@@ -1,0 +1,17 @@
+[
+  {
+    "url": "https://waycool.in/career",
+    "error": "TypeError: Failed to fetch",
+    "capturedAt": "2026-10-23T06:12:08.787Z"
+  },
+  {
+    "url": "https://waycool.in/",
+    "error": "TypeError: Failed to fetch",
+    "capturedAt": "2026-10-23T06:12:08.788Z"
+  },
+  {
+    "url": "https://www.waycool.in/job-opportunities.php",
+    "error": "TypeError: Failed to fetch",
+    "capturedAt": "2026-10-23T06:12:09.143Z"
+  }
+]

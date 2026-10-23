@@ -1,0 +1,68 @@
+{
+  "source": "waycool",
+  "retainedAt": "2026-10-23",
+  "captureMethod": "Root shared Playwright browser native public fetch; exact response bodies and transport failures retained",
+  "scope": "Official careers, homepages on both www/non-www hosts and legacy native Join Us endpoint. www/career returned HTTP 404; other four requests failed transport. No current employer-bound inventory or role contract recovered.",
+  "fixtures": [
+    {
+      "file": "official-responses.json.gz",
+      "rawBytes": 426,
+      "rawSHA256": "6179f30b8ffa9b1c71dc0801bf459adcd835dd4ceee3aadd48bd73eb6149ce8f",
+      "gzipSHA256": "fa4fb0776e1d59d777a22a124f43291c8836791485839ff6d384a0255afe101a",
+      "responses": [
+        {
+          "url": "https://waycool.in/career",
+          "error": "TypeError: Failed to fetch",
+          "capturedAt": "2026-10-23T06:12:08.787Z",
+          "finalUrl": null,
+          "status": null,
+          "bodyBytes": null,
+          "bodySHA256": null
+        },
+        {
+          "url": "https://waycool.in/",
+          "error": "TypeError: Failed to fetch",
+          "capturedAt": "2026-10-23T06:12:08.788Z",
+          "finalUrl": null,
+          "status": null,
+          "bodyBytes": null,
+          "bodySHA256": null
+        },
+        {
+          "url": "https://www.waycool.in/job-opportunities.php",
+          "error": "TypeError: Failed to fetch",
+          "capturedAt": "2026-10-23T06:12:09.143Z",
+          "finalUrl": null,
+          "status": null,
+          "bodyBytes": null,
+          "bodySHA256": null
+        }
+      ]
+    },
+    {
+      "file": "official-www-responses.json.gz",
+      "rawBytes": 470,
+      "rawSHA256": "a74e92b52ac468a6883c0ccedb0e9437940edc2d17ef63a8858e6a5b50d61c8c",
+      "gzipSHA256": "3a98c6e12ca5503d9550d78a61df557cf26d5c4f70df12b298319b218a74602b",
+      "responses": [
+        {
+          "url": "https://www.waycool.in/career",
+          "finalUrl": "https://www.waycool.in/career",
+          "status": 404,
+          "capturedAt": "2026-10-23T06:17:48.553Z",
+          "bodyBytes": 143,
+          "bodySHA256": "3a544106eb185ab7aed03b7da8745541506521877bd1599266f837c86bcd25d3"
+        },
+        {
+          "url": "https://www.waycool.in/",
+          "error": "TypeError: Failed to fetch",
+          "capturedAt": "2026-10-23T06:17:48.253Z",
+          "finalUrl": null,
+          "status": null,
+          "bodyBytes": null,
+          "bodySHA256": null
+        }
+      ]
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import batchProviders from '../providers/providerExtensions/workbook-batch-09-f.
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 import { getScraperSourceDirectoryName } from '../providers/sourcePaths.js'
+import { classifyProviderImplementation } from '../../scripts/reportScriptCatalogTopology.js'
 
 const EXPECTED_COMPANY_COUNT = 68
 const EXPECTED_BATCH_ID = "09f"
@@ -31,7 +32,7 @@ test('workbook batch 09f providers resolve through the shared catalog', () => {
   )
 })
 
-test('workbook batch 09f providers stay exact-name and fail closed', async () => {
+test('workbook batch 09f registrations retain provenance and distinguish repaired implementations', async () => {
   const catalog = getScraperCatalog()
   const scrapersByName = new Map(buildScrapers().map((scraper) => [scraper.name, scraper]))
 
@@ -41,7 +42,6 @@ test('workbook batch 09f providers stay exact-name and fail closed', async () =>
     const expectedDirectoryName = getScraperSourceDirectoryName(provider)
     const expectedModulePath = `../${expectedDirectoryName}/script.js`
     const expectedDryRunFile = `${expectedDirectoryName}/jobs.json`
-    const expectedRuntimeSuffix = `scraper\\${expectedDirectoryName}\\script.js`
     const expectedOriginalModulePath = `../workbookbatch09f/failClosedSentinel.js`
 
     assert.ok(catalogProvider)
@@ -72,7 +72,16 @@ test('workbook batch 09f providers stay exact-name and fail closed', async () =>
       true,
     )
     assert.equal(provider.verifiedSurfaceSummary.includes(provider.companyName), true)
-    assert.equal(String(catalogProvider.modulePath).endsWith(expectedRuntimeSuffix), true)
-    assert.deepEqual(await scraper.run(), [])
+    // Registration metadata is historical provenance. Repaired integrations
+    // have native fixture contracts and must not be required to return zero,
+    // or make public requests from this catalog-registration test.
+    const implementation = classifyProviderImplementation(catalogProvider)
+    if (['sentinel', 'static-empty'].includes(implementation.type)) {
+      assert.equal(String(catalogProvider.modulePath).replaceAll('\\', '/').endsWith(`/scraper/${expectedDirectoryName}/script.js`), true, provider.source)
+      assert.deepEqual(await scraper.run(), [])
+    } else {
+      assert.ok(['script', 'shared-adapter', 'discovery-only'].includes(implementation.type), provider.source)
+      assert.equal(typeof scraper.run, 'function')
+    }
   }
 })

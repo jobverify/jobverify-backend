@@ -9,14 +9,16 @@
   "companyCareerPage": "https://lucidmotors.com/careers",
   "officialCareersPageUrl": "https://lucidmotors.com/careers/search",
   "companyDomain": "lucidmotors.com",
-  "atsPlatform": "official-first-party-careers-search-page-fail-closed",
+  "atsPlatform": "greenhouse",
   "countryFilter": "India",
-  "paginationStrategy": "official-careers-search-page-sentinel",
-  "extractionStrategy": "verified-first-party-careers-page+return-empty-until-public-job-feed-is-verifiable",
+  "paginationStrategy": "complete-greenhouse-native-jobs-departments-offices-parity",
+  "extractionStrategy": "live-official-next-client-handoff+native-inventory+office-country-ancestry",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-25",
-  "verifiedPublicJobCount": 0,
+  "verifiedOn": "2026-10-23",
+  "verifiedPublicJobCount": 445,
   "verifiedIndiaJobCount": 0,
-  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://lucidmotors.com/careers is Lucid Motors' first-party careers page and that its public open-roles surface is exposed under https://lucidmotors.com/careers/search. Because no stable enumerable extraction contract was independently verified from that first-party search surface here, this exact-name provider fails closed and returns no jobs."
+  "verifiedSurfaceSummary": "October 23, 2026 official search and Next.js client identify the lucidmotors Greenhouse board. Captured unfiltered native jobs, department and office feeds reconcile 445 roles, none in India. Runtime verifies current client handoff and native identities/counts/geography; captured counts are observations, not future empty-inventory evidence.",
+  "atsBoardToken": "lucidmotors",
+  "inventoryVerificationPolicy": "live-parser-evidence-required"
 }

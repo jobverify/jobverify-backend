@@ -1,0 +1,8 @@
+{
+  "url": "https://moeving.freshteam.com/jobs",
+  "finalUrl": "https://moeving.freshteam.com/jobs",
+  "status": 200,
+  "capturedAt": "2026-10-23T04:22:07.272Z",
+  "body": "<!DOCTYPE html>\n<html>\n  <head>\n    <meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">\n    <link rel=\"stylesheet\" href=\"/src/404.css\" type=\"text/css\" media=\"screen, projection\">\n    <title>Freshteam</title>\n  </head>\n  <body>\n    <div id=\"wrap\" class=\"container\">\n\t\t\t<div class=\"invalid-domain-wrapper\">\n\t\t\t\t<div class=\"wrapper-shadow\">\n\t\t\t\t\t<div class=\"no-ats\">\n\t\t\t\t\t\t<div class=\"freshteam-logo\"></div>\n\t\t\t\t\t\t<h2 class=\"invalid-domain-header\"> We couldn't find <span id=\"domainname\"></span></h2>\n\t\t\t\t\t\t<p> May be this is still fresh!  </p>\n\t\t\t\t\t\t<p> You can claim it now at\n              <a href='https://www.freshworks.com/applicant-tracking'>http://www.freshteam.com</a>\n            </p>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n    <script type='text/javascript'>\n\t\t\tdocument.getElementById(\"domainname\").innerHTML = (document.domain);\n    </script>\n\t</body>\n</html>\n",
+  "text": "We couldn't find moeving.freshteam.com\n\nMay be this is still fresh!\n\nYou can claim it now at http://www.freshteam.com"
+}

@@ -3,9 +3,9 @@ import mongoose from 'mongoose';
 import '../loadEnv.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
 import PipelineRun from '../src/models/PipelineRun.js';
-import { createPipeline, claimStage, recordStageResult, completeWorkflow, updateStage, changeRun } from '../src/pipeline/execution.js';
+import { claimStage, recordStageResult, completeWorkflow, updateStage, changeRun } from '../src/pipeline/execution.js';
 import { directConfiguration, stageOutcome, WORKFLOWS, WORKFLOW_NAMES, isTerminal } from '../src/pipeline/policy.js';
-import { dispatchGithubStage, githubRequest, matchesGithubStage } from '../src/pipeline/github.js';
+import { createDirectGithubPipeline, dispatchGithubStage, githubRequest, matchesGithubStage } from '../src/pipeline/github.js';
 import { redactLog } from '../src/pipeline/local.js';
 import { aggregateClassificationSummaries } from '../classification/reporting.js';
 
@@ -19,8 +19,8 @@ try {
     if(process.env.GITHUB_REF_NAME!==process.env.PIPELINE_DEFAULT_BRANCH)throw new Error('Production pipelines run only on the repository default branch.');
     let id=process.env.PIPELINE_ID,dispatchToken=process.env.PIPELINE_DISPATCH_TOKEN;
     if(!id) {
-      const run=await createPipeline({configuration:directConfiguration(key),target:'github',origin:'github',
-        repo:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF_NAME,sha:process.env.GITHUB_SHA,initialRunId:Number(process.env.GITHUB_RUN_ID)});
+      const run=await createDirectGithubPipeline({configuration:directConfiguration(key),target:'github',origin:'github',
+        repo:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF_NAME,sha:process.env.GITHUB_SHA,initialRunId:Number(process.env.GITHUB_RUN_ID)},{token});
       id=run._id;
     } else {
       const expected=await PipelineRun.findById(id).lean();

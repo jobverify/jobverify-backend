@@ -1,0 +1,136 @@
+{
+  "source": "unocoin",
+  "capturedOn": "2026-10-23",
+  "evidence": [
+    {
+      "file": "current-client-routes.json.gz",
+      "sha256": "da22feadb261c147f6d5caff788dd666c3c471cd401f49590e6fe2b52d0c12b9",
+      "uncompressedSha256": "261d45b13c30ab8e4d7ab870d6fc6a857eb2f29457ea7aad6cb50503c96adc6f",
+      "responses": [
+        {
+          "url": "https://unocoin.com/landing/_next/static/chunks/pages/in-cde9a562d132e596.js",
+          "finalUrl": "https://unocoin.com/landing/_next/static/chunks/pages/in-cde9a562d132e596.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:12.203Z",
+          "bodySHA256": "b5886946d93906388e7ce2078a2f3ed076e71a9c898cbd964e20b0fb21937eac",
+          "bodyBytes": 288,
+          "error": null
+        },
+        {
+          "url": "https://unocoin.com/landing/_next/static/mVHYbDhzyiMi8AAGvd9Zq/_buildManifest.js",
+          "finalUrl": "https://unocoin.com/landing/_next/static/mVHYbDhzyiMi8AAGvd9Zq/_buildManifest.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:12.206Z",
+          "bodySHA256": "1104c3d76bbb3076bf457dc7ca357427bec49bba08c2cf176bb9ed34d67691ce",
+          "bodyBytes": 6832,
+          "error": null
+        }
+      ]
+    },
+    {
+      "file": "edu-navigation.json.gz",
+      "sha256": "e6f5d4ab21cd28e9d1579f092e64944256569467cbe3332c456faeab91eae92c",
+      "uncompressedSha256": "411df45d96fbad37c0fa422a56caa673b041cea33060702403b249c121384571",
+      "responses": [
+        {
+          "url": "https://edu.unocoin.com/",
+          "finalUrl": null,
+          "status": null,
+          "capturedAt": "2026-10-23T07:22:18.821976+00:00",
+          "bodySHA256": null,
+          "bodyBytes": null,
+          "error": "Playwright native navigation net::ERR_ABORTED at https://edu.unocoin.com/; no response body/status captured"
+        }
+      ]
+    },
+    {
+      "file": "native-employer.json.gz",
+      "sha256": "3505b1a9c1e90054d7eca067fc290dc657dfc01c8aab44def7d91847fb05f3a3",
+      "uncompressedSha256": "4ad6d07d3a00018b8cd8b7b57c44e33e7501849207e2fa2b619967124b72803f",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/unocoin",
+          "finalUrl": "https://www.linkedin.com/company/unocoin",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:21:13.100Z",
+          "bodySHA256": "58e94657167137bf1f89200b26613d4db0f043a8470abc07a1b5e94da67d7f2e",
+          "bodyBytes": 324676,
+          "error": null
+        }
+      ]
+    },
+    {
+      "file": "native-jobs.json.gz",
+      "sha256": "8bb91055576d32cc46476402962ca738e5c7e83729853079ba2de2f1f0f2fa77",
+      "uncompressedSha256": "25258fb0497d2aebde97ab5389f96264b932227f35929bfaf53299eefb79401e",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=3621275&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=3621275&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:21:38.660Z",
+          "bodySHA256": "782dbaaaf161da5a5289fa8dc43e58c9595cbe3b7918ef7a82d516dd0fbca17a",
+          "bodyBytes": 89582,
+          "error": null
+        }
+      ]
+    },
+    {
+      "file": "native-worldwide-confirmation.json.gz",
+      "sha256": "5221b3b3aa8a00bfc000e2d5d596a0aa3af8f768ca897207a336932cc7a3e0e9",
+      "uncompressedSha256": "532a5e01e97edba9b3157a29506bd419de997b7866567e5ce1c9f537fd4a8b45",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/unocoin-jobs-worldwide?f_C=3621275&pageNum=0",
+          "finalUrl": "https://www.linkedin.com/jobs/unocoin-jobs-worldwide?f_C=3621275&pageNum=0",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:02.192Z",
+          "bodySHA256": "239bcdbd90b77f7ef5f23deb216608aac491c27373f4c6470f08f2a9c8e1870b",
+          "bodyBytes": 89752,
+          "error": null
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=3621275&location=Worldwide",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=3621275&location=Worldwide",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:02.744Z",
+          "bodySHA256": "125459cf7ae96cb3f6059cb858c289b7c6cd055e08fdd9d6831f956c0596779a",
+          "bodyBytes": 89637,
+          "error": null
+        }
+      ]
+    },
+    {
+      "file": "native-worldwide-query.json.gz",
+      "sha256": "a4a5f3ba9e19454340772f22a1a506d0ed28fffd2ada16788c07d9cb89dd1f18",
+      "uncompressedSha256": "d264454e33a1f2e44a6b6ae703120a3c2b8fe4ea270c45e105cd05bd3a878b61",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=3621275",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=3621275",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:23:15.039Z",
+          "bodySHA256": "e202d0b4efc5e2c79d4806e1878771f837d02bed1ac082cbd03ef8e1225d8fdb",
+          "bodyBytes": 89669,
+          "error": null
+        }
+      ]
+    },
+    {
+      "file": "official-home.json.gz",
+      "sha256": "c7559391265ad4d64054a0fb18895c4dafa5666c35c857eb28980963d036f0fa",
+      "uncompressedSha256": "49cd191f297e0cc41930334c29b3ee2dde24d6f6236bd0df9c9967322a645047",
+      "responses": [
+        {
+          "url": "https://unocoin.com/in/",
+          "finalUrl": "https://unocoin.com/in/",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:18:22.098Z",
+          "bodySHA256": "87b548c207f7c45d1baa7b6284a59662c8af17ea15ec7bd4d5b7e3bf61b310bd",
+          "bodyBytes": 148538,
+          "error": null
+        }
+      ]
+    }
+  ]
+}

@@ -21,10 +21,20 @@ test('Tork Motors resolves only to its exact-name official-domain provider', () 
   ])
 })
 
-test('Tork Motors fails closed without a verified public careers feed', async () => {
+test('Tork Motors reports a coverage gap without a verified employer inventory', async () => {
   const modulePath = new URL('../scraper/torkmotors/script.js', import.meta.url)
   assert.equal(existsSync(modulePath), true)
 
-  const { run } = await import(modulePath)
-  assert.deepEqual(await run(), [])
+  const { run, PROVIDER_METADATA } = await import(modulePath)
+  const response = new Response('<h1>Cà Khịa TV</h1>')
+  Object.defineProperty(response, 'url', { value: 'https://torkmotors.com/' })
+  await assert.rejects(run({ fetchImpl: async () => response }), (error) => (
+    error.code === 'TORKMOTORS_COVERAGE_GAP'
+    && error.inventoryEvidence.reportedTotal === null
+    && error.inventoryEvidence.listingComplete === false
+    && error.lifecycleCleanupAllowed === false
+  ))
+  assert.equal(PROVIDER_METADATA.firstParty, false)
+  assert.equal(PROVIDER_METADATA.verifiedPublicJobCount, null)
+  assert.equal(PROVIDER_METADATA.sourceListingComplete, false)
 })

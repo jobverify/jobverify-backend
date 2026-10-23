@@ -1,0 +1,98 @@
+{
+  "source": "cognitensor",
+  "evidence": [
+    {
+      "file": "careers-pages.json.gz",
+      "sha256": "ea0c704c1fbfdd8131cd9528c7e61aa92178c667b2bd2e342f0196fd6d53b8b8",
+      "uncompressedSha256": "ee66679f701a0d14dcf0f7a9f2be656b2500ede890eaf91967b0282934767a96",
+      "responses": [
+        {
+          "url": "https://www.cognitensor.com/company/careers",
+          "finalUrl": "https://www.cognitensor.com/company/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T08:10:26.410Z",
+          "bodySHA256": "a0c05a810739b2a9494d85d1c280dd652ea5ac6351d49750d00442ded5afc74e"
+        },
+        {
+          "url": "https://www.cognitensor.com/assets/index-CafDbZnE.js",
+          "finalUrl": "https://www.cognitensor.com/assets/index-CafDbZnE.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T08:10:26.516Z",
+          "bodySHA256": "2ce519cb04ff8646389a4819d8d03e00cc704878552d92bb34d1ea1dc1086d29"
+        }
+      ]
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "a69390495ebaf40095aa1656c2329c08907f12b00790a52c289f617000d70bd2",
+      "uncompressedSha256": "b4385e83e9114ffb0e0ee4c182633b28ba9a78230349354e9c82f37c07e16ea4",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/cognitensor",
+          "finalUrl": "https://www.linkedin.com/company/cognitensor",
+          "status": 200,
+          "capturedAt": "2026-10-23T08:09:17.625Z",
+          "bodySHA256": "e03d4fe8d9038da0ec56bf5216236275cb21df7d5ccbe641fc09b11ebb618195"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/4457463203",
+          "finalUrl": "https://www.linkedin.com/jobs/django-developer-jobs?trk=expired_jd_redirect",
+          "status": 200,
+          "capturedAt": "2026-10-23T08:09:19.269Z",
+          "bodySHA256": "894d1e850ac94a98d84aac484cc656eade25a613cd295b225c18b20088861fb5"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=11509078&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=11509078&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T08:09:19.850Z",
+          "bodySHA256": "fd2d9c3de522c748925ee8bdb4d54962281a1e3333c75bf9f6a1cb2a8b2b4bbe"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=11509078&location=Worldwide",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=11509078&location=Worldwide",
+          "status": 200,
+          "capturedAt": "2026-10-23T08:09:20.370Z",
+          "bodySHA256": "8866848df4b8049cae35b18f3340cb224a7e84e904a225629ce277985a92d390"
+        }
+      ]
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "66c34162c6c02e8b16c168696c50c43add8e5805465d3f136bc0d4b645ac82e4",
+      "uncompressedSha256": "6841cc72306a74abec7c8bb69166372c04357ead76c790cd960c21357a03603b",
+      "responses": [
+        {
+          "url": "https://www.cognitensor.com/",
+          "finalUrl": "https://www.cognitensor.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T08:09:14.296Z",
+          "bodySHA256": "a0c05a810739b2a9494d85d1c280dd652ea5ac6351d49750d00442ded5afc74e"
+        }
+      ]
+    }
+  ],
+  "navigationObservations": [
+    {
+      "file": "careers-pages.dom.json.gz",
+      "sha256": "382e60ab159c7fb67ac33925548e0fbf674d497e4538c9e3e4a71009b0b949da",
+      "uncompressedSha256": "dd68314161f6824959ea9029099df20bbf0813bf5aace35da87656a053b75e8e",
+      "kind": "browser-navigation-observation-not-http-receipt",
+      "finalUrl": "https://www.cognitensor.com/company/careers"
+    },
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "fd3382b57d37c5d8291df5ef16f68a5037e52b114735078bb28270437d33f683",
+      "uncompressedSha256": "862017d4bfa86cb3fc9e1410ff5fd06a62da6eb5923367dbdb838f16c1bd18c8",
+      "kind": "browser-navigation-observation-not-http-receipt",
+      "finalUrl": "https://www.linkedin.com/authwall?trk=bf&trkInfo=AQF077gwAATfqAAAAaFnzqeYoyxjofk64IFxteYIucKeqP1XQ4A-1vlnRHbAo15a-13ZqakaCaHXk-gfMIbKej5APUSjci3PgrKjicoz-Dpwz8IXHnjdof2Ohw4NplewQ-L_dic=&original_referer=&sessionRedirect=https%3A%2F%2Fwww.linkedin.com%2Fcompany%2Fcognitensor"
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "772edc8630288aa355fafcc026bc673fe39f83176d1e1ba2a5c3eca1a2b8fa70",
+      "uncompressedSha256": "ad06371310dd3f0a6920b36ddc22469890f95546bedff1f6b8e8299504554cc1",
+      "kind": "browser-navigation-observation-not-http-receipt",
+      "finalUrl": "https://www.cognitensor.com/"
+    }
+  ]
+}

@@ -1,0 +1,219 @@
+{
+  "source": "truemeds",
+  "retainedAt": "2026-10-23",
+  "captureMethod": "Shared root Playwright browser context public fetch; response body retained verbatim",
+  "scope": "Official website employer LinkedIn handoff, employer public listing and 13 role detail attempts; three HTTP429 are retained coverage gaps",
+  "fixtures": [
+    {
+      "file": "official-about.json.gz",
+      "rawBytes": 142562,
+      "rawSHA256": "1d6465cdf286ee3420de39e2ccb656dc8c6442aeaa5a15937195c19709bf2f28",
+      "gzipSHA256": "a4c0347abe0c547f74ea4eb653a32c6d58b198f688ecba815f4c23d1ba561fd6",
+      "responses": [
+        {
+          "url": "https://www.truemeds.in/about-us",
+          "finalUrl": "https://www.truemeds.in/about-us",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:54:43.006Z",
+          "error": null,
+          "bodyBytes": 115768,
+          "bodySHA256": "3f5fe1fd852349e552927e7b09ec2294617b3715d82223d27b1adf5406b4622b"
+        }
+      ]
+    },
+    {
+      "file": "native-linkedin.json.gz",
+      "rawBytes": 427159,
+      "rawSHA256": "80e7975ed9a73d246f652dfb2b8c75f51a0f00bbac162f120875b90d16e2e757",
+      "gzipSHA256": "5c645c803219f2e0f81071d71db88e4b86d551baee4c5335cd5f7b0d0b0098f2",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/truemeds-india/",
+          "finalUrl": "https://www.linkedin.com/company/truemeds-india/",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:55:44.689Z",
+          "error": null,
+          "bodyBytes": 318461,
+          "bodySHA256": "2247943113fddbef507648f7b0f4eaebca5df3ed9cf186251995f8a9178802bf"
+        },
+        {
+          "url": "https://www.linkedin.com/company/truemeds-india/jobs/",
+          "finalUrl": null,
+          "status": null,
+          "capturedAt": null,
+          "error": "TypeError: Failed to fetch",
+          "bodyBytes": null,
+          "bodySHA256": null
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=14614643",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=14614643",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:55:44.407Z",
+          "error": null,
+          "bodyBytes": 89496,
+          "bodySHA256": "cc234b2f96cb8543f45cd32bc41c2e7745dae1edcd173aba3ea2a73aed842bf8"
+        }
+      ]
+    },
+    {
+      "file": "native-jobs.json.gz",
+      "rawBytes": 154325,
+      "rawSHA256": "f852ecf7a51f8ef739b0fce7cf84e5c47920391afcd8e1e8cf62b239e49908fb",
+      "gzipSHA256": "280b03eb2370e31a55672501fd56febc04f3dfb7a7af2be88081bf10662b1c75",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/truemeds-jobs-worldwide?f_C=14614643&trk=top-card_top-card-primary-button-top-card-primary-cta",
+          "finalUrl": "https://www.linkedin.com/jobs/truemeds-jobs-worldwide?f_C=14614643&trk=top-card_top-card-primary-button-top-card-primary-cta",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:56:28.926Z",
+          "error": null,
+          "bodyBytes": 146641,
+          "bodySHA256": "fb75ba7bcbc7e1f1f2f41cb12c2491f1d070fe91a15d8acc605d033a37822734"
+        }
+      ]
+    },
+    {
+      "file": "native-details.json.gz",
+      "rawBytes": 3304082,
+      "rawSHA256": "e1763165ebf28687dd1869cd340eaba197e8b376ba2cab0b7d0aeb6fcb167ace",
+      "gzipSHA256": "5216bce4ad13ca269ae0d379df990f93a312ff52005ed046c677610fad3dd7d3",
+      "responses": [
+        {
+          "url": "https://in.linkedin.com/jobs/view/product-analyst-senior-product-analyst-at-truemeds-4456903153",
+          "finalUrl": "https://in.linkedin.com/jobs/view/product-analyst-senior-product-analyst-at-truemeds-4456903153",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:57:59.820Z",
+          "error": null,
+          "bodyBytes": 299904,
+          "bodySHA256": "3f0907902d0dd94fb4e6bf87cb0d652538f32f1a28264bc7ee8f7492eecca0f5"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/facility-management-at-truemeds-4467371225",
+          "finalUrl": "https://in.linkedin.com/jobs/view/facility-management-at-truemeds-4467371225",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:58:00.107Z",
+          "error": null,
+          "bodyBytes": 323290,
+          "bodySHA256": "2a9eb97bb861afb506c26589af07ff2e4ba9a0a867931379fb76c81d7c4e988e"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/performance-marketing-manager-at-truemeds-4476017532",
+          "finalUrl": "https://in.linkedin.com/jobs/view/performance-marketing-manager-at-truemeds-4476017532",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:58:00.032Z",
+          "error": null,
+          "bodyBytes": 333323,
+          "bodySHA256": "2c4be5e5e182dbf1c69e9614940e77f0edeb07f91148ad6afeae4a3e972b3073"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/warehouse-manager-at-truemeds-4479406616",
+          "finalUrl": "https://in.linkedin.com/jobs/view/warehouse-manager-at-truemeds-4479406616",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:57:59.953Z",
+          "error": null,
+          "bodyBytes": 302169,
+          "bodySHA256": "41d2be56e794c4318ec2f5c462ff21919693822331d760a7a1162dedc14dc77a"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/marketing-analyst-at-truemeds-4476012758",
+          "finalUrl": "https://in.linkedin.com/jobs/view/marketing-analyst-at-truemeds-4476012758",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:58:00.700Z",
+          "error": null,
+          "bodyBytes": 320244,
+          "bodySHA256": "98780089a074c74b7f8041f77e545e41a1a45174a594f1e1325dd4fc520376e2"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/accounts-compliance-manager-at-truemeds-4473620674",
+          "finalUrl": "https://in.linkedin.com/jobs/view/accounts-compliance-manager-at-truemeds-4473620674",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:58:01.045Z",
+          "error": null,
+          "bodyBytes": 323753,
+          "bodySHA256": "e35c264ea5979b4a636ca903651788da442825c7506d5dd35400514c8ec8cef5"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/assistant-manager-procurement-at-truemeds-4277723622",
+          "finalUrl": "https://in.linkedin.com/jobs/view/assistant-manager-procurement-at-truemeds-4277723622",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:58:01.107Z",
+          "error": null,
+          "bodyBytes": 324310,
+          "bodySHA256": "74457cdedd86cdb80bddea8ded366c8e06d56e7d6c51e40ebb3f531be6e902cb"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/associate-director-hyperlocal-logistics-at-truemeds-4467361456",
+          "finalUrl": "https://in.linkedin.com/jobs/view/associate-director-hyperlocal-logistics-at-truemeds-4467361456",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:58:01.256Z",
+          "error": null,
+          "bodyBytes": 323146,
+          "bodySHA256": "142f3f2d8c68dcdba8e7ec0b9eb8706c742fb87b74f70ff27dab859ee21fb951"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/senior-accountant-reconciliation-at-truemeds-4477062217",
+          "finalUrl": "https://in.linkedin.com/jobs/view/senior-accountant-reconciliation-at-truemeds-4477062217",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:58:01.499Z",
+          "error": null,
+          "bodyBytes": 302906,
+          "bodySHA256": "b47f12c5840612206a098c87a6f17f8295f27093c9e5750659e84985d8d9deb0"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/analytics-branded-at-truemeds-4277723623",
+          "finalUrl": "https://in.linkedin.com/jobs/view/analytics-branded-at-truemeds-4277723623",
+          "status": 429,
+          "capturedAt": "2026-10-23T05:58:01.618Z",
+          "error": null,
+          "bodyBytes": 792,
+          "bodySHA256": "c8a44ed34475393301a2b3246826b2b2d6bdb4df15a744922ae66b16bfb001cb"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/assistant-manager-category-operations-at-truemeds-4473655329",
+          "finalUrl": "https://in.linkedin.com/jobs/view/assistant-manager-category-operations-at-truemeds-4473655329",
+          "status": 429,
+          "capturedAt": "2026-10-23T05:58:01.685Z",
+          "error": null,
+          "bodyBytes": 792,
+          "bodySHA256": "c8a44ed34475393301a2b3246826b2b2d6bdb4df15a744922ae66b16bfb001cb"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/graphic-designer-%E2%80%93-performance-marketing-at-truemeds-4479406763",
+          "finalUrl": "https://in.linkedin.com/jobs/view/graphic-designer-%E2%80%93-performance-marketing-at-truemeds-4479406763",
+          "status": 429,
+          "capturedAt": "2026-10-23T05:58:01.925Z",
+          "error": null,
+          "bodyBytes": 792,
+          "bodySHA256": "c8a44ed34475393301a2b3246826b2b2d6bdb4df15a744922ae66b16bfb001cb"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/jit-purchase-manager-at-truemeds-4478255314",
+          "finalUrl": "https://in.linkedin.com/jobs/view/jit-purchase-manager-at-truemeds-4478255314",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:58:02.041Z",
+          "error": null,
+          "bodyBytes": 297366,
+          "bodySHA256": "85472b4c313f360913d53180bc6e30e0ee68a755ef5436fb0557306a237c1466"
+        }
+      ]
+    },
+    {
+      "file": "native-exact-company.json.gz",
+      "rawBytes": 333311,
+      "rawSHA256": "c50b6b829f9823a85b2a10fec13b3a44309ba6c2adc5840e6f3e064bd7895141",
+      "gzipSHA256": "c296c4c164f4247a5cce9a5b92f2efb9f159d7b94fffcba6de7ba5c4d8a34300",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/truemeds-india",
+          "finalUrl": "https://www.linkedin.com/company/truemeds-india",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:03:58.490Z",
+          "error": null,
+          "bodyBytes": 318461,
+          "bodySHA256": "a94de194a28aa952642acd661fd82c93fbb85eef8e45f7a9caa811f7eebc1a27"
+        }
+      ]
+    }
+  ]
+}

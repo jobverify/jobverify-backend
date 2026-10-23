@@ -1,6 +1,5 @@
 import { filterIndiaJobs } from './indiaLocationFilter.js'
 import { isAggregateHiringSignalJob } from '../../src/utils/jobListingEvidence.js'
-import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import {
   buildPublishableJobPostedAtCutoff,
   normalizeLifecycleDate,
@@ -62,11 +61,8 @@ export const analyzePublishableJobs = (jobs = [], { now = new Date() } = {}) => 
       return false
     }
 
-    if (!hasSourceDescription(job)) {
-      filterCounts.emptyDescription += 1
-      return false
-    }
-
+    // A missing description is a detail-health issue, not an eligibility
+    // rejection. Keep the original content unchanged for later enrichment.
     return true
   })
 

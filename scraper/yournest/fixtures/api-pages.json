@@ -1,0 +1,16 @@
+[
+  {
+    "url": "https://api.pyjamahr.com/api/career/jobs/?company_uuid=987EE7EF32&page=1&is_careers_page=true",
+    "finalUrl": "https://api.pyjamahr.com/api/career/jobs/?company_uuid=987EE7EF32&page=1&is_careers_page=true",
+    "status": 200,
+    "capturedAt": "2026-10-23T09:22:38.852Z",
+    "body": "{\"count\":3,\"next\":null,\"previous\":null,\"results\":[{\"id\":376083,\"slug\":\"associate-sr-associate-foundation\",\"title\":\"Associate/Sr. Associate - Foundation\",\"max_experience\":8.0,\"min_experience\":3.0,\"country\":\"India\",\"location\":\"Gurugram, Haryana, India\",\"other_locations\":[],\"department_name\":null,\"published_internally\":false,\"workplace_type\":\"ON_SITE\",\"product\":null},{\"id\":374870,\"slug\":\"associate-principal-principal-growth-equity-exits\",\"title\":\"Associate Principal/Principal - Venture Capital\",\"max_experience\":12.0,\"min_experience\":8.0,\"country\":\"India\",\"location\":\"Gurugram, Haryana, India\",\"other_locations\":[],\"department_name\":null,\"published_internally\":false,\"workplace_type\":\"ON_SITE\",\"product\":null},{\"id\":43774,\"slug\":\"interested-in-vcstartups-across-india\",\"title\":\"Interested in VC/Startups (Across India)\",\"max_experience\":20.0,\"min_experience\":0.0,\"country\":\"India\",\"location\":\"Remote\",\"other_locations\":[],\"department_name\":null,\"published_internally\":false,\"workplace_type\":\"REMOTE\",\"product\":null}]}"
+  },
+  {
+    "url": "https://api.pyjamahr.com/api/career/jobs/products?company_uuid=987EE7EF32",
+    "finalUrl": "https://api.pyjamahr.com/api/career/jobs/products/?company_uuid=987EE7EF32",
+    "status": 200,
+    "capturedAt": "2026-10-23T09:22:38.937Z",
+    "body": "[]"
+  }
+]

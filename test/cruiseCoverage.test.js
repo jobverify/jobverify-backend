@@ -27,7 +27,7 @@ test('Cruise exact provider extension covers only the literal CSV company row', 
 
   assert.equal(provider.companyName, 'Cruise')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'exact-name-fail-closed-sentinel')
+  assert.equal(provider.atsPlatform, 'first-party-careers-coverage-gap')
   assert.deepEqual(
     report.matched.filter(({ companyName }) => companyName === 'Cruise').map((item) => item.source),
     ['cruise'],
@@ -36,9 +36,15 @@ test('Cruise exact provider extension covers only the literal CSV company row', 
   assert.equal(nearNameReport.unmatchedCount, 2)
 })
 
-test('Cruise scraper fails closed without a verified enumerable extraction contract', async () => {
+test('Cruise registered scraper reports a coverage gap without a verified enumerable contract', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'cruise')
 
   assert.ok(scraper, 'Expected Cruise scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  await assert.rejects(scraper.run({ fetchImpl: async () => ({ status: 502 }) }), error => {
+    assert.equal(error.code, 'CRUISE_COVERAGE_GAP')
+    assert.equal(error.inventoryEvidence.listingComplete, false)
+    assert.equal(error.inventoryEvidence.reportedTotal, null)
+    assert.equal(error.inventoryEvidence.indiaFacetCount, null)
+    return true
+  })
 })

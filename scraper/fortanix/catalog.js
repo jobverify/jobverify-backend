@@ -1,30 +1,73 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
+import {fileURLToPath} from 'node:url'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+const PROVIDER_METADATA={...{
   "source": "fortanix",
   "companyName": "Fortanix",
   "adapter": "script",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json'),
-  "atsPlatform": "workbook-exact-name-sentinel",
-  "countryFilter": "India",
-  "paginationStrategy": "none",
-  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-  "parser": "custom-script",
+  "catalogOverride": true,
+  "atsPlatform": "workable-native-api",
+  "parser": "shared-bounded-native-collector+existing-Workable-detail-mapper;official-client/account-and-native-count-contract",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-29",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
-  "verifiedSurfaceSummary": "Workbook batch 08 exact-name sentinel for Fortanix added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-  "backfillMode": "sentinel",
+  "countryFilter": "India",
+  "companyDomain": "fortanix.com",
+  "companyCareerPage": "https://www.fortanix.com/company/careers",
+  "jobsBoardUrl": "https://apply.workable.com/fortanix/",
+  "paginationStrategy": "native19-count-to-complete-markdown/widget-ID-reconciliation;unfiltered-single-native-array;closing-widget-recheck",
+  "extractionStrategy": "official-advertised-client-read-as-text-to-account337112;native-count-and-shortcode-reconciliation;all-India-public-API-details;existing-Workable-validation-and-mapping",
+  "backfillMode": "live-parser",
   "originalAdapter": "script",
   "originalAtsPlatform": "workbook-exact-name-sentinel",
   "originalModulePath": "../workbookbatch08/failClosedSentinel.js",
-  "originalDryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\workbookbatch08\\fortanix.jobs.json"
-}
-
+  "zeroResultPolicy": "coverage-gap",
+  "sourceScopeComplete": false,
+  "lifecycleCleanupAllowed": false,
+  "bindingEvidence": {
+    "verified": true,
+    "verifiedAt": "2026-10-22T23:32:47.797Z",
+    "officialCareerPage": "https://www.fortanix.com/company/careers",
+    "officialAdvertisedClient": "https://www.fortanix.com/_next/static/chunks/8661.f2dc7083db09c896.js",
+    "nativeAccountID": "337112",
+    "nativeAccountUID": "ce81a40d-ccc1-41ad-b20b-a603237884c8",
+    "matchedLinks": [
+      "https://cdn.aglty.io/fortanix/js-files/workable-embed.js",
+      "https://apply.workable.com/fortanix/jobs.md"
+    ],
+    "bindingScope": "current-official-client-Workable-account-ID-and-native-Fortanix-shortcodes;whole-employer-scope-unresolved",
+    "scriptsExecuted": false,
+    "applicationsOpened": false
+  },
+  "sharedATSMapper": "workablePublicApi.mapWorkablePublicDetail;existing-body-unchanged",
+  "verifiedOn": null,
+  "verifiedAt": null,
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "verifiedInventoryStatus": "unverified",
+  "runtimeQualification": "actual-isolated-native-extraction-and-loopback-persistence-status-history-public-predicate-validated",
+  "remediationStatus": "19global/10India;4eligible-local-saves;6age-exclusions;whole-employer-and-production-unobserved",
+  "sourceResearchGlobalRecords": 19,
+  "sourceResearchIndiaDetails": 10,
+  "verifiedSurfaceSummary": "Actual isolated source attempt 2026-10-22T23:32:41.870Z to 2026-10-22T23:32:47.797Z retained16HTTP200 bodies. Current official corporate client configures Workable account337112;native LLMS count19,complete markdown and numeric-widget19shortcodes reconcile. All10India details match native accountUID,published/approved/noninternal state,identities,calendar dates and typed location evidence.4pass existing publishing policy;6older openings excluded. Loopback saves4,repeat0;public experienced enabled4/disabled0;Bangalore filter3 and existing Remote display-label filter1. Native city stays null on the India-wide remote role. Native source/application URLs and all description,requirements,benefits sections preserved verbatim;blank native requisitions remain null. Published timestamp,widget publication day and widget creation day remain separate. Prior inventory and complete-check history protected. Whole-employer/legal scope,first-ever publication and current production publication unknown.",
+  "sourceScopeNotes": "Full original description,requirements and benefits sections preserved;native application and public role URLs copied verbatim. Blank native requisition codes remain unknown,distinct from public shortcodes. Native published timestamp retained separately from widget publication calendar and creation calendar;first-ever publication unknown. Remote India-only role retains null city. Complete native count reconciliation requires fresh native markdown and unique matching IDs. Existing publishing rules and whole-employer lifecycle protections remain in force.",
+  "verificationDisposition": "native-positive-partial;4eligible-and-locally-saved;6older-openings-excluded-by-existing-policy",
+  "sourceLatestLiveAttemptedAt": "2026-10-22T23:32:41.870Z",
+  "sourceLatestLiveCompletedAt": "2026-10-22T23:32:47.797Z",
+  "sourceLatestLiveOutcome": "positive-extraction-incomplete-evidence",
+  "sourceLatestLiveRawRecords": 19,
+  "sourceLatestLiveListingPages": 1,
+  "sourceLatestLiveIndiaCandidates": 10,
+  "sourceLatestLiveParsedIndiaJobs": 10,
+  "sourceLatestLiveEligibleJobs": 4,
+  "sourceLatestLiveAgeRejectedJobs": 6,
+  "sourceLatestLiveNativeDetailFailures": 0,
+  "sourceLatestLiveHTTPResponses": 16,
+  "sourceLatestLiveSourceCityNull": 1,
+  "localPersistenceSavedJobs": 4,
+  "localPersistenceRepeatInserted": 0,
+  "localVisibilityExperiencedEnabled": 4,
+  "localVisibilityExperiencedDisabled": 0,
+  "localVisibleBangaloreJobs": 3,
+  "localVisibleRemoteLabelJobs": 1
+},modulePath:path.join(currentDir,'script.js'),dryRunFile:path.join(currentDir,'jobs.json')}
 export default PROVIDER_METADATA
-export { PROVIDER_METADATA }
+export {PROVIDER_METADATA}

@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { TURTLEMINT_CATALOG } from '../../scraper/turtlemint/catalog.js'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
@@ -30,5 +33,10 @@ test('Turtlemint scraper stays fail-closed when the official careers page has no
   const scraper = buildScrapers().find((item) => item.name === 'turtlemint')
 
   assert.ok(scraper, 'Expected Turtlemint scraper')
-  assert.deepEqual(await scraper.run(), [])
+  const capture = JSON.parse(readFileSync(new URL('../../scraper/turtlemint/fixtures/careers-response.json', import.meta.url)))
+  const jobs = await scraper.run({ fetchPage: async () => ({ status: capture.status, url: capture.finalUrl, html: capture.body }) })
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
+  assert.equal(TURTLEMINT_CATALOG.inventoryVerificationPolicy, 'live-parser-evidence-required')
+  assert.equal(TURTLEMINT_CATALOG.verifiedOn, '2026-10-23')
 })

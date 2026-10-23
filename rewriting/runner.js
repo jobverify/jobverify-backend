@@ -6,6 +6,7 @@ import { REWRITE_MODEL, REWRITE_SCHEMA, MAX_REWRITE_SECTION_ITEMS, buildRewriteI
 import { reconcileRewriteCandidate, rewriteSnapshotFilter } from './queue.js';
 import { RewriteWorkerError } from './worker.js';
 import { buildReferencedSections, expandReferencedSections } from './sectionProtocol.js';
+import { buildSourceEdits, expandSourceEdits } from './editProtocol.js';
 
 export const rewriteDeadline = ({ now = Date.now(), budgetSeconds = 1200, workflowStartedAt, workflowSeconds = 9000, cleanupSeconds = 120 } = {}) => {
   const budget = Number(budgetSeconds);
@@ -20,10 +21,14 @@ export class RewriteGenerationError extends Error {
   constructor(message, options) { super(message, options); this.name = 'RewriteGenerationError'; }
 }
 
+export const rewriteStopDetails = ({ budgetExpired = false, cancelled = false } = {}) => cancelled
+  ? { interrupted: true, cancelled: true, stopReason: 'cancelled', reason: 'interrupted' }
+  : budgetExpired ? { interrupted: true, budgetExhausted: true, stopReason: 'budget_exhausted', reason: 'workflow_budget_exhausted' } : {};
+
 // The prose protocol handles dense text and mixed headings through evidence validation.
 // Keep the compact protocol available for historical benchmarks and explicit callers.
 export const assessDescriptionRewrite = (input, format = REWRITE_MODEL.outputFormat) => {
-  if (format === 'source-sections') {
+  if (['source-edits', 'source-sections'].includes(format)) {
     if (!input.eligible) return { ok: false, reason: 'insufficient_source' };
     const counts = new Map();
     for (const unit of buildReferencedSections(input).sources.filter(unit => unit.automatic)) {
@@ -57,6 +62,7 @@ const readCompletionStream = async response => {
     if(choice?.finish_reason)finishReason=choice.finish_reason;
     usage=value.usage||usage;timings=value.timings||timings;
   };
+  try {
   for await(const chunk of response.body){
     buffer+=decoder.decode(chunk,{stream:true});
     let end;while((end=buffer.indexOf('\n'))>=0){frame(buffer.slice(0,end).replace(/\r$/,''));buffer=buffer.slice(end+1);}
@@ -65,17 +71,21 @@ const readCompletionStream = async response => {
   buffer+=decoder.decode();if(buffer.trim())frame(buffer.replace(/\r$/,''));
   if(!done||!finishReason)throw new RewriteGenerationError('Local generator stream incomplete');
   return {choices:[{message:{content},finish_reason:finishReason}],usage,timings};
+  } catch (error) {
+    error.rawText = content.slice(0, 2400);
+    throw error;
+  }
 };
 
 export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-qwen',
   format = REWRITE_MODEL.outputFormat, requestMs = REWRITE_MODEL.requestSeconds * 1000, planCacheDir, assertAlive = () => {} } = {}) => {
-  if (!['source-sections', 'sections', 'fact-plan'].includes(format)) throw new Error('Invalid rewrite output format');
+  if (!['source-edits', 'source-sections', 'sections', 'fact-plan'].includes(format)) throw new Error('Invalid rewrite output format');
   const url = new URL(endpoint);
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error('Generation must run on unauthenticated http://127.0.0.1');
   const cache = new Map();
-  const compact = format === 'fact-plan', referenced = format === 'source-sections';
-  const cacheVersion = compact ? 1 : referenced ? 3 : 2, cacheBytes = compact ? 16000 : 65536;
-  const expand = (value, input) => compact ? expandModelPlan(value, input) : referenced ? expandReferencedSections(value, input) : value;
+  const compact = format === 'fact-plan', boundedEdits = format === 'source-edits', referenced = boundedEdits || format === 'source-sections';
+  const cacheVersion = compact ? 1 : boundedEdits ? 4 : referenced ? 3 : 2, cacheBytes = compact ? 16000 : 65536;
+  const expand = (value, input) => compact ? expandModelPlan(value, input) : boundedEdits ? expandSourceEdits(value, input) : referenced ? expandReferencedSections(value, input) : value;
   const validate = (value, input, finishReason) => validateDescriptionRewrite(value, input, finishReason, format);
   const sourceMetrics = value => {
     if (!referenced || !value) return {};
@@ -93,9 +103,14 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
     const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
     combined.throwIfAborted();
     assertAlive();
-    const protocol = referenced ? buildReferencedSections(input) : null;
+    const protocol = boundedEdits ? buildSourceEdits(input) : referenced ? buildReferencedSections(input) : null;
     const messages = protocol?.messages || (compact ? factPlanMessages(input) : rewriteMessages(input));
     const schema = protocol?.schema || (compact ? factPlanSchema(input) : REWRITE_SCHEMA);
+    if (boundedEdits && !protocol.candidates.length) {
+      const rawValue = { edits: [] }, value = expand(rawValue, input);
+      return { value, rawValue, format, finishReason: 'stop', generationRequests: 0,
+        renderedWithoutInference: true, ...sourceMetrics(value) };
+    }
     const requestHash=createHash('sha256').update(JSON.stringify([REWRITE_MODEL,format,
       ...(compact ? [] : [input.inputHash]),messages,schema])).digest('hex');
     const cached=cache.get(requestHash);
@@ -175,10 +190,11 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
       }
     } catch (error) {
       error.generationRequests = generationRequests;
+      error.rawText ||= result?.choices?.[0]?.message?.content?.slice(0, 2400);
       assertAlive();
       if (error.cause?.code === 'ECONNREFUSED') throw new RewriteWorkerError('connection_refused');
       if (['ECONNRESET','ETIMEDOUT','UND_ERR_SOCKET','UND_ERR_CONNECT_TIMEOUT','UND_ERR_HEADERS_TIMEOUT','UND_ERR_BODY_TIMEOUT','Z_DATA_ERROR','Z_BUF_ERROR','Z_NEED_DICT'].includes(error.cause?.code)) {
-        throw Object.assign(new RewriteGenerationError('Local generator request failed'), { generationRequests });
+        throw Object.assign(new RewriteGenerationError('Local generator request failed'), { generationRequests, rawText: error.rawText });
       }
       throw error;
     }
@@ -187,7 +203,7 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
     if (!choice || typeof choice.message?.content !== 'string') throw Object.assign(new RewriteGenerationError('Malformed generator response'), { generationRequests });
     let value;
     try { value = JSON.parse(choice.message.content); } catch { value = null; }
-    const completion={value:expand(value,input),rawValue:value,finishReason:choice.finish_reason,timings:result.timings,usage:result.usage,generationRequests,format,...(retrySkipped&&{retrySkipped})};
+    const completion={value:expand(value,input),rawValue:value,rawText:choice.message.content.slice(0,2400),finishReason:choice.finish_reason,timings:result.timings,usage:result.usage,generationRequests,format,...(retrySkipped&&{retrySkipped})};
     Object.assign(completion, sourceMetrics(completion.value));
     if(completion.finishReason==='stop'&&completion.value&&validate(completion.value,input,'stop').ok){
       remember(requestHash,completion);
@@ -214,14 +230,13 @@ export const probeRewriteClient = async (client, { concurrency = 1, deadline = D
       throw new RewriteGenerationError('Model readiness output was rejected');
     }
   }));
-  signal?.throwIfAborted();
   const rejections = probes.filter(result => result.status === 'rejected');
-  const failure = rejections.find(result => !(result.reason instanceof RewriteGenerationError) && result.reason?.name !== 'TimeoutError');
+  const failure = rejections.find(result => !(result.reason instanceof RewriteGenerationError) && !['TimeoutError','AbortError'].includes(result.reason?.name));
   if (failure) {
-    signal?.throwIfAborted();
     if (failure.reason.name === 'RewriteWorkerError') throw failure.reason;
     throw new RewriteWorkerError('generation_probe');
   }
+  signal?.throwIfAborted();
   return { requests: concurrency, durationMs: Date.now() - started, ...(rejections.length ? { warnings: rejections.length } : {}) };
 };
 
@@ -307,9 +322,10 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
         method: 'source_referenced_sections', modelEditedItems: response.modelEditedItems, sourceCopiedItems: response.sourceCopiedItems };
       }
     } catch (error) {
+      const expectedAbort = ['TimeoutError', 'AbortError'].includes(error.name) || error === signal?.reason;
+      if (!(error instanceof RewriteGenerationError) && !expectedAbort) throw error;
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
-      if (!(error instanceof RewriteGenerationError) && error.name !== 'TimeoutError') throw error;
-      if (Number.isInteger(error.generationRequests)) response = { generationRequests: error.generationRequests };
+      if (Number.isInteger(error.generationRequests) || error.rawText) response = { generationRequests: error.generationRequests, rawText: error.rawText };
       result = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout'
         : error.reason === 'model_context_budget' ? 'model_context_budget' : 'generation_error' };
     }
@@ -329,7 +345,8 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
     else if (!assessment.ok || ['not_improved','already_structured','dense_source','uncertain_section_assignment','model_context_budget'].includes(result.reason)) stats.skipped++;
     else stats.failed++;
     await onResult({ id: String(job._id), inputHash: input.inputHash, ok: result.ok, reason: result.reason, durationMs, wordCount: result.wordCount, generated: assessment.ok, modelPlanCached: response?.cachedModelPlan || false,
-      generationRequests: response?.generationRequests ?? (assessment.ok && !response?.cachedModelPlan ? 1 : 0), retrySkipped: response?.retrySkipped, quality: result.quality, usage: response?.usage, timings: response?.timings });
+      generationRequests: response?.generationRequests ?? (assessment.ok && !response?.cachedModelPlan ? 1 : 0), renderedWithoutInference: response?.renderedWithoutInference,
+      retrySkipped: response?.retrySkipped, quality: result.quality, usage: response?.usage, timings: response?.timings });
   };
   const pending = new Set();
   let failure;

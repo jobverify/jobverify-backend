@@ -45,6 +45,101 @@ const card = (id, title = 'Synthetic foreign role', location = 'London, United K
 const syntheticPage = (number, last = 24, count = number === last ? 3 : 10, cards) => `<h1>Jobs and careers with Buro Happold</h1>${cards || Array.from({ length: count }, (_, index) => card(10000 + number * 10 + index)).join('')}<div class="pagination" role="navigation"><strong>${number}</strong>${number > 1 ? '<a href="https://vacancies.burohappold.com/jobs/search/-1/1">First</a>' : ''}${number < last ? `<a href="https://vacancies.burohappold.com/jobs/search/-1/${number + 1}"><span class="sr-only">Next results page</span>&gt;</a><a href="https://vacancies.burohappold.com/jobs/search/-1/${last}">Last &rsaquo;</a>` : ''}</div>`;
 const fullPagination = Object.fromEntries(Array.from({ length: 23 }, (_, index) => [BOARD + 'jobs/search/-1/' + (index + 2), syntheticPage(index + 2)]));
 
+const livePagination = JSON.parse(zlib.gunzipSync(fs.readFileSync(new URL('./fixtures/native-073-live-pagination.json.gz', import.meta.url))));
+const fullLive = JSON.parse(zlib.gunzipSync(fs.readFileSync(new URL('./fixtures/native-073-live-full.json.gz', import.meta.url))));
+const capturedListings = Object.entries(fullLive.responseQueues).filter(([url]) => url === BOARD || new URL(url).pathname.startsWith('/jobs/search/')).flatMap(([url, responses]) => parseListing(Buffer.from(responses[0].bodyBase64, 'base64').toString('utf8'), url).records);
+const capturedRole = id => {
+  const row = capturedListings.find(row => row.id === id); assert.ok(row, 'Captured listing row required');
+  const response = fullLive.responseQueues[row.url]?.[0]; assert.ok(response, 'Captured detail body required');
+  return { row, html: Buffer.from(response.bodyBase64, 'base64').toString('utf8') };
+};
+test('actual double-hyphen role slug retains a source row instead of losing role2551', () => {
+  const parsed = Object.entries(fullLive.responseQueues).filter(([url]) => url === BOARD || new URL(url).pathname.startsWith('/jobs/search/')).map(([url, responses]) => parseListing(Buffer.from(responses[0].bodyBase64, 'base64').toString('utf8'), url));
+  const row = parsed.flatMap(page => page.records).find(row => row.id === '2551');
+  assert.ok(row);
+  assert.equal(row.url, BOARD + 'jobs/job/Construction-AdminSite-Engineer--Mechanical/2551');
+  assert.equal(parsed.reduce((sum, page) => sum + page.errors.length, 0), 0);
+  assert.throws(() => validateURL(row.url + '?mode=apply'));
+});
+
+test('actual foreign location punctuation compares completely without accepting changed location words', () => {
+  const { row, html } = capturedRole('2610'), fact = parseDetail(html, row);
+  assert.equal(fact.excluded, true);
+  assert.equal(fact.nativeCountryAddresses[0].country, 'Poland');
+  assert.equal(fact.nativeVisibleSummary.Location, 'Warszawa; Lublin,Lublin');
+  assert.deepEqual(fact.nativeListingRecord.locations, ['Warszawa; Lublin, Lublin']);
+  assert.equal(CONFIG.locationLabelsAgree(['Warszawa; Lublin,Lublin'], ['Warszawa; Lublin, Lublin']), true);
+  assert.equal(CONFIG.locationLabelsAgree(['Berlin; Lublin,Lublin'], ['Warszawa; Lublin, Lublin']), false);
+});
+
+test('all explicit grouped India localities keep every source city without fabricating postal addresses', () => {
+  for (const id of ['2550', '2508', '2432', '2403', '2302', '1533']) {
+    const { row, html } = capturedRole(id), fact = parseDetail(html, row);
+    assert.equal(fact.nativeCountryAddresses[0].country, 'India');
+    assert.match(fact.nativeCountryAddresses[0].raw.addressLocality, /[,;]/);
+    assert.equal(fact.nativeVisibleSummary.Location, row.locations[0]);
+  }
+});
+
+test('real native reference mismatches remain rejected after location and slug corrections', () => {
+  for (const id of ['2607', '2606']) {
+    const { row, html } = capturedRole(id);
+    assert.throws(() => parseDetail(html, row), /reference\/URL identity mismatch/);
+  }
+});
+
+test('explicit foreign-country exclusions preserve expiry disagreement without becoming India jobs', () => {
+  const { row, html } = capturedRole('2600'), fact = parseDetail(html, row);
+  assert.equal(fact.excluded, true);
+  assert.equal(fact.nativeCountryAddresses[0].country, 'United States');
+  assert.equal(fact.nativeVisibleClosingDateLabel, 'No expiry date');
+  assert.ok(fact.nativeValidThrough.raw);
+  assert.equal(fact.nativeExpiryUIValidation, 'not-applied-to-excluded-role');
+  assert.equal(fact.applicationsVisited, false);
+});
+
+test('retained full live batch recovers grouped India roles and keeps unretained detail2551 unknown', async () => {
+  const indices = new Map();
+  const jobs = await runNative({ transport: async url => {
+    const index = indices.get(url) || 0, response = fullLive.responseQueues[url]?.[index];
+    if (!response) throw Object.assign(Error('Actual role2551 detail was not fetched in the original trial'), { code: 'FIXTURE_UNRETAINED' });
+    indices.set(url, index + 1); return { ...response, body: Buffer.from(response.bodyBase64, 'base64') };
+  } });
+  assert.equal(jobs.length, 80);
+  const evidence = jobs[0].nativeCollectionEvidence;
+  assert.equal(evidence.observedListingCount, 239); assert.equal(evidence.pagesFetched, 24);
+  assert.equal(evidence.listingPaginationComplete, true); assert.equal(evidence.failures.length, 6);
+  const grouped = jobs.find(job => job.jobId === '2432'); assert.ok(grouped);
+  assert.equal(grouped.city, null);
+  assert.deepEqual(grouped.locations, ['Mumbai, India', 'Bengaluru, India']);
+  assert.equal(grouped.nativeCountryAddresses.length, 1);
+  assert.equal(grouped.nativeCountryAddresses[0].raw.addressLocality, 'Mumbai, Bengaluru');
+  assert.equal(grouped.nativeCountryAddresses[0].raw.postalCode, '400710, 560038');
+  assert.equal(grouped.sourceScopeComplete, false); assert.equal(grouped.lifecycleCleanupAllowed, false);
+  assert.ok(evidence.failures.some(failure => failure.code === 'FIXTURE_UNRETAINED'));
+});
+test('actual native page2 accepts its unnumbered first-page navigation alias and keeps page3 continuation', () => {
+  const response = livePagination.responseQueues[livePagination.oracle.page2][0];
+  assert.equal(crypto.createHash('sha256').update(Buffer.from(response.bodyBase64, 'base64')).digest('hex'), response.provenance.bodySHA256);
+  const parsed = parseListing(Buffer.from(response.bodyBase64, 'base64').toString('utf8'), response.url);
+  assert.equal(parsed.pageNumber, 2);
+  assert.equal(parsed.observedRows, 10);
+  assert.equal(parsed.records.length, 10);
+  assert.equal(parsed.errors.length, 0);
+  assert.equal(parsed.lastPage, 24);
+  assert.equal(parsed.nextURL, livePagination.oracle.nextPage);
+  assert.equal(parsed.reportedTotal, null);
+  assert.equal(parsed.terminationKnown, false);
+  assert.equal(CONFIG.sameReadIdentity(BOARD, livePagination.oracle.nativePage1Alias), true);
+  assert.equal(CONFIG.sameReadIdentity(livePagination.oracle.nativePage1Alias, BOARD + 'jobs/search/-1/1'), true);
+  assert.equal(CONFIG.sameReadIdentity(livePagination.oracle.nativePage1Alias, livePagination.oracle.page2), false);
+});
+
+test('first-page alias support keeps filtered searches and candidate/member/application reads excluded', () => {
+  validateURL(livePagination.oracle.nativePage1Alias);
+  for (const url of [BOARD + 'jobs/search/-2/', BOARD + 'jobs/search/-1/?country=India', BOARD + 'jobs/search/-1/0', BOARD + 'jobs/search/-1/1001', BOARD + 'members/', BOARD + 'jobs/search/-1/../apply', 'https://careershub.burohappold.com/members/?j=2633&lang=en']) assert.throws(() => validateURL(url));
+});
+
 test('all 24 advertised pages are followed while an unadvertised total stays unknown', async () => {
   const calls = [], delegate = injected(fullPagination);
   const jobs = await runNative({ transport: async url => { calls.push(url); return delegate(url); } }), result = jobs[0].nativeCollectionEvidence;

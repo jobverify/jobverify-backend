@@ -5,6 +5,7 @@ import batchProviders from '../providers/providerExtensions/workbook-batch-10-b.
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 import { getScraperSourceDirectoryName } from '../providers/sourcePaths.js'
+import { classifyProviderImplementation } from '../../scripts/reportScriptCatalogTopology.js'
 
 const EXPECTED_COMPANY_COUNT = 56
 const EXPECTED_BATCH_ID = '10b'
@@ -31,18 +32,30 @@ test('workbook batch 10b providers resolve through the shared catalog', () => {
   )
 })
 
-test('workbook batch 10b providers stay exact-name and fail closed', async () => {
+test('workbook batch 10b retains historical registration and executes only remaining empty implementations', async () => {
   const catalog = getScraperCatalog()
   const scrapersByName = new Map(buildScrapers().map((scraper) => [scraper.name, scraper]))
 
   for (const provider of batchProviders) {
     const catalogProvider = catalog.find((entry) => entry.source === provider.source)
     const scraper = scrapersByName.get(provider.source)
+    assert.ok(catalogProvider)
+    assert.ok(scraper)
+    assert.equal(catalogProvider.source, provider.source)
+    assert.equal(scraper.name, provider.source)
+    const implementation = classifyProviderImplementation(catalogProvider)
+    // Some registration records have already been updated alongside a repair.
+    // Keep their exact source/name binding without imposing sentinel metadata.
+    if (provider.atsPlatform !== 'workbook-exact-name-sentinel') {
+      assert.equal(catalogProvider.companyName, provider.companyName)
+      assert.ok(['script', 'shared-adapter', 'discovery-only'].includes(implementation.type), provider.source)
+      assert.equal(typeof scraper.run, 'function')
+      continue
+    }
     const expectedDirectoryName = getScraperSourceDirectoryName(provider)
     const expectedModulePath = `../${expectedDirectoryName}/script.js`
     const expectedDryRunFile = `${expectedDirectoryName}/jobs.json`
-    const expectedRuntimeSuffix = `scraper\\${expectedDirectoryName}\\script.js`
-    const expectedOriginalModulePath = '../workbookbatch10b/failClosedSentinel.js'
+    const expectedOriginalModulePath = `../workbookbatch10b/failClosedSentinel.js`
 
     assert.ok(catalogProvider)
     assert.ok(scraper)
@@ -72,7 +85,15 @@ test('workbook batch 10b providers stay exact-name and fail closed', async () =>
       true,
     )
     assert.equal(provider.verifiedSurfaceSummary.includes(provider.companyName), true)
-    assert.equal(String(catalogProvider.modulePath).endsWith(expectedRuntimeSuffix), true)
-    assert.deepEqual(await scraper.run(), [])
+    // Historical registration remains testable after a source is repaired.
+    // The native fixture contracts cover implemented scrapers without live
+    // requests or a requirement to keep returning an empty inventory.
+    if (['sentinel', 'static-empty'].includes(implementation.type)) {
+      assert.equal(String(catalogProvider.modulePath).replaceAll('\\', '/').endsWith(`/scraper/${expectedDirectoryName}/script.js`), true, provider.source)
+      assert.deepEqual(await scraper.run(), [])
+    } else {
+      assert.ok(['script', 'shared-adapter', 'discovery-only'].includes(implementation.type), provider.source)
+      assert.equal(typeof scraper.run, 'function')
+    }
   }
 })

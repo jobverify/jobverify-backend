@@ -23,6 +23,9 @@ concurrency:
 
 jobs:
   register:
+    permissions:
+      contents: read
+      actions: write
     name: ${{ inputs.dispatch_token && format('Job Classification [dispatch:{0}]', inputs.dispatch_token) || 'Job Classification' }}
     runs-on: ubuntu-latest
     outputs:
@@ -39,6 +42,7 @@ jobs:
       - id: claim
         run: node scripts/pipelineGithub.js register
         env:
+          GH_TOKEN: ${{ github.token }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
           PIPELINE_STAGE: classification
           PIPELINE_ID: ${{ inputs.pipeline_id }}

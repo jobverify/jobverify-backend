@@ -1,0 +1,16 @@
+[
+  {
+    "url": "https://agnext.keka.com/careers/api/careerportal/careerportalinfo",
+    "finalUrl": "https://agnext.keka.com/careers/api/careerportal/careerportalinfo",
+    "status": 404,
+    "capturedAt": "2026-10-23T02:42:21.155Z",
+    "body": ""
+  },
+  {
+    "url": "https://agnext.keka.com/careers/api/careerportal/jobs/default/active",
+    "finalUrl": "https://agnext.keka.com/careers/api/careerportal/jobs/default/active",
+    "status": 404,
+    "capturedAt": "2026-10-23T02:42:21.156Z",
+    "body": ""
+  }
+]

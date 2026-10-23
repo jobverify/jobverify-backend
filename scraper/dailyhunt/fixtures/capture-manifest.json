@@ -1,0 +1,48 @@
+{
+  "source": "dailyhunt",
+  "files": [
+    {
+      "file": "official-home.json.gz",
+      "sha256": "3a3a5c75d6ea1b1a4c034dea801b7e21af779736e0a15af5ddc8fc87b5a3f88a",
+      "uncompressedSha256": "71b3d10ed80394387d52e4592d10ded4339babaf9bd082a2d18428d809258e8b",
+      "responses": [
+        {
+          "url": "https://www.eternoinfo.com/",
+          "finalUrl": "https://www.eternoinfo.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:47:54.811Z",
+          "bodySHA256": "24bbcf050d60fcb9006658e52b34ef8a7d23253d967ebd4ae8342b36c3d8fac3"
+        }
+      ]
+    },
+    {
+      "file": "native-portal.json.gz",
+      "sha256": "c34b4dd4f7ac9d52b8185e6005b301bf7e54460ad316a59dfbf1092c105e6341",
+      "uncompressedSha256": "0716e9680f5a050c32b18c9d82229d63f646110fc828920b6dad7bd53d8895e9",
+      "responses": [
+        {
+          "url": "https://jobs.careerswith-us.com/eterno",
+          "finalUrl": "https://jobs.careerswith-us.com/eterno",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:49:25.053Z",
+          "bodySHA256": "f7452556ca10c19a76bbd757835a057aab088406c855582f4d2c1bde06352a7b"
+        }
+      ]
+    },
+    {
+      "file": "native-all-openings.json.gz",
+      "sha256": "9c1544c1cd2c73f8841e56b652e3d814742a30ff63c6c3bbb607d6ca4ace86b1",
+      "uncompressedSha256": "9cdfaecb30200044f216032561fefb26e7d751dd2805e111e439e99dc66f2432",
+      "responses": [
+        {
+          "url": "https://jobs.careerswith-us.com/eterno/search/?createNewAlert=false&q=&locationsearch=",
+          "finalUrl": "https://jobs.careerswith-us.com/eterno/search/?createNewAlert=false&q=&locationsearch=",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:50:19.789Z",
+          "bodySHA256": "d1c3f11a3c8f252ad5d735987611d13b5ce911aae384fcb2671787b5b524fa65"
+        }
+      ]
+    }
+  ],
+  "productionWrites": false
+}

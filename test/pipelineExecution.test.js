@@ -4,9 +4,9 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { fileURLToPath } from 'node:url';
 import PipelineRun from '../src/models/PipelineRun.js';
-import { createPipeline, claimStage, recordStageResult, completeWorkflow, completeLocalStage, dispatchNext } from '../src/pipeline/execution.js';
+import { createPipeline, claimStage, recordStageResult, completeWorkflow, completeLocalStage, dispatchNext, failPipeline } from '../src/pipeline/execution.js';
 import { defaultConfiguration, stageOutcome } from '../src/pipeline/policy.js';
-import { reconcileGithub } from '../src/pipeline/github.js';
+import { reconcileGithub, createDirectGithubPipeline } from '../src/pipeline/github.js';
 import { reconcileLocal } from '../src/pipeline/local.js';
 
 test('durable pipeline claims, handoffs, failures and configuration snapshots', {timeout:300000}, async t=>{
@@ -50,6 +50,23 @@ test('durable pipeline claims, handoffs, failures and configuration snapshots', 
   await claimStage(run._id,'rewrite',{token:next.stages[1].dispatchToken,owner:'test-owner'});
   await completeLocalStage(run._id,'rewrite','failed',{failed:1});
   assert.equal((await PipelineRun.findById(run._id).lean()).status,'failed');
+ });
+ await t.test('normal GitHub rewrite budget exhaustion queues classification and retains pending counts',async()=>{
+  const configuration={stages:[{key:'scraper',enabled:false},{key:'rewrite',enabled:true},{key:'classification',enabled:true}]};
+  const run=await createPipeline({configuration,target:'github',origin:'admin'});
+  await dispatchNext(run._id,async()=>{});
+  const queued=await PipelineRun.findById(run._id).lean();
+  await claimStage(run._id,'rewrite',{runId:913,token:queued.stages[1].dispatchToken});
+  const summary={interrupted:true,budgetExhausted:true,stopReason:'budget_exhausted',pendingEstimate:19446,failed:34};
+  await recordStageResult(run._id,'rewrite',{outcome:stageOutcome('rewrite',summary,0),summary});
+  let nextStage;
+  await completeWorkflow(913,'success',async(_row,stage)=>{nextStage=stage.key;});
+  const next=await PipelineRun.findById(run._id).lean();
+  assert.equal(nextStage,'classification');assert.equal(next.stages[1].status,'completed');
+  assert.equal(next.stages[1].summary.pendingEstimate,19446);assert.equal(next.stages[2].status,'queued');
+  await claimStage(run._id,'classification',{runId:914,token:next.stages[2].dispatchToken});
+  await recordStageResult(run._id,'classification',{outcome:'completed',summary:{}});
+  await completeWorkflow(914,'success',async()=>assert.fail('No more stages'));
  });
  await t.test('failed dispatch is terminal and releases the database slot',async()=>{
   const run=await createPipeline({configuration:defaultConfiguration(),target:'github',origin:'admin'});
@@ -111,6 +128,43 @@ test('durable pipeline claims, handoffs, failures and configuration snapshots', 
   await PipelineRun.updateOne({_id:run._id},{$set:{heartbeatAt:new Date(Date.now()-180000)}});
   const stopped=await reconcileLocal(await PipelineRun.findById(run._id).lean());
   assert.equal(stopped.status,'interrupted');assert.equal(stopped.stages[0].status,'interrupted');assert.equal(stopped.stages[1].status,'blocked');assert.equal(stopped.activeKey,undefined);
+ });
+ await t.test('direct registration reconciles authoritative completion without stealing a live slot',async childTest=>{
+  const configuration={stages:defaultConfiguration().stages.map(s=>({...s,enabled:s.key==='scraper'}))};
+  const options={configuration,target:'github',origin:'github',repo:'owner/jobs',initialRunId:801};
+  const old=await createPipeline({...options,initialRunId:800});
+  let status='in_progress';let reads=0;
+  const mock=childTest.mock.method(globalThis,'fetch',async url=>{
+   reads++;assert.equal(String(url),'https://api.github.com/repos/owner/jobs/actions/runs/800');
+   return Response.json({id:800,status,conclusion:status==='completed'?'failure':null});
+  });
+  await assert.rejects(createDirectGithubPipeline(options,{token:'test-token'}),e=>e.status===409&&e.message.includes(old._id)&&e.message.includes('800'));
+  assert.equal((await PipelineRun.findById(old._id).lean()).activeKey,'database');
+  status='completed';
+  const next=await createDirectGithubPipeline(options,{token:'test-token'});
+  assert.equal(reads,2);assert.equal((await PipelineRun.findById(old._id).lean()).status,'failed');
+  assert.equal(next.stages[0].githubRunId,801);
+  await completeWorkflow(801,'failure',async()=>assert.fail('must not dispatch'));
+  mock.mock.restore();
+ });
+ await t.test('direct registration preserves the slot when GitHub cannot verify completion',async childTest=>{
+  const options={configuration:defaultConfiguration(),target:'github',origin:'github',repo:'owner/jobs',initialRunId:802};
+  const old=await createPipeline(options);
+  const mock=childTest.mock.method(globalThis,'fetch',async()=>{throw Error('offline');});
+  await assert.rejects(createDirectGithubPipeline({...options,initialRunId:803},{token:'test-token'}),/GitHub could not be reached/);
+  assert.equal((await PipelineRun.findById(old._id).lean()).activeKey,'database');
+  mock.mock.restore();await completeWorkflow(802,'failure',async()=>{});
+ });
+ await t.test('direct registration does not reconcile a different repository or a local worker',async childTest=>{
+  const options={configuration:defaultConfiguration(),target:'github',origin:'github',repo:'owner/jobs',initialRunId:804};
+  const mock=childTest.mock.method(globalThis,'fetch',async()=>assert.fail('unrelated pipeline must not be touched'));
+  for(const overrides of [{repo:'other/jobs'},{target:'local'}]) {
+   const old=await createPipeline({...options,...overrides});
+   await assert.rejects(createDirectGithubPipeline({...options,initialRunId:805},{token:'test-token'}),e=>e.status===409);
+   assert.equal((await PipelineRun.findById(old._id).lean()).activeKey,'database');
+   await failPipeline(old._id,'cancelled','test cleanup');
+  }
+  mock.mock.restore();
  });
  await t.test('direct starts bind their initiating workflow atomically before processing',async()=>{
   const run=await createPipeline({configuration:defaultConfiguration(),target:'github',origin:'github',initialRunId:900});

@@ -1,18 +1,20 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import {createFirstPartyHTMLScraper} from '../../scraper-support/shared/firstPartyHtmlJobs.js'
+import {nativePostingJobs} from '../../scraper-support/shared/nativeJobPosting.js'
+import {createSourceConfig} from './parser.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "forvismazars"
 export const COMPANY = "Forvis Mazars"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-08"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 10 exact-name sentinel for Forvis Mazars added on Saturday, August 8, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
-
-export const run = async () => createFailClosedSentinelScraper().run()
+export const CAREERS_URL = 'https://careers.forvismazars.com/'
+export const run = options => {
+ const config=createSourceConfig(options)
+ config.projectJobs=result=>nativePostingJobs(result,config).map(j=>({...j,applicationLinkSource:'native-role-inline-application-entry',nativeWordPressDateGMT:j.nativeFacts.nativeWordPressRecord.date_gmt,nativeWordPressModifiedGMT:j.nativeFacts.nativeWordPressRecord.modified_gmt,nativePublicationDateBasis:'native-public-job-offer-post-date-gmt;corroborated-public-role-WebPage-datePublished',nativeWordPressDescription:j.nativeFacts.nativeWordPressDescription,nativeLocationTerms:j.nativeFacts.nativeLocationTerms,nativeApplicationEntry:j.nativeFacts.nativeApplicationEntry,verifiedPortalBrand:j.nativeFacts.verifiedPortalBrand}))
+ return createFirstPartyHTMLScraper(config).run(options)
+}
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

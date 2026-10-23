@@ -31,6 +31,8 @@ const ScraperRunSourceSchema = new Schema(
     detailHealth: { type: Schema.Types.Mixed, default: null },
     attemptedAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
+    partial: { type: Boolean, default: null },
+    skipped: { type: Boolean, default: null },
     softFailure: { type: Boolean, default: null },
     upstreamOutage: { type: Boolean, default: null },
     failureKind: { type: String, default: null },
@@ -48,7 +50,7 @@ const ScraperRunSourceSchema = new Schema(
     },
     filteredOld: {
       type: Number,
-      default: 0,
+      default: null,
     },
     missed: {
       type: Number,

@@ -71,11 +71,11 @@ const ScraperStatusSchema = new Schema(
     },
     lastCompleteJobsFound: {
       type: Number,
-      default: 0,
+      default: null,
     },
     lastCompleteEligibleJobsFound: {
       type: Number,
-      default: 0,
+      default: null,
     },
     lastInserted: {
       type: Number,

@@ -1,0 +1,46 @@
+{
+  "source": "synup",
+  "captureMechanism": "Root-owned Playwright browser public HTTP responses; raw bodies preserved without excerpting",
+  "captures": [
+    {
+      "url": "https://synup.com/careers",
+      "finalUrl": "https://synup.com/careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:29:30.970Z",
+      "rawBodyFile": "official-careers.html.gz",
+      "bodyBytes": 280084,
+      "bodySHA256": "5f7a991649432d6267f0bc7b501528cd4a0e5eff3bf6a01dbc45d4d973ca1383",
+      "gzipSHA256": "02a5862f12da673b20fcc712add3d67ee1f453c6136fca4b218b714e6e6ea8b0"
+    },
+    {
+      "url": "https://www.linkedin.com/company/synup",
+      "finalUrl": "https://www.linkedin.com/company/synup",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:30:31.009Z",
+      "rawBodyFile": "native-company.html.gz",
+      "bodyBytes": 345325,
+      "bodySHA256": "5018304c88fc1d4279f97f6ae437bb5c6e443df1b376a1ae607e49753230d68e",
+      "gzipSHA256": "2903b8337a76a097c7ad8c0dd48e32be79111010374fae3e6241e8cbbe3cc8a7"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=9322483&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=9322483&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:31:15.227Z",
+      "rawBodyFile": "native-jobs-0.html.gz",
+      "bodyBytes": 89375,
+      "bodySHA256": "ce933bffdc2b442f6660ee611627a3c5b0bc4efbefbdd5ecee9d8b84f9df9408",
+      "gzipSHA256": "5cd95f6e7f9997d1ed1126db507cde9c15bbd7e33306f514dc06e0b7f400c681"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=9322483&location=India&start=0",
+      "finalUrl": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=9322483&location=India&start=0",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:31:15.182Z",
+      "rawBodyFile": "native-jobs-1.html.gz",
+      "bodyBytes": 26,
+      "bodySHA256": "ea12acf875ac1dffa5de9dd8f5c5a54a41cf50370705c4694aef841aa2b28a36",
+      "gzipSHA256": "43b0dbcd24ea79cc31e61ec15ff3d8c52e8bcbb08d2b5358b4e5cf3d1beae08c"
+    }
+  ]
+}

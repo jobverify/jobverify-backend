@@ -1,0 +1,13 @@
+{
+  "source": "turtlemint",
+  "file": "careers-response.json",
+  "rawCaptureSha256": "119ecd7e44a4c1ae5b319c4a8694dcc38ec554e8aca62e5f9ea607be599e24bd",
+  "url": "https://www.turtlemint.com/careers/",
+  "finalUrl": "https://www.turtlemint.com/careers/",
+  "status": 200,
+  "capturedAt": "2026-10-23T03:50:40.478Z",
+  "bodySha256": "41dd9739284daba72586806895df295700feec0b5dcf933fcea09db56a0d5905",
+  "bodyBytes": 203463,
+  "observedState": "There are no active openings at the moment",
+  "observedRecruitingContact": "mailto:careers@turtlemint.com"
+}

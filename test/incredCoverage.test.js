@@ -19,6 +19,7 @@ test('InCred resolves only to its exact-name first-party provider', () => {
   )
 })
 
-test('InCred fails closed when its official careers page has no enumerable openings', async () => {
-  assert.deepEqual(await run(), [])
+test('InCred upstream failure is never an unfetched static zero', async () => {
+  await assert.rejects(run({ fetchImpl: async () => { throw Error('offline') } }), error =>
+    error.code === 'INCRED_COVERAGE_GAP' && error.inventoryEvidence.reportedTotal === null)
 })

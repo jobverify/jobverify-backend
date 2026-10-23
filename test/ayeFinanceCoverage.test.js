@@ -20,6 +20,11 @@ test('Aye Finance resolves only to its exact-name first-party provider', () => {
   assert.deepEqual(report.unmatched.map((item) => item.companyName), ['Aye Finance India'])
 })
 
-test('Aye Finance fails closed when its official surface has no enumerable India openings', async () => {
-  assert.deepEqual(await run(), [])
+test('Aye Finance unavailable native recruiting cannot certify an empty inventory', async () => {
+  await assert.rejects(run({fetchImpl: async url => ({url, status:503})}), error => {
+    assert.equal(error.code, 'AYEFINANCE_COVERAGE_GAP')
+    assert.equal(error.inventoryEvidence.reportedTotal, null)
+    assert.equal(error.lifecycleCleanupAllowed, false)
+    return true
+  })
 })

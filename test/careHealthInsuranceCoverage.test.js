@@ -19,6 +19,12 @@ test('Care Health Insurance resolves to its exact-name first-party provider', ()
   )
 })
 
-test('Care Health Insurance fails closed when its official surface has no enumerable India openings', async () => {
-  assert.deepEqual(await run(), [])
+test('Care Health Insurance selected-area sentinel cannot authorize an empty company inventory', async () => {
+  await assert.rejects(run({fetchImpl:async url => ({url, status:200,
+    text:async () => 'No opening in this area. Please check after sometime.'})}), error => {
+    assert.equal(error.code, 'CAREHEALTHINSURANCE_COVERAGE_GAP')
+    assert.equal(error.lifecycleCleanupAllowed, false)
+    assert.equal(error.inventoryEvidence.listingComplete, false)
+    return true
+  })
 })

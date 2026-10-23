@@ -8,15 +8,16 @@
   "companyCareerPage": "https://kinaracapital.com/careers/",
   "officialCareersHandoffUrl": "https://careers.kinaracapital.com/",
   "companyDomain": "kinaracapital.com",
-  "atsPlatform": "official-first-party-careers-shell-unverified-public-feed",
+  "atsPlatform": "official-native-careers-unavailable",
   "countryFilter": "India",
-  "paginationStrategy": "first-party-careers-shell-validation",
-  "extractionStrategy": "verified-first-party-careers-page+unverified-public-apply-handoff+return-empty",
+  "paginationStrategy": "unverified-no-enumerable-native-contract",
+  "extractionStrategy": "bounded-official-handoff-validation+typed-coverage-gap",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-25",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
+  "verifiedOn": null,
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
   "officialCareersPageUrl": "https://kinaracapital.com/careers/",
-  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://kinaracapital.com/careers/ was Kinara Capital's live first-party careers page and that it exposed an APPLY NOW handoff to https://careers.kinaracapital.com/. The public handoff target was not verifiable as a trustworthy enumerable jobs feed from the current environment, so this exact-name provider fails closed and returns no jobs until a stable official listings surface is confirmed."
+  "verifiedSurfaceSummary": "On 2026-10-23 the official careers page returned HTTP 200 and retained APPLY NOW to careers.kinaracapital.com. The native board failed browser transport/TLS and supplied no HTTP inventory. The official footer links Kinara Capital's LinkedIn company; that page identifies organization 2688667. Its company-filtered India jobs search returned no matching roles and its guest endpoint returned only whitespace. This alternate scoped observation does not prove the unavailable primary board empty. Runtime validates the exact active official handoff, bounds fetch plus body by one deadline, and throws KINARACAPITAL_COVERAGE_GAP with incomplete evidence and unknown counts. No exhaustive pagination, public dates, descriptions or cleanup eligibility are claimed.",
+  "exactCompanyMatchOnly": true
 }

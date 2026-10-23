@@ -1,0 +1,62 @@
+[
+  {
+    "url": "https://www.nseit.com/",
+    "finalUrl": null,
+    "status": null,
+    "capturedAt": null,
+    "error": "TypeError: Failed to fetch",
+    "bodyBytes": null,
+    "bodySHA256": null,
+    "captureFile": "official-responses.json.gz"
+  },
+  {
+    "url": "https://www.dexitglobal.com/careers/",
+    "finalUrl": "https://www.dexitglobal.com/careers/",
+    "status": 200,
+    "capturedAt": "2026-10-23T05:35:13.291Z",
+    "error": null,
+    "bodyBytes": 699131,
+    "bodySHA256": "1f8bd295cd2983db27a4fcd7f10d65f63baa4a21bbfa8df70cd7bfac2f37cd99",
+    "captureFile": "official-responses.json.gz"
+  },
+  {
+    "url": "https://www.dexitglobal.com/currentopenings/helpdesk-executive/",
+    "finalUrl": "https://www.dexitglobal.com/currentopenings/helpdesk-executive/",
+    "status": 200,
+    "capturedAt": "2026-10-23T05:35:13.146Z",
+    "error": null,
+    "bodyBytes": 616722,
+    "bodySHA256": "aaf7f53f9a0562cb674167929ab8eab5ed8a06c25c398981bc579995681cb2be",
+    "captureFile": "official-responses.json.gz"
+  },
+  {
+    "url": "https://www.dexitglobal.com/about-us/",
+    "finalUrl": "https://www.dexitglobal.com/about-us/",
+    "status": 200,
+    "capturedAt": "2026-10-23T05:35:13.294Z",
+    "error": null,
+    "bodyBytes": 674747,
+    "bodySHA256": "bc7eb4d95ddf5ee312b6e9f58fcee4c599427c29ecf0f29321a356eac41a9e97",
+    "captureFile": "official-responses.json.gz"
+  },
+  {
+    "url": "https://www.dexitglobal.com/careers/page/2/",
+    "finalUrl": "https://www.dexitglobal.com/careers/page/2/",
+    "status": 200,
+    "capturedAt": "2026-10-23T05:38:31.486Z",
+    "error": null,
+    "bodyBytes": 693854,
+    "bodySHA256": "6e6e5d647d969e8d514026f6dd3afc8036c87c06a7c2454c050af1b89dbcc513",
+    "captureFile": "continuation-responses.json.gz"
+  },
+  {
+    "url": "https://www.dexitglobal.com/wp-json/wp/v2/types",
+    "finalUrl": "https://www.dexitglobal.com/wp-json/wp/v2/types",
+    "status": 401,
+    "capturedAt": "2026-10-23T05:38:30.183Z",
+    "error": null,
+    "bodyBytes": 118,
+    "bodySHA256": "ed6a7c7c15db91f2b6ffbaec4ccb7be48bd7853833e3e3e642ccf701fa90f3de",
+    "captureFile": "continuation-responses.json.gz"
+  }
+]

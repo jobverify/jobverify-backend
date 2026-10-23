@@ -1,0 +1,1005 @@
+{
+  "source": "dassaultaviationindia",
+  "capturedOn": "2026-10-23",
+  "evidence": [
+    {
+      "file": "native-careers.json.gz",
+      "sha256": "19a2457d9540936650cdba5076114c1e2588f6ad56d8a1650ef748febf810014",
+      "uncompressedSha256": "9926372aa0abd070147c4340610db36e0a0cc59fc78f1204940cdb4fbd54d077",
+      "responses": [
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com//accueil.aspx?LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com//accueil.aspx?LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:16:47.660Z",
+          "bodySHA256": "03a23b31557e1d063e7eec2f653b48fdb76f1644a5aa82940854be2bf3c5de4f",
+          "bodyBytes": 101733
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=list",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=list",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:16:48.064Z",
+          "bodySHA256": "a12eae773256d33c2359f9fb7f563b5905632ee3c93b7d478d3d3080d6c81886",
+          "bodyBytes": 137137
+        }
+      ]
+    },
+    {
+      "file": "native-job-details-01.json.gz",
+      "sha256": "595ae8d802dcd70a359bd50126f01fed12319cb3788e311000d5fc79275dd2db",
+      "uncompressedSha256": "c19ed39ada496f0e2e6085a4cf3ba07fd21e9c1082c05c41b558b42c30b6e7da",
+      "responses": [
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdd-acheteur-systemes-et-soutien-f-h_15839.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdd-acheteur-systemes-et-soutien-f-h_15839.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:45.751Z",
+          "bodySHA256": "18e51d65ee465463f8cc66acb695c02459698d9758b43e3e7f5aa529d35278ee",
+          "bodyBytes": 114749
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-acheteur-pieces-primaires-f-h_15690.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-acheteur-pieces-primaires-f-h_15690.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:46.338Z",
+          "bodySHA256": "f3ba6dd41f77bb4a534e62d06ae12bff885792c98f9cacfe3968a3711a5fc3b2",
+          "bodyBytes": 117703
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-acheteur-hors-production-f-h_15653.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-acheteur-hors-production-f-h_15653.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:46.981Z",
+          "bodySHA256": "e3f16c2bf1c1d7737ebaa0659d2c821b56d23f7678d4a5759a60a63aa3e5b982",
+          "bodyBytes": 116074
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-apprenti-e-chef-fe-de-projet-usine-4-0-connectee-f-h_15568.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-apprenti-e-chef-fe-de-projet-usine-4-0-connectee-f-h_15568.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:47.599Z",
+          "bodySHA256": "d55da62699bd0cb6d9c049587fb4c810b75c00098598d8458dd3e563b66acf61",
+          "bodyBytes": 116431
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-ajusteuse-f-h_15013.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-ajusteuse-f-h_15013.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:48.201Z",
+          "bodySHA256": "7c753aea910233deeacab4dd1f54fc49f6675d261596d07115d5798a91048484",
+          "bodyBytes": 117571
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-processus-de-cablage-pour-les-essais-de-vulnerabilite-electromagnetique-et-foudres-f-h_15901.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-processus-de-cablage-pour-les-essais-de-vulnerabilite-electromagnetique-et-foudres-f-h_15901.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:48.796Z",
+          "bodySHA256": "3ebf16b66f2d255b651c3dc90cacd1d88fbff33c7e820c7d4a6d3b7a04cfbd81",
+          "bodyBytes": 119607
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-controle-de-gestion-f-h_15274.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-controle-de-gestion-f-h_15274.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:49.387Z",
+          "bodySHA256": "8ebec308cbb484afb16df6af2cef1a695094b3cf87204cae9deeb8a66d47c140",
+          "bodyBytes": 116878
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-developpement-de-modeles-pour-avant-projets-avions-militaires-f-h_15853.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-developpement-de-modeles-pour-avant-projets-avions-militaires-f-h_15853.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:49.950Z",
+          "bodySHA256": "f8b32f5ac1f011faa9ce8bca880fff9944df04d84b0f892bb7c381a214f0d4d1",
+          "bodyBytes": 119520
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-produit-structure-f-h_15890.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-produit-structure-f-h_15890.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:50.491Z",
+          "bodySHA256": "c46cf9b2980a2a3c7eb8f3a487210929856cc37992bb5e474aa6f090fe79d474",
+          "bodyBytes": 116686
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-f-h_15714.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-f-h_15714.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:51.040Z",
+          "bodySHA256": "cf3113f47900d03690cb5a35d3bc085f6fc6beb7483473d6983eb0729c7c3f63",
+          "bodyBytes": 114855
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-usineur-f-h_15713.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-usineur-f-h_15713.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:51.643Z",
+          "bodySHA256": "18a2fac179f463be0d850cab06b8ed5a05b5eaa436048d7b7007ad6edfd2af28",
+          "bodyBytes": 114910
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cqpm-integrateur-rice-cableur-se-aeronautique-f-h_15036.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cqpm-integrateur-rice-cableur-se-aeronautique-f-h_15036.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:52.239Z",
+          "bodySHA256": "9891349aa6ce648b3a9e7c1df929a297d3b2a13b9476415ac0b97452c6d0ff2a",
+          "bodyBytes": 114852
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-ajusteuse-f-h_15033.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-ajusteuse-f-h_15033.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:52.851Z",
+          "bodySHA256": "23821596c8f89bb150291aa38fcf8d118b4e9514ad51e554c9c553da736e4755",
+          "bodyBytes": 115224
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-modelisation-fonctionnelle-l-ensemble-propulsif-du-vortex-d-_15797.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-modelisation-fonctionnelle-l-ensemble-propulsif-du-vortex-d-_15797.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:53.416Z",
+          "bodySHA256": "3879c69fcac85c2367c62f1a9d9f4652d4172bec687b882e1e921bea5f00aa50",
+          "bodyBytes": 119949
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-gestionnaire-de-production-ligne-f-h_15748.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-gestionnaire-de-production-ligne-f-h_15748.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:54.094Z",
+          "bodySHA256": "af6fb634ccce6db700de8072c82fa0bb0d39f38c46164e666e77364cec6f4ab5",
+          "bodyBytes": 114903
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-chef-fe-d-equipe-de-production-station-d-assemblage-structure-f-h_14992.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-chef-fe-d-equipe-de-production-station-d-assemblage-structure-f-h_14992.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:55.068Z",
+          "bodySHA256": "36ece563892c24bffce5206f6cc40021c63c4c67a8b47769da0797a8b201fa03",
+          "bodyBytes": 116088
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-e-moyens-de-developpement-dev-advocate-f-h_14951.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-e-moyens-de-developpement-dev-advocate-f-h_14951.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:55.653Z",
+          "bodySHA256": "9403ee309f4af058068c3dc7a0785947ccc9438ae9de06233df90a2972da2e05",
+          "bodyBytes": 118356
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-pays-f-h_14743.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-pays-f-h_14743.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:56.338Z",
+          "bodySHA256": "1bb14783acf380e7da5bf950aef153dfc244f2b0157cab2d2d26f09a0d6ab045",
+          "bodyBytes": 112731
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stagiaire-support-a-l-ingenierie-des-rechanges-falcon-f-h_15876.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stagiaire-support-a-l-ingenierie-des-rechanges-falcon-f-h_15876.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:56.919Z",
+          "bodySHA256": "8c75968e60977f8c799f385cb7a7b30bea2f91f5cee9ce17496d43fd7d87694d",
+          "bodyBytes": 117870
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-correspondant-logistique-rechanges-egypte-f-h_15640.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-correspondant-logistique-rechanges-egypte-f-h_15640.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:26:57.522Z",
+          "bodySHA256": "73a2342ed7ec39f116466ba75c48dbe18e83c3ea27307d50b88f87171ba95cae",
+          "bodyBytes": 116221
+        }
+      ]
+    },
+    {
+      "file": "native-job-details-02.json.gz",
+      "sha256": "dad4a2fe95d3363001861b3a8a3bd1f41bf75789b6383c91e8035a8797200de9",
+      "uncompressedSha256": "257d8be647ce8b0bfdc6d48b080bb59d7cb2c102a15732c7dac42f6517cbb40f",
+      "responses": [
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-correspondant-logistique-rechanges-france-f-h_15616.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-correspondant-logistique-rechanges-france-f-h_15616.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:44.581Z",
+          "bodySHA256": "c5e3be4c41fd1afa48b7f6a5205d730385e75aa462872854595a5492fdaef59a",
+          "bodyBytes": 116057
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-operateur-trice-test-fuselage-f-h_15444.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-operateur-trice-test-fuselage-f-h_15444.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:45.190Z",
+          "bodySHA256": "4d54c7c34524c1d992ee9d9518bdfe0bb92a9aba9dc79cc9e0642b81b87c6b60",
+          "bodyBytes": 114835
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-instructeur-concepteur-pedagogique-avionique-rafale-f-h_15322.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-instructeur-concepteur-pedagogique-avionique-rafale-f-h_15322.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:47.156Z",
+          "bodySHA256": "2476f8eb524d2b55f584fb556139dff29aa493a8051bfb484050ec9c61f4b010",
+          "bodyBytes": 117262
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-instruction-f-h_15258.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-instruction-f-h_15258.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:48.101Z",
+          "bodySHA256": "acbf92711f86b8b8800d17933896d25a5650f34ab90d8d1a1620d7dec113983e",
+          "bodyBytes": 114989
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-instruction-f-h_15256.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-instruction-f-h_15256.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:48.890Z",
+          "bodySHA256": "9969e2de9ed8809e9dd4924200a6f3bf5e404064a45bdcb244bb6076f216227b",
+          "bodyBytes": 115060
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-integration-d-algorithmes-d-optimisation-dans-un-code-de-calcul-elements-finis-f-h_15870.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-integration-d-algorithmes-d-optimisation-dans-un-code-de-calcul-elements-finis-f-h_15870.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:49.588Z",
+          "bodySHA256": "8c7b1b034bb24cc354ba8f2a42304ee1ac820d84c2687445d69d0cb39af77ff6",
+          "bodyBytes": 120398
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-modeles-d-ia-pour-la-generation-de-bases-aerodynamiques-f-h_15827.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-modeles-d-ia-pour-la-generation-de-bases-aerodynamiques-f-h_15827.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:50.610Z",
+          "bodySHA256": "07f75ae65a7b98dde365dd6a746b66e79defa96ca7c0cbd252ea16cba09a71b2",
+          "bodyBytes": 118965
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-f-h_15769.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-f-h_15769.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:51.912Z",
+          "bodySHA256": "01fbb66b7cee51e4982863cf25e3dea37ae5e18ab252a3010aa88c493879a901",
+          "bodyBytes": 115347
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdic-charge-de-travaux-generaliste-tce-f-h_15789.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdic-charge-de-travaux-generaliste-tce-f-h_15789.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:52.747Z",
+          "bodySHA256": "77fdd3cf216778e8bccc83dfc68d8897c2c607946f3e66196683bd462e350011",
+          "bodyBytes": 117697
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-maintenance-industrielle-infrastructure-et-travaux-neufs-f-h_15722.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-maintenance-industrielle-infrastructure-et-travaux-neufs-f-h_15722.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:53.613Z",
+          "bodySHA256": "b6ccd4552c79266299e942f60d42cf4ea7c4628eab76c33402d09068156e53ed",
+          "bodyBytes": 115433
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-specialiste-support-technique-specialiste-vecteur-atl2-f-h_15754.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-specialiste-support-technique-specialiste-vecteur-atl2-f-h_15754.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:54.623Z",
+          "bodySHA256": "04775d0218f2cdfa48d50acfe378f0022a09d98ff71c88896a3eaea196db2e3c",
+          "bodyBytes": 116480
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-concepteur-developpeur-devlead-f-h_15868.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-concepteur-developpeur-devlead-f-h_15868.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:57.225Z",
+          "bodySHA256": "b85c26108ace9a5705583d5bca675d019eb4ee4c19f4b59f441abcfa102ec77f",
+          "bodyBytes": 117503
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-qualite-falcon-f-h_15867.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-qualite-falcon-f-h_15867.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:27:58.354Z",
+          "bodySHA256": "425f0552303f27be4ad55ae08cd47eee77063c73d11933a40c654bddda4d1c3e",
+          "bodyBytes": 116197
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-qualite-amenagement-electrique-f-h_15725.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-qualite-amenagement-electrique-f-h_15725.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:28:00.150Z",
+          "bodySHA256": "5aaf6a49357a4a245aa6af14f97ba1410bf620329eec8d09367e156c88f547cb",
+          "bodyBytes": 115322
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-administrateur-support-utilisateur-informatique-f-h_15783.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-administrateur-support-utilisateur-informatique-f-h_15783.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:28:00.951Z",
+          "bodySHA256": "1239c428c3ade6c734da220b0a6fbdf74d0398ec4b29162327133473aa628ff9",
+          "bodyBytes": 116805
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-equipements-mecaniques-f-h_15858.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-equipements-mecaniques-f-h_15858.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:28:01.738Z",
+          "bodySHA256": "419efbbfb6b8552b2c0713999e3f5e08b705c20cf63f1416f6ef78033f1825a6",
+          "bodyBytes": 113696
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cableur-equipements-mecaniques-f-h_15856.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cableur-equipements-mecaniques-f-h_15856.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:28:02.434Z",
+          "bodySHA256": "5b0ca02cddcba9ce3a2c7cbbf45c77f979e82ed64bb81a8fb9d2d07983a43205",
+          "bodyBytes": 113346
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-de-content-manager-restructuration-d-une-base-de-connaissances-f-h_15273.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-de-content-manager-restructuration-d-une-base-de-connaissances-f-h_15273.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:28:03.702Z",
+          "bodySHA256": "18462b77c73e6a114959082e363d0439853e33295416873e0f651d40d588c180",
+          "bodyBytes": 117346
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-rectifieur-f-h_15855.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-rectifieur-f-h_15855.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:28:04.387Z",
+          "bodySHA256": "7914c1ad510145b0eb912f97032e2c79b3878881057399232bdddeda6b61663a",
+          "bodyBytes": 114026
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-maintenance-moyens-industriels-et-generaux-f-h_15854.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-maintenance-moyens-industriels-et-generaux-f-h_15854.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:28:05.154Z",
+          "bodySHA256": "7ec56c5745e0e7a7665c4409a10d6fae7cd2ab3f6027b28f5fde93295fda972a",
+          "bodyBytes": 115254
+        }
+      ]
+    },
+    {
+      "file": "native-job-details-03.json.gz",
+      "sha256": "0da9b5dcc32cab886affe5fbcc8e6273853b069069599a04b4d874d474234e0e",
+      "uncompressedSha256": "a3453a15d2f14e16009611f57975c47a81ab72c845665cabe5a55685465a149f",
+      "responses": [
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdd-administrateur-infrastructure-si-f-h_15816.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdd-administrateur-infrastructure-si-f-h_15816.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:24.809Z",
+          "bodySHA256": "557db4fce2bf211c0ea29defb0977b27cdf2e83964a07b42ee97b03b12404e15",
+          "bodyBytes": 117424
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-gestionnaire-de-production-principal-f-h_15548.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-gestionnaire-de-production-principal-f-h_15548.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:25.446Z",
+          "bodySHA256": "e32d06a1820e6252ea31d9ee6ead3948c68d51c7cfa5575bb7d2720da017f351",
+          "bodyBytes": 117034
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-avion-f-h_15356.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-avion-f-h_15356.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:28.555Z",
+          "bodySHA256": "05845b6816ca45734f133694b5178d626c5f2bc25c38fbe239f31a427a23c16f",
+          "bodyBytes": 114680
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-en-automatisation-d-audits-de-cybersecurite-par-intelligence-artificielle-ia-f-h_15852.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-en-automatisation-d-audits-de-cybersecurite-par-intelligence-artificielle-ia-f-h_15852.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:30.114Z",
+          "bodySHA256": "9919c8b1193ecf143eb18d002a019fae8896d3001c47b6270e31d0fbc04e6ccd",
+          "bodyBytes": 120968
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-m-a-et-relations-investisseurs-f-h_15840.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-m-a-et-relations-investisseurs-f-h_15840.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:30.915Z",
+          "bodySHA256": "70d46f55b4ad2831d606ae5a8d8092aae8debdddee520d38f7636782aa953ed0",
+          "bodyBytes": 117056
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-en-conception-maintenance-etude-d-optimisation-des-plans-d-entretien-rafale-f-h_15851.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-en-conception-maintenance-etude-d-optimisation-des-plans-d-entretien-rafale-f-h_15851.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:31.636Z",
+          "bodySHA256": "d4d3311124010e9592822810ce80b0f2f20461c7996f06ea784b4342ef00ec5e",
+          "bodyBytes": 120946
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-developpement-d-algorithme-intelligence-artificielle-au-service-du-soutien-f-h_15850.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-developpement-d-algorithme-intelligence-artificielle-au-service-du-soutien-f-h_15850.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:32.365Z",
+          "bodySHA256": "08c2062e3175761fbd9222b710e2f090e8a445f37da0a82c1fee92fbbce31b0f",
+          "bodyBytes": 119054
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cqpm-assembleur-se-monteur-se-de-systemes-mecanises-f-h_15032.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cqpm-assembleur-se-monteur-se-de-systemes-mecanises-f-h_15032.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:32.991Z",
+          "bodySHA256": "094597a6bda0e408c9ade4729f49a1f5f2095f6bb0238e4b678cc18039520e0f",
+          "bodyBytes": 115341
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-de-gestion-f-h_15799.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-de-gestion-f-h_15799.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:33.554Z",
+          "bodySHA256": "329cf0e9d0670b85c38cd2986995babc5fc2c25722f8073d54779f3a1127a318",
+          "bodyBytes": 116037
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-logisticien-ne-f-h_15818.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-logisticien-ne-f-h_15818.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:34.207Z",
+          "bodySHA256": "39c447e775c23751a91713466689a9a04768c95eaa81639c806daa065a55d29e",
+          "bodyBytes": 116367
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-methodes-composite-f-h_15837.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-methodes-composite-f-h_15837.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:34.829Z",
+          "bodySHA256": "cfcc12bdf76f20c8231750fe9fb3977502bba16f9e18e3665f2b3852ca9833e1",
+          "bodyBytes": 116172
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-bureau-d-industrialisation-maitrise-des-outils-coupants-en-atelier-f-h_15848.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-bureau-d-industrialisation-maitrise-des-outils-coupants-en-atelier-f-h_15848.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:35.426Z",
+          "bodySHA256": "5041c8d6a4b79a0968863d5a57906a94ffe49eb612babb79cbe9267279df32f1",
+          "bodyBytes": 117763
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-intelligence-artificielle-rag-_15828.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-intelligence-artificielle-rag-_15828.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:36.287Z",
+          "bodySHA256": "2bd9950e5cef7b3618421e86a0dc96006dff13fafab1d3c01e75def62295bd5d",
+          "bodyBytes": 119826
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-e-du-numerique-concepteur-developpeur-logiciel-filiere-electricite-avion-h-f-f-h_15211.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-e-du-numerique-concepteur-developpeur-logiciel-filiere-electricite-avion-h-f-f-h_15211.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:36.902Z",
+          "bodySHA256": "3f098e5a30b7250692bf59a900e0fb27fc6e0a928cdf69d982a81ecf0c6a8526",
+          "bodyBytes": 118169
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-architecte-technique-si-sap-erp-f-h_14733.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-architecte-technique-si-sap-erp-f-h_14733.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:38.025Z",
+          "bodySHA256": "0d6410e0e178084c52461d765c6014f34131e1f03957d48b1873fd30e93b74b9",
+          "bodyBytes": 116531
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-montage-f-h_15825.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-montage-f-h_15825.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:38.853Z",
+          "bodySHA256": "1b5b229888bc1aa3c139c58241ed6f2872010b5d1ad5049666d37d57ea67f656",
+          "bodyBytes": 113924
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-chef-de-projet-junior-relations-ecoles-salon-du-bourget-2027-f-h_15823.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-chef-de-projet-junior-relations-ecoles-salon-du-bourget-2027-f-h_15823.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:40.249Z",
+          "bodySHA256": "9c6bf698b3b00aec4134c033f4a539059b8596d3cd86e619aa18858c14ed774b",
+          "bodyBytes": 109752
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-comptable-f-h_15800.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-comptable-f-h_15800.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:41.026Z",
+          "bodySHA256": "57c7d1da8b8204c970ab62716f48aa67163c0f558614a15b809a83778836f382",
+          "bodyBytes": 115698
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-concepteur-en-electronique-f-h_15821.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-concepteur-en-electronique-f-h_15821.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:41.771Z",
+          "bodySHA256": "47b484165608caab09aad53eb36a3a42128688ea0481f2392f9128879e11e049",
+          "bodyBytes": 115163
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-logisticien-ne-f-h_15815.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-logisticien-ne-f-h_15815.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:42.505Z",
+          "bodySHA256": "00fc88d7129e45df7e1d4f7dd3c1204873b3323a7757c304cc7563d931051be1",
+          "bodyBytes": 116380
+        }
+      ]
+    },
+    {
+      "file": "native-job-details-04.json.gz",
+      "sha256": "7f96568ae4f31d59da6a21a5d8c310ac02a06cda715bcddc92cf46d71b77af36",
+      "uncompressedSha256": "4e1ed5b0ea5fc50c31391242b01c14159a157bf773147c9e8c55d386b8ef091a",
+      "responses": [
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-gestionnaire-administration-du-personnel-cdd-f-h_15817.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-gestionnaire-administration-du-personnel-cdd-f-h_15817.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:48.933Z",
+          "bodySHA256": "617cecb5fffe2b27d1d3d3fe03d1f46d1d347143e4f171b1a70f90f104f3e32d",
+          "bodyBytes": 115146
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-concepteur-fonctionnel-mes-apriso-f-h_15782.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-concepteur-fonctionnel-mes-apriso-f-h_15782.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:49.535Z",
+          "bodySHA256": "8c6293b3c26a1918fd5143d7980570f2ed379572162327dad74c5bb55bb5ed51",
+          "bodyBytes": 115644
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-monteur-equipements-mecaniques-f-h_15119.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-monteur-equipements-mecaniques-f-h_15119.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:50.119Z",
+          "bodySHA256": "18b23620f496195ee48a3ff9a64328493a8bcfe9ba9e21c94348f49723049ab0",
+          "bodyBytes": 114731
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-acheteur-contrat-f-h_15801.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-acheteur-contrat-f-h_15801.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:50.701Z",
+          "bodySHA256": "7f90af689ba404542265cd47b3db24f4ecfac2128a7268e13ea132382f29d799",
+          "bodyBytes": 113688
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-moyens-d-essais-f-h_15775.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-moyens-d-essais-f-h_15775.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:51.280Z",
+          "bodySHA256": "85603f997f91ade45b03046ceda0f077aba66f55a991b74e67e34aea2e85ef59",
+          "bodyBytes": 115596
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdic-charge-de-travaux-elec-f-h_15788.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdic-charge-de-travaux-elec-f-h_15788.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:51.970Z",
+          "bodySHA256": "e20c090f20b887c99e2373cd39b44c16e3785bc3eebe77f3dc294c55c04d5bfe",
+          "bodyBytes": 118341
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-soudeur-soudeuse-f-h_15603.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-soudeur-soudeuse-f-h_15603.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:53.016Z",
+          "bodySHA256": "e867df266bf4c10f93b30614752dcfdc9d9d2ab8fc7baf1c270933bd86c4c0e7",
+          "bodyBytes": 114769
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-logisticien-logisticienne-f-h_15770.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-logisticien-logisticienne-f-h_15770.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:53.720Z",
+          "bodySHA256": "279795f10a66ff7bbc4298d58d130a6b183e5fcb40bfee9ce99dc7b716c14f40",
+          "bodyBytes": 114250
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdd-charge-de-travaux-generaliste-tce-f-h_15724.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdd-charge-de-travaux-generaliste-tce-f-h_15724.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:54.558Z",
+          "bodySHA256": "79f2e9b76156dab2bb39aac092c0927078dbbadd4265b8db47be3b6ee3dd0004",
+          "bodyBytes": 118086
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-caracterisation-d-une-liaison-de-donnees-chiffree-via-satcom-f-h_15706.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-caracterisation-d-une-liaison-de-donnees-chiffree-via-satcom-f-h_15706.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:55.259Z",
+          "bodySHA256": "da898d7e158048f46ca670806129dd635f0f10f1835f1daba4661ce8b95001f9",
+          "bodyBytes": 119199
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-mecanicien-de-piste-falcon-f-h_15759.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-mecanicien-de-piste-falcon-f-h_15759.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:55.987Z",
+          "bodySHA256": "df4de61f118e430066dd921932d36efc86a21409ceaae4e33e5dcce12eeaab5c",
+          "bodyBytes": 114296
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-mecanicien-de-piste-rafale-f-h_15758.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-mecanicien-de-piste-rafale-f-h_15758.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:56.675Z",
+          "bodySHA256": "f87ebdfe5714651d85240162515f6070cbc6494918a0de86e71e8273f7252416",
+          "bodyBytes": 114205
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-instructeur-trice-concepteur-trice-pedagogique-avionique-rafale-f-h_15134.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-instructeur-trice-concepteur-trice-pedagogique-avionique-rafale-f-h_15134.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:57.241Z",
+          "bodySHA256": "a5db62e3e56b83ed08161e228bf751a74339d44f9aa85a390c65d0ca226b3028",
+          "bodyBytes": 117304
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-supplier-development-manager-f-h_15522.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-supplier-development-manager-f-h_15522.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:58.313Z",
+          "bodySHA256": "82101821b85437dc743209e9242aeea02b8ba807173a49bb1d3e81b1ec4c2556",
+          "bodyBytes": 114626
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-outils-metier-f-h_15736.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-outils-metier-f-h_15736.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:58.998Z",
+          "bodySHA256": "212fdad48f3a8992c876557ee57e2ae5e9cc6aadacca411e8546dba4e4554269",
+          "bodyBytes": 115497
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-pilote-operationnel-falcon-gpo-f-h_15734.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-pilote-operationnel-falcon-gpo-f-h_15734.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:29:59.649Z",
+          "bodySHA256": "1c95453e9de8c420e91b894175b308b8b72702fb9cd79e6f9927a43dfb782ace",
+          "bodyBytes": 110033
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-assistante-au-sein-de-la-direction-des-ventes-f-h_15727.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-assistante-au-sein-de-la-direction-des-ventes-f-h_15727.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:30:00.509Z",
+          "bodySHA256": "49bfb7e3fab3114d65be68d076918354e5aa2864ea9b21870e539b9b35406ac5",
+          "bodyBytes": 116906
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-controle-de-gestion-production-f-h_15419.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-controle-de-gestion-production-f-h_15419.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:30:01.132Z",
+          "bodySHA256": "9e34accb8c4cdc010d348e3a83db058b5482e46d2c2c55a6d6197374a1b9453d",
+          "bodyBytes": 116251
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-preparateur-f-h_15527.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-preparateur-f-h_15527.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:30:01.741Z",
+          "bodySHA256": "80963aeecd8fabc7a4119e413d2ba1c015c4bbe6ba1fc3e2601a456323319622",
+          "bodyBytes": 114184
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-redacteur-de-documentation-de-vol-f-h_15711.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-redacteur-de-documentation-de-vol-f-h_15711.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:30:02.433Z",
+          "bodySHA256": "0c89f812ba15705e7f5260be9bfa9ddede03e8d89b162373a03180eae469930e",
+          "bodyBytes": 116978
+        }
+      ]
+    },
+    {
+      "file": "native-job-details-05.json.gz",
+      "sha256": "9bfa2afbdd1baeeb8ae036eb120757bcce7a545122ef41ad33dd43c17b21e0f5",
+      "uncompressedSha256": "7ef125be5b585bbcb1e2554644e6eb762a940a1b29bdafec04540a79a34c49d9",
+      "responses": [
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-produit-produits-metalliques-f-h_15576.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-produit-produits-metalliques-f-h_15576.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:30:59.163Z",
+          "bodySHA256": "43cb623021892bb026c4310f40ba642c95e91394535aa20b8efc63f1b710d40e",
+          "bodyBytes": 116128
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-infirmier-e-de-sante-au-travail-f-h_15667.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-infirmier-e-de-sante-au-travail-f-h_15667.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:30:59.995Z",
+          "bodySHA256": "3301896740562d7a37c19e38f18c82369588afec4106497ca249d0996038439d",
+          "bodyBytes": 115321
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-juriste-d-affaires-affaires-internationales-f-h_15168.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-juriste-d-affaires-affaires-internationales-f-h_15168.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:00.788Z",
+          "bodySHA256": "ae4ab01293b60c8ac6f2d353b8e1389d202890019a2d91b3612ae0aab2297457",
+          "bodyBytes": 107550
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-revue-technique-documentaire-atelier-de-maintenance-des-batteries-avions-f-h_15700.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-revue-technique-documentaire-atelier-de-maintenance-des-batteries-avions-f-h_15700.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:01.502Z",
+          "bodySHA256": "f58afe5e7cbd868c96e4c02c567058497f83a9ae6566037e73bf2e990e58428b",
+          "bodyBytes": 119203
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-qualite-fournisseurs-electroniques-f-h_15687.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-qualite-fournisseurs-electroniques-f-h_15687.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:02.246Z",
+          "bodySHA256": "806cc44f266857d7d02571d26d4db5c1de0ad4b2da85ab8f756d1da2e81b7026",
+          "bodyBytes": 115621
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-de-bureau-technique-cdd-f-h_15598.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-de-bureau-technique-cdd-f-h_15598.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:03.176Z",
+          "bodySHA256": "8e93ef228bdf89901c9c3f67834bd3b3f660344410c7a521651c874a392e3f1a",
+          "bodyBytes": 118700
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-produit-fournisseur-aerostructure-f-h_15678.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-produit-fournisseur-aerostructure-f-h_15678.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:03.954Z",
+          "bodySHA256": "82decd0b0b5745e7dc308ccb84319cdbd7046d1c4f3ce41441248df0b9dbf0c5",
+          "bodyBytes": 118117
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-filiales-f-h_15221.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-filiales-f-h_15221.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:05.086Z",
+          "bodySHA256": "c574dc755ebcfca1bc2f4917ccb38133f6ff04242e08c586525ddeadc5a4d4f2",
+          "bodyBytes": 116544
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-specialise-cnd-niveau-1-f-h_14736.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-specialise-cnd-niveau-1-f-h_14736.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:05.883Z",
+          "bodySHA256": "77d6623f9447b660f1a511d86a2e736139baa80c7d686e93b04af067a748e949",
+          "bodyBytes": 114017
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-charge-de-mobilite-internationale-f-h-f-h_15661.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-charge-de-mobilite-internationale-f-h-f-h_15661.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:06.559Z",
+          "bodySHA256": "d8b7e554ebdef92f484353f2773bfb556120d35beb6471c3b2c0023a60fc054a",
+          "bodyBytes": 117502
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-f-h_15658.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-f-h_15658.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:07.396Z",
+          "bodySHA256": "1f4b59e92a276565a9802b1d2fe558e69bbc57b3e051e28f8baa6783f2f4c469",
+          "bodyBytes": 113716
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-operateur-traitements-des-materiaux-f-h_14609.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-operateur-traitements-des-materiaux-f-h_14609.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:08.200Z",
+          "bodySHA256": "b541055e92a550231daaa9496b7eed9e440b6dd05e748609150f762a08f28008",
+          "bodyBytes": 114311
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-specialise-cnd-niveau-2-f-h_14599.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-specialise-cnd-niveau-2-f-h_14599.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:08.927Z",
+          "bodySHA256": "b2ed53f71ad50aa4e9cfdfb84652315ddfc0db6ad8d2744f44ad0748c10aff54",
+          "bodyBytes": 114975
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-d-atelier-tt-ts-f-h_15124.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-d-atelier-tt-ts-f-h_15124.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:11.158Z",
+          "bodySHA256": "df8fa6d5a80db2c11fc3a73143e65f37267761f2dcf523097e584dd02afef46f",
+          "bodyBytes": 114445
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-falconcare-support-contract-manager-f-h_15504.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-falconcare-support-contract-manager-f-h_15504.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:12.249Z",
+          "bodySHA256": "e45d244821621fa7f2b5da80af01bc244239ceba728f484ea3997ab13bb7a245",
+          "bodyBytes": 111088
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-utilisation-de-ia-pour-la-conception-de-documentation-falcon-f-h_15488.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-utilisation-de-ia-pour-la-conception-de-documentation-falcon-f-h_15488.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:12.928Z",
+          "bodySHA256": "3c1178943699e42b4dec4f3999533c657494d3c8615683266c7784de69ef67fe",
+          "bodyBytes": 118605
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-customer-service-manager-responsable-support-client-f-h_15422.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-customer-service-manager-responsable-support-client-f-h_15422.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:13.598Z",
+          "bodySHA256": "f33986a2f4e5888ecdd38f3c31971116d6f5c880366faad565473d6ecb1cda1f",
+          "bodyBytes": 116786
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-de-mesure-f-h_15130.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-de-mesure-f-h_15130.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:14.228Z",
+          "bodySHA256": "c97d353e6063168fafd380bce1a4a0256c09c8da435688c2164fe839abac488d",
+          "bodyBytes": 113919
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-rayonneur-f-h_15104.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-rayonneur-f-h_15104.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:15.271Z",
+          "bodySHA256": "2cead06ee4af8abc25162f029f7ece9c4ac4cbd0762125a94a7c5a5e7ec6e7a6",
+          "bodyBytes": 113658
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-integrateur-trice-cableur-euse-f-h_15034.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-integrateur-trice-cableur-euse-f-h_15034.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:16.246Z",
+          "bodySHA256": "6c6d4fc8597e3ae90fec88334639ce997ee811730dd60b37c0d7103b3fd8dc74",
+          "bodyBytes": 114859
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-mecanicien-mecanicienne-aeronautique-f-h_15046.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-mecanicien-mecanicienne-aeronautique-f-h_15046.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:17.535Z",
+          "bodySHA256": "b5e61c47ce230ce4052c7304345d07b5b7888771edfaa4843c0c3ab30b4a50e5",
+          "bodyBytes": 115455
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-amelioration-continue-qualite-stage-f-h_15028.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-amelioration-continue-qualite-stage-f-h_15028.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:18.304Z",
+          "bodySHA256": "95b0b9bc88d3e11638ce49b995f0184e6a7311cdc75f6c4d0e7406b1546c4cd0",
+          "bodyBytes": 115790
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cqpm-ajusteur-se-assembleur-se-de-structures-aeronefs-f-h_15035.aspx",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cqpm-ajusteur-se-assembleur-se-de-structures-aeronefs-f-h_15035.aspx",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:31:18.973Z",
+          "bodySHA256": "86a5627d010c1153f32d681c89fdc9d6eae324efd56f50d9f6d26cfef6c37ca7",
+          "bodyBytes": 114791
+        }
+      ]
+    },
+    {
+      "file": "native-listing-pages.json.gz",
+      "sha256": "bff6fde6fc21244e2afd55708a8cd940fa9ee2780046b6f9f1f08ba642847304",
+      "uncompressedSha256": "287fa578ee57ad7f7b18ff774dcbf46edf173f546612e33e6938852b1cd4c14d",
+      "responses": [
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=list",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=list",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:23:57.353Z",
+          "bodySHA256": "94b5c31c44805403588bb245a7f10c7f32531d7a98aa37612d7c3b47727abff4",
+          "bodyBytes": 137137
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=2&LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=2&LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:23:57.847Z",
+          "bodySHA256": "03f49528d731aa1ee1aad8053461ffbeaa4de8b4b6fbc916b0187d030fc8f6f0",
+          "bodyBytes": 139256
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=3&LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=3&LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:23:58.313Z",
+          "bodySHA256": "b3a97fa6be099e187c1bb437e446b5d7147819b68f5e315006bdec99c5b35d59",
+          "bodyBytes": 139660
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=4&LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=4&LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:23:58.799Z",
+          "bodySHA256": "487d9a0e41f3ede508a85f1b5538969aaa488e3c1e13e38c2cdb00b38f76b72d",
+          "bodyBytes": 139088
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=5&LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=5&LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:23:59.285Z",
+          "bodySHA256": "d69e2bb5976242079b3608c70f18fb9ab0e30fb498ab2f6edca2c8d43a41304d",
+          "bodyBytes": 139940
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=6&LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=6&LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:23:59.761Z",
+          "bodySHA256": "52f763911fecdaade47655a0421a4a6ddd1568adb0663111d75d1ac0f30129da",
+          "bodyBytes": 139167
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=7&LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=7&LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:24:00.237Z",
+          "bodySHA256": "6ee0a3e4deda79ed31237a5a9f558898276b97b5c86cf23c726b623fb6aab9d7",
+          "bodyBytes": 138157
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=8&LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=8&LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:24:00.716Z",
+          "bodySHA256": "34d094fec3e8db51c67d2752d296ff4d90ed38f5f63f473b8384fefecde7318f",
+          "bodyBytes": 138147
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=9&LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=9&LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:24:01.203Z",
+          "bodySHA256": "7f4634a443c82ebb2d9fa2fb17aab73816e4453312fb46bd98cb5c910fdb32de",
+          "bodyBytes": 139194
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=10&LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=10&LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:24:01.722Z",
+          "bodySHA256": "2a833b3f65da64087fab13755a955ab0c62f229e4abf09cf085d1f2a2a6fb26c",
+          "bodyBytes": 137889
+        },
+        {
+          "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=11&LCID=1036",
+          "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?page=11&LCID=1036",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:24:02.219Z",
+          "bodySHA256": "e67fcf6d7b3e27d3cdc4a53532a061a6e46ea05d7d640aeb5ac83713b1fbcab9",
+          "bodyBytes": 121796
+        }
+      ]
+    },
+    {
+      "file": "official-careers.json.gz",
+      "sha256": "26be8d425e6f41018c48ff028a7eaaa0df74bc654c8387257337efb984155d79",
+      "uncompressedSha256": "0c4fec6590436745cd6dea7aeb6cd0a876d4a0f47a18f15822ac71f63f9145c3",
+      "responses": [
+        {
+          "url": "https://www.dassault-aviation.com/en/group/careers/",
+          "finalUrl": "https://www.dassault-aviation.com/en/group/careers/",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:15:57.938Z",
+          "bodySHA256": "969e4172ca88fbd866e1ae6a70dd06a6a6718adc09a86b9c34159788c0a7bf1b",
+          "bodyBytes": 235676
+        }
+      ]
+    }
+  ],
+  "redirectReplay": {
+    "requestUrl": "https://carriere.dassault-aviation.com/accueil.aspx?LCID=1036",
+    "targetUrl": "https://dassault-aviation-cand.talent-soft.com//accueil.aspx?LCID=1036",
+    "status": 301,
+    "provenance": "Root observed native browser navigation network 301 -> native entry200. Offline header is explicitly modeled from that observation; no raw redirect headers/body captured.",
+    "rawResponseCaptured": false
+  }
+}

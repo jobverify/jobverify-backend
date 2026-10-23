@@ -53,10 +53,23 @@ test('conflicting official boards require review rather than choosing a successf
 test('audit uses actual shared extraction, preserves first-party evidence, and separates zero India inventory', async () => {
   const result = await auditCatalogProvider({ source: 'acme', companyName: 'Acme', companyCareerPage: 'https://acme.test/careers' }, {
     fetchPage: async url => ({ status: 200, url, html: '<a href="https://boards.greenhouse.io/acme">Open roles</a>' }),
-    fetchJson: async () => ({ jobs: [{ id: 1, title: 'Engineer', location: { name: 'Bangalore, India' }, absolute_url: 'https://job-boards.greenhouse.io/acme/jobs/1', content: 'Develop reliable software systems.' }] }),
+    fetchJson: async () => ({ jobs: [{ id: 1, title: 'Engineer', location: { name: 'Bangalore, India' }, absolute_url: 'https://job-boards.greenhouse.io/acme/jobs/1', content: 'Develop reliable software systems.', first_published: new Date().toISOString() }], meta: { total: 1 } }),
   })
   assert.equal(result.outcome, 'ready-for-validation')
   assert.equal(result.eligibleJobs, 1)
   assert.equal(result.jobs[0].company, 'Acme')
   assert.equal(result.inventoryEvidence.listingComplete, true)
+})
+
+test('missing or truncated native totals cannot qualify an empty remediation result', async () => {
+  for (const payload of [{ jobs: [] }, { jobs: [], meta: { total: 1 } }]) {
+    const result = await auditCatalogProvider({ source: 'acme', companyName: 'Acme', companyCareerPage: 'https://acme.test/careers' }, {
+      fetchPage: async url => ({ status: 200, url, html: '<a href="https://boards.greenhouse.io/acme">Open roles</a>' }),
+      fetchJson: async () => payload,
+    })
+    assert.equal(result.outcome, 'extraction-failed')
+    assert.equal(result.rawJobs, null)
+    assert.equal(result.eligibleJobs, null)
+    assert.equal(result.inventoryEvidence, null)
+  }
 })

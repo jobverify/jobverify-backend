@@ -1,0 +1,202 @@
+{
+  "source": "greyamp",
+  "captureMethod": "Root browser actual HTTP text responses; no form submission. Native3country-unknown discoveries retained separately from eligible output.",
+  "captures": [
+    {
+      "file": "careers-response.json",
+      "sha256": "6459773dfcbc439456889077c1d703b656377cb977f7b522183ccbe2c91d7209",
+      "rawSha256": "6459773dfcbc439456889077c1d703b656377cb977f7b522183ccbe2c91d7209",
+      "responses": [
+        {
+          "url": "https://www.greyamp.com/careers",
+          "finalUrl": "https://www.greyamp.com/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:58:35.694Z",
+          "bodySha256": "c032ac83862975b5b7111c5690b60bf23c4733c5ec01725c124654966c616c6f"
+        }
+      ]
+    },
+    {
+      "file": "native-and-client-responses.json.gz",
+      "sha256": "4292e2ffb6fc1f8bdb5cf47b1d11bec6de5dc9aea242e4eead91507fa4bd7369",
+      "rawSha256": "be96874772016436113e9be8ac0a306d355ad6398352781fdcddace62bb06797",
+      "responses": [
+        {
+          "url": "https://www.greyamp.com/api/job-openings",
+          "finalUrl": "https://www.greyamp.com/api/job-openings",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.175Z",
+          "bodySha256": "e7c5757881d14f3e1c67feb3ea7de9442a9dc7b2cfede92d7c36621523fceb76"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/3re7arw49yn5c.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/3re7arw49yn5c.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.008Z",
+          "bodySha256": "dc10caa6d254657e2ef9f91f2da63489b84145a16b8b0345011c195889967f29"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/2eciz8bkofhyy.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/2eciz8bkofhyy.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.012Z",
+          "bodySha256": "9438359811dc9598f260d54d3eb1a0128e6ccdc7752e54ae34144984c64487bd"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/1_nje_4rcmdo6.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/1_nje_4rcmdo6.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.009Z",
+          "bodySha256": "dff05be14ec4b73b12db8c571845fc166fbf226d2f05970d2272e64d64d7006b"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.012Z",
+          "bodySha256": "8bbb58cbfd4633c1d828c6bc37bc32abc768a149c01b1dfc4f5131fd81274551"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/28ggf5nd0yr6f.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/28ggf5nd0yr6f.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.010Z",
+          "bodySha256": "d1319a737df1f4cd04d89ee2bc932678f62bd71900dc90bf2452b27b1e825622"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/43ca5cpyygdk_.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/43ca5cpyygdk_.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.011Z",
+          "bodySha256": "b4fa0a8a7e4355642d6aee611960a6d46df27c84c16f4247d29b2fa2380af454"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/06bdyifok3sfl.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/06bdyifok3sfl.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.027Z",
+          "bodySha256": "2cd5cf965fc64142b77fb7c7342e2ea8cff46b01127598c82fd20e1f9618527a"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/3yjmbepk38jdn.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/3yjmbepk38jdn.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.022Z",
+          "bodySha256": "1733b43c95af93259112a1e13c0fcd90dbcd4a762fb5f482a839154f787f0c09"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/35_qjls4fkaqx.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/35_qjls4fkaqx.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.033Z",
+          "bodySha256": "2d8cd78c593a7474f6ac9266dff05a1c6f4ced775e5bf9e5f1872137f05e7a77"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/41r4e2mi10n4e.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/41r4e2mi10n4e.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.029Z",
+          "bodySha256": "6b81e355aeadc9c68c665d9ed633e3080b5c650dc9771407b7fe09a363d3680e"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/11nuygajop27h.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/11nuygajop27h.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.030Z",
+          "bodySha256": "eb9b5b5f8ea6797fc1c9abc5ccf97d355a4678a0175cd6b920a6d0ba5db32f99"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/2rrquw9a_28mi.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/2rrquw9a_28mi.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.073Z",
+          "bodySha256": "04672a075565f5936087599dc1e72271425079dff8edbd9c1e4c7549e048593f"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/0cz1d0mv5g_q7.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/0cz1d0mv5g_q7.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.088Z",
+          "bodySha256": "0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/1vc85khilw3s0.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/1vc85khilw3s0.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.034Z",
+          "bodySha256": "48e85ceb332116ff9f09a3d8da6f3bc4a213c088e56bb53634597eed856d424d"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/3l_qwstrkhb72.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/3l_qwstrkhb72.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.077Z",
+          "bodySha256": "85a03d023642071548182ea2cf42f959c9735b8613d22805b44a9ead2c608914"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/15pfv5mqpp9cq.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/15pfv5mqpp9cq.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.076Z",
+          "bodySha256": "bc4355131fb586101d26d1450ca63611e57c141fa48c5bc041393d9e4585f7fe"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/3gn4umu834-e5.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/3gn4umu834-e5.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.074Z",
+          "bodySha256": "89e6a78a78714c3c3dcf7ce95d73ab69d6d2360cbebd3631faf994a3a05bfe82"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/26q79uog-559a.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/26q79uog-559a.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.075Z",
+          "bodySha256": "940dd301cf674d1e547ac4b4c0b69ea37fd0b3358262ca18567ee59fc1f2f218"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/0b0yhjr7cah91.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/0b0yhjr7cah91.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.080Z",
+          "bodySha256": "747b57be9f6bfc0e6472ebd33972c12ee6fc46689433cee446170f9c38e53110"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/2l36z77a2s4wd.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/2l36z77a2s4wd.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.078Z",
+          "bodySha256": "950b789b14153233f909ea60c8480d4f108f9bafa7cb2c88146e032550618ab7"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/3ws0vgam5n33e.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/3ws0vgam5n33e.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.079Z",
+          "bodySha256": "85e50bcf6b0abf7820bbc83d0a03103391598ad8f51b7a2190bcf97cdea9348a"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/0pf_pvzkahkm1.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/0pf_pvzkahkm1.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:11:28.080Z",
+          "bodySha256": "5b48446f59ccee384ffbdb504a6c3a9f36af76664b12ffd35b1b91ae0b8c4d78"
+        }
+      ]
+    },
+    {
+      "file": "application-response.json.gz",
+      "sha256": "a512bd5c03c6d8716a738ae87f85220fc2aac6f4fdac67d6beec0ea1da932ac6",
+      "rawSha256": "576aef2f7fb5ae10792dde1762faecff04b116449c96f0525c3867c2423fce8c",
+      "responses": [
+        {
+          "url": "https://docs.google.com/forms/d/e/1FAIpQLSe5uopMDdaOyyPwMSVOJjtd2C9UU4tlOTzegWBvsmFQaxp-lw/viewform",
+          "finalUrl": "https://docs.google.com/forms/d/e/1FAIpQLSe5uopMDdaOyyPwMSVOJjtd2C9UU4tlOTzegWBvsmFQaxp-lw/viewform",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:13:05.698Z",
+          "bodySha256": "f39a769ae166d6d4fda8e490a6053259b0edf99d2dfe3486234dc3c384a390e2"
+        }
+      ]
+    }
+  ]
+}

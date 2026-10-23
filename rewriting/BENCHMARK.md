@@ -1,6 +1,14 @@
 # Qwen description rewriting on CPU
 
-The configured model remains **Qwen3.5-9B Q5_K_M**, with immutable checksums in [model.json](model.json). Policy v13 returns source IDs and optional edits, preserving sensitive facts directly from source. It uses four CPU threads, one active request, an 8,192-token context, 1,024 initial output tokens, at most one retry up to 2,048 tokens, a shared 600-second deadline and a 128 MiB prompt cache. Its performance is unmeasured; no local tests or inference were run for these fixes.
+The configured model remains **Qwen3.5-9B Q5_K_M**, with immutable checksums in [model.json](model.json). Policy v14 limits responses to two 160-character edits selected from six job-focused source statements, while retaining the complete source separately. It uses four CPU threads, one active request, an 8,192-token context, 1,024 initial output tokens, at most one retry up to 2,048 tokens, a shared 600-second deadline and a 128 MiB prompt cache. Its performance is unmeasured; no local tests or inference were run for these fixes.
+
+## Previous GitHub run, policy v13
+
+Artifact description-rewrite-39826150888-1.zip covers 22 October 2026 17:50:50-22:50:55 UTC, approximately five hours. Of 19,485 queued jobs, 37 were attempted: two published, 34 failed and one remained in flight at the budget stop. Three additional jobs were skipped before generation, leaving 39 completed result rows. Failures comprised 28 token truncations at the 1,024-token cap, three timeouts, two unsupported claims and one changed relationship. The three preflight skips exceeded the source-fact limit.
+
+Generation was approximately 4.3 output tokens/second on a four-thread AMD EPYC 7763 runner. Worker peak RSS was 6.85 GiB, and the worker remained alive at the deadline. CursorNotFound did not recur. The normal five-hour budget nevertheless marked the stage incomplete and blocked classification. Rejection samples contained only early truncations and a null completion preview, preventing inspection of partial JSON and later rejection types.
+
+The v14 changes bound both generated edit count and length, narrow the prompt to job-focused candidates, reject edits that omit source words, retain partial completion previews, diversify rejection samples, and permit classification after a normal budget stop. Pending work remains queued. Throughput improvement and output quality still need measurement in Actions; these changes do not establish whole-queue capacity on four CPU cores.
 
 ## Previous GitHub run, policy v12
 
@@ -23,7 +31,7 @@ The generic publishing path now excludes empty descriptions. Raw dry-run snapsho
 
 ## Production behavior and reproduction
 
-The rewrite workflow is separate from scraping. It has a 350-minute job limit, a 315-minute generation step limit and a five-hour default total runtime budget. Pending source-hash work survives interruption and resumes on later runs. Validated prose is reused only when the model, prompt and complete source signature match. Pipeline stage controls determine handoffs; individual generation rejections retain the source and do not fail the stage.
+The rewrite workflow is separate from scraping. It has a 350-minute job limit, a 315-minute generation step limit and a five-hour default total runtime budget. Pending source-hash work survives interruption and resumes on later runs. Validated prose is reused only when the model, prompt and complete source signature match. Individual generation rejections retain the source and do not fail the stage. A normal rewrite budget stop permits classification; cancellation and execution failures still stop handoff.
 
 Run a database-free benchmark with 20 representative source descriptions:
 

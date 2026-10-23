@@ -1,0 +1,314 @@
+{
+  "source": "wati",
+  "captureMethod": "Official browser-network responses captured by root agent; body preserves observed response text.",
+  "binding": {
+    "careersUrl": "https://www.wati.io/career/",
+    "officialBoardHref": "https://apply.workable.com/wati-dot-i-o/",
+    "accountUid": "da70e071-85cc-431f-b985-66f433ef6d33",
+    "accountName": "WATI.io",
+    "accountWebsite": "https://www.wati.io/"
+  },
+  "observedInventory": {
+    "total": 57,
+    "pages": 6,
+    "indiaDetails": 17,
+    "terminalCursor": "omitted"
+  },
+  "responses": [
+    {
+      "file": "account-response.json",
+      "url": "https://apply.workable.com/api/v1/accounts/wati-dot-i-o?full=true",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:54:58.094Z",
+      "method": "GET",
+      "bodySha256": "57b3ebf73022fd7a8df4b39aea146803707da302bda9ab54869282cf1520bbad",
+      "captureSha256": "b0980bd12523dd0b2f69eda6ff9e16531775f01af0cc10ae29032299c6711691"
+    },
+    {
+      "file": "careers-response.json",
+      "url": "https://www.wati.io/career/",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:53:44.793Z",
+      "method": "GET",
+      "bodySha256": "798489db0c6338df2deb24840818f51f692ad0cb2834b213036f24a9701ff6d8",
+      "captureSha256": "1372b163f651d93a03f4e648dddffe6da55b6c4b80c64888830b4baaee282728"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 0,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/89E979B9A0",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.914Z",
+      "method": "GET",
+      "bodySha256": "1f6b273d8abb7b16f49bf81cc09dbadef7347b2a21259ebcac2ad5530f1dce17",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 1,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/F92A9ABAF5",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.837Z",
+      "method": "GET",
+      "bodySha256": "401f7ba3a215d775eadc81c7c1544d495fb6b970671b56d160d39ef2ac4294d4",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 2,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/557F99AF6F",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.911Z",
+      "method": "GET",
+      "bodySha256": "bfc8a521b7d0abe5383c6cacd48ff018b855d96df6260dd03b8b90e6e17779d9",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 3,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/04F012771D",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.913Z",
+      "method": "GET",
+      "bodySha256": "bdc10b15496516c385f06f8b26b288403d197e6eea12052bc9c76415008f5294",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 4,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/D6A461CC4E",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.839Z",
+      "method": "GET",
+      "bodySha256": "4ccf95b565470b9545ccb889aa0dc8b24c07e606c46321cdef898335dabc1ecd",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 5,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/C26EFAD507",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.911Z",
+      "method": "GET",
+      "bodySha256": "666741f60852bc2946fed5958c32a9169a4e2288836146feee9cf450eb4895ea",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 6,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/B47B87CE59",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.841Z",
+      "method": "GET",
+      "bodySha256": "69c297d485bc7930a3a5681f9351167ac94ddd96ed33127b127e161a9d5f164e",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 7,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/82C690C912",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.905Z",
+      "method": "GET",
+      "bodySha256": "8b76b53dbbdee4163fe820adb358c48e4ba29445453b6f7ff8b965808135c7fb",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 8,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/4B1B0CE60A",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.908Z",
+      "method": "GET",
+      "bodySha256": "412fd729031f744da1c60ca2d4455aa2aec2d2c70c85c4c444431cdd2497ebf3",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 9,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/0054C594F5",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.912Z",
+      "method": "GET",
+      "bodySha256": "911d0d8bc7389be2672ee01fd28f1d5227ba242c7a092e713f68682f3bd2fbe8",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 10,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/236302D9D8",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.916Z",
+      "method": "GET",
+      "bodySha256": "53a55ef1b3be1f3cb88f45ee1049b02c8b7cb63dcf30578158ab9facd6d7f839",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 11,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/D60B1FAA10",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:30.266Z",
+      "method": "GET",
+      "bodySha256": "ea31fed784e67801f8998b88581681b47f268d6ac67ad26012b576e7d61ab7ff",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 12,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/D64BCBA4E9",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:29.920Z",
+      "method": "GET",
+      "bodySha256": "cf7f08757bc2f7abd6238815a3fd52cfb9932342eefd5eb811d6e6b4a9f653c5",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 13,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/26B43942BA",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:30.403Z",
+      "method": "GET",
+      "bodySha256": "adb80fa399701b9a57395d0230e237f1c6c15bd0419f79e1a2904abbebfce6bc",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 14,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/E1D465A2BC",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:30.421Z",
+      "method": "GET",
+      "bodySha256": "f8dac6eade0d9e17d0f32835b75468abca1c34763ec3063040e52a32dc1fbc3d",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 15,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/D20970F18D",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:30.399Z",
+      "method": "GET",
+      "bodySha256": "4b4bffbc3cce34400573b4b0f9e082b04f5093a130843a2bf58a82d521ae59aa",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "detail-responses.json",
+      "responseIndex": 16,
+      "url": "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/99F31A2507",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:30.399Z",
+      "method": "GET",
+      "bodySha256": "51d0aa621db783b2f0d1d44df88c3e412a5d5456514b4f5c2650ab9220f5df0e",
+      "captureSha256": "4463a97c46853b17faf134a2e7c7de9a2d5a108919b01ae035a570585c01b712"
+    },
+    {
+      "file": "listing-responses.json",
+      "responseIndex": 0,
+      "url": "https://apply.workable.com/api/v3/accounts/wati-dot-i-o/jobs",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:03.631Z",
+      "method": "POST",
+      "requestBody": {
+        "query": "",
+        "location": [],
+        "department": [],
+        "worktype": [],
+        "remote": []
+      },
+      "bodySha256": "56820fb8459350410195c7c0aee597e4b68619f6a3b37f298821ef3c7b3e730c",
+      "captureSha256": "93555a2c950f0fd57695161be99ec13b9afe81b0a5f57238d78a35fbe6ab6e69"
+    },
+    {
+      "file": "listing-responses.json",
+      "responseIndex": 1,
+      "url": "https://apply.workable.com/api/v3/accounts/wati-dot-i-o/jobs",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:03.981Z",
+      "method": "POST",
+      "requestBody": {
+        "query": "",
+        "location": [],
+        "department": [],
+        "worktype": [],
+        "remote": [],
+        "token": "WzE3ODg5MTIwMDAwMDAsNjA4NzM3NF0="
+      },
+      "bodySha256": "8ff1d61750094642dbbb11e057b81365d16997837a77778a8282d5002329c096",
+      "captureSha256": "93555a2c950f0fd57695161be99ec13b9afe81b0a5f57238d78a35fbe6ab6e69"
+    },
+    {
+      "file": "listing-responses.json",
+      "responseIndex": 2,
+      "url": "https://apply.workable.com/api/v3/accounts/wati-dot-i-o/jobs",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:04.335Z",
+      "method": "POST",
+      "requestBody": {
+        "query": "",
+        "location": [],
+        "department": [],
+        "worktype": [],
+        "remote": [],
+        "token": "WzE3ODM5ODcyMDAwMDAsNTQzOTE0Ml0="
+      },
+      "bodySha256": "fc5ac050b2b725b28b101e28c8311997d290e6b175c169e1f33249e5eaba3e6f",
+      "captureSha256": "93555a2c950f0fd57695161be99ec13b9afe81b0a5f57238d78a35fbe6ab6e69"
+    },
+    {
+      "file": "listing-responses.json",
+      "responseIndex": 3,
+      "url": "https://apply.workable.com/api/v3/accounts/wati-dot-i-o/jobs",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:04.714Z",
+      "method": "POST",
+      "requestBody": {
+        "query": "",
+        "location": [],
+        "department": [],
+        "worktype": [],
+        "remote": [],
+        "token": "WzE3Nzc1MDcyMDAwMDAsNTc3Nzg1M10="
+      },
+      "bodySha256": "12f03dff5be283694d5506cbb8cbb89d80fcca59f0329b8af31ab94b3419b207",
+      "captureSha256": "93555a2c950f0fd57695161be99ec13b9afe81b0a5f57238d78a35fbe6ab6e69"
+    },
+    {
+      "file": "listing-responses.json",
+      "responseIndex": 4,
+      "url": "https://apply.workable.com/api/v3/accounts/wati-dot-i-o/jobs",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:05.096Z",
+      "method": "POST",
+      "requestBody": {
+        "query": "",
+        "location": [],
+        "department": [],
+        "worktype": [],
+        "remote": [],
+        "token": "WzE3NzE0NTkyMDAwMDAsNTM2NzgwNl0="
+      },
+      "bodySha256": "602622b8440833c2170cf9ce8329942b33c1cfe3e853cd1edfa35a01a1c2e956",
+      "captureSha256": "93555a2c950f0fd57695161be99ec13b9afe81b0a5f57238d78a35fbe6ab6e69"
+    },
+    {
+      "file": "listing-responses.json",
+      "responseIndex": 5,
+      "url": "https://apply.workable.com/api/v3/accounts/wati-dot-i-o/jobs",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:05.451Z",
+      "method": "POST",
+      "requestBody": {
+        "query": "",
+        "location": [],
+        "department": [],
+        "worktype": [],
+        "remote": [],
+        "token": "WzE3NjI5OTIwMDAwMDAsNTI4NDYyMV0="
+      },
+      "bodySha256": "bba8a8b288800cfe0507ee4a806ef5b9f6c20a88d5d1516a0a7f521c74b6e956",
+      "captureSha256": "93555a2c950f0fd57695161be99ec13b9afe81b0a5f57238d78a35fbe6ab6e69"
+    }
+  ]
+}

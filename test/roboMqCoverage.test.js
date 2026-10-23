@@ -20,8 +20,8 @@ test('RoboMQ resolves only its exact company name', () => {
   )
 })
 
-test('RoboMQ fails closed without a first-party or official ATS job feed', async () => {
+test('RoboMQ reports unavailable native recruiting as a coverage gap', async () => {
   const { run } = await import('../scraper/robomq/script.js')
 
-  assert.deepEqual(await run(), [])
+  await assert.rejects(run({fetchImpl:async()=>({status:503,url:'https://www.robomq.io/',text:async()=>''})}),{code:'ROBOMQ_COVERAGE_GAP'})
 })

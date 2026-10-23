@@ -18,8 +18,8 @@ test('runner diagnostics retain raw inventory evidence and every mutually exclus
   const metrics = buildScraperAttemptDiagnostics(jobs)
   assert.equal(metrics.rawRecords, 6)
   assert.equal(metrics.jobs, 5)
-  assert.equal(metrics.eligibleJobs, 1)
-  assert.deepEqual([metrics.filteredNonIndia, metrics.filteredClosed, metrics.filteredInvalidUrl, metrics.filteredEmptyDescription, metrics.filteredNonJob], [1, 1, 1, 1, 1])
+  assert.equal(metrics.eligibleJobs, 2)
+  assert.deepEqual([metrics.filteredNonIndia, metrics.filteredClosed, metrics.filteredInvalidUrl, metrics.filteredEmptyDescription, metrics.filteredNonJob], [1, 1, 1, 0, 1])
   assert.equal(metrics.inventoryEvidence.surface, evidence.surface)
   assert.deepEqual(metrics.detailHealth, { complete: false, inspectedJobs: 5,
     incompleteJobs: 1, missingDescriptions: 1, failureKinds: { 'missing-content': 1 } })
@@ -39,6 +39,27 @@ test('runner detail diagnostics inspect India roles before eligibility filtering
     incompleteJobs: 1, missingDescriptions: 0, failureKinds: { 'detail-budget-exhausted': 1 } })
   assert.equal(diagnostics.inventoryEvidence.listingComplete, true)
   assert.equal(diagnostics.eligibleJobs, 2)
+})
+
+test('runner diagnostics keep native raw totals separate from a projected India subset', () => {
+  const role = { title: 'Engineer', location: 'Bengaluru, India', country: 'India',
+    applyUrl: 'https://example.com/job/1', description: 'Build customer software.' }
+  const jobs = attachInventoryEvidence([role], { status: 'coverage-gap', firstParty: true, listingComplete: false,
+    pagesFetched: 34, surface: 'https://example.com/api/jobs', reportedTotal: 336 })
+  const diagnostics = buildScraperAttemptDiagnostics(jobs)
+  assert.equal(diagnostics.rawRecords, 336)
+  assert.equal(diagnostics.jobs, 1)
+  assert.equal(diagnostics.eligibleJobs, 1)
+  assert.equal(diagnostics.inventoryEvidence.listingComplete, false)
+})
+
+test('runner uses same-source observed native rows when the upstream total is unavailable', () => {
+  const jobs = [{ title: 'Engineer', location: 'Bengaluru, India', country: 'India',
+    applyUrl: 'https://example.com/job/1', description: 'Build customer software.',
+    nativeCollectionEvidence: { source: 'fixture', observedListingCount: 20 } }]
+  assert.equal(buildScraperAttemptDiagnostics(jobs, undefined, { source: 'fixture' }).rawRecords, 20)
+  assert.equal(buildScraperAttemptDiagnostics(jobs, undefined, { source: 'other' }).rawRecords, 1)
+  assert.equal(buildScraperAttemptDiagnostics(jobs).rawRecords, 1)
 })
 
 test('name coverage explicitly describes registration and keeps legacy counts', () => {

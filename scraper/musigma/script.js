@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { document } from '../../scraper-support/shared/rmkNativePairHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -106,40 +107,48 @@ export const hasOfficialCareersSignal = (html) => {
     )
 }
 
-export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
-  /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"/gi,
-)]
-  .map((match) => {
-    const [, jobId, rawHref, rawTitle, rawCompany, rawLocation, postingDate] = match
-    const sourceUrl = normalizeWhitespace(rawHref)?.replace(/&amp;/g, '&')
-    const title = stripTags(rawTitle)
-    const company = stripTags(rawCompany)
-    const locationData = parseLocation(stripTags(rawLocation))
+export const extractSearchResults = (html) => {
+  const doc = document(String(html ?? ''))
+  // Read each card independently: a whole-page regex can backtrack across
+  // subsequent cards for minutes when a field is missing.
+  return doc.nodes(node => doc.hasClass(node, 'base-card') && doc.hasClass(node, 'job-search-card'))
+    .map((card) => {
+      const field = className => doc.nodes(node => doc.hasClass(node, className), card)[0]
+      const jobId = /^urn:li:jobPosting:(\d+)$/.exec(card.attrs['data-entity-urn'] || '')?.[1]
+      const sourceUrl = normalizeWhitespace(field('base-card__full-link')?.attrs.href)
+      const title = normalizeWhitespace(doc.text(field('base-search-card__title')))
+      const company = normalizeWhitespace(doc.text(field('base-search-card__subtitle')))
+      const locationData = parseLocation(doc.text(field('job-search-card__location')))
+      const date = doc.nodes(node => node.tag === 'time' && (
+        doc.hasClass(node, 'job-search-card__listdate') || doc.hasClass(node, 'job-search-card__listdate--new')
+      ), card)[0]
+      const postingDate = date?.attrs.datetime
 
-    if (!title || !jobId || !sourceUrl || locationData.country !== 'India') return null
+      if (!title || !jobId || !sourceUrl || locationData.country !== 'India') return null
 
-    return {
-      title,
-      company,
-      department: null,
-      location: locationData.location,
-      city: locationData.city,
-      country: locationData.country,
-      jobId,
-      requisitionId: jobId,
-      sourceUrl,
-      applyUrl: sourceUrl,
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: normalizeWhitespace(postingDate),
-      closingDate: null,
-      jobDescription: null,
-    }
-  })
-  .filter(Boolean)
+      return {
+        title,
+        company,
+        department: null,
+        location: locationData.location,
+        city: locationData.city,
+        country: locationData.country,
+        jobId,
+        requisitionId: jobId,
+        sourceUrl,
+        applyUrl: sourceUrl,
+        employmentType: null,
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: normalizeWhitespace(postingDate),
+        closingDate: null,
+        jobDescription: null,
+      }
+    })
+    .filter(Boolean)
+}
 
 export const extractJobDetail = (html) => {
   const jobPosting = parseJobPostingJsonLd(html)

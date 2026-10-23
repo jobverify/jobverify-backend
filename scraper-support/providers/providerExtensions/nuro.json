@@ -8,15 +8,16 @@
   "dryRunFile": "nuro/jobs.json",
   "companyCareerPage": "https://www.nuro.ai/careers",
   "companyDomain": "nuro.ai",
-  "atsPlatform": "official-first-party-careers-page-fail-closed",
+  "atsPlatform": "greenhouse",
   "countryFilter": "India",
-  "paginationStrategy": "official-careers-page-sentinel",
-  "extractionStrategy": "verified-first-party-careers-page+return-empty-until-public-job-feed-is-verifiable",
+  "paginationStrategy": "native-greenhouse-complete-single-response",
+  "extractionStrategy": "live-official-nuxt-client-handoff-and-full-greenhouse-inventory",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-26",
-  "verifiedPublicJobCount": 0,
+  "verifiedOn": "2026-10-23",
+  "verifiedPublicJobCount": 101,
   "verifiedIndiaJobCount": 0,
   "officialCareersPageUrl": "https://www.nuro.ai/careers",
-  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.nuro.ai/careers is Nuro's first-party careers page and exposes an Open Roles interface with individual careersitem links. This repository does not have a verified stable public jobs-feed contract for that surface, so the exact-name provider fails closed and returns no jobs until the feed can be verified."
+  "verifiedSurfaceSummary": "Rechecked 2026-10-23: official Nuro careers client calls the nuro Greenhouse posting API. The observed complete 101-role response has explicit California work locations and no India roles. Each run verifies current official client binding and native response; it never substitutes a historical empty assertion. Captures retained under scraper/nuro/fixtures.",
+  "boardToken": "nuro"
 }

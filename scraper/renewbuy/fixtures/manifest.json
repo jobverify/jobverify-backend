@@ -1,0 +1,187 @@
+{
+  "source": "renewbuy",
+  "capturedOn": "2026-10-23",
+  "bodyRepresentation": "Decoded UTF-8 HTTP response bodies captured through root Playwright ordinary unauthenticated requests; no wire-byte claim",
+  "responses": [
+    {
+      "packet": "native-company.json.gz",
+      "index": 0,
+      "url": "https://www.linkedin.com/company/renewbuyofficial/",
+      "finalUrl": "https://www.linkedin.com/company/renewbuyofficial/",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:13:36.817Z",
+      "bodyBytes": 382163,
+      "bodySHA256": "d022b3ec27c7f24f30c00479d50a537f2baa04e92414f536a07e816fb0fb43b6"
+    },
+    {
+      "packet": "native-details.json.gz",
+      "index": 0,
+      "url": "https://in.linkedin.com/jobs/view/arm-rm-agency-krishnanagar-wb-at-renewbuy-4457853673",
+      "finalUrl": "https://in.linkedin.com/jobs/view/arm-rm-agency-krishnanagar-wb-at-renewbuy-4457853673",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:17:14.445Z",
+      "bodyBytes": 266611,
+      "bodySHA256": "633c090578e4a34a638dd3abd0f741562644d026253b112442b375109f96047c"
+    },
+    {
+      "packet": "native-details.json.gz",
+      "index": 1,
+      "url": "https://in.linkedin.com/jobs/view/arm-rm-agency-bhubaneswar-at-renewbuy-4457850766",
+      "finalUrl": "https://in.linkedin.com/jobs/view/arm-rm-agency-bhubaneswar-at-renewbuy-4457850766",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:17:14.522Z",
+      "bodyBytes": 300835,
+      "bodySHA256": "69ee20369de252de376c282c559560ed60896273be9135f9e70e31449e0dbf4e"
+    },
+    {
+      "packet": "native-details.json.gz",
+      "index": 2,
+      "url": "https://in.linkedin.com/jobs/view/arm-rm-agency-sundergarh-odisha-at-renewbuy-4457857705",
+      "finalUrl": "https://in.linkedin.com/jobs/view/arm-rm-agency-sundergarh-odisha-at-renewbuy-4457857705",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:17:14.552Z",
+      "bodyBytes": 300998,
+      "bodySHA256": "5019fb3c2110f9d0462646a235d69cf6d8b5417d9c5a34d0205781dc040df01e"
+    },
+    {
+      "packet": "native-details.json.gz",
+      "index": 3,
+      "url": "https://in.linkedin.com/jobs/view/arm-rm-agency-burdwan-bardhaman-wb-at-renewbuy-4457866682",
+      "finalUrl": "https://in.linkedin.com/jobs/view/arm-rm-agency-burdwan-bardhaman-wb-at-renewbuy-4457866682",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:17:14.551Z",
+      "bodyBytes": 300175,
+      "bodySHA256": "699d77988d9a696e1e5023631c9a6317536b2c39301cfa76931d274cff905f94"
+    },
+    {
+      "packet": "native-details.json.gz",
+      "index": 4,
+      "url": "https://in.linkedin.com/jobs/view/arm-rm-agency-nuapada-odisha-at-renewbuy-4457865684",
+      "finalUrl": "https://in.linkedin.com/jobs/view/arm-rm-agency-nuapada-odisha-at-renewbuy-4457865684",
+      "status": 429,
+      "capturedAt": "2026-10-23T06:17:14.956Z",
+      "bodyBytes": 792,
+      "bodySHA256": "c8a44ed34475393301a2b3246826b2b2d6bdb4df15a744922ae66b16bfb001cb"
+    },
+    {
+      "packet": "native-details.json.gz",
+      "index": 5,
+      "url": "https://in.linkedin.com/jobs/view/arm-rm-agency-krishnanagar-wb-at-renewbuy-4457863691",
+      "finalUrl": "https://in.linkedin.com/jobs/view/arm-rm-agency-krishnanagar-wb-at-renewbuy-4457863691",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:17:15.358Z",
+      "bodyBytes": 302585,
+      "bodySHA256": "788fd156a86827d6ca3d7ffb878a151674414093d72590a2061a19702d978d59"
+    },
+    {
+      "packet": "native-details.json.gz",
+      "index": 6,
+      "url": "https://in.linkedin.com/jobs/view/arm-rm-agency-baripada-odisha-at-renewbuy-4457863692",
+      "finalUrl": "https://in.linkedin.com/jobs/view/arm-rm-agency-baripada-odisha-at-renewbuy-4457863692",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:17:15.430Z",
+      "bodyBytes": 300757,
+      "bodySHA256": "93cc4f2e2d0a874617fdea84c8d3f38795641889ae7166bb5f22659051fb99c7"
+    },
+    {
+      "packet": "native-details.json.gz",
+      "index": 7,
+      "url": "https://in.linkedin.com/jobs/view/arm-rm-agency-sundergarh-odisha-at-renewbuy-4457854693",
+      "finalUrl": "https://in.linkedin.com/jobs/view/arm-rm-agency-sundergarh-odisha-at-renewbuy-4457854693",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:17:15.508Z",
+      "bodyBytes": 299866,
+      "bodySHA256": "bdd2b35789e584841053d841d0eaa4dfa54f01e931478f5aeb1ec7d6717c4204"
+    },
+    {
+      "packet": "native-jobs.json.gz",
+      "index": 0,
+      "url": "https://www.linkedin.com/jobs/renewbuy-jobs-worldwide?f_C=9350817&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/renewbuy-jobs-worldwide?f_C=9350817&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:14:11.776Z",
+      "bodyBytes": 310331,
+      "bodySHA256": "9eff7e96db97fcb001ba3f5d1a052b91331e31735cb8a0d9c1c1b34e98fa9a8f"
+    },
+    {
+      "packet": "native-pages.json.gz",
+      "index": 0,
+      "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=9350817&location=India&start=0",
+      "finalUrl": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=9350817&location=India&start=0",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:15:18.743Z",
+      "bodyBytes": 31393,
+      "bodySHA256": "03404acaed50a90ea1f0f068812529d62e7844585a28685bce775da5d1690a11"
+    },
+    {
+      "packet": "native-pages.json.gz",
+      "index": 1,
+      "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=9350817&location=India&start=25",
+      "finalUrl": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=9350817&location=India&start=25",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:15:19.304Z",
+      "bodyBytes": 31237,
+      "bodySHA256": "8b40a458c320cb16172e4559c8ffa8fc9a0ea8e872af59ac7ea8247c49d3dd56"
+    },
+    {
+      "packet": "native-pages.json.gz",
+      "index": 2,
+      "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=9350817&location=India&start=50",
+      "finalUrl": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=9350817&location=India&start=50",
+      "status": 429,
+      "capturedAt": "2026-10-23T06:15:19.707Z",
+      "bodyBytes": 24633,
+      "bodySHA256": "7f21baf22d7ae7f8481decf0db0d6768cf061515e5b489d179cb22bcdc8739ff"
+    },
+    {
+      "packet": "official-alias-responses.json.gz",
+      "index": 0,
+      "url": "https://www.renewbuy.com/about-us",
+      "finalUrl": "https://www.renewbuy.com/about-us",
+      "status": 403,
+      "capturedAt": "2026-10-23T06:18:09.774Z",
+      "bodyBytes": 520,
+      "bodySHA256": "8b73b6ccd7091d6d9d23adaab2baae3c4abf6de06df8efdd03215ee9376fa035"
+    },
+    {
+      "packet": "official-alias-responses.json.gz",
+      "index": 1,
+      "url": "https://www.renewbuy.com/about-us/careers",
+      "finalUrl": "https://www.renewbuy.com/about-us/careers",
+      "status": 403,
+      "capturedAt": "2026-10-23T06:18:09.766Z",
+      "bodyBytes": 520,
+      "bodySHA256": "8b73b6ccd7091d6d9d23adaab2baae3c4abf6de06df8efdd03215ee9376fa035"
+    },
+    {
+      "packet": "official-alias-responses.json.gz",
+      "index": 2,
+      "url": "https://www.renewbuy.com/p/careers/",
+      "finalUrl": "https://www.renewbuy.com/p/careers/",
+      "status": 403,
+      "capturedAt": "2026-10-23T06:18:09.773Z",
+      "bodyBytes": 520,
+      "bodySHA256": "8b73b6ccd7091d6d9d23adaab2baae3c4abf6de06df8efdd03215ee9376fa035"
+    },
+    {
+      "packet": "official-responses.json.gz",
+      "index": 0,
+      "url": "https://www.renewbuy.com/",
+      "finalUrl": "https://www.renewbuy.com/",
+      "status": 403,
+      "capturedAt": "2026-10-23T06:11:48.030Z",
+      "bodyBytes": 520,
+      "bodySHA256": "8b73b6ccd7091d6d9d23adaab2baae3c4abf6de06df8efdd03215ee9376fa035"
+    },
+    {
+      "packet": "official-responses.json.gz",
+      "index": 1,
+      "url": "https://www.renewbuy.com/careers",
+      "finalUrl": "https://www.renewbuy.com/careers",
+      "status": 403,
+      "capturedAt": "2026-10-23T06:11:48.025Z",
+      "bodyBytes": 520,
+      "bodySHA256": "8b73b6ccd7091d6d9d23adaab2baae3c4abf6de06df8efdd03215ee9376fa035"
+    }
+  ]
+}

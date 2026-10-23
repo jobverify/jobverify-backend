@@ -6,7 +6,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { buildRewriteInput, validateRewrite, REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
 import { buildReferencedSections, expandReferencedSections } from '../rewriting/sectionProtocol.js';
-import { createRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
+import { createRewriteClient as createProductionRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
+// Historical v13 transport remains replayable; the production v14 edit protocol has separate coverage.
+const createRewriteClient = options => createProductionRewriteClient({ ...options, format: 'source-sections' });
 
 const overview = 'Build Python services for customer applications.';
 const duty = 'Design reliable APIs and maintain Python services.';

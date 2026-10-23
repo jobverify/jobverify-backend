@@ -1,0 +1,28 @@
+{
+  "url": "https://www.holidayiq.com/",
+  "title": "Just a moment...",
+  "text": "www.holidayiq.com\nPerforming security verification\n\nThis website uses a security service to protect against malicious bots. This page is displayed while the website verifies you are not a bot.\n\nWhy is this verification taking longer?\n\nThis verification can take longer due to an older computer or a slow internet connection.\n\nWhat to do next:\n\nWait briefly. Refreshing the page will restart the security verification and may take longer.\nIf the verification still does not complete, refresh this page.\nIf you are still stuck on this page after a page refresh, refer to Cloudflare’s troubleshooting documentation for more help.\nRay ID: a4ef85b3cf15b1c5\nPerformance and Security by Cloudflare\nPrivacy",
+  "links": [
+    {
+      "text": "refresh this page",
+      "url": "https://www.holidayiq.com/#"
+    },
+    {
+      "text": "troubleshooting documentation",
+      "url": "https://www.holidayiq.com/cdn-cgi/challenge-platform/help"
+    },
+    {
+      "text": "Cloudflare",
+      "url": "https://www.cloudflare.com/?utm_source=challenge&utm_campaign=l"
+    },
+    {
+      "text": "Privacy",
+      "url": "https://www.cloudflare.com/privacypolicy/"
+    }
+  ],
+  "scripts": [
+    "https://www.holidayiq.com/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1?ray=a4ef85b3cf15b1c5",
+    "https://challenges.cloudflare.com/turnstile/v0/b/d2d3316b729e/api.js?onload=DraY9&render=explicit"
+  ],
+  "network": []
+}

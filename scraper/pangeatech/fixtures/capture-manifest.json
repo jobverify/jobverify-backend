@@ -1,0 +1,96 @@
+{
+  "source": "pangeatech",
+  "captureMethod": "Root-owned isolated local Chrome browser direct native fetch; DOM companions are browser inspection only. Unmodified request/status/finalURL/body/time retained in gzip receipts.",
+  "files": [
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "1bd4273885e4d5341ef63b16499da3e96c49eb09da38cc2e8bd2cd4bcea217ab",
+      "uncompressedSHA256": "a1407b43458a72e26481141d7ca673312c46e6097719b4d30bd4ba222938a1eb",
+      "bytes": 1009838
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "c4ca03f1152976cd95bf1a4dc3eb9997ff1dc369127173166658b63dae2f8d8f",
+      "uncompressedSHA256": "430ef3b480531b1c8f91289f6c2f3f170ac1d8f744430f8213eb611a1cebb08f",
+      "bytes": 8788
+    },
+    {
+      "file": "native-employer-jobs.json.gz",
+      "sha256": "40c0385efc4c5027be4ecedc30710168556ca976611b5d02753f52e3652142c0",
+      "uncompressedSHA256": "7625b61028582645d3b91e5fced2d1db134559ea4685d044fec815db2268c21a",
+      "bytes": 533747
+    },
+    {
+      "file": "native-employer-jobs.dom.json.gz",
+      "sha256": "05bc202beb6e5f1cd6da0179d4bbbd06b05f0909d686d39a964db9db4c50da97",
+      "uncompressedSHA256": "293f43d72a62f293ecc9f0741f448b26373e3e0faeaf17c7bc02dd62efed20d3",
+      "bytes": 63185
+    },
+    {
+      "file": "native-jobs-route.json.gz",
+      "sha256": "84073c5160b63a6675da2176289fe63c2e29cd48b8ba5aaa5d3383202b6ba3ea",
+      "uncompressedSHA256": "1e6ce5e1e6bc0c43858f300b4f60e7e8b0a8dd7cd232faadb5f759f2cb3ac980",
+      "bytes": 165
+    },
+    {
+      "file": "native-jobs-route.dom.json.gz",
+      "sha256": "d40fe28b7ba884a74fe1a00d5b8b420fe9ec117ee71a667e4da92d8ac23adf73",
+      "uncompressedSHA256": "fd8033122dca582fd4cd4766b94410e32c05a9bf52f84bc86f967f5e8d9ef9a4",
+      "bytes": 61553
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://pangeatech.net/",
+      "finalUrl": "https://pangeatech.net/",
+      "status": 200,
+      "capturedAt": "2026-10-23T07:48:04.771Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "ce914a75c47c5ff333a84417e16b9ab1a635e16841b9a597334044170c833b54",
+      "bodyBytes": 524921
+    },
+    {
+      "url": "https://pangeatech.net/meet-pangea/the-tribe",
+      "finalUrl": "https://pangeatech.net/meet-pangea/the-tribe",
+      "status": 200,
+      "capturedAt": "2026-10-23T07:48:05.010Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "ff5f292dfa83c551bb2d3152f85e17733c09d1217b02ff1f9960bfa0897eb31a",
+      "bodyBytes": 463113
+    },
+    {
+      "url": "https://www.linkedin.com/company/pangea-tech",
+      "finalUrl": "https://www.linkedin.com/company/pangea-tech",
+      "status": 200,
+      "capturedAt": "2026-10-23T07:49:28.142Z",
+      "file": "native-employer-jobs.json.gz",
+      "bodySHA256": "2fd23d86375cee5e1635e029a178cff60653148b6769b48e7ebc13971cab8d0b",
+      "bodyBytes": 331947
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=73024337&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=73024337&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T07:49:30.886Z",
+      "file": "native-employer-jobs.json.gz",
+      "bodySHA256": "9e3cffcdc8b291a37dfa8c8417ba8f4df19c5dd2c1857e04970de23f803b2abe",
+      "bodyBytes": 89329
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=73024337&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=73024337&location=Worldwide",
+      "status": 200,
+      "capturedAt": "2026-10-23T07:49:31.621Z",
+      "file": "native-employer-jobs.json.gz",
+      "bodySHA256": "1c7742193b22c6b5bf2f7810fd470a9295032b78f93cef1debc47dc83e83c5f7",
+      "bodyBytes": 89384
+    }
+  ],
+  "routeObservations": [
+    {
+      "url": "https://www.linkedin.com/company/pangea-tech/jobs/",
+      "capturedAt": "2026-10-23T07:52:04.830Z",
+      "error": "TypeError: Failed to fetch"
+    }
+  ]
+}

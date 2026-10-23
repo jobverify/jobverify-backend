@@ -1,0 +1,73 @@
+{
+  "inventoryEvidence": {
+    "status": "discovery-only",
+    "surface": "https://www.careinsurance.com/rhicl/careers/job-search",
+    "firstParty": true,
+    "listingComplete": false,
+    "pagesFetched": 5,
+    "reportedTotal": null,
+    "indiaFacetCount": null,
+    "verifiedAt": "2026-10-23T07:06:22.798Z",
+    "reason": "Reviewed first-party category arrays recovered; country gaps and whole-company scope remain incomplete"
+  },
+  "recoveredJobs": 8,
+  "completeDescriptionCount": 8,
+  "jobs": [
+    {
+      "jobId": "25",
+      "title": "ABDM /Deputy ABDM Business - Business",
+      "location": "Pan India",
+      "postingDate": "2021-02-11",
+      "sourceDetailComplete": true
+    },
+    {
+      "jobId": "26",
+      "title": "Agency Manager/Sr. Agency Manager/ Business Agency Manager.",
+      "location": "Pan India",
+      "postingDate": "2021-02-11",
+      "sourceDetailComplete": true
+    },
+    {
+      "jobId": "27",
+      "title": "Cluster Manager",
+      "location": "Pan India",
+      "postingDate": "2021-02-11",
+      "sourceDetailComplete": true
+    },
+    {
+      "jobId": "28",
+      "title": "Relationship Managet/Sr. Relationship Manager-Bancassurance",
+      "location": "Pan India",
+      "postingDate": "2021-02-11",
+      "sourceDetailComplete": true
+    },
+    {
+      "jobId": "32",
+      "title": "ABDM-Agency & BDM-Agency",
+      "location": "Pan India",
+      "postingDate": "2021-08-26",
+      "sourceDetailComplete": true
+    },
+    {
+      "jobId": "40",
+      "title": "Branch Manager- Direct",
+      "location": "Pan India",
+      "postingDate": "2024-06-18",
+      "sourceDetailComplete": true
+    },
+    {
+      "jobId": "44",
+      "title": "Key Relationship Manager /Relationship Manager/Senior Relationship Manager-Assisted Sales",
+      "location": "Pan India",
+      "postingDate": "2024-06-18",
+      "sourceDetailComplete": true
+    },
+    {
+      "jobId": "45",
+      "title": "Cluster Manager",
+      "location": "Pan India",
+      "postingDate": "2024-06-18",
+      "sourceDetailComplete": true
+    }
+  ]
+}

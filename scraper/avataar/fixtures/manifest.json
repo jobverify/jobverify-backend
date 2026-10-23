@@ -1,0 +1,77 @@
+{
+  "source": "avataar",
+  "files": [
+    {
+      "file": "native-company.json",
+      "fileSHA256": "c1b746a2f1e5f2fc6095b6ca2088f880740801180bd361d2f878595f7a26840e",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/avataar-/",
+          "finalUrl": "https://www.linkedin.com/company/avataar-/",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:13:30.735Z",
+          "bodySHA256": "2e0fd85ea8ad5e5c456be95f846d3f24e62d467e4ac27dd190dbc643ea6b9bd2"
+        }
+      ]
+    },
+    {
+      "file": "native-jobs.json",
+      "fileSHA256": "582cf6d85eb122eb333466c1b6406daacaaba44ec6e63a20b276c9aa45343426",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=13195422&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13195422&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:14:28.988Z",
+          "bodySHA256": "1189afde707f8694cdfe8f9127ffc389216719e8cf4e2daebcd0b949936ae32a"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=13195422&location=India&start=0",
+          "finalUrl": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=13195422&location=India&start=0",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:14:28.920Z",
+          "bodySHA256": "ea12acf875ac1dffa5de9dd8f5c5a54a41cf50370705c4694aef841aa2b28a36"
+        }
+      ]
+    },
+    {
+      "file": "official-home.json",
+      "fileSHA256": "0f438f8687a2c83cde8b3e0b738d669ef1e95cb16c9a60caf9baa0ca0ffe171a",
+      "responses": [
+        {
+          "url": "https://www.avataar.ai/",
+          "finalUrl": "https://www.avataar.ai/",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:10:58.855Z",
+          "bodySHA256": "e12ed63b7de82c8aa6afbfbcb72b9ba6302fee7073e0a03c5fe70237c04f183d"
+        }
+      ]
+    },
+    {
+      "file": "additional-official-pages.dom.json",
+      "fileSHA256": "ad72682ffb76e1e7a932b371374df90ab324d9e8ef18e35ced3f3a65b817357a",
+      "responses": [],
+      "observationOnly": true
+    },
+    {
+      "file": "additional-official-pages.json",
+      "fileSHA256": "b1bd3b18724179394b1c2f828f338839b68ec7fecef6bd33ad1b8e45e4856acb",
+      "responses": [
+        {
+          "url": "https://www.avataar.ai/",
+          "finalUrl": "https://www.avataar.ai/",
+          "status": 200,
+          "capturedAt": "2026-10-23T09:44:16.373Z",
+          "bodySHA256": "3cfff534de2c7a42e5f96dc6bf0a7b85d7a6d08c0ba622d5e32e107292efddf7",
+          "bodyBytes": 691250
+        },
+        {
+          "url": "https://cod-sturgeon-s8h6.squarespace.com/careers",
+          "capturedAt": "2026-10-23T09:44:17.932Z",
+          "error": "TypeError: Failed to fetch"
+        }
+      ]
+    }
+  ],
+  "productionWrites": false
+}

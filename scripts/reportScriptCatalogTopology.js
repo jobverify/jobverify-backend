@@ -10,6 +10,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
+import { isDiscoveryOnlyExecutable } from './sourceExtractionCapability.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
@@ -51,6 +52,10 @@ export const classifyProviderImplementation = (provider = {}, {
   if (/(?:async\s+)?run\s*\([^)]*\)\s*\{\s*return\s*\[\s*\]\s*;?\s*\}/.test(withoutComments)
     || /\brun\s*=\s*(?:async\s*)?\([^)]*\)\s*=>\s*(?:\{\s*return\s*)?\[\s*\]/.test(withoutComments)) {
     return { type: 'static-empty', reason: 'Executable run method unconditionally returns an empty array.' }
+  }
+  if (isDiscoveryOnlyExecutable(code, { modulePath: provider.modulePath,
+    evidenceModulePath: path.join(backendDir, 'scraper-support', 'utils', 'inventoryEvidence.js') })) {
+    return { type: 'discovery-only', reason: 'Executable only records a careers handoff; job extraction is not implemented.' }
   }
   return { type: 'script', reason: 'Script exists; runtime extraction is assessed separately.' }
 }

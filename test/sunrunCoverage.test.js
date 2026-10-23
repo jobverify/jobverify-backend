@@ -2,8 +2,10 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
+import { replay } from '../scraper/sunrun/fixtureReplay.js'
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../scraper-support/providers/index.js'
+import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 
 const COMPANY_CSV_TEXT = "company_name\nSunrun\n"
 
@@ -23,7 +25,7 @@ test('Sunrun is covered only by its exact-name first-party provider', () => {
   assert.equal(provider.companyName, 'Sunrun')
   assert.equal(provider.companyDomain, 'sunrun.com')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-search-page-fail-closed')
+  assert.match(provider.modulePath, /[\\/]sunrun[\\/]script\.js$/)
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'Sunrun').map((item) => item.source),
     ['sunrun'],
@@ -32,9 +34,13 @@ test('Sunrun is covered only by its exact-name first-party provider', () => {
   assert.equal(nearNameReport.unmatchedCount, 2)
 })
 
-test('Sunrun scraper fails closed until the first-party jobs feed is explicitly verified', async () => {
+test('Sunrun scraper enumerates captured public Workday inventory deterministically', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'sunrun')
 
   assert.ok(scraper, 'Expected Sunrun scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  const jobs = await scraper.run(replay())
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 254)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
 })

@@ -7,7 +7,7 @@ import { buildScrapers, getScraperCatalog } from '../scraper-support/providers/i
 
 const COMPANY_CSV_TEXT = "company_name\nLetsVenture\n"
 
-test('LetsVenture is covered exactly by its first-party fail-closed provider', () => {
+test('LetsVenture retains exact original company identity through verified LVX rebrand', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'letsventure')
   const report = generateCompanyCoverageReport({
@@ -17,17 +17,19 @@ test('LetsVenture is covered exactly by its first-party fail-closed provider', (
 
   assert.ok(provider, 'Expected LetsVenture provider extension in the scraper catalog')
   assert.equal(provider.companyName, 'LetsVenture')
-  assert.equal(provider.companyDomain, 'letsventure.com')
-  assert.equal(provider.atsPlatform, 'exact-name-fail-closed-sentinel')
+  assert.equal(provider.companyDomain, 'lvxventures.com')
+  assert.equal(provider.verifiedPublicJobCount,null)
+  assert.equal(provider.lifecycleCleanupAllowed,false)
+  assert.equal(provider.atsPlatform, 'native-zoho+rebranded-lvx-employer-country-age-unresolved')
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'LetsVenture').map((item) => item.source),
     ['letsventure'],
   )
 })
 
-test('LetsVenture scraper fails closed without a verified official public careers feed', async () => {
+test('LetsVenture scraper reports unavailable native coverage without false zero', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'letsventure')
 
   assert.ok(scraper, 'Expected LetsVenture scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  await assert.rejects(scraper.run({fetchImpl:async()=>{throw Error('offline')}}),e=>e.code==='LETSVENTURE_COVERAGE_GAP'&&e.inventoryEvidence.reportedTotal===null&&e.lifecycleCleanupAllowed===false)
 })

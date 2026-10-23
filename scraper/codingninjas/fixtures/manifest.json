@@ -1,0 +1,109 @@
+{
+  "capturedAt": "2026-10-23",
+  "files": [
+    {
+      "file": "official-response.json.gz",
+      "encoding": "gzip",
+      "rawSha256": "ca3705618bac497ecac065b0102e97ff1c8318873e7ab11fb06d45132c2f764f",
+      "storedSha256": "ce5f5aa427dd28f411671dd718f901efccf866895d3a7f5640d8c9f04281a9d1",
+      "responses": [
+        {
+          "url": "https://www.codingninjas.com/",
+          "finalUrl": "https://www.codingninjas.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:09.117Z",
+          "bodySha256": "1ad5a82a5c2f9e89d73ab893f7985715869865611743f22089acb17088cad204"
+        }
+      ]
+    },
+    {
+      "file": "board-response.json",
+      "encoding": "utf8",
+      "rawSha256": "4ea953ceec567f1a11f86d70f051844b99b71684a395d010bf7c6e515d2a8b3f",
+      "storedSha256": "4ea953ceec567f1a11f86d70f051844b99b71684a395d010bf7c6e515d2a8b3f",
+      "responses": [
+        {
+          "url": "https://codingninjas.keka.com/careers",
+          "finalUrl": "https://codingninjas.keka.com/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:18.926Z",
+          "bodySha256": "d93aedc7b032c320bbfa6d120c4c81bd62fb842ea0b9ecd59a6818606e9f64c5"
+        }
+      ]
+    },
+    {
+      "file": "native-responses.json.gz",
+      "encoding": "gzip",
+      "rawSha256": "465dfadd5cb6620fa83bb2acc944fc592dddf05bcc339a69c00e5fb82e6c0b79",
+      "storedSha256": "f83294a7ea734c06dc0d721ffc648ff262831b532372be3ee139a58bc29c4ffc",
+      "responses": [
+        {
+          "url": "https://codingninjas.keka.com/ats/documents/0ec89a02-c247-4dc7-b554-64ae46e3ffc5/careerportal/f11e21d9a163478c888564e2889d5527.html",
+          "finalUrl": "https://codingninjas.keka.com/ats/documents/0ec89a02-c247-4dc7-b554-64ae46e3ffc5/careerportal/f11e21d9a163478c888564e2889d5527.html",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:36.254Z",
+          "bodySha256": "649cf22d77d53e7dc38d1c6f5311c9fe9114bab7f48d6054300e28ff6fe8e2cf"
+        },
+        {
+          "url": "https://codingninjas.keka.com/careers/api/embedjobs/js/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
+          "finalUrl": "https://codingninjas.keka.com/careers/api/embedjobs/js/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:36.319Z",
+          "bodySha256": "176878893ddcd1a0dabb3b84d1c8a98bde7c16c6ace1af2871db06c741fa022b"
+        },
+        {
+          "url": "https://codingninjas.keka.com/careers/api/organization/default/careerportalinfo",
+          "finalUrl": "https://codingninjas.keka.com/careers/api/organization/default/careerportalinfo",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:36.316Z",
+          "bodySha256": "174676bee076f479e90793b52ca7d2024df3cf57806912e10892256c3f463a40"
+        },
+        {
+          "url": "https://codingninjas.keka.com/careers/api/embedjobs/grouplinkstatus/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
+          "finalUrl": "https://codingninjas.keka.com/careers/api/embedjobs/grouplinkstatus/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:36.344Z",
+          "bodySha256": "e6df21daeeed53bbd52bd27f01cdde394a06139d1dfdd9cec5463752abda95b0"
+        },
+        {
+          "url": "https://codingninjas.keka.com/careers/api/embedjobs/default/active/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
+          "finalUrl": "https://codingninjas.keka.com/careers/api/embedjobs/default/active/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:36.346Z",
+          "bodySha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "url": "https://codingninjas.keka.com/careers/api/embedjobs/default/colorcode/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
+          "finalUrl": "https://codingninjas.keka.com/careers/api/embedjobs/default/colorcode/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:36.347Z",
+          "bodySha256": "7b066e7aeca4878ce36f1ef180536ce941a7c1b5d90d2febfd14a4bb54ae36a6"
+        },
+        {
+          "url": "https://codingninjas.keka.com/careers/api/embedjobs/default/sociallinks",
+          "finalUrl": "https://codingninjas.keka.com/careers/api/embedjobs/default/sociallinks",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:36.346Z",
+          "bodySha256": "b33c8a5b886a03e21ad7bb9a6ae16675212962d0a47d074ff1167fd27821a1f6"
+        },
+        {
+          "url": "https://codingninjas.keka.com/careers/api/embedjobs/departments/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
+          "finalUrl": "https://codingninjas.keka.com/careers/api/embedjobs/departments/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:36.343Z",
+          "bodySha256": "dee6594b229d76dd8a72b3ea72990e5d98cc3ff0204764d114a44b61fe734231"
+        }
+      ]
+    }
+  ],
+  "omittedBinaryResponses": [
+    {
+      "url": "https://codingninjas.keka.com/ats/documents/0ec89a02-c247-4dc7-b554-64ae46e3ffc5/careerportal/96d6fd98ed1345b08a5e23ade70318a8.png",
+      "reason": "Binary PNG response was decoded as text during capture; omitted because original HTTP bytes were not retained. Irrelevant to native inventory checks."
+    },
+    {
+      "url": "https://codingninjas.keka.com/ats/documents/0ec89a02-c247-4dc7-b554-64ae46e3ffc5/careerportal/302a7eda66fe427880713dac90425f83.png",
+      "reason": "Binary PNG response was decoded as text during capture; omitted because original HTTP bytes were not retained. Irrelevant to native inventory checks."
+    }
+  ]
+}

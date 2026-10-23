@@ -5,7 +5,7 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
-test('Supergrad resolves approved case variants to its exact-name first-party provider', () => {
+test('Supergrad resolves approved case variants to its exact-name provider', () => {
   const report = generateCompanyCoverageReport({
     csvText: 'company_name\nSupergrad\nSuperGrad\nSupergrads\n',
     catalog: getScraperCatalog(),
@@ -21,10 +21,15 @@ test('Supergrad resolves approved case variants to its exact-name first-party pr
   assert.deepEqual(report.unmatched.map((item) => item.companyName), ['Supergrads'])
 })
 
-test('Supergrad fails closed without a verified public first-party careers feed', async () => {
+test('Supergrad exposes unknown inventory metadata and uses injected offline transport', async () => {
   const modulePath = new URL('../scraper/supergrad/script.js', import.meta.url)
   assert.equal(existsSync(modulePath), true)
 
-  const { run } = await import(modulePath)
-  assert.deepEqual(await run(), [])
+  const { run, PROVIDER_METADATA } = await import(modulePath)
+  assert.equal(PROVIDER_METADATA.verifiedPublicJobCount,null)
+  assert.equal(PROVIDER_METADATA.verifiedIndiaJobCount,null)
+  assert.equal(PROVIDER_METADATA.sourceScopeComplete,false)
+  assert.equal(PROVIDER_METADATA.lifecycleCleanupAllowed,false)
+  assert.equal(PROVIDER_METADATA.companyDomain,'supergrad.co.in')
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('offline transport')}}),{code:'SUPERGRAD_COVERAGE_GAP'})
 })

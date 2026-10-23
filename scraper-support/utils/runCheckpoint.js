@@ -15,6 +15,7 @@ const cloneJson = (value) => JSON.parse(JSON.stringify(value))
 
 const CHECKPOINT_RESULT_FIELDS = [
   'success',
+  'partial',
   'skipped',
   'softFailure',
   'upstreamOutage',
@@ -28,6 +29,7 @@ const CHECKPOINT_RESULT_FIELDS = [
   'filteredNonJob',
   'zeroJobEvidence',
   'inventoryEvidence',
+  'detailHealth',
   'attemptedAt',
   'completedAt',
   'staleCheckSkipped',

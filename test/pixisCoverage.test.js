@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
@@ -29,6 +31,13 @@ test('Pixis does not match similar company names', () => {
   assert.deepEqual(report.unmatched.map((item) => item.companyName), ['Pixis AI'])
 })
 
-test('Pixis fails closed when its official careers page has no public vacancies', async () => {
-  assert.deepEqual(await run(), [])
+test('Pixis observes its captured official empty listing with deterministic transport', async () => {
+  const capture = JSON.parse(readFileSync(new URL('../scraper/pixis/fixtures/careers-response.json', import.meta.url)))
+  const jobs = await run({ fetchPage: async url => {
+    assert.equal(url, capture.url)
+    return { status: capture.status, url: capture.finalUrl, html: capture.body }
+  } })
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })

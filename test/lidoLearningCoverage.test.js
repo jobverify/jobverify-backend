@@ -20,5 +20,5 @@ test('Lido Learning resolves only the exact CSV company name to its first-party 
 })
 
 test('Lido Learning fails closed without a verified public careers feed', async () => {
-  assert.deepEqual(await run(), [])
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('offline native source unavailable')}}), error=>error.code==='LIDOLEARNING_COVERAGE_GAP' && error.inventoryEvidence.reportedTotal===null && error.lifecycleCleanupAllowed===false)
 })

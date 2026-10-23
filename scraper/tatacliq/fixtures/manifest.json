@@ -1,0 +1,433 @@
+{
+  "source": "tatacliq",
+  "capturedOn": "2026-10-23",
+  "bodyEncoding": "Exact TEXT bodies as returned by browser response.text; UTF-8 SHA256. Large JSON capture containers gzip encoded. No text-decoded binary assets.",
+  "employer": "Tata Unistore Limited",
+  "nativeTenant": "cliqonnect / 310",
+  "publicCount": 25,
+  "indiaCount": 25,
+  "listingPageSizes": [
+    10,
+    10,
+    5
+  ],
+  "selectedDetailCount": 25,
+  "negativeEvidence": "official-cms-response.json is HTTP400 without required public x-tenant-id header; official-cms-bound-response.json is authoritative HTTP200 with observed beaute business routing header.",
+  "files": [
+    {
+      "file": "board-response.json",
+      "fileBytes": 32579,
+      "fileSHA256": "375cabe694ded60600b6165d99436886e49a9106e0f3969c5e7050d801085ab8",
+      "decodedBytes": 32579,
+      "decodedSHA256": "375cabe694ded60600b6165d99436886e49a9106e0f3969c5e7050d801085ab8",
+      "responses": [
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidatev2/main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidatev2/main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:00:15.754Z",
+          "bodyBytes": 29846,
+          "bodySHA256": "2280857a4dc8b6cd2f901e6555bd22eee6dd8eb7063a62bdb5427b7d570b4ea7"
+        }
+      ]
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "fileBytes": 54197,
+      "fileSHA256": "4c0dfb8ace51a3dcceb7b872ba0621aea621dda5cbb6d3907cf679b0a8c88841",
+      "decodedBytes": 578264,
+      "decodedSHA256": "a43dd9be56d8f14c61c39519c7f72c5b7bfa5398fd4c3f3e841123ccdac227df",
+      "responses": [
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ad9a97842998?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ad9a97842998?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:54.451Z",
+          "bodyBytes": 11590,
+          "bodySHA256": "466494ac18031a0cc180b880dfdff92218474c32112e3f4cfbe980b364c7a161"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ad9a8cfd3797?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ad9a8cfd3797?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:53.986Z",
+          "bodyBytes": 22249,
+          "bodySHA256": "a342e087b27d95016e660cb6c5d2c64c2085f2004a1f0b38bebf0e93d847a112"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ab4c5bb691d0?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ab4c5bb691d0?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:53.867Z",
+          "bodyBytes": 19850,
+          "bodySHA256": "6ef832063214a7f75a1a7e6ebe878dd458ab8a3e1df32cdcb84a2c8337f70fc2"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6aabe1d383a15?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6aabe1d383a15?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:54.449Z",
+          "bodyBytes": 21509,
+          "bodySHA256": "60e3b6449948ece530cfe7dfdacca1e0d81791c9b49fd46397bee72c58c46188"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a70990a0d46b?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a70990a0d46b?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:54.004Z",
+          "bodyBytes": 4828,
+          "bodySHA256": "b97f3457bca934fef642d9220e1f03de9e944681619d92a19b5ab93b19f1ff9f"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a61d6e296b3e?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a61d6e296b3e?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:54.946Z",
+          "bodyBytes": 53801,
+          "bodySHA256": "e0e31b2bb3b7ef9f063457b252adf1c4c2415fe749450169948e049887723a8e"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a59d6fa825be?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a59d6fa825be?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.007Z",
+          "bodyBytes": 24365,
+          "bodySHA256": "65c37f76850fdd4003b6df8b63b9b0adec5631b899165d5c1ce36a5e18193663"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a5603d07aba4?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a5603d07aba4?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:54.935Z",
+          "bodyBytes": 5683,
+          "bodySHA256": "48afe08ecbb66da04cf06d03d9163ebfb0353a45533f43d471c489fbc1aab477"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a2937777bce8?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a2937777bce8?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:54.995Z",
+          "bodyBytes": 17472,
+          "bodySHA256": "4f8a5f92a4e9222fedfed960dbab427fbb5c1ed255396eac377422f42cc55084"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a2121bb4954d?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a2121bb4954d?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:54.940Z",
+          "bodyBytes": 34664,
+          "bodySHA256": "9be73fe40586df16ed14bd375fb119ae28aaf9eb9b51217898850cd2103e60c4"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6acc86464a16c?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6acc86464a16c?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.413Z",
+          "bodyBytes": 16516,
+          "bodySHA256": "d961719a6ac6694b4a7c586f1344cc8bcddf365b4cc37dd8effce8002a7ee647"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6acc85d910b5c?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6acc85d910b5c?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.183Z",
+          "bodyBytes": 18659,
+          "bodySHA256": "8374fcb2efdf87512ded7235aec3ba93a3935f9fa04ec0f551afa81b84366ee8"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6acc792b51d0e?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6acc792b51d0e?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.449Z",
+          "bodyBytes": 108387,
+          "bodySHA256": "60c3effae9615bb488237ab3f1460c51cd92dd39c54396d5908bd2b3787e3fc6"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac8ce75e58d7?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac8ce75e58d7?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.184Z",
+          "bodyBytes": 26136,
+          "bodySHA256": "53b6e10d6439c41048f4f04a9e8109b726195339d4501e16acfafcd53fa1d809"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac75e58396e4?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac75e58396e4?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.412Z",
+          "bodyBytes": 24600,
+          "bodySHA256": "34282b9f4cb8063eb725acf589b12e65027c58a2a8996b0194a01295f7fe51a0"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac73430cb24b?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac73430cb24b?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.950Z",
+          "bodyBytes": 18692,
+          "bodySHA256": "63ad49afebb9996ef5da56625cb3525d6d8ba49ea5956dd39aa9b0f5642ab170"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac72fe75964a?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac72fe75964a?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.682Z",
+          "bodyBytes": 13442,
+          "bodySHA256": "2373238d15576cc424bf1c317b9b26a6840ba38050ee454366ae9941e857f6c5"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac4b9b64e234?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac4b9b64e234?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.835Z",
+          "bodyBytes": 6999,
+          "bodySHA256": "30489f740e778df9e4e1553d906f8925a23afb60fd2d2a86f4387101104b2c1a"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac4a443598f7?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6ac4a443598f7?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.706Z",
+          "bodyBytes": 12823,
+          "bodySHA256": "05e64d01ca72bc648c31a1b54405450cd69a101eae57c4e3ae3166c3ee36b580"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a4e2acabf2d9?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a4e2acabf2d9?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:55.949Z",
+          "bodyBytes": 17634,
+          "bodySHA256": "c79c0009714ab01a84e88c27a076cc4ad85f5b4f0afb5cea7c94f30e543534f9"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a7c4539bb79e?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a7c4539bb79e?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:56.175Z",
+          "bodyBytes": 19433,
+          "bodySHA256": "275a917ff2821c75821ef0879d604653166d1d61f9f4294ae39c5c6358fb9ac7"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a84063c28b2e?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a84063c28b2e?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:56.367Z",
+          "bodyBytes": 22571,
+          "bodySHA256": "669361846ce7efdcd773e17d055114b815586f5e2e11c33ad6fed9ef3869ffa2"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6aa3959eeaad4?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6aa3959eeaad4?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:56.297Z",
+          "bodyBytes": 16597,
+          "bodySHA256": "6c85dde7695aa6b8f60e1d9c8420d6c27da4999bfef5afc9ee43cad82ec6766f"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6aa25dd4932d7?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6aa25dd4932d7?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:56.460Z",
+          "bodyBytes": 10049,
+          "bodySHA256": "154dc9577aa8d5005d5f38626b3de2dbff704f16b11f2dc9acd39d8a2aed4562"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a7d7a90dd6a4?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/a6a7d7a90dd6a4?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:03:56.468Z",
+          "bodyBytes": 16620,
+          "bodySHA256": "2cff71de33bc689588e07d321f195bd6850865becf44a8f751b92d9cdcde4ee5"
+        }
+      ]
+    },
+    {
+      "file": "filters-request-body.json",
+      "fileBytes": 28,
+      "fileSHA256": "4dbc0b9c9ad3edae527ac26a46832bfecad0ca1cb18064a43a4c3672ac2f8cb5",
+      "decodedBytes": 28,
+      "decodedSHA256": "4dbc0b9c9ad3edae527ac26a46832bfecad0ca1cb18064a43a4c3672ac2f8cb5",
+      "responses": []
+    },
+    {
+      "file": "filters-response-body.json",
+      "fileBytes": 2320,
+      "fileSHA256": "14ac751f362058305d05d37fa7705b5794d8a68cef29b9dc26fb35f8b5a5f6b3",
+      "decodedBytes": 2320,
+      "decodedSHA256": "14ac751f362058305d05d37fa7705b5794d8a68cef29b9dc26fb35f8b5a5f6b3",
+      "responses": []
+    },
+    {
+      "file": "listing-request-body.json",
+      "fileBytes": 60,
+      "fileSHA256": "463c5070d2cfcb4db798bd12ec3b8d2cea47ce402572d592ec6b68a6d1946fdf",
+      "decodedBytes": 60,
+      "decodedSHA256": "463c5070d2cfcb4db798bd12ec3b8d2cea47ce402572d592ec6b68a6d1946fdf",
+      "responses": []
+    },
+    {
+      "file": "listing-response-body.json.gz",
+      "fileBytes": 20296,
+      "fileSHA256": "735794d6bba93861907c537c680e084b87ee4d0dfba889d3a7ee9ca62cad8aad",
+      "decodedBytes": 216138,
+      "decodedSHA256": "a2aa3ffb663a8c234d18b26538e9c9258e3ebebd28d4a2ff4fae8103af47ad10",
+      "responses": []
+    },
+    {
+      "file": "listing-responses.json.gz",
+      "fileBytes": 54461,
+      "fileSHA256": "f1dc71cf9a5229f5ac4b0e896d30b9dfcc507f3038f71d520d0088bb9f3c639e",
+      "decodedBytes": 575598,
+      "decodedSHA256": "a2fc86c527ecb8c511312f2f0b4d5b8c352a4f64f071479e9779f7629089b725",
+      "responses": [
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/newfilters?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/newfilters?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:02:57.043Z",
+          "requestBody": "{\"companyId\":\"main\",\"id\":[]}",
+          "bodyBytes": 2320,
+          "bodySHA256": "14ac751f362058305d05d37fa7705b5794d8a68cef29b9dc26fb35f8b5a5f6b3"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:02:57.447Z",
+          "requestBody": "{\"companyId\":\"main\",\"page\":1,\"sort_option\":\"new\",\"limit\":10}",
+          "bodyBytes": 216138,
+          "bodySHA256": "a2aa3ffb663a8c234d18b26538e9c9258e3ebebd28d4a2ff4fae8103af47ad10"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:02:57.959Z",
+          "requestBody": "{\"companyId\":\"main\",\"page\":2,\"sort_option\":\"new\",\"limit\":10}",
+          "bodyBytes": 263984,
+          "bodySHA256": "b8532d0383c73a18f417950cc4f8b6672257c773af8edcd053e39cb8b14f862a"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:02:58.287Z",
+          "requestBody": "{\"companyId\":\"main\",\"page\":3,\"sort_option\":\"new\",\"limit\":10}",
+          "bodyBytes": 85416,
+          "bodySHA256": "49ad25ad20c2d5ebfb910fe750bf9660589c2d62c57881293d2f49e418a44443"
+        }
+      ]
+    },
+    {
+      "file": "native-config-responses.json",
+      "fileBytes": 3125,
+      "fileSHA256": "f9125559c6afbfbb23f966b4f71679dd5dcd0bf0f9763a901ba53e7437e02730",
+      "decodedBytes": 3125,
+      "decodedSHA256": "f9125559c6afbfbb23f966b4f71679dd5dcd0bf0f9763a901ba53e7437e02730",
+      "responses": [
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/getCompanyConfig?is_preview=false&companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/getCompanyConfig?is_preview=false&companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:00:59.774Z",
+          "bodyBytes": 2184,
+          "bodySHA256": "aa1ab032f24bb83cb2e6c410dd7178cafa0dbf0192936a26d81919c7839324c6"
+        },
+        {
+          "url": "https://cliqonnect.darwinbox.in/ms/candidateapi/groupcompanycareersetting?companyId=main",
+          "finalUrl": "https://cliqonnect.darwinbox.in/ms/candidateapi/groupcompanycareersetting?companyId=main",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:00:59.711Z",
+          "bodyBytes": 41,
+          "bodySHA256": "2c7b3232e9b988ac528b81dcf62112727e2b6b805992f20213cc07d3de5134a5"
+        }
+      ]
+    },
+    {
+      "file": "official-client-response.json.gz",
+      "fileBytes": 895571,
+      "fileSHA256": "1ca77264216a32215640d5441bca5e571292a479b699b4fa69427d18595899b0",
+      "decodedBytes": 3367529,
+      "decodedSHA256": "ff04f46885ef8c46a5d6d3d8aebe37ad70935afef690da629e29ac781ef940ab",
+      "responses": [
+        {
+          "url": "https://www.tatacliq.com/client.60bf524baa78.js",
+          "finalUrl": "https://www.tatacliq.com/client.60bf524baa78.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:10:12.888Z",
+          "bodyBytes": 3306484,
+          "bodySHA256": "309ce2305b488abd9e18230e8d6760af3f1db4975e263506b44fda914e13f8a8"
+        }
+      ]
+    },
+    {
+      "file": "official-cms-bound-response.json",
+      "fileBytes": 4014,
+      "fileSHA256": "b2a29abd7f226c669a50f38ac4e909eb6d744ee10d637143b0d179b16eb8eab6",
+      "decodedBytes": 4014,
+      "decodedSHA256": "b2a29abd7f226c669a50f38ac4e909eb6d744ee10d637143b0d179b16eb8eab6",
+      "responses": [
+        {
+          "url": "https://apimw.tatacliq.com/content-aggregator-service/v1/pages/landing/custom/careers",
+          "finalUrl": "https://apimw.tatacliq.com/content-aggregator-service/v1/pages/landing/custom/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:12:04.181Z",
+          "requestHeaders": {
+            "x-tenant-id": "beaute"
+          },
+          "bodyBytes": 3594,
+          "bodySHA256": "c4201026bbf2fd9676b7e3fc5c23b456c0d7f7f9e0d16fb59071ba44daf2595e"
+        }
+      ]
+    },
+    {
+      "file": "official-cms-response.json",
+      "fileBytes": 444,
+      "fileSHA256": "2f606df2d5485116c60bd6ed73a1cc3fb36d7f5d9259b1cfe5e8cd42ad4286c1",
+      "decodedBytes": 444,
+      "decodedSHA256": "2f606df2d5485116c60bd6ed73a1cc3fb36d7f5d9259b1cfe5e8cd42ad4286c1",
+      "responses": [
+        {
+          "url": "https://apimw.tatacliq.com/content-aggregator-service/v1/pages/landing/custom/careers",
+          "finalUrl": "https://apimw.tatacliq.com/content-aggregator-service/v1/pages/landing/custom/careers",
+          "status": 400,
+          "capturedAt": "2026-10-23T05:10:44.773Z",
+          "bodyBytes": 148,
+          "bodySHA256": "c68caca6bbb5eb8996d677e0383139cef04cc6cc23682c419b8a9c61097ef55b"
+        }
+      ]
+    },
+    {
+      "file": "official-response.json",
+      "fileBytes": 30214,
+      "fileSHA256": "d1fcc17851cb4c23db494ad23a4647f1aad2e15f1e6c97e9d01987e023745133",
+      "decodedBytes": 30214,
+      "decodedSHA256": "d1fcc17851cb4c23db494ad23a4647f1aad2e15f1e6c97e9d01987e023745133",
+      "responses": [
+        {
+          "url": "https://www.tatacliq.com/careers",
+          "finalUrl": "https://www.tatacliq.com/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:59:58.933Z",
+          "bodyBytes": 13050,
+          "bodySHA256": "d0a72a860c2c7bb29ed8cd0c3782cffffafd05dacdfbb014fe72c1c8acad79d1"
+        }
+      ]
+    },
+    {
+      "file": "rendered-board.json",
+      "fileBytes": 1985,
+      "fileSHA256": "36547defca9afa141aa311f4d74e20d30171d6f4ebcd67daa0e3a54dd6b3c5fd",
+      "decodedBytes": 1985,
+      "decodedSHA256": "36547defca9afa141aa311f4d74e20d30171d6f4ebcd67daa0e3a54dd6b3c5fd",
+      "responses": []
+    },
+    {
+      "file": "rendered-listing.json",
+      "fileBytes": 3698,
+      "fileSHA256": "620a5d56397b0e5c19ee4199acb1d04f6e2aec30bb72c69ff8e66e6037e8adcc",
+      "decodedBytes": 3698,
+      "decodedSHA256": "620a5d56397b0e5c19ee4199acb1d04f6e2aec30bb72c69ff8e66e6037e8adcc",
+      "responses": []
+    }
+  ]
+}

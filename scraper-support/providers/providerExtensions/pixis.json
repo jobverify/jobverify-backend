@@ -8,15 +8,16 @@
   "dryRunFile": "pixis/jobs.json",
   "companyCareerPage": "https://pixis.ai/careers/",
   "companyDomain": "pixis.ai",
-  "atsPlatform": "official-first-party-careers-no-public-vacancies",
+  "atsPlatform": "official-first-party-careers",
   "countryFilter": "India",
-  "paginationStrategy": "verified-first-party-careers-page-sentinel",
-  "extractionStrategy": "verified-first-party-careers-page-without-public-vacancies+return-empty",
+  "paginationStrategy": "single-firstparty-open-roles-section",
+  "extractionStrategy": "live-native-closed-open-roles-empty-validation",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-25",
+  "verifiedOn": "2026-10-23",
   "verifiedPublicJobCount": 0,
   "verifiedIndiaJobCount": 0,
   "officialCareersPageUrl": "https://pixis.ai/careers/",
-  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://pixis.ai/careers/ is Pixis' first-party careers surface. The page currently states that there are no vacancies and exposes no trustworthy public job listing feed, so this exact-name provider fails closed and returns no jobs until Pixis publishes public vacancies."
+  "verifiedSurfaceSummary": "Official careers response captured October 23, 2026 explicitly reports no vacancies. Each run validates the complete native open-roles section, current hiring links and error-free CMS state; changed or failed pages cannot certify zero.",
+  "inventoryVerificationPolicy": "live-parser-evidence-required"
 }

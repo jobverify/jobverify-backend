@@ -1,0 +1,8 @@
+{
+  "url": "https://www.trigyn.com/get-career-data",
+  "requestBody": "param=%7B%22current_page%22%3A%220%22%7D",
+  "finalUrl": "https://www.trigyn.com/get-career-data",
+  "status": 500,
+  "capturedAt": "2026-10-23T04:24:00.830Z",
+  "body": "The website encountered an unexpected error. Try again later."
+}

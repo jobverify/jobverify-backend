@@ -80,7 +80,7 @@ test('workbook batch 05 replaces the generic sentinel only for explicitly verifi
     ['starhealthdigital', 'verified-non-enumerable-careers-cta'],
     ['sukoon', 'verified-exact-name-company-surface-no-public-listings'],
     ['sumupindia', 'verified-public-positions-page'],
-    ['supergaming', 'official-company-site-email-handoff'],
+    ['supergaming', 'first-party-email-recruiting-unverified-inventory'],
     ['suprdaily', 'verified-exact-name-public-company-surface'],
     ['synup', 'first-party-careers-page-linkedin-handoff'],
     ['techjockey', 'verified-first-party-careers-empty-result'],
@@ -89,7 +89,7 @@ test('workbook batch 05 replaces the generic sentinel only for explicitly verifi
     ['thirdeyedata', 'verified-public-jobpost-detail-pages'],
     ['trell', 'verified-exact-name-public-surface-fail-closed-sentinel'],
     ['tricog', 'verified-first-party-resume-intake-surface'],
-    ['trigyn', 'verified-first-party-careers-empty-drupal-listing-wrapper'],
+    ['trigyn', 'first-party-drupal-native-career-api'],
     ['truecallerindia', 'verified-public-careers-jsonld'],
     ['trukkerindia', 'verified-public-careers-jsonld'],
     ['twimbit', 'verified-public-careers-detail-pages'],
@@ -100,7 +100,7 @@ test('workbook batch 05 replaces the generic sentinel only for explicitly verifi
     ['vakilsearch', 'verified-public-careers-jsonld'],
     ['verygoodsecurityindia', 'lever'],
     ['vervotech', 'verified-exact-name-public-company-surface'],
-    ['wati', 'verified-public-careers-non-listing-surface'],
+    ['wati', 'workable-native-api'],
     ['wealthy', 'zoho-recruit-public-board'],
   ])
 

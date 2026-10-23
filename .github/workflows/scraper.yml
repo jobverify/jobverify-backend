@@ -21,6 +21,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   scrape:
+    permissions:
+      contents: read
+      actions: write
     name: ${{ inputs.dispatch_token && format('Scraper [dispatch:{0}]', inputs.dispatch_token) || 'Scraper' }}
     runs-on: ubuntu-latest
     timeout-minutes: 360
@@ -46,6 +49,8 @@ jobs:
       - name: Claim pipeline stage
         id: register
         run: node scripts/pipelineGithub.js register
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Restore source checkpoint on rerun
         uses: actions/cache/restore@v4
         with:

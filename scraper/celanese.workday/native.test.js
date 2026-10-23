@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 import { getScraperCatalog, createCatalogScraper } from '../../scraper-support/providers/index.js';
 import { readInventoryEvidence, isVerifiedEmptyEvidence } from '../../scraper-support/utils/inventoryEvidence.js';
 import { document } from '../../scraper-support/shared/rmkNativePairHtml.js';
-import { CAREERS, ORIGIN, BOARD, ASSET_BASE, CONFIG, parseListing, parseDetail, verifyCorporateHandoff, compareDescriptions, validateURL } from './parser.js';
+import { CAREERS, ORIGIN, BOARD, ASSET_BASE, CONFIG, parseListing, parseDetail, verifyCorporateHandoff, compareDescriptions, validateURL, descriptionSections } from './parser.js';
 import { collect, runNative } from './native.js';
 import { extractionFailureDetails } from '../../scripts/catalogExtractionFailureEvidence.js';
 import { buildPublishableJobPostedAtCutoff, resolveJobPostedAt } from '../../src/utils/jobLifecycle.js';
@@ -49,6 +49,103 @@ const field = (name, value) => `<div class="iCIMS_JobHeaderTag"><dt class="iCIMS
 const card = (id, country = 'China', city = 'Shanghai') => `<div class="row"><a class="iCIMS_Anchor" href="${ORIGIN}/jobs/${id}/synthetic-role/job"><h3>Synthetic foreign role</h3></a><dl class="iCIMS_JobHeaderGroup">${field('Job ID', '2026-' + id)}${field('Country', country)}${field('City', city)}</dl></div>`;
 const syntheticPage = (page, last = 3, count = page === last ? 7 : 20, rows) => `<base href="${ASSET_BASE}"><div class="iCIMS_MainWrapper iCIMS_ListingsPage"><h2>Search Results: Page ${page} of ${last}</h2>${rows || Array.from({ length: count }, (_, index) => card(50000 + page * 100 + index)).join('')}<div class="iCIMS_Paging"><a class="selected" href="${pageURL(page)}">Page ${page} of ${last} , Current Page</a>${page < last ? `<a href="${pageURL(page + 1)}">Next page of results</a><a href="${pageURL(last)}">Last page of results Last</a>` : ''}</div></div>`;
 const allPages = { [pageURL(2)]: syntheticPage(2), [pageURL(3)]: syntheticPage(3) };
+
+const liveFrame = JSON.parse(zlib.gunzipSync(fs.readFileSync(new URL('./fixtures/native-074-live-frame.json.gz', import.meta.url))));
+const shellHTML = Buffer.from(liveFrame.responses[BOARD].bodyBase64, 'base64').toString('utf8');
+const framedBoard = BOARD + '&in_iframe=1';
+const actualDetails = JSON.parse(zlib.gunzipSync(fs.readFileSync(new URL('./fixtures/native-074-live-details.json.gz', import.meta.url))));
+const nativeListingRows = Object.entries(actualDetails.responseQueues).filter(([url]) => new URL(url).pathname === '/jobs/search' && new URL(url).searchParams.get('in_iframe') === '1').flatMap(([url, responses]) => parseListing(Buffer.from(responses[0].bodyBase64, 'base64').toString('utf8'), url).records);
+const actualRole = id => {
+  const row = nativeListingRows.find(row => row.id === id); assert.ok(row);
+  const response = actualDetails.responseQueues[row.url]?.[0]; assert.ok(response);
+  return { row, html: Buffer.from(response.bodyBase64, 'base64').toString('utf8') };
+};
+test('native application links accept the exact iframe parameter while retaining the same role', () => {
+  const { row, html } = actualRole('23774');
+  const fact = parseDetail(html, row);
+  assert.equal(new URL(fact.nativeApplicationURL).searchParams.get('in_iframe'), '1');
+  assert.equal(new URL(fact.nativeApplicationURL).pathname, new URL(row.url).pathname);
+  assert.equal(fact.nativeJobPosting.datePosted, '2024-10-22T17:32:09.052Z');
+  assert.throws(() => parseDetail(html.replaceAll('in_iframe=1', 'in_iframe=0'), row));
+});
+
+test('nested native requirement headings remain inside all three complete description sections', () => {
+  const { row, html } = actualRole('23761');
+  const fact = parseDetail(html, row);
+  assert.equal(fact.nativeDescriptionSections.length, 3);
+  const qualifications = fact.nativeDescriptionSections[2].bodyHTML;
+  for (const heading of ['Required Qualifications', 'Preferred Qualifications', 'Core Competencies']) assert.ok(qualifications.includes(heading));
+  assert.ok(fact.nativeDescriptionSections[1].bodyHTML.includes('Data Migration'));
+  assert.equal(compareDescriptions(fact.nativeVisibleDescriptionHTML, fact.nativeSchemaDescription), true);
+});
+
+test('native encoded punctuation compares as the same text without dropping any requirement', () => {
+  const { row, html } = actualRole('24007');
+  const fact = parseDetail(html, row);
+  assert.ok(fact.nativeVisibleDescriptionHTML.includes('&bull;'));
+  assert.ok(fact.nativeSchemaDescription.includes('•'));
+  assert.equal(compareDescriptions(fact.nativeVisibleDescriptionHTML, fact.nativeSchemaDescription), true);
+  assert.equal(compareDescriptions(fact.nativeVisibleDescriptionHTML.replace('Salesforce', 'FORGED'), fact.nativeSchemaDescription), false);
+});
+
+test('all ten captured native India details parse while six malformed country records stay unknown', async () => {
+  const indices = new Map();
+  const jobs = await runNative({ transport: async url => {
+    const index = indices.get(url) || 0, response = actualDetails.responseQueues[url]?.[index]; assert.ok(response, 'Actual response sequence required'); indices.set(url, index + 1);
+    return { ...response, body: Buffer.from(response.bodyBase64, 'base64') };
+  } });
+  assert.equal(jobs.length, 10);
+  const evidence = jobs[0].nativeCollectionEvidence;
+  assert.equal(evidence.observedListingCount, 46); assert.equal(evidence.pagesFetched, 3);
+  assert.equal(evidence.failures.length, 6); assert.equal(evidence.candidateDetails, 16);
+  assert.ok(jobs.every(job => job.country === 'India' && job.postingDate.startsWith('2024-')));
+  const analysis = (await import('../../scraper-support/utils/publishableJobMetrics.js')).analyzePublishableJobs(jobs, { now: new Date(actualDetails.originalCompletedAt) });
+  assert.equal(analysis.eligibleJobs.length, 0); assert.equal(analysis.filterCounts.old, 10);
+  for (const id of ['23920', '23907', '23766', '23708', '23707', '23235']) {
+    const { row, html } = actualRole(id); assert.throws(() => parseDetail(html, row));
+  }
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false);
+  assert.equal(isVerifiedEmptyEvidence(readInventoryEvidence(jobs)), false);
+});
+test('actual public noscript portal shell resolves only the identical native search with in_iframe=1', () => {
+  assert.equal(typeof CONFIG.resolveReadFrame, 'function');
+  assert.equal(CONFIG.resolveReadFrame(shellHTML, BOARD), framedBoard);
+  validateURL(framedBoard);
+  assert.equal(CONFIG.sameReadIdentity(BOARD, framedBoard), true);
+  assert.equal(CONFIG.resolveReadFrame(boardHTML, BOARD), null);
+  for (const target of [framedBoard.replace('asiacareers-', 'careers-'), framedBoard + '&in_iframe=1', framedBoard + '&pr=1', framedBoard.replace('mobile=false', 'mobile=true'), ORIGIN + '/jobs/23787/role/job?in_iframe=1']) {
+    assert.throws(() => CONFIG.resolveReadFrame(replaceOnce(shellHTML, framedBoard.replaceAll('&', '&amp;'), target.replaceAll('&', '&amp;')), BOARD));
+  }
+});
+
+test('same public native role allows its own frame while hidden/template frames stay excluded', () => {
+  const role = fixture.oracle.roleURL, framedRole = role + '?in_iframe=1';
+  const shell = '<span id="icims_iframe_span" role="main" aria-label="Career Portal"></span><noscript><iframe src="' + framedRole + '" id="noscript_icims_content_iframe" name="noscript_icims_content_iframe" title="Noscript iCIMS Content iFrame"></iframe></noscript>';
+  assert.equal(CONFIG.resolveReadFrame(shell, role), framedRole);
+  assert.equal(CONFIG.sameReadIdentity(role, framedRole), true);
+  assert.equal(CONFIG.resolveReadFrame('<div hidden>' + shell + '</div>', role), null);
+  assert.equal(CONFIG.resolveReadFrame('<template>' + shell + '</template>', role), null);
+  assert.throws(() => CONFIG.resolveReadFrame(shell, fixture.oracle.roleURL.replace('/23787/', '/23788/')));
+});
+
+test('bounded non-executing frame GET retains real shell and historical inner bodies distinctly', async () => {
+  // Mixed-time behavior fixture: current real outer shell plus historical inner
+  // listing. It does not establish a complete or current inventory.
+  const calls = [];
+  const jobs = await runNative({ transport: async url => {
+    calls.push(url);
+    if (url === BOARD) return { ...liveFrame.responses[BOARD], body: Buffer.from(liveFrame.responses[BOARD].bodyBase64, 'base64') };
+    if (url === framedBoard) return { ...fixture.responses[BOARD], url, body: Buffer.from(fixture.responses[BOARD].bodyBase64, 'base64'), provenance: { derivedMixedClockBehaviorTest: true } };
+    return transport(url);
+  } });
+  assert.equal(jobs.length, 1);
+  assert.equal(jobs[0].postingDate, '2024-10-21T01:48:11.318Z');
+  assert.equal(calls.filter(url => url === BOARD).length, 2);
+  assert.equal(calls.filter(url => url === framedBoard).length, 2);
+  assert.ok(jobs[0].nativeCollectionEvidence.retainedResponses.some(response => response.url === BOARD && response.bodySHA256 === liveFrame.responses[BOARD].provenance.bodySHA256));
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false);
+  assert.ok(calls.every(url => { validateURL(url); return !/\/login|\/apply|candidate|form\//.test(url); }));
+});
 
 test('active corporate Sitecore careers components establish the precise unfiltered regional handoff', () => {
   assert.equal(verifyCorporateHandoff(careersHTML).boardURL, BOARD);

@@ -9,13 +9,14 @@
   "companyDomain": "moneytap-1.jobsoid.com",
   "atsPlatform": "jobsoid-official-ats",
   "countryFilter": "India",
-  "paginationStrategy": "official-ats-empty-state-sentinel",
-  "extractionStrategy": "official-ats-empty-state+return-empty",
+  "paginationStrategy": "single-native-jobsoid-closed-listing-section",
+  "extractionStrategy": "live-native-jobsoid-branded-explicit-empty-validation",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-25",
+  "verifiedOn": "2026-10-23",
   "verifiedPublicJobCount": 0,
   "verifiedIndiaJobCount": 0,
   "officialAtsUrl": "https://moneytap-1.jobsoid.com/",
-  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://moneytap-1.jobsoid.com/ is MoneyTap's branded Jobsoid applicant-tracking-system careers surface. The official ATS currently reports no current openings, so this exact-name provider fails closed and returns no jobs until MoneyTap publishes public openings."
+  "verifiedSurfaceSummary": "October 23, 2026 branded moneytap-1 Jobsoid response reports No Current Openings. Each run fetches and validates the complete current listing, MoneyTap identity, active empty message and hiring handoffs. Failed, redirected or changed boards cannot certify zero. Future openings require a verified native extraction contract.",
+  "inventoryVerificationPolicy": "live-parser-evidence-required"
 }

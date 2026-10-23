@@ -7,8 +7,9 @@ import {
   run,
 } from '../../scraper/supergaming/script.js'
 
-test('SuperGaming careers surface is an email handoff with no public jobs', async () => {
+test('SuperGaming email recruiting does not establish a zero job inventory', async () => {
   assert.equal(CAREERS_URL, 'https://www.supergaming.com/careers')
-  assert.equal(CONTACT_EMAIL, 'hiring@supergaming.com')
-  assert.deepEqual(await run(), [])
+  assert.equal(CONTACT_EMAIL, 'careers@supergaming.com')
+  await assert.rejects(run({fetchImpl:async url=>({status:503,url,text:async()=>''})}),error=>
+    error.code==='SUPERGAMING_COVERAGE_GAP'&&error.inventoryEvidence.reportedTotal===null)
 })

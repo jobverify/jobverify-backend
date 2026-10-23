@@ -23,7 +23,7 @@ test('Samsung is covered only by its exact-name first-party provider', () => {
   assert.equal(provider.companyName, 'Samsung')
   assert.equal(provider.companyDomain, 'samsung.com')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-search-page-fail-closed')
+  assert.equal(provider.atsPlatform, 'workday-public-cxs')
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'Samsung').map((item) => item.source),
     ['samsung'],
@@ -37,9 +37,9 @@ test('Samsung is covered only by its exact-name first-party provider', () => {
   )
 })
 
-test('Samsung scraper fails closed without a separately verified enumerable jobs feed', async () => {
+test('Samsung registered scraper rejects unavailable native recruiting', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'samsung')
 
   assert.ok(scraper, 'Expected Samsung scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  await assert.rejects(scraper.run({fetchImpl:async url=>({status:503,url,text:async()=>''})}))
 })

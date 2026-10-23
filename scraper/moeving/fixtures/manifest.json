@@ -1,0 +1,33 @@
+{
+  "captureMethod": "Root-managed browser navigation followed by native same-origin fetch; exact bodies retained inside capture JSON",
+  "captures": [
+    {
+      "file": "board-response.json",
+      "url": "https://moeving.freshteam.com/jobs",
+      "finalUrl": "https://moeving.freshteam.com/jobs",
+      "status": 200,
+      "capturedAt": "2026-10-23T04:22:07.272Z",
+      "bodyBytes": 889,
+      "bodySha256": "cb99ec1dca84ce08f1e1fafbac6f52d6104eb80d6f514a71b0b412a45e4c44ce",
+      "fileSha256": "22c971e08519d17ffdb6dec21302952f5c0f0bba01a28d964577b1b8377f57e4"
+    },
+    {
+      "file": "official-response.json.gz",
+      "url": "https://moeving.com/join-us/",
+      "finalUrl": "https://moeving.com/join-us/",
+      "status": 200,
+      "capturedAt": "2026-10-23T04:22:22.218Z",
+      "bodyBytes": 167074,
+      "bodySha256": "03aabf186953d00a7ba51be982c9bc586027a2939385d432a34eba45a19aebe7",
+      "fileSha256": "9847bbfce9dd0ca16445845a3982dc3feff5d3b2805f788abc2f4be6ae5ee1ca"
+    }
+  ],
+  "outcome": "blocked-upstream",
+  "reportedTotal": null,
+  "indiaFacetCount": null,
+  "limitations": [
+    "Freshteam returns HTTP 200 but an invalid-domain/no-ats claimable tenant shell, not employer listings.",
+    "Official Join Us serves generic rental content; no current enumerable job contract or complete India facet is verified.",
+    "No vacancy records, publication dates, detail schemas, pagination or current empty inventory can be inferred."
+  ]
+}

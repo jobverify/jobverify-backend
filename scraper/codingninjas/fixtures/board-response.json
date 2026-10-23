@@ -1,0 +1,11 @@
+{
+  "url": "https://codingninjas.keka.com/careers",
+  "finalUrl": "https://codingninjas.keka.com/careers",
+  "status": 200,
+  "capturedAt": "2026-10-23T04:46:18.926Z",
+  "body": "    <!DOCTYPE html>\r\n    <html>\r\n    <head><link rel=\"preconnect\" href=\"https://cdn.keka.com/careers/v/2026/\" />\r\n        <meta charset=\"utf-8\" />\r\n        \t<meta name=\"robots\" content=\"noindex\">\r\n\r\n        \r\n\r\n\r\n        <script>\r\n            window.isCareersPage = true;\r\n        </script>\r\n    </head>\r\n    <body>\r\n        <div id=\"content-container\"></div>\r\n        <script>\r\n            fetch('/ats/documents/0ec89a02-c247-4dc7-b554-64ae46e3ffc5/careerportal/f11e21d9a163478c888564e2889d5527.html')\r\n                .then(response => response.text())\r\n                .then(data => {\r\n                    var parser = new DOMParser();\r\n                    var htmlDoc = parser.parseFromString(data, 'text/html');\r\n                    var bodyContent = htmlDoc.body.innerHTML;\r\n                    document.getElementById('content-container').innerHTML = bodyContent;\r\n\r\n                    htmlDoc.head.childNodes.forEach(node => {\r\n                        if (node.tagName === 'SCRIPT') {\r\n                            var script = document.createElement('script');\r\n                            script.innerHTML = node.innerHTML; // Set the script content\r\n\r\n                            for (var i = 0; i < node.attributes.length; i++) {\r\n                                script.setAttribute(node.attributes[i].name, node.attributes[i].value);\r\n                            }\r\n\r\n                            document.head.appendChild(script);\r\n                        } else {\r\n                            document.head.appendChild(node.cloneNode(true));\r\n                        }\r\n                    });\r\n                });\r\n        </script>\r\n    </body>\r\n    </html>\r\n",
+  "text": "Browse all jobs\n\nOpen Positions\nDepartment\nThere are no job postings matching the filters.\n2026 Keka Hire. Powered by",
+  "scripts": [
+    "https://codingninjas.keka.com/careers/api/embedjobs/js/0ec89a02-c247-4dc7-b554-64ae46e3ffc5"
+  ]
+}

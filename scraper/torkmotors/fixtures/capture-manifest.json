@@ -1,0 +1,30 @@
+{
+  "source": "torkmotors",
+  "captureMethod": "Root-owned isolated Chrome native fetch with true final URLs/status; DOM files separate observations.",
+  "files": [
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "029a4b0651423bcad15881e6e6293e8e6d9cbe70d39864d6e63ea12b7554554e",
+      "uncompressedSHA256": "4122220a9dfcb38f0f8d2cb7570e7e0855236045aaa592c4d6fda668cb97b3bc",
+      "bytes": 29554
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "31f70eeb8914be86ed8bf0ab15db6916419f11f5073cf78daa4d8ccf9b916720",
+      "uncompressedSHA256": "823914e2c2b5a42334450898f3281159a81acaf82810f3141ea9989f483683d4",
+      "bytes": 375204
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "a0d600db474c2747b28f9e0e1edfb819bb89aa0eb39a2107fc094088e7f90a30",
+      "uncompressedSHA256": "7a052c399ef54d15621b7162eeef9f833f32bdb257b81d2277e93d5a949946bb",
+      "bytes": 24966
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "fb7837e6095a84164a2307b4ce187b2dc7de50689878c89dd39cfd61cdbecb10",
+      "uncompressedSHA256": "03093c0733c72343be1914a523aedf95ea1cc3bf83a52bc5710e76ed1213439a",
+      "bytes": 86301
+    }
+  ]
+}

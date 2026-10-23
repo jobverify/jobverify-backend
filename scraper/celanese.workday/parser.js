@@ -15,17 +15,54 @@ export function validateURL(value) {
   else {
     requireNative(url.origin === ORIGIN, 'Unapproved regional/source origin');
     if (url.pathname === '/jobs/search') {
-      const defaults = { ss: '1', mobile: 'false', width: '1065', height: '500', bga: 'true', needsRedirect: 'false', jan1offset: '330', jun1offset: '330', schemaId: '', o: '' };
+      const defaults = { ss: '1', mobile: 'false', width: '1065', height: '500', bga: 'true', needsRedirect: 'false', jan1offset: '330', jun1offset: '330', schemaId: '', o: '', in_iframe: '1' };
       for (const name of new Set(url.searchParams.keys())) requireNative(url.searchParams.getAll(name).length === 1 && (name === 'pr' ? /^(?:0|[1-9]\d{0,2})$/.test(url.searchParams.get(name)) : Object.hasOwn(defaults, name) && url.searchParams.get(name) === defaults[name]), 'Unapproved native search filter/page');
     } else {
       const match = rolePath.exec(url.pathname);
-      requireNative(match && !url.search, 'Unapproved native role/application read path');
+      requireNative(match && (!url.search || url.search === '?in_iframe=1'), 'Unapproved native role/application read path');
       requireNative(!/[\\/?#\u0000-\u001f\u007f]/.test(decodeURIComponent(match[2])), 'Unapproved encoded role path');
     }
   }
   return url;
 }
 const pageNumber = value => { const url = validateURL(value); requireNative(url.origin === ORIGIN && url.pathname === '/jobs/search', 'Not a native Asia listing'); return Number(url.searchParams.get('pr') || 0) + 1; };
+const frameQueryIdentity = url => JSON.stringify([...url.searchParams].filter(([name]) => name !== 'in_iframe').sort());
+const sameReadIdentity = (left, right) => {
+  const a = validateURL(left), b = validateURL(right);
+  if (a.origin !== b.origin) return false;
+  return a.pathname === '/jobs/search' && b.pathname === '/jobs/search' ? pageNumber(left) === pageNumber(right)
+    : a.pathname.replace(/^\/en\//, '/') === b.pathname.replace(/^\/en\//, '/') && frameQueryIdentity(a) === frameQueryIdentity(b);
+};
+export function resolveReadFrame(html, currentURL) {
+  const current = validateURL(currentURL);
+  if (current.origin !== ORIGIN) return null;
+  const doc = docOf(html);
+  if (doc.nodes(node => hasClass(node, 'iCIMS_MainWrapper')).length) return null;
+  const frames = [];
+  const hidden = node => Object.hasOwn(node.attrs, 'hidden') || Object.hasOwn(node.attrs, 'inert') || node.attrs['aria-hidden'] === 'true' || /(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse))/i.test(node.attrs.style || '');
+  const visit = node => {
+    if (node.tag === 'noscript') {
+      if (hidden(node)) return;
+      // The explicit no-JavaScript fallback is read as inert markup only.
+      const fallback = document(node.raw), elements = fallback.root.children.filter(child => typeof child !== 'string');
+      const frame = elements[0];
+      if (elements.length !== 1 || frame.tag !== 'iframe' || frame.attrs.id !== 'noscript_icims_content_iframe') return;
+      requireNative(fallback.root.children.filter(child => typeof child === 'string').every(text => !text.trim()) && !frame.raw.trim(), 'Unexpected native fallback frame content');
+      requireNative(!hidden(frame) && frame.attrs.name === 'noscript_icims_content_iframe' && frame.attrs.title === 'Noscript iCIMS Content iFrame', 'Native fallback frame identity changed');
+      frames.push(frame); return;
+    }
+    if (node.inactive) return;
+    for (const child of node.children) if (typeof child !== 'string') visit(child);
+  };
+  visit(doc.root);
+  if (!frames.length) return null;
+  const frame = oneNative(frames, 'native public fallback frame');
+  requireNative(doc.nodes(node => node.tag === 'span' && node.attrs.id === 'icims_iframe_span' && node.attrs.role === 'main' && node.attrs['aria-label'] === 'Career Portal').length === 1, 'Native career portal frame slot missing');
+  const target = validateURL(frame.attrs.src);
+  requireNative(current.searchParams.get('in_iframe') !== '1' && target.searchParams.get('in_iframe') === '1'
+    && current.origin === target.origin && current.pathname === target.pathname && frameQueryIdentity(current) === frameQueryIdentity(target), 'Native fallback frame changes search/role identity');
+  return target.href;
+}
 export function verifyCorporateHandoff(html) {
   const doc = docOf(html), script = oneNative(doc.nodes(node => node.tag === 'script' && node.attrs.type === 'application/json' && node.attrs.id === '__JSS_STATE__'), 'native Sitecore JSON state');
   requireNative(!doc.nodes(node => node.tag === 'base').length, 'Unexpected corporate base URL');
@@ -86,15 +123,20 @@ export function parseListing(html, url = BOARD) {
 }
 const contentScope = doc => oneNative(doc.nodes(node => hasClass(node, 'iCIMS_JobContent')), 'native role content');
 export function descriptionSections(doc) {
-  const scope = contentScope(doc), bodies = doc.nodes(node => node.tag === 'div' && hasClass(node, 'iCIMS_InfoMsg_Job'), scope), headings = doc.nodes(node => node.tag === 'h2', scope);
+  const scope = contentScope(doc), bodies = doc.nodes(node => node.tag === 'div' && hasClass(node, 'iCIMS_InfoMsg_Job'), scope);
+  const headings = doc.nodes(node => node.tag === 'h2', scope).filter(heading => !bodies.some(body => heading.start > body.start && heading.end <= body.end));
   requireNative(bodies.length === 3 && headings.length === 4 && doc.text(headings[3]) === 'Apply 申请:', 'Native description sections changed');
   requireNative(bodies.every(node => doc.text(node)), 'Empty native description section');
+  requireNative(bodies.every((body, index) => headings[index].end <= body.start && body.end <= headings[index + 1].start), 'Native description section order changed');
   return bodies.map((node, index) => ({ headingHTML: doc.outer(headings[index]), headingText: doc.text(headings[index]), bodyHTML: doc.inner(node), bodyText: doc.text(node) }));
 }
 const sectionKeys = html => {
-  const doc = docOf(html), headings = doc.nodes(node => node.tag === 'h2');
+  const doc = docOf(html), headings = doc.nodes(node => node.tag === 'h2' && /^(?:JobOverview综述|Responsibilities职责|Qualifications要求)$/.test(doc.text(node).replace(/:\s*$/, '').replace(/\s+/g, '')));
   requireNative(headings.length === 3 && !plainNativeHTML(html.slice(0, headings[0].start)), 'Unmatched native description prefix/sections');
-  return headings.map((node, index) => [doc.text(node).replace(/:\s*$/, '').replace(/\s+/g, ''), plainNativeHTML(html.slice(node.end, headings[index + 1]?.start ?? html.length)).replace(/\s+/g, '')]);
+  // Compare the observed named HTML entities with their literal Unicode form;
+  // keep the complete original visible/schema HTML untouched in the output.
+  const textKey = value => plainNativeHTML(value).replace(/&(bull|rsquo|reg);/g, (_, name) => ({ bull: '•', rsquo: '’', reg: '®' })[name]).replace(/\s+/g, '');
+  return headings.map((node, index) => [doc.text(node).replace(/:\s*$/, '').replace(/\s+/g, ''), textKey(html.slice(node.end, headings[index + 1]?.start ?? html.length))]);
 };
 export const compareDescriptions = (visible, schema) => {
   const actual = sectionKeys(visible), expected = sectionKeys(schema);
@@ -111,7 +153,7 @@ const postingConfig = {
     const links = [...new Set(doc.nodes(node => node.tag === 'a' && node.attrs.href && /^Apply for this job online(?: Apply)?$/.test(doc.text(node)), contentScope(doc)).map(node => { const url = new URL(node.attrs.href); requireNative(url.href === node.attrs.href, 'Noncanonical/relative application URL'); return url.href; }))];
     requireNative(links.length === 1, 'Missing/ambiguous native public application URL');
     const url = new URL(links[0]);
-    requireNative(url.origin === ORIGIN && !url.username && !url.password && !url.hash && url.pathname === new URL(row.url).pathname && url.searchParams.getAll('mode').length === 1 && url.searchParams.get('mode') === 'apply' && url.searchParams.getAll('apply').length === 1 && url.searchParams.get('apply') === 'yes' && url.searchParams.getAll('hashed').length === 1 && /^-?\d{1,12}$/.test(url.searchParams.get('hashed')) && [...url.searchParams.keys()].every(key => ['mode', 'apply', 'hashed'].includes(key)), 'Native application/role identity mismatch');
+    requireNative(url.origin === ORIGIN && !url.username && !url.password && !url.hash && url.pathname === new URL(row.url).pathname && url.searchParams.getAll('mode').length === 1 && url.searchParams.get('mode') === 'apply' && url.searchParams.getAll('apply').length === 1 && url.searchParams.get('apply') === 'yes' && url.searchParams.getAll('hashed').length === 1 && /^-?\d{1,12}$/.test(url.searchParams.get('hashed')) && (!url.searchParams.has('in_iframe') || url.searchParams.getAll('in_iframe').length === 1 && url.searchParams.get('in_iframe') === '1') && [...url.searchParams.keys()].every(key => ['mode', 'apply', 'hashed', 'in_iframe'].includes(key)), 'Native application/role identity mismatch');
     return { nativeApplicationURL: links[0] };
   },
 };
@@ -126,7 +168,7 @@ export function parseDetail(html, row) {
 export const CONFIG = {
   source: 'celanese', companyName: 'Celanese', boardURL: BOARD, validateURL, parseListing, parseDetail,
   handoffs: [{ url: CAREERS, verify: verifyCorporateHandoff }],
-  sameReadIdentity: (left, right) => { const a = validateURL(left), b = validateURL(right); if (a.origin !== b.origin) return false; return a.pathname === '/jobs/search' && b.pathname === '/jobs/search' ? pageNumber(left) === pageNumber(right) : a.pathname.replace(/^\/en\//, '/') === b.pathname.replace(/^\/en\//, '/') && a.search === b.search; },
+  sameReadIdentity, resolveReadFrame,
   candidateForIndia: row => row.countries.some(country => nativeCountryName(country) === 'India' || !nativeCountryName(country)),
   pageFingerprint: page => JSON.stringify({ page: page.pageNumber, last: page.lastPage, rows: page.records.map(row => [row.id, row.title, row.url, row.locations, row.countries, row.nativeListingJobLabel]), errors: page.errors }),
 };

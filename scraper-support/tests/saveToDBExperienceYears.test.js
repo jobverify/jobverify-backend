@@ -18,7 +18,7 @@ const setReadyState = (value) => {
   }
 }
 
-test('generic persistence never inserts empty-description jobs and reports the rejection', async t => {
+test('generic persistence accepts missing descriptions while retaining incomplete-detail lifecycle protection', async t => {
   const restore = setReadyState(1)
   t.after(restore)
   const written = []
@@ -30,17 +30,45 @@ test('generic persistence never inserts empty-description jobs and reports the r
     { ...base, link: 'https://example.test/jobs/empty', description: ' \n\t' },
     { ...base, link: 'https://example.test/jobs/full', description: 'Build reliable APIs for customers.' },
   ], 'example', { classifier: { mode: 'off' }, descriptionRewriteMode: 'off', enrichPublicExperience: false, refreshDatasetSummary: false, replaceExisting: false, enqueueAlerts: false })
-  assert.equal(result.inserted, 1)
-  assert.equal(result.filteredEmptyDescription, 1)
-  assert.equal(written.length, 1)
-  assert.equal(written[0].updateOne.update.$set.applyUrl, 'https://example.test/jobs/full')
-  const rejected = await saveToDB([{ ...base, link: 'https://example.test/jobs/empty', description: null }], 'example', {
+  assert.equal(result.inserted, 2)
+  assert.equal(result.eligibleJobs, 2)
+  assert.equal(result.filteredEmptyDescription, 0)
+  assert.equal(written.length, 2)
+  assert.equal(written[0].updateOne.update.$set.applyUrl, 'https://example.test/jobs/empty')
+  assert.equal(written[0].updateOne.update.$set.sourceDescription, null)
+  assert.equal(written[0].updateOne.update.$set.description, undefined)
+  const accepted = await saveToDB([{ ...base, link: 'https://example.test/jobs/empty', description: null }], 'example', {
     classifier: { mode: 'off' }, descriptionRewriteMode: 'off', enrichPublicExperience: false, refreshDatasetSummary: false, enqueueAlerts: false,
   })
-  assert.equal(rejected.inserted, 0)
-  assert.equal(rejected.staleCheckSkipped, true)
-  assert.equal(rejected.filteredEmptyDescription, 1)
-  assert.equal(written.length, 1)
+  assert.equal(accepted.inserted, 1)
+  assert.equal(accepted.staleCheckSkipped, true)
+  assert.equal(accepted.filteredEmptyDescription, 0)
+  assert.equal(written.length, 3)
+})
+
+test('accepted markup-only rescrapes retain saved employer descriptions and source hashes', async t => {
+  const restore = setReadyState(1)
+  t.after(restore)
+  let saved
+  t.mock.method(Job, 'find', () => ({ select() { return this }, lean() { return this }, exec: async () => saved ? [saved] : [] }))
+  t.mock.method(Job, 'bulkWrite', async operations => {
+    saved = { ...saved, ...operations[0].updateOne.update.$set }
+    return { upsertedCount: 0, modifiedCount: 1 }
+  })
+  const job = { title: 'Engineer', company: 'Example', location: 'Bengaluru, India',
+    link: 'https://example.test/jobs/preserved', jobDescription: 'Build reliable APIs for customers.' }
+  const options = { enrichPublicExperience: false, refreshDatasetSummary: false,
+    replaceExisting: false, enqueueAlerts: false, descriptionRewriteMode: 'publish' }
+  await saveToDB([job], 'example', options)
+  const expectedDescription = saved.description
+  const expectedHash = saved.sourceContentHash
+  for (const jobDescription of ['<p>&nbsp;<br></p>', '&#160;&#xA0;', '<!-- no details --><script>ignored()</script>']) {
+    const result = await saveToDB([{ ...job, jobDescription }], 'example', options)
+    assert.equal(result.eligibleJobs, 1)
+    assert.equal(saved.description, expectedDescription)
+    assert.equal(saved.sourceDescription, expectedDescription)
+    assert.equal(saved.sourceContentHash, expectedHash)
+  }
 })
 
 test('scraped jobs are persisted as pending without invoking a classifier', async () => {
@@ -359,8 +387,9 @@ test('saveToDB preserves source wording and does not write a later empty descrip
       'Responsibilities:\nBuild services.\n\nRequirements:\nFive years of experience.',
     )
     assert.equal(Object.hasOwn(updates[0], '$unset') && Object.hasOwn(updates[0].$unset, 'description'), false)
-    assert.equal(updates.length, 2)
-    assert.equal(updates[1].$set.description, 'Full alternate description.')
+    assert.equal(updates.length, 3)
+    assert.equal(Object.hasOwn(updates[1].$set, 'description'), false)
+    assert.equal(updates[2].$set.description, 'Full alternate description.')
     assert.equal(Object.hasOwn(updates[1], '$unset') && Object.hasOwn(updates[1].$unset, 'description'), false)
   } finally {
     Job.bulkWrite = originalBulkWrite

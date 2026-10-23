@@ -1,0 +1,858 @@
+{
+  "url": "https://www.easemytrip.com/career.html",
+  "finalUrl": "https://www.easemytrip.com/career.html",
+  "status": 200,
+  "capturedAt": "2026-10-23T05:55:22.325Z",
+  "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n<meta charset=\"UTF-8\" />\r\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\r\n<title>Careers at EaseMyTrip — Boost Your Professional Journey with India’s Leading Travel Platform</title>\r\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\" />\r\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin />\r\n<script src=\"https://www.easemytrip.com/offers/anniversary/js/mobjquery.min.js\"></script>\r\n<link href=\"https://www.easemytrip.com/css/nwhomfiles/desktopmenulogin.css?v=9\" rel=\"stylesheet\" />\r\n<link href=\"https://www.easemytrip.com/css/new-login-flow-style.css?v=1\" rel=\"stylesheet\">\r\n<link rel=\"stylesheet\" type=\"text/css\" href=\"https://www.easemytrip.com/css/mobemthome-new.css?v=2.3.1\">\r\n<link href=\"https://www.easemytrip.com/css/nwhomfiles/desktopmenulogin.css?v=9\" rel=\"stylesheet\" />\t\r\n\r\n<link href=\"https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap\" rel=\"stylesheet\" />\r\n<style>\r\n  :root{\r\n    --emt-blue:#2093EF;\r\n    --emt-blue-deep:#0B6FD0;\r\n    --emt-blue-700:#0A56A8;\r\n    --ink:#07294D;\r\n    --ink-2:#0A1F3C;\r\n    --orange:#FF7A1A;\r\n    --orange-deep:#F2620A;\r\n    --sky:#EAF4FE;\r\n    --sky-2:#F3F8FE;\r\n    --cloud:#F5F7FA;\r\n    --paper:#FFFFFF;\r\n    --muted:#5A6B7B;\r\n    --line:#E4EAF1;\r\n    --radius:18px;\r\n    --radius-sm:12px;\r\n    --shadow-sm:0 4px 14px rgba(10,31,60,.06);\r\n    --shadow:0 18px 40px -18px rgba(10,31,60,.22);\r\n    --shadow-lg:0 30px 60px -24px rgba(10,31,60,.35);\r\n    --maxw:1180px;\r\n    --ff:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;\r\n    --mono:'DM Mono',ui-monospace,SFMono-Regular,Menlo,monospace;\r\n  }\r\n  *{margin:0;padding:0;box-sizing:border-box}\r\n  html{scroll-behavior:smooth}\r\n  body{\r\n    font-family:var(--ff);\r\n    color:var(--ink);\r\n    background:var(--paper);\r\n    line-height:1.6;\r\n    -webkit-font-smoothing:antialiased;\r\n    overflow-x:hidden;\r\n  }\r\n  a{color:inherit;text-decoration:none}\r\n  img{display:block;max-width:100%}\r\n  .container{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 24px}\r\n  .section{padding:96px 0}\r\n  ::selection{background:var(--emt-blue);color:#fff}\r\n\r\n  /* ---------- Eyebrow / headings ---------- */\r\n  .eyebrow{\r\n    font-family:var(--mono);\r\n    font-size:13px;letter-spacing:.16em;text-transform:uppercase;\r\n    color:var(--emt-blue);font-weight:500;\r\n    display:inline-flex;align-items:center;gap:9px;margin-bottom:16px;\r\n  }\r\n  .eyebrow::before{content:\"\";width:26px;height:2px;background:var(--emt-blue);border-radius:2px}\r\n  h1,h2,h3{line-height:1.12;letter-spacing:-.02em;font-weight:700}\r\n  h2.title{font-size:clamp(30px,4.4vw,48px);font-weight:800;margin-bottom:14px}\r\n  h2.title .hl{color:var(--emt-blue)}\r\n  .section-lead{color:var(--muted);font-size:17px;max-width:560px}\r\n  .center{text-align:center}\r\n  .center .section-lead{margin-left:auto;margin-right:auto}\r\n\r\n  /* ---------- Buttons ---------- */\r\n  .btn{\r\n    display:inline-flex;align-items:center;justify-content:center;gap:9px;\r\n    font-family:var(--ff);font-weight:600;font-size:15px;cursor:pointer;border:none;\r\n    padding:14px 26px;border-radius:999px;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;\r\n  }\r\n  .btn:focus-visible{outline:3px solid var(--orange);outline-offset:3px}\r\n  .btn-primary{background:var(--emt-blue);color:#fff;box-shadow:0 12px 26px -10px rgba(32,147,239,.7)}\r\n  .btn-primary:hover{background:var(--emt-blue-deep);transform:translateY(-2px)}\r\n  .btn-orange{background:var(--orange);color:#fff;box-shadow:0 12px 26px -10px rgba(255,122,26,.7)}\r\n  .btn-orange:hover{background:var(--orange-deep);transform:translateY(-2px)}\r\n  .btn-ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.4)}\r\n  .btn-ghost:hover{border-color:#fff;background:rgba(255,255,255,.08);transform:translateY(-2px)}\r\n  .btn-outline{background:#fff;color:var(--ink);border:1.5px solid var(--line)}\r\n  .btn-outline:hover{border-color:var(--emt-blue);color:var(--emt-blue);transform:translateY(-2px)}\r\n\r\n  /* ---------- NAV ---------- */\r\n  header.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}\r\n  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:70px}\r\n  .logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:21px;letter-spacing:-.02em}\r\n  .logo .mark{color:var(--ink)}.logo .my{color:var(--emt-blue)}\r\n  .logo svg{width:30px;height:30px}\r\n  .nav-links{display:flex;align-items:center;gap:34px}\r\n  .nav-links a{font-size:15px;font-weight:500;color:var(--ink);position:relative;padding:4px 0}\r\n  .nav-links a:hover{color:var(--emt-blue)}\r\n  .nav-links a.active{color:var(--emt-blue)}\r\n  .nav-links a.active::after{content:\"\";position:absolute;left:0;bottom:-4px;width:100%;height:2px;background:var(--emt-blue);border-radius:2px}\r\n  .nav-cta{display:flex;align-items:center;gap:14px}\r\n  .menu-btn{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px}\r\n  .menu-btn span{width:24px;height:2px;background:var(--ink);border-radius:2px}\r\n\r\n  /* ---------- HERO ---------- */\r\n  .hero{position:relative;background:radial-gradient(1200px 600px at 78% 20%,#0e3a6b 0%,#0a234a 45%,#071a36 100%);color:#fff;overflow:hidden}\r\n  .hero::after{content:\"\";position:absolute;inset:0;background:\r\n     radial-gradient(2px 2px at 20% 30%,rgba(255,255,255,.18),transparent),\r\n     radial-gradient(2px 2px at 70% 70%,rgba(255,255,255,.12),transparent),\r\n     radial-gradient(1.5px 1.5px at 40% 80%,rgba(255,255,255,.1),transparent);\r\n     pointer-events:none}\r\n  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;align-items:center;gap:30px;min-height:600px;padding:54px 0 30px;position:relative;z-index:2}\r\n  .hero .eyebrow{color:#7fc0ff}\r\n  .hero .eyebrow::before{background:#7fc0ff}\r\n  .hero h1{font-size:clamp(38px,5.2vw,62px);font-weight:800;letter-spacing:-.03em;margin-bottom:22px}\r\n  .hero h1 .yr{color:var(--emt-blue);position:relative;white-space:nowrap}\r\n  .hero p.sub{font-size:18px;color:#c3d6ec;max-width:500px;margin-bottom:34px}\r\n  .hero-actions{display:flex;gap:14px;flex-wrap:wrap}\r\n  .globe-wrap{position:relative;display:flex;align-items:center;justify-content:center;min-height:480px}\r\n  #globe{display:block;width:100%;height:auto;max-width:560px;cursor:grab;touch-action:none}\r\n  #globe:active{cursor:grabbing}\r\n  .globe-glow{position:absolute;width:78%;aspect-ratio:1;border-radius:50%;\r\n    background:radial-gradient(circle,rgba(32,147,239,.35) 0%,rgba(32,147,239,0) 62%);filter:blur(8px);z-index:0}\r\n\r\n  /* hero stats — clean glass card row */\r\n  .hero-stats{position:relative;z-index:2;margin:8px 0 64px;\r\n    display:grid;grid-template-columns:repeat(4,1fr);\r\n    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);\r\n    border-radius:20px;backdrop-filter:blur(8px);overflow:hidden}\r\n  .hstat{padding:26px 30px;position:relative}\r\n  .hstat+.hstat::before{content:\"\";position:absolute;left:0;top:22%;height:56%;width:1px;background:rgba(255,255,255,.13)}\r\n  .hstat .num{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1}\r\n  .hstat .num .u{color:var(--orange)}\r\n  .hstat .lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;color:#9db8d6;text-transform:uppercase;margin-top:10px}\r\n\r\n  \r\n.career-visual{position:relative;display:flex;align-items:center;justify-content:center;min-height:500px}\r\n.team-image{width:100%;max-width:520px;border-radius:28px;object-fit:cover;box-shadow:0 30px 80px rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.15)}\r\n.floating-card{position:absolute;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.12);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 18px;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.18)}\r\n.floating-card span{font-size:24px}\r\n.floating-card strong{display:block;font-size:15px;font-weight:700}\r\n.floating-card p{margin:0;font-size:12px;color:#d9e8f7}\r\n.card-1{top:40px;right:-20px}\r\n.card-2{bottom:120px;left:-30px}\r\n.card-3{bottom:20px;right:10px}\r\n\r\n/* ---------- WHY WORK ---------- */\r\n  .why-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}\r\n  .why-copy h2{margin-bottom:22px}\r\n  .why-copy p{color:var(--muted);margin-bottom:18px;font-size:16.5px}\r\n  .why-copy p strong{color:var(--ink);font-weight:600}\r\n  .why-media{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:16px}\r\n  .why-media .ph{border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);position:relative;background:linear-gradient(135deg,var(--emt-blue),var(--ink))}\r\n  .why-media .ph img{width:100%;height:100%;object-fit:cover}\r\n  .why-media .ph.tall{grid-row:span 2;min-height:380px}\r\n  .why-media .ph.short{min-height:182px}\r\n  .quote-badge{grid-column:1 / -1;background:var(--ink);color:#fff;border-radius:var(--radius);padding:24px 26px;display:flex;gap:16px;align-items:flex-start}\r\n  .quote-badge .q{font-size:42px;line-height:.6;color:var(--emt-blue);font-family:Georgia,serif}\r\n  .quote-badge p{color:#cfe0f2;font-size:15px;margin:0}\r\n\r\n  /* ---------- WHAT WE OFFER ---------- */\r\n  .offer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}\r\n  .offer-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:28px 24px;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}\r\n  .offer-card:hover{transform:translateY(-6px);box-shadow:var(--shadow);border-color:transparent}\r\n  .offer-card .ic{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;margin-bottom:18px;background:var(--sky);color:var(--emt-blue)}\r\n  .offer-card:nth-child(2n) .ic{background:#FFF1E6;color:var(--orange)}\r\n  .offer-card .ic svg{width:26px;height:26px}\r\n  .offer-card h3{font-size:18px;font-weight:700;margin-bottom:8px}\r\n  .offer-card p{color:var(--muted);font-size:14.5px}\r\n\r\n\r\n  /* ---------- OPEN ROLES ---------- */\r\n\r\n  /* ---------- OPEN ROLES ---------- */\r\n  .roles-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:30px}\r\n  .roles-tools{display:flex;flex-direction:column;gap:16px;margin-bottom:30px}\r\n  .search-row{display:flex;gap:12px;flex-wrap:wrap}\r\n  .search-box{flex:1;min-width:240px;position:relative}\r\n  .search-box input{width:100%;padding:14px 16px 14px 46px;border:1px solid rgba(255,255,255,0.12);border-radius:999px;font-family:var(--ff);font-size:15px;background:#1a1f2e;color:#f0f4ff;transition:border-color .18s ease}\r\n  .search-box input::placeholder{color:#4a5568}\r\n  .search-box input:focus{outline:none;border-color:var(--emt-blue)}\r\n  .search-box svg{position:absolute;left:17px;top:50%;transform:translateY(-50%);color:#4a5568;width:18px;height:18px}\r\n  .chips{display:flex;gap:10px;flex-wrap:wrap}\r\n  .chip{font-family:var(--ff);font-size:13px;font-weight:500;padding:8px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#94a3b8;cursor:pointer;transition:all .16s ease;white-space:nowrap}\r\n  .chip:hover{border-color:var(--emt-blue);color:#60a5fa}\r\n  .chip.active{background:var(--emt-blue);border-color:var(--emt-blue);color:#fff}\r\n\r\n  .jobs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}\r\n\r\n  /* B2 — slate/charcoal dark cards */\r\n  .job-card{background:#1a1f2e;border-radius:14px;padding:20px;display:flex;flex-direction:column;min-height:200px;transition:transform .2s ease,box-shadow .2s ease;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.07)}\r\n  .job-card:hover{transform:translateY(-5px);box-shadow:0 20px 40px -12px rgba(0,0,0,0.5);border-color:rgba(255,255,255,0.14)}\r\n\r\n  /* dept badge pill */\r\n  .job-top{margin-bottom:14px}\r\n  .job-badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 11px;font-size:11.5px;font-weight:500;letter-spacing:.02em}\r\n  .job-dept-ic{width:14px;height:14px;flex-shrink:0}\r\n  .job-dept-ic svg{width:14px;height:14px}\r\n\r\n  /* badge colors per dept */\r\n  .badge-eng{background:rgba(32,147,239,0.15);color:#60a5fa}\r\n  .badge-prd{background:rgba(139,92,246,0.15);color:#a78bfa}\r\n  .badge-mkt{background:rgba(251,146,60,0.15);color:#fb923c}\r\n  .badge-sal{background:rgba(16,185,129,0.15);color:#34d399}\r\n  .badge-cus{background:rgba(245,158,11,0.15);color:#fbbf24}\r\n  .badge-dat{background:rgba(6,182,212,0.15);color:#22d3ee}\r\n  .badge-fin{background:rgba(132,204,22,0.15);color:#a3e635}\r\n  .badge-hr{background:rgba(236,72,153,0.15);color:#f472b6}\r\n  .badge-ops{background:rgba(239,68,68,0.15);color:#f87171}\r\n\r\n  .job-card h3{font-size:15.5px;font-weight:600;letter-spacing:-.01em;margin-bottom:12px;line-height:1.35;color:#f0f4ff}\r\n  .job-meta{display:flex;gap:12px;flex-wrap:wrap;color:#6b7a99;font-size:12.5px;margin-bottom:auto}\r\n  .job-meta span{display:inline-flex;align-items:center;gap:4px}\r\n  .job-meta svg{width:13px;height:13px}\r\n  .job-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07)}\r\n  .view-desc{font-size:12.5px;font-weight:500;color:#60a5fa;cursor:pointer;background:none;border:none;font-family:var(--ff);display:inline-flex;align-items:center;gap:5px;padding:0}\r\n  .view-desc:hover{color:#93c5fd}\r\n  .view-desc svg{width:14px;height:14px}\r\n  .apply-link{font-size:12.5px;font-weight:600;color:#fb923c;display:inline-flex;align-items:center;gap:4px}\r\n  .apply-link svg{width:14px;height:14px;transition:transform .16s ease}\r\n  .job-card:hover .apply-link svg{transform:translateX(3px)}\r\n  .no-results{grid-column:1/-1;text-align:center;color:#94a3b8;padding:40px;font-size:16px}\r\n  .roles-cta{text-align:center;margin-top:40px}\r\n\r\n  /* ---------- JD DRAWER ---------- */\r\n  .drawer-overlay{position:fixed;inset:0;background:rgba(7,31,60,.5);backdrop-filter:blur(3px);opacity:0;visibility:hidden;transition:opacity .3s ease,visibility .3s ease;z-index:90}\r\n  .drawer-overlay.open{opacity:1;visibility:visible}\r\n  .drawer{position:fixed;top:0;right:0;height:100%;width:min(560px,92vw);background:#fff;z-index:100;\r\n    transform:translateX(100%);transition:transform .36s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-30px 0 60px -20px rgba(7,31,60,.4)}\r\n  .drawer.open{transform:translateX(0)}\r\n  .drawer-head{padding:26px 30px 22px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,var(--ink),var(--emt-blue-700));color:#fff;position:relative;flex-shrink:0}\r\n  .drawer-head .dept-pill{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:#9fd0ff;display:inline-flex;align-items:center;gap:7px;margin-bottom:12px}\r\n  .drawer-head h3{font-size:24px;font-weight:800;letter-spacing:-.01em;margin-bottom:12px;line-height:1.2}\r\n  .drawer-head .dmeta{display:flex;gap:16px;flex-wrap:wrap;font-size:13.5px;color:#cfe2f7}\r\n  .drawer-head .dmeta span{display:inline-flex;align-items:center;gap:6px}\r\n  .drawer-head .dmeta svg{width:14px;height:14px}\r\n  .drawer-close{position:absolute;top:20px;right:22px;width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;display:grid;place-items:center;transition:background .16s ease}\r\n  .drawer-close:hover{background:rgba(255,255,255,.28)}\r\n  .drawer-close svg{width:18px;height:18px}\r\n  .drawer-body{padding:28px 30px 24px;overflow-y:auto;flex:1}\r\n  .jd-block{margin-bottom:26px}\r\n  .jd-block h4{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:9px}\r\n  .jd-block h4::before{content:\"\";width:4px;height:16px;background:var(--emt-blue);border-radius:3px}\r\n  .jd-block p{color:var(--muted);font-size:14.5px}\r\n  .jd-block ul{list-style:none}\r\n  .jd-block li{position:relative;padding-left:22px;margin-bottom:9px;color:var(--muted);font-size:14.5px}\r\n  .jd-block li::before{content:\"\";position:absolute;left:2px;top:9px;width:6px;height:6px;border-radius:50%;background:var(--orange)}\r\n  .jd-block li strong{color:var(--ink);font-weight:600}\r\n  .jd-exp{display:inline-block;font-family:var(--mono);font-size:13px;background:var(--sky);color:var(--emt-blue-700);padding:7px 14px;border-radius:10px}\r\n  .drawer-foot{padding:18px 30px;border-top:1px solid var(--line);flex-shrink:0;background:#fff}\r\n  .drawer-foot .btn{width:100%}\r\n\r\n  /* ---------- LIFE GALLERY ---------- */\r\n  .life-section{background:var(--cloud)}\r\n  .gallery{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:200px;gap:16px;margin-top:46px}\r\n  .gphoto{border-radius:var(--radius);overflow:hidden;position:relative;background:linear-gradient(135deg,var(--emt-blue),var(--ink));box-shadow:var(--shadow-sm)}\r\n  .gphoto img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease}\r\n  .gphoto::after{content:\"\";position:absolute;inset:0;background:linear-gradient(to top,rgba(7,31,60,.72) 0%,rgba(7,31,60,.05) 55%);opacity:.85;transition:opacity .3s ease}\r\n  .gphoto:hover img{transform:scale(1.08)}\r\n  .gphoto:hover::after{opacity:1}\r\n  .gcap{position:absolute;left:18px;bottom:16px;z-index:2;color:#fff;transform:translateY(6px);opacity:0;transition:transform .3s ease,opacity .3s ease}\r\n  .gphoto:hover .gcap{transform:translateY(0);opacity:1}\r\n  .gcap .t{font-weight:700;font-size:16px}\r\n  .gcap .s{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:#bcd9f7;text-transform:uppercase}\r\n  .gphoto.w2{grid-column:span 2}\r\n  .gphoto.h2{grid-row:span 2}\r\n  .life-tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}\r\n  .life-tags .tg{font-family:var(--mono);font-size:12.5px;color:var(--emt-blue-700);background:#fff;border:1px solid var(--line);padding:8px 15px;border-radius:999px}\r\n  .life-tags .tg b{color:var(--orange)}\r\n\r\n  /* ---------- HIRING JOURNEY ---------- */\r\n  .journey-section{background:var(--ink);color:#fff;position:relative;overflow:hidden}\r\n  .journey-section .eyebrow{color:#7fc0ff}.journey-section .eyebrow::before{background:#7fc0ff}\r\n  .journey-section h2.title{color:#fff}\r\n  .journey-section .section-lead{color:#bcd1ea}\r\n  .journey{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:54px;position:relative}\r\n  .jstep{position:relative;padding:0 22px;text-align:center}\r\n  .jline{position:absolute;top:27px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(127,192,255,.35),transparent);z-index:0}\r\n  .jdot{width:56px;height:56px;border-radius:50%;background:#0d2c54;border:2px solid var(--emt-blue);color:#fff;display:grid;place-items:center;margin:0 auto 20px;position:relative;z-index:1;font-family:var(--mono);font-size:18px;font-weight:500}\r\n  .jstep:nth-child(3) .jdot,.jstep:nth-child(5) .jdot{border-color:var(--orange)}\r\n  .jstep h4{font-size:17px;font-weight:700;margin-bottom:8px}\r\n  .jstep p{color:#a9c2de;font-size:14px}\r\n\r\n  /* ---------- BOTTOM CTA ---------- */\r\n  .endcta{padding:96px 0 100px;background:var(--paper)}\r\n  .endcta-inner{position:relative;background:linear-gradient(115deg,var(--emt-blue) 0%,var(--emt-blue-deep) 58%,var(--emt-blue-700) 130%);border-radius:28px;overflow:hidden;padding:60px 56px;color:#fff;box-shadow:var(--shadow-lg)}\r\n  .endcta-inner::before{content:\"\";position:absolute;inset:0;background:\r\n     radial-gradient(2px 2px at 30% 40%,rgba(255,255,255,.25),transparent),\r\n     radial-gradient(2px 2px at 80% 60%,rgba(255,255,255,.18),transparent),\r\n     radial-gradient(600px 300px at 90% 110%,rgba(255,255,255,.12),transparent);pointer-events:none}\r\n  .endcta h2{font-size:clamp(28px,3.6vw,42px);font-weight:800;max-width:560px;margin-bottom:16px;position:relative}\r\n  .endcta p{color:rgba(255,255,255,.88);max-width:520px;font-size:17px;margin-bottom:30px;position:relative}\r\n  .endcta .btn{position:relative}\r\n  .plane-deco{position:absolute;right:54px;top:50%;transform:translateY(-50%) rotate(8deg);opacity:.18;pointer-events:none}\r\n  .plane-deco svg{width:300px;height:300px}\r\n\r\n  /* ---------- CONTACT BAND (not a footer) ---------- */\r\n  .contact-band{background:var(--cloud);border-top:1px solid var(--line);padding:60px 0}\r\n  .contact-inner{display:grid;grid-template-columns:1.3fr 1fr;gap:48px;align-items:center}\r\n  .contact-about .logo{margin-bottom:18px}\r\n  .contact-about p{color:var(--muted);font-size:15px;max-width:440px}\r\n  .contact-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:28px 30px;box-shadow:var(--shadow-sm)}\r\n  .contact-card h5{font-size:16px;font-weight:700;margin-bottom:18px}\r\n  .contact-card a,.contact-card .fline{display:flex;align-items:center;gap:12px;color:var(--ink);font-size:15px;margin-bottom:14px;font-weight:500}\r\n  .contact-card a:last-child,.contact-card .fline:last-child{margin-bottom:0}\r\n  .contact-card a:hover{color:var(--emt-blue)}\r\n  .contact-card .cic{width:38px;height:38px;border-radius:10px;background:var(--sky);color:var(--emt-blue);display:grid;place-items:center;flex-shrink:0}\r\n  .contact-card .cic svg{width:18px;height:18px}\r\n\r\n  /* ---------- RESPONSIVE ---------- */\r\n  @media(max-width:980px){\r\n    .section{padding:72px 0}\r\n    .hero-grid{grid-template-columns:1fr;text-align:center;min-height:auto;padding:40px 0 60px}\r\n    .hero .eyebrow{justify-content:center}\r\n    .hero-actions{justify-content:center}\r\n    .hero p.sub{margin-left:auto;margin-right:auto}\r\n    .globe-wrap{order:-1;min-height:340px;margin-bottom:10px}\r\n    #globe{max-width:380px}\r\n    .hero-stats{grid-template-columns:repeat(2,1fr)}\r\n    .hstat+.hstat::before{display:none}\r\n    .hstat{border-top:1px solid rgba(255,255,255,.1)}\r\n    .hstat:nth-child(odd){border-right:1px solid rgba(255,255,255,.1)}\r\n    .hstat:nth-child(1),.hstat:nth-child(2){border-top:none}\r\n    .why-grid{grid-template-columns:1fr;gap:40px}\r\n    .offer-grid{grid-template-columns:repeat(2,1fr)}\r\n    .jobs-grid{grid-template-columns:repeat(2,1fr)}\r\n    .gallery{grid-template-columns:repeat(2,1fr)}\r\n    .journey{grid-template-columns:repeat(2,1fr);gap:36px 0}\r\n    .jline{display:none}\r\n    .contact-inner{grid-template-columns:1fr;gap:32px}\r\n    .nav-links{display:none}\r\n    .menu-btn{display:flex}\r\n    .plane-deco{display:none}\r\n  }\r\n  @media(max-width:560px){\r\n    .container{padding:0 18px}\r\n    .offer-grid,.jobs-grid,.gallery{grid-template-columns:1fr}\r\n    .journey{grid-template-columns:1fr}\r\n    .hero-stats{grid-template-columns:repeat(2,1fr)}\r\n    .endcta-inner{padding:42px 26px}\r\n  }\r\n  @media(prefers-reduced-motion:reduce){\r\n    *{scroll-behavior:auto}\r\n  }\r\n  .cntdv{display:none;}\r\n</style>\r\n</head>\r\n<body>\r\n\r\n<!-- ===== NAV ===== -->\r\n<!--header view-->\r\n     <!--header view-->\r\n\r\n\t<link rel=\"stylesheet\" type=\"text/css\" href=\"https://www.easemytrip.com/css/mobemthome-new.css?v=2.3.1\">\r\n    <link href=\"https://www.easemytrip.com/css/nwhomfiles/desktopmenulogin.css?v=9\" rel=\"stylesheet\" />\r\n\t\r\n\t<script src=\"https://www.easemytrip.com/scripts/multi/Login-h_newheader.js?v=dds\"></script>\r\n<script src=\"https://www.easemytrip.com/scripts/multi/LoginWithOTP.js?a=7412e11\" ></script> \r\n    <div id=\"loaddetails\" class=\"app-hide\"></div>\r\n    <!-- header finish-->\r\n\t\r\n    <script>\r\n\r\n        $.ajax({\r\n            type: \"get\",\r\n            contentType: \"application/json; charset=utf-8\",\r\n            dataType: \"text\",\r\n            url: \"https://loginuser.easemytrip.com/api/login/LoginTemplate?id=1\",\r\n            //  data: JSON.stringify(ReqData),\r\n\r\n            // beforeSend: function (xhr) { xhr.setRequestHeader('useridentity', Encryption(UserID + \"|\" + UserIp + \"|\" + UTY)); },\r\n            success: function (response) {\r\n                //document.write(response);\r\n                $(\"#loaddetails\").append(response);\r\n            },\r\n\r\n            error: function (jq, status, message) {\r\n                alert('Status: ' + status + ' - Message: ' + message);\r\n            }\r\n\r\n        })\r\n\r\n    </script>\r\n\r\n<div class=\"clr\"></div>\r\n    <!-- header finish-->\r\n\r\n<!-- ===== HERO ===== -->\r\n<section class=\"hero\">\r\n  <div class=\"container\">\r\n    <div class=\"hero-grid\">\r\n      <div class=\"hero-copy\">\r\n        <span class=\"eyebrow\">Come &amp; Join EaseMyTrip</span>\r\n        <h1>Boost Your Professional Journey with India’s Leading <span class=\"yr\">Travel Platform</span></h1>\r\n        <p class=\"sub\">Fast-paced, dynamic, and built by people who love making travel just work. Find the team where your next big journey takes off.</p>\r\n        <div class=\"hero-actions\">\r\n          <a href=\"#roles\" class=\"btn btn-orange\">Explore opportunities\r\n            <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" width=\"18\" height=\"18\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\r\n          </a>\r\n          <a href=\"#why\" class=\"btn btn-ghost\">Life at EMT</a>\r\n        </div>\r\n      </div>\r\n      <div class=\"career-visual\">\r\n        <img\r\n          src=\"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&q=80&auto=format&fit=crop\"\r\n          alt=\"EaseMyTrip Team\"\r\n          class=\"team-image\"\r\n        />\r\n        <div class=\"floating-card card-1\">\r\n          <span>🚀</span>\r\n          <div><strong>Fast Growth</strong><p>Build & Scale</p></div>\r\n        </div>\r\n        <div class=\"floating-card card-2\">\r\n          <span>🏆</span>\r\n          <div><strong>Great Culture</strong><p>People First</p></div>\r\n        </div>\r\n        <div class=\"floating-card card-3\">\r\n          <span>🌎</span>\r\n          <div><strong>1Cr+ Travelers</strong><p>Real Impact</p></div>\r\n        </div>\r\n      </div>\r\n    </div>\r\n\r\n    <div class=\"hero-stats\">\r\n      <div class=\"hstat\"><div class=\"num\">2008</div><div class=\"lbl\">Founded</div></div>\r\n      <div class=\"hstat\"><div class=\"num\">18<span class=\"u\">+</span></div><div class=\"lbl\">Years strong</div></div>\r\n      <div class=\"hstat\"><div class=\"num\">98.84<span class=\"u\">%</span></div><div class=\"lbl\">Booking Success Ratio</div></div>\r\n      <div class=\"hstat\"><div class=\"num\">9</div><div class=\"lbl\">Departments hiring</div></div>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<!-- ===== WHY WORK WITH US ===== -->\r\n<section class=\"section\" id=\"why\">\r\n  <div class=\"container\">\r\n    <div class=\"why-grid\">\r\n      <div class=\"why-copy\">\r\n        <span class=\"eyebrow\">Who we are</span>\r\n        <h2 class=\"title\">Why work with <span class=\"hl\">EaseMyTrip?</span></h2>\r\n        <p>Started in <strong>2008</strong>, EaseMyTrip is one of the largest online travel platforms and a trusted name in the Indian travel and tourism space. Millions of Indians rely on us daily for everything from flights and hotels to bus, cabs, train and holiday packages.</p>\r\n        <p>Despite winning several awards and accolades, we take pride in an <strong>inclusive work culture</strong> where every brilliant mind and skilled hand gets to showcase their creativity, knowledge and expertise. We don't just promise work-life balance, peace of mind and perpetual learning — our roles and responsibilities go far beyond what one can reckon.</p>\r\n        <div class=\"hero-actions\" style=\"margin-top:6px\">\r\n          <a href=\"#offer\" class=\"btn btn-outline\">What we offer</a>\r\n        </div>\r\n      </div>\r\n      <div class=\"why-media\">\r\n        <div class=\"ph tall\"><img loading=\"lazy\" src=\"https://images.emtcontent.com/career/bn-5.webp\" alt=\"EaseMyTrip team collaborating\" onerror=\"this.style.display='none'\"></div>\r\n        <div class=\"ph short\"><img loading=\"lazy\" src=\"https://images.emtcontent.com/career/abt-1.webp\" alt=\"Team planning session\" onerror=\"this.style.display='none'\"></div>\r\n        <div class=\"ph short\"><img loading=\"lazy\" src=\"https://images.emtcontent.com/career/abt-2.webp\" alt=\"Office discussion\" onerror=\"this.style.display='none'\"></div>\r\n        <div class=\"quote-badge\">\r\n          <span class=\"q\">&ldquo;</span>\r\n          <p>Every voice is heard here. The pace is real, the ownership is real, and so is the team that has your back.</p>\r\n        </div>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<!-- ===== WHAT WE OFFER ===== -->\r\n<section class=\"section\" id=\"offer\" style=\"background:var(--paper);padding-top:0\">\r\n  <div class=\"container\">\r\n    <div class=\"center\" style=\"margin-bottom:50px\">\r\n      <span class=\"eyebrow\" style=\"display:inline-flex\">Perks &amp; culture</span>\r\n      <h2 class=\"title\">What we <span class=\"hl\">offer</span></h2>\r\n      <p class=\"section-lead\">Beyond the paycheck — the things that make EaseMyTrip a place people stay and grow.</p>\r\n    </div>\r\n    <div class=\"offer-grid\">\r\n      <div class=\"offer-card\">\r\n        <div class=\"ic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"/></svg></div>\r\n        <h3>Competitive Pay</h3>\r\n        <p>We go beyond industry standards to reward the brightest minds working with us.</p>\r\n      </div>\r\n      <div class=\"offer-card\">\r\n        <div class=\"ic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 17l6-6 4 4 8-8M21 7v5\"/></svg></div>\r\n        <h3>Growth &amp; Exposure</h3>\r\n        <p>Ample opportunities and real responsibility that help you grow and succeed.</p>\r\n      </div>\r\n      <div class=\"offer-card\">\r\n        <div class=\"ic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"9\" cy=\"7\" r=\"3\"/><path d=\"M2 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2M17 11l2 2 4-4\"/></svg></div>\r\n        <h3>Inclusive Workplace</h3>\r\n        <p>An environment where voices are valued and diversity is genuinely celebrated.</p>\r\n      </div>\r\n      <div class=\"offer-card\">\r\n        <div class=\"ic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg></div>\r\n        <h3>Flexibility</h3>\r\n        <p>We get your commitments — you manage your time and tasks the way that works.</p>\r\n      </div>\r\n      <div class=\"offer-card\">\r\n        <div class=\"ic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></div>\r\n        <h3>Learning Budget</h3>\r\n        <p>Courses, certifications and conferences — we invest in keeping you sharp.</p>\r\n      </div>\r\n      <div class=\"offer-card\">\r\n        <div class=\"ic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M22 11.5V11a10 10 0 1 0-3.92 7.94\"/><path d=\"M9 11l3 3L22 4\"/></svg></div>\r\n        <h3>Health &amp; Wellness</h3>\r\n        <p>Comprehensive insurance and wellness support for you and your family.</p>\r\n      </div>\r\n      <div class=\"offer-card\">\r\n        <div class=\"ic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M2 16L21 4l-6 16-3.5-6L2 16z\"/></svg></div>\r\n        <h3>Travel Perks</h3>\r\n        <p>Exclusive employee discounts and deals on flights, hotels and holidays.</p>\r\n      </div>\r\n      <div class=\"offer-card\">\r\n        <div class=\"ic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z\"/></svg></div>\r\n        <h3>Recognition</h3>\r\n        <p>Awards, shout-outs and a culture that celebrates wins big and small.</p>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n\r\n<!-- ===== OPEN ROLES ===== -->\r\n<section class=\"section\" id=\"roles\" style=\"background:#0f1117\">\r\n  <div class=\"container\">\r\n    <div class=\"roles-head\">\r\n      <div>\r\n        <span class=\"eyebrow\" style=\"color:#60a5fa\">Open positions</span>\r\n        <h2 class=\"title\" style=\"color:#f0f4ff\">Keen to work <span class=\"hl\">with us?</span></h2>\r\n        <p class=\"section-lead\" style=\"color:#94a3b8\">Browse live openings across every team. Found your role? Apply in a click.</p>\r\n      </div>\r\n    </div>\r\n\r\n    <div class=\"roles-tools\">\r\n      <div class=\"search-row\">\r\n        <div class=\"search-box\">\r\n          <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"M21 21l-4-4\"/></svg>\r\n          <input type=\"text\" id=\"searchInput\" placeholder=\"Search role, skill or keyword…\" aria-label=\"Search roles\">\r\n        </div>\r\n      </div>\r\n      <div class=\"chips\" id=\"chips\"><!-- filled by JS --></div>\r\n    </div>\r\n\r\n    <div class=\"jobs-grid\" id=\"jobsGrid\"><!-- filled by JS --></div>\r\n\r\n    <div class=\"roles-cta\" style=\"display:none;\">\r\n      <a href=\"mailto:joinus@easemytrip.com\" class=\"btn btn-primary\">View all openings\r\n        <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" width=\"18\" height=\"18\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\r\n      </a>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<!-- ===== LIFE AT EMT ===== -->\r\n<section class=\"section life-section\" id=\"life\">\r\n  <div class=\"container\">\r\n    <div>\r\n      <span class=\"eyebrow\">Inside EMT</span>\r\n      <h2 class=\"title\">Life at <span class=\"hl\">EaseMyTrip</span></h2>\r\n      <p class=\"section-lead\">A look at our fully-enthusiastic family — celebrations, off-sites, and everyday hustle.</p>\r\n    </div>\r\n    <div class=\"gallery\">\r\n      <div class=\"gphoto w2 h2\"><img loading=\"lazy\" src=\"https://images.emtcontent.com/career/offr-1.webp\" alt=\"Team celebration\" onerror=\"this.style.display='none'\"><div class=\"gcap\"><div class=\"s\">Team spirit</div><div class=\"t\">Celebrations &amp; festivals</div></div></div>\r\n      <div class=\"gphoto\"><img loading=\"lazy\" src=\"https://images.emtcontent.com/career/offr-2.webp\" alt=\"Group photo\" onerror=\"this.style.display='none'\"><div class=\"gcap\"><div class=\"s\">Together</div><div class=\"t\">Off-sites</div></div></div>\r\n      <div class=\"gphoto\"><img loading=\"lazy\" src=\"https://images.emtcontent.com/career/lf-5.webp\" alt=\"Team lunch\" onerror=\"this.style.display='none'\"><div class=\"gcap\"><div class=\"s\">Break time</div><div class=\"t\">Team lunches</div></div></div>\r\n      <div class=\"gphoto\"><img loading=\"lazy\" src=\"https://images.emtcontent.com/career/offr-3.webp\" alt=\"Office discussion\" onerror=\"this.style.display='none'\"><div class=\"gcap\"><div class=\"s\">Everyday</div><div class=\"t\">Brainstorms</div></div></div>\r\n      <div class=\"gphoto\"><img loading=\"lazy\" src=\"https://images.emtcontent.com/career/bn-1.webp\" alt=\"Mentoring\" onerror=\"this.style.display='none'\"><div class=\"gcap\"><div class=\"s\">Growth</div><div class=\"t\">Mentoring</div></div></div>\r\n      <div class=\"gphoto w2\"><img loading=\"lazy\" src=\"https://images.emtcontent.com/career/lf-3.webp\" alt=\"Team outdoors\" onerror=\"this.style.display='none'\"><div class=\"gcap\"><div class=\"s\">Beyond work</div><div class=\"t\">Team outings</div></div></div>\r\n\t  <div class=\"gphoto w2\"><img loading=\"lazy\" src=\"https://images.emtcontent.com/career/lf-2.webp\" alt=\"Team outdoors\" onerror=\"this.style.display='none'\"><div class=\"gcap\"><div class=\"s\">Festival</div><div class=\"t\">Team Celebration</div></div></div>\r\n    </div>\r\n    <div class=\"life-tags\">\r\n      <span class=\"tg\"><b>4.2★</b> Glassdoor culture</span>\r\n      <span class=\"tg\">Hybrid &amp; flexible</span>\r\n      <span class=\"tg\">Annual off-sites</span>\r\n      <span class=\"tg\">Festivals &amp; sports</span>\r\n      <span class=\"tg\">Learning weeks</span>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<!-- ===== HIRING JOURNEY ===== -->\r\n<section class=\"section journey-section\">\r\n  <div class=\"container\">\r\n    <div class=\"center\">\r\n      <span class=\"eyebrow\" style=\"display:inline-flex\">Your boarding pass</span>\r\n      <h2 class=\"title\">From apply to onboard</h2>\r\n      <p class=\"section-lead\">A clear, four-stop journey — no black holes, no endless waiting.</p>\r\n    </div>\r\n    <div class=\"journey\">\r\n      <div class=\"jline\" aria-hidden=\"true\"></div>\r\n      <div class=\"jstep\"><div class=\"jdot\">01</div><h4>Apply</h4><p>Send your application for the role that fits — one click, no long forms.</p></div>\r\n      <div class=\"jstep\"><div class=\"jdot\">02</div><h4>Recruiter call</h4><p>A quick chat to understand you, the role, and your expectations.</p></div>\r\n      <div class=\"jstep\"><div class=\"jdot\">03</div><h4>Team rounds</h4><p>Skill and team interviews with the people you'll actually work with.</p></div>\r\n      <div class=\"jstep\"><div class=\"jdot\">04</div><h4>Offer &amp; onboard</h4><p>Offer rolled out, warm onboarding — welcome aboard EaseMyTrip.</p></div>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<!-- ===== BOTTOM CTA ===== -->\r\n<section class=\"endcta\">\r\n  <div class=\"container\">\r\n    <div class=\"endcta-inner\">\r\n      <div class=\"plane-deco\" aria-hidden=\"true\">\r\n        <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.2\"><path d=\"M2 16L21 4l-6 16-3.5-6L2 16z\"/></svg>\r\n      </div>\r\n      <h2>Could not find a work role for yourself?</h2>\r\n      <p>Worry not. If you love working in travel and tourism and are committed to go the extra mile, we would love to hear from you.</p>\r\n      <a href=\"mailto:joinus@easemytrip.com\" class=\"btn\" style=\"background:#fff;color:var(--emt-blue-deep)\">\r\n        <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" width=\"18\" height=\"18\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M3 7l9 6 9-6\"/></svg>\r\n        Email us: joinus@easemytrip.com\r\n      </a>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<!-- ===== FOOTER ===== -->\r\n<!-- ===== CONTACT BAND ===== -->\r\n<section class=\"contact-band\">\r\n  <div class=\"container\">\r\n    <div class=\"contact-inner\">\r\n      <div class=\"contact-about\">\r\n        <a class=\"logo\">\r\n         <img src=\"https://images.emtcontent.com/brandlogo/emtlogo_new8.svg\">\r\n        </a>\r\n        <p>Initiated in 2008, EaseMyTrip is one of the leading online travel platforms across India, offering an exclusive range of end-to-end travel solutions to cater to all the prerequisites of travellers.</p>\r\n      </div>\r\n      <div class=\"contact-card\">\r\n        <h5>Get in touch</h5>\r\n        <a href=\"mailto:joinus@easemytrip.com\"><span class=\"cic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M3 7l9 6 9-6\"/></svg></span>joinus@easemytrip.com</a>\r\n        <a href=\"tel:01143131313\"><span class=\"cic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z\"/></svg></span>011 - 43131313, 43030303</a>\r\n        <a href=\"https://www.easemytrip.com\" target=\"_blank\" rel=\"noopener\"><span class=\"cic\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z\"/></svg></span>www.EaseMyTrip.com</a>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</section>\r\n\r\n<div class=\"clr\"></div>\r\n\r\n\t\t\r\n<div id=\"emtnewfooter\"></div>\r\n<div class=\"clr\"></div>\t\t\r\n\t\t\r\n<script>\r\n  fetch('https://www.easemytrip.com/footer-new-in.html?v1')\r\n    .then(response => {\r\n      if (!response.ok) throw new Error('Network response was not ok');\r\n      return response.text();\r\n    })\r\n    .then(html => {\r\n      document.getElementById('emtnewfooter').innerHTML = html;\r\n      var yearEl = document.getElementById('currentYear');\r\n      if (yearEl) {\r\n        yearEl.textContent = new Date().getFullYear();\r\n      }\r\n    })\r\n    .catch(error => {\r\n      console.error('Error loading footer:', error);\r\n    });\r\n</script>\r\n<script src=\"https://www.easemytrip.com/scripts/bottomfooterjs.js?xr8\"></script>\r\n\r\n<!-- ===== JD DRAWER ===== -->\r\n<div class=\"drawer-overlay\" id=\"drawerOverlay\"></div>\r\n<aside class=\"drawer\" id=\"drawer\" aria-hidden=\"true\" aria-label=\"Job description\">\r\n  <div class=\"drawer-head\">\r\n    <button class=\"drawer-close\" id=\"drawerClose\" aria-label=\"Close\">\r\n      <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\"><path d=\"M18 6L6 18M6 6l12 12\"/></svg>\r\n    </button>\r\n    <div class=\"dept-pill\" id=\"drawerDept\"></div>\r\n    <h3 id=\"drawerTitle\"></h3>\r\n    <div class=\"dmeta\" id=\"drawerMeta\"></div>\r\n  </div>\r\n  <div class=\"drawer-body\" id=\"drawerBody\"></div>\r\n  <div class=\"drawer-foot\">\r\n    <a class=\"btn btn-orange\" id=\"drawerApply\" href=\"https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform\" target=\"_blank\">Apply for this role\r\n      <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" width=\"18\" height=\"18\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\r\n    </a>\r\n  </div>\r\n</aside>\r\n\r\n<script>\r\n/* =========================================================\r\n   DATA — departments & roles\r\n   ========================================================= */\r\nconst DEPARTMENTS = [\r\n  {key:'Engineering',     label:'Engineering',          icon:'code'},\r\n  {key:'Product & Design',label:'Product & Design',     icon:'pen'},\r\n  {key:'Marketing',       label:'Marketing & Growth',   icon:'mega'},\r\n  {key:'Sales',           label:'Sales & Partnerships', icon:'handshake'},\r\n  {key:'Customer',        label:'Customer Experience',  icon:'support'},\r\n  {key:'Data',            label:'Data & Analytics',     icon:'chart'},\r\n  {key:'Finance',         label:'Finance & Accounts',   icon:'rupee'},\r\n  {key:'HR',              label:'Human Resources',      icon:'people'},\r\n  {key:'Operations',      label:'Travel Operations',    icon:'plane'},\r\n];\r\n\r\nconst ROLES = [\r\n  {title:'Senior Frontend Engineer', dept:'Engineering', loc:'Gurugram', type:'Full-time',\r\n   about:'Join our engineering team to build the interfaces millions of travellers use to search, compare and book flights, hotels and holidays. You will own complex, high-traffic UI surfaces and set the bar for performance and polish across the EaseMyTrip web experience.',\r\n   process:['1st round with Engineering Manager','Live coding / system design round','Final round with Tech Leadership'], exp:'5 to 9 Year(s)',\r\n   resp:['<b>Build & Ship</b>: Develop responsive, pixel-perfect interfaces for flight, hotel and booking flows.','<b>Performance</b>: Optimise load times and Core Web Vitals across high-traffic pages.','<b>Architecture</b>: Drive component design, state management and front-end best practices.','<b>Collaboration</b>: Partner closely with Design and Backend to deliver end-to-end features.','<b>Mentorship</b>: Guide junior engineers through reviews and pairing.','<b>Quality</b>: Champion testing, accessibility and cross-browser reliability.'],\r\n   profile:['<b>Experience</b>: 5+ years building production web apps with modern JS frameworks.','<b>Core Skills</b>: Deep JavaScript, HTML/CSS, React/Angular, and browser performance.','<b>Mindset</b>: Strong eye for detail and user experience.','<b>Bonus</b>: Travel-domain or high-scale consumer product experience.']},\r\n  {title:'Backend Engineer (Java)', dept:'Engineering', loc:'Noida', type:'Full-time',\r\n   about:'Design and scale the services that power search, pricing, payments and bookings at EaseMyTrip. You will work on systems that handle huge volumes of real-time traffic with strict reliability requirements.',\r\n   process:['1st round with Engineering Manager','DSA + system design round','Final round with Operations Team'], exp:'3 to 7 Year(s)',\r\n   resp:['<b>Services</b>: Build and maintain scalable Java microservices and APIs.','<b>Integrations</b>: Work with airline/hotel supplier systems and third-party gateways.','<b>Reliability</b>: Ensure high availability, low latency and graceful failure handling.','<b>Data</b>: Design efficient schemas and caching strategies.','<b>Collaboration</b>: Work with frontend and product on end-to-end delivery.'],\r\n   profile:['<b>Experience</b>: 3+ years in backend development with Java/Spring.','<b>Core Skills</b>: REST APIs, SQL/NoSQL, caching, message queues.','<b>Bonus</b>: Experience with high-throughput distributed systems.']},\r\n  {title:'Android Developer', dept:'Engineering', loc:'Gurugram', type:'Full-time',\r\n   about:'Own and evolve the EaseMyTrip Android app used by millions to book travel on the go. Deliver smooth, reliable mobile experiences across a wide range of devices.',\r\n   process:['1st round with Engineering Manager','Mobile coding round','Final round with Tech Leadership'], exp:'2 to 6 Year(s)',\r\n   resp:['<b>Build</b>: Develop new features for the Android app in Kotlin.','<b>Quality</b>: Ensure crash-free, performant experiences across devices.','<b>Integrations</b>: Work with backend APIs, payments and analytics.','<b>Collaboration</b>: Partner with design and product on releases.'],\r\n   profile:['<b>Experience</b>: 2+ years of native Android development.','<b>Core Skills</b>: Kotlin, Android SDK, Jetpack, REST APIs.','<b>Bonus</b>: Consumer app experience at scale.']},\r\n  {title:'Product Designer', dept:'Product & Design', loc:'Gurugram', type:'Full-time',\r\n   about:'Shape how travellers experience EaseMyTrip end to end — from search to checkout. You will turn complex travel flows into intuitive, delightful product experiences.',\r\n   process:['Portfolio review','Design exercise / whiteboard round','Final round with Product Leadership'], exp:'3 to 7 Year(s)',\r\n   resp:['<b>Design</b>: Own flows, wireframes and high-fidelity UI for web and app.','<b>Research</b>: Translate user insights into product decisions.','<b>Systems</b>: Contribute to and maintain the design system.','<b>Collaboration</b>: Work closely with PMs and engineers from idea to launch.'],\r\n   profile:['<b>Experience</b>: 3+ years in product / UX design with a strong portfolio.','<b>Core Skills</b>: Figma, interaction design, prototyping.','<b>Mindset</b>: User-first, data-informed and detail-obsessed.']},\r\n  {title:'UX Researcher', dept:'Product & Design', loc:'Remote', type:'Full-time',\r\n   about:'Be the voice of the traveller. Plan and run research that informs product strategy and design decisions across EaseMyTrip.',\r\n   process:['1st round with Design Lead','Research case discussion','Final round with Product Leadership'], exp:'3 to 6 Year(s)',\r\n   resp:['<b>Research</b>: Design and run qualitative and quantitative studies.','<b>Insights</b>: Synthesise findings into clear, actionable recommendations.','<b>Influence</b>: Partner with product and design to drive decisions.','<b>Evangelise</b>: Build a culture of user-centred thinking.'],\r\n   profile:['<b>Experience</b>: 3+ years in UX research.','<b>Core Skills</b>: Usability testing, interviews, surveys, analysis.','<b>Bonus</b>: Experience in consumer or travel products.']},\r\n  {title:'Performance Marketing Manager', dept:'Marketing', loc:'Mumbai', type:'Full-time',\r\n   about:'Drive growth across paid channels for EaseMyTrip. Own performance budgets and scale acquisition profitably across search, social and display.',\r\n   process:['1st round with Marketing Lead','Case / metrics discussion','Final round with Growth Leadership'], exp:'4 to 8 Year(s)',\r\n   resp:['<b>Campaigns</b>: Plan, run and optimise paid campaigns across Google, Meta and more.','<b>ROI</b>: Manage budgets to hit CAC, ROAS and revenue targets.','<b>Analytics</b>: Track, report and improve funnel performance.','<b>Experiment</b>: Run A/B tests on creatives, audiences and landing pages.'],\r\n   profile:['<b>Experience</b>: 4+ years in performance marketing.','<b>Core Skills</b>: Google Ads, Meta Ads, analytics, attribution.','<b>Mindset</b>: Data-driven and growth-obsessed.']},\r\n  {title:'Email Marketing Specialist', dept:'Marketing', loc:'Gurugram', type:'Full-time',\r\n   about:'Own EaseMyTrip\\u2019s lifecycle and campaign emails end to end — from concept to send. Build engaging, conversion-focused mailers that reach millions.',\r\n   process:['1st round with Marketing Lead','Practical mailer / CRM task','Final round with Growth Leadership'], exp:'2 to 5 Year(s)',\r\n   resp:['<b>Production</b>: Build responsive HTML email campaigns with inline CSS.','<b>Lifecycle</b>: Set up automated journeys and segmentation in the ESP.','<b>Optimise</b>: A/B test subject lines, content and timing.','<b>Reporting</b>: Track opens, clicks and conversions to improve performance.'],\r\n   profile:['<b>Experience</b>: 2+ years in email / CRM marketing.','<b>Core Skills</b>: HTML email, ESP tools (MoEngage/similar), UTM tracking.','<b>Bonus</b>: Travel or e-commerce campaign experience.']},\r\n  {title:'Business Development Manager', dept:'Sales', loc:'Delhi', type:'Full-time',\r\n   about:'Drive sales of MICE (Meetings, Incentives, Conferences and Exhibitions) by crafting customised event solutions and ensuring their successful execution. Expand our MICE business through strategic sales initiatives, exceptional client service, and a deep understanding of market dynamics.',\r\n   process:['1st round with HR','2nd & final round with Operations Team'], exp:'3 to 8 Year(s)',\r\n   resp:['<b>Identify Opportunities</b>: Detect and seize opportunities within the MICE sector to expand market share.','<b>Client Relationships</b>: Forge and sustain solid relationships with new and existing clients.','<b>Collaboration</b>: Work closely with event planning, marketing and operations for seamless execution.','<b>Proposal Development</b>: Create tailored proposals that meet client needs while maintaining profitability.','<b>Contract Negotiations</b>: Negotiate terms that benefit both the client and the company.','<b>Reporting</b>: Provide detailed reports on sales activities and client feedback.'],\r\n   profile:['<b>Educational Background</b>: Bachelor\\u2019s in Hospitality, Business Administration, Marketing or related field.','<b>Experience</b>: 4+ years in MICE sales with a history of achieving targets.','<b>Communication Skills</b>: Exceptional verbal and written communication.','<b>Negotiation Skills</b>: Strong negotiation skills to secure profitable deals.']},\r\n  {title:'Customer Support Executive', dept:'Customer', loc:'Gurugram', type:'Full-time',\r\n   about:'Be the friendly, reliable voice travellers reach when they need help. Resolve booking, cancellation and travel queries with empathy and speed.',\r\n   process:['1st round with HR','Communication & scenario round','Final round with CX Lead'], exp:'0 to 3 Year(s)',\r\n   resp:['<b>Support</b>: Handle customer queries across calls, chat and email.','<b>Resolve</b>: Manage bookings, changes, cancellations and refunds.','<b>Empathy</b>: Deliver calm, helpful service in time-sensitive situations.','<b>Escalate</b>: Flag complex issues to the right teams quickly.'],\r\n   profile:['<b>Experience</b>: 0\\u20133 years in customer support (freshers welcome).','<b>Core Skills</b>: Clear communication, patience, problem-solving.','<b>Bonus</b>: Travel/airline domain knowledge.']},\r\n  {title:'Data Analyst', dept:'Data', loc:'Remote', type:'Full-time',\r\n   about:'Turn EaseMyTrip\\u2019s data into decisions. Build dashboards, run analyses and surface insights that shape product, marketing and operations.',\r\n   process:['1st round with Data Lead','SQL / case analysis round','Final round with Leadership'], exp:'2 to 5 Year(s)',\r\n   resp:['<b>Analysis</b>: Explore large datasets to answer business questions.','<b>Dashboards</b>: Build and maintain reporting for key metrics.','<b>Insights</b>: Translate data into clear recommendations.','<b>Collaboration</b>: Partner with teams across the company.'],\r\n   profile:['<b>Experience</b>: 2+ years in analytics.','<b>Core Skills</b>: SQL, Excel, a BI tool, basic statistics.','<b>Bonus</b>: Python/R and experience in consumer products.']},\r\n  {title:'Talent Acquisition Specialist', dept:'HR', loc:'Gurugram', type:'Full-time',\r\n   about:'Help build the teams that build EaseMyTrip. Own end-to-end hiring across functions and deliver a great candidate experience.',\r\n   process:['1st round with HR Lead','Stakeholder round','Final round with Leadership'], exp:'2 to 6 Year(s)',\r\n   resp:['<b>Sourcing</b>: Find and engage strong candidates across channels.','<b>Process</b>: Manage the full hiring funnel and interview coordination.','<b>Experience</b>: Ensure a smooth, respectful candidate journey.','<b>Partnership</b>: Work with hiring managers on role definition.'],\r\n   profile:['<b>Experience</b>: 2+ years in recruitment / talent acquisition.','<b>Core Skills</b>: Sourcing, stakeholder management, ATS tools.','<b>Bonus</b>: Tech or high-volume hiring experience.']},\r\n  {title:'Travel Operations Executive', dept:'Operations', loc:'Noida', type:'Full-time',\r\n   about:'Keep travel running smoothly behind the scenes. Manage bookings, supplier coordination and issue resolution across the EaseMyTrip operations engine.',\r\n   process:['1st round with HR','Operations scenario round','Final round with Operations Lead'], exp:'1 to 4 Year(s)',\r\n   resp:['<b>Operations</b>: Process and manage bookings end to end.','<b>Coordination</b>: Liaise with airlines, hotels and suppliers.','<b>Resolution</b>: Handle changes, cancellations and exceptions.','<b>Accuracy</b>: Maintain clean records and timely follow-ups.'],\r\n   profile:['<b>Experience</b>: 1+ years in travel operations or similar.','<b>Core Skills</b>: Coordination, attention to detail, communication.','<b>Bonus</b>: GDS / travel-tools familiarity.']},\r\n];\r\n\r\nconst ICONS = {\r\n  code:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M8 8l-4 4 4 4M16 8l4 4-4 4M14 4l-4 16\"/></svg>',\r\n  pen:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 19l7-7-4-4-7 7v4z\"/><path d=\"M15 8l3-3 1 1-3 3\"/></svg>',\r\n  mega:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z\"/><path d=\"M16 9a3 3 0 0 1 0 6\"/></svg>',\r\n  handshake:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M8 12l3 3 5-5 4 4M2 10l4-4 5 5\"/></svg>',\r\n  support:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 14v-2a8 8 0 0 1 16 0v2M4 14a2 2 0 0 0 2 2h1v-5H6a2 2 0 0 0-2 2zM20 14a2 2 0 0 1-2 2h-1v-5h1a2 2 0 0 1 2 2zM18 16v1a3 3 0 0 1-3 3h-3\"/></svg>',\r\n  chart:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 3v18h18M7 14v4M12 9v9M17 5v13\"/></svg>',\r\n  rupee:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M6 4h12M6 8h12M9 4c4 0 6 2 6 5s-2 5-6 5l6 6\"/></svg>',\r\n  people:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1M16 5a3 3 0 0 1 0 6M22 20v-1a5 5 0 0 0-4-4.9\"/></svg>',\r\n  plane:'<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M2 16L21 4l-6 16-3.5-6L2 16z\"/></svg>',\r\n};\r\nconst pinIcon='<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z\"/><circle cx=\"12\" cy=\"10\" r=\"2.5\"/></svg>';\r\nconst clockIcon='<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg>';\r\nconst arrowIcon='<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>';\r\n\r\n/* ---- render filter chips ---- */\r\nconst chipsWrap=document.getElementById('chips');\r\nlet activeFilter='all';\r\nfunction buildChips(){\r\n  chipsWrap.innerHTML='';\r\n  const all=document.createElement('button');\r\n  all.className='chip'+(activeFilter==='all'?' active':'');\r\n  all.textContent='All roles';\r\n  all.onclick=()=>setFilter('all');\r\n  chipsWrap.appendChild(all);\r\n  DEPARTMENTS.forEach(d=>{\r\n    if(!ROLES.some(r=>r.dept===d.key))return;\r\n    const c=document.createElement('button');\r\n    c.className='chip'+(activeFilter===d.key?' active':'');\r\n    c.textContent=d.label;\r\n    c.onclick=()=>setFilter(d.key);\r\n    chipsWrap.appendChild(c);\r\n  });\r\n}\r\nfunction setFilter(k){activeFilter=k;buildChips();renderJobs();}\r\n\r\n/* ---- render jobs ---- */\r\nconst jobsGrid=document.getElementById('jobsGrid');\r\nconst searchInput=document.getElementById('searchInput');\r\nfunction renderJobs(){\r\n  const q=(searchInput.value||'').toLowerCase().trim();\r\n  const list=ROLES.filter(r=>{\r\n    const okDept=activeFilter==='all'||r.dept===activeFilter;\r\n    const okQ=!q||r.title.toLowerCase().includes(q)||r.dept.toLowerCase().includes(q)||r.loc.toLowerCase().includes(q);\r\n    return okDept&&okQ;\r\n  });\r\n  jobsGrid.innerHTML='';\r\n  if(!list.length){\r\n    jobsGrid.innerHTML='<div class=\"no-results\">No roles match that search yet — try a different keyword, or email <a href=\"mailto:joinus@easemytrip.com\" style=\"color:var(--emt-blue);font-weight:600\">joinus@easemytrip.com</a>.</div>';\r\n    return;\r\n  }\r\n  list.forEach(r=>{\r\n    const idx=ROLES.indexOf(r);\r\n    const d=DEPARTMENTS.find(x=>x.key===r.dept)||{icon:'plane',label:r.dept};\r\n    // dept → badge color class\r\n    const badgeMap={'Engineering':'badge-eng','Product & Design':'badge-prd','Marketing':'badge-mkt',\r\n      'Sales':'badge-sal','Customer':'badge-cus','Data':'badge-dat','Finance':'badge-fin','HR':'badge-hr','Operations':'badge-ops'};\r\n    const bc=badgeMap[r.dept]||'badge-eng';\r\n    const card=document.createElement('div');\r\n    card.className='job-card';\r\n    card.innerHTML=`\r\n      <div class=\"job-top\">\r\n        <span class=\"job-badge ${bc}\"><span class=\"job-dept-ic\">${ICONS[d.icon]}</span>${d.label}</span>\r\n      </div>\r\n      <h3>${r.title}</h3>\r\n      <div class=\"job-meta\">\r\n        <span>${pinIcon}${r.loc}</span>\r\n        <span>${clockIcon}${r.type}</span>\r\n      </div>\r\n      <div class=\"job-foot\">\r\n        <button class=\"view-desc\" data-idx=\"${idx}\">${eyeIcon}View description</button>\r\n        <a class=\"apply-link\" href=\"https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform\" target=\"_blank\">Apply ${arrowIcon}</a>\r\n      </div>`;\r\n    card.querySelector('.view-desc').addEventListener('click',()=>openDrawer(idx));\r\n    jobsGrid.appendChild(card);\r\n  });\r\n}\r\nconst eyeIcon='<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg>';\r\nsearchInput.addEventListener('input',renderJobs);\r\nbuildChips();renderJobs();\r\n\r\n/* =========================================================\r\n   JD DRAWER (right-side slide-in)\r\n   ========================================================= */\r\nconst drawer=document.getElementById('drawer');\r\nconst overlay=document.getElementById('drawerOverlay');\r\nfunction openDrawer(idx){\r\n  const r=ROLES[idx];\r\n  const d=DEPARTMENTS.find(x=>x.key===r.dept)||{icon:'plane',label:r.dept};\r\n  document.getElementById('drawerDept').innerHTML=`${ICONS[d.icon]}${d.label}`;\r\n  document.getElementById('drawerTitle').textContent=r.title;\r\n  document.getElementById('drawerMeta').innerHTML=`<span>${pinIcon}${r.loc}</span><span>${clockIcon}${r.type}</span>`;\r\n  document.getElementById('drawerApply').href='https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform';\r\n  document.getElementById('drawerBody').innerHTML=`\r\n    <div class=\"jd-block\"><h4>About the role</h4><p>${r.about}</p></div>\r\n    <div class=\"jd-block\"><h4>Interview process</h4><ul>${r.process.map(p=>`<li>${p}</li>`).join('')}</ul></div>\r\n    <div class=\"jd-block\"><h4>Minimum experience</h4><span class=\"jd-exp\">${r.exp}</span></div>\r\n    <div class=\"jd-block\"><h4>Roles &amp; responsibilities</h4><ul>${r.resp.map(p=>`<li>${p}</li>`).join('')}</ul></div>\r\n    <div class=\"jd-block\"><h4>Preferred candidate profile</h4><ul>${r.profile.map(p=>`<li>${p}</li>`).join('')}</ul></div>`;\r\n  document.getElementById('drawerBody').scrollTop=0;\r\n  drawer.classList.add('open');overlay.classList.add('open');\r\n  drawer.setAttribute('aria-hidden','false');\r\n  document.body.style.overflow='hidden';\r\n}\r\nfunction closeDrawer(){\r\n  drawer.classList.remove('open');overlay.classList.remove('open');\r\n  drawer.setAttribute('aria-hidden','true');\r\n  document.body.style.overflow='';\r\n}\r\ndocument.getElementById('drawerClose').addEventListener('click',closeDrawer);\r\noverlay.addEventListener('click',closeDrawer);\r\ndocument.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});\r\n\r\n/* =========================================================\r\n   INTERACTIVE WORLD GLOBE  (vanilla canvas, no libraries)\r\n   - REAL geography from an embedded land bitmap (Natural Earth 110m)\r\n   - lat/long graticule, country-to-country flight arcs, city lights\r\n   - DRAG with cursor / touch to spin it in place\r\n   ========================================================= */\r\n(function(){\r\n  const canvas=document.getElementById('globe');\r\n  if(!canvas)return;\r\n  const ctx=canvas.getContext('2d');\r\n  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;\r\n  let DPR=Math.min(window.devicePixelRatio||1,2);\r\n  let size=560,R=0,cx=0,cy=0;\r\n  function resize(){\r\n    const cssW=Math.min(canvas.parentElement.clientWidth||560,560);\r\n    size=cssW;canvas.style.width=size+'px';canvas.style.height=size+'px';\r\n    canvas.width=size*DPR;canvas.height=size*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);\r\n    R=size*0.40;cx=size/2;cy=size/2;\r\n  }\r\n  resize();window.addEventListener('resize',resize);\r\n\r\n  // ---- embedded land mask (bit-packed, MSB-first, row-major) ----\r\n  const MW=720,MH=360;\r\n  const MASK_B64=\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH//////gAAAAD///////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////////gAAB8P//////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH////////Af////////////4A/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABh///////+B////////////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf8P//////g/////////////////AAAAAAAAAAAAAAAAAAAADvAAAAAAAAAAAAAB/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//+QP///8H////////////////gAAAAAAAAAAA//+AAAAAADwAAAAAAAAAAAAAD//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///f////gAf//////////////+AAAAAAAAAD4/j/+AAAAAAAAAAAAAAAAAAAAAA//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAD//n//8AAD///////////////8AAAAAAAAAD//+AAAAAAAAAAAAAAAAAAAAAAAAP/xwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgA/4eD/8///+AP////////////////4AAAAAAAAAB//+AAAAAAAAAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8fgHg///8D/////////////////4AAAAAAAAAAf/w8AAAAAAAAAAAAAAAAAAAAAAAAAP+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPwAAAA8AD///AAf////////////////4AAAAAAAAAAD/A/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/gAAAAAAAAD//4AAB////////////////8AAAAAAAAAAD+AAAAAAAAAAAAAAAAAAAAAAAAAAAA/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/gAEAAAD/4f///AAH////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAA+AAAAAAAAAAD/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfwPgPAB/wD8AABwAAA////////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAP/8AAAAAAAAAD////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+H8B/4A/gA+AAAAAAAf////////////4AAAAAAAAAAAAAAAAAAAAAAAAAH/8AAAAAAAAD///////AAAAAAAB//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB///8APx8f///wAAAAAAH////////////wAAAAAAAAAAAAAAAAAAAAAAAAB/4AAAAAAAAH///////+AAAAAAAD//x+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfwAAAA8P///wAAAAAAB////////////wAAAAAAAAAAAAAAAAAAAAAAAAD/AAAAAAAAB////////gAAAAAAAAcAAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAA////////////gAAAAAAAAAAAAAAAAAAAAAAAAP4AAAAAAAAB///////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAAAAGAf8AAAQAAAAAAAP///////////gAAAAAAAAAAAAAAAAAAAAAAAA/gAAAAAAAf/////////8EAAAAAAAA4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH//kAAHgf4/4Pj+fwAAAAAAH//////////wAAAAAAAAAAAAAAAAAAAAAAAAB/AAAAAAAB////////////8A/8AAAA+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/7/8Y+B/8/A/3/ggAAAAAAD//////////4AAAAAAAAAAAAAAAAAAAAAAAAH8AAAA/gAB////////////////AAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/n//+/Af+cA///n+AAAAAAD/////////+AAAAAAAAAAAAAAAAAAAAAAAAAH4AAAA/gh8////////////////AAAH//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAf+P////AD8cA/////gAAAAAH//////////4AAAAAAAAAAAAAAAAAAAAAAAAf4AAAD/jv/////////////////AgAH///AAAAAAAAAA8AAAAAADgAAAAAAAAAB8B////gAB/A//////gAAAAAf/////////8AAAAAAAAAAAAAAAAAAAAAAAAD+AAAP/H//////////////////h//////4AAAAAAAADAAAAAAB//gAAAAAAAAAAD////4AB/wP/////8AAAAB/////////48AAAAAAAAAAAAAAA//AAAAAAAA/AAAf/j////////////////////////////gAAAAAAAAAAAA////+AAAAAAcAAAAf///AB/4A//////wAAAB/////////4AAAAAAAAAAAAAAAT//gAAAAAAAAAAAP/z////////////////////////////wAAAAAAAAAAAD///////AAA//Y4A/////w+fwAH5Af//4AAAB+/////////gAAAAAAAAAAAAAP///2AAAAAAAAAYAP/n////////////////////////////wAAD/+AAAAAAH///////+D/////wP///+B/H+AH+AH//8AAAAA////////8AAAAAAAAAAAAAA/////4AAAAAAAAf8D/j///////////////////////////////h//8gAAAH////////////////8f4EAAAH+4H+AD//gAAAAB////////gAAAAAAAAAAAAAD//////4AAAADAEf/g/w///////////////////////////////////+AAAH////////////////+AB/gAeH/8P+AAP/8AAAAP///////gAAAAAAAAAAAAAAf///////gDwA/P///9/5////////////////////////////////////gAAA/////////////////H4//H///8f+APD//4AAAf//////gAAAAAAAAAAAAAAB////////4D4P///////w////////////////////////////////////8AAAP//////////////////////////+AOD//8AAA//////+AAAAAAAAAAAAAAAD////////8Dg////////j////////////////////////////////////9+AAB//////////////////////////4AAH///wAAf/////8AAAAAAAAAAAAAAAH////////8Bz////////H//////////////////////////////////////gD4/////////////////////////wAAAP/x/wAAf/////gAAAeAPgAAAAAAAAP//////wPx7/////////f///////////////////////////////////v//g///////////////////////////gAAAP/wfAAAP////wAAAA///gAAAAAAAA///4f//8AH//////////////////////////////////////////////gP4AP//////////////////////////PAA///4GAAAH///8AAAAAH//wAAAAAAAB///gH//8AP//////////////////////////////////////////////AH4AH/////////////////////////+P4B////AAAAD///4AAAAAP//wAAAAAAAD///gf//8fP/////////////////////////////////////////////+AAQAAAP///////////////////////8f+AQH//wAAAD///4AAAAAD/+AAAAAAAAP///B///+P//////////////////////////////////////////////wAAAAAAP//////////////////////+AfngAA//wAAAB///wAAAAAA/gAAAAAAAA///8H///////////////////////////////////////////////////4AAAcAD///////////////////////+AEAAAA/34AAAA///gAAAAAAAAAAAAAAAD///wf///////////////////////////////////////////////////8AAAAA////////////////////////wAAcAAAH8QAAAAf/+AAAAAAAAAAAAAAAAf///A////////////////////////////////////////////////////+AAAAB////////////////////////AAAwI/YAeAAAAAP/+AAAAAAAAAAAAAAAB///+A///////////////////////////////////////////////x///+AAAAAD///////////////////////+AAAAI//AAAAAAAH/+AAAAAAAAAAAAAAAD///+Af//////////////////////////////////////////////j///gAAAAAB///////////////////////8AAAAA//gAAAAAAD/8AAAAAAAAAAAAAAAD///+Af////////////////////////////////////////////gfH//8AAAAAAB////38/////////////////4AAAAA//+AAAAAAAD8AAAAAAAAAAAAAAAD///+Af///////////////////////////////////////////+AIP//gAAAAAAMf///n8D////////////////4AAAAAf/+AAAAAAAA4AAAAAAAAAAAAAAAD////gH4H/////////////////////////////////////////8AB//GAAAAAAAAA///PgAA///////////////4AAAAAf/+AcAAAAAAAAAAAAAAAAAAAAAAB////gAAH/////////////////////////////////////////4AD5AAAAAAAAAAA//8EAAAH//////////////4AAAAA//+A+AAAAAAAAAAAAAAAAAAAAAAB/3//AB////////////////////////////////////////g8H8APwAAAAAAAAAAAx/+AAAAB//////////////+AAAAB///h/AAAAAAAAAAAAAAAAAAAAAAB/D/8AB///////////////////////////////////////gAAAAAfgAAAAAAAAAAAAH8AAAAAP//////////////AAAAAf////gAAAAAAAAAAAAAAAAAAeAAAcB/4AA///////////////////////////////////////AAAAAB/AAAAAAAAAAAAAHzgAAAAAP/////////////gAAAAP////wAAAAAAAAAAAAAAAAAA8AAAAB/4AAf/////////////////////////////////////8AAAAAP/gAAAAAAAAAAAAeHgAAAAAH/////////////iAAAAH////4AAAAAAAAAAAAAAAAAA/wAAAY/4Ac//////////////////////////////////////wAAAAAf/wAAAAAAAAAAAB8AAAAAAAD//////////////4AAAH////4AAAAAAAAAAAAAAAAAA/gAAD4f4A///////////////////////////////////////gAAAAA//wAAAAAAAAAAAHwAAAAAAAA//////////////+AAAP////4AAAAAAAAAAAAAAAAAAfAAAD4fwA//////////////////////////////////////+AAAAAB//wAAAAAAAAAAA/AAAAAAAAA///////////////wAAf////+AAAAAAAAAAAAAAAAAAfwAADz+AA//////////////////////////////////////8AAAAAB//AAAAAAAAAAADgAAAAAAAAAf///////////////gA//////gAAAAAAAAAAAAAAAAAP4AABzgAA//////////////////////////////////////wAAAAAB//AAAAAAAAAAAcAAAAAAAAAAH///////////////4H//////+AAAAAAAAAAAAAAAAPH8AABwADj//////////////////////////////////////gAAAAAB//AAAAAAAAAAAAAAAAAAAAAAH///////////////4H///////AAAAAAAAAAAAAAAA/A+AAB8wf///////////////////////////////////////8AAAAAB/4AAAAAAAAAAAAAAAAAAAAADB///////////////4D///////gAAAAAAAAAAAAAAB/A/AAB///////////////////////////////////////////+EAAAA/wAAAAAAAAAAAAAAAAAAAAADB///////////////8D///////wAAAAAAAAAAAAAAB/H/gD/////////////////////////////////////////////cAAAA/wAAAAAAAAAAAAAAAAAAAAABA///////////////8B///////4AAAAAAAAAAAAAAB+H/4H/////////////////////////////////////////////8AAAA+AAAAAAAAAAAAAAAAAAAAAAAAP//////////////+D///////4AAAAAAAAAAAAAAB8H/4P/////////////////////////////////////////////+AAAA+AAAAAAAAAAAAAAAAAAAAAAAAP///////////////j///////gAAAAAAAAAAAAAABgP/wP/////////////////////////////////////////////eAAAAcAAAAAAAAAAAAAAAAAAAAAAAAH//////////////////////84AAAAAAAAAAAAAAAAD/4/////////////////////////////////////////////+OAAAAQAAAAAAAAAAAAAAAAAAAAAAAAD//////////////////////xwAAAAAAAAAAAAAAAAP8H/////////////////////////////////////////////+OAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////////////////////B/BgAAAAAAAAAAAAAAAAaAH/////////////////////////////////////////////+PAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD3//////////////////8DAD4AAAAAAAAAAAAAAAAAA//////////////////////////////////////////////+PAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA5//////////////////wAwH/gAAAAAAAAAAAAAAAAP//////////////////////////////////////////////+PgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAef/////////////////H4AP/gAAAAAAAAAAAAAAAH///////////////////////////////////////////////8MAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEf////////////////+fwAP/wAAAAAAAAAAAAAAAH///////////////////////////////////////////////8IAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHf////////////////9/wAf/4AAAAAAAAAAAAAAAB///////////////////////////////////////////////4IAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////////////7/wAAEwAAAAAAAAAAAAAAAAf//////////////////////////////////////////////wMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////////////////8CAAwAAAAAAAAAAAAAAAAP////////////z///+D////////////////////////////gOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////////////////7iAAAAAAAAAAAAAAAAAAAH//////////j8D///wD////////////////////////////AIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////////////////AAAAAAAAAAAAAAAAAAAD//////////A8H///gD///////////////////////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////////////////P8AAAAAAAAAAAAAAAAAAAH////n////+B/v//+Af///////////////////////////8AIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//////////////////8fAAAAAAAAAAAAAAAAAAAAH////g////8AcH//8Af///////////////////////////4AcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//////////////////w8AAAAAAAAAAAAAAAAAAAAH//+/gf///4AAB//8B////////////////////////////wAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////////////8AwAAAAAAAAAAAAAAAAAAAAH//4P4f///4AAAf/+A////////////////////////////gAf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////////////////4AAAAAAAAAAAAAAAAAAAA////xgH4D///wAAAP/+Af//////////////////////////+AB/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////////////////wAAAAAAAAAAAAAAAAAAAA////AAn8A///wAAAB/+AH/////////////////////////+AAD/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////////////////4AAAAAAAAAAAAAAAAAAAA////ABh/AP//wAAAB//AH/////////////////////////4AADmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////////////8AAAAAAAAAAAAAAAAAAAA////ABg/wH//wB/AB//gE/////////////////////////wAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////////////AAAAAAAAAAAAAAAAAAAAA///8AAAP4H//8H/4D//wAf////////////////////////gAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH////////////////+AAAAAAAAAAAAAAAAAAAAA///gABgD/H/Dj//////4C//////////////////////z//gAADgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH////////////////wAAAAAAAAAAAAAAAAAAAAA///gABwA9n/A///////8H//////////////////////D/+AAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////wAAAAAAAAAAAAAAAAAAAAA///AABgAYD8B///////4B/////////////////////+Hn4AAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////gAAAAAAAAAAAAAAAAAAAAB///AABgAMB8B///////4B/////////////////////8GB4AAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////////////////AAAAAAAAAAAAAAAAAAAAAB///AAAAAIB+B///////wA/////////////////////gAD8AAAHgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///////////////7AAAAAAAAAAAAAAAAAAAAAA//+AAAAAYA/B///////wA/////////////////////wAD+AAAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////////////4AAAAAAAAAAAAAAAAAAAAAA//+AAAAfgAfA///////wA/////////////////////8QA/AAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////////////4AAAAAAAAAAAAAAAAAAAAAA//4AAAwHgAcAf//////+A/////////////////////++AfgAA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////////////8AAAAAAAAAAAAAAAAAAAAAAB/wB//8AAAMAf///////3//////////////////////4AfgAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////////////8AAAAAAAAAAAAAAAAAAAAAAAwAf//4AAAAABhw////////////////////////////wAfgAP+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH//////////////+AAAAAAAAAAAAAAAAAAAAAAAwD///8AAAAAAAA////////////////////////////AAfgAP+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//////////////8AAAAAAAAAAAAAAAAAAAAAAA/P///8AAAA8AAw///////////////////////////+AAfAf/+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//////////////4AAAAAAAAAAAAAAAAAAAAAAB/////4AAAAAABg///////////////////////////+AAcA//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////////////gAAAAAAAAAAAAAAAAAAAAAAD/////wAAAAAAAB////////////////////////////gAAD28AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH////////////+AAAAAAAAAAAAAAAAAAAAAAAH/////4AAAAAAAB////////////////////////////gAAGeQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////////////8AAAAAAAAAAAAAAAAAAAAAAAf/////+AAAAAAAD////////////////////////////gAAfYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////wAAAAAAAAAAAAAAAAAAAAAAA///////8AA4AAAD////////////////////////////wAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////gAAAAAAAAAAAAAAAAAAAAAAB////////AD+AAAD////////////////////////////4AAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////AAAAAAAAAAAAAAAAAAAAAAAB////////gD/wAAH////////////////////////////8AAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcf/////////+AAAAAAAAAAAAAAAAAAAAAAAD////////4D//h8H////////////////////////////8AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOP/////////+AAAAAAAAAAAAAAAAAAAAAAAB/////////D/////////////////////////////////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOP///////gP+AAAAAAAAAAAAAAAAAAAAAAAB///////////////////////////////////////////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGH///////gEfAAAAAAAAAAAAAAAAAAAAAAAD///////////////////B///////////////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADH/////wDgAPAAAAAAAAAAAAAAAAAAAAAAAH///////////////////B///////////////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABj/////gAAAPgAAAAAAAAAAAAAAAAAAAAAAP//////////////7////g///////////////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAx////+AAAAPgAAAAAAAAAAAAAAAAAAAAAAf///////////////////g///////////////////////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4f///8AAAAPgAAAAAAAAAAAAAAAAAAAAAD///////////////h////wP//////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4f///4AAAAHwAAAAAAAAAAAAAAAAAAAAAH///////////////h////4D//////////////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeP///4AAAAHzAAAAAAAAAAAAAAAAAAAAAH///////////////w////8B4/////////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGH///4AAAADwQAAAAAAAAAAAAAAAAAAAAf///////////////wf///8AA/////////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH///8AAAABwAAAAAAAAAAAAAAAAAAAAAf///////////////4f///8gGf///////////////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB///4AAAAAgAAAAAAAAAAAAAAAAAAAAA////////////////4P////gOAf8f////////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg///4AAAAABgAAAAAAAAAAAAAAAAAAAA////////////////8P////geAAAP////////////////8MAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwf//4AAAAAAgAAAAAAAAAAAAAAAAAAAB////////////////+H////g/AAAH////////////////wYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYP//4AAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////+B//////wAAD////////////////g4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIH//4AAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////+B//////8AAA///////////////+A4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAAAA/4AAAAAAAAAAAAAAAAAAAAH/////////////////A//////+AAAf//////n///////4AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//wAAABj/AAAAAAAAAAAAAAAAAAAAH/////////////////g///////AAAf//////j//////+AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//4AAAAAPgAAAAAAAAAAAAAAAAAAAP/////////////////w//////+AAAf/////8D//////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//4AAfAAB4AAAAAAAAAAAAAAAAAAAP/////////////////w//////8AAAP/////AD////+HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAB//8AB/AAA+AAAAAAAAAAAAAAAAAAAP/////////////////wf/////4AAAAf////AB////8GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//8AB+AAAfgAAAAAAAAAAAAAAAAAAH/////////////////wP/////wAAAAP///+AB////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAB//+AB+AAAAD4AAAAAAAAAAAAAAAAAH/////////////////wH/////gAAAAP///4AAf///wPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAA///AD+AAAAD+AAAAAAAAAAAAAAAAAH/////////////////4D/////wAAAAP///wAAf///geAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//gP+AAAAB/gAAAAAAAAAAAAAAAAD/////////////////4D/////AAAAAP///gAAP///weAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH//7/8AAA4f0DgAAAAAAAAAAAAAAAD/////////////////8B////+AAAAAP///AAAH///4AAAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////8AAAQAAAAAAAAAAAAAAAAAAAD/////////////////+A////4AAAAAP//+AAAH///4AAAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///8AAAAAAAAAAAAAAAAAAAAAAAH//////////////////Af///wAAAAAH//4AAAH///8AAAAeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///4AAAAAAAAAAAAAAAAAAAAAAAH//////////////////Af//+AAAAAAH//wAAAH///+AAAAeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//4AAAAAAAAAAAAAAAAAAAAAAAH//////////////////AP//4AAAAAAH//gAAAPH///AAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB/7/AAAAAAAAAAAAAAAAAAAAAAH//////////////////gf//wAAAAAAH/+AAAACH///gAAA4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///gAAAAAAAAAAAAAAAAAAAAAP//////////////////wf//gAAAAAAD/8AAAAAH///wAAA4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//wAAAAAAAAAAAAAAAAAAAAAf//////////////////8P/8AAAAAAAB/8AAAAAD///wAAA4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//wAAAAAAAAAAAAAAAAAAAAAP//////////////////+P/wAAAAAAAB/8AAAAAD///wAAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//gAAAAAAAAAAAAAAAAAAAAAP///////////////////P+AAAAAAAAB/8AAAAAD///4AAAPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN/gAAAAAAAAAAAAAAAAAAAAAP///////////////////vgAAAAAAAAA/+AAAAABz//4AAAYwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/gAAAAAAAAAAAAAAAAAAAAAP///////////////////3AAAAAAAAAA/8AAAAABz//4AAAIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/gAAAgAAAAAAAAAAAAAAAAAH///////////////////4AAAAAAAAAA/8AAAAABwf/4AAAAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfgAABiAAAAAAAAAAAAAAAAAH///////////////////wABAAAAAAAAf8AAAAABwP/wAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPAAAPHgAAAAAAAAAAAAAAAAB///////////////////4A/AAAAAAAAf8AAAAABgP/gAAADGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgAB//wAEAAAAAAAAAAAAAAA///////////////////8P/AAAAAAAAP8AAAAABgH/AAACC0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPwAB/f/nsAAAAAAAAAAAAAAAf/////////////////////AAAAAAAAP4AAAAABgB8AAACAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAF4AB/P//4AAAAAAAAAAAAAAAP////////////////////+AAAAAAAAHwAAAAABAA4AAAEBgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4PD////8AAAAAAAAAAAAAAAH////////////////////+AAAAAAAAHzAAAAABgAwAAAIABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf5v////+AAAAAAAAAAAAAAAD////////////////////+AAAAAAAAHDAAAAADwAgAAAAAHgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHh//////gAAAAAAAAAAAAAAD////////////////////8AAAAAAAADHgAAAAD4AAAAAAA/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABx//////wAAAAAAAAAAAAAAD////////////////////8AAAAAAAAAHgAAAAA4AAAAAAD/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//////4AAAAAAAAAAAAAAB////////////////////4AAAAAAAAADwAAAAAYAAAAAACPgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////8AAAAAAAAAAAAAAAf///////////////////4AAAAAAAAADgAAAAAOAAAABgAOgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////+AAAAAAAAAAAAAAAP///+///////////////wAAAAAAAAADgAAAAAPAAAABgAOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf///////AAAAAAAAAAAAAAD///gD//////////////wAAAAAAAAAAAAAAAAPwAAAD4ACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf///////4AAAAAAAAAAAAAB//+AD//////////////gAAAAAAAAAAAAAAB4HwAAAP8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf///////8AAAAAAAAAAAAAA+AAAB//////////////AAAAAAAAAAAAAAAB8H4AAAf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf///////+AAAAAAAAAAAAAAAAAAAh/////////////AAAAAAAAAAAAAAAA+H4AAA/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////////AAAAAAAAAAAAAAAAAAAAf///////////+AAAAAAAAAAAAAAAAfD4AAB/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////////AAAAAAAAAAAAAAAAAAAAf///////////8AAAAAAAAAAAAAAAAPj4AAD/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////////AAAAAAAAAAAAAAAAAAAAf///////////4AAAAAAAAAAAAAAAAHx4AAf/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/////////gAAAAAAAAAAAAAAAAAAAf///////////wAAAAAAAAAAAAAAAAD48AA//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////wAAAAAAAAAAAAAAAAAAAf///////////AAAAAAAAAAAAAAAAAB/MAH//wAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////wAAAAAAAAAAAAAAAAAAAf//////////+AAAAAAAAAAAAAAAAAA/kAP//4AEGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/////////wAAAAAAAAAAAAAAAAAAAf//////////4AAAAAAAAAAAAAAAAAA/wAP//w/4GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/////////gAAAAAAAAAAAAAAAAAAAf//////////wAAAAAAAAAAAAAAAAAAf4AP//ggAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////////8AAAAAAAAAAAAAAAAAAA///////////gAAAAAAAAAAAAAAAAAAf4AP//hAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////////+wAAAAAAAAAAAAAAAAAA///////////AAAAAAAAAAAAAAAAAAAP4AP//hhAAB8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///////////+AAAAAAAAAAAAAAAAAA///////////AAAAAAAAAAAAAAAAAAAH+AH//B+AAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////gAAAAAAAAAAAAAAAAA//////////+AAAAAAAAAAAAAAAAAAAH+AD/+D8AAA+BgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////gAAAAAAAAAAAAAAAAAf/////////8AAAAAAAAAAAAAAAAAAAD/AD/+D8AAAOH4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////AAAAAAAAAAAAAAAAAP/////////4AAAAAAAAAAAAAAAAAAAB/wD/+D8AAAeP/gAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////+AAAAAAAAAAAAAAAAH/////////wAAAAAAAAAAAAAAAAAAAA/wAN+DuAz4f//4AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//////////////gAAAAAAAAAAAAAAAD/////////wAAAAAAAAAAAAAAAAAAAA/wAAcBuAQAL///gABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//////////////wAAAAAAAAAAAAAAAB/////////gAAAAAAAAAAAAAAAAAAAAfwAAABnAAAA///wAFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//////////////4AAAAAAAAAAAAAAAB/////////AAAAAAAAAAAAAAAAAAAAAHwAAABlAAAAH//4AGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///////////////gAAAAAAAAAAAAAAA/////////AAAAAAAAAAAAAAAAAAAAADwAAABhAAAAB//8AMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///////////////wAAAAAAAAAAAAAAA/////////AAAAAAAAAAAAAAAAAAAAABgAAAAAAAAAA///H4EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///////////////wAAAAAAAAAAAAAAAf////////AAAAAAAAAAAAAAAAAAAAAAPAAAAAAAACAf//hgCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////////////wAAAAAAAAAAAAAAAf////////gAAAAAAAAAAAAAAAAAAAAAfxwAAAAAAAAf//AABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////////////wAAAAAAAAAAAAAAAP////////gAAAAAAAAAAAAAAAAAAAAAH/8AAAAAAAAf//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH//////////////wAAAAAAAAAAAAAAAP////////AAAAAAAAAAAAAAAAAAAAAAAH/gAAAAAAA//vgAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//////////////wAAAAAAAAAAAAAAAP////////AAAAAAAAAAAAAAAAAAAAAAAA/4AAAAAAAz+DwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//////////////wAAAAAAAAAAAAAAAP////////gAAAAAAAAAAAAAAAAAAAAAAAAA8+DwAAAB+B4AAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//////////////gAAAAAAAAAAAAAAAP////////gAAAAAAAAAAAAAAAAAAAAAAAAAAAOAAAAAEA+AAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//////////////gAAAAAAAAAAAAAAAP////////wAAAAAAAAAAAAAAAAAAAAAAAAABgcAAAAAAAfAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//////////////AAAAAAAAAAAAAAAAH////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAHgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////////////+AAAAAAAAAAAAAAAAH////////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////////////8AAAAAAAAAAAAAAAAH////////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////////////4AAAAAAAAAAAAAAAAH////////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////4AAAAAAAAAAAAAAAAH////////4AAIAAAAAAAAAAAAAAAAAAAAAAAAAAC/8AMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////wAAAAAAAAAAAAAAAAP////////4AAIAAAAAAAAAAAAAAAAAAAAAAAAAAH/8AeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH////////////gAAAAAAAAAAAAAAAAf////////4AAcAAAAAAAAAAAAAAAAAAAAAAAAAAP/4AeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH////////////AAAAAAAAAAAAAAAAAf////////4AA8AAAAAAAAAAAAAAAAAAAAAAAAAAP/wAeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////AAAAAAAAAAAAAAAAA/////////4AA8AAAAAAAAAAAAAAAAAAAAAAAAA8f/wAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////AAAAAAAAAAAAAAAAA/////////4AB+AAAAAAAAAAAAAAAAAAAAAAAAD+f/gAfwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////////////AAAAAAAAAAAAAAAAA/////////4AD+AAAAAAAAAAAAAAAAAAAAAAAAH///wAf4AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf///////////AAAAAAAAAAAAAAAAA/////////4AP6AAAAAAAAAAAAAAAAAAAAAAAAH///8Af4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH///////////AAAAAAAAAAAAAAAAB/////////wB/8AAAAAAAAAAAAAAAAAAAAAAAAP///+Af4AAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB///////////AAAAAAAAAAAAAAAAB/////////gB/8AAAAAAAAAAAAAAAAAAAAAAABf////g/4AAAAAAAAAAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////////AAAAAAAAAAAAAAAAB////////8AD/4AAAAAAAAAAAAAAAAAAAAAAAB/////w/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////////AAAAAAAAAAAAAAAAA////////4AD/4AAAAAAAAAAAAAAAAAAAAAAAB///////8AAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////////+AAAAAAAAAAAAAAAAA////////gAD/4AAAAAAAAAAAAAAAAAAAAAAAD///////8AAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////////+AAAAAAAAAAAAAAAAAf///////AAD/wAAAAAAAAAAAAAAAAAAAAAAAH///////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////////+AAAAAAAAAAAAAAAAAf//////+AAB/wAAAAAAAAAAAAAAAAAAAAAAAH////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////8AAAAAAAAAAAAAAAAAP//////8AAB/wAAAAAAAAAAAAAAAAAAAAAAAf////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////4AAAAAAAAAAAAAAAAAP//////4AAD/gAAAAAAAAAAAAAAAAAAAAAAH/////////4AAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////4AAAAAAAAAAAAAAAAAH//////8AAD/gAAAAAAAAAAAAAAAAAAAAAB//////////8AAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////wAAAAAAAAAAAAAAAAAH//////8AAH/gAAAAAAAAAAAAAAAAAAAAAH//////////+AAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////wAAAAAAAAAAAAAAAAAD//////+AAH/AAAAAAAAAAAAAAAAAAAAAAP//////////+AAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////gAAAAAAAAAAAAAAAAAB//////+AAH/AAAAAAAAAAAAAAAAAAAAAA////////////AAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////////AAAAAAAAAAAAAAAAAAB//////+AAH/AAAAAAAAAAAAAAAAAAAAAA////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH////////wAAAAAAAAAAAAAAAAAAB//////+AAH+AAAAAAAAAAAAAAAAAAAAAA////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH///////+AAAAAAAAAAAAAAAAAAAB//////+AAH+AAAAAAAAAAAAAAAAAAAAAB////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH///////4AAAAAAAAAAAAAAAAAAAB//////+AAH+AAAAAAAAAAAAAAAAAAAAAB////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH///////gAAAAAAAAAAAAAAAAAAAB//////4AAD8AAAAAAAAAAAAAAAAAAAAAB////////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH///////AAAAAAAAAAAAAAAAAAAAB//////gAABwAAAAAAAAAAAAAAAAAAAAAA/////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH//////+AAAAAAAAAAAAAAAAAAAAA/////+AAAAAAAAAAAAAAAAAAAAAAAAAAA/////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////+AAAAAAAAAAAAAAAAAAAAA//////AAAAAAAAAAAAAAAAAAAAAAAAAAB/////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////+AAAAAAAAAAAAAAAAAAAAA//////AAAAAAAAAAAAAAAAAAAAAAAAAAB/////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////+AAAAAAAAAAAAAAAAAAAAAf////+AAAAAAAAAAAAAAAAAAAAAAAAAAA/////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////+AAAAAAAAAAAAAAAAAAAAAf////+AAAAAAAAAAAAAAAAAAAAAAAAAAA/////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//////+AAAAAAAAAAAAAAAAAAAAAP////+AAAAAAAAAAAAAAAAAAAAAAAAAAAf////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////8AAAAAAAAAAAAAAAAAAAAAH////8AAAAAAAAAAAAAAAAAAAAAAAAAAAf////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////4AAAAAAAAAAAAAAAAAAAAAH////4AAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////wAAAAAAAAAAAAAAAAAAAAAD////wAAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////wAAAAAAAAAAAAAAAAAAAAAB////gAAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////gAAAAAAAAAAAAAAAAAAAAAB////gAAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//////AAAAAAAAAAAAAAAAAAAAAAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAH////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////+AAAAAAAAAAAAAAAAAAAAAAA///+AAAAAAAAAAAAAAAAAAAAAAAAAAAAH////A///////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////8AAAAAAAAAAAAAAAAAAAAAAA///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAD///QAH/////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////4AAAAAAAAAAAAAAAAAAAAAAA///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAH//8AAD/////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////wAAAAAAAAAAAAAAAAAAAAAAA///gAAAAAAAAAAAAAAAAAAAAAAAAAAAAH//wAAB+////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//////gAAAAAAAAAAAAAAAAAAAAAAA//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//wAAA8////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////7/gAAAAAAAAAAAAAAAAAAAAAAAfgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP+AAAAA5////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////8eAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAARf///wAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf///gAAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///gAAAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH///AAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///AAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///AAAAAAAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//+AAAAAAAAeYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfvgAAAAAAAAf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAfwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH///gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP4AAAAAAAPMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP4AAAAAAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL//6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHwAAAAAAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHwAAAAAAA+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAT//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB///AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//AAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//AAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP3wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAAAAAAAB/AAfgAAAAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//gAAAAAAAAAYAAAH/wH//AD////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//4AAAAAAAG///+f///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////wfAAAAA/////////////////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////AAAH//////////////////////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAB/////////gAAf///////////////////////8MAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcf/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/4P/////////gAA//////////////////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+f/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////gA////////////////////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAff/gAAAAAAAAAAAAAAAAAAAAAAPwff/gAH////////////8AH////////////////////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/v/wAAAAAAAAAAAAAAAAAAAAAH/7///////////////////AP/////////////////////////////+QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/n/4AAAAAAAAAAAAAAAAAHg+P/////////////////////+A////////////////////////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAA//j/4AAAAAAAAAAAAAAAAf/////////////////////////8B/////////////////////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+AAAAAAAd+H/8AAAAAAAAAAAAAAAA/////////////////////////////////////////////////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAGAAAAQAAAAAAP/8AAAAAAAAAAAAAAAH////////////////////////////////////////////////////////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAH/wBw/4AQAAf//+AAAAAAAAAAAAAAB/////////////////////////////////////////////////////////////8AAAAAAAAAAAAAAAAAAAAAgfgAAAAD//////9/4f///8AAAAAAAAAAAAAAH/////////////////////////////////////////////////////////////gAAAAAAAAAAAAAAAAAAAAAAAP/wAAAP////////////4AAAAAAAAAAAAAAB////////////////////////////////////////////////////////////8AAAAAAAAAAAAAAAAAAf////////wAAH///////////+AAAAAAAAAAAAAAAH////////////////////////////////////////////////////////////gAAAAAAAAAAAAAAAEH/////////////3///////////4AAAAAAAAAAAAAAA////////////////////////////////////////////////////////////+AAAAAAAAAAAAAAAAf/////////////////////////+AAAAAAAAAAAAAAAf////////////////////////////////////////////////////////////8AAAAAAAAAAAAAAAAP////////////////////////8AAAAAAAAAAAAAAD//////////////////////////////////////////////////////////////4AAAAAAAAAAAAAAAH///////////////////////wAAAAAAAAAAAAAAAP///////////////////////////////////////////////////////////////4AAAAAAAAAAAAd+B////////////////////////+AAAAAAAAAAAAAAB////////////////////////////////////////////////////////////////8AAAAAAAAAAAAP///////////////////////////wAAAAAAAAAAAAA/////////////////////////////////////////////////////////////////+AAAAAAAAAACAH//////////////////////////wAAAAAAAAD/gAAf//////////////////////////////////////////////////////////////////wAAAAAAAAAH8A//////////////////////////AAAAAAAAAP/4AA///////////////////////////////////////////////////////////////////4AAAAAAAAAB+AAf////////////////////////gAAAAAAAAf/4AA/////////////////////////////////////////////////////////////////+AAAAAAAAAAAAAAAAB///////////////////////4AAAACAAB//4AAAAf//////////////////////////////////////////////////////////////8AAAAAAAAAAAAAAAAAf///////////////////////AAAAHgA///gAAAAP//////////////////////////////////////////////////////////////4AAAAAAAAAAAAAAAAB/////////////////////////wAP/AA//gAAAAP///////////////////////////////////////////////////////////////wAAAAAAAAAAAAAAf8///////////////////////////gAAAAAAAAAH/////////////////////////////////////////////////////////////////8AAAAAAAAAAAAAAH//////////////////////////////AAAAP4B////////////////////////////////////////////////////////////////////AAAAAAAAAAAAAAA//////////////////////////////+AAf///////////////////////////////////////////////////////////////////////wAAAAAAAAAAAAAA///////////////////////////////wf/////////////////////////////////////////////////////////////////////////gAAAAAAAAAAAAB///////////////////////////////////////////////////////////////////////////////////////////////////////////gAAAAAAAAAAAA///////////////////////////////////////////////////////////////////////////////////////////////////////////4AAAIYf+AAAAAA///////////////////////////////////////////////////////////////////////////////////////////////////////////8PA/////AAAAAAAP/////////////////////////////////////////////////////////////////////////////////////////////////////////////////8D/4AH////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\";\r\n  const bin=atob(MASK_B64);\r\n  function bit(idx){return (bin.charCodeAt(idx>>3)>>(7-(idx&7)))&1;}\r\n  function isLand(lng,lat){\r\n    let ix=((lng+180)/360*MW)|0; ix=((ix%MW)+MW)%MW;\r\n    let iy=((90-lat)/180*MH)|0; if(iy<0)iy=0; if(iy>=MH)iy=MH-1;\r\n    return bit(iy*MW+ix);\r\n  }\r\n  function ll(lat,lng){const phi=(90-lat)*Math.PI/180,th=(lng+180)*Math.PI/180;\r\n    return [-Math.sin(phi)*Math.cos(th),Math.cos(phi),Math.sin(phi)*Math.sin(th)];}\r\n\r\n  // ---- build land dot cloud once (accurate continents) ----\r\n  const N=18000,gold=Math.PI*(3-Math.sqrt(5)),land=[];\r\n  for(let i=0;i<N;i++){\r\n    const y=1-(i/(N-1))*2,r=Math.sqrt(1-y*y),th=gold*i;\r\n    const x=Math.cos(th)*r,z=Math.sin(th)*r;\r\n    const lat=Math.asin(Math.max(-1,Math.min(1,y)))*180/Math.PI;\r\n    const lng=Math.atan2(z,x)*180/Math.PI;\r\n    if(isLand(lng,lat))land.push([x,y,z]);\r\n  }\r\n\r\n  // ---- graticule (lat/long grid) ----\r\n  const grid=[];\r\n  for(let la=-60;la<=60;la+=30){const l=[];for(let lo=-180;lo<=180;lo+=4)l.push(ll(la,lo));grid.push(l);}\r\n  for(let lo=-180;lo<180;lo+=30){const l=[];for(let la=-85;la<=85;la+=4)l.push(ll(la,lo));grid.push(l);}\r\n\r\n  // ---- cities + routes (real cities -> arcs end on land) ----\r\n  const C={delhi:ll(28.6,77.2),mumbai:ll(19,72.8),dubai:ll(25.2,55.3),london:ll(51.5,-0.1),\r\n    paris:ll(48.8,2.3),newyork:ll(40.7,-74),singapore:ll(1.3,103.8),bangkok:ll(13.7,100.5),\r\n    hongkong:ll(22.3,114.2),sydney:ll(-33.8,151.2),nairobi:ll(-1.3,36.8),tokyo:ll(35.6,139.7),\r\n    istanbul:ll(41,28.9),capetown:ll(-33.9,18.4),saopaulo:ll(-23.5,-46.6)};\r\n  const ROUTES=[['delhi','dubai'],['delhi','london'],['mumbai','singapore'],['delhi','newyork'],\r\n    ['bangkok','hongkong'],['mumbai','nairobi'],['delhi','sydney'],['london','newyork'],\r\n    ['dubai','paris'],['singapore','tokyo'],['delhi','istanbul'],['nairobi','capetown'],['london','saopaulo']];\r\n  // ---- rotation state + drag (works anywhere inside globe circle) ----\r\n  let rotY=-1.5,tiltX=-0.28,vel=0,dragging=false,lastX=0,lastY=0;\r\n  function insideGlobe(e){\r\n    const rect=canvas.getBoundingClientRect();\r\n    const mx=(e.clientX-rect.left)*(canvas.width/DPR/rect.width);\r\n    const my=(e.clientY-rect.top)*(canvas.height/DPR/rect.height);\r\n    const dx=mx-cx,dy=my-cy;\r\n    return Math.sqrt(dx*dx+dy*dy)<=R*1.08;\r\n  }\r\n  canvas.addEventListener('pointerdown',e=>{\r\n    dragging=true;lastX=e.clientX;lastY=e.clientY;\r\n    try{canvas.setPointerCapture(e.pointerId);}catch(_){}\r\n    e.preventDefault();\r\n  },{passive:false});\r\n  window.addEventListener('pointermove',e=>{if(!dragging)return;\r\n    const dx=e.clientX-lastX,dy=e.clientY-lastY;\r\n    rotY+=dx*0.006;tiltX=Math.max(-1.1,Math.min(1.1,tiltX+dy*0.005));\r\n    vel=dx*0.006;lastX=e.clientX;lastY=e.clientY;});\r\n  window.addEventListener('pointerup',()=>{dragging=false;});\r\n  window.addEventListener('pointercancel',()=>{dragging=false;});\r\n\r\n  function rot(p){const x=p[0],y=p[1],z=p[2],c=Math.cos(rotY),s=Math.sin(rotY);\r\n    const x1=x*c+z*s,z1=-x*s+z*c,c2=Math.cos(tiltX),s2=Math.sin(tiltX);\r\n    return [x1,y*c2-z1*s2,y*s2+z1*c2];}\r\n  function slerp(a,b,t){let d=a[0]*b[0]+a[1]*b[1]+a[2]*b[2];d=Math.max(-1,Math.min(1,d));\r\n    const om=Math.acos(d);if(om<1e-4)return a.slice();const so=Math.sin(om),k1=Math.sin((1-t)*om)/so,k2=Math.sin(t*om)/so;\r\n    return [a[0]*k1+b[0]*k2,a[1]*k1+b[1]*k2,a[2]*k1+b[2]*k2];}\r\n  function strokeLine(pts,color,w){ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=w;let pen=false;\r\n    for(let i=0;i<pts.length;i++){const p=rot(pts[i]);if(p[2]<-0.02){pen=false;continue;}\r\n      const sx=cx+p[0]*R,sy=cy-p[1]*R;if(!pen){ctx.moveTo(sx,sy);pen=true;}else ctx.lineTo(sx,sy);}\r\n    ctx.stroke();}\r\n\r\n  let t0=performance.now();\r\n  function frame(now){\r\n    const dt=(now-t0)/1000;t0=now;\r\n    if(!dragging){if(Math.abs(vel)>0.0009){rotY+=vel;vel*=0.94;}else if(!reduce){rotY+=dt*0.07;}}\r\n    ctx.clearRect(0,0,size,size);\r\n\r\n    // sphere body — no outer glow ring\r\n    const body=ctx.createRadialGradient(cx-R*0.32,cy-R*0.32,R*0.1,cx,cy,R);\r\n    body.addColorStop(0,'rgba(18,66,124,0.50)');body.addColorStop(1,'rgba(6,20,46,0.85)');\r\n    ctx.fillStyle=body;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();\r\n\r\n    // graticule\r\n    grid.forEach(l=>strokeLine(l,'rgba(95,180,245,0.10)',1));\r\n\r\n    // land continents (accurate)\r\n    for(let i=0;i<land.length;i++){const p=rot(land[i]);if(p[2]<-0.03)continue;\r\n      const d=(p[2]+1)/2,sx=cx+p[0]*R,sy=cy-p[1]*R,s=0.8+d*1.6;\r\n      ctx.fillStyle='rgba('+Math.round(165+d*75)+','+Math.round(208+d*42)+',255,'+(0.38+d*0.56)+')';\r\n      ctx.fillRect(sx-s/2,sy-s/2,s,s);}\r\n\r\n    // flight arcs — full great-circle line city→city, comet travels the whole arc\r\n    const period=5.8,segs=72;\r\n    ROUTES.forEach(function(rt,idx){\r\n      const a=C[rt[0]],b=C[rt[1]],phase=((now/1000)/period+idx/ROUTES.length)%1;\r\n      const pts=[];\r\n      for(let s=0;s<=segs;s++){\r\n        const tt=s/segs,bs=slerp(a,b,tt),lift=1+0.22*Math.sin(Math.PI*tt);\r\n        pts.push([bs[0]*lift,bs[1]*lift,bs[2]*lift]);\r\n      }\r\n      // full arc line (city to city, over ocean too — just like real flight paths)\r\n      ctx.beginPath();ctx.strokeStyle='rgba(115,195,255,0.32)';ctx.lineWidth=1;let pen=false;\r\n      for(let s=0;s<=segs;s++){\r\n        const p=rot(pts[s]);if(p[2]<-0.04){pen=false;continue;}\r\n        const sx=cx+p[0]*R,sy=cy-p[1]*R;\r\n        if(!pen){ctx.moveTo(sx,sy);pen=true;}else ctx.lineTo(sx,sy);\r\n      }ctx.stroke();\r\n      // comet head travels full arc\r\n      for(let s=0;s<=segs;s++){\r\n        const p=rot(pts[s]);if(p[2]<-0.04)continue;\r\n        const sx=cx+p[0]*R,sy=cy-p[1]*R,d=(p[2]+1)/2;\r\n        const tt=s/segs;let dd=Math.abs(tt-phase);dd=Math.min(dd,1-dd);\r\n        const head=Math.max(0,1-dd*8);\r\n        if(head<=0.06)continue;\r\n        // bright white-blue comet core\r\n        ctx.beginPath();ctx.fillStyle='rgba(220,242,255,'+(head*d)+')';\r\n        ctx.arc(sx,sy,0.6+head*2.2,0,7);ctx.fill();\r\n        // soft outer glow\r\n        ctx.beginPath();ctx.fillStyle='rgba(140,210,255,'+(head*0.4*d)+')';\r\n        ctx.arc(sx,sy,1.2+head*4,0,7);ctx.fill();\r\n      }\r\n    });\r\n\r\n    // city lights — only verified land coordinates (all cross-checked against isLand)\r\n    const LAND_LIGHTS=[\r\n      [28.6,77.2],[17.5,73.5],[12.9,77.6],[22.5,88.3],[51.5,-0.1],[48.8,2.3],\r\n      [52.5,13.4],[41.9,12.5],[40.7,-74],[34,-118.2],[19.4,-99.1],[-23.5,-46.6],\r\n      [25.2,55.3],[-0.2,102.3],[13.7,100.5],[35.6,139.7],[31.2,121.5],[39.9,116.4],\r\n      [22.1,112.7],[-33.8,151.2],[55.7,37.6],[41,28.9],[-1.3,36.8],[-25.7,28.2],\r\n      [30.1,31.2],[6.5,3.4],[14.7,-17.4],[-4.3,15.3],[33.9,-6.9],[36.8,10.2],\r\n      [23.7,90.4],[17.4,78.5],[13,77.6]\r\n    ].filter(c=>isLand(c[1],c[0])).map(c=>ll(c[0],c[1]));\r\n\r\n    // draw city lights (all verified land-only)\r\n    for(let i=0;i<LAND_LIGHTS.length;i++){const p=rot(LAND_LIGHTS[i]);if(p[2]<0.02)continue;\r\n      const d=(p[2]+1)/2,sx=cx+p[0]*R,sy=cy-p[1]*R;\r\n      ctx.fillStyle='rgba(205,238,255,'+(0.6*d)+')';ctx.beginPath();ctx.arc(sx,sy,1.1+d*0.5,0,7);ctx.fill();}\r\n    const pulse=(Math.sin(now/460)+1)/2;\r\n    for(const k in C){const p=rot(C[k]);if(p[2]<0.03)continue;\r\n      const sx=cx+p[0]*R,sy=cy-p[1]*R,d=(p[2]+1)/2;\r\n      const g=ctx.createRadialGradient(sx,sy,0,sx,sy,7+pulse*5);\r\n      g.addColorStop(0,'rgba(120,210,255,'+(0.5*d)+')');g.addColorStop(1,'rgba(120,210,255,0)');\r\n      ctx.fillStyle=g;ctx.beginPath();ctx.arc(sx,sy,7+pulse*5,0,7);ctx.fill();\r\n      ctx.beginPath();ctx.fillStyle='rgba(210,240,255,'+d+')';ctx.arc(sx,sy,1.9,0,7);ctx.fill();}\r\n\r\n    requestAnimationFrame(frame);\r\n  }\r\n  requestAnimationFrame(frame);\r\n})();\r\n</script>\r\n</body>\r\n</html>\r\n",
+  "scripts": [
+    "https://www.easemytrip.com/offers/anniversary/js/mobjquery.min.js",
+    "https://www.easemytrip.com/scripts/multi/Login-h_newheader.js?v=dds",
+    "https://www.easemytrip.com/scripts/multi/LoginWithOTP.js?a=7412e11",
+    "https://www.easemytrip.com/scripts/common/contrast-mode-static.js",
+    "https://www.easemytrip.com/scripts/wlredir.js",
+    "https://www.easemytrip.com/scripts/bottomfooterjs.js?xr8"
+  ],
+  "links": [
+    {
+      "text": "",
+      "href": "https://www.easemytrip.com/"
+    },
+    {
+      "text": "lights",
+      "href": "https://www.easemytrip.com/flights.html"
+    },
+    {
+      "text": "otels",
+      "href": "https://www.easemytrip.com/hotels/"
+    },
+    {
+      "text": "\n                                    FLIGHT+HOTEL\n                                ",
+      "href": "https://fph.easemytrip.com/"
+    },
+    {
+      "text": "rains",
+      "href": "https://www.easemytrip.com/railways/"
+    },
+    {
+      "text": "us",
+      "href": "https://www.easemytrip.com/bus/"
+    },
+    {
+      "text": "olidays",
+      "href": "https://www.easemytrip.com/holidays/"
+    },
+    {
+      "text": "abs",
+      "href": "https://www.easemytrip.com/cabs/"
+    },
+    {
+      "text": "ctivities",
+      "href": "https://www.easemytrip.com/activities/"
+    },
+    {
+      "text": "isa",
+      "href": "https://www.easemytrip.com/visa-booking/"
+    },
+    {
+      "text": "asemytrip Cards\napply now to get rewards",
+      "href": "https://www.emtcards.in/"
+    },
+    {
+      "text": "asyeloped\nfor romantic getaways",
+      "href": "https://www.easyeloped.com/"
+    },
+    {
+      "text": "asydarshan\nspiritual tours in india",
+      "href": "https://www.easydarshan.com/"
+    },
+    {
+      "text": "irport Experience\nenjoy airport service",
+      "href": "https://www.easemytrip.com/airport-experience.html"
+    },
+    {
+      "text": "ift Card\nbuy giftcards here",
+      "href": "https://www.easemytrip.com/giftcard/"
+    },
+    {
+      "text": "ffers\ncheck best latest offers",
+      "href": "https://www.easemytrip.com/deals.html"
+    },
+    {
+      "text": "Mail Support\nCare@easemytrip.com",
+      "href": "mailto:care@easemytrip.com"
+    },
+    {
+      "text": "\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t",
+      "href": "javascript:void(0)"
+    },
+    {
+      "text": "\n\t\t\t  \n\t\t\t",
+      "href": "https://www.easemytrip.com/"
+    },
+    {
+      "text": "\n            \n            Flight\n        ",
+      "href": "https://www.easemytrip.com/flights.html"
+    },
+    {
+      "text": "\n            \n            hotel\n        ",
+      "href": "https://www.easemytrip.com/hotels/"
+    },
+    {
+      "text": "\n            \n            Trains\n        ",
+      "href": "https://www.easemytrip.com/railways/"
+    },
+    {
+      "text": "\n            \n            Flight+Hotel\n        ",
+      "href": "https://fph.easemytrip.com/"
+    },
+    {
+      "text": "\n            \n            Bus\n        ",
+      "href": "https://www.easemytrip.com/bus/"
+    },
+    {
+      "text": "\n            \n            Holidays\n        ",
+      "href": "https://www.easemytrip.com/holidays/"
+    },
+    {
+      "text": "\n            \n            Cabs\n        ",
+      "href": "https://www.easemytrip.com/cabs/"
+    },
+    {
+      "text": "\n            \n            Activities\n        ",
+      "href": "https://www.easemytrip.com/activities/"
+    },
+    {
+      "text": "\n            \n            Gift Cards\n        ",
+      "href": "https://www.easemytrip.com/giftcard/"
+    },
+    {
+      "text": "\n            \n            Visa\n        ",
+      "href": "https://www.easemytrip.com/visa-booking/"
+    },
+    {
+      "text": "Explore opportunities",
+      "href": "https://www.easemytrip.com/career.html#roles"
+    },
+    {
+      "text": "Life at EMT",
+      "href": "https://www.easemytrip.com/career.html#why"
+    },
+    {
+      "text": "What we offer",
+      "href": "https://www.easemytrip.com/career.html#offer"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "Apply",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    },
+    {
+      "text": "View all openings\n        \n      ",
+      "href": "mailto:joinus@easemytrip.com"
+    },
+    {
+      "text": "Email us: joinus@easemytrip.com",
+      "href": "mailto:joinus@easemytrip.com"
+    },
+    {
+      "text": "joinus@easemytrip.com",
+      "href": "mailto:joinus@easemytrip.com"
+    },
+    {
+      "text": "011 - 43131313, 43030303",
+      "href": "tel:01143131313"
+    },
+    {
+      "text": "www.EaseMyTrip.com",
+      "href": "https://www.easemytrip.com/"
+    },
+    {
+      "text": "INVESTOR RELATIONS",
+      "href": "https://www.easemytrip.com/investor-relations.html"
+    },
+    {
+      "text": "CURRENT OPENINGS",
+      "href": "https://www.easemytrip.com/career.html"
+    },
+    {
+      "text": "Flight",
+      "href": "https://www.easemytrip.com/flights/"
+    },
+    {
+      "text": "Hotels",
+      "href": "https://www.easemytrip.com/hotels/"
+    },
+    {
+      "text": "Trains",
+      "href": "https://www.easemytrip.com/railways/"
+    },
+    {
+      "text": "Holidays",
+      "href": "https://www.easemytrip.com/holidays/"
+    },
+    {
+      "text": "Bus",
+      "href": "https://www.easemytrip.com/bus/"
+    },
+    {
+      "text": "Flight Status",
+      "href": "https://www.easemytrip.com/flights/flight-status/"
+    },
+    {
+      "text": "Cabs",
+      "href": "https://www.easemytrip.com/cabs/"
+    },
+    {
+      "text": "Airlines",
+      "href": "https://www.easemytrip.com/directory/airlines.html"
+    },
+    {
+      "text": "Airports",
+      "href": "https://www.easemytrip.com/directory/airports-in-india.html"
+    },
+    {
+      "text": "Travel Guides",
+      "href": "https://www.easemytrip.com/travel-guides.html"
+    },
+    {
+      "text": "Check PNR Status",
+      "href": "https://www.easemytrip.com/railways/pnr-status/"
+    },
+    {
+      "text": "EMT PRO",
+      "href": "https://www.easemytrip.com/emtpro"
+    },
+    {
+      "text": "Activities",
+      "href": "https://www.easemytrip.com/activities/"
+    },
+    {
+      "text": "Travel Updates",
+      "href": "https://www.easemytrip.com/travel-updates.html"
+    },
+    {
+      "text": "Corporate travel",
+      "href": "https://www.easemytrip.com/corporate"
+    },
+    {
+      "text": "Blog",
+      "href": "https://www.easemytrip.com/blog/"
+    },
+    {
+      "text": "Flight Check-in",
+      "href": "https://www.easemytrip.com/flights/web-check-in/"
+    },
+    {
+      "text": "VIP Cabs",
+      "href": "https://www.easemytrip.com/bookvipcabs.html"
+    },
+    {
+      "text": "Refer & Earn",
+      "href": "https://www.easemytrip.com/refer"
+    },
+    {
+      "text": "Heritage & Events",
+      "href": "https://www.easemytrip.com/monuments/"
+    },
+    {
+      "text": "Work From Home",
+      "href": "https://www.easemytrip.com/holiday-planners/work-from-home.html"
+    },
+    {
+      "text": "Flight by City",
+      "href": "https://www.easemytrip.com/directory/flights.html"
+    },
+    {
+      "text": "Lowest Airfare Calendar",
+      "href": "https://www.easemytrip.com/flights/airfare-calendar/"
+    },
+    {
+      "text": "Domestic Flights",
+      "href": "https://www.easemytrip.com/flights/domestic-flight/"
+    },
+    {
+      "text": "International Flights",
+      "href": "https://www.easemytrip.com/flights/international-flight/"
+    },
+    {
+      "text": "Train Routes",
+      "href": "https://www.easemytrip.com/directory/train-routes.html"
+    },
+    {
+      "text": "Holiday Packages",
+      "href": "https://www.easemytrip.com/holidays/"
+    },
+    {
+      "text": "Hotel Directory",
+      "href": "https://www.easemytrip.com/directory/hotels-in-india.html"
+    },
+    {
+      "text": "Bangalore to delhi Flights",
+      "href": "https://www.easemytrip.com/flights/bangalore-blr-to-delhi-del/"
+    },
+    {
+      "text": "Delhi to Bangalore flights",
+      "href": "https://www.easemytrip.com/flights/delhi-del-to-bangalore-blr/"
+    },
+    {
+      "text": "Delhi to Mumbai Flights",
+      "href": "https://www.easemytrip.com/flights/delhi-del-to-mumbai-bom/"
+    },
+    {
+      "text": "Mumbai to Delhi Flights",
+      "href": "https://www.easemytrip.com/flights/mumbai-bom-to-delhi-del/"
+    },
+    {
+      "text": "Delhi to Goa Flights",
+      "href": "https://www.easemytrip.com/flights/delhi-del-to-goa-goi/"
+    },
+    {
+      "text": "Mumbai to Bangalore Flights",
+      "href": "https://www.easemytrip.com/flights/mumbai-bom-to-bangalore-blr/"
+    },
+    {
+      "text": "Delhi to Bangkok Flights",
+      "href": "https://www.easemytrip.com/flights/delhi-del-to-bangkok-bkk/"
+    },
+    {
+      "text": "Mumbai to Dubai Flights",
+      "href": "https://www.easemytrip.com/flights/mumbai-bom-to-dubai-dwc/"
+    },
+    {
+      "text": "Delhi to Dubai Flights",
+      "href": "https://www.easemytrip.com/flights/delhi-del-to-dubai-dwc/"
+    },
+    {
+      "text": "Dubai to Mumbai Flights",
+      "href": "https://www.easemytrip.com/flights/dubai-dwc-to-mumbai-bom/"
+    },
+    {
+      "text": "Kolkata to Bangkok Flights",
+      "href": "https://www.easemytrip.com/flights/kolkata-ccu-to-bangkok-bkk/"
+    },
+    {
+      "text": "London to Delhi Flights",
+      "href": "https://www.easemytrip.com/flights/london-lhr-to-delhi-del/"
+    },
+    {
+      "text": "Howrah to Puri Trains",
+      "href": "https://www.easemytrip.com/railways/howrah-to-puri-train-tickets/"
+    },
+    {
+      "text": "Secunderabad to Vijayawada Trains",
+      "href": "https://www.easemytrip.com/railways/secunderabad-to-vijayawada-train-tickets/"
+    },
+    {
+      "text": "Borivali to Surat Trains",
+      "href": "https://www.easemytrip.com/railways/borivali-to-surat-train-tickets/"
+    },
+    {
+      "text": "Mumbai Cst to Pune Trains",
+      "href": "https://www.easemytrip.com/railways/mumbai-cst-to-pune-train-tickets/"
+    },
+    {
+      "text": "Howrah to Asansol Trains",
+      "href": "https://www.easemytrip.com/railways/howrah-to-asansol-train-tickets/"
+    },
+    {
+      "text": "Howrah To Durgapur Trains",
+      "href": "https://www.easemytrip.com/railways/howrah-to-durgapur-train-tickets/"
+    },
+    {
+      "text": "Kannur To Mangalore Trains",
+      "href": "https://www.easemytrip.com/railways/kannur-to-mangalore-train-tickets/"
+    },
+    {
+      "text": "Pune to Thane Trains",
+      "href": "https://www.easemytrip.com/railways/pune-to-thane-train-tickets/"
+    },
+    {
+      "text": "Jaipur to Ajmer Trains",
+      "href": "https://www.easemytrip.com/railways/jaipur-to-ajmer-train-tickets/"
+    },
+    {
+      "text": "Guwahati to New Jalpaiguri Trains",
+      "href": "https://www.easemytrip.com/railways/guwahati-to-new-jalpaiguri-train-tickets/"
+    },
+    {
+      "text": "Japan Tourism",
+      "href": "https://www.easemytrip.com/tourism/japan/japan.html"
+    },
+    {
+      "text": "Dubai Tourism",
+      "href": "https://www.easemytrip.com/tourism/dubai/dubai.html"
+    },
+    {
+      "text": "Manali",
+      "href": "https://www.easemytrip.com/holidays/manali-tours-packages/"
+    },
+    {
+      "text": "Leh Ladakh",
+      "href": "https://www.easemytrip.com/holidays/ladakh-tours-packages/"
+    },
+    {
+      "text": "Kashmir",
+      "href": "https://www.easemytrip.com/holidays/kashmir-tours-packages/"
+    },
+    {
+      "text": "Srinagar",
+      "href": "https://www.easemytrip.com/holidays/srinagar-tours-packages/"
+    },
+    {
+      "text": "Kerala",
+      "href": "https://www.easemytrip.com/holidays/kerala-tours-packages/"
+    },
+    {
+      "text": "Andaman",
+      "href": "https://www.easemytrip.com/holidays/andaman-tours-packages/"
+    },
+    {
+      "text": "Nainital",
+      "href": "https://www.easemytrip.com/holidays/nainital-tours-packages/"
+    },
+    {
+      "text": "Mumbai",
+      "href": "https://www.easemytrip.com/holidays/mumbai-tours-packages/"
+    },
+    {
+      "text": "Munnar",
+      "href": "https://www.easemytrip.com/holidays/munnar-tours-packages/"
+    },
+    {
+      "text": "Agra",
+      "href": "https://www.easemytrip.com/holidays/agra-tours-packages/"
+    },
+    {
+      "text": "Rishikesh",
+      "href": "https://www.easemytrip.com/holidays/rishikesh-tours-packages/"
+    },
+    {
+      "text": "Dehradun",
+      "href": "https://www.easemytrip.com/holidays/dehradun-tours-packages/"
+    },
+    {
+      "text": "Ranikhet",
+      "href": "https://www.easemytrip.com/holidays/ranikhet-tours-packages/"
+    },
+    {
+      "text": "Odisha",
+      "href": "https://www.easemytrip.com/holidays/odisha-tours-packages/"
+    },
+    {
+      "text": "Shimla",
+      "href": "https://www.easemytrip.com/holidays/shimla-tours-packages/"
+    },
+    {
+      "text": "Goa",
+      "href": "https://www.easemytrip.com/holidays/goa-tours-packages/"
+    },
+    {
+      "text": "Dalhousie",
+      "href": "https://www.easemytrip.com/holidays/dalhousie-tours-packages/"
+    },
+    {
+      "text": "Ooty",
+      "href": "https://www.easemytrip.com/holidays/ooty-tours-packages/"
+    },
+    {
+      "text": "Amritsar",
+      "href": "https://www.easemytrip.com/holidays/amritsar-tours-packages/"
+    },
+    {
+      "text": "Himachal",
+      "href": "https://www.easemytrip.com/holidays/himachal-pradesh-tours-packages/"
+    },
+    {
+      "text": "Darjeeling",
+      "href": "https://www.easemytrip.com/holidays/darjeeling-tours-packages/"
+    },
+    {
+      "text": "Haridwar",
+      "href": "https://www.easemytrip.com/holidays/haridwar-tours-packages/"
+    },
+    {
+      "text": "Dharamshala",
+      "href": "https://www.easemytrip.com/holidays/dharamshala-tours-packages/"
+    },
+    {
+      "text": "Kovalam",
+      "href": "https://www.easemytrip.com/holidays/kovalam-tours-packages/"
+    },
+    {
+      "text": "West Bengal",
+      "href": "https://www.easemytrip.com/holidays/west-bengal-tours-packages/"
+    },
+    {
+      "text": "Maharashtra",
+      "href": "https://www.easemytrip.com/holidays/maharashtra-tours-packages/"
+    },
+    {
+      "text": "North East",
+      "href": "https://www.easemytrip.com/holidays/north-east-tours-packages/"
+    },
+    {
+      "text": "Pondicherry",
+      "href": "https://www.easemytrip.com/holidays/pondicherry-tours-packages/"
+    },
+    {
+      "text": "Madhya Pradesh",
+      "href": "https://www.easemytrip.com/holidays/madhya-pradesh-tours-packages/"
+    },
+    {
+      "text": "Karnataka",
+      "href": "https://www.easemytrip.com/holidays/karnataka-tours-packages/"
+    },
+    {
+      "text": "Tamil Naidu",
+      "href": "https://www.easemytrip.com/holidays/tamil-nadu-tours-packages/"
+    },
+    {
+      "text": "Gujarat",
+      "href": "https://www.easemytrip.com/holidays/gujarat-tours-packages/"
+    },
+    {
+      "text": "Rajasthan",
+      "href": "https://www.easemytrip.com/holidays/rajasthan-tours-packages/"
+    },
+    {
+      "text": "Assam",
+      "href": "https://www.easemytrip.com/holidays/assam-tours-packages/"
+    },
+    {
+      "text": "Sikkim",
+      "href": "https://www.easemytrip.com/holidays/sikkim-tours-packages/"
+    },
+    {
+      "text": "Delhi",
+      "href": "https://www.easemytrip.com/holidays/delhi-tours-packages/"
+    },
+    {
+      "text": "Jaipur",
+      "href": "https://www.easemytrip.com/holidays/jaipur-tours-packages/"
+    },
+    {
+      "text": "Bangalore",
+      "href": "https://www.easemytrip.com/holidays/bangalore-tours-packages/"
+    },
+    {
+      "text": "Mussoorie",
+      "href": "https://www.easemytrip.com/holidays/mussoorie-tours-packages/"
+    },
+    {
+      "text": "Lansdowne",
+      "href": "https://www.easemytrip.com/holidays/lansdowne-tours-packages/"
+    },
+    {
+      "text": "Mauritius",
+      "href": "https://www.easemytrip.com/holidays/mauritius-tours-packages/"
+    },
+    {
+      "text": "Europe",
+      "href": "https://www.easemytrip.com/holidays/europe-tours-packages/"
+    },
+    {
+      "text": "Thailand",
+      "href": "https://www.easemytrip.com/holidays/thailand-tours-packages/"
+    },
+    {
+      "text": "Singapore",
+      "href": "https://www.easemytrip.com/holidays/singapore-tours-packages/"
+    },
+    {
+      "text": "Dubai",
+      "href": "https://www.easemytrip.com/holidays/dubai-tours-packages/"
+    },
+    {
+      "text": "Maldives",
+      "href": "https://www.easemytrip.com/holidays/maldives-tours-packages/"
+    },
+    {
+      "text": "Egypt",
+      "href": "https://www.easemytrip.com/holidays/egypt-tours-packages/"
+    },
+    {
+      "text": "Malaysia",
+      "href": "https://www.easemytrip.com/holidays/malaysia-tours-packages/"
+    },
+    {
+      "text": "Australia",
+      "href": "https://www.easemytrip.com/holidays/australia-tours-packages/"
+    },
+    {
+      "text": "Spain",
+      "href": "https://www.easemytrip.com/holidays/spain-tours-packages/"
+    },
+    {
+      "text": "Jordan",
+      "href": "https://www.easemytrip.com/holidays/jordan-tours-packages/"
+    },
+    {
+      "text": "Bali",
+      "href": "https://www.easemytrip.com/holidays/bali-tours-packages/"
+    },
+    {
+      "text": "Africa",
+      "href": "https://www.easemytrip.com/holidays/south-africa-tours-packages/"
+    },
+    {
+      "text": "Vietnam",
+      "href": "https://www.easemytrip.com/holidays/vietnam-tours-packages/"
+    },
+    {
+      "text": "Srilanka",
+      "href": "https://www.easemytrip.com/holidays/sri-lanka-tours-packages/"
+    },
+    {
+      "text": "Canada",
+      "href": "https://www.easemytrip.com/holidays/canada-tours-packages/"
+    },
+    {
+      "text": "Germany",
+      "href": "https://www.easemytrip.com/holidays/germany-tours-packages/"
+    },
+    {
+      "text": "Switzerland",
+      "href": "https://www.easemytrip.com/holidays/switzerland-tours-packages/"
+    },
+    {
+      "text": "Japan",
+      "href": "https://www.easemytrip.com/holidays/japan-tours-packages/"
+    },
+    {
+      "text": "IndiGo Airlines",
+      "href": "https://www.easemytrip.com/flights/indigo-tickets/"
+    },
+    {
+      "text": "Air India Airlines",
+      "href": "https://www.easemytrip.com/flights/air-india-tickets/"
+    },
+    {
+      "text": "SpiceJet Airlines",
+      "href": "https://www.easemytrip.com/flights/spicejet-tickets/"
+    },
+    {
+      "text": "Air Asia Airlines",
+      "href": "https://www.easemytrip.com/flights/air-asia-tickets/"
+    },
+    {
+      "text": "British airways",
+      "href": "https://www.easemytrip.com/flights/british-airways-tickets/"
+    },
+    {
+      "text": "Qatar airways",
+      "href": "https://www.easemytrip.com/flights/qatar-airways-tickets/"
+    },
+    {
+      "text": "Singapore Airlines",
+      "href": "https://www.easemytrip.com/flights/singapore-airlines-tickets/"
+    },
+    {
+      "text": "Etihad airways",
+      "href": "https://www.easemytrip.com/flights/etihad-airways-tickets/"
+    },
+    {
+      "text": "Thai airways",
+      "href": "https://www.easemytrip.com/flights/thai-airways-tickets/"
+    },
+    {
+      "text": "United Airlines",
+      "href": "https://www.easemytrip.com/flights/united-airlines-tickets/"
+    },
+    {
+      "text": "American Airlines",
+      "href": "https://www.easemytrip.com/flights/american-airlines-tickets/"
+    },
+    {
+      "text": "Malaysia Airlines",
+      "href": "https://www.easemytrip.com/flights/malaysia-airlines-tickets/"
+    },
+    {
+      "text": "Akasa Air",
+      "href": "https://www.easemytrip.com/flights/akasa-air-tickets/"
+    },
+    {
+      "text": "Egypt Air",
+      "href": "https://www.easemytrip.com/flights/egypt-air-tickets/"
+    },
+    {
+      "text": "Emirates Airlines",
+      "href": "https://www.easemytrip.com/flights/emirates-tickets/"
+    },
+    {
+      "text": " Contact Us",
+      "href": "https://www.easemytrip.com/contact-us.html"
+    },
+    {
+      "text": " Facebook",
+      "href": "https://www.facebook.com/EaseMyTrip/"
+    },
+    {
+      "text": " Twitter",
+      "href": "https://twitter.com/easemytrip"
+    },
+    {
+      "text": " Youtube",
+      "href": "https://www.youtube.com/c/EaseMyTripOfficial"
+    },
+    {
+      "text": " LinkedIn",
+      "href": "https://www.linkedin.com/company/easemytrip-com"
+    },
+    {
+      "text": " Instagram",
+      "href": "https://www.instagram.com/easemytrip/"
+    },
+    {
+      "text": "Gift Card",
+      "href": "https://www.easemytrip.com/giftcard/"
+    },
+    {
+      "text": "Flight Offers",
+      "href": "https://www.easemytrip.com/offers/flights.html"
+    },
+    {
+      "text": "Hotel Offers",
+      "href": "https://www.easemytrip.com/offers/hotels.html"
+    },
+    {
+      "text": "Bus Offers",
+      "href": "https://www.easemytrip.com/offers/bus.html"
+    },
+    {
+      "text": "Cab Offers",
+      "href": "https://www.easemytrip.com/offers/cab.html"
+    },
+    {
+      "text": "Hot Deals",
+      "href": "https://www.easemytrip.com/offers/hot-deals.html"
+    },
+    {
+      "text": "Special Offers",
+      "href": "https://www.easemytrip.com/deals.html"
+    },
+    {
+      "text": "About Us",
+      "href": "https://www.easemytrip.com/about-us.html"
+    },
+    {
+      "text": "Privacy Policy",
+      "href": "https://www.easemytrip.com/privacy-policy.html"
+    },
+    {
+      "text": "Terms & Conditions",
+      "href": "https://www.easemytrip.com/terms.html"
+    },
+    {
+      "text": "User Agreement",
+      "href": "https://www.easemytrip.com/user-agreement.html"
+    },
+    {
+      "text": "Travel Updates",
+      "href": "https://www.easemytrip.com/travel-updates.html"
+    },
+    {
+      "text": "Investors Relation",
+      "href": "https://www.easemytrip.com/investor-relations.html"
+    },
+    {
+      "text": "Achievements",
+      "href": "https://www.easemytrip.com/achievements/index.html"
+    },
+    {
+      "text": "No Convenience Fee",
+      "href": "https://www.easemytrip.com/offers/no-convenience-fee.html"
+    },
+    {
+      "text": "Free Flight Cancellation",
+      "href": "https://www.easemytrip.com/offers/free-flight-cancellation.html"
+    },
+    {
+      "text": "Refer & Earn",
+      "href": "https://www.easemytrip.com/refer"
+    },
+    {
+      "text": "Franchise",
+      "href": "https://www.easemytrip.com/franchise/"
+    },
+    {
+      "text": "Mice",
+      "href": "https://www.easemytrip.com/mice/index.html"
+    },
+    {
+      "text": "Tourism",
+      "href": "https://www.easemytrip.com/tourism.html"
+    },
+    {
+      "text": "Press Releases",
+      "href": "https://www.easemytrip.com/media.html"
+    },
+    {
+      "text": "kiran.sharma@easemytrip.com",
+      "href": "mailto:kiran.sharma@easemytrip.com"
+    },
+    {
+      "text": "media@easemytrip.com",
+      "href": "mailto:media@easemytrip.com"
+    },
+    {
+      "text": "Current Openings",
+      "href": "https://www.easemytrip.com/career.html"
+    },
+    {
+      "text": "",
+      "href": "https://play.google.com/store/apps/details?id=com.easemytrip.android"
+    },
+    {
+      "text": "",
+      "href": "https://itunes.apple.com/in/app/easemytrip-flight-booking/id1053030595?mt=8"
+    },
+    {
+      "text": "Apply for this role",
+      "href": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform"
+    }
+  ],
+  "visibleText": "lights\notels\nrains\nus\nolidays\nabs\nctivities\nisa\nore\nasemytrip Cards\napply now to get rewards\nasyeloped\nfor romantic getaways\nasydarshan\nspiritual tours in india\nirport Experience\nenjoy airport service\nift Card\nbuy giftcards here\nffers\ncheck best latest offers\nCustomer Service\nWe're here to help\nCall Support\nTel : 011 - 43131313, 43030303\nMail Support\nCare@easemytrip.com\nCOME & JOIN EASEMYTRIP\nBoost Your Professional Journey with India’s Leading Travel Platform\n\nFast-paced, dynamic, and built by people who love making travel just work. Find the team where your next big journey takes off.\n\nExplore opportunities\nLife at EMT\n🚀\nFast Growth\n\nBuild & Scale\n\n🏆\nGreat Culture\n\nPeople First\n\n🌎\n1Cr+ Travelers\n\nReal Impact\n\n2008\nFOUNDED\n18+\nYEARS STRONG\n98.84%\nBOOKING SUCCESS RATIO\n9\nDEPARTMENTS HIRING\nWHO WE ARE\nWhy work with EaseMyTrip?\n\nStarted in 2008, EaseMyTrip is one of the largest online travel platforms and a trusted name in the Indian travel and tourism space. Millions of Indians rely on us daily for everything from flights and hotels to bus, cabs, train and holiday packages.\n\nDespite winning several awards and accolades, we take pride in an inclusive work culture where every brilliant mind and skilled hand gets to showcase their creativity, knowledge and expertise. We don't just promise work-life balance, peace of mind and perpetual learning — our roles and responsibilities go far beyond what one can reckon.\n\nWhat we offer\n“\n\nEvery voice is heard here. The pace is real, the ownership is real, and so is the team that has your back.\n\nPERKS & CULTURE\nWhat we offer\n\nBeyond the paycheck — the things that make EaseMyTrip a place people stay and grow.\n\nCompetitive Pay\n\nWe go beyond industry standards to reward the brightest minds working with us.\n\nGrowth & Exposure\n\nAmple opportunities and real responsibility that help you grow and succeed.\n\nInclusive Workplace\n\nAn environment where voices are valued and diversity is genuinely celebrated.\n\nFlexibility\n\nWe get your commitments — you manage your time and tasks the way that works.\n\nLearning Budget\n\nCourses, certifications and conferences — we invest in keeping you sharp.\n\nHealth & Wellness\n\nComprehensive insurance and wellness support for you and your family.\n\nTravel Perks\n\nExclusive employee discounts and deals on flights, hotels and holidays.\n\nRecognition\n\nAwards, shout-outs and a culture that celebrates wins big and small.\n\nOPEN POSITIONS\nKeen to work with us?\n\nBrowse live openings across every team. Found your role? Apply in a click.\n\nAll roles\nEngineering\nProduct & Design\nMarketing & Growth\nSales & Partnerships\nCustomer Experience\nData & Analytics\nHuman Resources\nTravel Operations\nEngineering\nSenior Frontend Engineer\nGurugram\nFull-time\nView description\nApply\nEngineering\nBackend Engineer (Java)\nNoida\nFull-time\nView description\nApply\nEngineering\nAndroid Developer\nGurugram\nFull-time\nView description\nApply\nProduct & Design\nProduct Designer\nGurugram\nFull-time\nView description\nApply\nProduct & Design\nUX Researcher\nRemote\nFull-time\nView description\nApply\nMarketing & Growth\nPerformance Marketing Manager\nMumbai\nFull-time\nView description\nApply\nMarketing & Growth\nEmail Marketing Specialist\nGurugram\nFull-time\nView description\nApply\nSales & Partnerships\nBusiness Development Manager\nDelhi\nFull-time\nView description\nApply\nCustomer Experience\nCustomer Support Executive\nGurugram\nFull-time\nView description\nApply\nData & Analytics\nData Analyst\nRemote\nFull-time\nView description\nApply\nHuman Resources\nTalent Acquisition Specialist\nGurugram\nFull-time\nView description\nApply\nTravel Operations\nTravel Operations Executive\nNoida\nFull-time\nView description\nApply\nINSIDE EMT\nLife at EaseMyTrip\n\nA look at our fully-enthusiastic family — celebrations, off-sites, and everyday hustle.\n\nTEAM SPIRIT\nCelebrations & festivals\nTOGETHER\nOff-sites\nBREAK TIME\nTeam lunches\nEVERYDAY\nBrainstorms\nGROWTH\nMentoring\nBEYOND WORK\nTeam outings\nFESTIVAL\nTeam Celebration\n4.2★ Glassdoor culture\nHybrid & flexible\nAnnual off-sites\nFestivals & sports\nLearning weeks\nYOUR BOARDING PASS\nFrom apply to onboard\n\nA clear, four-stop journey — no black holes, no endless waiting.\n\n01\nApply\n\nSend your application for the role that fits — one click, no long forms.\n\n02\nRecruiter call\n\nA quick chat to understand you, the role, and your expectations.\n\n03\nTeam rounds\n\nSkill and team interviews with the people you'll actually work with.\n\n04\nOffer & onboard\n\nOffer rolled out, warm onboarding — welcome aboard EaseMyTrip.\n\nCould not find a work role for yourself?\n\nWorry not. If you love working in travel and tourism and are committed to go the extra mile, we would love to hear from you.\n\nEmail us: joinus@easemytrip.com\n\nInitiated in 2008, EaseMyTrip is one of the leading online travel platforms across India, offering an exclusive range of end-to-end travel solutions to cater to all the prerequisites of travellers.\n\nGet in touch\njoinus@easemytrip.com\n011 - 43131313, 43030303\nwww.EaseMyTrip.com\nOUR OFFERINGS\nQUICK LINKS\nPOPULAR DESTINATION\nINTERNATIONAL DESTINATION\nPOPULAR AIRLINE\nCONNECT WITH US\nOFFERS\nEMT INSIGHTS\nMEDIA\nINVESTOR RELATIONS\nCURRENT OPENINGS\n\nMake your travel easy with a wide range of products and services.\n\nFlight\nHotels\nTrains\nHolidays\nBus\nFlight Status\nCabs\nAirlines\nAirports\nTravel Guides\nCheck PNR Status\nEMT PRO\nActivities\nTravel Updates\nCorporate travel\nBlog\nFlight Check-in\nVIP Cabs\nRefer & Earn\nHeritage & Events\nWork From Home\n\nEaseMyTrip offers 'End to End' travel solutions including air tickets for more than 400 international and domestic airlines, hotel bookings for nearly 1 million hotels in India and abroad, cab booking with 4000+ cab operators, bus tickets with 2000+ bus operators, and railway tickets in India for all major cities.\n\nDOWNLOAD EASEMYTRIP APP\nSCAN QR CODE\nCopyright © 2026 EaseMyTrip\nApply for this role"
+}

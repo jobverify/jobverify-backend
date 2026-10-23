@@ -1,0 +1,76 @@
+{
+  "source": "agnext",
+  "officialHomepage": "https://www.agnext.com/",
+  "officialHandoff": "https://agnext.keka.com/careers",
+  "verificationDisposition": "blocked-keka-board-native-listing-contract-unverified",
+  "listingComplete": false,
+  "verifiedJobCount": null,
+  "evidence": [
+    {
+      "file": "home-response.json",
+      "sha256": "0f8b4ef51e6f337b410d942e7028b1c33f87d38cd384bd0ffd280b84f4c1fb8d",
+      "observations": [
+        {
+          "url": "https://www.agnext.com/",
+          "finalUrl": "https://www.agnext.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T02:42:31.891Z",
+          "bodySha256": "869eece370a6af1930a8b252f0e179c0c0938a0caf72acf4f216ffeda62eb4c1"
+        }
+      ]
+    },
+    {
+      "file": "careers-response.json",
+      "sha256": "3c7657de387ed6f20d243e046cf956255c4aa05d73bcc1e3eaf603a47673afdf",
+      "observations": [
+        {
+          "url": "https://agnext.keka.com/careers/Content/403.html",
+          "finalUrl": "https://agnext.keka.com/careers/Content/403.html",
+          "status": 200,
+          "capturedAt": "2026-10-23T02:42:01.602Z",
+          "bodySha256": "ca76a3797cc419ee02ac1fcc656fd3a07dc83e698d0f51366b61514c8a721a6c"
+        }
+      ]
+    },
+    {
+      "file": "api-responses.json",
+      "sha256": "e700b3e5ee04840eba540358994147a85dedd70d7b8bd0085d2124bc548c363c",
+      "observations": [
+        {
+          "url": "https://agnext.keka.com/careers/api/careerportal/careerportalinfo",
+          "finalUrl": "https://agnext.keka.com/careers/api/careerportal/careerportalinfo",
+          "status": 404,
+          "capturedAt": "2026-10-23T02:42:21.155Z",
+          "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "url": "https://agnext.keka.com/careers/api/careerportal/jobs/default/active",
+          "finalUrl": "https://agnext.keka.com/careers/api/careerportal/jobs/default/active",
+          "status": 404,
+          "capturedAt": "2026-10-23T02:42:21.156Z",
+          "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "file": "native-api-responses.json",
+      "sha256": "2449de06d79ac5ffa4fa48521584d27b045ef6a947a707af8099636417b13bfd",
+      "observations": [
+        {
+          "url": "https://agnext.keka.com/careers/api/organization/default/careerportalinfo",
+          "finalUrl": "https://agnext.keka.com/careers/Content/403.html",
+          "status": 200,
+          "capturedAt": "2026-10-23T02:44:45.389Z",
+          "bodySha256": "ca76a3797cc419ee02ac1fcc656fd3a07dc83e698d0f51366b61514c8a721a6c"
+        },
+        {
+          "url": "https://agnext.keka.com/careers/api/jobs/default/active",
+          "finalUrl": "https://agnext.keka.com/careers/Content/403.html",
+          "status": 200,
+          "capturedAt": "2026-10-23T02:44:45.386Z",
+          "bodySha256": "ca76a3797cc419ee02ac1fcc656fd3a07dc83e698d0f51366b61514c8a721a6c"
+        }
+      ]
+    }
+  ]
+}

@@ -29,5 +29,6 @@ test('FarmTheory fails closed when no verified official careers feed is availabl
   assert.equal(existsSync(modulePath), true)
 
   const { run } = await import(modulePath)
-  assert.deepEqual(await run(), [])
+  await assert.rejects(run({fetchImpl:async()=>{throw new Error('injected transport unavailable')}}),
+    error=>error.code==='FARMTHEORY_COVERAGE_GAP'&&error.inventoryEvidence.reportedTotal===null&&error.lifecycleCleanupAllowed===false)
 })

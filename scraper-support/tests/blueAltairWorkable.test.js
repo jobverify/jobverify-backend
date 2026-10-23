@@ -30,7 +30,9 @@ test('Blue Altair native twelve-role inventory yields ten complete India details
   assert.equal(evidence.listingComplete,true)
   assert.equal(new Set(jobs.map(j=>j.jobId)).size,10)
   assert.ok(jobs.every(j=>j.company==='Blue Altair' && j.country==='India' && j.jobDescription.includes('Requirements') && j.jobDescription.includes('Benefits')))
-  assert.equal(analyzePublishableJobs(jobs).eligibleJobs.length,10)
+  const publication=analyzePublishableJobs(jobs,{now:new Date('2026-10-20T22:00:00.000Z')})
+  assert.equal(publication.eligibleJobs.length,0)
+  assert.equal(publication.filterCounts.old,10)
 })
 test('preserves the native 2025 publication date and exact public shortcode URLs', async () => {
   const jobs=await run(options())

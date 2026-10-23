@@ -5,7 +5,7 @@ import { generateCompanyCoverageReport } from '../scraper-support/providers/comp
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
 import { run } from '../scraper/truemeds/script.js'
 
-test('Truemeds resolves only the exact CSV company name to its first-party sentinel provider', () => {
+test('Truemeds resolves only the exact CSV company name to its official employer provider', () => {
   const report = generateCompanyCoverageReport({
     csvText: 'company_name\nTruemeds\nTruemeds India\n',
     catalog: getScraperCatalog(),
@@ -28,6 +28,6 @@ test('Truemeds resolves only the exact CSV company name to its first-party senti
   )
 })
 
-test('Truemeds fails closed without a verified first-party public careers feed', async () => {
-  assert.deepEqual(await run(), [])
+test('Truemeds reports unavailable native recruiting as a coverage gap', async () => {
+  await assert.rejects(run({fetchImpl:async url=>({status:503,url,text:async()=>'<h1>Unavailable</h1>'})}),{code:'TRUEMEDS_COVERAGE_GAP'})
 })

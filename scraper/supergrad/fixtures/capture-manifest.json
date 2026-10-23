@@ -1,0 +1,50 @@
+{
+  "source": "supergrad",
+  "captureMethod": "Root-owned isolated Chrome fetch attempts timed out without HTTP responses. Separate navigation DOM observations show Cloudflare origin522; these do not establish raw HTTP status, response body or final URL.",
+  "files": [
+    {
+      "file": "bare-pages.dom.json.gz",
+      "sha256": "896ec2ebc7cbf2ef390029923135a3b6b932a4d17ee34f1cffc9e0829146abfa",
+      "uncompressedSHA256": "ab38964575856ae96fa634281f34fef5ac6f364254e64a5c64e0bffca5e39f1b",
+      "bytes": 746
+    },
+    {
+      "file": "bare-pages.json.gz",
+      "sha256": "2b290763b4e2919eb6832c0968d4f2e2bf45b58dc202a193ddcee248f66059a1",
+      "uncompressedSHA256": "9b535550082420210401672c142159b2bd3f2480c5465c56e4bb5408bee93eef",
+      "bytes": 141
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "ccc6212908ca90f819233a307124e7a4738802e3f9a7f7cb62c4681226d86afb",
+      "uncompressedSHA256": "ec20e8c7ece6fa055e513ce0087b3dc51607c0ad9fa38e7959d5aef320f3cb1b",
+      "bytes": 747
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "197915e8a07948643f792d19008886c485bab3af547d8820814cadf930c6f2fd",
+      "uncompressedSHA256": "f7c341d7feeaa51b00d7b545b83600b73d99e9f13dd858feb98bbf24e710ee70",
+      "bytes": 144
+    }
+  ],
+  "attempts": [
+    {
+      "url": "https://supergrad.co.in/",
+      "capturedAt": "2026-10-23T09:19:55.413Z",
+      "error": "TimeoutError: signal timed out",
+      "status": null,
+      "finalUrl": null,
+      "bodySHA256": null,
+      "captureFile": "bare-pages.json.gz"
+    },
+    {
+      "url": "https://www.supergrad.co.in/",
+      "capturedAt": "2026-10-23T09:16:10.265Z",
+      "error": "TimeoutError: signal timed out",
+      "status": null,
+      "finalUrl": null,
+      "bodySHA256": null,
+      "captureFile": "official-pages.json.gz"
+    }
+  ]
+}

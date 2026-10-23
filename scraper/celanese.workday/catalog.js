@@ -12,8 +12,8 @@ const PROVIDER_METADATA = { ...{
   "parser": "native-html-jobposting",
   "normalizationProfile": "engineering-default",
   "countryFilter": "India",
-  "paginationStrategy": "native-unfiltered-Asia-GET-next-links;all-advertised-pages;closing-board-check",
-  "extractionStrategy": "official-Sitecore-JSON-By-Region-Asia-handoff;native-ID;complete-overview-responsibilities-qualifications;typed-country-and-city",
+  "paginationStrategy": "native-unfiltered-Asia-GET-next-links;explicit-same-search-noscript-frame;all-advertised-pages;closing-board-check",
+  "extractionStrategy": "official-regional-icims;bounded-noscript-frame;full-three-sections-including-nested-headings;native-ID-and-country;exact-same-role-application-link",
   "companyDomain": "celanese.com",
   "officialHomepageUrl": "https://www.celanese.com/",
   "companyCareerPage": "https://www.celanese.com/en/careers",
@@ -22,11 +22,11 @@ const PROVIDER_METADATA = { ...{
   "verifiedAt": null,
   "verifiedPublicJobCount": null,
   "verifiedIndiaJobCount": null,
-  "verificationDisposition": "implemented-offline-runtime-unverified",
+  "verificationDisposition": "actual-native-detail-contract-replay-validated-live-recheck-pending",
   "verifiedInventoryStatus": "unverified",
   "zeroResultPolicy": "coverage-gap",
-  "remediationStatus": "implemented-offline-runtime-validation-pending",
-  "runtimeQualification": "unqualified-offline-fixture-port-only",
+  "remediationStatus": "native-ten-India-detail-parsers-corrected-live-validation-pending",
+  "runtimeQualification": "retained-actual-HTTP-replay10-India-details0-eligible6-unresolved-country;whole-source-unqualified",
   "backfillMode": "live-parser",
   "originalModulePath": "../workbookbatch09b/failClosedSentinel.js",
   "sourceScopeComplete": false,
@@ -36,12 +36,12 @@ const PROVIDER_METADATA = { ...{
   "sourceObservedReportedTotal": null,
   "sourceObservedFirstPageExplicitIndiaLabels": 4,
   "sourceObservedFirstPageUnknownCountryLabels": 4,
-  "sourceRetainedFullIndiaDetails": 1,
+  "sourceRetainedFullIndiaDetails": 10,
   "sourceRetainedRoleNativePostedDate": "2024-10-21T01:48:11.318Z",
   "sourceRetainedRoleNativeValidThrough": "2027-10-21T01:48:11.318Z",
   "sourceNativeObservationCompletedAt": "2026-10-21T01:42:24.567Z",
   "sourceNativeDetailObservationCompletedAt": "2026-10-21T01:48:10.850Z",
-  "verifiedSurfaceSummary": "Retained corporate careers HTML contains an application/json Sitecore Careers route whose active By Region Asia CTA advertises this exact unfiltered iCIMS board. Native firstpage has20 cards behind3 advertised pages, with4 explicit India labels and4 missing country labels. One full Hyderabad role23787 is retained; later pages and7 candidate detail bodies are unavailable. Native2024 datePosted and2027 validThrough remain verbatim; listing label2026-23787 does not refresh publication. Current eligibility, source health, persistence and public visibility are unverified.",
+  "verifiedSurfaceSummary": "Official corporate Sitecore Careers/By Region/Asia CTA binds the regional iCIMS board. The actual17:31:55.309→17:32:20.980Z audit retained23 responses and reached3 pages/46 native listings. Parser corrections recover10 full explicit-India details from those retained bodies, preserving nested qualification headings, encoded punctuation and same-role application query parameters. Six malformed/missing native country records remain unknown. All10 parsed source datePosted values remain2024, so0 pass the existing date filter at the original observation clock. This replay is not a new live check or proof of no openings. Whole-employer completeness, current production counts and source date-generation semantics remain unknown.",
   "bindingEvidence": {
     "verified": false,
     "officialBrandHandoffDocumented": true,
@@ -53,7 +53,19 @@ const PROVIDER_METADATA = { ...{
     "aliasesCreated": false,
     "applicationsOpened": false
   },
-  "sourceScopeNotes": "Asia is the selected corporate-advertised regional inventory; Americas/EMEA/global/early-career surfaces remain separate. Native Country India, City Hyderabad and typed addressCountry IN/addressLocality Hyderabad must agree. Native UNAVAILABLE state remains raw evidence with normalized state unknown; Telangana is not inferred. All three full description sections/headings survive; schema comparison permits only terminal-colon heading formatting differences and whitespace. Native application query is retained without visiting or submitting any application/login/consent form. The historical folder name remains for compatibility; execution is native iCIMS HTML."
+  "sourceScopeNotes": "Asia is the selected corporate-advertised regional inventory; Americas/EMEA/global/early-career surfaces remain separate. Native Country India, City Hyderabad and typed addressCountry IN/addressLocality Hyderabad must agree. Native UNAVAILABLE state remains raw evidence with normalized state unknown; Telangana is not inferred. All three full description sections/headings survive; schema comparison permits only terminal-colon heading formatting differences and whitespace. Native application query is retained without visiting or submitting any application/login/consent form. The historical folder name remains for compatibility; execution is native iCIMS HTML. Explicit no-JavaScript frames are followed only to the same search page or same native role, with no new filters. Outer and inner response bodies retain their own clocks. Mixed-time behavior fixtures do not establish a current inventory. Nested h2 headings inside each native description body remain part of that complete body; only the three outer role-section headings define boundaries. Observed bull/rsquo/reg entities compare with their literal Unicode glyphs without altering original visible/schema HTML. Application in_iframe=1 is allowed only on the same-role native application link, never fetched. Malformed Tokyo country labels and native2024 dates remain unchanged.",
+  "sourceLatestNativeShellObservationCompletedAt": "2026-10-22T17:24:02.110Z",
+  "sourceNativeFrameStrategy": "Only explicit noscript_icims_content_iframe, matching active Career Portal slot, exact same Asia origin/path/search, and the sole additional in_iframe=1 parameter. Bounded public GET only; no website script execution.",
+  "sourceCurrentInventoryCounts": null,
+  "sourceRetainedLatestListingRows": 46,
+  "sourceRetainedLatestCandidateDetails": 16,
+  "sourceRetainedLatestUnresolvedCountryDetails": 6,
+  "sourceRetainedLatestDetailClock": "2026-10-22T17:32:20.980Z",
+  "sourceRetainedLatestParsedIndiaDatePostedYears": [
+    2024
+  ],
+  "sourceRetainedReplayEligibleJobs": 0,
+  "sourceRetainedReplayRejectedOld": 10
 }, modulePath: path.join(dir, 'script.js'), dryRunFile: path.join(dir, 'jobs.json') };
 export default PROVIDER_METADATA;
 export { PROVIDER_METADATA };
