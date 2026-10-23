@@ -1,0 +1,162 @@
+{
+  "source": "lidolearning",
+  "files": [
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "c508c62ef474387e3d6aadd8027157bdd44e04f5b30f7ca3b90054df853de668",
+      "uncompressedSHA256": "bf981682e7f78675f46b1c5a1ec14af1cfebb630233e31141a33dd37ed8212aa"
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "e8b0d4c6f7cc1122b9f6c0e641ab298f209fcba12a8ecc7cdbe2d8bac4c5ed74",
+      "uncompressedSHA256": "87091b33b1ccd777bc094cd7de01c2dcc0381372b2b4656c969738e62a7b50d8"
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "e4f8063f6a62b26238255c12d5d143dc652661ef659ab7a26a825576e84449fe",
+      "uncompressedSHA256": "3b5c41909af1c60065b011108d25f463bf3edb39f8e3d41208807f700cf7e898"
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "c50d6a83e18226cad86318f37fbd9c5035368128d1bd4ef1f810c0020b95e9f2",
+      "uncompressedSHA256": "5ae81d82b0d9fdaa446809ae004c00640c7c3ee0bb18db18b23cbbdfefb02278"
+    },
+    {
+      "file": "webbtree-api.json.gz",
+      "sha256": "bac5cb1bbe600f58ae8c1393893cb7fdbdf010b3ea2963e10383106555847654",
+      "uncompressedSHA256": "2cc16f2364be0a706232484f3107ab8736e76ffc901fe1742b290d9ee7d38391"
+    },
+    {
+      "file": "webbtree-client.dom.json.gz",
+      "sha256": "f18c1df225f0e5b3f727ceb6515e052eb1add1bdd7a1eb9f66f329acf75a387a",
+      "uncompressedSHA256": "1399a828080f29a0b2895c331430df95f4caf0a92c18f0df028ecc400225cf28"
+    },
+    {
+      "file": "webbtree-client.json.gz",
+      "sha256": "98c88a2bf59247be5b55da7c09b4b504388971f4e4b4bba3a08b8f718f495525",
+      "uncompressedSHA256": "c428e42db11e6925627c67a1589ca0b367ff0fd55210e65858c600366d01b931"
+    },
+    {
+      "file": "webbtree-company-client.dom.json.gz",
+      "sha256": "e04f609837c4a7adb244faef96d5ddef7213961cfb8d619c592aab87af04e551",
+      "uncompressedSHA256": "1eff9c0f21f4a1087ef89f9f6cc6c712c254c24c471694bebd466e4402ea6bd4"
+    },
+    {
+      "file": "webbtree-company-client.json.gz",
+      "sha256": "39560b357c359fe34b973d49b49ebd960f9f23f75f6ea82d8edb246fb6cab406",
+      "uncompressedSHA256": "b082b133c60c159e417e2f1cae8730382cde551ca41344a8c2805c5173f90371"
+    },
+    {
+      "file": "webbtree-pages.dom.json.gz",
+      "sha256": "5f9dbf1d48ce667c6979658012ced3def11981a356dfa840d01e788aab172582",
+      "uncompressedSHA256": "ea8883791fe7cd9c946d9b0da08367e9327f1d9ba042ab5e15835daa1d93321f"
+    },
+    {
+      "file": "webbtree-pages.json.gz",
+      "sha256": "a80583ea9d9c1a373be5660da2cb0f04711b7092295b1d0549b0236b5d46574f",
+      "uncompressedSHA256": "75965e28ca901b88fb6f3688ca5f8092ac0dc814a3c75c4f5d62b34b7f0423a8"
+    }
+  ],
+  "responses": [
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/company/lido-learning",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/company/lido-learning",
+      "capturedAt": "2026-10-23T08:57:31.894Z",
+      "bodySHA256": "92930ec3d053a58c9063ec0fa352b8be49e077cc677d2035995d5a65c8dd2a1e",
+      "requestHeaders": null,
+      "requestBody": null
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=14625914&location=India",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=14625914&location=India",
+      "capturedAt": "2026-10-23T08:57:32.697Z",
+      "bodySHA256": "ea1f77c3c6c8fe84a2344ee50070ce0cc6c4da2e49816b0af56dc0dfded1a630",
+      "requestHeaders": null,
+      "requestBody": null
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=14625914&location=Worldwide",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=14625914&location=Worldwide",
+      "capturedAt": "2026-10-23T08:57:33.373Z",
+      "bodySHA256": "98c6fef247aca446b5e40194d8f2d349968e60a90060aa3c3dd6c8f7f426b80d",
+      "requestHeaders": null,
+      "requestBody": null
+    },
+    {
+      "file": "official-pages.json.gz",
+      "url": "https://www.lidolearning.com/",
+      "status": 200,
+      "finalUrl": "https://www.lidolearning.com/",
+      "capturedAt": "2026-10-23T08:55:30.087Z",
+      "bodySHA256": "14552ea6bcefc9dea5196a330852febbec77fd2b83a319f0f68ea70bd03d430c",
+      "requestHeaders": null,
+      "requestBody": null
+    },
+    {
+      "file": "webbtree-api.json.gz",
+      "url": "https://appapi.webbtree.com/candidate/company/getcompanyinfo?domain=lidolearning/VA34plKma25sh4vywwGhgggweqeq&c_n=lidolearning&c_e=VA34plKma25sh4vywwGhgggweqeq",
+      "status": 401,
+      "finalUrl": "https://appapi.webbtree.com/candidate/company/getcompanyinfo?domain=lidolearning/VA34plKma25sh4vywwGhgggweqeq&c_n=lidolearning&c_e=VA34plKma25sh4vywwGhgggweqeq",
+      "capturedAt": "2026-10-23T09:05:28.601Z",
+      "bodySHA256": "aa357e50268b7d5e7a98ff3e6f5f2f182d47079857469c232cf458076adaa32f",
+      "requestHeaders": {
+        "customurl": "/lidolearning/VA34plKma25sh4vywwGhgggweqeq"
+      },
+      "requestBody": null
+    },
+    {
+      "file": "webbtree-api.json.gz",
+      "url": "https://appapi.webbtree.com/candidate/jobs/getjobs",
+      "status": 401,
+      "finalUrl": "https://appapi.webbtree.com/candidate/jobs/getjobs",
+      "capturedAt": "2026-10-23T09:05:28.756Z",
+      "bodySHA256": "aa357e50268b7d5e7a98ff3e6f5f2f182d47079857469c232cf458076adaa32f",
+      "requestHeaders": {
+        "customurl": "lidolearning/VA34plKma25sh4vywwGhgggweqeq"
+      },
+      "requestBody": {
+        "params": {
+          "locationname": "",
+          "employmenttype": "",
+          "jobnameordept": ""
+        }
+      }
+    },
+    {
+      "file": "webbtree-client.json.gz",
+      "url": "https://app.webbtree.com/main-es2015.7b693001c98af043cb86.js",
+      "status": 200,
+      "finalUrl": "https://app.webbtree.com/main-es2015.7b693001c98af043cb86.js",
+      "capturedAt": "2026-10-23T08:59:31.879Z",
+      "bodySHA256": "381072ae69a1faa00f75f486f79f627caf97151e9409214aaa30f39ffd27c9fe",
+      "requestHeaders": null,
+      "requestBody": null
+    },
+    {
+      "file": "webbtree-company-client.json.gz",
+      "url": "https://app.webbtree.com/company/main-es2015.7b693001c98af043cb86.js",
+      "status": 200,
+      "finalUrl": "https://app.webbtree.com/company/main-es2015.7b693001c98af043cb86.js",
+      "capturedAt": "2026-10-23T09:02:22.951Z",
+      "bodySHA256": "8295ed0326d18cca3d2c560dd2b3b7ddb4923d340b47611686569d98398d1ab9",
+      "requestHeaders": null,
+      "requestBody": null
+    },
+    {
+      "file": "webbtree-pages.json.gz",
+      "url": "https://app.webbtree.com/company/lidolearning/jobs",
+      "status": 200,
+      "finalUrl": "https://app.webbtree.com/company/lidolearning/jobs",
+      "capturedAt": "2026-10-23T08:55:35.198Z",
+      "bodySHA256": "9b7a825a273fa73cfc3e8bca3d7c62e5edffc68296de0bc697d3e210a0ca04b1",
+      "requestHeaders": null,
+      "requestBody": null
+    }
+  ]
+}

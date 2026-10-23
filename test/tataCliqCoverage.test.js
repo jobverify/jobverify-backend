@@ -18,9 +18,14 @@ test('Tata CLiQ resolves to its exact-name first-party provider', () => {
   )
 })
 
-test('Tata CLiQ fails closed when its official ATS has no verified enumerable openings', async () => {
+test('Tata CLiQ registered scraper reports unavailable coverage instead of verified zero', async () => {
   const scraper = buildScrapers().find((candidate) => candidate.name === 'tatacliq')
 
   assert.ok(scraper)
-  assert.deepEqual(await scraper.run(), [])
+  await assert.rejects(scraper.run({fetchImpl:async url=>({status:503,url,text:async()=>''})}),error=>{
+    assert.equal(error.code,'TATACLIQ_COVERAGE_GAP')
+    assert.equal(error.inventoryEvidence.listingComplete,false)
+    assert.equal(error.inventoryEvidence.reportedTotal,null)
+    return true
+  })
 })

@@ -1,0 +1,104 @@
+{
+  "source": "classklap",
+  "captureMethod": "Root-owned isolated Chrome direct native fetch; exact URL, final URL, HTTP status, capture time and body retained. Separate DOM navigation includes LinkedIn authwall and parent-site certificate error; neither DOM observation supplies HTTP facts. Parent transport failure has unknown status and final URL.",
+  "files": [
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "db4016997b6288ffac407bba4a02360b89148cfba02420e43383d6e1a03122c4",
+      "uncompressedSHA256": "a20f210689ac0f6eef225a336ae248e0ac8129ab7bb7c0ed07e94e7c386d282f",
+      "bytes": 5937
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "2c1f35b08641fb4bd8b300fd2305aa0702989d90982ba6d2422cc1f15ffe3620",
+      "uncompressedSHA256": "c53fdff6ea5a77712ad5f766696f0c812b1fcb1e037b2d761d358fa0cce0b019",
+      "bytes": 352972
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "36cd32314c4878452bee42b72058b9e101bf611a63f717bce3bf435debd85757",
+      "uncompressedSHA256": "176cfaa9c345629ddf1c259bde72b79514e135afce771aa78e48cb0566611cb3",
+      "bytes": 1308
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "5e4166c3ae4d404fb2d38e2362aafe31798721baa6218a5059651ce6d6737640",
+      "uncompressedSHA256": "b3c35c6b6acb5ee073b5358a45d8ae7db60b1afea01132ab187ce76dcd6970c5",
+      "bytes": 7037
+    },
+    {
+      "file": "parent-pages.dom.json.gz",
+      "sha256": "9a39398cfee4b2b56637d68c7954402c374fd2e52417871fc616782ce1c45eef",
+      "uncompressedSHA256": "4506bece3227f5c8ada19de501278de45ba606d756404d377a952eb68ac8ccd4",
+      "bytes": 955
+    },
+    {
+      "file": "parent-pages.json.gz",
+      "sha256": "f45478d91014c981b0098a03ccf5550165cbbbdacc68d417bbae26db04074a17",
+      "uncompressedSHA256": "2cf5460c192fdf8d7bcafe79f7aa5b205ee41b7d648fd7392edcb09b60a0173d",
+      "bytes": 138
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://www.linkedin.com/company/classklap/",
+      "finalUrl": "https://www.linkedin.com/company/classklap/",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:37:41.904Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "5eae9aa6517925e6cfaaf221a0e483dbcd941411f35ea1c6b1bdc015ea149ac1",
+      "bodyBytes": 158609
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=18717228&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=18717228&location=India",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:37:42.519Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "1ef3a52539656313c2bc127271c47a54d5189de3cda6bdde864df2285322d1bc",
+      "bodyBytes": 89323
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=18717228&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=18717228&location=Worldwide",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:37:43.099Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "24f7b8454ad343beff8461beac3687f41fd4b3be8fbb1ee04ad67628d3c7f7d0",
+      "bodyBytes": 89378
+    },
+    {
+      "url": "https://www.classklap.com/",
+      "finalUrl": "https://www.classklap.com/",
+      "status": 404,
+      "error": null,
+      "capturedAt": "2026-10-23T08:37:24.912Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "106675610e3fe4d70329833048cb77366fd04c31e225910cf58a62ec7dd1d542",
+      "bodyBytes": 3177
+    },
+    {
+      "url": "https://www.classklap.com/careers",
+      "finalUrl": "https://www.classklap.com/careers",
+      "status": 404,
+      "error": null,
+      "capturedAt": "2026-10-23T08:37:25.319Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "106675610e3fe4d70329833048cb77366fd04c31e225910cf58a62ec7dd1d542",
+      "bodyBytes": 3177
+    },
+    {
+      "url": "https://www.eupheus.in/",
+      "finalUrl": null,
+      "status": null,
+      "error": "TypeError: Failed to fetch",
+      "capturedAt": "2026-10-23T08:39:09.991Z",
+      "file": "parent-pages.json.gz",
+      "bodySHA256": null,
+      "bodyBytes": null
+    }
+  ]
+}

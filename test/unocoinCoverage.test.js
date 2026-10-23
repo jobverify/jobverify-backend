@@ -20,5 +20,10 @@ test('Unocoin resolves to its exact-name official provider', () => {
 })
 
 test('Unocoin fails closed without official enumerable job listings', async () => {
-  assert.deepEqual(await run(), [])
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('native source unavailable')}}), error => {
+    assert.equal(error.code,'UNOCOIN_COVERAGE_GAP')
+    assert.equal(error.inventoryEvidence.reportedTotal,null)
+    assert.equal(error.lifecycleCleanupAllowed,false)
+    return true
+  })
 })

@@ -6,7 +6,7 @@ import '../loadEnv.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
 import Job from '../src/models/Job.js';
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
-import { rewriteDeadline, rewriteQueueQuery, rewriteQueuePages, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient, rewriteProgress } from '../rewriting/runner.js';
+import { rewriteDeadline, rewriteStopDetails, rewriteQueueQuery, rewriteQueuePages, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient, rewriteProgress } from '../rewriting/runner.js';
 import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration } from '../rewriting/worker.js';
 import { createRewriteDiagnostics } from '../rewriting/diagnostics.js';
 
@@ -20,7 +20,8 @@ const summary = { mode: apply ? mode : 'preview', modelId: REWRITE_MODEL.modelId
   startedAt: new Date().toISOString(), environment: { platform: os.platform(), cpu: os.cpus()[0]?.model,
     availableCpus: os.availableParallelism(), cpuThreads: workerConfig.threads, parallelism: workerConfig.parallelism,
     contextTokensPerRequest: REWRITE_MODEL.contextTokens, maxOutputTokens: REWRITE_MODEL.maxOutputTokens,
-    maxRetryOutputTokens: REWRITE_MODEL.maxRetryOutputTokens, queuePageSize: 8,
+    maxRetryOutputTokens: REWRITE_MODEL.maxRetryOutputTokens, maxModelEdits: REWRITE_MODEL.maxModelEdits,
+    maxPromptCandidates: REWRITE_MODEL.maxPromptCandidates, maxEditCharacters: REWRITE_MODEL.maxEditCharacters, queuePageSize: 8,
     requestSeconds: REWRITE_MODEL.requestSeconds, totalMemoryBytes: os.totalmem() } };
 const summaryFile = path.resolve(process.env.PIPELINE_SUMMARY_FILE || '.cache/scraper-actions/description-summary.json');
 const diagnosticFile = path.join(path.dirname(summaryFile), 'description-rejections.json');
@@ -67,11 +68,15 @@ try {
     }
   }
 } catch (error) {
-  summary.reason = signal.aborted ? 'interrupted' : 'worker_error';
   if (error.rewriteStats) Object.assign(summary, error.rewriteStats);
-  // Keep diagnostics free of source text, connection strings, and model completions.
-  Object.assign(summary, rewriteFailureDetails(error, error.rewritePhase || phase));
-  if (!signal.aborted) process.exitCode = 1;
+  const expectedStop = signal.aborted && (['AbortError', 'TimeoutError'].includes(error.name) || error === signal.reason);
+  if (expectedStop) Object.assign(summary, rewriteStopDetails({ cancelled: controller.signal.aborted, budgetExpired: budgetSignal.aborted || Date.now() >= deadline }));
+  else {
+    summary.reason = 'worker_error';
+    // Never hide a code/database/worker failure that coincides with the deadline.
+    Object.assign(summary, rewriteFailureDetails(error, error.rewritePhase || phase));
+    process.exitCode = 1;
+  }
 } finally {
   await jobs?.return();
   if (worker) summary.worker = worker.diagnostics();
@@ -82,8 +87,13 @@ try {
     const durations=summary.results.filter(r=>r.generated && !r.modelPlanCached && r.durationMs>0).map(r=>r.durationMs).sort((a,b)=>a-b);
     const seconds=(Date.now()-Date.parse(summary.startedAt))/1000;
     summary.capacity={elapsedSeconds:seconds,modelRequests:summary.results.reduce((total,r)=>total+(r.generationRequests??(r.generated&&!r.modelPlanCached?1:0)),0),attemptsPerHour:summary.attempted ? summary.attempted/seconds*3600 : 0,p50DurationMs:durations[Math.floor(durations.length*.5)]||null,p95DurationMs:durations[Math.min(durations.length-1,Math.floor(durations.length*.95))]||null};
+    summary.capacity.renderedWithoutInference = summary.results.filter(result => result.ok && result.renderedWithoutInference).length;
+    summary.capacity.modelEditedItems = summary.results.reduce((total, result) => total + (result.ok ? result.quality?.modelEditedItems || 0 : 0), 0);
+    summary.capacity.sourceCopiedItems = summary.results.reduce((total, result) => total + (result.ok ? result.quality?.sourceCopiedItems || 0 : 0), 0);
   }
   if (apply && summary.queued !== undefined) Object.assign(summary, rewriteProgress(summary));
+  if (apply && !summary.errorType && summary.reason !== 'disabled') Object.assign(summary,
+    rewriteStopDetails({ cancelled: controller.signal.aborted, budgetExpired: budgetSignal.aborted || Date.now() >= deadline || summary.reason === 'workflow_budget_exhausted' }));
   summary.finishedAt = new Date().toISOString();
   if (apply) {
     const { stageOutcome } = await import('../src/pipeline/policy.js');

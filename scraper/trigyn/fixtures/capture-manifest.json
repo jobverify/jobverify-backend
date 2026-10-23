@@ -1,0 +1,2429 @@
+{
+  "source": "trigyn",
+  "capturedOn": "2026-10-23",
+  "captureMethod": "Root-controlled browser: same-origin HTTP response envelopes; original UTF-8 response bodies retained exactly.",
+  "scope": "All six native regional inventories and independent India facet. The unfiltered no-region request is HTTP500, never zero.",
+  "regionalTotals": {
+    "53": 16,
+    "54": 54,
+    "55": 30,
+    "56": 125,
+    "57": 1,
+    "250": 1
+  },
+  "globalUniqueJobs": 227,
+  "indiaFacetCount": 40,
+  "detailResponses": 227,
+  "publicationDates": "No source publication date exposed; postingDate remains null.",
+  "files": [
+    {
+      "file": "careers-response.json.gz",
+      "bytes": 20088,
+      "sha256": "1b4b98a0246a30ef620e794503f6da76eff019062264138619abc25d385e44f2",
+      "uncompressedBytes": 203990,
+      "uncompressedSha256": "a53b4744c25ef09429d902879fa0d2f2d703e42344ac57a9af246388e474ef99",
+      "responses": [
+        {
+          "url": "https://www.trigyn.com/careers",
+          "finalUrl": "https://www.trigyn.com/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:22:45.415Z",
+          "method": "GET",
+          "bodyBytes": 175072,
+          "bodySha256": "90a678ba0645fb9ff372782eeb1ab791dc3e25b5ccd16f04caec6ad2e5639dac"
+        }
+      ]
+    },
+    {
+      "file": "client-responses.json.gz",
+      "bytes": 68551,
+      "sha256": "0fc74a59d1045868d28dd14a83b46561030f958e66797fa0bdc4f60f5e63e3ce",
+      "uncompressedBytes": 250124,
+      "uncompressedSha256": "7a2477957d54dd2bbbe0fb584ed8a1a5951726a1afff6ee210e8c1937fb047ad",
+      "responses": [
+        {
+          "url": "https://www.trigyn.com/sites/default/files/js/js_Yf-SVzYjzdjRlhUsYlQvSfxtcOrMZsJV1QpYffCPwjw.js?scope=header&delta=0&language=en&theme=trigyn_theme&include=eJxtjM0OwyAMg1-oGo8UpcGiWYGgAPt5-3WHHjrtYsv-LGOSmO2Kw0rLylUQ8KdcklnKoMEppEN-843v_FqGa3pXktmHlSDsgHey1szHrDoU_dwUizMj9O1AMgetXCv8pGNDQUjZVs7XTr83nEkbyQbZr7TDHyro1GeDU3Rr0Z71A6pjXH0",
+          "finalUrl": "https://www.trigyn.com/sites/default/files/js/js_Yf-SVzYjzdjRlhUsYlQvSfxtcOrMZsJV1QpYffCPwjw.js?scope=header&delta=0&language=en&theme=trigyn_theme&include=eJxtjM0OwyAMg1-oGo8UpcGiWYGgAPt5-3WHHjrtYsv-LGOSmO2Kw0rLylUQ8KdcklnKoMEppEN-843v_FqGa3pXktmHlSDsgHey1szHrDoU_dwUizMj9O1AMgetXCv8pGNDQUjZVs7XTr83nEkbyQbZr7TDHyro1GeDU3Rr0Z71A6pjXH0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:23:07.643Z",
+          "method": "GET",
+          "bodyBytes": 418,
+          "bodySha256": "ff128dc05c030929b152a98cf243220c5cbad9c6ba2a90550704ec504ccb76a0"
+        },
+        {
+          "url": "https://www.trigyn.com/sites/default/files/js/js_l0t6M8HlWRmfP6n9FMVIqWWx_wOI6HV6C7eMyJhlKNY.js?scope=footer&delta=0&language=en&theme=trigyn_theme&include=eJxtjM0OwyAMg1-oGo8UpcGiWYGgAPt5-3WHHjrtYsv-LGOSmO2Kw0rLylUQ8KdcklnKoMEppEN-843v_FqGa3pXktmHlSDsgHey1szHrDoU_dwUizMj9O1AMgetXCv8pGNDQUjZVs7XTr83nEkbyQbZr7TDHyro1GeDU3Rr0Z71A6pjXH0",
+          "finalUrl": "https://www.trigyn.com/sites/default/files/js/js_l0t6M8HlWRmfP6n9FMVIqWWx_wOI6HV6C7eMyJhlKNY.js?scope=footer&delta=0&language=en&theme=trigyn_theme&include=eJxtjM0OwyAMg1-oGo8UpcGiWYGgAPt5-3WHHjrtYsv-LGOSmO2Kw0rLylUQ8KdcklnKoMEppEN-843v_FqGa3pXktmHlSDsgHey1szHrDoU_dwUizMj9O1AMgetXCv8pGNDQUjZVs7XTr83nEkbyQbZr7TDHyro1GeDU3Rr0Z71A6pjXH0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:23:08.103Z",
+          "method": "GET",
+          "bodyBytes": 243741,
+          "bodySha256": "b5d6ac2cefc5002a53a5546028db06c8ef12ed010a420229780bae8d4ce18e8e"
+        }
+      ]
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "bytes": 715561,
+      "sha256": "3053d0141837349204c4738c0929a9c37dc43fe8348d9a6e40e101a73e42a2e9",
+      "uncompressedBytes": 7582759,
+      "uncompressedSha256": "aa80aa01a09e54fecd81989c8843c25c1152661902384a5af6039e2eb3b3203a",
+      "responses": [
+        {
+          "url": "https://www.trigyn.com/job/fresher",
+          "finalUrl": "https://www.trigyn.com/job/fresher",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:18.707Z",
+          "method": "GET",
+          "bodyBytes": 174018,
+          "bodySha256": "d079d11334cd65c86f350bff2f4ce9c44e9d137d177559abcb1fccdb453cbd63"
+        },
+        {
+          "url": "https://www.trigyn.com/job/executive-senior-executive-pre-sales",
+          "finalUrl": "https://www.trigyn.com/job/executive-senior-executive-pre-sales",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:18.907Z",
+          "method": "GET",
+          "bodyBytes": 174852,
+          "bodySha256": "a1905a5092d017ebab1671575fce027284ff77e90700dab503245717fa0169a7"
+        },
+        {
+          "url": "https://www.trigyn.com/job/operator-command-center",
+          "finalUrl": "https://www.trigyn.com/job/operator-command-center",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:19.138Z",
+          "method": "GET",
+          "bodyBytes": 176892,
+          "bodySha256": "372db42d3729215b3d6b6e084a1e6438238e2c95c2eec2181bd823a9ff507b3a"
+        },
+        {
+          "url": "https://www.trigyn.com/job/development-lead-aspnet-net-core-web-apis-angularjs-jquery-azure-devops-iis-deployments",
+          "finalUrl": "https://www.trigyn.com/job/development-lead-aspnet-net-core-web-apis-angularjs-jquery-azure-devops-iis-deployments",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:19.172Z",
+          "method": "GET",
+          "bodyBytes": 177818,
+          "bodySha256": "f6a3f80e2f37f55b9f317045b9f6ddc41ad05f5b5a9ca7331bcefbf209b9aa72"
+        },
+        {
+          "url": "https://www.trigyn.com/job/solution-architect-data-lake",
+          "finalUrl": "https://www.trigyn.com/job/solution-architect-data-lake",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:19.139Z",
+          "method": "GET",
+          "bodyBytes": 177651,
+          "bodySha256": "1c3da1782d17524261922b2d8794916927a041837757df1ce49f655888a5348a"
+        },
+        {
+          "url": "https://www.trigyn.com/job/product-owner",
+          "finalUrl": "https://www.trigyn.com/job/product-owner",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:20.208Z",
+          "method": "GET",
+          "bodyBytes": 183178,
+          "bodySha256": "c0806e745ce4649d38fad0a8511ba8c7f215db41dbdb124d8cfe33ee6f70a9e8"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sr-network-engineer",
+          "finalUrl": "https://www.trigyn.com/job/sr-network-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:20.012Z",
+          "method": "GET",
+          "bodyBytes": 181333,
+          "bodySha256": "0a1b1f4cfd0e6c6c5bab498ef58580e08ff8f829c2720db59d58abf3a00ab22c"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lead-it-infra",
+          "finalUrl": "https://www.trigyn.com/job/lead-it-infra",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:20.262Z",
+          "method": "GET",
+          "bodyBytes": 179478,
+          "bodySha256": "ab4df2ff02fb636fe4b1d157938289926c6c8068d99177e6c11c004ad04fe422"
+        },
+        {
+          "url": "https://www.trigyn.com/job/technical-lead",
+          "finalUrl": "https://www.trigyn.com/job/technical-lead",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:20.266Z",
+          "method": "GET",
+          "bodyBytes": 180446,
+          "bodySha256": "54e78808a2c26f546db58792a63ef468c8859e6679fe5e0263075bc89c394d8e"
+        },
+        {
+          "url": "https://www.trigyn.com/job/python-developer",
+          "finalUrl": "https://www.trigyn.com/job/python-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:20.266Z",
+          "method": "GET",
+          "bodyBytes": 175574,
+          "bodySha256": "f76167b1d766add97a05752590d347ee43ebc122faae49f486f1d66eeb606a7d"
+        },
+        {
+          "url": "https://www.trigyn.com/job/net-react-developer",
+          "finalUrl": "https://www.trigyn.com/job/net-react-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:21.220Z",
+          "method": "GET",
+          "bodyBytes": 176441,
+          "bodySha256": "318f973935a9f77520a1199267056a140309840d21611ec39fb4e10723e57357"
+        },
+        {
+          "url": "https://www.trigyn.com/job/project-managerlead",
+          "finalUrl": "https://www.trigyn.com/job/project-managerlead",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:21.230Z",
+          "method": "GET",
+          "bodyBytes": 185458,
+          "bodySha256": "fe0debb15a4123ecb3f872d4b81dbaa750b298cb6f62c140290dc1f46d1a1413"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sr-backend-developer",
+          "finalUrl": "https://www.trigyn.com/job/sr-backend-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:21.290Z",
+          "method": "GET",
+          "bodyBytes": 175288,
+          "bodySha256": "8f8604b2249327f47856572e009ee93907c0db1b5fe8897dd44a0f460d14a647"
+        },
+        {
+          "url": "https://www.trigyn.com/job/data-visualisation-expert-data-analyst",
+          "finalUrl": "https://www.trigyn.com/job/data-visualisation-expert-data-analyst",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:21.011Z",
+          "method": "GET",
+          "bodyBytes": 181961,
+          "bodySha256": "7d2f145bc0e72b62f67e00267180449f6b8e5a6d9fc3b1af5a76ed2c6d4b18c0"
+        },
+        {
+          "url": "https://www.trigyn.com/job/full-stack-developer-java-reactangular",
+          "finalUrl": "https://www.trigyn.com/job/full-stack-developer-java-reactangular",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:21.458Z",
+          "method": "GET",
+          "bodyBytes": 181335,
+          "bodySha256": "a40b38f695a6ff4fb571480b9947abeafbb8e4e3f5591e574c44947bcbbb341d"
+        },
+        {
+          "url": "https://www.trigyn.com/job/full-stack-developer",
+          "finalUrl": "https://www.trigyn.com/job/full-stack-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:22.355Z",
+          "method": "GET",
+          "bodyBytes": 178586,
+          "bodySha256": "555e6a81fc5c7eb8801a3b4f0f3c3aada31ad93212b93b85ff82a55f47cb3177"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:22.364Z",
+          "method": "GET",
+          "bodyBytes": 180488,
+          "bodySha256": "f36d47565e6580d592008dea698d176d038d4e4a969b4df3656bb3b3b12a4a00"
+        },
+        {
+          "url": "https://www.trigyn.com/job/mobile-developer",
+          "finalUrl": "https://www.trigyn.com/job/mobile-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:22.138Z",
+          "method": "GET",
+          "bodyBytes": 175529,
+          "bodySha256": "354419e6dc39dcdf737aba14616f5ac51488957c272bb5cc19851dd1920a26bf"
+        },
+        {
+          "url": "https://www.trigyn.com/job/technical-lead-moodle",
+          "finalUrl": "https://www.trigyn.com/job/technical-lead-moodle",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:22.188Z",
+          "method": "GET",
+          "bodyBytes": 191481,
+          "bodySha256": "0df1c6a6a03b518a2336a1a63c99591fddb3b932f1e7b53fe50664cbb4800bf3"
+        },
+        {
+          "url": "https://www.trigyn.com/job/helpdesk-support-executive-l1-support-engineer",
+          "finalUrl": "https://www.trigyn.com/job/helpdesk-support-executive-l1-support-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:22.591Z",
+          "method": "GET",
+          "bodyBytes": 185412,
+          "bodySha256": "a1f33b66cfd7ee1ab188ca155b8afef8b3a36f1590e6d2ecbc272395b264ca85"
+        },
+        {
+          "url": "https://www.trigyn.com/job/frontend-developer-angular",
+          "finalUrl": "https://www.trigyn.com/job/frontend-developer-angular",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:23.501Z",
+          "method": "GET",
+          "bodyBytes": 175471,
+          "bodySha256": "7506f3272c70dfce1fb68c4b39d1581685e1582abd0c61b1b17005ad6ad350ee"
+        },
+        {
+          "url": "https://www.trigyn.com/job/apprentice-human-resources",
+          "finalUrl": "https://www.trigyn.com/job/apprentice-human-resources",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:23.502Z",
+          "method": "GET",
+          "bodyBytes": 175415,
+          "bodySha256": "a12d9952aa789f0abc1127a456cf653d2d5d74145ab0ae2915a45580cfdfc3b4"
+        },
+        {
+          "url": "https://www.trigyn.com/job/performance-engineer",
+          "finalUrl": "https://www.trigyn.com/job/performance-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:23.345Z",
+          "method": "GET",
+          "bodyBytes": 175851,
+          "bodySha256": "697c86059ee44ae715724a7eb2af0dcc7e7a80f08456f30caf802a3f5c34ff43"
+        },
+        {
+          "url": "https://www.trigyn.com/job/solution-architect",
+          "finalUrl": "https://www.trigyn.com/job/solution-architect",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:23.286Z",
+          "method": "GET",
+          "bodyBytes": 176149,
+          "bodySha256": "fef93047c677613b936944efb82e6f216027bd95764dde4146bdb0d6b274fbd3"
+        },
+        {
+          "url": "https://www.trigyn.com/job/helpdesk-support-executive",
+          "finalUrl": "https://www.trigyn.com/job/helpdesk-support-executive",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:23.742Z",
+          "method": "GET",
+          "bodyBytes": 176765,
+          "bodySha256": "6f9ba7df1f73d8cafd1219757ba6a04d460828070b3632c6d2c16865d604f87e"
+        },
+        {
+          "url": "https://www.trigyn.com/job/noc-engineer-work-ciet-office",
+          "finalUrl": "https://www.trigyn.com/job/noc-engineer-work-ciet-office",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:24.661Z",
+          "method": "GET",
+          "bodyBytes": 179832,
+          "bodySha256": "1819a9d1ef60492f6b2208e8a69e6afa539e79414d614a2cadf02e59ac1776e8"
+        },
+        {
+          "url": "https://www.trigyn.com/job/analytics-engineer-senior-ai-rag-platform-engineer",
+          "finalUrl": "https://www.trigyn.com/job/analytics-engineer-senior-ai-rag-platform-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:24.452Z",
+          "method": "GET",
+          "bodyBytes": 184954,
+          "bodySha256": "55a4d97d3e0e1c270c14a4b685587be7f61e127b58354d5a50565ad6c61bda47"
+        },
+        {
+          "url": "https://www.trigyn.com/job/uiux-designer-work-ciet-office",
+          "finalUrl": "https://www.trigyn.com/job/uiux-designer-work-ciet-office",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:24.661Z",
+          "method": "GET",
+          "bodyBytes": 175208,
+          "bodySha256": "2b3f0dfd33b940751365eeb7ca7d69b3575adc0360ed5766bfe4f691e7b0fee4"
+        },
+        {
+          "url": "https://www.trigyn.com/job/technical-lead-devops",
+          "finalUrl": "https://www.trigyn.com/job/technical-lead-devops",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:24.493Z",
+          "method": "GET",
+          "bodyBytes": 186071,
+          "bodySha256": "ef9b32469695a01ab7a8e8af794b728d48c2fb5c22c9973e15b3f1f8f04cb445"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-full-stack-developer-work-ciet-office",
+          "finalUrl": "https://www.trigyn.com/job/senior-full-stack-developer-work-ciet-office",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:24.884Z",
+          "method": "GET",
+          "bodyBytes": 178812,
+          "bodySha256": "caa88ddf2f46eda73f2016e2006a39e2a75f4323b54dd730275a1579076493e8"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-education-domain",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-education-domain",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:25.669Z",
+          "method": "GET",
+          "bodyBytes": 178941,
+          "bodySha256": "d618662ae865ac1afa8b41fa67b5a2d59c586734a9b67644be6bf36d717b94aa"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-full-stack-developer-1",
+          "finalUrl": "https://www.trigyn.com/job/senior-full-stack-developer-1",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:25.834Z",
+          "method": "GET",
+          "bodyBytes": 178638,
+          "bodySha256": "8f133f6d8a1613cb8ee3221d859ddf5fd7c40eae500839f7c75f2ac589c077c5"
+        },
+        {
+          "url": "https://www.trigyn.com/job/tech-managerlead",
+          "finalUrl": "https://www.trigyn.com/job/tech-managerlead",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:25.623Z",
+          "method": "GET",
+          "bodyBytes": 180511,
+          "bodySha256": "c2b1eaba8fbf8725396ee5625fde2522c18461931d05057ba858169d090b4364"
+        },
+        {
+          "url": "https://www.trigyn.com/job/technical-architect-0",
+          "finalUrl": "https://www.trigyn.com/job/technical-architect-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:25.734Z",
+          "method": "GET",
+          "bodyBytes": 179945,
+          "bodySha256": "28068eb23d56553851edb97b12828c70758bfb1f4b0b171ca7f20cacae314c60"
+        },
+        {
+          "url": "https://www.trigyn.com/job/analytics-engineer",
+          "finalUrl": "https://www.trigyn.com/job/analytics-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:26.141Z",
+          "method": "GET",
+          "bodyBytes": 183570,
+          "bodySha256": "97ca90bb64f937f36817cd5cddf18599803d09affc904fc1261ea1bdbf4d857f"
+        },
+        {
+          "url": "https://www.trigyn.com/job/noc-manager",
+          "finalUrl": "https://www.trigyn.com/job/noc-manager",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:27.073Z",
+          "method": "GET",
+          "bodyBytes": 182620,
+          "bodySha256": "18df0dd628a834ff479a487dd5ee89f7859f1ed1dba0564a1537ecefc4c7d62e"
+        },
+        {
+          "url": "https://www.trigyn.com/job/front-end-developer",
+          "finalUrl": "https://www.trigyn.com/job/front-end-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:26.860Z",
+          "method": "GET",
+          "bodyBytes": 177824,
+          "bodySha256": "004154cea6c56fc9ed422f3ee7461679ee08f58f410dc397a8c1b2538d607e80"
+        },
+        {
+          "url": "https://www.trigyn.com/job/full-stack-developer-7-9-years",
+          "finalUrl": "https://www.trigyn.com/job/full-stack-developer-7-9-years",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:26.954Z",
+          "method": "GET",
+          "bodyBytes": 176806,
+          "bodySha256": "600880246010ed0951d8865ec784458e39e0a6f998f21be7110578b50ca09c27"
+        },
+        {
+          "url": "https://www.trigyn.com/job/system-administrator",
+          "finalUrl": "https://www.trigyn.com/job/system-administrator",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:26.912Z",
+          "method": "GET",
+          "bodyBytes": 175736,
+          "bodySha256": "d41612bf290f944f065c80a34a80ad145ce170675a221dd0a6c207f78afb18e1"
+        },
+        {
+          "url": "https://www.trigyn.com/job/development-lead-microsoft-sql-server-and-nosql-databases-cosmos-db",
+          "finalUrl": "https://www.trigyn.com/job/development-lead-microsoft-sql-server-and-nosql-databases-cosmos-db",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:27.131Z",
+          "method": "GET",
+          "bodyBytes": 178923,
+          "bodySha256": "60249249deccbdd7390d1b4828483ebdd3b008f03ada0d4dd5df0c175d647253"
+        },
+        {
+          "url": "https://www.trigyn.com/job/java-programmer-architect-ai-mcp-server-gcp",
+          "finalUrl": "https://www.trigyn.com/job/java-programmer-architect-ai-mcp-server-gcp",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:27.893Z",
+          "method": "GET",
+          "bodyBytes": 181730,
+          "bodySha256": "346bbfd3ae82ef22f154d6f4b5b33541a2c40e1cbdde204b5580645c6b265370"
+        }
+      ]
+    },
+    {
+      "file": "foreign-detail-responses.json.gz",
+      "bytes": 3342137,
+      "sha256": "14500de96437c0170f398cd9ee3559dc222b6b17017141dd507b10e4fd130a63",
+      "uncompressedBytes": 34733994,
+      "uncompressedSha256": "87dd5715138b8c6161988b6318dfa91bd5af6b41d8fa212b92d13e9a83509054",
+      "responses": [
+        {
+          "url": "https://www.trigyn.com/job/junior-financial-analyst-acca-cpa-certification",
+          "finalUrl": "https://www.trigyn.com/job/junior-financial-analyst-acca-cpa-certification",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:02.604Z",
+          "method": "GET",
+          "bodyBytes": 177466,
+          "bodySha256": "a4e2d1c61588c010d3664de0eddde9d74a268d72ef605467cfeeec302f6c59b1"
+        },
+        {
+          "url": "https://www.trigyn.com/job/attorney-housing-court-experience",
+          "finalUrl": "https://www.trigyn.com/job/attorney-housing-court-experience",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:02.113Z",
+          "method": "GET",
+          "bodyBytes": 175353,
+          "bodySha256": "f85f675c0c840f4ffb4a4daf6b6c7599bc7f57b9f2604142c35257ba87788a02"
+        },
+        {
+          "url": "https://www.trigyn.com/job/c-net-developer-aspnet-sql-server",
+          "finalUrl": "https://www.trigyn.com/job/c-net-developer-aspnet-sql-server",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:01.916Z",
+          "method": "GET",
+          "bodyBytes": 179071,
+          "bodySha256": "72ae38ac978ccc8325ff26ec64434c54c9e2e26be96e11beb7dbc1fed7993b44"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lead-java-programmer-ai-mcp-server-gcp",
+          "finalUrl": "https://www.trigyn.com/job/lead-java-programmer-ai-mcp-server-gcp",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:02.608Z",
+          "method": "GET",
+          "bodyBytes": 181683,
+          "bodySha256": "5bbfa19499a7938c20061a8a4c332f0617f7737525dc772d8cc34de59aeaa4f6"
+        },
+        {
+          "url": "https://www.trigyn.com/job/project-manager-state-government-exp",
+          "finalUrl": "https://www.trigyn.com/job/project-manager-state-government-exp",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:02.609Z",
+          "method": "GET",
+          "bodyBytes": 180927,
+          "bodySha256": "332de7b32a1e7fe1cd3a0ec7eaddea9751b73b8219f70cccf5711e9240edb9a7"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-digital-accessibility-part-time",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-digital-accessibility-part-time",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:02.609Z",
+          "method": "GET",
+          "bodyBytes": 180280,
+          "bodySha256": "917a24195bff01eec0696cba215e7df41ea371707339dba492f534590ffd4343"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-systems-administrator-windows-server-linux-kubernetes-cloud-vmware",
+          "finalUrl": "https://www.trigyn.com/job/senior-systems-administrator-windows-server-linux-kubernetes-cloud-vmware",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:03.613Z",
+          "method": "GET",
+          "bodyBytes": 182471,
+          "bodySha256": "46d7df0cb232bd497d49b882baa04fe7e5895c4e7472dfad7a65412ea6e59c94"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-systems-administrator-windows-server-linux-kubernetes-cloud",
+          "finalUrl": "https://www.trigyn.com/job/senior-systems-administrator-windows-server-linux-kubernetes-cloud",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:03.545Z",
+          "method": "GET",
+          "bodyBytes": 182404,
+          "bodySha256": "befd434d4ebf02dff704ef36be96be38ef18245a25e06d06dbaef31a4e888631"
+        },
+        {
+          "url": "https://www.trigyn.com/job/db2-database-administrator",
+          "finalUrl": "https://www.trigyn.com/job/db2-database-administrator",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:03.345Z",
+          "method": "GET",
+          "bodyBytes": 183639,
+          "bodySha256": "10ef19f1c7edfb63a2716c06b5dfd1f30f29e3204b70d1d9a9f2b1c112311413"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyststaff-analyst-environmental-investigations-lead-inspections",
+          "finalUrl": "https://www.trigyn.com/job/business-analyststaff-analyst-environmental-investigations-lead-inspections",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:03.767Z",
+          "method": "GET",
+          "bodyBytes": 176413,
+          "bodySha256": "af86e162e0635650dcac5c5bd45ea5b3a3f2a6a142021e0ebd30c7583210fcf1"
+        },
+        {
+          "url": "https://www.trigyn.com/job/power-platform-administrator-lead",
+          "finalUrl": "https://www.trigyn.com/job/power-platform-administrator-lead",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:03.767Z",
+          "method": "GET",
+          "bodyBytes": 215402,
+          "bodySha256": "4993098bfb15496164c1ef9d7302b971ca7e45adb6b90b72d1092734d6278a13"
+        },
+        {
+          "url": "https://www.trigyn.com/job/database-administrator-sql-db2",
+          "finalUrl": "https://www.trigyn.com/job/database-administrator-sql-db2",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:03.975Z",
+          "method": "GET",
+          "bodyBytes": 182956,
+          "bodySha256": "16e365f5441431f167ccc61633d218a9e79dcb8ed54b8aee1d800bf2002c0caa"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-tester-java-sql-mcp-server-ai-enabled-applications",
+          "finalUrl": "https://www.trigyn.com/job/senior-tester-java-sql-mcp-server-ai-enabled-applications",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:04.759Z",
+          "method": "GET",
+          "bodyBytes": 181382,
+          "bodySha256": "bdd0bceea555eee614b41939de4da929d907247940a4ba8fdec3a3497dcc1bb5"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-tester-java-ai-enabled-applications",
+          "finalUrl": "https://www.trigyn.com/job/senior-tester-java-ai-enabled-applications",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:04.510Z",
+          "method": "GET",
+          "bodyBytes": 181236,
+          "bodySha256": "37b4489eb463570d394adcd6315ef7e27e8ad4451f279e688a4c55dfcfbad248"
+        },
+        {
+          "url": "https://www.trigyn.com/job/oracle-database-administrator",
+          "finalUrl": "https://www.trigyn.com/job/oracle-database-administrator",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:04.760Z",
+          "method": "GET",
+          "bodyBytes": 181587,
+          "bodySha256": "0cee0aebefa1e7ec72e85f29e493f6fde3f6efe486e88942e0ca5321ddb5d1c5"
+        },
+        {
+          "url": "https://www.trigyn.com/job/platform-engineer-cloud-gcp-terraform",
+          "finalUrl": "https://www.trigyn.com/job/platform-engineer-cloud-gcp-terraform",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:04.710Z",
+          "method": "GET",
+          "bodyBytes": 180572,
+          "bodySha256": "a4d2217670a46f1c6bccf23747cd705a6340c57c1897858953d64ca3fc330eed"
+        },
+        {
+          "url": "https://www.trigyn.com/job/net-developer-aspnet-mvc-soa-wcf-oracle",
+          "finalUrl": "https://www.trigyn.com/job/net-developer-aspnet-mvc-soa-wcf-oracle",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:04.921Z",
+          "method": "GET",
+          "bodyBytes": 178371,
+          "bodySha256": "a21b48fd0a937e0c2363cff434144116a52428d40f6229752875bc4bbcc7aff3"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-configuration-analyst-sap-ecc-and-s4hana-finance-configuration",
+          "finalUrl": "https://www.trigyn.com/job/sap-configuration-analyst-sap-ecc-and-s4hana-finance-configuration",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:05.109Z",
+          "method": "GET",
+          "bodyBytes": 182471,
+          "bodySha256": "6f8ea1b323399b09409d8e4f8b92941f0c812f158b39c74a3abba39240188bac"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-cognos-sql-social-services",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-cognos-sql-social-services",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:05.831Z",
+          "method": "GET",
+          "bodyBytes": 178713,
+          "bodySha256": "1c032e4d608e5424d33defe7d3b5fe45974bd270d23973f1c8b065921167981d"
+        },
+        {
+          "url": "https://www.trigyn.com/job/data-manager-transportation-systems-cdmp-certification",
+          "finalUrl": "https://www.trigyn.com/job/data-manager-transportation-systems-cdmp-certification",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:05.946Z",
+          "method": "GET",
+          "bodyBytes": 184854,
+          "bodySha256": "5da4bc375e4fad75f44d36bc70a007324ab660eeea2c46cae2df94b7ad2897ab"
+        },
+        {
+          "url": "https://www.trigyn.com/job/desktop-support-engineer-mdm-active-directory-windows-11",
+          "finalUrl": "https://www.trigyn.com/job/desktop-support-engineer-mdm-active-directory-windows-11",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:06.027Z",
+          "method": "GET",
+          "bodyBytes": 185599,
+          "bodySha256": "b77aa19612fca41136b45f5e6c6dcff179e6fae413d3a8a5879b627c3b5c3268"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-s4hana-supply-chain-architect-ewm-tm-ppds",
+          "finalUrl": "https://www.trigyn.com/job/sap-s4hana-supply-chain-architect-ewm-tm-ppds",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:05.891Z",
+          "method": "GET",
+          "bodyBytes": 182042,
+          "bodySha256": "085d3af2703a9d813ab3487fad3e0cdc34710bd2fbc556e497a606bcd9ffbd6a"
+        },
+        {
+          "url": "https://www.trigyn.com/job/cloud-infrastructure-engineer-aws-azure-gcp-terraform-openshift",
+          "finalUrl": "https://www.trigyn.com/job/cloud-infrastructure-engineer-aws-azure-gcp-terraform-openshift",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:06.178Z",
+          "method": "GET",
+          "bodyBytes": 178162,
+          "bodySha256": "7e14fc2beb13a16e990dbc6ceeb63da6f8d73366a409209eebf69dc1bd2902e8"
+        },
+        {
+          "url": "https://www.trigyn.com/job/telecom-network-support-analyst",
+          "finalUrl": "https://www.trigyn.com/job/telecom-network-support-analyst",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:06.266Z",
+          "method": "GET",
+          "bodyBytes": 178580,
+          "bodySha256": "476278acf3b78b9bb6c15cf920fa9115c768bc8b52c75ef8cba6d7991350d5b5"
+        },
+        {
+          "url": "https://www.trigyn.com/job/data-analyst-python-oracle-postgres-tableau",
+          "finalUrl": "https://www.trigyn.com/job/data-analyst-python-oracle-postgres-tableau",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:07.186Z",
+          "method": "GET",
+          "bodyBytes": 177404,
+          "bodySha256": "486d3499deea1d18728f5c59e877be5eb1136a58373033d1692c581910a67560"
+        },
+        {
+          "url": "https://www.trigyn.com/job/net-developer-plsql-mvc-ssrs-jquery-0",
+          "finalUrl": "https://www.trigyn.com/job/net-developer-plsql-mvc-ssrs-jquery-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:06.971Z",
+          "method": "GET",
+          "bodyBytes": 177072,
+          "bodySha256": "0e32be0dc9cc8fbd6e67455e0de1cedfd289fcb9b634ce091c86e79c30b847e5"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-salesforce",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-salesforce",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:07.186Z",
+          "method": "GET",
+          "bodyBytes": 179886,
+          "bodySha256": "9efd6738aaa4071d280964f4b073e312b4316085541bb25b7f67bdd3674cd850"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-software-analyst-healthcare-salesforce",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-software-analyst-healthcare-salesforce",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:07.040Z",
+          "method": "GET",
+          "bodyBytes": 180533,
+          "bodySha256": "e2251c3929016b030e79cc60ed876203f8c0ceee02794b0421fbde08d5c0e789"
+        },
+        {
+          "url": "https://www.trigyn.com/job/java-j2ee-developer-spring-boot-angular-sql-cloud",
+          "finalUrl": "https://www.trigyn.com/job/java-j2ee-developer-spring-boot-angular-sql-cloud",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:07.119Z",
+          "method": "GET",
+          "bodyBytes": 181631,
+          "bodySha256": "37ead23978fe6490ef2d4085a51b267fb980f583a522ed0e575725d74288a253"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lead-solution-architect",
+          "finalUrl": "https://www.trigyn.com/job/lead-solution-architect",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:07.446Z",
+          "method": "GET",
+          "bodyBytes": 181875,
+          "bodySha256": "bc96a6ef3f407591b26e38c06df69abd0db0d505cec6a0f04f4459252f34f346"
+        },
+        {
+          "url": "https://www.trigyn.com/job/database-architect-informatica-powercenter-idmc",
+          "finalUrl": "https://www.trigyn.com/job/database-architect-informatica-powercenter-idmc",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:08.508Z",
+          "method": "GET",
+          "bodyBytes": 180956,
+          "bodySha256": "4e9f9f8ce3da6cafa2405565d49bcc8ee6b132370ba0933f7e8eb398e65358cf"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-technical-consultant-fiori-btp-work-zone-s4hana-migration",
+          "finalUrl": "https://www.trigyn.com/job/sap-technical-consultant-fiori-btp-work-zone-s4hana-migration",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:08.518Z",
+          "method": "GET",
+          "bodyBytes": 182810,
+          "bodySha256": "07dbebae11c5186a95226b89bc66b8bf61c521dd2b9ebdbe4f3a7fbb5f623101"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lead-qa-automation-engineer-selenium-webdriver-jira-healthcare",
+          "finalUrl": "https://www.trigyn.com/job/lead-qa-automation-engineer-selenium-webdriver-jira-healthcare",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:08.517Z",
+          "method": "GET",
+          "bodyBytes": 181153,
+          "bodySha256": "795ab9a24cc632b815ef14c3b6bc52bcf3d5aa5e9957fe3ac10d6f19225ceb66"
+        },
+        {
+          "url": "https://www.trigyn.com/job/desktop-support-specialist-mdm-active-directory-powershell",
+          "finalUrl": "https://www.trigyn.com/job/desktop-support-specialist-mdm-active-directory-powershell",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:08.522Z",
+          "method": "GET",
+          "bodyBytes": 182854,
+          "bodySha256": "bea0b16d846cf9c9c2fc2dd789585098e859b7f89ab343b17c6a6f92964ec8ce"
+        },
+        {
+          "url": "https://www.trigyn.com/job/c-net-developer-oracle-tfs-crystal-reports",
+          "finalUrl": "https://www.trigyn.com/job/c-net-developer-oracle-tfs-crystal-reports",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:08.637Z",
+          "method": "GET",
+          "bodyBytes": 181054,
+          "bodySha256": "e76ec68fcfb7523c4686d13917424fad36494cb42c61e60ddc7f685e06356371"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-salesforce-cbap-certification",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-salesforce-cbap-certification",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:08.599Z",
+          "method": "GET",
+          "bodyBytes": 179377,
+          "bodySha256": "8bc7e41b13720676c7076fa39c0da7c8e6e25aa3acc06ea310ddad8ee531ae45"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lead-software-engineerarchitect-net",
+          "finalUrl": "https://www.trigyn.com/job/lead-software-engineerarchitect-net",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:09.377Z",
+          "method": "GET",
+          "bodyBytes": 181580,
+          "bodySha256": "3e01ab97a8ef5422b93d61ba25f01a483b568e5359127ec369e130e9dfc4bd41"
+        },
+        {
+          "url": "https://www.trigyn.com/job/data-analyst-excel-r-stata-python",
+          "finalUrl": "https://www.trigyn.com/job/data-analyst-excel-r-stata-python",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:09.455Z",
+          "method": "GET",
+          "bodyBytes": 177934,
+          "bodySha256": "42a5213d6a5fba88b78efb1e7dccf7256dff9b5f9a0bf44f5bfe7962bd8c2598"
+        },
+        {
+          "url": "https://www.trigyn.com/job/systems-analyst-public-sector",
+          "finalUrl": "https://www.trigyn.com/job/systems-analyst-public-sector",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:09.625Z",
+          "method": "GET",
+          "bodyBytes": 180502,
+          "bodySha256": "22bc533caf0f955bbd73040f85edc798583fae6730c164d5bb49fc04086fd29b"
+        },
+        {
+          "url": "https://www.trigyn.com/job/salesforce-architect",
+          "finalUrl": "https://www.trigyn.com/job/salesforce-architect",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:09.791Z",
+          "method": "GET",
+          "bodyBytes": 181617,
+          "bodySha256": "9cd4b41f55d737d4a4e009798e8165c92feaede4b909334968e072618ec6db18"
+        },
+        {
+          "url": "https://www.trigyn.com/job/data-quality-governance-engineer-sql-tableau-python-snowflake",
+          "finalUrl": "https://www.trigyn.com/job/data-quality-governance-engineer-sql-tableau-python-snowflake",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:09.850Z",
+          "method": "GET",
+          "bodyBytes": 180814,
+          "bodySha256": "651bb133d4aae44ef27379fce6b018182ef58e3bf641fc4d3f0eb5c8d632b494"
+        },
+        {
+          "url": "https://www.trigyn.com/job/coldfusion-architect",
+          "finalUrl": "https://www.trigyn.com/job/coldfusion-architect",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:10.036Z",
+          "method": "GET",
+          "bodyBytes": 178682,
+          "bodySha256": "55df97ac8bbf63316bf55e0cf7b197189902f4f1f469d053f549e85725ebb67e"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-healthcare-public-sector-csm-certification-0",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-healthcare-public-sector-csm-certification-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:10.852Z",
+          "method": "GET",
+          "bodyBytes": 179332,
+          "bodySha256": "64a7706d721a62b11cf4751596a6c429ccf82861455986a712aedf8fb3b5428d"
+        },
+        {
+          "url": "https://www.trigyn.com/job/java-developer-oracle-plsql-spring-struts",
+          "finalUrl": "https://www.trigyn.com/job/java-developer-oracle-plsql-spring-struts",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:11.053Z",
+          "method": "GET",
+          "bodyBytes": 177313,
+          "bodySha256": "16066b3522e1434a92e16d18fed3be4ef1a10b3c528b5d41e59bfe1a20abd2b0"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-learning-management-system-cbap-certification",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-learning-management-system-cbap-certification",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:11.060Z",
+          "method": "GET",
+          "bodyBytes": 180490,
+          "bodySha256": "ff93fe01e61cb490194cf730c28c58b0f15c9e20c3af3ebdfdc16e9ccdab35b1"
+        },
+        {
+          "url": "https://www.trigyn.com/job/content-editor",
+          "finalUrl": "https://www.trigyn.com/job/content-editor",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:11.116Z",
+          "method": "GET",
+          "bodyBytes": 180103,
+          "bodySha256": "2106cdc5afa6a630a19670aa01da5db90158de25a0f8e34c2b80083833703fb2"
+        },
+        {
+          "url": "https://www.trigyn.com/job/c-aspnet-developer-mvc-plsql-crystal-reports-tfs-healthcare",
+          "finalUrl": "https://www.trigyn.com/job/c-aspnet-developer-mvc-plsql-crystal-reports-tfs-healthcare",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:11.193Z",
+          "method": "GET",
+          "bodyBytes": 180952,
+          "bodySha256": "01d1695d20614a188ad1cec36d2b4eb6435a44281d63571316142b62fe1ada8b"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lead-c-net-developer",
+          "finalUrl": "https://www.trigyn.com/job/lead-c-net-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:11.284Z",
+          "method": "GET",
+          "bodyBytes": 181043,
+          "bodySha256": "9f25dffdec6d9e7d06815ca425095556a9edf6e493f60bac0b3cc07a664302ef"
+        },
+        {
+          "url": "https://www.trigyn.com/job/net-developer-aspnet-plsql-mvc-ssrs-jquery",
+          "finalUrl": "https://www.trigyn.com/job/net-developer-aspnet-plsql-mvc-ssrs-jquery",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:12.055Z",
+          "method": "GET",
+          "bodyBytes": 177141,
+          "bodySha256": "945c3038b6d67c2b8fc9df2ed27e3c126a0c5a683e09525d62d60f2edd327ab6"
+        },
+        {
+          "url": "https://www.trigyn.com/job/net-developer-plsql-mvc-ssrs-jquery",
+          "finalUrl": "https://www.trigyn.com/job/net-developer-plsql-mvc-ssrs-jquery",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:11.967Z",
+          "method": "GET",
+          "bodyBytes": 177141,
+          "bodySha256": "e7e8922349c7f2a3a1f080c1645d8e290dd17eb52378b2fbdbeeb121f688781b"
+        },
+        {
+          "url": "https://www.trigyn.com/job/java-developer-spring-boot-java-ee-oracle-angular",
+          "finalUrl": "https://www.trigyn.com/job/java-developer-spring-boot-java-ee-oracle-angular",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:12.167Z",
+          "method": "GET",
+          "bodyBytes": 177687,
+          "bodySha256": "6c94cf6cd1fba0bae15b98cdfd620261530396a5759b5205c5f4e07e3035f5c0"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lead-business-analyst-user-stories-devops-change-management",
+          "finalUrl": "https://www.trigyn.com/job/lead-business-analyst-user-stories-devops-change-management",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:12.097Z",
+          "method": "GET",
+          "bodyBytes": 182365,
+          "bodySha256": "40a10a4869761876fcfab0e0c83e70e8f844835ab018aac0a32f3dbd153ee4df"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-cloud-computing-data-integration-programming-exp",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-cloud-computing-data-integration-programming-exp",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:12.178Z",
+          "method": "GET",
+          "bodyBytes": 185106,
+          "bodySha256": "b65a596e17e75c077c1b6b835c1a136f85f6e726817840602d637750c33279ed"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lead-systems-analyst-systems-architect",
+          "finalUrl": "https://www.trigyn.com/job/lead-systems-analyst-systems-architect",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:12.375Z",
+          "method": "GET",
+          "bodyBytes": 185699,
+          "bodySha256": "1830327a8507deab765f9692a8b24cd9cea3e4a3ec59e95a054a3702d86fb666"
+        },
+        {
+          "url": "https://www.trigyn.com/job/software-architect-aws-python-etl-rest-api",
+          "finalUrl": "https://www.trigyn.com/job/software-architect-aws-python-etl-rest-api",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:13.048Z",
+          "method": "GET",
+          "bodyBytes": 178904,
+          "bodySha256": "3f19f357419709a5a5e492a1496aa0398888aad40d85a694beeb8662571ec341"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-data-migrationsaas",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-data-migrationsaas",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:13.202Z",
+          "method": "GET",
+          "bodyBytes": 182658,
+          "bodySha256": "0c9670a775e6f9ba31995cde095980951aac1d3a0fa2d99014759c46977a2514"
+        },
+        {
+          "url": "https://www.trigyn.com/job/it-support-specialist-child-welfare-environment-0",
+          "finalUrl": "https://www.trigyn.com/job/it-support-specialist-child-welfare-environment-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:13.265Z",
+          "method": "GET",
+          "bodyBytes": 176566,
+          "bodySha256": "0edda6c39a16cee7d2d5324c7fd89bd9579977d13320dc92ee1e849fd25e940f"
+        },
+        {
+          "url": "https://www.trigyn.com/job/project-manager-pmp-certification-ai-related-projects",
+          "finalUrl": "https://www.trigyn.com/job/project-manager-pmp-certification-ai-related-projects",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:13.266Z",
+          "method": "GET",
+          "bodyBytes": 180471,
+          "bodySha256": "b5681bef0ffb25d92db271b84a13d4f408ad58b70ea5651ffa0530160a58f1af"
+        },
+        {
+          "url": "https://www.trigyn.com/job/systems-architect-l3-technical-support-cots",
+          "finalUrl": "https://www.trigyn.com/job/systems-architect-l3-technical-support-cots",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:13.120Z",
+          "method": "GET",
+          "bodyBytes": 182812,
+          "bodySha256": "ca2047ba92bc8610524552dc530dc81785a2936dc11e9573c5842d4e6e899c20"
+        },
+        {
+          "url": "https://www.trigyn.com/job/oracle-plsql-developer",
+          "finalUrl": "https://www.trigyn.com/job/oracle-plsql-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:13.525Z",
+          "method": "GET",
+          "bodyBytes": 179382,
+          "bodySha256": "eb50e82095f69071dee5fd2b380dc1f08e155d4fe607ba9bf5da1f653598571e"
+        },
+        {
+          "url": "https://www.trigyn.com/job/microsoft-ai-365-consultant-copilot-studio-purview-entra-id",
+          "finalUrl": "https://www.trigyn.com/job/microsoft-ai-365-consultant-copilot-studio-purview-entra-id",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:14.393Z",
+          "method": "GET",
+          "bodyBytes": 184637,
+          "bodySha256": "5f4116fbf799b8f968ff6cb87f5214dfc5489c8b10fb7fb6d078967d3655a428"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lead-devops-engineer-strong-net-exp",
+          "finalUrl": "https://www.trigyn.com/job/lead-devops-engineer-strong-net-exp",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:14.294Z",
+          "method": "GET",
+          "bodyBytes": 180463,
+          "bodySha256": "b80d5124e4de522f02cd222b4e2874776955a861955a893a5c3757170da556d6"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lead-project-manager-infrastructure-projects-cots-pmp",
+          "finalUrl": "https://www.trigyn.com/job/lead-project-manager-infrastructure-projects-cots-pmp",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:14.250Z",
+          "method": "GET",
+          "bodyBytes": 182096,
+          "bodySha256": "2f40d28dc70dc608bfe0fc7c574296587bc8ede10770fbbc913c7bfaf47c0337"
+        },
+        {
+          "url": "https://www.trigyn.com/job/net-architect-qa-lead",
+          "finalUrl": "https://www.trigyn.com/job/net-architect-qa-lead",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:14.190Z",
+          "method": "GET",
+          "bodyBytes": 180348,
+          "bodySha256": "a9e509a7312997e67e99adaa02c565c7c8e116c854599db6010492a1d0b63d72"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sr-systems-engineer-microsoft-365",
+          "finalUrl": "https://www.trigyn.com/job/sr-systems-engineer-microsoft-365",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:14.610Z",
+          "method": "GET",
+          "bodyBytes": 181423,
+          "bodySha256": "f823670c7fa38be104035d2885aa330d1b4cd6221aed747bdebd4c86a74bfeeb"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-systems-analyst",
+          "finalUrl": "https://www.trigyn.com/job/business-systems-analyst",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:14.678Z",
+          "method": "GET",
+          "bodyBytes": 179806,
+          "bodySha256": "2888200d644106d1f5ce84327ea959ba846c868d045a0f9edbe7b09f1092bf66"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-integrated-eligibility-system-child-welfare-information-system-cbap",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-integrated-eligibility-system-child-welfare-information-system-cbap",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:15.458Z",
+          "method": "GET",
+          "bodyBytes": 179685,
+          "bodySha256": "bf0cb07c3009f5d0192fc4b89d86cf4baf03cc3e78eddd84e6c26578628a7c80"
+        },
+        {
+          "url": "https://www.trigyn.com/job/it-project-manager-coordinator-infrastructure-projects",
+          "finalUrl": "https://www.trigyn.com/job/it-project-manager-coordinator-infrastructure-projects",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:15.454Z",
+          "method": "GET",
+          "bodyBytes": 182264,
+          "bodySha256": "020055c257ed41e5c30ec676eb3dd1bf97d4146f8d6ea6caf7022120ab386adc"
+        },
+        {
+          "url": "https://www.trigyn.com/job/software-developer-spring-boot-java-ee-jpa-oracle-sql",
+          "finalUrl": "https://www.trigyn.com/job/software-developer-spring-boot-java-ee-jpa-oracle-sql",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:15.384Z",
+          "method": "GET",
+          "bodyBytes": 180500,
+          "bodySha256": "75cd714548140c6865dc1edfbdc695eb83d660df3cd217a16d809d182cb17d07"
+        },
+        {
+          "url": "https://www.trigyn.com/job/qa-tester-hp-alm-selenium",
+          "finalUrl": "https://www.trigyn.com/job/qa-tester-hp-alm-selenium",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:15.585Z",
+          "method": "GET",
+          "bodyBytes": 180414,
+          "bodySha256": "50d00d41b6cf7bf47d74119519e86b9d7094c0762a86989db66b245cf7a6dc7e"
+        },
+        {
+          "url": "https://www.trigyn.com/job/oracle-financials-cloud-saas-erp-functional-expert-general-ledger",
+          "finalUrl": "https://www.trigyn.com/job/oracle-financials-cloud-saas-erp-functional-expert-general-ledger",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:15.814Z",
+          "method": "GET",
+          "bodyBytes": 180112,
+          "bodySha256": "61d9cd7daace09271c3bb6e13156ea17dfbfae18ecd8beed68cd49130d6fa841"
+        },
+        {
+          "url": "https://www.trigyn.com/job/project-assistant",
+          "finalUrl": "https://www.trigyn.com/job/project-assistant",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:15.806Z",
+          "method": "GET",
+          "bodyBytes": 180595,
+          "bodySha256": "d810e03e488b7eda98e86dcbed7764d123ab87eab5625078ffed7c9889ec84f5"
+        },
+        {
+          "url": "https://www.trigyn.com/job/it-site-service-specialist-itil-v4-preferred",
+          "finalUrl": "https://www.trigyn.com/job/it-site-service-specialist-itil-v4-preferred",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:16.559Z",
+          "method": "GET",
+          "bodyBytes": 179439,
+          "bodySha256": "2aabb061b7610765263cbfc37b2474ffa454cf17dfc743ec29634244c0e0159a"
+        },
+        {
+          "url": "https://www.trigyn.com/job/junior-data-scientist-copilot-studio-python-sql",
+          "finalUrl": "https://www.trigyn.com/job/junior-data-scientist-copilot-studio-python-sql",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:16.655Z",
+          "method": "GET",
+          "bodyBytes": 178129,
+          "bodySha256": "4a81cf594e1d5d72ce09a56a7e8da00f710cdedde0006ad9527ec3de3553eb7a"
+        },
+        {
+          "url": "https://www.trigyn.com/job/java-j2ee-developer-jsp-eclipse-spring-websphere-sql",
+          "finalUrl": "https://www.trigyn.com/job/java-j2ee-developer-jsp-eclipse-spring-websphere-sql",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:16.611Z",
+          "method": "GET",
+          "bodyBytes": 179917,
+          "bodySha256": "dc2fe560491b356dd2e35f397b9c3b52d017be8e826032325c6e4b4f881f45ac"
+        },
+        {
+          "url": "https://www.trigyn.com/job/net-developer-mvc-wcf-tfs",
+          "finalUrl": "https://www.trigyn.com/job/net-developer-mvc-wcf-tfs",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:16.612Z",
+          "method": "GET",
+          "bodyBytes": 177365,
+          "bodySha256": "2de7d8d83a9deae98f118b7cd2a117b05684c5652d89ccaea6448edd96965f2b"
+        },
+        {
+          "url": "https://www.trigyn.com/job/java-j2ee-architect-jsp-websphere-db2-mqseries",
+          "finalUrl": "https://www.trigyn.com/job/java-j2ee-architect-jsp-websphere-db2-mqseries",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:16.959Z",
+          "method": "GET",
+          "bodyBytes": 179507,
+          "bodySha256": "8b4f7373e00df0832dad9582e3d52da069ca87b3086089993ce064e7bfaf2b51"
+        },
+        {
+          "url": "https://www.trigyn.com/job/crystal-reports-developer-lab-information-management-system-part-time",
+          "finalUrl": "https://www.trigyn.com/job/crystal-reports-developer-lab-information-management-system-part-time",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:16.940Z",
+          "method": "GET",
+          "bodyBytes": 180125,
+          "bodySha256": "0ff0332c1cda60d02761c811eb6c2abb55fb600e0ecc86c36355a43a8ac0a910"
+        },
+        {
+          "url": "https://www.trigyn.com/job/mainframe-specialist-cics-zos-racf",
+          "finalUrl": "https://www.trigyn.com/job/mainframe-specialist-cics-zos-racf",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:17.684Z",
+          "method": "GET",
+          "bodyBytes": 177864,
+          "bodySha256": "368e821063b69e06bb4bd8aa1adda771db07d8da1fe23ca12aab33c03bb631b6"
+        },
+        {
+          "url": "https://www.trigyn.com/job/java-j2ee-programmer-hibernate-jpa-jsf-spring-boot-gcp",
+          "finalUrl": "https://www.trigyn.com/job/java-j2ee-programmer-hibernate-jpa-jsf-spring-boot-gcp",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:17.695Z",
+          "method": "GET",
+          "bodyBytes": 181977,
+          "bodySha256": "b130dbde92aaa11327a254287cb600afb2f4bc4416f29878a271bca86d0f8028"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-software-analyst-net",
+          "finalUrl": "https://www.trigyn.com/job/business-software-analyst-net",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:17.748Z",
+          "method": "GET",
+          "bodyBytes": 177727,
+          "bodySha256": "a421700fa0abebef11df52f1681f95b4728d9aa88d0565aa13e6f8d767dcc91e"
+        },
+        {
+          "url": "https://www.trigyn.com/job/informatica-powercenter-administrator-specialist",
+          "finalUrl": "https://www.trigyn.com/job/informatica-powercenter-administrator-specialist",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:17.502Z",
+          "method": "GET",
+          "bodyBytes": 180822,
+          "bodySha256": "eaac9f7fca9a47a4c02f7ee67d965ce6b471c190591bd7d937188546679980dd"
+        },
+        {
+          "url": "https://www.trigyn.com/job/desktop-support-specialist-active-directory-powershell-mdm",
+          "finalUrl": "https://www.trigyn.com/job/desktop-support-specialist-active-directory-powershell-mdm",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:17.919Z",
+          "method": "GET",
+          "bodyBytes": 180580,
+          "bodySha256": "7006214484fc073e1647b360bdad747a3596bb689634102382d457810655a100"
+        },
+        {
+          "url": "https://www.trigyn.com/job/full-stack-developer-net-core-python-react-azure-openai",
+          "finalUrl": "https://www.trigyn.com/job/full-stack-developer-net-core-python-react-azure-openai",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:18.107Z",
+          "method": "GET",
+          "bodyBytes": 182931,
+          "bodySha256": "a03ec5bdf0bece3f7968275f93697b9161afa82db2ce090b06214bee5e911173"
+        },
+        {
+          "url": "https://www.trigyn.com/job/it-support-specialist-child-welfare-environment",
+          "finalUrl": "https://www.trigyn.com/job/it-support-specialist-child-welfare-environment",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:18.853Z",
+          "method": "GET",
+          "bodyBytes": 177545,
+          "bodySha256": "cd8ac41daf667b36c05300c888f148b5076928140c139412f4937ba24d8a11a0"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-healthcare-public-sector-csm-certification",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-healthcare-public-sector-csm-certification",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:18.806Z",
+          "method": "GET",
+          "bodyBytes": 179264,
+          "bodySha256": "79454fdd609c2b8fa1a4aaf1d12908bcca15a15b0b9f9b1a40719c9d0b8bc85e"
+        },
+        {
+          "url": "https://www.trigyn.com/job/project-manager-govt-exp",
+          "finalUrl": "https://www.trigyn.com/job/project-manager-govt-exp",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:18.927Z",
+          "method": "GET",
+          "bodyBytes": 181725,
+          "bodySha256": "e65ab133210db5023c0d8df611516311d6f426ae723cafc92e8f7817cff353e8"
+        },
+        {
+          "url": "https://www.trigyn.com/job/net-developer-aspnet-mvc-ssrs-jquery",
+          "finalUrl": "https://www.trigyn.com/job/net-developer-aspnet-mvc-ssrs-jquery",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:18.858Z",
+          "method": "GET",
+          "bodyBytes": 177082,
+          "bodySha256": "77a6c7308953e4625704b2181a4a18fd5f9ea7165c50c3a08e88059e08c665f6"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-cbap-certification",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-cbap-certification",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:19.166Z",
+          "method": "GET",
+          "bodyBytes": 178840,
+          "bodySha256": "cd7ad92b4fc6b94c16f58511745d8ef9da1e12016f43b3838c9dcf129c9ba936"
+        },
+        {
+          "url": "https://www.trigyn.com/job/it-project-manager-infrastructure-projects",
+          "finalUrl": "https://www.trigyn.com/job/it-project-manager-infrastructure-projects",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:19.198Z",
+          "method": "GET",
+          "bodyBytes": 184390,
+          "bodySha256": "7d78cba7fcdeadc5fc20e2f8769efcb5a0f390607f7f4c0a65fe03861ce1c699"
+        },
+        {
+          "url": "https://www.trigyn.com/job/net-developer-aspnet-mvc-biztalk-plsql",
+          "finalUrl": "https://www.trigyn.com/job/net-developer-aspnet-mvc-biztalk-plsql",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:19.896Z",
+          "method": "GET",
+          "bodyBytes": 177139,
+          "bodySha256": "679efdf97474875c45011f534d0dffe3cf66eba88e4b8c062a7533c6d27d3635"
+        },
+        {
+          "url": "https://www.trigyn.com/job/software-architect-java-spring-boot-federal-health-exchange",
+          "finalUrl": "https://www.trigyn.com/job/software-architect-java-spring-boot-federal-health-exchange",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:20.016Z",
+          "method": "GET",
+          "bodyBytes": 180320,
+          "bodySha256": "8cd500983ac6fb844051d14d3daceb0b2a081e9d68c5a3898e8423799c1126d1"
+        },
+        {
+          "url": "https://www.trigyn.com/job/project-manager",
+          "finalUrl": "https://www.trigyn.com/job/project-manager",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:20.100Z",
+          "method": "GET",
+          "bodyBytes": 179687,
+          "bodySha256": "282eddca20c687315296bf595938fab93f08b30e8e68f25f8aac53613b334eac"
+        },
+        {
+          "url": "https://www.trigyn.com/job/business-analyst-health-insurance-medicaid",
+          "finalUrl": "https://www.trigyn.com/job/business-analyst-health-insurance-medicaid",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:19.968Z",
+          "method": "GET",
+          "bodyBytes": 181488,
+          "bodySha256": "4e3750088a276e716b00b3df0ac6025c1dfa0be1275afbfc49616aa80756f7e2"
+        },
+        {
+          "url": "https://www.trigyn.com/job/systems-architect-net-aix-db2-government-organization",
+          "finalUrl": "https://www.trigyn.com/job/systems-architect-net-aix-db2-government-organization",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:19.958Z",
+          "method": "GET",
+          "bodyBytes": 177948,
+          "bodySha256": "d064954889ced121d5c8a02d6beb42838807aee594f9f8bff210725107a2632b"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-sap-bi-specialist-bwhana-focus-data-modeling",
+          "finalUrl": "https://www.trigyn.com/job/senior-sap-bi-specialist-bwhana-focus-data-modeling",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:20.344Z",
+          "method": "GET",
+          "bodyBytes": 180009,
+          "bodySha256": "1fe93d1d6de27f66bb5e9d493a652795aebdbd9b485eba04c25b52997f9bb5e1"
+        },
+        {
+          "url": "https://www.trigyn.com/job/project-management-tool-implementation-lead",
+          "finalUrl": "https://www.trigyn.com/job/project-management-tool-implementation-lead",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:21.216Z",
+          "method": "GET",
+          "bodyBytes": 185447,
+          "bodySha256": "e03f632df662507d609488e73ca774bc4b1e8cfe1637dfd52c9711507c9002d9"
+        },
+        {
+          "url": "https://www.trigyn.com/job/project-manager-pmp-government-exp",
+          "finalUrl": "https://www.trigyn.com/job/project-manager-pmp-government-exp",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:21.011Z",
+          "method": "GET",
+          "bodyBytes": 178919,
+          "bodySha256": "1703e7fe8c225cdee26f7b735b07d1f3824248bf3e1e47de791a8f9cdcb541f4"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-travel-technical-expert",
+          "finalUrl": "https://www.trigyn.com/job/sap-travel-technical-expert",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:21.075Z",
+          "method": "GET",
+          "bodyBytes": 180419,
+          "bodySha256": "370dd8d01e9c861c01656cb9d1760a6df185efcaa3d4287f696ba7802ebb7d4b"
+        },
+        {
+          "url": "https://www.trigyn.com/job/organizational-change-management-consultant",
+          "finalUrl": "https://www.trigyn.com/job/organizational-change-management-consultant",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:21.075Z",
+          "method": "GET",
+          "bodyBytes": 183334,
+          "bodySha256": "1685567182663a73fab69ed91796a161481acee107f90c618b17794edd64e245"
+        },
+        {
+          "url": "https://www.trigyn.com/job/it-product-manager-strong-knowledge-change-management-principles",
+          "finalUrl": "https://www.trigyn.com/job/it-product-manager-strong-knowledge-change-management-principles",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:21.136Z",
+          "method": "GET",
+          "bodyBytes": 183292,
+          "bodySha256": "4f2ef8047e9c6c67bde657aac04c882cebd2c2fa6970b65693f976f2c38cf325"
+        },
+        {
+          "url": "https://www.trigyn.com/job/it-change-management-lead-tax-modernization",
+          "finalUrl": "https://www.trigyn.com/job/it-change-management-lead-tax-modernization",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:21.446Z",
+          "method": "GET",
+          "bodyBytes": 183293,
+          "bodySha256": "ca62b83244a4886477f26394cecd0e67912b9b30bfb1a4d0afcca2b7fbf3a7a3"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sql-dba-sql-serverazure-sql",
+          "finalUrl": "https://www.trigyn.com/job/sql-dba-sql-serverazure-sql",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:22.215Z",
+          "method": "GET",
+          "bodyBytes": 181721,
+          "bodySha256": "e8e568165018961742e700a662d757b431bc7ccb7efbe908f22cb5683261cc69"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-btp-architect",
+          "finalUrl": "https://www.trigyn.com/job/sap-btp-architect",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:22.153Z",
+          "method": "GET",
+          "bodyBytes": 188435,
+          "bodySha256": "49cb6b293758a657d7d5f881f56c41a8b64ebb6713e06b41d2ccd9b53bf7d669"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-btpwork-zonefiori-developer",
+          "finalUrl": "https://www.trigyn.com/job/sap-btpwork-zonefiori-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:21.974Z",
+          "method": "GET",
+          "bodyBytes": 183927,
+          "bodySha256": "9f6a9909d5bd68880c1d779c1cd82c2e9c5317d9bb671e7a13c6b3bd6418c5e0"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-governance-risk-and-compliance-grc-implementation-consultant",
+          "finalUrl": "https://www.trigyn.com/job/sap-governance-risk-and-compliance-grc-implementation-consultant",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:22.147Z",
+          "method": "GET",
+          "bodyBytes": 181202,
+          "bodySha256": "05eba3370651bcc0f22f2fe325e27b5631ae255798afc4fc82deb648052d2ad1"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-s4hana-technical-developer-abap-fiori-and-sap-btp",
+          "finalUrl": "https://www.trigyn.com/job/sap-s4hana-technical-developer-abap-fiori-and-sap-btp",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:22.214Z",
+          "method": "GET",
+          "bodyBytes": 191186,
+          "bodySha256": "a377e8d982c90bc63cacc7844bc4c3d23475b95813b34306e8bedf098af443a8"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-s4hana-security-architecture-and-implementation-consultant",
+          "finalUrl": "https://www.trigyn.com/job/sap-s4hana-security-architecture-and-implementation-consultant",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:22.415Z",
+          "method": "GET",
+          "bodyBytes": 182267,
+          "bodySha256": "c82da93db54c995b685a45932b12396634ad284c8e0530414dbf5cc0ba0ee7fe"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-sap-basis-migration-specialist-s4hana-private-cloud-expertise",
+          "finalUrl": "https://www.trigyn.com/job/senior-sap-basis-migration-specialist-s4hana-private-cloud-expertise",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:23.204Z",
+          "method": "GET",
+          "bodyBytes": 188280,
+          "bodySha256": "1962c68520dffdcda15eadb90002225e4b29a31486031544da7fa84e433600aa"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-sap-basis-migration-specialist-bw4hana-bods-and-datasphere",
+          "finalUrl": "https://www.trigyn.com/job/senior-sap-basis-migration-specialist-bw4hana-bods-and-datasphere",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:23.120Z",
+          "method": "GET",
+          "bodyBytes": 188155,
+          "bodySha256": "a507cb95c073ef4c3fdd62459d25c5741b21769395fc72950c647d5c8f75abb8"
+        },
+        {
+          "url": "https://www.trigyn.com/job/software-manager-saml-oauth-java",
+          "finalUrl": "https://www.trigyn.com/job/software-manager-saml-oauth-java",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:23.198Z",
+          "method": "GET",
+          "bodyBytes": 178673,
+          "bodySha256": "11691b5f6885f4d73f7615c47b1f5a3afd7b9f597294b67fcb62cc808ab9747c"
+        },
+        {
+          "url": "https://www.trigyn.com/job/clerical-associate-prepping-scanning-and-processing-documents",
+          "finalUrl": "https://www.trigyn.com/job/clerical-associate-prepping-scanning-and-processing-documents",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:23.238Z",
+          "method": "GET",
+          "bodyBytes": 175751,
+          "bodySha256": "86389bac27cb7c81e5e7cf016ea6818c63ef5126caa11781746150be0925339c"
+        },
+        {
+          "url": "https://www.trigyn.com/job/ai-program-manager",
+          "finalUrl": "https://www.trigyn.com/job/ai-program-manager",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:23.404Z",
+          "method": "GET",
+          "bodyBytes": 181456,
+          "bodySha256": "f076c79fc18767d5003fd7786cae57ff2d0718a8eb47b22f7efbefb70935f20f"
+        },
+        {
+          "url": "https://www.trigyn.com/job/maximo-developer",
+          "finalUrl": "https://www.trigyn.com/job/maximo-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:23.562Z",
+          "method": "GET",
+          "bodyBytes": 181612,
+          "bodySha256": "cad9a84662ce16227b42080ce4ee537ba99d43aca7fc97fad60a8be8ea9f2da5"
+        },
+        {
+          "url": "https://www.trigyn.com/job/data-entry-operator-recordkeeping-documentation",
+          "finalUrl": "https://www.trigyn.com/job/data-entry-operator-recordkeeping-documentation",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:24.340Z",
+          "method": "GET",
+          "bodyBytes": 176221,
+          "bodySha256": "df0b327e48a2b75307c91e50844f47ea5bd5a3fdb01b862d4c78fac4e8e053ed"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-budget-systems-analyst-sac-p-sap-s4hana",
+          "finalUrl": "https://www.trigyn.com/job/sap-budget-systems-analyst-sac-p-sap-s4hana",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:24.337Z",
+          "method": "GET",
+          "bodyBytes": 183326,
+          "bodySha256": "e7074cf001f3a4597e722f53737b540ed538228d50fcbd6632b340602f7e1d27"
+        },
+        {
+          "url": "https://www.trigyn.com/job/administrative-assistant-housing-property-management",
+          "finalUrl": "https://www.trigyn.com/job/administrative-assistant-housing-property-management",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:24.264Z",
+          "method": "GET",
+          "bodyBytes": 175667,
+          "bodySha256": "d7c5bf3d1077d51392ec25340e205b8942b0d4779f5d63afd5a7e9f59ce69a8a"
+        },
+        {
+          "url": "https://www.trigyn.com/job/call-centercustomer-service-representative-phone-support",
+          "finalUrl": "https://www.trigyn.com/job/call-centercustomer-service-representative-phone-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:24.396Z",
+          "method": "GET",
+          "bodyBytes": 178340,
+          "bodySha256": "6fb6a8866d3c3fa4c64aea0453cdcf9ae910ce9d6b41460c1113648193701fe4"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-sap-s4hana-public-sector-functional-consultant-procurement-and-supply-chain-operations",
+          "finalUrl": "https://www.trigyn.com/job/senior-sap-s4hana-public-sector-functional-consultant-procurement-and-supply-chain-operations",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:24.696Z",
+          "method": "GET",
+          "bodyBytes": 180189,
+          "bodySha256": "667f19974c858513be4f8d1e19fc8abff62adcba5b372ac9acef86dd35acd5db"
+        },
+        {
+          "url": "https://www.trigyn.com/job/technical-architect",
+          "finalUrl": "https://www.trigyn.com/job/technical-architect",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:24.776Z",
+          "method": "GET",
+          "bodyBytes": 176186,
+          "bodySha256": "a05ce358e7aa3c02f7240c8a119631e0e3ef3ca62453b3275657042c768a1ae8"
+        },
+        {
+          "url": "https://www.trigyn.com/job/administrative-assistant-housing",
+          "finalUrl": "https://www.trigyn.com/job/administrative-assistant-housing",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:25.518Z",
+          "method": "GET",
+          "bodyBytes": 175524,
+          "bodySha256": "4f4091ec053bccdca6c8cdc6e91e95a47726f69592bcaa6eb752b9f5dad3f4f8"
+        },
+        {
+          "url": "https://www.trigyn.com/job/administrative-assistant-attorney-support-data-entry",
+          "finalUrl": "https://www.trigyn.com/job/administrative-assistant-attorney-support-data-entry",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:25.453Z",
+          "method": "GET",
+          "bodyBytes": 175803,
+          "bodySha256": "56413f1d596f1fa00581ff8f3e44bd52451c565b48e0e694a8b41431f8dd645f"
+        },
+        {
+          "url": "https://www.trigyn.com/job/clerical-support-specialist-propertyhousing",
+          "finalUrl": "https://www.trigyn.com/job/clerical-support-specialist-propertyhousing",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:25.516Z",
+          "method": "GET",
+          "bodyBytes": 175915,
+          "bodySha256": "225eb4dc39bc990380f7ed850c5a5ba8d7d1532c039443f46cca8e0f7dcc33ed"
+        },
+        {
+          "url": "https://www.trigyn.com/job/call-centercustomer-support-executive-phone-supportwriting-skills",
+          "finalUrl": "https://www.trigyn.com/job/call-centercustomer-support-executive-phone-supportwriting-skills",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:25.864Z",
+          "method": "GET",
+          "bodyBytes": 180816,
+          "bodySha256": "2b94a0abc30957856497aadf00023ab92e1497dfd9c48135683a7a42567949e5"
+        },
+        {
+          "url": "https://www.trigyn.com/job/peoplesoft-developer-0",
+          "finalUrl": "https://www.trigyn.com/job/peoplesoft-developer-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:25.895Z",
+          "method": "GET",
+          "bodyBytes": 180175,
+          "bodySha256": "2aaef068ab694eaa006f3aaeb5a7b5869fce6ac38387e0eb593a2ae6889c0d38"
+        },
+        {
+          "url": "https://www.trigyn.com/job/ibm-datastage-developer",
+          "finalUrl": "https://www.trigyn.com/job/ibm-datastage-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:25.940Z",
+          "method": "GET",
+          "bodyBytes": 177220,
+          "bodySha256": "02675257578918a07bdf67fbf522fc3fb12a9ac8a3179dc5586fdd47916d56de"
+        },
+        {
+          "url": "https://www.trigyn.com/job/product-owner-business-analyst",
+          "finalUrl": "https://www.trigyn.com/job/product-owner-business-analyst",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:26.650Z",
+          "method": "GET",
+          "bodyBytes": 185792,
+          "bodySha256": "ccca6b74c7e842cb42b137f781277f4d8ca92753922a693cf3396be2e1c30508"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-full-stack-ai-engineer",
+          "finalUrl": "https://www.trigyn.com/job/senior-full-stack-ai-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:26.594Z",
+          "method": "GET",
+          "bodyBytes": 186093,
+          "bodySha256": "2e38e07215b9b739dae0d0edc347cbf1590b02db0a10c143cf2a1872808701ce"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-full-stack-developer-0",
+          "finalUrl": "https://www.trigyn.com/job/senior-full-stack-developer-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:26.662Z",
+          "method": "GET",
+          "bodyBytes": 180365,
+          "bodySha256": "e74b3a99d1d1c2554d5282fd1378683bea6b8eedc773402c7ed0d8995ac4d87d"
+        },
+        {
+          "url": "https://www.trigyn.com/job/associate-product-engineer-ivalua",
+          "finalUrl": "https://www.trigyn.com/job/associate-product-engineer-ivalua",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:26.832Z",
+          "method": "GET",
+          "bodyBytes": 188847,
+          "bodySha256": "1a437a9a3adc812bdd23952f5cbfb5173ecd3104623695b6bddb2b6523179c9c"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-full-stack-developer",
+          "finalUrl": "https://www.trigyn.com/job/senior-full-stack-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:27.035Z",
+          "method": "GET",
+          "bodyBytes": 182321,
+          "bodySha256": "e8da047e7212f0b768e96be2b69a488f579a80b21ea540bf2ae759d27b762f58"
+        },
+        {
+          "url": "https://www.trigyn.com/job/ms-power-bi-developer",
+          "finalUrl": "https://www.trigyn.com/job/ms-power-bi-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:26.897Z",
+          "method": "GET",
+          "bodyBytes": 181138,
+          "bodySha256": "533bc5509f60af8ee4dfbdbcbf0487c9b29a1e40ed5176f2ec6906d08a870a43"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-data-engineer",
+          "finalUrl": "https://www.trigyn.com/job/senior-data-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:27.783Z",
+          "method": "GET",
+          "bodyBytes": 184701,
+          "bodySha256": "98ab3814447b99c1411bdc0a2f87178bed5f79d00c74c2e54946895af937a6c9"
+        },
+        {
+          "url": "https://www.trigyn.com/job/software-engineer-graduate",
+          "finalUrl": "https://www.trigyn.com/job/software-engineer-graduate",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:27.763Z",
+          "method": "GET",
+          "bodyBytes": 182252,
+          "bodySha256": "0b312610ac2a22124db35d21c8716556392ed7fb4606225bec91d20ed4a5802c"
+        },
+        {
+          "url": "https://www.trigyn.com/job/full-stack-developer-graduate",
+          "finalUrl": "https://www.trigyn.com/job/full-stack-developer-graduate",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:27.571Z",
+          "method": "GET",
+          "bodyBytes": 186305,
+          "bodySha256": "9b9f9a4ec6ecfbe6cada4eb90df1806d9f7a3f030729308f242e091e99249801"
+        },
+        {
+          "url": "https://www.trigyn.com/job/junior-it-quality-assurance",
+          "finalUrl": "https://www.trigyn.com/job/junior-it-quality-assurance",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:27.720Z",
+          "method": "GET",
+          "bodyBytes": 180817,
+          "bodySha256": "7e1a81bbd32ad23d30ec33f90ec09a8587e0b78274e69be80e0bac16bce2eeaf"
+        },
+        {
+          "url": "https://www.trigyn.com/job/ai-testing-consultant",
+          "finalUrl": "https://www.trigyn.com/job/ai-testing-consultant",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:27.998Z",
+          "method": "GET",
+          "bodyBytes": 178595,
+          "bodySha256": "b05cc27e5bd76ed23e8b3dcdf094c3fa2e33273ad4ff6619ca6cd5e8c6df34ff"
+        },
+        {
+          "url": "https://www.trigyn.com/job/peoplesoft-developer",
+          "finalUrl": "https://www.trigyn.com/job/peoplesoft-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:27.982Z",
+          "method": "GET",
+          "bodyBytes": 180171,
+          "bodySha256": "3fc6c8e01b156fa639518c38a41c91bc88a0e23075f373438cd727708428f136"
+        },
+        {
+          "url": "https://www.trigyn.com/job/geospatial-data-scientist",
+          "finalUrl": "https://www.trigyn.com/job/geospatial-data-scientist",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:28.765Z",
+          "method": "GET",
+          "bodyBytes": 190114,
+          "bodySha256": "6695b41e79be1eabf3a35a938398e8b131d8be12bf131e4863818184af9a8e8f"
+        },
+        {
+          "url": "https://www.trigyn.com/job/network-administrators",
+          "finalUrl": "https://www.trigyn.com/job/network-administrators",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:28.766Z",
+          "method": "GET",
+          "bodyBytes": 187686,
+          "bodySha256": "4390214c29b2228dd0abe0f7815921fd32ef2e929a58cb38d691952b256d1394"
+        },
+        {
+          "url": "https://www.trigyn.com/job/ats-adoption-training-and-support-analyst",
+          "finalUrl": "https://www.trigyn.com/job/ats-adoption-training-and-support-analyst",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:28.688Z",
+          "method": "GET",
+          "bodyBytes": 177913,
+          "bodySha256": "a90b390e7e0cd559ee24be48e83a2f2c9d01bfb3707efb58dc5216993b474563"
+        },
+        {
+          "url": "https://www.trigyn.com/job/productivity-collaboration-services-administrator",
+          "finalUrl": "https://www.trigyn.com/job/productivity-collaboration-services-administrator",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:28.877Z",
+          "method": "GET",
+          "bodyBytes": 182617,
+          "bodySha256": "58aec2456437bddf8c98695e541f43f30020f04a17ba2286f291707a8a4bc21f"
+        },
+        {
+          "url": "https://www.trigyn.com/job/service-desk-technician",
+          "finalUrl": "https://www.trigyn.com/job/service-desk-technician",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:29.079Z",
+          "method": "GET",
+          "bodyBytes": 182964,
+          "bodySha256": "9f446ff4036ef77410e03baf0531e3477b22592f20614145ea856579d073b31e"
+        },
+        {
+          "url": "https://www.trigyn.com/job/siebel-business-analyst",
+          "finalUrl": "https://www.trigyn.com/job/siebel-business-analyst",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:29.113Z",
+          "method": "GET",
+          "bodyBytes": 180579,
+          "bodySha256": "3a457f4bb86785681b6f4dc282fa00fe593ee1d430c7db6429231a7cc8b6008d"
+        },
+        {
+          "url": "https://www.trigyn.com/job/siebel-developer",
+          "finalUrl": "https://www.trigyn.com/job/siebel-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:29.840Z",
+          "method": "GET",
+          "bodyBytes": 177313,
+          "bodySha256": "c5474dbee7b59e4a7af36f51e7e364d1582f6581198d3648e0ab0078963d2d55"
+        },
+        {
+          "url": "https://www.trigyn.com/job/ict-innovation-support",
+          "finalUrl": "https://www.trigyn.com/job/ict-innovation-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:29.810Z",
+          "method": "GET",
+          "bodyBytes": 181690,
+          "bodySha256": "2e48d4304ae4e99e1e4d198cd8b2bb25319056baad22e105186a6eb84f49e102"
+        },
+        {
+          "url": "https://www.trigyn.com/job/security-operations-analyst-siem-operations-and-threat-detection",
+          "finalUrl": "https://www.trigyn.com/job/security-operations-analyst-siem-operations-and-threat-detection",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:29.881Z",
+          "method": "GET",
+          "bodyBytes": 186145,
+          "bodySha256": "c02a0c9fae6723c27fecc3cfa1109bab75d08b76ba76b903e04bcb284a9eb2ac"
+        },
+        {
+          "url": "https://www.trigyn.com/job/security-operations-analyst-cyber-defense-operations-0",
+          "finalUrl": "https://www.trigyn.com/job/security-operations-analyst-cyber-defense-operations-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:29.640Z",
+          "method": "GET",
+          "bodyBytes": 182771,
+          "bodySha256": "badff75684ad378f13084aa171e93409e67c56461c9682c5d7f5ee670dd43488"
+        },
+        {
+          "url": "https://www.trigyn.com/job/application-support-technician",
+          "finalUrl": "https://www.trigyn.com/job/application-support-technician",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:30.046Z",
+          "method": "GET",
+          "bodyBytes": 181828,
+          "bodySha256": "0ed8bd001a41186fa445efbe98b0b5a0a2bca7e7b5f3ddb62a4eab792379aec7"
+        },
+        {
+          "url": "https://www.trigyn.com/job/tableau-platform-business-intelligence-engineer",
+          "finalUrl": "https://www.trigyn.com/job/tableau-platform-business-intelligence-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:30.209Z",
+          "method": "GET",
+          "bodyBytes": 190760,
+          "bodySha256": "7c0dbbd80de1c7fe090a3ac93243a591e16503051e68a9ff80b1a03e59c48d32"
+        },
+        {
+          "url": "https://www.trigyn.com/job/devops-engineer-0",
+          "finalUrl": "https://www.trigyn.com/job/devops-engineer-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:30.993Z",
+          "method": "GET",
+          "bodyBytes": 183784,
+          "bodySha256": "29f1806c4bcdc1c50280c1923df7d63ad70cc308f6828d509ae517c59afc5558"
+        },
+        {
+          "url": "https://www.trigyn.com/job/ict-admintraining-support",
+          "finalUrl": "https://www.trigyn.com/job/ict-admintraining-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:31.105Z",
+          "method": "GET",
+          "bodyBytes": 176540,
+          "bodySha256": "57f8b53705029baaf569fb11ab462830c4a43937021a49c3e8265cfd95653661"
+        },
+        {
+          "url": "https://www.trigyn.com/job/data-science-specialist",
+          "finalUrl": "https://www.trigyn.com/job/data-science-specialist",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:30.900Z",
+          "method": "GET",
+          "bodyBytes": 181181,
+          "bodySha256": "17705f52b6fd579c896520c9e99e03b7fcc878422836118b2e4b598d160c5d97"
+        },
+        {
+          "url": "https://www.trigyn.com/job/web-developer",
+          "finalUrl": "https://www.trigyn.com/job/web-developer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:31.017Z",
+          "method": "GET",
+          "bodyBytes": 184024,
+          "bodySha256": "d67a11623b93c1dc5c1161f41ad673867f7292d73b3fb0d8c8df95ef0507cb8c"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-sap-bi-specialist-bwhana",
+          "finalUrl": "https://www.trigyn.com/job/senior-sap-bi-specialist-bwhana",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:30.994Z",
+          "method": "GET",
+          "bodyBytes": 179498,
+          "bodySha256": "a08567694507c53084da1333635a3fbfc17cbba3f67d1e84801dfe7c0896e458"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-travel-technical-expert-0",
+          "finalUrl": "https://www.trigyn.com/job/sap-travel-technical-expert-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:31.354Z",
+          "method": "GET",
+          "bodyBytes": 180396,
+          "bodySha256": "c7076f13af4c2b109c78a8c4e2ca01314bdddecc2424ecd40cb3e597015e9653"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-btpwork-zonefiori-developer-0",
+          "finalUrl": "https://www.trigyn.com/job/sap-btpwork-zonefiori-developer-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:32.103Z",
+          "method": "GET",
+          "bodyBytes": 181758,
+          "bodySha256": "8e760c166fdd17929ccaa3a5d6038e3e2e5526bcb825200faeb09ea8095c2a25"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-btp-integration-suite-architect",
+          "finalUrl": "https://www.trigyn.com/job/sap-btp-integration-suite-architect",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:32.031Z",
+          "method": "GET",
+          "bodyBytes": 187843,
+          "bodySha256": "ca80d8ca403382d50b74154d76a93baaeccac8d0388384e6ec151979f8744400"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-btp-architect-0",
+          "finalUrl": "https://www.trigyn.com/job/sap-btp-architect-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:32.104Z",
+          "method": "GET",
+          "bodyBytes": 185936,
+          "bodySha256": "80b90be6d399d06498d559a4190b830c8a18f11687e29821042fe5b36806b0c6"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-s4hana-security-architecture-and-implementation-consultant-0",
+          "finalUrl": "https://www.trigyn.com/job/sap-s4hana-security-architecture-and-implementation-consultant-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:32.121Z",
+          "method": "GET",
+          "bodyBytes": 182050,
+          "bodySha256": "c040976a264eeb9e3de6fca5e5b336bbf0d0225b66df4ca25a3c59a5334274cc"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-grc-implementation-consultant",
+          "finalUrl": "https://www.trigyn.com/job/sap-grc-implementation-consultant",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:32.264Z",
+          "method": "GET",
+          "bodyBytes": 180446,
+          "bodySha256": "f5a79c4c4080ca31f54876c75523a67ddf019946e1268dd5c748c74eb071be15"
+        },
+        {
+          "url": "https://www.trigyn.com/job/sap-s4hana-technical-developer-abap-fiori-and-sap-btp-0",
+          "finalUrl": "https://www.trigyn.com/job/sap-s4hana-technical-developer-abap-fiori-and-sap-btp-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:32.448Z",
+          "method": "GET",
+          "bodyBytes": 189761,
+          "bodySha256": "ad48828a80a84df9bd209ae2a62d75791a9af000baead62a8b65be4d8e8460fb"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-sap-basis-migration-specialist-s4hana-cloud-expertise",
+          "finalUrl": "https://www.trigyn.com/job/senior-sap-basis-migration-specialist-s4hana-cloud-expertise",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:33.142Z",
+          "method": "GET",
+          "bodyBytes": 188128,
+          "bodySha256": "17d86d0f1b7e3f722793d4ca2596821fdea6680598ed293fe085cf2ea8cf6bcf"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-sap-basis-migration-specialist-bw4hana-bods-and-datasphere-0",
+          "finalUrl": "https://www.trigyn.com/job/senior-sap-basis-migration-specialist-bw4hana-bods-and-datasphere-0",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:33.222Z",
+          "method": "GET",
+          "bodyBytes": 188084,
+          "bodySha256": "d489d4a0a936629166133c27ef2351856d13dddf8dcddfa8e6b7e63f47a4b829"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-test-automation-engineer-netc",
+          "finalUrl": "https://www.trigyn.com/job/senior-test-automation-engineer-netc",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:33.222Z",
+          "method": "GET",
+          "bodyBytes": 182645,
+          "bodySha256": "51fd7585335d0e739479cc78d680652129f53baad71a169c7f1ea035db561063"
+        },
+        {
+          "url": "https://www.trigyn.com/job/devops-engineer",
+          "finalUrl": "https://www.trigyn.com/job/devops-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:33.339Z",
+          "method": "GET",
+          "bodyBytes": 178052,
+          "bodySha256": "1128af8b8bf4f355cec445185328cf9e38297f3896d0bba2d26608ed14e95459"
+        },
+        {
+          "url": "https://www.trigyn.com/job/web-designer",
+          "finalUrl": "https://www.trigyn.com/job/web-designer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:33.221Z",
+          "method": "GET",
+          "bodyBytes": 176485,
+          "bodySha256": "2e6452e584484c4ab3b3e48a34445b5dd7c2115b274fc216c8dab243b98e9036"
+        },
+        {
+          "url": "https://www.trigyn.com/job/cloud-secops-engineer",
+          "finalUrl": "https://www.trigyn.com/job/cloud-secops-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:33.582Z",
+          "method": "GET",
+          "bodyBytes": 179585,
+          "bodySha256": "b7a7c17083a038d60a9d5a7843a216e7bb10dfe4c66199aa8983bde316b47e23"
+        },
+        {
+          "url": "https://www.trigyn.com/job/project-and-service-management-erpcrm",
+          "finalUrl": "https://www.trigyn.com/job/project-and-service-management-erpcrm",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:34.347Z",
+          "method": "GET",
+          "bodyBytes": 181304,
+          "bodySha256": "6106987ed4670f2622210a96c8db0abf9df7586882fd1cebf1f186b806d3f8aa"
+        },
+        {
+          "url": "https://www.trigyn.com/job/data-science-analyst",
+          "finalUrl": "https://www.trigyn.com/job/data-science-analyst",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:34.264Z",
+          "method": "GET",
+          "bodyBytes": 180039,
+          "bodySha256": "3baadefb6af244a10d0b13c96c8df616bd094c29d2ca144b4c76d16fc67bf325"
+        },
+        {
+          "url": "https://www.trigyn.com/job/ct-helpdesk-assistant",
+          "finalUrl": "https://www.trigyn.com/job/ct-helpdesk-assistant",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:34.343Z",
+          "method": "GET",
+          "bodyBytes": 180759,
+          "bodySha256": "3d4ad147d03a503521528442d9697af6f16bcbc263eab1d9c8b7c77741743e18"
+        },
+        {
+          "url": "https://www.trigyn.com/job/data-engineer-web-scraping-data-acquisition",
+          "finalUrl": "https://www.trigyn.com/job/data-engineer-web-scraping-data-acquisition",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:34.324Z",
+          "method": "GET",
+          "bodyBytes": 180139,
+          "bodySha256": "ef96eda2095a848f350b7674c883b36c49b55cb00c85dcc89fa1707a216c064f"
+        },
+        {
+          "url": "https://www.trigyn.com/job/cloud-solutions-architect",
+          "finalUrl": "https://www.trigyn.com/job/cloud-solutions-architect",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:34.720Z",
+          "method": "GET",
+          "bodyBytes": 180908,
+          "bodySha256": "138a17f29db07a4cd16cb40452c9f9a1f9887e22546293791d81fc97a90726a6"
+        },
+        {
+          "url": "https://www.trigyn.com/job/project-management-officer",
+          "finalUrl": "https://www.trigyn.com/job/project-management-officer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:34.705Z",
+          "method": "GET",
+          "bodyBytes": 181205,
+          "bodySha256": "1e4c379367033dca62587400e9594041a64cb70bcfc222b1a0b721de5c40bcab"
+        },
+        {
+          "url": "https://www.trigyn.com/job/data-engineer",
+          "finalUrl": "https://www.trigyn.com/job/data-engineer",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:35.422Z",
+          "method": "GET",
+          "bodyBytes": 179187,
+          "bodySha256": "2a1623907ad4f2dc67ea75fd072d278035a07ac21d0f96356843db624da25aa9"
+        },
+        {
+          "url": "https://www.trigyn.com/job/gis-support",
+          "finalUrl": "https://www.trigyn.com/job/gis-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:35.487Z",
+          "method": "GET",
+          "bodyBytes": 176744,
+          "bodySha256": "1fb9411e27ad457bd50d66e6a1589b9c0d32109410dea26761e427e56e8b4bdf"
+        },
+        {
+          "url": "https://www.trigyn.com/job/server-and-storage-equip-support",
+          "finalUrl": "https://www.trigyn.com/job/server-and-storage-equip-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:35.624Z",
+          "method": "GET",
+          "bodyBytes": 179667,
+          "bodySha256": "de78404e80a1a6bf903cfa1811c3b69573e1b3ec9caaf2cd34e1657a66d21f13"
+        },
+        {
+          "url": "https://www.trigyn.com/job/ict-administrationtraining-support",
+          "finalUrl": "https://www.trigyn.com/job/ict-administrationtraining-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:35.812Z",
+          "method": "GET",
+          "bodyBytes": 176833,
+          "bodySha256": "bf41a5d755249dfd5366de7a558df7a57f5cae5702656fd97b2e6a60e368f2d8"
+        },
+        {
+          "url": "https://www.trigyn.com/job/lte-network-support",
+          "finalUrl": "https://www.trigyn.com/job/lte-network-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:35.836Z",
+          "method": "GET",
+          "bodyBytes": 179116,
+          "bodySha256": "f3ccbc686c2512b77a83b37f241b09d9f3c98ddad0c494e761ed57d6daf25ab7"
+        },
+        {
+          "url": "https://www.trigyn.com/job/network-equipment-support",
+          "finalUrl": "https://www.trigyn.com/job/network-equipment-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:35.852Z",
+          "method": "GET",
+          "bodyBytes": 177432,
+          "bodySha256": "3a2f1334b7d9e2fb9c434f6b34a3ef2f5ba9be2d6660fc0ddd20c28031cf1f28"
+        },
+        {
+          "url": "https://www.trigyn.com/job/satellite-infrastructure-support",
+          "finalUrl": "https://www.trigyn.com/job/satellite-infrastructure-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:36.612Z",
+          "method": "GET",
+          "bodyBytes": 178558,
+          "bodySha256": "161712776faa31a3bfc3fdc349a05e39548a5f0e6881f68bb079e9c40ea6b029"
+        },
+        {
+          "url": "https://www.trigyn.com/job/broadcasting-infrastructure",
+          "finalUrl": "https://www.trigyn.com/job/broadcasting-infrastructure",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:36.550Z",
+          "method": "GET",
+          "bodyBytes": 179557,
+          "bodySha256": "4485bcae201057ca1b8f1e05e1397acf23965cd389427fa7ebc5178e062ea410"
+        },
+        {
+          "url": "https://www.trigyn.com/job/two-way-radio-systems-support",
+          "finalUrl": "https://www.trigyn.com/job/two-way-radio-systems-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:36.368Z",
+          "method": "GET",
+          "bodyBytes": 175999,
+          "bodySha256": "a5944a27672650ef121cff5a701fd28a9db3429ec1e9a30b54ca7b75f8161aba"
+        },
+        {
+          "url": "https://www.trigyn.com/job/microwave-links-systems-support",
+          "finalUrl": "https://www.trigyn.com/job/microwave-links-systems-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:36.565Z",
+          "method": "GET",
+          "bodyBytes": 176430,
+          "bodySha256": "7aab45f5a72f12349d0575e42913ffdb65ce7a579d939ae572c9ae92a653f13e"
+        },
+        {
+          "url": "https://www.trigyn.com/job/senior-sap-developers",
+          "finalUrl": "https://www.trigyn.com/job/senior-sap-developers",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:36.778Z",
+          "method": "GET",
+          "bodyBytes": 176764,
+          "bodySha256": "08435c0bec98155987ba46eb2b2c034a0e68ad59a415f7eebea66dc330dc5f19"
+        },
+        {
+          "url": "https://www.trigyn.com/job/ict-project-support",
+          "finalUrl": "https://www.trigyn.com/job/ict-project-support",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:26:37.009Z",
+          "method": "GET",
+          "bodyBytes": 178633,
+          "bodySha256": "9a9097aa1064c0304b6498081d1082459d90a3df1e34044a4e94d283ee41f0e8"
+        }
+      ]
+    },
+    {
+      "file": "global-first-response.json",
+      "bytes": 306,
+      "sha256": "28b2ef8edfb06c0a9baf7f47582041bde784f7eb3b3c7432a1e6edbd10ae4e64",
+      "uncompressedBytes": 306,
+      "uncompressedSha256": "28b2ef8edfb06c0a9baf7f47582041bde784f7eb3b3c7432a1e6edbd10ae4e64",
+      "responses": [
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 500,
+          "capturedAt": "2026-10-23T04:24:00.830Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 61,
+          "bodySha256": "1a4c6cfcbf5924ca66a7d0f6e6b30ef041ce22ad50e829a5cca73fe6cfaa4280"
+        }
+      ]
+    },
+    {
+      "file": "native-responses.json.gz",
+      "bytes": 11782,
+      "sha256": "816195b6007442a06fc95206948cfd35efcbfceaf5e09aa73cfb7580b405df8c",
+      "uncompressedBytes": 105078,
+      "uncompressedSha256": "cc96f295b0ebafeddf291657a4c6f1854be56e03bbd6bc22c9aa25deaf4eb284",
+      "responses": [
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:55.575Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2256%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 7060,
+          "bodySha256": "bde367083bb647b385e5b218351080c465f0399223e5756a0420ae93c620010b"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:56.005Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2256%22%2C%22current_page%22%3A%221%22%7D",
+          "bodyBytes": 7039,
+          "bodySha256": "365a4cab3b95f40beec5c5cc003fc75acf13d1fe7494c491d521c72e314512b9"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:56.432Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2256%22%2C%22current_page%22%3A%222%22%7D",
+          "bodyBytes": 6994,
+          "bodySha256": "7a645e690141d8862f883002c28748380b9fea0d373180df3a3dfb567bfe5d90"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:56.874Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2256%22%2C%22current_page%22%3A%223%22%7D",
+          "bodyBytes": 6995,
+          "bodySha256": "779911cf10dde45c1129624b07a9d1c70c21f770a18499f1f5bdb90239edcfc2"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:57.310Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2256%22%2C%22current_page%22%3A%224%22%7D",
+          "bodyBytes": 6964,
+          "bodySha256": "97c0947980f2d0608b2d99c45bdcf5ca3f7dc140102c157a5f4004ec26c28d3c"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:57.756Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2256%22%2C%22current_page%22%3A%225%22%7D",
+          "bodyBytes": 7097,
+          "bodySha256": "88625bcf3d695c3dbad191da2e6901b47f63c43ed5f9e4e13b9728fc49878afa"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:58.187Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2256%22%2C%22current_page%22%3A%226%22%7D",
+          "bodyBytes": 1917,
+          "bodySha256": "faa93cfe48961055a21c14a2c4754250db5610429b35c4f2005422f367258133"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:58.629Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2254%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 5721,
+          "bodySha256": "98ffd6a4d9bc58b32cf9260938558cd158e03ab8b82dd0b11c2a070eb5ef1de4"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:59.043Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2254%22%2C%22current_page%22%3A%221%22%7D",
+          "bodyBytes": 5848,
+          "bodySha256": "c96f1c8addfa8a9c2c360358b686a3ad68efc6bde282f8f0bf9aca5d71c87d15"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:59.479Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2254%22%2C%22current_page%22%3A%222%22%7D",
+          "bodyBytes": 4294,
+          "bodySha256": "4dc9c660db0120140b9861bb3d1a5f5632ebd7258f145703469ed1a876cb3eb9"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:59.865Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2255%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 6316,
+          "bodySha256": "f15782768122a8f0b2c35f544b0681a24e3f9b78c7170ac6dddfa9996c5daa26"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:00.269Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2255%22%2C%22current_page%22%3A%221%22%7D",
+          "bodyBytes": 3487,
+          "bodySha256": "6a6f8a7d81e0fb6150dbf3c707ab7fa369cef87131542c36d690fa1af11e27ce"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:00.697Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2253%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 5018,
+          "bodySha256": "da4bb8ff7a94e38d62e7d407a9bc2ec69e83ce2d711395bde13909bf1fdac2b1"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:01.111Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%22250%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 544,
+          "bodySha256": "be7abc92fa9246efc220b22a59607229b07d8301ebc5b36659131c88cf443c8e"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:01.531Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2257%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 541,
+          "bodySha256": "d758b98756b1ef150e33c0b46eeabdf4ef008dd9627fb5b77d023089bdc1e1a5"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:01.970Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2254%22%2C%22country%22%3A%2262%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 5838,
+          "bodySha256": "662c25c589664cb1ce5613e8a02380ec43158b156267612c11db31493e7a620f"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:02.417Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2254%22%2C%22country%22%3A%2262%22%2C%22current_page%22%3A%221%22%7D",
+          "bodyBytes": 5913,
+          "bodySha256": "4b6eb647f0c660a4a2e12454999514e5e2de3807224687b0348bd3b11aa44a98"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:25:02.820Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2254%22%2C%22country%22%3A%2262%22%2C%22current_page%22%3A%222%22%7D",
+          "bodyBytes": 420,
+          "bodySha256": "0f931f3f0b32811f05f51b96b8ae213ff2020b5fef9ad2a3a54a6f4d60a94cf7"
+        }
+      ]
+    },
+    {
+      "file": "observed-response-body.json",
+      "bytes": 5838,
+      "sha256": "662c25c589664cb1ce5613e8a02380ec43158b156267612c11db31493e7a620f",
+      "uncompressedBytes": 5838,
+      "uncompressedSha256": "662c25c589664cb1ce5613e8a02380ec43158b156267612c11db31493e7a620f",
+      "responses": []
+    },
+    {
+      "file": "raw-client-responses.json.gz",
+      "bytes": 68757,
+      "sha256": "18fdafc683b285f044cc9ac5668c479a1c57a533df43af2274789a5ec4919b2e",
+      "uncompressedBytes": 250943,
+      "uncompressedSha256": "1ddb3bd6460815f0ab315f6fee0472fdeb1de4c9cd5d069f051edcd11ec2be68",
+      "responses": [
+        {
+          "url": "https://www.trigyn.com/sites/default/files/js/js_GtGd6NmMsKvre8NeKzPgEWeiVPIAjssDue8Hbn6MtyA.js?scope=footer&delta=0&language=en&theme=trigyn_theme&include=eJxtjEsOwyAMRC8UlSNZhoyIG8CWgX5u31RqF6m6GdvvWRMlk4khxM-yYFJS3QXHqFaEW0L4B5esmgtocA75iN_7wld-LMMlPxul2YfWkNgB76Rm6mM2GYL-_am6zoLQt0OlOShya_CvHRsqQi4auZyZvGu4kBilDWk_2w6_SUKnPg1Oq6utem8vG0xjVg",
+          "finalUrl": "https://www.trigyn.com/sites/default/files/js/js_GtGd6NmMsKvre8NeKzPgEWeiVPIAjssDue8Hbn6MtyA.js?scope=footer&delta=0&language=en&theme=trigyn_theme&include=eJxtjEsOwyAMRC8UlSNZhoyIG8CWgX5u31RqF6m6GdvvWRMlk4khxM-yYFJS3QXHqFaEW0L4B5esmgtocA75iN_7wld-LMMlPxul2YfWkNgB76Rm6mM2GYL-_am6zoLQt0OlOShya_CvHRsqQi4auZyZvGu4kBilDWk_2w6_SUKnPg1Oq6utem8vG0xjVg",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:31:39.586Z",
+          "method": "GET",
+          "bodyBytes": 245759,
+          "bodySha256": "e354e307b5d8628ef34c73bd04ecced383f53db2313438ee5e4f0d94e7e75152"
+        }
+      ]
+    },
+    {
+      "file": "region-first-responses.json",
+      "bytes": 30409,
+      "sha256": "a4d208c7f6317e090204b040a9cfa2ccbf3ef44e4c6cb8976202f7c464537aca",
+      "uncompressedBytes": 30409,
+      "uncompressedSha256": "a4d208c7f6317e090204b040a9cfa2ccbf3ef44e4c6cb8976202f7c464537aca",
+      "responses": [
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:37.596Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2256%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 7060,
+          "bodySha256": "bde367083bb647b385e5b218351080c465f0399223e5756a0420ae93c620010b"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:38.013Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2254%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 5721,
+          "bodySha256": "98ffd6a4d9bc58b32cf9260938558cd158e03ab8b82dd0b11c2a070eb5ef1de4"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:38.435Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2255%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 6316,
+          "bodySha256": "f15782768122a8f0b2c35f544b0681a24e3f9b78c7170ac6dddfa9996c5daa26"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:38.865Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2253%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 5018,
+          "bodySha256": "da4bb8ff7a94e38d62e7d407a9bc2ec69e83ce2d711395bde13909bf1fdac2b1"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:39.263Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%22250%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 544,
+          "bodySha256": "be7abc92fa9246efc220b22a59607229b07d8301ebc5b36659131c88cf443c8e"
+        },
+        {
+          "url": "https://www.trigyn.com/get-career-data",
+          "finalUrl": "https://www.trigyn.com/get-career-data",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:24:39.655Z",
+          "method": "POST",
+          "requestBody": "param=%7B%22region%22%3A%2257%22%2C%22current_page%22%3A%220%22%7D",
+          "bodyBytes": 541,
+          "bodySha256": "d758b98756b1ef150e33c0b46eeabdf4ef008dd9627fb5b77d023089bdc1e1a5"
+        }
+      ]
+    }
+  ]
+}

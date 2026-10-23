@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { gunzipSync } from 'node:zlib'
+import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../scraper-support/providers/index.js'
@@ -23,7 +25,7 @@ test('Rivian is covered only by its exact-name first-party provider', () => {
   assert.equal(provider.companyName, 'Rivian')
   assert.equal(provider.companyDomain, 'rivian.com')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-page-india-enumeration-unverified-fail-closed')
+  assert.match(provider.modulePath, /rivian[\\/]script\.js$/)
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'Rivian').map((item) => item.source),
     ['rivian'],
@@ -32,9 +34,25 @@ test('Rivian is covered only by its exact-name first-party provider', () => {
   assert.equal(nearNameReport.unmatchedCount, 2)
 })
 
-test('Rivian scraper fails closed without a verified India jobs feed', async () => {
+test('Rivian provider preserves the complete captured native no-India inventory evidence', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'rivian')
 
   assert.ok(scraper, 'Expected Rivian scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  const pages = JSON.parse(gunzipSync(readFileSync(new URL('../scraper/rivian/fixtures/listing-responses.json.gz', import.meta.url))))
+  let page = 0
+  const jobs = await scraper.run({ fetchPage: async url => {
+    const name = url.endsWith('/work') ? 'work-response' : 'search-response'
+    const capture = JSON.parse(gunzipSync(readFileSync(new URL('../scraper/rivian/fixtures/' + name + '.json.gz', import.meta.url))))
+    assert.equal(url, capture.url)
+    return { status: capture.status, url: capture.finalUrl, html: capture.body }
+  }, fetchJson: async url => {
+    const capture = pages[page++]
+    assert.equal(url, capture.url)
+    return JSON.parse(capture.body)
+  } })
+  assert.equal(page, 10)
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status, 'complete-inventory')
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 947)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })

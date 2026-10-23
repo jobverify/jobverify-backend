@@ -1,0 +1,86 @@
+{
+  "source": "udaan",
+  "retainedAt": "2026-10-23",
+  "captureMethod": "Shared root Playwright browser public HTTP capture; response body retained verbatim",
+  "scope": "Official commerce home/about outgoing employer link, careers transport failures, exact employer profile and employer-filtered India no-match search; no companywide empty verification",
+  "fixtures": [
+    {
+      "file": "official-responses.json.gz",
+      "rawBytes": 165326,
+      "rawSHA256": "f937f56c51b9021109cfc95855376f84fc8df8216506362b3a0b24ae59ff7369",
+      "gzipSHA256": "35eaa365815aca0d05268296d2652f4ec0efaf9c611d42660f763189b778b508",
+      "responses": [
+        {
+          "url": "https://udaan.com/",
+          "finalUrl": "https://udaan.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:13:01.388Z",
+          "bodyBytes": 91780,
+          "bodySHA256": "c6518b68dc9a8ca90744fdd4bd6303797ecae7beb980347df0fa61aade70a10a"
+        },
+        {
+          "url": "https://udaan.com/about-us",
+          "finalUrl": "https://udaan.com/about-us",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:13:00.834Z",
+          "bodyBytes": 68543,
+          "bodySHA256": "cc118d7c334564ed6d95f5df095233b25746767897c229b33e90ff3d540ac9d3"
+        },
+        {
+          "url": "https://udaan.com/careers",
+          "error": "TimeoutError: signal timed out",
+          "capturedAt": "2026-10-23T06:13:20.329Z",
+          "bodyBytes": null,
+          "bodySHA256": null
+        },
+        {
+          "url": "https://careers.udaan.com/",
+          "error": "TimeoutError: signal timed out",
+          "capturedAt": "2026-10-23T06:13:20.329Z",
+          "bodyBytes": null,
+          "bodySHA256": null
+        }
+      ]
+    },
+    {
+      "file": "native-company.json.gz",
+      "rawBytes": 346704,
+      "rawSHA256": "36bd3dd27567749afe7a7a0b862dd24adf38bdb260b3141423ffa7dc702c7067",
+      "gzipSHA256": "eacf352aec0a04ea9f1a7700f4658927c122a1ed231f712dc61bcd91e7b167f5",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/udaan/",
+          "finalUrl": "https://www.linkedin.com/company/udaan/",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:14:35.580Z",
+          "bodyBytes": 331775,
+          "bodySHA256": "47568133419537cd6827afa35cf047250cdb61a42c3f7f87dfa3f4b763431557"
+        }
+      ]
+    },
+    {
+      "file": "native-jobs.json.gz",
+      "rawBytes": 94027,
+      "rawSHA256": "f802127a324ff1d6f7c2ff8151c031c00ab8c8c6970c560c7af5526676f458fb",
+      "gzipSHA256": "69ec823a7354da97742c65ab1ee147c9055bd4b512123d915d3e84f2d8cc3874",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=10838271&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=10838271&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:16:44.138Z",
+          "bodyBytes": 89418,
+          "bodySHA256": "390fc1d9f259e3e120ae201d282e61c16bc13621898f3804b8d33708630a43d4"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=10838271&location=India&start=0",
+          "finalUrl": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=10838271&location=India&start=0",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:16:44.012Z",
+          "bodyBytes": 26,
+          "bodySHA256": "ea12acf875ac1dffa5de9dd8f5c5a54a41cf50370705c4694aef841aa2b28a36"
+        }
+      ]
+    }
+  ]
+}

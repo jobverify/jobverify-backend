@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
+import { createHash } from 'node:crypto'
 import { runIsolatedExtraction } from '../scripts/auditCatalogExtractions.js'
 
 const backend = fileURLToPath(new URL('../', import.meta.url))
@@ -74,6 +75,29 @@ test('an empty successful return without evidence stays unverified', async () =>
   })
 })
 
+test('native parser failures retain hash-checked bodies in the permitted artifact directory only', async () => {
+  const body = Buffer.from('<html><main>Changed first-party listing layout</main></html>')
+  const packet = { url: 'https://careers.example.test/jobs', status: 200,
+    headers: { 'content-type': 'text/html', cookie: 'PRIVATE_COOKIE' }, bodyBytes: body.length,
+    bodySHA256: createHash('sha256').update(body).digest('hex'), rawBodyBase64: body.toString('base64'),
+    requestedAt: '2026-10-22T17:13:01.000Z', completedAt: '2026-10-22T17:13:04.000Z' }
+  await withFixture(`export const run = async () => { const error = new Error('Native parser incomplete'); error.nativeEvidence = {retainedResponses:[${JSON.stringify(packet)}], failures:[{stage:'native-pagination',message:'Missing native wrapper'}]}; throw error }`, async ({ directory, provider }) => {
+    const outputDirectory = path.join(directory, 'output')
+    const row = await runIsolatedExtraction(provider, { outputDirectory })
+    assert.equal(row.outcome, 'extraction-failed')
+    for (const key of ['rawJobs', 'indiaJobs', 'eligibleJobs']) assert.equal(row[key], null)
+    assert.equal(row.retainedFailureEvidence.retainedResponses, 1)
+    const bytes = fs.readFileSync(path.join(outputDirectory, row.retainedFailureEvidence.filename))
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), row.retainedFailureEvidence.sha256)
+    const artifact = JSON.parse(bytes)
+    assert.equal(artifact.retainedResponses[0].rawBodyBase64, body.toString('base64'))
+    assert.equal(artifact.retainedResponses[0].completedAt, packet.completedAt)
+    assert.equal(artifact.verifiedZeroInventory, false)
+    assert.doesNotMatch(JSON.stringify(artifact), /PRIVATE_COOKIE/)
+    assert.doesNotMatch(JSON.stringify(row), /rawBodyBase64|Changed first-party/)
+  })
+})
+
 test('complete listing evidence cannot conceal missing native descriptions or explicit detail failures', async () => {
   const helper = new URL('../scraper-support/utils/inventoryEvidence.js', import.meta.url).href
   for (const variant of [
@@ -115,5 +139,32 @@ test('timed out audits record the actual attempt and unknown counts', async () =
     assert.equal(row.productionWrites, false)
     assert.equal(row.rawJobs, null)
     assert.equal(row.inventoryEvidence, null)
+  })
+})
+
+test('a source process exit preserves its exit code and leaves inventory unknown', async () => {
+  await withFixture('export const run = async () => process.exit(7)', async ({ directory, provider }) => {
+    const row = await runIsolatedExtraction(provider, { outputDirectory: path.join(directory, 'output') })
+    assert.equal(row.outcome, 'audit-process-exited-without-result')
+    assert.deepEqual(row.auditProcessExit, { exitCode: 7, signal: null })
+    for (const key of ['rawJobs', 'indiaJobs', 'eligibleJobs', 'inventoryEvidence']) assert.equal(row[key], null)
+  })
+})
+
+test('partial native extraction reports observed listing rows separately from extracted jobs', async () => {
+  const helper = new URL('../scraper-support/utils/inventoryEvidence.js', import.meta.url).href
+  const code = `import {attachInventoryEvidence} from ${JSON.stringify(helper)};
+    export const run = async () => attachInventoryEvidence([
+      {title:'Software Engineer',company:'Fixture',source:'fixture',country:'India',location:'Bengaluru, India',sourceUrl:'https://careers.fixture.test/jobs/1',jobDescription:'Build production software services.',sourceListingComplete:false,nativeCollectionEvidence:{source:'fixture',observedListingCount:7}},
+      {title:'Data Engineer',company:'Fixture',source:'fixture',country:'India',location:'Bengaluru, India',sourceUrl:'https://careers.fixture.test/jobs/2',jobDescription:'Build production data pipelines.',sourceListingComplete:false}
+    ],{status:'coverage-gap',firstParty:true,listingComplete:false,reportedTotal:null,surface:'https://careers.fixture.test/jobs',pagesFetched:1})`
+  await withFixture(code, async ({ directory, provider }) => {
+    const row = await runIsolatedExtraction(provider, { outputDirectory: path.join(directory, 'output') })
+    assert.equal(row.outcome, 'positive-extraction-incomplete-evidence')
+    assert.equal(row.rawJobs, 7)
+    assert.equal(row.extractedJobs, 2)
+    assert.equal(row.rawJobsBasis, 'observed-native-listing-rows')
+    assert.equal(row.inventoryEvidence.reportedTotal, null)
+    assert.equal(row.inventoryEvidence.listingComplete, false)
   })
 })

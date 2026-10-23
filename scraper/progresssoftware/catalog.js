@@ -20,9 +20,12 @@ export const PROGRESS_SOFTWARE_CATALOG = {
     'verified-first-party-careers-homepage+verified-open-positions-list+india-location-filter+first-party-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-10-23',
+  inventoryVerificationPolicy: 'live-parser-evidence-required',
+  verifiedPublicJobCount: 26,
+  verifiedIndiaJobCount: 10,
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.progress.com/company/careers was the official Progress Software careers homepage, that the first-party open roles surface at https://www.progress.com/company/careers/open-positions publicly exposed India (11) and direct first-party detail pages under https://www.progress.com/company/careers/open-positions/, and that the live India list included roles such as Manager, Software Engineering, Principal Software Engineer ( Lead RUST Developer), and Technical Support Engineer, Senior 1(Open Edge/ Oracle DBA).',
+    'Verified on 2026-10-23 that https://www.progress.com/company/careers links to https://www.progress.com/company/careers/open-positions. Each run reconciles all native SSR cards, ItemList URLs and per-country facet counts, then verifies all JobPosting detail identities, visible locations and employer content. The current board exposes 26 public roles, including 10 India roles. Native Jobvite IDs retain case; first-party detail redirects may canonicalize only route case/encoding. Explicit JobPosting dates are preserved; schema-only or heading-only descriptions remain missing visible details and yield incomplete inventory evidence.',
   dryRunFile: 'progresssoftware/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

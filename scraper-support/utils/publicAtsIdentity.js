@@ -4,7 +4,7 @@ export const identifyPublicAtsBoard = value => {
   if (!['http:', 'https:'].includes(url.protocol)) return null
   const parts = url.pathname.split('/').filter(Boolean)
   let atsPlatform, boardToken
-  if (['boards.greenhouse.io', 'job-boards.greenhouse.io', 'boards-api.greenhouse.io', 'api.greenhouse.io'].includes(url.hostname)) {
+  if (['boards.greenhouse.io', 'job-boards.greenhouse.io', 'boards.eu.greenhouse.io', 'job-boards.eu.greenhouse.io', 'boards-api.greenhouse.io', 'api.greenhouse.io'].includes(url.hostname)) {
     atsPlatform = 'greenhouse'
     boardToken = ['boards-api.greenhouse.io', 'api.greenhouse.io'].includes(url.hostname)
       ? parts[0] === 'v1' && parts[1] === 'boards' ? parts[2] : null

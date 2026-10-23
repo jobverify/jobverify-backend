@@ -1,6 +1,23 @@
 import PipelineRun from '../models/PipelineRun.js';
 import { WORKFLOWS, isTerminal } from './policy.js';
-import { changeRun, completeWorkflow, dispatchNext, failPipeline, pipelineError } from './execution.js';
+import { changeRun, completeWorkflow, createPipeline, dispatchNext, failPipeline, pipelineError } from './execution.js';
+
+/** Refresh a missed completion before a scheduled/manual workflow claims the shared slot. */
+export async function createDirectGithubPipeline(options,{token=process.env.GITHUB_PAT}={}) {
+  const active=await PipelineRun.findOne({activeKey:'database'}).lean();
+  // A GitHub worker cannot establish the liveness of another repository or local process.
+  if(active?.target==='github'&&active.repo===options.repo)await reconcileGithub(active,{token});
+  try { return await createPipeline(options); }
+  catch(error) {
+    if(error.status===409&&error.activeRun) {
+      const run=error.activeRun;
+      const stage=run.stages.find(s=>['queued','preparing','running'].includes(s.status));
+      const workflow=stage?.githubRunId?` GitHub run ${stage.githubRunId}.`:'';
+      error.message=`A pipeline is already active: ${run._id} (${run.target}, ${stage?.key||run.status}).${workflow} Wait for it to finish, or cancel it through pipeline controls before starting a new run.`;
+    }
+    throw error;
+  }
+}
 
 export async function githubRequest(repo,endpoint,{token=process.env.GITHUB_PAT,method='GET',body}={}) {
   if(!token||!/^[-\w.]+\/[-\w.]+$/.test(repo||''))throw pipelineError('Configure GITHUB_REPO and GITHUB_PAT with Actions read/write access.',503);

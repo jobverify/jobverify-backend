@@ -7,7 +7,7 @@ import { getScraperCatalog } from '../scraper-support/providers/index.js'
 
 const COMPANY_CSV_TEXT = "company_name\nWizKlub\n"
 
-test('WizKlub resolves exactly to its first-party fail-closed provider', () => {
+test('WizKlub resolves exactly to its native brand-filtered provider', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'wizklub')
   const report = generateCompanyCoverageReport({
@@ -17,15 +17,17 @@ test('WizKlub resolves exactly to its first-party fail-closed provider', () => {
 
   assert.ok(provider, 'Expected a WizKlub provider extension in the scraper catalog')
   assert.equal(provider.companyName, 'WizKlub')
-  assert.equal(provider.companyDomain, 'dev.wizklub.com')
-  assert.equal(provider.atsPlatform, 'exact-name-fail-closed-sentinel')
+  assert.equal(provider.companyDomain, 'wizklub.com')
+  assert.equal(provider.verifiedPublicJobCount,null)
+  assert.equal(provider.lifecycleCleanupAllowed,false)
+  assert.equal(provider.atsPlatform, 'native-employer-linkedin-explicit-brand-parent-roles')
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'WizKlub').map((item) => item.source),
     ['wizklub'],
   )
 })
 
-test('WizKlub fails closed without an enumerable official careers feed', async () => {
+test('WizKlub reports unavailable native coverage without false zero', async () => {
   let module
   try {
     module = await import('../scraper/wizklub/script.js')
@@ -35,5 +37,5 @@ test('WizKlub fails closed without an enumerable official careers feed', async (
 
   assert.ok(module, 'Expected WizKlub scraper script')
   assert.equal(typeof module.run, 'function')
-  assert.deepEqual(await module.run(), [])
+  await assert.rejects(module.run({fetchImpl:async()=>{throw Error('offline')}}),e=>e.code==='WIZKLUB_COVERAGE_GAP'&&e.inventoryEvidence.reportedTotal===null&&e.lifecycleCleanupAllowed===false)
 })

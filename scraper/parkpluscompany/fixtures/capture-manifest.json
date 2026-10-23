@@ -1,0 +1,23 @@
+{
+  "source": "parkpluscompany",
+  "captureMethod": "Root-owned isolated public Chrome fetch; unmodified HTTP body/status/finalURL/time retained, DOM companions are observation only.",
+  "files": [
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "a5a6a5aebcf32cbee8c3f24fa3ebcd566867b2436097b1f689ca3c765b7d25de",
+      "uncompressedSHA256": "6fa46b1973e87cee585435b0c8da9f82f7c9f7ee5fb37e300b9d0303fc8daef5",
+      "bytes": 167917
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://parkplus.io/careers",
+      "finalUrl": "https://parkplus.io/careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:26.952Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "09f75439ae8bc79d38f4966657bb97a19c2589d35b5a50749db9b0c0eafa0ff6",
+      "bodyBytes": 162516
+    }
+  ]
+}

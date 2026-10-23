@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import { analyzePublishableJobs } from '../utils/publishableJobMetrics.js'
 
-test('empty employer descriptions cannot become publishable through display text or metadata', () => {
+test('missing employer descriptions remain eligible without substituting display text for source content', () => {
   const empty = [undefined, null, '', ' \n\t\u00a0\u200b', '<p>&nbsp;<br></p>', '<!-- vacancy --><style>body{color:red}</style><script>ignored()</script>', '&#160;&#xA0;', '<br>'.repeat(10000), '<script>' + 'ignored();'.repeat(10000) + '</script>']
   const jobs = empty.map((sourceDescription, index) => ({
     jobId: `empty-${index}`, title: 'Engineer', location: 'India', applyUrl: `https://example.test/jobs/${index}`,
@@ -13,8 +13,24 @@ test('empty employer descriptions cannot become publishable through display text
   jobs.push({ jobId: 'source', title: 'Engineer', location: 'India', applyUrl: 'https://example.test/jobs/source', sourceDescription: '\u00a0'.repeat(10000) + '<script></script><!-- spacer -->'.repeat(100) + '<p>Build APIs.</p>' })
   jobs.push({ jobId: 'alias', title: 'Engineer', location: 'India', applyUrl: 'https://example.test/jobs/alias', jobDescription: 'Build APIs.' })
   const result = analyzePublishableJobs(jobs)
-  assert.deepEqual(result.eligibleJobs.map(job => job.jobId), ['legacy', 'source', 'alias'])
-  assert.equal(result.filterCounts.emptyDescription, 9)
+  assert.equal(result.eligibleJobs.length, 12)
+  assert.deepEqual(result.eligibleJobs, jobs)
+  assert.equal(result.filterCounts.emptyDescription, 0)
+  assert.equal(jobs[2].sourceDescription, '')
+})
+
+test('missing descriptions do not bypass geography, age, expiry, URL or individual-vacancy requirements', () => {
+  const base = { title: 'Engineer', location: 'India', applyUrl: 'https://example.test/jobs/1' }
+  const result = analyzePublishableJobs([
+    { ...base, jobId: 'eligible' },
+    { ...base, jobId: 'foreign', location: 'London, United Kingdom' },
+    { ...base, jobId: 'old', postingDate: '2026-08-01' },
+    { ...base, jobId: 'closed', closingDate: '2026-10-19' },
+    { ...base, jobId: 'invalid', applyUrl: 'javascript:alert(1)' },
+    { ...base, title: 'Current openings at Example', jobId: 'example-current-openings', applyUrl: 'https://wellfound.com/company/example/jobs' },
+  ], { now: new Date('2026-10-23T12:00:00Z') })
+  assert.deepEqual(result.eligibleJobs.map(job => job.jobId), ['eligible'])
+  assert.deepEqual(result.filterCounts, { nonIndia: 1, old: 1, closed: 1, invalidUrl: 1, nonJob: 1, emptyDescription: 0 })
 })
 
 test('excludes an open India job posted before the previous calendar month', () => {

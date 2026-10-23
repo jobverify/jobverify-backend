@@ -1,18 +1,15 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export const SOURCE = "fortanix"
-export const COMPANY = "Fortanix"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Fortanix added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
-
-export const run = async () => createFailClosedSentinelScraper().run()
+import {createFirstPartyHTMLScraper} from '../../scraper-support/shared/firstPartyHtmlJobs.js'
+import {attachInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {createSourceConfig} from './parser.js'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+export const SOURCE='fortanix',COMPANY='Fortanix',CAREERS_URL='https://www.fortanix.com/company/careers'
+export const run=async options=>{
+ const jobs=await createFirstPartyHTMLScraper(createSourceConfig(options)).run(options)
+ return attachInventoryEvidence(jobs,{...readInventoryEvidence(jobs),reason:'official-Fortanix-client-account337112;native-LLMS-count-and-complete-markdown/widget-ID-reconciliation;validated-Workable-India-details;whole-employer-scope-unresolved;cleanup-forbidden'})
+}
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

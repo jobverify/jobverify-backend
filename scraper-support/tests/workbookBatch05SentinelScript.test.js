@@ -73,6 +73,10 @@ const NON_GENERIC_PROVIDER_SOURCES = new Set([
 ])
 
 const EXPECTED_VERIFIED_ON_BY_SOURCE = {
+  supergaming: '2026-10-23',
+  synup: '2026-10-23',
+  trigyn: '2026-10-23',
+  wati: '2026-10-23',
   verygoodsecurityindia: '2026-09-13',
   sukoon: '2026-08-04',
   suprdaily: '2026-08-04',

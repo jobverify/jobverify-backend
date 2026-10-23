@@ -19,6 +19,11 @@ test('Dailyhunt resolves to its exact-name first-party provider', () => {
   )
 })
 
-test('Dailyhunt fails closed when its official operator careers page has no enumerable openings', async () => {
-  assert.deepEqual(await run(), [])
+test('Dailyhunt unavailable official recruiting cannot authorize an empty inventory', async () => {
+  await assert.rejects(run({fetchImpl:async url=>({url,status:503})}), error=>{
+    assert.equal(error.code,'DAILYHUNT_COVERAGE_GAP')
+    assert.equal(error.inventoryEvidence.reportedTotal,null)
+    assert.equal(error.lifecycleCleanupAllowed,false)
+    return true
+  })
 })

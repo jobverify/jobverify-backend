@@ -1,0 +1,2959 @@
+{
+  "source": "electronicarts",
+  "officialSurface": "https://jobs.ea.com/en_US/careers/Home/",
+  "capturedBy": "root managed browser same-origin public GET",
+  "files": [
+    {
+      "file": "first-listing-response.json.gz",
+      "rawBytes": 264710,
+      "rawSha256": "e62076a29ea823abcedf53e801f8644af5cedf2a7b72f8e52eb9a032c9b72a93",
+      "gzipSha256": "af09f634b0ca5fd694fc2375bfd86b848afecbf0f0efc24714d64390a3e1754f",
+      "responses": [
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=100&jobOffset=0",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=100&jobOffset=0",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:11.921Z",
+          "bodyBytes": 223508,
+          "bodySha256": "859f10dea748aa7bd7bd58b7f3065384d3db9491ba7a3f2a08fbeda83f468101"
+        }
+      ]
+    },
+    {
+      "file": "listing-responses.json.gz",
+      "rawBytes": 4258238,
+      "rawSha256": "f0b05e561ebe473e4460ffc450bc051cd0b49c8f1e248351cab742e5cf1b7833",
+      "gzipSha256": "ac11a6e9b60990b845b767724e900a5094746fde340a4ec55db21535faf03600",
+      "responses": [
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=0",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=0",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:36.019Z",
+          "bodyBytes": 223488,
+          "bodySha256": "1377e45f8a998ed8438d7e05bdaf2ab547a8846c38351c9f5681422239b881fb"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=20",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=20",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:30.683Z",
+          "bodyBytes": 227113,
+          "bodySha256": "f7d6afb696480f1a5150850d47440d53209df37dc3b149d3901dd1da98d5a195"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=40",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=40",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:29.532Z",
+          "bodyBytes": 228809,
+          "bodySha256": "173589a94baf1584b43a10f016ffd79616fc8655ccae4b8baf855761a4a3d401"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=60",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=60",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:31.774Z",
+          "bodyBytes": 247959,
+          "bodySha256": "fcd56ea8b69eefea9ebc6c6706723c18a7b7024aa287a7717a10b45fd76e1168"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=80",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=80",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:34.591Z",
+          "bodyBytes": 248249,
+          "bodySha256": "88704dae38302ac069151e256aaea86acc78104a2b3b311ab40a5caa5de50992"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=100",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=100",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:33.214Z",
+          "bodyBytes": 245914,
+          "bodySha256": "d25302936f09ccec5ea4ae2a8da41f6bc53c48d446544d024d8719c644302e1c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=120",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=120",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:37.664Z",
+          "bodyBytes": 227391,
+          "bodySha256": "2e40b4cfe4a432654ce8cbb8fb3ba18253f9eed3a739ff1f6a11b7cc2231fd0f"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=140",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=140",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:44.159Z",
+          "bodyBytes": 230308,
+          "bodySha256": "157eb95b5e5417f59c484dc160435ac5a05575f6297a59782f01c7bf92044681"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=160",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=160",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:40.163Z",
+          "bodyBytes": 241627,
+          "bodySha256": "6f753a37326455baed55d68e0d518437eeb27ba231b6e620297e58c4fd2a086f"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=180",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=180",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:41.512Z",
+          "bodyBytes": 240211,
+          "bodySha256": "b5b151fb29d9bdfe775f7f44fa8f25886f648c2bf7ea335a91c4bbaec5478023"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=200",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=200",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:42.655Z",
+          "bodyBytes": 234684,
+          "bodySha256": "f172c71a615c3bf06653980c24a87697ab57304b027bb5af81bf8e1a62c57e50"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=220",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=220",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:39.037Z",
+          "bodyBytes": 243135,
+          "bodySha256": "48d716e8d757bed9e8aca469da675f008b8c6f63b3580fcc92f1fd919d01403d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=240",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=240",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:52.220Z",
+          "bodyBytes": 238857,
+          "bodySha256": "c0fa1cedbcef9c4a255737b579b806ce04482e7ae9556338c9512c76c9aa3a43"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=260",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=260",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:48.492Z",
+          "bodyBytes": 235285,
+          "bodySha256": "1ed5d569edfc77fd538f1a60518b006ab124af387c603d723706f36d22c6afc5"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=280",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=280",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:51.066Z",
+          "bodyBytes": 233319,
+          "bodySha256": "f82f3ac1734b8ff1bdcf6817216cb988d66a7a4fcf438b83d80138a1e5fcff5d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=300",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=300",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:49.983Z",
+          "bodyBytes": 237718,
+          "bodySha256": "e40bdc938db1a85653aa19999b3140d5faa91abc3d3951be0febbf39c359cec7"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=320",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=320",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:47.000Z",
+          "bodyBytes": 236194,
+          "bodySha256": "74a6569334a1cf4c452175691cb04daa0f45921b0a761c4a2e0c238d8bf1e15d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=340",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/Home/?jobRecordsPerPage=20&jobOffset=340",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:51:45.459Z",
+          "bodyBytes": 106081,
+          "bodySha256": "25487c5b32a8439ea97c05d3c3f9fdb71c885223adadcea20cd18f6ccf378a65"
+        }
+      ]
+    },
+    {
+      "file": "first-detail-response.json.gz",
+      "rawBytes": 65135,
+      "rawSha256": "a8d6f40ae8f1a6f4b7acdda3c343714ef18b392241cbbc7bf5d0f655d39200e0",
+      "gzipSha256": "3174472a040a79e0a23249578d995c4c11d1557230fd9803e86b4f3d3a94f4d9",
+      "responses": [
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/215941",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/215941",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:52:15.061Z",
+          "bodyBytes": 62365,
+          "bodySha256": "e160299175068d44276a4fd6cbeba23774fa98eb0c2d7cd02ba4ce49b1aeedd5"
+        }
+      ]
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "rawBytes": 24989931,
+      "rawSha256": "bb63cc6d39bbdae9164c61d43af5091881648c46a13e9769ecc38ea393765ee1",
+      "gzipSha256": "1b8c1e585cbf7828bedb08702212f68c4f55063102dad4f056b7ec8e75a7f2bb",
+      "responses": [
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/215941",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/215941",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:28.478Z",
+          "bodyBytes": 62467,
+          "bodySha256": "18187858fa500f954417d24b631c895d80866a3e21a71f63caa87850cfd7955f"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/215948",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/215948",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:29.842Z",
+          "bodyBytes": 62467,
+          "bodySha256": "a379bb64a10834d9f65312079a15d75cc5e423526054761a44473cccb8586b54"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/215949",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/215949",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:27.112Z",
+          "bodyBytes": 62467,
+          "bodySha256": "ad1463fb9b59234dd0a753ad0737e87ff1e653113f479d55e0a03740d46fcc31"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Cinematic-Artist-Screenshot-Specialist/216337",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Cinematic-Artist-Screenshot-Specialist/216337",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:31.459Z",
+          "bodyBytes": 77492,
+          "bodySha256": "57af2f91a85b5b2fb3a77de98e39eea3e73064e6aac6529bef72ffba548d9d49"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Producer-Football-Data-Automation/216373",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Producer-Football-Data-Automation/216373",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:32.646Z",
+          "bodyBytes": 56921,
+          "bodySha256": "7a5e30c3a41c5a22e39401b7bf96e9038164bf1d45c932ae05818649608785ee"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/SE-III-SGP-Icon-Mode/216421",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/SE-III-SGP-Icon-Mode/216421",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:34.188Z",
+          "bodyBytes": 60788,
+          "bodySha256": "f571d325d58fd11604c0bbe4f17f2d6a262a34821140aba8576085d7e471421c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer/216434",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer/216434",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:38.420Z",
+          "bodyBytes": 61901,
+          "bodySha256": "e4f134fe6d42a879b29f0a8779cf3eb33b3a5c91d5b0567d5a628207a3b12a46"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/SE-II-SGP-CompApp/216448",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/SE-II-SGP-CompApp/216448",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:36.262Z",
+          "bodyBytes": 60133,
+          "bodySha256": "4f61eb00c70a45a0d96b195a75ff85affdc6dbc1b8347a920b4dc8eb295462f2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Engineering-Manager/216450",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Engineering-Manager/216450",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:37.308Z",
+          "bodyBytes": 60042,
+          "bodySha256": "f6d06acc73ab291dba75bc8dda67262f504ab328882e5ef398c5d88a054a1dfe"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Accountant-I/216487",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Accountant-I/216487",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:35.159Z",
+          "bodyBytes": 64605,
+          "bodySha256": "69a30d16b0324911433c0c54c179acc12bb6ecb1fea9a1f7dfd8728032d48431"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-III-Data-Insights/216499",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-III-Data-Insights/216499",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:49.105Z",
+          "bodyBytes": 70688,
+          "bodySha256": "2174068e3845ad7ca7ebd660c28de3de49970fff8c039f106e09f7d5c67a93d3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/FC-Social-Community-Intern/216512",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/FC-Social-Community-Intern/216512",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:41.032Z",
+          "bodyBytes": 69118,
+          "bodySha256": "dafa61215e1af725030b6d0295e4438d05978ebda3476f98cda69ca079f5f624"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Data-Science-Intern/215937",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Data-Science-Intern/215937",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:47.631Z",
+          "bodyBytes": 60825,
+          "bodySha256": "7bf36a0f391bb93db4d748ab1298cd800894574a0a8a46e8ab686c1e910baf1d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/JAVA-Software-Engineer-Intern/215938",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/JAVA-Software-Engineer-Intern/215938",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:50.609Z",
+          "bodyBytes": 59358,
+          "bodySha256": "07fbd8ef4210a1a9fbb59ac9ea006230e861dc744cacf8a70caf66fe0558ee63"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Billing-Coordinator-6-Month-Temp-Role/216378",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Billing-Coordinator-6-Month-Temp-Role/216378",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:46.069Z",
+          "bodyBytes": 72828,
+          "bodySha256": "1d7183e5e5a556b153747d9fb4d6c7bfa6329ffc3b97c5cc41ab31c514bdce95"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Data-Quality-Reviewer/216472",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Data-Quality-Reviewer/216472",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:43.519Z",
+          "bodyBytes": 55008,
+          "bodySha256": "bc9d4d2250826e105ff9881bdaffecb8ea7163e83e230a819f892f216a10240d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Lighting-Artist-Cinematics/216341",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Lighting-Artist-Cinematics/216341",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:51.609Z",
+          "bodyBytes": 74873,
+          "bodySha256": "93f57d3afb401437cf633f7b61a2a6de404ed8b9f0a765aeb3e37cf48a13bd9c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-IPS/216413",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-IPS/216413",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:39.901Z",
+          "bodyBytes": 72587,
+          "bodySha256": "85dab2890852e965a3791b50be0d9a4ed4359646ca721c1935383c5130823728"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Channel-Delivery-Intern/216496",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Channel-Delivery-Intern/216496",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:42.518Z",
+          "bodyBytes": 67665,
+          "bodySha256": "c53f5ae3f18b23eb69d8b19a7bf78e6b0120407e39300edfc5ec379c197fba0f"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Director-PE-Shared-Services/214164",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Director-PE-Shared-Services/214164",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:45.097Z",
+          "bodyBytes": 78016,
+          "bodySha256": "948c543b64bd997b78a636c9acf0a7a0479b99d45c9772e8e14ab7e97a2a72e3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Designer-II/215680",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Designer-II/215680",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:57.809Z",
+          "bodyBytes": 68924,
+          "bodySha256": "b246b0f653c97bf359c72e00d1bcb8647fe356e98a12ded3a8872f6ba621d18c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Quality-Designer/216258",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Quality-Designer/216258",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:54.029Z",
+          "bodyBytes": 58891,
+          "bodySha256": "1ce91da04b42f5c653c268d5512261775222d954b56902b71cfe9eaa7a158c9c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Quality-Designer/216259",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Quality-Designer/216259",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:03.311Z",
+          "bodyBytes": 59167,
+          "bodySha256": "3cff214195a108dc2e8f4a630b60d08c6d9c6410c65e3dcd2da6f4230815983f"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Payroll-Specialist/216403",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Payroll-Specialist/216403",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:59.227Z",
+          "bodyBytes": 62325,
+          "bodySha256": "7020297eaf1c296df94e898144d3d8bc936f6248f3028028f9058d119f120606"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Game-Technology-Platform-Development/216407",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Game-Technology-Platform-Development/216407",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:00.290Z",
+          "bodyBytes": 78530,
+          "bodySha256": "63b30aa9c2bd3ac730ab248bc75aa56e7e59ed23f9c2842574bc77f3bf95eab3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/DevOps-Engineer-1-year-contract/216418",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/DevOps-Engineer-1-year-contract/216418",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:55.081Z",
+          "bodyBytes": 61391,
+          "bodySha256": "cc0d11692aeb668c6336ba2d01d6feb23c049a3c4d85ed1c3b2f50799b906fa6"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Corporate-Paralegal/216419",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Corporate-Paralegal/216419",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:01.920Z",
+          "bodyBytes": 70223,
+          "bodySha256": "14cd72ddc4b8b3fcce3961ef402353109f365e215ef80e8ca6b2e5fc4ff8a485"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Quality-Designer-II/216420",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Quality-Designer-II/216420",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:53.023Z",
+          "bodyBytes": 67179,
+          "bodySha256": "2de3083039bfa219793bd5e6c78917e294d6ad341d4942ced9c43b226163c0f8"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Tax-Manager/216456",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Tax-Manager/216456",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:04.840Z",
+          "bodyBytes": 63646,
+          "bodySha256": "4e43c0782cc870094427e6ceb3f73f28b357e26426d71ea86edb7699e21a839a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-EA-Sports-FC/216469",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-EA-Sports-FC/216469",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:58:56.288Z",
+          "bodyBytes": 93046,
+          "bodySha256": "87c31cacd1e49b5d10ad8d164379df03f6d05d6d1c7e78620d8cf41c557f52fd"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Animator-Co-op-Sports-Tech/216233",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Animator-Co-op-Sports-Tech/216233",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:07.442Z",
+          "bodyBytes": 80846,
+          "bodySha256": "930437bb1220b00ca89bc41e21b543911555b2cfc586bcbaa12a0da11f6251ad"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/AI-ML-Software-Engineer-Intern-Summer-2027-8-Months-Masters-QVS/216234",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/AI-ML-Software-Engineer-Intern-Summer-2027-8-Months-Masters-QVS/216234",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:10.831Z",
+          "bodyBytes": 82013,
+          "bodySha256": "48c492d8502762666df2676bd83b77149f75b98ab102735192e060208d73707c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/FC-Franchise-Campaign-Marketing-Intern/216355",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/FC-Franchise-Campaign-Marketing-Intern/216355",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:08.667Z",
+          "bodyBytes": 74103,
+          "bodySha256": "78912060b399ac1d5a5f006bce465b2d13b87f2ae5407ee2c1a4f3599690adc6"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/UI-Scripter-Intern/216359",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/UI-Scripter-Intern/216359",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:09.690Z",
+          "bodyBytes": 66019,
+          "bodySha256": "4b128e5d471723142cb9ab0b8ce268a41dc3c41f6773f781ae74ef3e46216fdd"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Client-AI-Software-Engineer-Intern/216364",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Client-AI-Software-Engineer-Intern/216364",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:17.636Z",
+          "bodyBytes": 66779,
+          "bodySha256": "a1806387c3116e38dd3a308d8244edefc5115511959d3ef92badd997a93e379d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Design-Intern/216365",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Design-Intern/216365",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:16.206Z",
+          "bodyBytes": 67628,
+          "bodySha256": "24c1f28ff0418e6aa223ad9a01e6ef87da157dd692604c746b6dc2d750220237"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Director-EA-Sports-FC/216369",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Director-EA-Sports-FC/216369",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:14.679Z",
+          "bodyBytes": 65646,
+          "bodySha256": "7c0ead69a1ea0482e5d02bac620461d3d7c3126bb6435b2d287753e9df09895c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Legal-Counsel/216409",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Legal-Counsel/216409",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:12.141Z",
+          "bodyBytes": 59304,
+          "bodySha256": "9b686ff50c92001d9f9e34715e8da1bab439f4cff6508bea6c9348c3f02111cb"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Program-Manager/216414",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Program-Manager/216414",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:06.634Z",
+          "bodyBytes": 71770,
+          "bodySha256": "54dd27b0d9be75986efcf833c69554cb036d5a6c0b8eafd80752cdd838095f03"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Product-Director/216463",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Product-Director/216463",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:13.670Z",
+          "bodyBytes": 66876,
+          "bodySha256": "240610b9c643edbffc3ab03661a547897947b2c0dd2337f22a57831b7c2bca3a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Program-Manager/216415",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Program-Manager/216415",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:26.678Z",
+          "bodyBytes": 75361,
+          "bodySha256": "eac0d892eb8e80da660917ed6504c5beeac5c2a6326f97c60effe75838bb59c6"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Client-Engineer-Unannounced-3A-Project/216453",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Client-Engineer-Unannounced-3A-Project/216453",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:19.142Z",
+          "bodyBytes": 152318,
+          "bodySha256": "2fe920e08f926cef3ccfb6b4b6fb28fce523e5190e19033a78059967ae0ac5f8"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Tax-Analyst/216404",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Tax-Analyst/216404",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:30.488Z",
+          "bodyBytes": 59887,
+          "bodySha256": "b33fdbca198571bb14a2ca5e816d2ff6cbe2b0174b0094535c7eb19c7329ff11"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Co-op/216406",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Co-op/216406",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:28.092Z",
+          "bodyBytes": 79722,
+          "bodySha256": "03fc151befa184f71967d8801b4eff17f71ba1e93fcf89f8d7803b9e1a707044"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Quality-Engineer/216433",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Quality-Engineer/216433",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:21.069Z",
+          "bodyBytes": 73248,
+          "bodySha256": "8ec39830e9d59891d912141ee108ea434a6b7eabcedee3403e04b52f869edd71"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-NET-EA-SPORTS-FC/216385",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-NET-EA-SPORTS-FC/216385",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:24.967Z",
+          "bodyBytes": 71386,
+          "bodySha256": "1af63394b39f81b40f8204680b7016af2e3b4663f616b225ac73c80d5a5e505e"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-Founding-Engineer-AI-Native-Product-Incubation/216399",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-Founding-Engineer-AI-Native-Product-Incubation/216399",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:29.500Z",
+          "bodyBytes": 85183,
+          "bodySha256": "9e4263cbac08cfcd821a2e165c675c5611b3561180e4904a42622bf72bb6f06b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Co-op-Summer-2027-8-Months-Sports-Technology/216225",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Co-op-Summer-2027-8-Months-Sports-Technology/216225",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:23.742Z",
+          "bodyBytes": 84984,
+          "bodySha256": "30063c5acec057d346035b83748e0f02cc78913a670ef22491d15187352e15fd"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern-Summer-2027-8-months-UFC/216226",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern-Summer-2027-8-months-UFC/216226",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:20.018Z",
+          "bodyBytes": 76483,
+          "bodySha256": "8ec5cb09023f145fff7e77e57fbbc15d04117e91c2d0f8bffa32101d4a4d8e1a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Software-Engineer-Co-op-FC/216230",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Software-Engineer-Co-op-FC/216230",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:22.741Z",
+          "bodyBytes": 79412,
+          "bodySha256": "d7a32ea5a5909327e135271a70ac867a42657e6e766d3be7b92cacee18ff0449"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/C-Generalist-Software-Engineer-Co-op-FC/216231",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/C-Generalist-Software-Engineer-Co-op-FC/216231",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:33.685Z",
+          "bodyBytes": 83504,
+          "bodySha256": "85c6b0860852bdc186817e757d0a04d58908febea0daa1e6b642c5916d402f9a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Sr-Accountant-I/215904",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Sr-Accountant-I/215904",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:43.006Z",
+          "bodyBytes": 63532,
+          "bodySha256": "f2d10f78581e65615735d81af4d81845af535303cb851cb6e18ead58f37db220"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-II/216313",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-II/216313",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:39.644Z",
+          "bodyBytes": 68743,
+          "bodySha256": "30a468e6be6ce817030b0fc97eaebde6f36edf8cd47f7c9e074e886ef948f89d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/PX-Product-Research-II/216397",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/PX-Product-Research-II/216397",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:31.967Z",
+          "bodyBytes": 67511,
+          "bodySha256": "15511bb849f09359a0a3408afe4db6b2430a6d3bf5b648e047fcec6c32fb14ba"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Art-Director-Unannounced-3A-Project/216400",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Art-Director-Unannounced-3A-Project/216400",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:40.633Z",
+          "bodyBytes": 73527,
+          "bodySha256": "ec055331b18a3e1e3ac3153341d04642f5bb12f50d37429d9a6672d58c95cb93"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Regional-Lead-Producer-Unannounced-3A-Project/216401",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Regional-Lead-Producer-Unannounced-3A-Project/216401",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:34.890Z",
+          "bodyBytes": 68877,
+          "bodySha256": "62030cf9c41a9c21c4ff1225f6ab2a25f87e8f9ea9388fd79a9638ceff027767"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Tools-Technology-Transformation/215804",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Tools-Technology-Transformation/215804",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:36.254Z",
+          "bodyBytes": 76281,
+          "bodySha256": "599fba550f9288d9bff6bd91dd4d864e1f2256cba48f94298f779e85a1cb677f"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Project-Management-Intern/216036",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Project-Management-Intern/216036",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:38.642Z",
+          "bodyBytes": 58685,
+          "bodySha256": "95fc0aad53735447e6359b7ecb1cc291630fcf8b4d6183c128e09159f201beca"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-EA-Sports-FC/216167",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-EA-Sports-FC/216167",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:41.636Z",
+          "bodyBytes": 64419,
+          "bodySha256": "3cee18546ab3ed7a15e771cc2badf01fe08a2b29bfa96b434bfde6e3079d9a77"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Product-Management-Intern-Fan-Care-Community-Care-Summer-2027/216182",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Product-Management-Intern-Fan-Care-Community-Care-Summer-2027/216182",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:37.598Z",
+          "bodyBytes": 74886,
+          "bodySha256": "2c194e8b52eb869c68938938454353e61ffcce2dcefe57cc16549071ae2dc003"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Strategy-Program-Management-Intern-Fan-Care-Community-Care-Summer-2027/216184",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Strategy-Program-Management-Intern-Fan-Care-Community-Care-Summer-2027/216184",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:44.348Z",
+          "bodyBytes": 76186,
+          "bodySha256": "385eddc79055332242a472e45254aec8cc3c0d6b50cecbb78736b294b243ca4c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Unreal-Engine-Programmer/216319",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Unreal-Engine-Programmer/216319",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:46.005Z",
+          "bodyBytes": 74444,
+          "bodySha256": "3a806a350ff03140722ff12ec7047e9bcd54ff3dd41f6385dc2e365fb19be775"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Program-Manager-and-Analyst-HR-Transformation/216354",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Program-Manager-and-Analyst-HR-Transformation/216354",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:55.936Z",
+          "bodyBytes": 69561,
+          "bodySha256": "e71e6b147981b063330b360d4ebd7196084a4c53f7a0747b91fea1d1cd0a06e5"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Environment-Art-Intern/216298",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Environment-Art-Intern/216298",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:54.925Z",
+          "bodyBytes": 68769,
+          "bodySha256": "0a0c534e7315d9a7c4a5b0864a2ddab6bcf409b2f648458680a87601bde6f1de"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Audio-Artist-III-FC/216309",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Audio-Artist-III-FC/216309",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:47.155Z",
+          "bodyBytes": 81688,
+          "bodySha256": "a4dee81cfc475e692d8420bf3804552c3104bbba84ceadde6415196ace0b5ce9"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Audio-Artist-II-FC/216315",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Audio-Artist-II-FC/216315",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:49.565Z",
+          "bodyBytes": 80020,
+          "bodySha256": "03038ed4df62634a6886c139f8ddaa8a4e2ff1fe1698117d6cf5200b8eeb4659"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-UX-UI-Designer/216096",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-UX-UI-Designer/216096",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:51.960Z",
+          "bodyBytes": 66310,
+          "bodySha256": "e69ec8b3ef66fcb41e32143ad284e2e9c14a2978cdfd10851e83ece0656993b3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Research-Engineer-Worlds/216278",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Research-Engineer-Worlds/216278",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:53.486Z",
+          "bodyBytes": 65143,
+          "bodySha256": "85235024d36fcdd8af06de16bd9661aae8396a98be7904b7d784d95914856d08"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Research-Scientist-Neural-Animation/216279",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Research-Scientist-Neural-Animation/216279",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:50.522Z",
+          "bodyBytes": 65335,
+          "bodySha256": "fbc96e90f7e7c6ee35413bbfb7477a438b484be8227fcff4e4b89f49a957bed9"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-C-EA-SPORTS-FC-12-Month-Temporary/216290",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-C-EA-SPORTS-FC-12-Month-Temporary/216290",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:47.940Z",
+          "bodyBytes": 67324,
+          "bodySha256": "2250e2fe04b9dfcd7fb50ed05ffee55d138212402f8bd9c695b4a0b4458e1a03"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Sound-Design-Intern/216299",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Sound-Design-Intern/216299",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:03.377Z",
+          "bodyBytes": 69242,
+          "bodySha256": "dd219d49b63367561e6623a40ca554cfaf8e561f697c68bac26b35285b3c857d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-EA-Sports-FC/216166",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-EA-Sports-FC/216166",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:06.411Z",
+          "bodyBytes": 90403,
+          "bodySha256": "14a6c09be15daf8a31f3a3fcd49c7d68aea83358b762f31fdeecdd9916291dc8"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Customer-Experience-Operations-Intern-Summer-2027/216183",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Customer-Experience-Operations-Intern-Summer-2027/216183",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:58.964Z",
+          "bodyBytes": 62745,
+          "bodySha256": "0253cc4d9876bd0972101afcf5d6a062f0d826eb6327ead477c6a6ab52e709c7"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-C-C-Frostbite/216282",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-C-C-Frostbite/216282",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:00.617Z",
+          "bodyBytes": 66618,
+          "bodySha256": "0eb279466e3c43d642f5ac019a92386e374266679acdc0c45708578b9a99c57a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Rigging-and-Animation-EA-SPORTS-F1/216017",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Rigging-and-Animation-EA-SPORTS-F1/216017",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:10.573Z",
+          "bodyBytes": 59127,
+          "bodySha256": "4bf0d0164f8572a5722874b29989d1ca033616abc4732a0dc9f2752735e8de77"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Sr-Software-Engineer-IAM/216122",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Sr-Software-Engineer-IAM/216122",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:04.630Z",
+          "bodyBytes": 64638,
+          "bodySha256": "4eb9217a3a5d72ee40517d93172c12a716c6142238eec98d740da4a0b1d592b0"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Gameplay-Experience/216275",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Gameplay-Experience/216275",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:07.703Z",
+          "bodyBytes": 67029,
+          "bodySha256": "1b6e03274555ad0caa1b9b0045787d5c3384cf07145ecc5017f6c5aa9286e307"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Developer-II-Agentic-Workflows/216277",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Developer-II-Agentic-Workflows/216277",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:02.301Z",
+          "bodyBytes": 66388,
+          "bodySha256": "60a7d32ed855e5431226d1b49f105194a75df79612774724f5ce28cad856fed8"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Agentic-Workflows/216281",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Agentic-Workflows/216281",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:59:57.605Z",
+          "bodyBytes": 66528,
+          "bodySha256": "4d7993138efcaa1f17c64182c25e15234e94850e3fb72e70971af4240de81fe5"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Security-Software-Engineer/215801",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Security-Software-Engineer/215801",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:09.238Z",
+          "bodyBytes": 80923,
+          "bodySha256": "03da300a7b56ba85f1460098e9488d2d75cecf0886639ea28df8a7ff5b1e2030"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-ML-Engineer/216087",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-ML-Engineer/216087",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:12.276Z",
+          "bodyBytes": 65914,
+          "bodySha256": "bedf782b96ea7348412caf7fe3e575e78aa4397059e4d7b3805da952d0e798d5"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Game-Integration-Capture-Reliability/216088",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Game-Integration-Capture-Reliability/216088",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:20.024Z",
+          "bodyBytes": 67979,
+          "bodySha256": "91062b28c9e270b01e333ff0bbc28eb694355503e5203dd9870bd4676ad2f7c2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Director-Game-Data-Capture/216090",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Director-Game-Data-Capture/216090",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:13.438Z",
+          "bodyBytes": 79896,
+          "bodySha256": "9acfa4f01adef1cca648ac66445b43c0a76eeea9d8f4066a5a6b59593fbfaf60"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Animator/216091",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Animator/216091",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:23.382Z",
+          "bodyBytes": 80594,
+          "bodySha256": "3012ff220b6c83af09b86faea0f5e809df550d22393d7e6af761e922c0b023c1"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Environment-Artist/216093",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Environment-Artist/216093",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:17.413Z",
+          "bodyBytes": 79798,
+          "bodySha256": "28f3adec59407a185151b48099da7f30d2dc45a466bffba8bc4c84324f73082a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Asset-World-Data-Systems/216095",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Asset-World-Data-Systems/216095",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:21.589Z",
+          "bodyBytes": 79693,
+          "bodySha256": "122e19c17e1c16ec234c956b0d01ef47a5f7e38c1be191ae11cdac545f4dbf4e"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Character-Artist/216101",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Character-Artist/216101",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:16.117Z",
+          "bodyBytes": 82127,
+          "bodySha256": "75984fb2d330cbc361777b53d706d6c51b4206b1091b2712a8d86339da39fbee"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Director/216104",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Director/216104",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:18.751Z",
+          "bodyBytes": 71257,
+          "bodySha256": "4600fc08be4d6067563cf2aee025b58ef592d43061bc175cdfcbcbba235024f5"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Analyst-EA-Sports-FC/216170",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Analyst-EA-Sports-FC/216170",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:14.578Z",
+          "bodyBytes": 72104,
+          "bodySha256": "0d9d42044e062f19581e576c425653f502e4252e9b584772ce746481fd90d386"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Multimodal-Capture-Platform/216203",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Multimodal-Capture-Platform/216203",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:25.025Z",
+          "bodyBytes": 67589,
+          "bodySha256": "261187cbc9e552d4438ff0d14ffe81b4bf346d0e5840986e7dc9699da42cb644"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-College-Football/216265",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-College-Football/216265",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:26.787Z",
+          "bodyBytes": 80223,
+          "bodySha256": "64cf4732f81c409ad4f4ec71db450a894cb22aaff39fff9a885920bf15e8b779"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Operations/216270",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Operations/216270",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:33.120Z",
+          "bodyBytes": 74735,
+          "bodySha256": "d648c5eb11f356f8d232927f6101a48761da610b0ed68461eca6589e8cd87218"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-III/216320",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-III/216320",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:29.106Z",
+          "bodyBytes": 62706,
+          "bodySha256": "fce960c8f7d7cb7d4665e780a8fb45be108844395d3058a2d1e3a145fdf16ce2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Rigging-EA-SPORTS-Technology/216316",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Rigging-EA-SPORTS-Technology/216316",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:27.817Z",
+          "bodyBytes": 62458,
+          "bodySha256": "3996cedfd8307db5f300d2f88ad9f22dc6c5fb2d362d4968bbd340d787f7af87"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Accountant-II/215906",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Accountant-II/215906",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:38.547Z",
+          "bodyBytes": 61441,
+          "bodySha256": "529e2b9ba7779c44b20385ddf8f75aec3d3ee22cfddc25d60f80277e8910950f"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Research-Scientist/216099",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Research-Scientist/216099",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:35.916Z",
+          "bodyBytes": 67767,
+          "bodySha256": "bccec29b2c5b22dadf1571be1ac606a721d54fded239096d3cf3be85fb6b029b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Director-Research-and-Engineering/216103",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Director-Research-and-Engineering/216103",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:34.547Z",
+          "bodyBytes": 70303,
+          "bodySha256": "92caecd6ce3502d14baae8217e9069a4554ec60dded6cf9bce2bad1b24fe9749"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Research-Engineer/216107",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Research-Engineer/216107",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:37.439Z",
+          "bodyBytes": 68759,
+          "bodySha256": "77281fbde613f288088a28feaaf9f980eef704f050ef26071c5c9daa766e1b3c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Team-Lead-PE-Shared-Services/216125",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Team-Lead-PE-Shared-Services/216125",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:29.964Z",
+          "bodyBytes": 65788,
+          "bodySha256": "9110e80897554fda1e018cb82acbc95b7418ba07fb0ac7d2b0583a679d5fa452"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Character-Artist-EA-Sports-UFC/216159",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Character-Artist-EA-Sports-UFC/216159",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:31.427Z",
+          "bodyBytes": 77305,
+          "bodySha256": "f622bb48f0a999a09ddf6bc6be8a9eeb41c55ef44b1123bf8c512d709a2a4373"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Audio-Software-Engineer/216092",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Audio-Software-Engineer/216092",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:50.138Z",
+          "bodyBytes": 69396,
+          "bodySha256": "2bc7e68515db0839827f717ed936b6fb3bfb53a3f9d3d35512f153db9e8f1b41"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Cinematic-Artist-American-Football/216055",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Cinematic-Artist-American-Football/216055",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:40.100Z",
+          "bodyBytes": 72571,
+          "bodySha256": "ce38946ab4247d0e312db1e497c14bd563a61de1f9609cc8e3e5173921080736"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-Technical-Director-Neural-Rendering/216086",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-Technical-Director-Neural-Rendering/216086",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:52.551Z",
+          "bodyBytes": 66795,
+          "bodySha256": "44148524565bae84f006816cf1afd59e84494c536b621fdf2a1cae73c9043070"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/MLOps-Developer/216108",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/MLOps-Developer/216108",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:45.916Z",
+          "bodyBytes": 75353,
+          "bodySha256": "d2951d76e2ef7024c28a63e1fdc3bc2f2f93208b2e965461abf8c4080062fbe7"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Infrastructure-Developer/216124",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Infrastructure-Developer/216124",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:41.941Z",
+          "bodyBytes": 75803,
+          "bodySha256": "a8d6ba0d77a8cd0ec29ebd475a09d0f8cf9a805fdbdd7367e8b1feab27d8bfd8"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Compensation/216127",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Compensation/216127",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:47.386Z",
+          "bodyBytes": 67654,
+          "bodySha256": "5a02ca9197510fe2243b7b81b58196ddb54c64a892c3ec57ba7c99d2529fe702"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Character/216143",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Character/216143",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:44.386Z",
+          "bodyBytes": 65489,
+          "bodySha256": "2b9b78a95c4fed731159f9de9d64dca642c37d934bf4d2b9709c114f5b7a0521"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Live-Producer/216144",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Live-Producer/216144",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:48.716Z",
+          "bodyBytes": 63813,
+          "bodySha256": "7a0c3666309f9ad7d39af2af123d50b0d7b235302fea3b56533795b949fe6ca6"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Environment/216145",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-Environment/216145",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:51.325Z",
+          "bodyBytes": 65079,
+          "bodySha256": "dd6d1af6fe784cfd4daa29dd19fff203a15bf011c84e704ef1b1ed8aaca3ca15"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Backend/216089",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Backend/216089",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:43.106Z",
+          "bodyBytes": 80765,
+          "bodySha256": "09191669c7c9322f149b1215d4265adb19173878d679368856d83a5062e5a1da"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Generative-Engine-Tools/216094",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Generative-Engine-Tools/216094",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:01.018Z",
+          "bodyBytes": 78912,
+          "bodySha256": "4e03cb18834ec61796121b0347b81d79c5eecece6d101b04982cd6027ecb060a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Networking/216106",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Developer-Networking/216106",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:56.668Z",
+          "bodyBytes": 75795,
+          "bodySha256": "af8ae9280f53665781eafed778b369f12f1e911acca747e01f532c1fd6f6ebf3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-III-Site-Reliability-Engineering/216188",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-III-Site-Reliability-Engineering/216188",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:06.475Z",
+          "bodyBytes": 108907,
+          "bodySha256": "bb2b31325f6fbac55fb2736d4d90b911343476cc2ec9c74b6105e056bbfde039"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Gameplay-Animator-EA-Sports-FC/216111",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Gameplay-Animator-EA-Sports-FC/216111",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:02.015Z",
+          "bodyBytes": 69342,
+          "bodySha256": "c520480146ff2d4459a3027ff26a83a6d33bd331c56297f718abc2fc45d6b145"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Animator-Battlefield/215970",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Animator-Battlefield/215970",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:03.651Z",
+          "bodyBytes": 65669,
+          "bodySha256": "1f0e5947add7307ec3c0696ada0ab710b78dddcc2db8f9ee6c0e9a6549650d82"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Compensation-Analyst/216079",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Compensation-Analyst/216079",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:55.166Z",
+          "bodyBytes": 67595,
+          "bodySha256": "8e47a1f8c7e7c82d537c638fe017f153ad9ce9d08d3ee7efebeae2037302f87c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-C-EA-SPORTS-FC/216031",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-C-EA-SPORTS-FC/216031",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:59.342Z",
+          "bodyBytes": 72861,
+          "bodySha256": "255d3b1c41acc338a94d720f5ed49c1776cfdc59eee6a63e359de640c754188d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Director-Business-Development/216041",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Director-Business-Development/216041",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:54.154Z",
+          "bodyBytes": 72098,
+          "bodySha256": "6f31de748ff9c92807a9f64935a64bf64cae9fa3fce6ca43e0317cf9fd4cc3c7"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Workplace-Experience-Specialist/216044",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Workplace-Experience-Specialist/216044",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:04.724Z",
+          "bodyBytes": 67441,
+          "bodySha256": "c5f49efcf2916886f92acf0f9990812c500cf9b752628f264bf40950dea03538"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Director-Workplace-Design/216045",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Director-Workplace-Design/216045",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:00:58.055Z",
+          "bodyBytes": 71091,
+          "bodySha256": "cbb62f5e1bb4c78ac70752103464f6bf2995b923202fa9ada9fe9e4b386eeb51"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Designer-System/216076",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Designer-System/216076",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:10.654Z",
+          "bodyBytes": 60134,
+          "bodySha256": "4f60a59dc0f762248b544e13bf961f9b6ee3e0bf1c79feab8842528a0e18620c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Site-Reliability-Engineer/215922",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Site-Reliability-Engineer/215922",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:17.222Z",
+          "bodyBytes": 61788,
+          "bodySha256": "77065c3b119b7e3defcffaf5501ebea7b96d55bf79680b325b746f3cbd929dce"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Designer-Gameplay/216061",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Designer-Gameplay/216061",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:13.143Z",
+          "bodyBytes": 62103,
+          "bodySha256": "1732a0e62fa7689f68a10d264307d31dd8948d4da9b947e68a11d8522954a7ba"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Experience-Designer-Sports-Network/216049",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Experience-Designer-Sports-Network/216049",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:11.635Z",
+          "bodyBytes": 74624,
+          "bodySha256": "c1449aee3e4f6fc1c72862529aa991c218e52bb3a44dae00fa1e1564e31ee8b5"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Director-Product-Management-Sports-Network/216052",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Director-Product-Management-Sports-Network/216052",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:08.074Z",
+          "bodyBytes": 63063,
+          "bodySha256": "b57a9aed6e58e65361c8b44d3f2df149631ce2c3059d9c6a15b90b3d186b632d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/UI-Artist/215285",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/UI-Artist/215285",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:19.778Z",
+          "bodyBytes": 69722,
+          "bodySha256": "ab2a1373a4e015e61adcac13984e1270fc8f5a4f2ce0b25055bcf1dd19bd349b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Concept-Artist-Muralist-Street-Art-EA-SPORTS-FC/215871",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Concept-Artist-Muralist-Street-Art-EA-SPORTS-FC/215871",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:14.881Z",
+          "bodyBytes": 66331,
+          "bodySha256": "002ad6e3c7246ea0ad9b2f8c005bece2325027d6bc2e4a60aa08bccdb0626f45"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-On-Device-Machine-Learning/216019",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-On-Device-Machine-Learning/216019",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:15.824Z",
+          "bodyBytes": 60464,
+          "bodySha256": "840a0e4a0edd2ca99c959af832ef07be632f4bc2d2da6788a001794a3b4f3158"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Level-Designer/215997",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Level-Designer/215997",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:09.507Z",
+          "bodyBytes": 58302,
+          "bodySha256": "3ae5ede25d6828c21941d9473bf4161c3087ebde5e8f735a7d3c0a68012b29b5"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Level-Artist/215998",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Level-Artist/215998",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:18.282Z",
+          "bodyBytes": 60702,
+          "bodySha256": "f740160ad333040424bed0d8b884eb9a17c0bdcf0eb3eb2ac0a4f6cbde54d84b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Level-Artist/215999",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Level-Artist/215999",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:21.273Z",
+          "bodyBytes": 61679,
+          "bodySha256": "4b85bfb7f265afedc39b2055c5cf8f1977d86f4a460b87307a9a8ca66d20d1e8"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Art-Director-Create/216022",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Art-Director-Create/216022",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:33.235Z",
+          "bodyBytes": 60272,
+          "bodySha256": "1de290c476b59c45534d132abd3098526ac57369d08b1c6c421613d903917d85"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Software-Engineering/215987",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Software-Engineering/215987",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:25.134Z",
+          "bodyBytes": 63308,
+          "bodySha256": "39f093a27bb6b96a80db42554e0ffb39e70d5028d1145090c9348d7334435119"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Core-Software-Engineer/215613",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Core-Software-Engineer/215613",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:29.578Z",
+          "bodyBytes": 62762,
+          "bodySha256": "8c0d2e6946e0474d727b413ea328325449961ba6e589b38bfa568911cb83e03d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/UI-Software-Engineer-Scalable-Platform/215618",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/UI-Software-Engineer-Scalable-Platform/215618",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:26.597Z",
+          "bodyBytes": 60717,
+          "bodySha256": "261c34b09d90369b7cb6d9d4c3bf606c3acd70f1eca77e8c86a03ad2f5f63c93"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Detection-Engineer/215727",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Detection-Engineer/215727",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:32.096Z",
+          "bodyBytes": 63074,
+          "bodySha256": "059f050ae7e45a56900e06b8696cbffa9840cc492745e30963ce118b6c0658ec"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Director-Finance-FP-A-Shooters-ARPG/215907",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Director-Finance-FP-A-Shooters-ARPG/215907",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:22.555Z",
+          "bodyBytes": 72185,
+          "bodySha256": "9e298a0a96f8395a7243229f85a012615878150e545fb764aa4bb632b72b799d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/RFT-Technical-Artist-DCC-Tools-EA-SPORTS-Technology/215839",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/RFT-Technical-Artist-DCC-Tools-EA-SPORTS-Technology/215839",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:30.693Z",
+          "bodyBytes": 64661,
+          "bodySha256": "e5be58468a71ad4fea9fc4d8079c9684098e879d1ce71fa7d787e425b1dace06"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Lead-Game-Product-Manager-EA-Sports-FC/214892",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Lead-Game-Product-Manager-EA-Sports-FC/214892",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:28.300Z",
+          "bodyBytes": 82456,
+          "bodySha256": "4013eb5623a69e9fadcb1e1f81b03b0d4dcdab080fcb5153572e6925c66e4240"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Quality-Designer-II-FC-Live-Curation-QV/215870",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Quality-Designer-II-FC-Live-Curation-QV/215870",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:23.699Z",
+          "bodyBytes": 70786,
+          "bodySha256": "658938079a3c0404f26ed74dd4e5e30fd37f256f98f7e5413de33daf3114a882"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-Technical-Artist/215623",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-Technical-Artist/215623",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:35.000Z",
+          "bodyBytes": 60049,
+          "bodySha256": "a131f01db4fc3781a65ed7089b803152509b78bf870be6f2e6c25135cc67e806"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Producer-EA-SPORTS-FC/215784",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Producer-EA-SPORTS-FC/215784",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:44.124Z",
+          "bodyBytes": 110469,
+          "bodySha256": "96cfef2c435a45426f2c9a358ef156a9838a7763f863c07eed288da10742090b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Technical-Artist-Rigging-EA-SPORTS-Technology/215840",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Technical-Artist-Rigging-EA-SPORTS-Technology/215840",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:40.695Z",
+          "bodyBytes": 81479,
+          "bodySha256": "ab888f60165d653eed10ebe131f2a7af59a4f2723e1bce7b8a337772f9ddcd66"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/EA-Sports-FC-QV-Quality-Designer-Companion-App/215869",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/EA-Sports-FC-QV-Quality-Designer-Companion-App/215869",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:41.758Z",
+          "bodyBytes": 63702,
+          "bodySha256": "52f8168ba8edfd73474eb8d6ab6a2a0227b69f817c713956e3bbab7830a74400"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Project-Manager-DevOps-team/215856",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Project-Manager-DevOps-team/215856",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:46.468Z",
+          "bodyBytes": 57384,
+          "bodySha256": "b2994a15e6a894d77d0f2144223700ff7d22fd56d253b09b876acc081a7cd328"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Global-Travel/213966",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Global-Travel/213966",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:39.065Z",
+          "bodyBytes": 63295,
+          "bodySha256": "2f1d1548d5d5fe77eaf2f4b2b50c033defc425339a4312e070d5d1344663c3be"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Animation-Director/215403",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Animation-Director/215403",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:37.576Z",
+          "bodyBytes": 59224,
+          "bodySha256": "9afdd944d234bb8baa7d9abec35b9814ea26d07d40cebbc83d1c65c64e4ba4b0"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Director-EA-SPORTS-FC/215794",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Director-EA-SPORTS-FC/215794",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:42.870Z",
+          "bodyBytes": 70788,
+          "bodySha256": "80f946aa8bd61c6fd4a8ccee64cfdf9b6ee56b83458fc519d0b613855379fa10"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Net/215836",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Net/215836",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:36.170Z",
+          "bodyBytes": 65468,
+          "bodySha256": "429742ea76c964a7237146f8fa9f3d7a91735b63921a158424753d5dc8af648b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/NET-Software-Engineer-EA-SPORTS-FC/215743",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/NET-Software-Engineer-EA-SPORTS-FC/215743",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:45.390Z",
+          "bodyBytes": 58677,
+          "bodySha256": "ce7d2b762442af9d90708c5fc53a6972ae04c64e00f6a86c324f2ab03f41aaea"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Developer-Engine-Performance-Battlefield/215616",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Developer-Engine-Performance-Battlefield/215616",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:00.053Z",
+          "bodyBytes": 60005,
+          "bodySha256": "8ac0632084017546df0f70633980b17ee01559ebad5a92273bf2b93f992e12a6"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Server-Engineer-Unannounced-3A-Project/215702",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Server-Engineer-Unannounced-3A-Project/215702",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:55.863Z",
+          "bodyBytes": 76943,
+          "bodySha256": "4b8a7d96ad136067a60223c1e82366c4e08e70a5bc409a0fb8cf0335c3960ff4"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Developer-Core-Engine-Battlefield/215620",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Developer-Core-Engine-Battlefield/215620",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:49.009Z",
+          "bodyBytes": 68655,
+          "bodySha256": "140526dd0058ca353944c82a18ea6e224352375f24b1b92f8fd5766230640c55"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Character-Artist/215657",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Character-Artist/215657",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:50.237Z",
+          "bodyBytes": 74065,
+          "bodySha256": "a7eb7801406aa5d0d031f0668bdfd9ca2ff4d9a02c03b51f966a9962333443b2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Character-Artist-II-EA-Sports-FC/215666",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Character-Artist-II-EA-Sports-FC/215666",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:57.395Z",
+          "bodyBytes": 74381,
+          "bodySha256": "4bbec0d542c8074997d5cb796501f6d286e986f6458d9c6082e9ebc6fff5aaa6"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-EA-SPORTS-FC/215361",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-EA-SPORTS-FC/215361",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:58.553Z",
+          "bodyBytes": 67253,
+          "bodySha256": "93d7d7c3589cb250bddb886d5412e14a126d4abb1f0211e0115bcf3d2144698c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-Sports-Tech/214973",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-Sports-Tech/214973",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:48.198Z",
+          "bodyBytes": 76118,
+          "bodySha256": "0fee57c10307c80fa539c07b891fc7e437f09d3eac49984d35dc525d970359bd"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Product-Market-Lead-Apex-Legends-Japan/215364",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Product-Market-Lead-Apex-Legends-Japan/215364",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:51.742Z",
+          "bodyBytes": 63807,
+          "bodySha256": "9b23376c2693f165c02491a46214ad2c3d83a37581aca929801cf0118e3c7307"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Market-Analyst-Apex-Legends-Japan/215365",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Market-Analyst-Apex-Legends-Japan/215365",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:53.300Z",
+          "bodyBytes": 63263,
+          "bodySha256": "3b650d8f2bb4b995cd3bba0ca81df9b3768f2fc4f618ebaf73c6be660779faef"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Advanced-Analyst/215382",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Advanced-Analyst/215382",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:01:54.819Z",
+          "bodyBytes": 72622,
+          "bodySha256": "6d27e9221d4ad11483678cad841487453fffee1b29d93a6b98e8647b28176394"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Publishing-Manager-FC-Online-SEA-Vietnam/215389",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Publishing-Manager-FC-Online-SEA-Vietnam/215389",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:09.992Z",
+          "bodyBytes": 62705,
+          "bodySha256": "d3d293f34d188bb78dca5b18ada097abf72c7e47fe042807b7de37587cfa6bb9"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Head-of-Publishing-Shooters-China/214948",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Head-of-Publishing-Shooters-China/214948",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:05.739Z",
+          "bodyBytes": 60971,
+          "bodySha256": "c36ac97fa230469fbe69c12c5b81d0e00ed6517c9fcdd37ee8a7d307fd4c660c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Design-Director/214955",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Design-Director/214955",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:01.909Z",
+          "bodyBytes": 79446,
+          "bodySha256": "b03feef075c0f1843ae0b2d0da098196a0bfb6bd765915a889167c234065434d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Producer/214812",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Producer/214812",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:11.579Z",
+          "bodyBytes": 79108,
+          "bodySha256": "4869c69733969a3755fa57285b2ee32e9845fc69f9fb1e392d572d4c7b64c9ca"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer/214027",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer/214027",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:08.409Z",
+          "bodyBytes": 57547,
+          "bodySha256": "339d4bb96b7fe76281039de68f950ba0771f0bca293634431fee280c6fefa8ef"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Technical-Artist-EA-SPORTS-FC/214777",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Technical-Artist-EA-SPORTS-FC/214777",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:13.694Z",
+          "bodyBytes": 63663,
+          "bodySha256": "eebdfb16344acebba0482dcff813d1329e508cc83956b9616b1d7afba2a10295"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Director-Tax-Controversy/214157",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Director-Tax-Controversy/214157",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:07.061Z",
+          "bodyBytes": 80878,
+          "bodySha256": "43a97e96dd36a19e320b2a655769b349c7597f3728f3c76dcc7de124641c9315"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-C-Frostbite/214323",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-C-Frostbite/214323",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:03.208Z",
+          "bodyBytes": 63233,
+          "bodySha256": "6e1db5f4b2e0f9cd908ff683fd17924cb87dcf10baeebd50be235fb1f30eff62"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer/214160",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer/214160",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:12.551Z",
+          "bodyBytes": 66079,
+          "bodySha256": "99e26b49766da20ffa7626ff3dbf4379e3b6faa6c75b218b1d0847202a8072c3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/EA-Sports-FC-Player-Experience-Analyst/214124",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/EA-Sports-FC-Player-Experience-Analyst/214124",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:04.622Z",
+          "bodyBytes": 62890,
+          "bodySha256": "f94be5695944804a980e8ec527e8468e1bd930afd9173d3bdabcec236dcc9dbf"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Producer/213844",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Producer/213844",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:27.206Z",
+          "bodyBytes": 70777,
+          "bodySha256": "c691570f118b8c7cba88ece219416d1e9b239fe7870e8826dd530bbfd9ebb385"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Machine-Learning-EA-SPORTS-FC/213900",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Machine-Learning-EA-SPORTS-FC/213900",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:22.954Z",
+          "bodyBytes": 68830,
+          "bodySha256": "4a101b4741905995036537e697932b61cd5b2cc82be29640cb015dfed267aac6"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Anti-Cheat-Operations-Engineer/213134",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Anti-Cheat-Operations-Engineer/213134",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:15.415Z",
+          "bodyBytes": 78120,
+          "bodySha256": "7f1955db99ab66be04103ed295f314feac2745555d56c726df643937051c1415"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/QVS-Development-Manager/213587",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/QVS-Development-Manager/213587",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:26.147Z",
+          "bodyBytes": 77259,
+          "bodySha256": "3c88dfab6631ed0a65e7ee152a48432274051176e0b1e304506386d9d41127b1"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Full-Stack-Engineer-EA-Arrival/213630",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Full-Stack-Engineer-EA-Arrival/213630",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:21.498Z",
+          "bodyBytes": 62114,
+          "bodySha256": "cff6ef9d5d0adcafd8271204aa4cc3ca0fd497fe59441b15ce36dd5a3d9a133d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Videogame-Tester-Hungarian/213703",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Videogame-Tester-Hungarian/213703",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:19.999Z",
+          "bodyBytes": 61426,
+          "bodySha256": "8e7a45241e13f9f3759589eed5525e399acfc5979c7743558ee532dd51fb32b0"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Features-Designer/213598",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Features-Designer/213598",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:18.955Z",
+          "bodyBytes": 76209,
+          "bodySha256": "4d1c26d8b53dd92bf1f0895f2087793f4345e5fd65a822cb5f480497bd599c83"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Reverse-Engineer-Anti-Cheat/213664",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Reverse-Engineer-Anti-Cheat/213664",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:16.431Z",
+          "bodyBytes": 61145,
+          "bodySha256": "65039564f345f1048beeb6e444e65b7aec6192a9e8da674ecd65e9e5bee772db"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Sr-Software-Engineer/213535",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Sr-Software-Engineer/213535",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:24.507Z",
+          "bodyBytes": 63833,
+          "bodySha256": "96fb0346bb50aa1ee003b3d680a737fc91819e54b8a509dfc4b6b19313de2e2b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Anti-Cheat-Engineer/212779",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Anti-Cheat-Engineer/212779",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:17.524Z",
+          "bodyBytes": 68027,
+          "bodySha256": "9cb406dca9e416db3ab3b9a2e6ac96e93586dd658392541f1bbe72ecd6c22f3d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Videogame-Tester-Danish/212720",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Videogame-Tester-Danish/212720",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:28.586Z",
+          "bodyBytes": 62696,
+          "bodySha256": "d6757b2a1106b4a31bddc7b92f4defe6721006c6f8adfef83c7395f12af8dee4"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Low-Level-ML-Optimization/212350",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Low-Level-ML-Optimization/212350",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:33.011Z",
+          "bodyBytes": 61175,
+          "bodySha256": "437c7ca488f2a69cc6e2bdd92b66bd1b7eabefae3773c994ef97ea5b078df7ea"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Machine-Learning-Engineer-III/212201",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Machine-Learning-Engineer-III/212201",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:31.418Z",
+          "bodyBytes": 67209,
+          "bodySha256": "c66146780bcb69b4aea054bef7acc61fbf20d82b7ee69c6804e64fd99f1bb1cb"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Analyst-Legal-Solutions-Technology/212125",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Analyst-Legal-Solutions-Technology/212125",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:34.308Z",
+          "bodyBytes": 71185,
+          "bodySha256": "1621651910caca4497d149740e3c71e8c444cb379c3abe5486d3daad57561ecf"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Lighting-Director-EA-SPORTS-FC/212135",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Lighting-Director-EA-SPORTS-FC/212135",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:37.498Z",
+          "bodyBytes": 74211,
+          "bodySha256": "296c66d2d6a35317e240c9f4392ea2396d1dc3ebf7a73048153c06a3e85cc109"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Product-Manager/211550",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Product-Manager/211550",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:41.242Z",
+          "bodyBytes": 77952,
+          "bodySha256": "546802046205fa4a0da4760ae7cc8de7f0f8be6aeee342ab2b5c051eccf9f6e7"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/216149-Tools-Engineer-III/216149",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/216149-Tools-Engineer-III/216149",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:39.931Z",
+          "bodyBytes": 61342,
+          "bodySha256": "b8aa329d66ca5b7cd90a3ecfc51f0e324db29d635a07fb9ff003a027282c468d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/216311-Rendering-Engineer-III/216311",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/216311-Rendering-Engineer-III/216311",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:29.868Z",
+          "bodyBytes": 58121,
+          "bodySha256": "8f90ff791f7960385992c5a62e98508b0b8c35060ce74faf9626d85b4d8823e3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer/216214",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer/216214",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:35.977Z",
+          "bodyBytes": 83817,
+          "bodySha256": "ce124b3cce5ed9d5cec3b018d66a0919ea4d088bc0c2a1ae24dc0541bcfabb22"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer/215841",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer/215841",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:38.812Z",
+          "bodyBytes": 66059,
+          "bodySha256": "22233d1ce2b22d51daf937d9d59e64ca4cefccf871a747874320d5c35cbc4dbe"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Online-Software-Engineer-EA-SPORTS-FC/214269",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Online-Software-Engineer-EA-SPORTS-FC/214269",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:47.853Z",
+          "bodyBytes": 66046,
+          "bodySha256": "c4c97cc5cd2d82f8e18d10d43cdb30e3931d34fc751a28f944d622e01f21909e"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-EA-SPORTS-FC/215918",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-EA-SPORTS-FC/215918",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:44.165Z",
+          "bodyBytes": 75018,
+          "bodySha256": "06197cde81ec39ca2ada7344ab7c723fd610c18421674d1c385c98280f39c9a2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/AI-Enablement-Intern-Summer-2027/216185",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/AI-Enablement-Intern-Summer-2027/216185",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:53.042Z",
+          "bodyBytes": 67402,
+          "bodySha256": "99535bfcd70b7960c9f383bb97af88bf719f4a223a108a5d8509c1db4c50e9d1"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/AI-Engineer-Intern/216236",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/AI-Engineer-Intern/216236",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:42.737Z",
+          "bodyBytes": 69649,
+          "bodySha256": "7ef3028fec130a7801871a500d0d67280e5f037423dbdbe5e3377eee71c4da8a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/AI-Engineer-Intern-Masters/216223",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/AI-Engineer-Intern-Masters/216223",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:48.898Z",
+          "bodyBytes": 76532,
+          "bodySha256": "ca29689d3baf97c85689169ec6a0a6eba72c36dd7e9437b8bae489861581be35"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Analytics-Intern/216232",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Analytics-Intern/216232",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:46.834Z",
+          "bodyBytes": 73319,
+          "bodySha256": "5414ee968d16c2679c3fcbc70a4e682d14eb6e91da477a70ca1b6f4b805a1ecf"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Animator/216304",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Animator/216304",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:45.641Z",
+          "bodyBytes": 59697,
+          "bodySha256": "0f612f838da41c37517bc0555aa23d9e336a799643c5a7e99c352e7b101f943c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Animator/216305",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Animator/216305",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:50.407Z",
+          "bodyBytes": 59544,
+          "bodySha256": "3bb59726e161d7f22c29411499e4ae2623132e4c42a0a5fe076571197cac56a2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Animator-I/216303",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Animator-I/216303",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:51.533Z",
+          "bodyBytes": 59591,
+          "bodySha256": "f35c39b15bfa91e7020a508f282aaedc96caa0b4db67b868b9f004b730946968"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Art-Director/214738",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Art-Director/214738",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:54.417Z",
+          "bodyBytes": 66300,
+          "bodySha256": "e34e6d2eefa7f7943237a133fc1490adbdcf95848eadd5ca1d9c3b127864e229"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Content-Designer-EA-SPORTS-NHL/216318",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Content-Designer-EA-SPORTS-NHL/216318",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:07.095Z",
+          "bodyBytes": 68121,
+          "bodySha256": "b5c1f296213cb85cf237f87fe7cc14e6c7b848923be950618e48e83539ec2aba"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Live-Gameplay-Producer-EA-SPORTS-FC/215796",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Live-Gameplay-Producer-EA-SPORTS-FC/215796",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:55.945Z",
+          "bodyBytes": 67787,
+          "bodySha256": "336c23b3edb2495475d2ee51480a902060df04f36434597ba0cece008440b320"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Producer-EA-SPORTS-FC/213741",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Producer-EA-SPORTS-FC/213741",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:01.632Z",
+          "bodyBytes": 68990,
+          "bodySha256": "995c1af7f28a72091953fe60d3b84ceb9715a88e3ce9e8c21ce3918471f30a26"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Producer-EA-SPORTS-FC/215646",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Producer-EA-SPORTS-FC/215646",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:05.554Z",
+          "bodyBytes": 67759,
+          "bodySha256": "fe8fe75d86391e68e563bb9a0e683620e5e4ef1d01b607c818d720923467cf47"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Producer-EA-SPORTS-FC-The-Grounds/216387",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Assistant-Producer-EA-SPORTS-FC-The-Grounds/216387",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:08.195Z",
+          "bodyBytes": 63445,
+          "bodySha256": "efe31742687e3e329d3e765776b8af5ba04642a0ab9c64188b558fbc24c71fa0"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Producer-EA-SPORTS-FC-Mobile-Business-Operations/216324",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Producer-EA-SPORTS-FC-Mobile-Business-Operations/216324",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:00.248Z",
+          "bodyBytes": 83520,
+          "bodySha256": "393440fd135417e573545a0bc9f30a128912342c27fa209429df74c9c1b2eb17"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Producer-EA-SPORTS-NHL/215817",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Producer-EA-SPORTS-NHL/215817",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:02.938Z",
+          "bodyBytes": 70737,
+          "bodySha256": "986b18be44fd1b67ac870f58132f666f64c5a101eb4cd1c5878e4e08260123bf"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Producer-EA-SPORTS-UFC/215834",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Producer-EA-SPORTS-UFC/215834",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:58.601Z",
+          "bodyBytes": 70418,
+          "bodySha256": "7da8914546d78c78107b4e89cc311248663edc64cdf8f2d93d4079eae87298bb"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Attendee-Experience-Intern-Global-Events-Team-Summer-2027/216244",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Attendee-Experience-Intern-Global-Events-Team-Summer-2027/216244",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:02:57.381Z",
+          "bodyBytes": 73297,
+          "bodySha256": "5c1c0a06d051095650cebdc2b1135dbee016ca2a05e055a4561b8a0f8b1df1bf"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Audio-Software-Engineer-EA-SPORTS-UFC/215824",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Audio-Software-Engineer-EA-SPORTS-UFC/215824",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:03.927Z",
+          "bodyBytes": 68932,
+          "bodySha256": "ef5353fa96415d8267e068874cf7c23b5dcbd16374496491587328c803a4a48e"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Capture-Artist/216336",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Capture-Artist/216336",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:21.686Z",
+          "bodyBytes": 71489,
+          "bodySha256": "e9ccfa1f99f1f06a74ef994d75a2015cceb0c5e458cf6d4c879fb019b5d958f0"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/216153-Pipeline-Engineer-II/216153",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/216153-Pipeline-Engineer-II/216153",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:20.131Z",
+          "bodyBytes": 57680,
+          "bodySha256": "a203838dab5940df4a020628a993ce54dd4f454a89e20aeb572ed73fbec8e477"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Client-Software-Engineer-FC/216386",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Client-Software-Engineer-FC/216386",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:09.696Z",
+          "bodyBytes": 68371,
+          "bodySha256": "f4aa12aa7700408f7e6f64ebfa436e03911b797f2ab92eba649119ecb4e1060d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Community-Coordinator-German-Speaking/214876",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Community-Coordinator-German-Speaking/214876",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:18.866Z",
+          "bodyBytes": 78586,
+          "bodySha256": "335d817885fb13908a620508cb7cfc0e17b5ec3eff36e35ea22e5ab073bb4abf"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Compensation-HR-Analyst/216358",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Compensation-HR-Analyst/216358",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:15.923Z",
+          "bodyBytes": 58017,
+          "bodySha256": "7b7994b6ea64035452018c8f9ef8e149a1b27bfa0ab23cf0407279cb2f5fb4e6"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Data-AI-Engineering-Intern-Summer-2027/216238",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Data-AI-Engineering-Intern-Summer-2027/216238",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:11.171Z",
+          "bodyBytes": 62774,
+          "bodySha256": "3089d97ec558eb9c673dbf7ed217e893994628107b47259cd1ca33178986ecf4"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Data-Analyst-Ads-Sponsorships/216218",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Data-Analyst-Ads-Sponsorships/216218",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:12.442Z",
+          "bodyBytes": 77358,
+          "bodySha256": "b42d5d713cd91f732ffa42df0c1645d72bf6997d36884070e9c69625d3446f12"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/216504-Development-Director/216504",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/216504-Development-Director/216504",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:17.534Z",
+          "bodyBytes": 58913,
+          "bodySha256": "ed898530c2130e5e1d8ecfc2c6baac7029cfd7533b93e1c89d0d50b1f48c9526"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Director-EA-SPORTS-UFC/216410",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Director-EA-SPORTS-UFC/216410",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:13.391Z",
+          "bodyBytes": 69084,
+          "bodySha256": "19ac0bc6d8fde92967d1f0cb7556e1b41152b2bcdcde12682bfba48486c24f89"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/216422-Development-Director-Quality-Verification/216422",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/216422-Development-Director-Quality-Verification/216422",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:14.431Z",
+          "bodyBytes": 62536,
+          "bodySha256": "1442a0c276b251daac7857926c7c2ce7aee98759eae8998a02b51ddc5c8a6c52"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager/215637",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager/215637",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:26.191Z",
+          "bodyBytes": 71022,
+          "bodySha256": "2f1aa2544f476ba500ab6353e2c3a2bdd77d7ae5a535ae4dd2bad9ff39e24b2a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager/215662",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager/215662",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:23.273Z",
+          "bodyBytes": 71022,
+          "bodySha256": "1919bcb531a0773e341a38d26860084a11c0be1618f1528f01bc2a5d52de13b4"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager/215663",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager/215663",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:30.040Z",
+          "bodyBytes": 71022,
+          "bodySha256": "49db2efc11f60860eaf68c135f94a724aa0bb133d47c11f9b387ed9b14600850"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-EA-SPORTS-UFC/216408",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-EA-SPORTS-UFC/216408",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:27.732Z",
+          "bodyBytes": 68371,
+          "bodySha256": "63946dd1ea49ba5d91fc2e9733ef29355e1a53c590c6ee41d66963894ed4d083"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-EA-SPORTS-UFC/215833",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-EA-SPORTS-UFC/215833",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:32.314Z",
+          "bodyBytes": 67536,
+          "bodySha256": "45424224b759961390bff4901cf5ce3c4e8bac7d1532333ab030a404d5dedfcb"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-Future-Opportunity/214853",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Development-Manager-Future-Opportunity/214853",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:24.813Z",
+          "bodyBytes": 59919,
+          "bodySha256": "95b6f3003a33b632339e82fe6a1b6f3b918dfa2f1a04a597ffd662be3f03be3a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Tools-Developer-Apex-Legends/216105",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Tools-Developer-Apex-Legends/216105",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:31.464Z",
+          "bodyBytes": 74903,
+          "bodySha256": "c82f810fa8c4d9d31e663f17011771e88e6ba16a58737108c47166f88a7b53bb"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Full-Stack-Developer-AI-and-Tools-Apex-Legends/215696",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Full-Stack-Developer-AI-and-Tools-Apex-Legends/215696",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:34.171Z",
+          "bodyBytes": 73102,
+          "bodySha256": "6a172691086f0e330144b3cbc5916bc206e2ccb218891773e7a165de24063108"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Tools-Developer-Apex-Legends/212777",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Tools-Developer-Apex-Legends/212777",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:28.904Z",
+          "bodyBytes": 69587,
+          "bodySha256": "014ab4a29e7d1853f6cecd70b11684d427fd0e39ada2c32c1c13c401c66c7342"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Engine-Programmer/215372",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Engine-Programmer/215372",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:35.452Z",
+          "bodyBytes": 58843,
+          "bodySha256": "b110c1177159f06f6ded938b5f8427921a0f7faf483a0a7d07bdc61a613c96c2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/DevOps-Engineer-EA-SPORTS-TECHNOLOGY/214187",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/DevOps-Engineer-EA-SPORTS-TECHNOLOGY/214187",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:37.076Z",
+          "bodyBytes": 77694,
+          "bodySha256": "842fa3d0852611d1154866dbef86116b977427e45bbb42e02239f2c1b9c6b1dd"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Director-Executive-Communications/214740",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Director-Executive-Communications/214740",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:43.667Z",
+          "bodyBytes": 80997,
+          "bodySha256": "f0d93bb2aa728fe0455f3261009ceaa9f51d67c08d3dc165759ec144bf062b37"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Director-of-Global-Communications-Apex-Legends/213674",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Director-of-Global-Communications-Apex-Legends/213674",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:40.841Z",
+          "bodyBytes": 80272,
+          "bodySha256": "bb1a7fbf8576babdda1f670462fd46fbc2aa8bd67b1d7c693f518f2dca2e972c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Director-of-Production-Content-Monetization-Progression-Apex-Legends/216317",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Director-of-Production-Content-Monetization-Progression-Apex-Legends/216317",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:38.330Z",
+          "bodyBytes": 88707,
+          "bodySha256": "6c4d5be0f32edede85d5939efc495da0f1f55fe88268996bf1d7f85c15d4c9b7"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-I/216357",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-I/216357",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:45.029Z",
+          "bodyBytes": 76563,
+          "bodySha256": "44df88be30936909c56c0f6843e41923de8b12f70f533687d61d83d348aebffd"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Employment-Counsel/216382",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Employment-Counsel/216382",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:47.562Z",
+          "bodyBytes": 67259,
+          "bodySha256": "a8f7f4c8f628b1eebf52853e631d68302d2ede91d78f1bdadb00482c8d91e303"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Executive-Producer-Head-of-Production-Apex-Legends/216060",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Executive-Producer-Head-of-Production-Apex-Legends/216060",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:42.147Z",
+          "bodyBytes": 76694,
+          "bodySha256": "e9ac95a3df451a93a5c0c9f2ad690c43473cb12143f3bb6d16ecba1663a8c66d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-EA-SPORTS-NHL/215802",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-EA-SPORTS-NHL/215802",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:49.037Z",
+          "bodyBytes": 68322,
+          "bodySha256": "a3c9dbe97077f8ee210f51a8f153da163991b55961a7252928aef0384c75d0ee"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-I/216492",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-I/216492",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:46.406Z",
+          "bodyBytes": 60642,
+          "bodySha256": "6bca701a602b410fdc236c7044b6fb54e7d9546546e39092f0a61c45cdd67e14"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-I-EA-SPORTS-FC/216314",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-I-EA-SPORTS-FC/216314",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:39.239Z",
+          "bodyBytes": 72229,
+          "bodySha256": "1a1d305d74acc4185867d6af5336abea6ecfe16c071452c29e136317a7a82c8d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-II-EA-SPORTS-FC/216370",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-II-EA-SPORTS-FC/216370",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:01.051Z",
+          "bodyBytes": 88736,
+          "bodySha256": "d2c4ed67adea7fe1f184bf7e7c7a70340ee38ac543d13ca01f7857abb23c876c"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-Handheld-Experiences-EA-SPORTS-FC/215926",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Experience-Designer-Handheld-Experiences-EA-SPORTS-FC/215926",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:50.681Z",
+          "bodyBytes": 69731,
+          "bodySha256": "d3342610538fdac6c18b028d4c9b1571bc8d7f89050115b12a1fcf1362bd5a5a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-EA-SPORTS-FC/212368",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-EA-SPORTS-FC/212368",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:55.240Z",
+          "bodyBytes": 75578,
+          "bodySha256": "198ba7d1f9570be885dd21beea3e49df5edfdc368e9c0099def095db0ee8d5e2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/216148-Tools-Engineer-II/216148",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/216148-Tools-Engineer-II/216148",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:53.049Z",
+          "bodyBytes": 69010,
+          "bodySha256": "692b0573dd4ec35284e9ad872496b606f3eaf9489514609aab46cde4ec1c38a4"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Designer-Intern-Summer-2027-Apex-Legends-Vancouver/216285",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Designer-Intern-Summer-2027-Apex-Legends-Vancouver/216285",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:51.532Z",
+          "bodyBytes": 64817,
+          "bodySha256": "9464dfbb03313aec6b296d9849fc3d145275685174b6ee3b264ce218f22bc677"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Designer-Intern-Summer-2027-Apex-Legends-Madison/216248",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Designer-Intern-Summer-2027-Apex-Legends-Madison/216248",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:56.762Z",
+          "bodyBytes": 71997,
+          "bodySha256": "fd57d7bd45ba202c1db60e449e4639c7d037acf5040d3795224840cd19cc3f19"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer/215808",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer/215808",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:59.464Z",
+          "bodyBytes": 74853,
+          "bodySha256": "b5a14c6291715a68cd521a7111780f81f5d851b934463015ca0a3c72814ae324"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Product-Manager-MTX-and-Events-Apex-Legends/216014",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Product-Manager-MTX-and-Events-Apex-Legends/216014",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:57.901Z",
+          "bodyBytes": 78268,
+          "bodySha256": "36c141889a4ad47298a21827c781db87764df726bb340a492f92ecf232602446"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Security-Analyst-Apex-Legends/214748",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Game-Security-Analyst-Apex-Legends/214748",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:02.694Z",
+          "bodyBytes": 68242,
+          "bodySha256": "b575182b72969aeb7ac002b6f1bfbef6210f9581d4213a12f91dc0b6e4dc35f3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Data-Science-Engineer-Apex-Legends/216112",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Data-Science-Engineer-Apex-Legends/216112",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:03:54.147Z",
+          "bodyBytes": 73466,
+          "bodySha256": "5bb878fe7ee52e473f5e260dcb4dde8f4916a1b0f0a7748d214ff2ee9f5df90e"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Designer-EA-SPORTS-FC/216168",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Designer-EA-SPORTS-FC/216168",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:04.278Z",
+          "bodyBytes": 65611,
+          "bodySha256": "175b0ad99dca4a90aa28dd9cc767c1d79d9a6e8817432ce7d0ef50764de2704d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Engineer-Apex-Legends/216048",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Engineer-Apex-Legends/216048",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:15.801Z",
+          "bodyBytes": 65763,
+          "bodySha256": "57c91335d49c986910ef0458f92753a49e0a83238b1a5e197fba232e3a10f0d8"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Software-Engineer-FC/215783",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Gameplay-Software-Engineer-FC/215783",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:07.500Z",
+          "bodyBytes": 64238,
+          "bodySha256": "93014875b20f9752938b28760a1b59184d3e78969afa971856580e574a9019bf"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer/216215",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer/216215",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:09.761Z",
+          "bodyBytes": 62133,
+          "bodySha256": "906a1fda97c870402b4f38a1381a189acecceec4616a490dbef737bda87db224"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Generalist-Software-Engineer-FC/215786",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Generalist-Software-Engineer-FC/215786",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:16.942Z",
+          "bodyBytes": 73462,
+          "bodySha256": "032c2b63828bd8ef7cc56fa36a8825923412897a9b32847a95eab957b61aa86a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Generalist-Software-Engineer-FC/215656",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Generalist-Software-Engineer-FC/215656",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:13.020Z",
+          "bodyBytes": 70743,
+          "bodySha256": "7d96473bbe2e0fde3cc77c8a5eaf33ce2bc33b6c71942ec3d4d072986848ffff"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Head-of-Product-Experience-FC/209831",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Head-of-Product-Experience-FC/209831",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:14.625Z",
+          "bodyBytes": 73797,
+          "bodySha256": "eafafef33c309f53e7168e80ff49e5abecb08b723ec1bf87495998e622412e5b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Head-of-Software-Quality-Apex-Legends-QV/216117",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Head-of-Software-Quality-Apex-Legends-QV/216117",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:08.618Z",
+          "bodyBytes": 63357,
+          "bodySha256": "76948ca662345c756a8b0ed399c4e480b880d0a2d8ff55efe38a2a2e8edbf27a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Health-and-Safety-Specialist/215953",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Health-and-Safety-Specialist/215953",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:05.830Z",
+          "bodyBytes": 59760,
+          "bodySha256": "f5883262e9b60a30ea1a949c4790ebd139a6b15ad00d975d03f3d0ff6fe6c5da"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/JavaScript-Software-Engineer-EAX/213967",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/JavaScript-Software-Engineer-EAX/213967",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:11.386Z",
+          "bodyBytes": 58933,
+          "bodySha256": "63fa146980076a0bf72149f19643cd64448b62a263c3af40d23f265e781ed9a0"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Animation-Engineer-Apex-Legends/213629",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Animation-Engineer-Apex-Legends/213629",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:18.635Z",
+          "bodyBytes": 89924,
+          "bodySha256": "b2aa0c36aacebbaad0da55e469fee03ab6b509adca086b54e9adfe4ee3350bff"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/213183-Lead-GP-Client-Engineer/213183",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/213183-Lead-GP-Client-Engineer/213183",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:28.383Z",
+          "bodyBytes": 58091,
+          "bodySha256": "bb8ede149e5257734a34aa1537c35e4758889b1ac33a02fe405d4997e901cd06"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Designer-UI-UX/216388",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Designer-UI-UX/216388",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:29.643Z",
+          "bodyBytes": 78716,
+          "bodySha256": "e878ac615766bc468950a2c003127509316afb29f6bf55a82189a131ffa7385a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/216150-Lead-Server-Engineer/216150",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/216150-Lead-Server-Engineer/216150",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:30.562Z",
+          "bodyBytes": 59079,
+          "bodySha256": "e889bd8c080adff232431c150a9fb3eb294c7ca289bd85c88ba15e3ebc0e73b4"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Software-Engineer/215815",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Lead-Software-Engineer/215815",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:21.624Z",
+          "bodyBytes": 74523,
+          "bodySha256": "ff717ae33619edb7aa2749866980a044f7f4e66310c83e56cf8eaffd86a271c3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Legal-Specialist-Intern-Approvals-JD-Level/216328",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Legal-Specialist-Intern-Approvals-JD-Level/216328",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:20.005Z",
+          "bodyBytes": 69683,
+          "bodySha256": "17b0e7956df2dfdc63ec582decff7ca8e6384f53ebdc481010fdcddc5b12d3d3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Line-Producer-EA-SPORTS-FC/216027",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Line-Producer-EA-SPORTS-FC/216027",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:25.789Z",
+          "bodyBytes": 68713,
+          "bodySha256": "50be1c839df2f90ea1c782715a6e4c5a81573238769c25b05f05e42387a82894"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Line-Producer-EA-SPORTS-FC/215736",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Line-Producer-EA-SPORTS-FC/215736",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:26.853Z",
+          "bodyBytes": 71187,
+          "bodySha256": "169a220e0aee437c09fbd30732acac13020ed6a5abb98ded057666e588a15864"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Live-Support-Football-Production-Opportunity-for-Students/214345",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Live-Support-Football-Production-Opportunity-for-Students/214345",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:24.338Z",
+          "bodyBytes": 61578,
+          "bodySha256": "400e262c9c76691eea6f367eec55b397b85f83cf7ec93fb2a6084c53a6e12b0a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Machine-Learning-Engineer-FC/215640",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Machine-Learning-Engineer-FC/215640",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:23.268Z",
+          "bodyBytes": 73766,
+          "bodySha256": "696dfccf68715edec9e8c430ae1e85accf43f12e27558ea8ef46ae55d895978f"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Manager-Procurement-Game-Engine-Technology/215798",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Manager-Procurement-Game-Engine-Technology/215798",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:40.210Z",
+          "bodyBytes": 65765,
+          "bodySha256": "7248920b28871c5ce1740e279e9c4d7ea7d901c3b534034b1ae721b6a89ca857"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Manager-Strategic-Intelligence/216065",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Manager-Strategic-Intelligence/216065",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:33.119Z",
+          "bodyBytes": 71600,
+          "bodySha256": "7b02a628c1b6777392b9cb92730cf0f10ecb6dba4aa031fe694a7011f4fd4b2d"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Marketing-Producer/213608",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Marketing-Producer/213608",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:37.085Z",
+          "bodyBytes": 70575,
+          "bodySha256": "0481fd089490cc4d840e48c7972050bbb41dd689c92cc41999441f186bb90ed7"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Measurement-Partnerships-Manager/215992",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Measurement-Partnerships-Manager/215992",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:34.371Z",
+          "bodyBytes": 77180,
+          "bodySha256": "08528c43db2369895f82e40915604b9fa375f6704c6dd9235360cfa4ce3896fd"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Experience-Designer/216054",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Associate-Experience-Designer/216054",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:41.709Z",
+          "bodyBytes": 60419,
+          "bodySha256": "8715322d58e10e56290610983656b3bfe550f498d2d13c83e3eea311707a93ea"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Online-Software-Engineer-EA-SPORTS-NHL/216381",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Online-Software-Engineer-EA-SPORTS-NHL/216381",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:42.837Z",
+          "bodyBytes": 63098,
+          "bodySha256": "2539f6fadac98648015e1a663ded7efd101e496129d5c4b0fb1a116b8bd5be3e"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Online-Software-Engineer-EA-SPORTS-UFC/215832",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Online-Software-Engineer-EA-SPORTS-UFC/215832",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:44.404Z",
+          "bodyBytes": 68117,
+          "bodySha256": "ddb8832938bcc2de3bd913e0eca4ed00d167ff2c6d3485db90a4eb6620ac5ee7"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Outsource-Support-Animator-Apex-Legends/216481",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Outsource-Support-Animator-Apex-Legends/216481",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:35.549Z",
+          "bodyBytes": 65508,
+          "bodySha256": "e9f8668ab390262f70f9e855cb5bf9f9e29096cd6ecd032117bbbf0c04eec461"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/PC-Product-Producer-EA-SPORTS-FC/213158",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/PC-Product-Producer-EA-SPORTS-FC/213158",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:38.621Z",
+          "bodyBytes": 68860,
+          "bodySha256": "d3035a842937b306115b461bb601dab5548bcd6db2cbc9c4d8ebb7767e947eb1"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/People-Partnerships-Lead/216331",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/People-Partnerships-Lead/216331",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:32.056Z",
+          "bodyBytes": 72744,
+          "bodySha256": "dafd4a9a9ea29ce3a61068fb65af4a7739ce98bf8c26e5a1f3c3756ae0b7d74b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Post-Match-Operator-Opportunity-for-Students/214350",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Post-Match-Operator-Opportunity-for-Students/214350",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:45.857Z",
+          "bodyBytes": 65281,
+          "bodySha256": "c336ef581b3f163827cbb18fed54e553bf0c4b1669ff1673a8dc78b36ac92ce3"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Presentation-Software-Engineer/215816",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Presentation-Software-Engineer/215816",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:52.754Z",
+          "bodyBytes": 74324,
+          "bodySha256": "4244fea674087ea77c59a88a4446c66084a1580f220abca49df026b72d662238"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-Materials-Artist-Apex-Legends/214789",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-Materials-Artist-Apex-Legends/214789",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:50.105Z",
+          "bodyBytes": 77422,
+          "bodySha256": "2b2858d996ac82609366be2e6f0a2880e647166ff76e268f869c25c9331b8ae5"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-Product-Manager-AI-Platform/214919",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Principal-Product-Manager-AI-Platform/214919",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:48.584Z",
+          "bodyBytes": 76462,
+          "bodySha256": "3891f8a29635089a61d79570c0e3d6d62701c426e246f294a8c5e0eeb11446c1"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Producer-EA-SPORTS-F1/216334",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Producer-EA-SPORTS-F1/216334",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:47.292Z",
+          "bodyBytes": 59088,
+          "bodySha256": "8c228a1e532d091e3631104935f217d29b10e86f1be1d4cab8550575e3df9ee4"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Producer-EA-SPORTS-FC/216411",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Producer-EA-SPORTS-FC/216411",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:54.356Z",
+          "bodyBytes": 69631,
+          "bodySha256": "a4ed6aab1277f6977d054417e6eca6698092c661395d046683e0ce8b11073173"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Producer-Apex-Legends/216462",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Producer-Apex-Legends/216462",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:58.538Z",
+          "bodyBytes": 68359,
+          "bodySha256": "464639ac9c1f32fc9800f9159c27fe0e92c40efa4a19f9a25ab49931f4229dad"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Product-Manager-Intern-MBA-Level-Summer-2027-Apex-Legends/216272",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Product-Manager-Intern-MBA-Level-Summer-2027-Apex-Legends/216272",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:55.714Z",
+          "bodyBytes": 65139,
+          "bodySha256": "e989465d70734073816347698a026426dd1041ae52a57986a995c7830715f417"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Production-Coordinator/216412",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Production-Coordinator/216412",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:51.355Z",
+          "bodyBytes": 77280,
+          "bodySha256": "9dace4ea2c327e5e7186cdc28675f2029ce6e0f014dcf2f2a53a82aa0260a5b2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Program-Manager-Intern-Games-for-All-Master-s-Level/216330",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Program-Manager-Intern-Games-for-All-Master-s-Level/216330",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:04:57.249Z",
+          "bodyBytes": 71041,
+          "bodySha256": "4b2ed548ca706ed352cce8bd8dad745ef73e0b87b6185aace091f7115ea93221"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Quality-Analyst-Multiple-Roles/216423",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Quality-Analyst-Multiple-Roles/216423",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:04.086Z",
+          "bodyBytes": 67893,
+          "bodySha256": "42a2741f8d67e1547d8c7796c7bbd25df8454f8e1f4b1c1143fda836f88d4abc"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Rendering-Engineer-Intern/216222",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Rendering-Engineer-Intern/216222",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:07.055Z",
+          "bodyBytes": 62483,
+          "bodySha256": "da3fd4678a75c58810cb7b05ec8b093246a45e389bf08b11214a29af711bad9e"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-EA-SPORTS-NHL/215813",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-EA-SPORTS-NHL/215813",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:10.904Z",
+          "bodyBytes": 69300,
+          "bodySha256": "a06067237ca1bbcd130ac88cf684b4e8159c6232281aa1c6709b87a4ecd307c5"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Rendering-Software-Engineer-EA-SPORTS-UFC/215823",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Rendering-Software-Engineer-EA-SPORTS-UFC/215823",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:12.047Z",
+          "bodyBytes": 67615,
+          "bodySha256": "3af638ad09ea8e825b71e66c287155da37c7df21b318e7d25ee097442eabc3b7"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Accountant-II/216363",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Accountant-II/216363",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:08.570Z",
+          "bodyBytes": 59088,
+          "bodySha256": "86bb9c115292d491db74dbe29d1aabf8cd77b6125e8447846f168343a907e2e2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-AI-Software-Developer/216047",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-AI-Software-Developer/216047",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:05.500Z",
+          "bodyBytes": 66697,
+          "bodySha256": "9cd2c6938101c6f0c613e5d55ba863d34d8e64ac80dde7394386fcc3a306188e"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-AI-Solutions-Lead-Software-Quality/211830",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-AI-Solutions-Lead-Software-Quality/211830",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:00.001Z",
+          "bodyBytes": 59621,
+          "bodySha256": "7b108db34a2b335d532b5369743bdc488764eb318e17c3d62b6bc0707c09bdb6"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Art-Design-Career-Manager-EA-SPORTS-UFC/216160",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Art-Design-Career-Manager-EA-SPORTS-UFC/216160",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:09.832Z",
+          "bodyBytes": 68034,
+          "bodySha256": "1ba7d0269578ad69b0d82af30ecb5d16744e331bb96d4a4457f5787f9aa04cb2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Sr-Capture-Artist/216333",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Sr-Capture-Artist/216333",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:01.543Z",
+          "bodyBytes": 70601,
+          "bodySha256": "2b254c8ba398d018a69b4720dc1bea40296d31272f582bae8eb16e8c46c81908"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/216294-Senior-Data-Analyst/216294",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/216294-Senior-Data-Analyst/216294",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:02.553Z",
+          "bodyBytes": 58591,
+          "bodySha256": "52dc0219b61a3b7d8084ab35e9261179f3db2eaa6fa2303a9b6548a575e8a5ac"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Digital-Merchandiser-Franchise-Lifecycle-Planning/216380",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Digital-Merchandiser-Franchise-Lifecycle-Planning/216380",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:13.574Z",
+          "bodyBytes": 63244,
+          "bodySha256": "0286ba3c7ca4cb9d4f396a31ff5e1bea907fd0cd241c430e6d53649e18655c9a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Director-Business-Strategy/212771",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Director-Business-Strategy/212771",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:25.805Z",
+          "bodyBytes": 66175,
+          "bodySha256": "bf796397ba09274a48d091c6a11e05dad1492b7eeb77b077cfea6bcfcc1288bf"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Director-Creative/215630",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Director-Creative/215630",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:24.771Z",
+          "bodyBytes": 85166,
+          "bodySha256": "22729f8fa0b7fd6879fb921f1ec4459e64faa5c9b086f257722c14a7dee41b03"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Experience-Designer-EA-SPORTS-NHL/216216",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Experience-Designer-EA-SPORTS-NHL/216216",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:22.997Z",
+          "bodyBytes": 69758,
+          "bodySha256": "8ffee4036aeebe3b2f46881eb879a5c0b57490bc773974f8baef7461e0e08756"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Game-Designer-EA-SPORTS-NHL/216163",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Game-Designer-EA-SPORTS-NHL/216163",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:22.028Z",
+          "bodyBytes": 69469,
+          "bodySha256": "915266021c49ce6eef95dbbd07ba9a79ae90c0d1920f392e8c55eb9d73007ddd"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Game-Designer-Social-Daily-Puzzle-Games/216196",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Game-Designer-Social-Daily-Puzzle-Games/216196",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:19.322Z",
+          "bodyBytes": 64139,
+          "bodySha256": "131ab481d1aab6d279d0f4e45bbcdebb9cc7daec7334810d4cbf3b50611740ca"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Gameplay-Software-Engineer-NHL/215810",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Gameplay-Software-Engineer-NHL/215810",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:14.903Z",
+          "bodyBytes": 82060,
+          "bodySha256": "c55891d130f81a8e8a40cbbe17dc31ad61217327c3262fa5a6a2aabbf6810f4a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Gameplay-Software-Engineer-UFC/215831",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Gameplay-Software-Engineer-UFC/215831",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:17.965Z",
+          "bodyBytes": 71543,
+          "bodySha256": "35797f4acdcda20daaaa101f14020683f4ce72d78b2fd6afdc82f63803efbcc4"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Lead-Designer-UI-UX/216390",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Lead-Designer-UI-UX/216390",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:16.426Z",
+          "bodyBytes": 80359,
+          "bodySha256": "a99a2372cf0aa9ad5f6714d4dcba8536f639fbe788c6f89d858ed3f2bed0f772"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Strategy-Chief-of-Staff-Strategic-Initiatives/212954",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Strategy-Chief-of-Staff-Strategic-Initiatives/212954",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:20.743Z",
+          "bodyBytes": 80314,
+          "bodySha256": "36fa3d531f8c8289556bf24f5cad032fd07fcf3cd4658431110b039ccce33dfa"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Producer/216338",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Producer/216338",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:37.806Z",
+          "bodyBytes": 58106,
+          "bodySha256": "a14f71a4977f14c960b5569329db7be8bd281a5dbac0570370b612fd850bdd95"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Program-Manager-Respawn-Studios/216084",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Program-Manager-Respawn-Studios/216084",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:30.141Z",
+          "bodyBytes": 89379,
+          "bodySha256": "86d881c723154d0cd26acddd6a6391ffe94b6384e6d0a81e02e9614a8a0785ed"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-QA-Lead/214858",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-QA-Lead/214858",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:27.328Z",
+          "bodyBytes": 60662,
+          "bodySha256": "3daac74b1b05210f24054544f9d180158ac099aced17fe19d9c10a459e88b37a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/AQD-QD-Multiple-roles/214834",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/AQD-QD-Multiple-roles/214834",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:32.844Z",
+          "bodyBytes": 60351,
+          "bodySha256": "4c63fdcf5ad07462bb0f48863eb99e259e888b4bd54b6fa67dce33205f68c3a6"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Generalist-Foundations-Apex-Legends/212775",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Generalist-Foundations-Apex-Legends/212775",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:36.344Z",
+          "bodyBytes": 76077,
+          "bodySha256": "8820b1fb7e2ed9739d2aca7201298b9d7e2597dca297f6826e7db1d60f679869"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Generalist-Foundations-Apex-Legends/212117",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Generalist-Foundations-Apex-Legends/212117",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:31.242Z",
+          "bodyBytes": 76077,
+          "bodySha256": "868a61944c3121637ee55de0a27812aaf2fd5cb817978c735085e6398c1b281a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Low-Level-Systems-C/215973",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Low-Level-Systems-C/215973",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:28.768Z",
+          "bodyBytes": 58144,
+          "bodySha256": "dddc28ffd2bdae2daeaf6e8461a617e69bd43e07697e5a0e3efee1abbf9aef45"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Generalist-Apex-Legends/216015",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer-Generalist-Apex-Legends/216015",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:34.642Z",
+          "bodyBytes": 77501,
+          "bodySha256": "b620e21b3167fb3d4987aace3c5cbbccb5a2937987da24c9792d62d2d91514be"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/216152-Sr-Technical-Artist/216152",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/216152-Sr-Technical-Artist/216152",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:40.054Z",
+          "bodyBytes": 60889,
+          "bodySha256": "e488e6b52417fa7edf7d9aa1de8aa77a22a09bc99bf18b3534012a9214c2da47"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer/216021",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Software-Engineer/216021",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:39.075Z",
+          "bodyBytes": 71159,
+          "bodySha256": "a6746795706391526896b67f16b0ee727d69eec3bc74ad5e9172fd9d1c8781f2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-UI-Artist/216296",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-UI-Artist/216296",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:51.069Z",
+          "bodyBytes": 67827,
+          "bodySha256": "c1e99c3ba3b011fd4e09aecaa125558c7e13509deef0969d37de10c7a23e58fd"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Viewmodel-Animator-Apex-Legends/215700",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Senior-Viewmodel-Animator-Apex-Legends/215700",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:52.689Z",
+          "bodyBytes": 70623,
+          "bodySha256": "fb36eecf757a2f3debc6ef92883ff649d5e4a6dd883697a564b5391918954d7b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/216151-Site-Reliability-Engineer/216151",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/216151-Site-Reliability-Engineer/216151",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:48.427Z",
+          "bodyBytes": 60930,
+          "bodySha256": "d884addedb8cf2c6b683c7bdd3c3a3a92f6b9885e1f0fffd22021467d613c1c7"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-II/215675",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-II/215675",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:53.962Z",
+          "bodyBytes": 78111,
+          "bodySha256": "87d4d236a4ff3db11504c368f18534ce8f4bf3b9236733d11e72616b017097a4"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern-Gameplay-UI/216190",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern-Gameplay-UI/216190",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:41.546Z",
+          "bodyBytes": 70307,
+          "bodySha256": "8685ac43c7350bd677cf72cd3d8d943e1919c30c031aac6cf88649bf8c00497e"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/216250",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/216250",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:44.721Z",
+          "bodyBytes": 58038,
+          "bodySha256": "3ed41b14b296620a54da4125bf050a18319d66977b135136923bb21c92a84574"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/216262",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/216262",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:45.804Z",
+          "bodyBytes": 58038,
+          "bodySha256": "0b2877988168e28812d78fa9f9aa661c6b27df49c5044c3ccab1b207246ed5e2"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/216263",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern/216263",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:49.818Z",
+          "bodyBytes": 58100,
+          "bodySha256": "b15d47fa958c8d899d6a1809452710f3ba530fc4871d1db9ed7a32605bce4916"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern-Tools/216192",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-Intern-Tools/216192",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:46.921Z",
+          "bodyBytes": 70690,
+          "bodySha256": "ccd0990b4bb141c392d1c81e78742d2c6ca9660a5b0a82cd171c7a1b5a52c322"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-UI/216375",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-UI/216375",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:43.372Z",
+          "bodyBytes": 75683,
+          "bodySha256": "65c7a4b9906d4d6442435a176df3e5f4795365f043ce7857f388a4479d705469"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Sr-Experience-Designer-EA-SPORTS-UFC/216161",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Sr-Experience-Designer-EA-SPORTS-UFC/216161",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:04.504Z",
+          "bodyBytes": 75042,
+          "bodySha256": "67693385bc0b671825e8c4f5f83db3ddfd023367df4e207c7430e39820fb5f3a"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Systems-Software-Engineer-EA-SPORTS-FC/216024",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Systems-Software-Engineer-EA-SPORTS-FC/216024",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:55.499Z",
+          "bodyBytes": 68048,
+          "bodySha256": "b4d6a2b78c6f53a2dccc07ecc90a52422db32320d57bdc7ec8fcedc6ab32361f"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-EA-SPORTS-NHL/215818",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Software-Engineer-EA-SPORTS-NHL/215818",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:06.096Z",
+          "bodyBytes": 79016,
+          "bodySha256": "1a79292b72c6a5192eea0e717124e8a90a76f28e76d5300f4d1e40a7f88d7103"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Systems-Software-Engineer-EA-SPORTS-UFC/215825",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Systems-Software-Engineer-EA-SPORTS-UFC/215825",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:58.879Z",
+          "bodyBytes": 66886,
+          "bodySha256": "2b0b128cdce69f28e645f8bc48bfbee74c6fb99fedb65a71264a0baac5125803"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-UFC/215827",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Artist-UFC/215827",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:03.009Z",
+          "bodyBytes": 63181,
+          "bodySha256": "3ea43e9fac5a4b981bd81912984e2a051fede7fde44b789f73edc63206631d12"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Designer-12-mo-TFT/216332",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Designer-12-mo-TFT/216332",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:57.701Z",
+          "bodyBytes": 69834,
+          "bodySha256": "070a6ccf8107e8d28f6a52dbe95bf9300bf500fd0459fa4dc1b14a92e9fa906b"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Interface-Designer-EA-SPORTS-FC/216176",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Interface-Designer-EA-SPORTS-FC/216176",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:01.543Z",
+          "bodyBytes": 74329,
+          "bodySha256": "7f184d4c2de61738ff52dc8d29e73770bf7d2931c7dc148bad601811ec350e68"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Interface-Designer-II-EA-SPORTS-FC/216322",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Technical-Interface-Designer-II-EA-SPORTS-FC/216322",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:05:56.770Z",
+          "bodyBytes": 79738,
+          "bodySha256": "e4611283d4d6f2e2f8fb08b2880ee9f1fee66f32ecdc07189000b6e7388b2939"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Tracking-Operator-Opportunity-for-Students/214346",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Tracking-Operator-Opportunity-for-Students/214346",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:07.612Z",
+          "bodyBytes": 57603,
+          "bodySha256": "2ebea0c9fc09e015f17dc2978e7785cde9e9e5caf87e2b54bb87828789e853fb"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/UI-Technical-Artist-NHL/215806",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/UI-Technical-Artist-NHL/215806",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:00.013Z",
+          "bodyBytes": 72928,
+          "bodySha256": "58dc89d88147760284c8927943a6007a3246329512cfe3497781d4f1b7c7f465"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/VFX-Intern/216274",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/VFX-Intern/216274",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:09.048Z",
+          "bodyBytes": 64241,
+          "bodySha256": "160f924bc6252934be447423b307292294643a0078bed117b9b0614a4ed6fa64"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/VFX-Intern/216273",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/VFX-Intern/216273",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:12.019Z",
+          "bodyBytes": 63014,
+          "bodySha256": "241d310314e1ca62071636920e0a9da62131ea1e403efe15e4c6029efebab027"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Viewmodel-Animator-Apex-Legends/215308",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Viewmodel-Animator-Apex-Legends/215308",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:14.914Z",
+          "bodyBytes": 66391,
+          "bodySha256": "753b0c6176fc5f743d5cc33d40f24314796a90ef44ba27277816a097626be308"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Visual-Designer-EA-SPORTS-UFC/215826",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Visual-Designer-EA-SPORTS-UFC/215826",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:13.301Z",
+          "bodyBytes": 67918,
+          "bodySha256": "f8343c33a8ac93a09a4162857ef813f08d4611b837bb54861799cbd4b3ecd3cc"
+        },
+        {
+          "url": "https://jobs.ea.com/en_US/careers/JobDetail/Workplace-Experience-Specialist/216379",
+          "finalUrl": "https://jobs.ea.com/en_US/careers/JobDetail/Workplace-Experience-Specialist/216379",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:06:10.770Z",
+          "bodyBytes": 73349,
+          "bodySha256": "2c1742121be1e6ccb28d1367c024e676e50f0b593c288bffac60f3f15b71872b"
+        }
+      ]
+    }
+  ]
+}

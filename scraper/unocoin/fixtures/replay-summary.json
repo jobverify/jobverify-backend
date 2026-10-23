@@ -1,0 +1,30 @@
+{
+  "source": "unocoin",
+  "inventoryEvidence": {
+    "status": "discovery-only",
+    "surface": "https://www.linkedin.com/jobs/search/?f_C=3621275&location=India",
+    "firstParty": true,
+    "listingComplete": false,
+    "pagesFetched": 4,
+    "reportedTotal": null,
+    "indiaFacetCount": null,
+    "verifiedAt": "2026-10-23T07:35:00.000Z",
+    "reason": "Exact corporate-linked native employer India and explicit Worldwide searches currently have no matches. Career-worded Unoversity handoff unavailable; whole-company inventory unresolved and cleanup disabled."
+  },
+  "actualRolesRecovered": 0,
+  "eligibleRolesRecovered": 0,
+  "observations": {
+    "exactCorporateLinkedEmployer": "3621275",
+    "scopedIndiaQueryObservedCards": 0,
+    "unfilteredQueryDefaultsTo": "United States",
+    "unoversity": "Playwright native navigation net::ERR_ABORTED at https://edu.unocoin.com/; no response body/status captured",
+    "explicitWorldwideQueriesObservedCards": 0,
+    "currentClientRouteInspection": "Homepage chunk and build manifest contain no career/job/recruit or edu/LinkedIn route references"
+  },
+  "limitations": [
+    "No complete current native company job board was verified",
+    "India search no-match is scoped evidence, not complete company vacancy proof",
+    "Generic LinkedIn browse jobs and third-party roles excluded without native employer role identity and active application"
+  ],
+  "jobs": []
+}

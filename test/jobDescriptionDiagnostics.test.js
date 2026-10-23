@@ -24,3 +24,17 @@ test('diagnostics omit exception messages, configuration and unrelated model fie
   assert.doesNotMatch(text, /mongodb|password|MONGO_URI|Authorization|Bearer/);
   assert.match(text, /Public employer wording/);
 });
+
+test('partial output is preserved and repeated truncations leave room for other rejection reasons', () => {
+  const diagnostics = createRewriteDiagnostics();
+  for (let i = 0; i < 28; i++) diagnostics.record({ id: String(i), reason: 'truncated',
+    input: { sourceDescription: 'Employer source.' }, response: { rawValue: null, value: null, rawText: '{"edits":[{"source":0' } });
+  for (const reason of ['timeout','unsupported_claim','relationship_changed']) diagnostics.record({ reason,
+    input: { sourceDescription: 'Employer source.' }, response: { rawText: 'partial text' } });
+  const result = diagnostics.snapshot();
+  assert.equal(result.reasons.truncated, 28); assert.equal(result.totalRejected, 31);
+  assert.equal(result.samples.filter(sample => sample.reason === 'truncated').length, 2);
+  for (const reason of ['timeout','unsupported_claim','relationship_changed']) assert.ok(result.samples.some(sample => sample.reason === reason));
+  assert.equal(result.samples[0].completionPreview, '{"edits":[{"source":0');
+  assert.ok(Buffer.byteLength(JSON.stringify(result)) <= 65536);
+});

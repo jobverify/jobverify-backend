@@ -23,6 +23,6 @@ test('Doubtnut resolves only to its exact-name first-party provider', () => {
   )
 })
 
-test('Doubtnut fails closed without an official enumerable jobs feed', async () => {
-  assert.deepEqual(await run(), [])
+test('Doubtnut reports a coverage gap when native transport fails', async () => {
+  await assert.rejects(run({ fetchImpl: async () => { throw new Error('offline') } }), { code: 'DOUBTNUT_COVERAGE_GAP' })
 })

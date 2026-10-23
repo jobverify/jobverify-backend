@@ -9,14 +9,15 @@
   "companyDomain": "codingninjas.keka.com",
   "atsPlatform": "keka-official-company-branded-careers",
   "countryFilter": "India",
-  "paginationStrategy": "official-keka-active-jobs-feed",
-  "extractionStrategy": "verified-official-keka-feed-without-public-openings+return-empty",
+  "paginationStrategy": "captured-native-client-unfiltered-active-array",
+  "extractionStrategy": "fresh-official-handoff-tenant-portal-and-contract-bound-empty-inventory",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-25",
+  "verifiedOn": "2026-10-23",
   "verifiedPublicJobCount": 0,
   "verifiedIndiaJobCount": 0,
   "officialCareersPageUrl": "https://codingninjas.keka.com/careers",
   "officialActiveJobsFeedUrl": "https://codingninjas.keka.com/careers/api/embedjobs/default/active/0ec89a02-c247-4dc7-b554-64ae46e3ffc5",
-  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that Coding Ninjas' first-party https://www.codingninjas.com/ homepage links directly to its company-branded Keka careers page at https://codingninjas.keka.com/careers. That public Keka board loads the active-jobs feed at https://codingninjas.keka.com/careers/api/embedjobs/default/active/0ec89a02-c247-4dc7-b554-64ae46e3ffc5, which returned an empty array; this exact-name provider therefore fails closed and returns no jobs until the official feed exposes public openings."
+  "verifiedSurfaceSummary": "Captured official Coding Ninjas homepage handoff, tenant-bound Keka shell and embedded configuration, linked client, employer portal domain and website, and unfiltered native active feed on 2026-10-23. Feed returned HTTP 200 with []. Every run repeats the checks; blocked, changed, malformed, or nonempty unsampled native contracts produce incomplete coverage with unknown counts. No populated detail/location/publication-date contract has been captured.",
+  "zeroResultPolicy": "coverage-gap"
 }

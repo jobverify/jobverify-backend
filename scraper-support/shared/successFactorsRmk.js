@@ -47,11 +47,14 @@ for (let a = 65; a <= 90; a++) for (let b = 65; b <= 90; b++) {
 const locationCountry = location => {
   const parts = text(location).split(',').map(part => part.trim())
   // Native RMK appends postal codes after the explicit country code.
-  const suffix = parts.length > 1 && /\d/.test(parts.at(-1)) && /^[\da-z -]+$/i.test(parts.at(-1)) ? parts.at(-2) : parts.at(-1)
+  const last = parts.at(-1)
+  const brazilPostal = parts.at(-2) === 'BR' && /^\d{2}\.\d{3}-\d{3}$/.test(last)
+  const suffix = parts.length > 1 && /\d/.test(last) && (/^[\da-z -]+$/i.test(last) || brazilPostal) ? parts.at(-2) : last
   const code = /^(India|IN)$/i.test(suffix) ? 'IN' : suffix.toUpperCase()
   requireProof(countries.has(code), `Unknown native location country: ${location}`)
   return code
 }
+export const readRmkLocationCountry = locationCountry
 const activeInlineScripts = html => {
   const inert = [], scripts = []
   const raw = new Set(['script', 'style', 'textarea', 'title', 'xmp', 'noscript', 'noembed', 'noframes', 'iframe', 'plaintext'])
@@ -89,6 +92,7 @@ const verifyTenant = (html, config) => {
   })
   requireProof(tokens.length > 0 && tokens.every(token => token === config.companyToken), 'Native company token mismatch or unavailable')
 }
+export const verifyRmkCompanyToken = verifyTenant
 const nativeUrl = (href, config, pattern) => {
   const url = new URL(href, config.origin)
   requireProof(url.origin === config.origin && !url.username && !url.password && pattern.test(url.pathname), 'Unexpected native URL')

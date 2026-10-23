@@ -1,18 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export const SOURCE = "bunge"
-export const COMPANY = "Bunge"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-01"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 09 exact-name sentinel for Bunge added on Saturday, August 1, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
-
-export const run = async () => createFailClosedSentinelScraper().run()
+import {createFirstPartyHTMLScraper} from '../../scraper-support/shared/firstPartyHtmlJobs.js'
+import {createSourceConfig} from './parser.js'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+export const SOURCE='bunge',COMPANY='Bunge',CAREERS_URL='https://jobs.bunge.com/'
+export const run=options=>createFirstPartyHTMLScraper(createSourceConfig(options)).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

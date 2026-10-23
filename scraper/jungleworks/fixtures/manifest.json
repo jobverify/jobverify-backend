@@ -1,0 +1,46 @@
+{
+  "source": "jungleworks",
+  "captureMethod": "Actual HTTP response bodies captured through root browser session; exact unmodified response JSON compressed with gzip.",
+  "captures": [
+    {
+      "file": "official-response.json.gz",
+      "url": "https://jungleworks.com/careers/",
+      "finalUrl": "https://jungleworks.com/careers/",
+      "status": 200,
+      "capturedAt": "2026-10-23T04:21:42.981Z",
+      "bodyBytes": 199137,
+      "bodySHA256": "eaf6fba5d835040e7262882b96a40c1f91c96d209042e581cd366c857e914940",
+      "captureSHA256": "504c08dacc4c551c317838f977e2c876e2d87eab01b025a1d79c80f8f241bf05"
+    },
+    {
+      "file": "board-response.json.gz",
+      "url": "https://jungleworks.zohorecruit.in/jobs/Careers",
+      "finalUrl": "https://jungleworks.zohorecruit.in/jobs/Careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T04:20:48.092Z",
+      "bodyBytes": 1722538,
+      "bodySHA256": "33a482a11922cd1bc92c6f6612ce0ce9601595153f7954120c717d74fd59ff4b",
+      "captureSHA256": "c03461ee5a2e4842b6148349598d8400596ab6c83cbedc80ffec0a38f96713b8"
+    },
+    {
+      "file": "native-response.json.gz",
+      "url": "https://jungleworks.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite",
+      "finalUrl": "https://jungleworks.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T04:21:02.649Z",
+      "bodyBytes": 1139,
+      "bodySHA256": "f7fea8dd7426097af13a8df609781bcaab7c416a87d5d6afeb0642a1cda61dca",
+      "captureSHA256": "51a8cb4793feba68f437214eb081a4c23a2b5b02f0c9fcf7bf3c8480588831fc"
+    },
+    {
+      "file": "detail-response.json.gz",
+      "url": "https://jungleworks.zohorecruit.in/jobs/Careers/69660000013757052/B2B-Sales-Trainee?source=CareerSite",
+      "finalUrl": "https://jungleworks.zohorecruit.in/jobs/Careers/69660000013757052/B2B-Sales-Trainee?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T04:21:29.695Z",
+      "bodyBytes": 1727665,
+      "bodySHA256": "5875658b34e376aab671b9274469c2cba30d1fa2ad000a1249ddc0456b097260",
+      "captureSHA256": "f73454a124dda782a228f906a69509ba8b60dd72ea8aa6eb365ca5257f600299"
+    }
+  ]
+}

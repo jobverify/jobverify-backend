@@ -1,0 +1,170 @@
+{
+  "source": "questt",
+  "captureMethod": "Root-owned isolated Chrome direct fetch; exact request URL, final URL, HTTP status, capture time and body retained. DOM observations are separate and do not prove HTTP facts.",
+  "files": [
+    {
+      "file": "ai-employer-pages.dom.json.gz",
+      "sha256": "a3e2dbf9ef28e27147419f46dc35a1c92e1e62a0ace9898093a81d969b15bf4e",
+      "uncompressedSHA256": "d04120e8f22bbd42e0f30f12517cef2dbb877ba3f463ad3e289b91e730cdc42d",
+      "bytes": 6648
+    },
+    {
+      "file": "ai-employer-pages.json.gz",
+      "sha256": "e4b2392ae52c632d980d1ab4e897cfa9ee640f32ba282160f561f926247db936",
+      "uncompressedSHA256": "fc74b720150177fde37fdc4b6ce56572dc9b1b82ecaf99eee81ee6c1e5263a89",
+      "bytes": 51508
+    },
+    {
+      "file": "ai-pages.dom.json.gz",
+      "sha256": "346701edd4db6d360291663ec43a36e4f6f3cfbf5b20f7692352356068b24f3d",
+      "uncompressedSHA256": "8ed2fb0404ed4f1aed07742da620fad737a6388da2481946565a8b624b6e2f28",
+      "bytes": 409
+    },
+    {
+      "file": "ai-pages.json.gz",
+      "sha256": "84801899d2e6fc544ea74ef2ace32488ecaf05919f360ad9fd959bcf35720002",
+      "uncompressedSHA256": "6f4259ac418ffaade661a0de22669ab3830cb1cb130263020ef59b21400f05f7",
+      "bytes": 150
+    },
+    {
+      "file": "application-navigation.dom.json.gz",
+      "sha256": "cd3b628ac82ef701bf3ce0992240be4c2d43ae99160af7a7e2121cc420a28004",
+      "uncompressedSHA256": "e6888cfd03f0c5821d0d58bd54df8ca9802d61b644419c52aa312786bc62e1c4",
+      "bytes": 6962
+    },
+    {
+      "file": "application-navigation.json.gz",
+      "sha256": "858ce9c035384bc4f31d7895b470bc72809b733274d960eabeca130df6c3bb1a",
+      "uncompressedSHA256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 23
+    },
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "0a0f9c2e9eaabf4c3590a56ae4affcbe6c0a4819c093a03c6342b35ce48b3bb3",
+      "uncompressedSHA256": "1a0d14aca02cd25db041414f35a6c091ca0b70b90937071210ce1833db8189ba",
+      "bytes": 3841
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "d6c4c3faf06d8b86f445d322415aac8233e420a8d33c016e7fb593937f519c8b",
+      "uncompressedSHA256": "2d6b49b09dbe812dff2e3ec6f85d2fe855ff628b8847c7dbb533c8035fcd870b",
+      "bytes": 52544
+    },
+    {
+      "file": "notion-pages.dom.json.gz",
+      "sha256": "c29577d88e6231e9215d8e791d2d0b3c49e368c6d0fef7dfe236e907c38ebee2",
+      "uncompressedSHA256": "39dc143b3c5938e0cade9e18850e0df68f170c303ff41be81ce3fea28d931608",
+      "bytes": 2081
+    },
+    {
+      "file": "notion-pages.json.gz",
+      "sha256": "32092ff91776d3fe5f6bbbc465bb95f23a848d655ac6c38331166e3092888462",
+      "uncompressedSHA256": "c6ad63ddf78ef8b39323e65fe2be4d193626eab3dad77384f1a14d74a56720cc",
+      "bytes": 188
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "19eabc3361e868c00bb00b88a044dc487e19574f89b1f7eef56d93e56ffa3ec8",
+      "uncompressedSHA256": "27c8815f15ef1a66a1b3a5ec5e9fe9928c53d5217974d74928da4ca7195904f2",
+      "bytes": 2790
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "e8d9325a53cf138c26d9be5ff7e68d0b28824a1d2642c4b1ff4c642cb4ff783a",
+      "uncompressedSHA256": "c4f9e1b46098b036a2e10e341c1a8b232e59aac3584cc03d19cf5339f7d076da",
+      "bytes": 5614
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://www.linkedin.com/company/questtai",
+      "finalUrl": "https://www.linkedin.com/company/questtai",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:17:49.414Z",
+      "error": null,
+      "captureFile": "ai-employer-pages.json.gz",
+      "bodySHA256": "ddfdbbca841abe34a629fa61be038d6030c9c987f7fa0459d0f8fe3ae351a921",
+      "bodyBytes": 208221
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=69658946&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=69658946&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:17:51.367Z",
+      "error": null,
+      "captureFile": "ai-employer-pages.json.gz",
+      "bodySHA256": "dabcc8e8049558d0b2ba3e0d66fcc3df74b8b963282ba14c7279abddcad8ab38",
+      "bodyBytes": 89319
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=69658946&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=69658946&location=Worldwide",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:17:52.233Z",
+      "error": null,
+      "captureFile": "ai-employer-pages.json.gz",
+      "bodySHA256": "d5d5e191077c572aa0f43964fd82c6ede3c1be9a9f47cb81c4e2d502aed3b059",
+      "bodyBytes": 89374
+    },
+    {
+      "url": "https://www.questt.ai/",
+      "finalUrl": null,
+      "status": null,
+      "capturedAt": "2026-10-23T09:17:39.441Z",
+      "error": "TypeError: Failed to fetch",
+      "captureFile": "ai-pages.json.gz",
+      "bodySHA256": null,
+      "bodyBytes": null
+    },
+    {
+      "url": "https://questt.ai/",
+      "finalUrl": null,
+      "status": null,
+      "capturedAt": "2026-10-23T09:17:39.723Z",
+      "error": "TypeError: Failed to fetch",
+      "captureFile": "ai-pages.json.gz",
+      "bodySHA256": null,
+      "bodyBytes": null
+    },
+    {
+      "url": "https://www.linkedin.com/company/questt/",
+      "finalUrl": "https://www.linkedin.com/company/questt/",
+      "status": 404,
+      "capturedAt": "2026-10-23T09:16:18.148Z",
+      "error": null,
+      "captureFile": "linkedin-pages.json.gz",
+      "bodySHA256": "8f447ee2be2aa3e41252dfe0a24a87385e659fecc33970a39dc952dd767f6fba",
+      "bodyBytes": 319687
+    },
+    {
+      "url": "https://www.notion.so/2513b2e8fea24399bae452bc13f064aa?v=36939e26756f4a8eaddf235ad0c6f684",
+      "finalUrl": null,
+      "status": null,
+      "capturedAt": "2026-10-23T09:16:23.986Z",
+      "error": "TypeError: Failed to fetch",
+      "captureFile": "notion-pages.json.gz",
+      "bodySHA256": null,
+      "bodyBytes": null
+    },
+    {
+      "url": "https://www.questt.com/",
+      "finalUrl": null,
+      "status": null,
+      "capturedAt": "2026-10-23T09:16:13.597Z",
+      "error": "TypeError: Failed to fetch",
+      "captureFile": "official-pages.json.gz",
+      "bodySHA256": null,
+      "bodyBytes": null
+    },
+    {
+      "url": "https://questt.com/",
+      "finalUrl": "https://questt.com/",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:16:14.051Z",
+      "error": null,
+      "captureFile": "official-pages.json.gz",
+      "bodySHA256": "c2a985de43038ee4223e2e28924b83ef79bb76ac2c2958175cca4f628d06df07",
+      "bodyBytes": 18582
+    }
+  ]
+}

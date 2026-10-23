@@ -23,7 +23,7 @@ test('Udaan is covered only by its exact-name first-party provider', () => {
   assert.equal(provider.companyName, 'Udaan')
   assert.equal(provider.companyDomain, 'udaan.com')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'exact-name-fail-closed-sentinel')
+  assert.equal(provider.atsPlatform, 'linkedin-employer-public-board')
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'Udaan').map((item) => item.source),
     ['udaan'],
@@ -32,9 +32,15 @@ test('Udaan is covered only by its exact-name first-party provider', () => {
   assert.equal(nearNameReport.unmatchedCount, 1)
 })
 
-test('Udaan scraper fails closed without an official public careers feed', async () => {
+test('Udaan scraper makes fresh requests and exposes upstream failures as typed coverage gaps', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'udaan')
 
   assert.ok(scraper, 'Expected Udaan scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  let calls = 0
+  await assert.rejects(scraper.run({fetchImpl:async () => {calls++; throw Error('offline')}}), error => {
+    assert.equal(error.code, 'UDAAN_COVERAGE_GAP')
+    assert.equal(error.inventoryEvidence.listingComplete, false)
+    return true
+  })
+  assert.equal(calls, 1)
 })

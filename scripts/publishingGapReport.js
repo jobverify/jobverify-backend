@@ -1,5 +1,5 @@
 import { classifyProviderImplementation } from './reportScriptCatalogTopology.js'
-import { isVerifiedEmptyEvidence, isFreshCompleteInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
+import { isVerifiedEmptyEvidence, isFreshCompleteInventoryEvidence, hasIncompleteScraperAttempt, isCompleteScraperAttempt } from '../scraper-support/utils/inventoryEvidence.js'
 import { explainPublishingGap } from './publishingGapExplanation.js'
 
 const metric = value => Number.isSafeInteger(value) && value >= 0 ? value : null
@@ -12,7 +12,7 @@ const companyKey = value => String(value || '').trim().toLowerCase()
 const companyNamesAvailable = value => Array.isArray(value) && value.every(name => typeof name === 'string')
 const sharedAdapters = new Set(['workday', 'publicAts', 'apiPortal'])
 const sharedAtsPlatforms = new Set(['greenhouse', 'ashby', 'lever', 'workday', 'workable', 'workable-native-api',
-  'darwinbox', 'phenom', 'successfactors-rmk', 'kula', 'kula-public-api'])
+  'darwinbox', 'phenom', 'successfactors-rmk', 'kula', 'kula-public-api', 'eightfold'])
 const countBy = (rows, field) => rows.reduce((counts, row) => {
   counts[row[field]] = (counts[row[field]] || 0) + 1
   return counts
@@ -136,17 +136,17 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
     const attemptFresh = fresh(attempt?.completedAt || attempt?.attemptedAt, now, maxAgeHours)
     const completeEvidence = isFreshCompleteInventoryEvidence(evidence, { now, maxAgeHours })
       && isFreshCompleteInventoryEvidence(evidence, { now: attempt?.completedAt || now, maxAgeHours })
-    const partial = attempt?.staleCheckSkipped === true || attempt?.partial === true
-      || attempt?.detailHealth?.complete === false || metric(attempt?.filteredEmptyDescription) > 0
+    const partial = hasIncompleteScraperAttempt(attempt)
+    const completeAttempt = completeEvidence && isCompleteScraperAttempt(attempt, { now, maxAgeHours })
     let runtimeOutcome = 'not-observed'
     if (attempt?.pending) runtimeOutcome = 'in-progress'
     else if (attempt?.skipped) runtimeOutcome = 'skipped'
     else if (attempt?.failureKind === 'coverage_gap' || attempt?.zeroJobEvidence === 'coverage-gap') runtimeOutcome = 'coverage-gap'
     else if (attempt?.failureKind === 'partial_positive' && partial) runtimeOutcome = 'partial'
-    else if (attempt?.success === false || attempt?.softFailure === true) runtimeOutcome = 'failed'
+    else if (attempt?.success === false || attempt?.softFailure === true || attempt?.upstreamOutage === true || attempt?.failureKind) runtimeOutcome = 'failed'
     else if (partial) runtimeOutcome = 'partial'
     else if (attempt?.success === true) {
-      if (metric(attempt.jobs) === 0) runtimeOutcome = completeEvidence
+      if (metric(attempt.jobs) === 0) runtimeOutcome = completeAttempt
         ? (isVerifiedEmptyEvidence(evidence) ? 'verified-zero' : 'no-india-jobs') : 'unverified-zero'
       else if (metric(attempt.eligibleJobs) === 0) runtimeOutcome = 'jobs-rejected'
       else if (metric(attempt.eligibleJobs) > 0) runtimeOutcome = 'eligible-jobs'
@@ -163,7 +163,7 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       isActive: typeof status?.isActive === 'boolean' ? status.isActive : null,
       latestAttemptAt: timestamp(attempt?.attemptedAt || attempt?.completedAt),
       latestAttemptCompletedAt: timestamp(attempt?.completedAt),
-      lastCompleteCheckAt: timestamp(status?.lastCompleteCheckAt || (completeEvidence && attempt?.success === true && !partial && !attempt.skipped ? attempt.completedAt : null)),
+      lastCompleteCheckAt: timestamp(status?.lastCompleteCheckAt || (completeAttempt ? attempt.completedAt || evidence?.verifiedAt : null)),
       attemptFresh, evidenceFresh, evidenceOrigin: attempt?.evidenceOrigin || (attempt ? 'database-status' : null),
       evidenceMode: attempt?.mode || (attempt ? 'live' : null),
       runtimeOutcome, publicationOutcome: visibleJobs === null ? 'unknown' : visibleJobs > 0 ? 'published' : 'not-published',
@@ -171,7 +171,7 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       upstreamReportedJobs: metric(evidence?.reportedTotal),
       savedJobs, visibleJobs, visibleCompanies: current.visibleCompanies, rejectionCounts,
       inventoryDelegation: delegationFor(provider),
-      completeSuccessfulCheck: attemptFresh && attempt?.success === true && !attempt.softFailure && !partial && !attempt.skipped && completeEvidence,
+      completeSuccessfulCheck: attemptFresh && completeAttempt,
       inventoryEvidence: evidence, detailHealth: attempt?.detailHealth || null, zeroJobEvidence: attempt?.zeroJobEvidence || null,
       failureKind: attempt?.failureKind || null, error: attempt?.error || null,
       careerPage: provider.companyCareerPage || null,
@@ -221,7 +221,7 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
     careerPage: row.careerPage, discoveryRequired: true,
     priority: row.gapExplanation === 'delegated-inventory-published-under-other-sources' || row.discoveredAtsBoard?.sharedPublishedSources?.length ? 3
       : exploredEligibleJobs(row) > 0 ? 0
-      : ['sentinel', 'static-empty', 'missing-module'].includes(row.implementationType) ? 1 : 2,
+      : ['sentinel', 'static-empty', 'discovery-only', 'missing-module'].includes(row.implementationType) ? 1 : 2,
     observedEligibleJobs: exploredEligibleJobs(row),
     evidence: { discoveryAt: row.discoveryAt, extractionAuditAt: row.extractionAuditAt,
       discoveredAtsBoard: row.discoveredAtsBoard, extractionAudit: row.extractionAuditEvidence,
@@ -239,7 +239,7 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       completeSuccessfulChecks: rows.filter(row => row.completeSuccessfulCheck).length,
       sourcesWithoutAttemptDiagnostics: rows.filter(row => row.rawJobs == null || row.indiaJobs == null || row.eligibleJobs == null).length,
       verifiedZeroInventories: rows.filter(row => row.runtimeOutcome === 'verified-zero' && row.attemptFresh).length,
-      coverageGaps: rows.filter(row => row.zeroResultPolicy === 'coverage-gap' || row.runtimeOutcome === 'coverage-gap' || ['sentinel', 'static-empty', 'missing-module', 'unreadable-module'].includes(row.implementationType)).length,
+      coverageGaps: rows.filter(row => row.zeroResultPolicy === 'coverage-gap' || row.runtimeOutcome === 'coverage-gap' || ['sentinel', 'static-empty', 'discovery-only', 'missing-module', 'unreadable-module'].includes(row.implementationType)).length,
       failures: rows.filter(row => row.runtimeOutcome === 'failed').length,
       sourcesWithVisibleJobs: visibleCountsComplete ? rows.filter(row => row.visibleJobs > 0).length : null,
       distinctVisibleCompanies: publicNames?.size ?? null,

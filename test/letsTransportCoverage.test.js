@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
@@ -31,9 +30,17 @@ test('LetsTransport is covered only by its exact first-party provider', () => {
   assert.equal(nearNameReport.unmatchedCount, 1)
 })
 
-test('LetsTransport scraper fails closed without an enumerable official jobs feed', async () => {
+test('LetsTransport registry scraper reports unavailable inventory without certifying zero', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'letstransport')
 
   assert.ok(scraper, 'Expected LetsTransport scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  await assert.rejects(scraper.run({ fetchImpl: async url => ({ status: 200, url,
+    text: async () => '<h1>LetsTransport</h1><p>Send your resume to recruitment@letstransport.team</p>',
+  }) }), error => {
+    assert.equal(error.code, 'LETSTRANSPORT_COVERAGE_GAP')
+    assert.equal(error.lifecycleCleanupAllowed, false)
+    assert.equal(error.inventoryEvidence.listingComplete, false)
+    assert.equal(error.inventoryEvidence.reportedTotal, null)
+    return true
+  })
 })

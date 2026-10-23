@@ -8,6 +8,7 @@ export const explainPublishingGap = (row, { now = new Date(), maxAgeHours = 48 }
   if (row.isActive === false) return 'administrator-disabled'
   if (row.implementationType === 'sentinel') return 'placeholder-not-implemented'
   if (row.implementationType === 'static-empty') return 'static-empty-implementation'
+  if (row.implementationType === 'discovery-only') return 'discovery-only-extraction-unimplemented'
   if (!['script', 'shared-adapter'].includes(row.implementationType)) return 'implementation-unavailable'
   if (row.extractionAuditFresh) {
     const persistedAt = Date.parse(row.latestAttemptCompletedAt || row.latestAttemptAt)

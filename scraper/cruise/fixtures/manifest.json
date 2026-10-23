@@ -1,0 +1,12 @@
+﻿{
+    "fixtures":  [
+                     {
+                         "file":  "transport-failure-20261023.json",
+                         "kind":  "browser-tool-transport-failure",
+                         "bytes":  786,
+                         "sha256":  "f0c8755977b6e7da23fb72994f88c0bd80d5f893594daf0f8b6c4ff57c77f118",
+                         "httpResponseCaptured":  false,
+                         "bodySha256":  null
+                     }
+                 ]
+}

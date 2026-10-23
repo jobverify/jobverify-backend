@@ -19,6 +19,6 @@ test('Jungleworks resolves only to its exact-name provider', () => {
   )
 })
 
-test('Jungleworks fails closed when its official ATS has no enumerable public openings', async () => {
-  assert.deepEqual(await run(), [])
+test('Jungleworks rejects unavailable official inventory instead of certifying zero', async () => {
+  await assert.rejects(run({ fetchImpl: async () => { throw new Error('offline fixture') } }), /offline fixture/)
 })

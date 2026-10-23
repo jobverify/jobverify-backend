@@ -1,0 +1,11 @@
+{
+  "url": "https://cropinhrms.keka.com/careers/",
+  "finalUrl": "https://cropinhrms.keka.com/careers/",
+  "status": 200,
+  "capturedAt": "2026-10-23T04:46:55.629Z",
+  "body": "    <!DOCTYPE html>\r\n    <html>\r\n    <head><link rel=\"preconnect\" href=\"https://cdn.keka.com/careers/v/2026/\" />\r\n        <meta charset=\"utf-8\" />\r\n        \t<meta name=\"robots\" content=\"noindex\">\r\n\r\n        \r\n\r\n\r\n        <script>\r\n            window.isCareersPage = true;\r\n        </script>\r\n    </head>\r\n    <body>\r\n        <div id=\"content-container\"></div>\r\n        <script>\r\n            fetch('/ats/documents/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e/careerportal/bccf7d2c2fd8455185c3c33332efea3e.html')\r\n                .then(response => response.text())\r\n                .then(data => {\r\n                    var parser = new DOMParser();\r\n                    var htmlDoc = parser.parseFromString(data, 'text/html');\r\n                    var bodyContent = htmlDoc.body.innerHTML;\r\n                    document.getElementById('content-container').innerHTML = bodyContent;\r\n\r\n                    htmlDoc.head.childNodes.forEach(node => {\r\n                        if (node.tagName === 'SCRIPT') {\r\n                            var script = document.createElement('script');\r\n                            script.innerHTML = node.innerHTML; // Set the script content\r\n\r\n                            for (var i = 0; i < node.attributes.length; i++) {\r\n                                script.setAttribute(node.attributes[i].name, node.attributes[i].value);\r\n                            }\r\n\r\n                            document.head.appendChild(script);\r\n                        } else {\r\n                            document.head.appendChild(node.cloneNode(true));\r\n                        }\r\n                    });\r\n                });\r\n        </script>\r\n    </body>\r\n    </html>\r\n",
+  "text": "Be a part of building something great\n\nBrowse all jobs\n\nOpen positions\nDepartment\nLocation\nThere are no job postings matching the filters.\n2026 Keka Hire. Powered by",
+  "scripts": [
+    "https://cropinhrms.keka.com/careers/api/embedjobs/js/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e"
+  ]
+}

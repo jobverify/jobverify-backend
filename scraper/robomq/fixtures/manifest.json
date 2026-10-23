@@ -1,0 +1,67 @@
+{
+  "source": "robomq",
+  "capturedOn": "2026-10-23",
+  "productionWrites": false,
+  "files": [
+    {
+      "file": "native-details.json",
+      "fileSha256": "778bf64afe94367ae510aecbdb1f962b413a2b6a7e542b68aaaea8e241dda886",
+      "responses": [
+        {
+          "url": "https://in.linkedin.com/jobs/view/devops-engineer-at-robomq-4475545026",
+          "finalUrl": "https://in.linkedin.com/jobs/view/devops-engineer-at-robomq-4475545026",
+          "status": 200,
+          "bodySha256": "23ef265c2d738a8cf4e4b992c3ac37c286fc3ebd2ca889047014509cad2ea15e"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/lead-software-engineer-at-robomq-4474128262",
+          "finalUrl": "https://in.linkedin.com/jobs/view/lead-software-engineer-at-robomq-4474128262",
+          "status": 200,
+          "bodySha256": "c6cbde33d3d278188f19d585ee633c8b001c796e2c23b63f52a84ac4ae6f1599"
+        },
+        {
+          "url": "https://in.linkedin.com/jobs/view/lead-software-engineer-distributed-systems-at-robomq-4462733185",
+          "finalUrl": "https://in.linkedin.com/jobs/view/lead-software-engineer-distributed-systems-at-robomq-4462733185",
+          "status": 200,
+          "bodySha256": "f31c1a62bb0c1452e055d4f1aaa8bdaf9fd191d0f7dbe0ba4693a2bfbd34b231"
+        }
+      ]
+    },
+    {
+      "file": "native-us-detail.json",
+      "fileSha256": "d1bb5d8c06e5409241046118428e070a08dff97f4e61eded392a176fcff60fbb",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/view/senior-account-executive-at-robomq-4473057072",
+          "finalUrl": "https://www.linkedin.com/jobs/view/senior-account-executive-at-robomq-4473057072",
+          "status": 200,
+          "bodySha256": "5a5a4b6071fe85dc58907b84f4cd912814fdf84d46e5a75201ef3941f29326b0"
+        }
+      ]
+    },
+    {
+      "file": "official-response.json",
+      "fileSha256": "3edee76528a566f04edf98a05bb0ed47aadb5a7fe67d40da85cfb2da7a0bf459",
+      "responses": [
+        {
+          "url": "https://www.robomq.io/",
+          "finalUrl": "https://www.robomq.io/",
+          "status": 200,
+          "bodySha256": "1f7127f71cf4827eba105cdbe462ef291715d670186953bc32b1aeb6753180e2"
+        }
+      ]
+    },
+    {
+      "file": "published-careers-response.json",
+      "fileSha256": "ffd8b3075ada812ef5832997812ca5d20cc825b07cd039ba18e4605f0eb4db90",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/robomq-jobs-worldwide?position=1&pageNum=0",
+          "finalUrl": "https://www.linkedin.com/jobs/robomq-jobs-worldwide?position=1&pageNum=0",
+          "status": 200,
+          "bodySha256": "64ded43b5b8fe8bf7899b07992905801a8f5b04ecb6e1f53938a42a574b6d538"
+        }
+      ]
+    }
+  ]
+}

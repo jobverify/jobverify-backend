@@ -1,0 +1,10 @@
+{
+  "url": "https://www.avataar.ai/",
+  "title": "Checking your browser before accessing. Just a moment...",
+  "text": "Checking your browser before accessing\nwww.avataar.ai\n\nPlease wait for up to 5 seconds...",
+  "links": [],
+  "scripts": [
+    "https://www.avataar.ai/hcdn-cgi/jschallenge"
+  ],
+  "network": []
+}

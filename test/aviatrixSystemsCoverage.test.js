@@ -18,6 +18,6 @@ test('Aviatrix Systems resolves only to its exact-name official provider', () =>
   assert.equal(report.unmatchedCount, 0)
 })
 
-test('Aviatrix Systems fails closed without a verified enumerable official jobs feed', async () => {
-  assert.deepEqual(await run(), [])
+test('Aviatrix Systems propagates official feed failures instead of reporting zero jobs', async () => {
+  await assert.rejects(run({ fetchJson: async () => { throw new Error('official board unavailable') } }), /official board unavailable/)
 })

@@ -6,18 +6,24 @@
   "adapter": "script",
   "modulePath": "../katalon/script.js",
   "dryRunFile": "katalon/jobs.json",
-  "companyCareerPage": "https://katalon.com/careers",
+  "companyCareerPage": "https://katalon.com/careers/all-jobs",
   "companyDomain": "katalon.com",
-  "atsPlatform": "teamtailor-branded-official-careers",
+  "atsPlatform": "teamtailor",
   "countryFilter": "India",
-  "paginationStrategy": "verified-official-ats-page-sentinel",
-  "extractionStrategy": "verified-official-ats-without-enumerable-india-listings+return-empty",
+  "paginationStrategy": "native-complete-jobs-page-and-rss-identity-reconciliation",
+  "extractionStrategy": "verified-first-party-teamtailor-listings-and-native-jobposting-details",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-26",
-  "verifiedPublicJobCount": 9,
-  "verifiedIndiaJobCount": 0,
+  "verifiedOn": "2026-10-23",
+  "verifiedPublicJobCount": 14,
   "officialCareersPageUrl": "https://katalon.com/careers",
   "officialAtsPageUrl": "https://careers.katalon.com/",
-  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://katalon.com/careers is Katalon's first-party careers page and links to its branded Teamtailor board at https://careers.katalon.com/. The public board currently lists nine Vietnam openings and no India openings, so this exact-name provider fails closed until the official ATS exposes enumerable India roles."
+  "verifiedSurfaceSummary": "Rechecked 2026-10-23: official Katalon careers handoff to careers.katalon.com/jobs. Complete native listing and RSS reconcile 14 entries. Two native India/Bengaluru recruiting locations require relocation to Vietnam; source titles/content and geographic conflict are preserved. They do not establish India-based work or complete India coverage. Captures retained under scraper/katalon/fixtures.",
+  "verifiedIndiaRecruitingLocationCount": 2,
+  "sourceListingComplete": false,
+  "verificationDisposition": "complete-native-enumeration-unresolved-vietnam-relocation",
+  "unresolvedJobIds": [
+    "8464989",
+    "8557097"
+  ]
 }

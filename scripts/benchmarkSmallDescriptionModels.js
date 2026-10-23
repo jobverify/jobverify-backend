@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { buildScrapers } from '../scraper-support/providers/index.js';
 import { normalizeScrapedJob } from '../scraper-support/utils/normalizeScrapedJob.js';
 import { REWRITE_MODEL, buildRewriteInput, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
-import { buildReferencedSections } from '../rewriting/sectionProtocol.js';
+import { buildSourceEdits } from '../rewriting/editProtocol.js';
 import { createRewriteClient, assessDescriptionRewrite, RewriteGenerationError } from '../rewriting/runner.js';
 import { factPlanMessages, factPlanSchema, buildSourceFacts, assessRewriteInput, expandModelPlan, validateFactPlan } from '../rewriting/factPlan.js';
 import { ensureArtifact, workerMemoryBytes } from '../rewriting/worker.js';
@@ -217,7 +217,7 @@ if (phase === 'prepare') {
   };
   const request = async (item, workerIndex = 0) => {
     const { input } = item, assessment = grounded ? assessDescriptionRewrite(input) : assessRewriteInput(input,factOptions), facts = buildSourceFacts(input,factOptions);
-    const protocol = grounded ? buildReferencedSections(input) : null;
+    const protocol = grounded ? buildSourceEdits(input) : null;
     const schema = grounded ? protocol.schema : factPlanSchema(input,factOptions), originalMessages = grounded ? protocol.messages : factPlanMessages(input,factOptions);
     const transport=!grounded&&minimalPlan?minimalPlanTransport(schema,originalMessages):null,messages=transport?.messages||originalMessages;
     const formatted = allDescriptions ? formatEmployerSource(input.sourceDescription) : null;

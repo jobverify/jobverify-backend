@@ -27,5 +27,10 @@ test('Dassault Aviation India stays exact-name while the sibling Dassault Aviati
 })
 
 test('Dassault Aviation India fails closed without verified public India openings', async () => {
-  assert.deepEqual(await run(), [])
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('offline')}}),error=>{
+    assert.equal(error.code,'DASSAULTAVIATIONINDIA_COVERAGE_GAP')
+    assert.equal(error.lifecycleCleanupAllowed,false)
+    assert.equal(error.inventoryEvidence.reportedTotal,null)
+    return true
+  })
 })

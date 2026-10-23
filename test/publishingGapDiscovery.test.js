@@ -144,7 +144,7 @@ test('backlog ranks shared compatibility before counts and source ID within each
 })
 
 test('compatibility recognizes supported shared adapters, script platforms and discovered ATS candidates', () => {
-  for (const atsPlatform of ['greenhouse', 'ashby', 'lever', 'workday', 'workable', 'workable-native-api']) {
+  for (const atsPlatform of ['greenhouse', 'ashby', 'lever', 'workday', 'workable', 'workable-native-api', 'eightfold']) {
     const report = buildPublishingGapReport({
       catalog: [
         { source: 'script', adapter: 'script', atsPlatform },

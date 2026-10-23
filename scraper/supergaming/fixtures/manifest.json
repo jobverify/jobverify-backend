@@ -1,0 +1,18 @@
+{
+  "source": "supergaming",
+  "captureMethod": "Actual root browser same-origin HTTP response; no enumerable job inventory inferred from general email recruiting.",
+  "captures": [
+    {
+      "file": "careers-response.json",
+      "url": "https://www.supergaming.com/careers",
+      "finalUrl": "https://www.supergaming.com/careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T04:45:16.957Z",
+      "bodySha256": "e2121622e7e9bbd528ada9c0d2ae3a509d6c66333fdfe74441b5f87f1ffe5f51",
+      "fileSha256": "90c5613a110e9a3a9ee097a56c52b8ab445da5e9659d0b3c357a8b414291a4d7"
+    }
+  ],
+  "outcome": "unverified-email-recruiting-inventory",
+  "reportedTotal": null,
+  "indiaFacetCount": null
+}

@@ -2,8 +2,11 @@ import { document, norm } from '../../scraper-support/shared/rmkNativePairHtml.j
 import { hasClass, requireNative, oneNative, nativeCountryName, nativeLocationCountryName, readNativeJobPosting } from '../../scraper-support/shared/nativeJobPosting.js';
 export const HOME = 'https://www.burohappold.com/careers/';
 export const BOARD = 'https://vacancies.burohappold.com/';
-const pagePath = /^\/jobs\/search\/-1\/([1-9]\d{0,3})\/?$/;
-const rolePath = /^\/jobs\/job\/([A-Za-z0-9]+(?:-[A-Za-z0-9]+)*)\/([1-9]\d{0,9})\/?$/;
+// The native page2 pagination uses /jobs/search/-1/ as its page1 alias.
+const pagePath = /^\/jobs\/search\/-1\/(?:([1-9]\d{0,3})\/?)?$/;
+const rolePath = /^\/jobs\/job\/([A-Za-z0-9]+(?:-+[A-Za-z0-9]+)*)\/([1-9]\d{0,9})\/?$/;
+const locationKey = value => norm(value).toLowerCase().replace(/\s*([,;])\s*/g, '$1');
+const locationLabelsAgree = (visible, listed) => JSON.stringify(visible.map(locationKey)) === JSON.stringify(listed.map(locationKey));
 export function validateURL(value) {
   requireNative(typeof value === 'string', 'Invalid Buro Happold URL type');
   const url = new URL(value);
@@ -12,11 +15,11 @@ export function validateURL(value) {
   else {
     requireNative(url.origin === new URL(BOARD).origin, 'Unapproved Buro Happold origin');
     const page = pagePath.exec(url.pathname);
-    requireNative(url.pathname === '/' || page && Number(page[1]) <= 1000 || rolePath.test(url.pathname), 'Unapproved vacancy/application read path');
+    requireNative(url.pathname === '/' || page && Number(page[1] || 1) <= 1000 || rolePath.test(url.pathname), 'Unapproved vacancy/application read path');
   }
   return url;
 }
-const pageNumber = value => { const path = validateURL(value).pathname; return path === '/' ? 1 : Number(pagePath.exec(path)?.[1]); };
+const pageNumber = value => { const path = validateURL(value).pathname, match = pagePath.exec(path); return path === '/' ? 1 : match ? Number(match[1] || 1) : NaN; };
 const docOf = html => { const doc = document(html); requireNative(!doc.nodes(node => node.tag === 'base').length, 'Unexpected native base URL'); return doc; };
 export function parseListing(html, url = BOARD) {
   const page = pageNumber(url); requireNative(Number.isInteger(page) && page > 0, 'Not an unfiltered native search page');
@@ -71,7 +74,7 @@ const summary = doc => {
 };
 const summaryValue = (doc, label) => { const value = summary(doc).get(label); requireNative(typeof value === 'string' && value, 'Missing native ' + label); return value; };
 const postingConfig = {
-  requireSchemaIdentifier: false, acceptedHiringOrganizations: ['Buro Happold Limited'],
+  requireSchemaIdentifier: false, acceptedHiringOrganizations: ['Buro Happold Limited'], compareLocationLabels: locationLabelsAgree,
   visibleTitle: doc => doc.text(oneNative(doc.nodes(node => node.tag === 'h1'), 'visible role heading')),
   visibleDescriptionHTML: doc => {
     const main = oneNative(doc.nodes(node => node.attrs.id === 'job_main'), 'main role description');
@@ -91,11 +94,17 @@ export function parseDetail(html, row) {
   const doc = docOf(html), reference = summaryValue(doc, 'Job Reference');
   requireNative(new RegExp('^burohappold/TP/[1-9]\\d*/' + row.id + '$').test(reference), 'Native job reference/URL identity mismatch');
   const fact = readNativeJobPosting(html, row, postingConfig);
+  if (fact.excluded) return { ...fact, nativeJobReference: reference, nativeVisibleSummary: Object.fromEntries(summary(doc)),
+    nativeVisibleClosingDateLabel: summary(doc).get('Closing Date') ?? null,
+    nativeExpiryUIValidation: 'not-applied-to-excluded-role' };
   for (const address of fact.nativeCountryAddresses.filter(value => value.country === 'India')) {
     const city = address.raw.addressLocality;
     requireNative(typeof city === 'string' && city.trim(), 'Missing explicit native India locality');
-    const cityKey = norm(city).toLowerCase();
-    requireNative(row.locations.some(label => label.split(/[,;]/).some(part => norm(part).toLowerCase() === cityKey)), 'Visible/native city location conflict');
+    const cities = city.split(/[,;]/).map(part => norm(part).toLowerCase());
+    requireNative(cities.every(Boolean) && row.locations.some(label => {
+      const parts = label.split(/[,;]/).map(part => norm(part).toLowerCase());
+      return cities.every(city => parts.includes(city));
+    }), 'Visible/native city location conflict');
   }
   const closingLabel = summaryValue(doc, 'Closing Date');
   if (fact.nativeValidThrough.iso) {
@@ -105,7 +114,7 @@ export function parseDetail(html, row) {
   return { ...fact, nativeJobReference: reference, nativeVisibleSummary: Object.fromEntries(summary(doc)), nativeVisibleClosingDateLabel: closingLabel };
 }
 export const CONFIG = {
-  source: 'burohappold', companyName: 'Buro Happold', boardURL: BOARD, validateURL, parseListing, parseDetail,
+  source: 'burohappold', companyName: 'Buro Happold', boardURL: BOARD, validateURL, parseListing, parseDetail, locationLabelsAgree,
   handoffs: [{ url: HOME, verify: html => { const doc = docOf(html); requireNative(doc.nodes(node => node.tag === 'a' && node.attrs.href).some(node => { try { return new URL(node.attrs.href, HOME).href === BOARD; } catch { return false; } }), 'Official corporate vacancy handoff missing'); } }],
   sameReadIdentity: (left, right) => { const a = validateURL(left), b = validateURL(right); return a.origin === b.origin && (Number.isInteger(pageNumber(left)) && Number.isInteger(pageNumber(right)) ? pageNumber(left) === pageNumber(right) : a.pathname.replace(/\/$/, '') === b.pathname.replace(/\/$/, '')); },
   candidateForIndia: row => row.countries.some(value => nativeCountryName(value) === 'India') || row.countries.some(value => !nativeCountryName(value)),

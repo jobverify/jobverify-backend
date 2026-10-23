@@ -1,0 +1,109 @@
+{
+  "source": "kinaracapital",
+  "captureMethod": "root-owned browser; transport errors are not HTTP responses",
+  "inventoryStatus": "coverage-gap",
+  "reportedTotal": null,
+  "indiaFacetCount": null,
+  "fixtures": [
+    {
+      "file": "official-careers.json",
+      "bytes": 191791,
+      "sha256": "7a1cc9b058c636b56d43934a1bd99752fd1780118dcf2656fc4efb41d876e68f",
+      "compressedFile": "official-careers.json.gz",
+      "compressedBytes": 42620,
+      "compressedSha256": "dd67b69d25334bfc9ff1f459074108fc9c0ebd76eee9314a526d0012594df2f1",
+      "responses": [
+        {
+          "url": "https://kinaracapital.com/careers/",
+          "finalUrl": "https://kinaracapital.com/careers/",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:54:28.516Z",
+          "httpResponseCaptured": true,
+          "bodyBytes": 169756,
+          "bodySha256": "71fcb48446b67a5eb93445c6e2416e29d24ac19c8953e5dc74075ee5b4d3c8c9",
+          "error": null
+        }
+      ]
+    },
+    {
+      "file": "native-board.json",
+      "bytes": 134,
+      "sha256": "d1c0cbedb10a7449ee6a826a09f30fe48bd6c0af71cf02b01096cf6ec1a9fb90",
+      "compressedFile": "native-board.json.gz",
+      "compressedBytes": 137,
+      "compressedSha256": "c76d7be130f69ee7912dc925c1fc920e8c64d5900d39df803751af272e928ecc",
+      "responses": [
+        {
+          "url": "https://careers.kinaracapital.com/",
+          "finalUrl": null,
+          "status": null,
+          "capturedAt": "2026-10-23T05:53:57.083Z",
+          "httpResponseCaptured": false,
+          "bodyBytes": null,
+          "bodySha256": null,
+          "error": "TypeError: Failed to fetch"
+        }
+      ]
+    },
+    {
+      "file": "native-linkedin.json",
+      "bytes": 312214,
+      "sha256": "364d6fc0604c5c357f1fd6e4e5d9ae093a080e3b03d30d161a46e3f8cfee0c1a",
+      "compressedFile": "native-linkedin.json.gz",
+      "compressedBytes": 28759,
+      "compressedSha256": "f392830973d03ac8deecd56bec051d236614eb49b90e5e1da253c05f8005213b",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/kinaracapital",
+          "finalUrl": "https://www.linkedin.com/company/kinaracapital",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:55:50.449Z",
+          "httpResponseCaptured": true,
+          "bodyBytes": 298568,
+          "bodySha256": "b2776563cb81393e68dfe762b313dc5a5c9f2f31a507d16dd9c3336b4a6a4aee",
+          "error": null
+        },
+        {
+          "url": "https://in.linkedin.com/company/kinaracapital",
+          "finalUrl": null,
+          "status": null,
+          "capturedAt": null,
+          "httpResponseCaptured": false,
+          "bodyBytes": null,
+          "bodySha256": null,
+          "error": "TypeError: Failed to fetch"
+        }
+      ]
+    },
+    {
+      "file": "native-jobs.json",
+      "bytes": 94061,
+      "sha256": "4a69b8fcec7f452f34e8d04cc8b5601463e9141d7f8df4de35d2b474f9a8ba49",
+      "compressedFile": "native-jobs.json.gz",
+      "compressedBytes": 14238,
+      "compressedSha256": "e94ad1fc54661f8d729e7288bf7b7427642526ac3934e994307280d5f6f3ee7e",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=2688667&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=2688667&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:57:30.632Z",
+          "httpResponseCaptured": true,
+          "bodyBytes": 89456,
+          "bodySha256": "d343b3990a8620fb93e88b55c318159684432401e770b1c0bda78c64a001c5bf",
+          "error": null
+        },
+        {
+          "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=2688667&location=India&start=0",
+          "finalUrl": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=2688667&location=India&start=0",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:57:30.523Z",
+          "httpResponseCaptured": true,
+          "bodyBytes": 26,
+          "bodySha256": "ea12acf875ac1dffa5de9dd8f5c5a54a41cf50370705c4694aef841aa2b28a36",
+          "error": null
+        }
+      ]
+    }
+  ]
+}

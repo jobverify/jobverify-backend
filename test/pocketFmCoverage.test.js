@@ -21,6 +21,6 @@ test('Pocket FM resolves only to its exact-name first-party provider', () => {
   )
 })
 
-test('Pocket FM fails closed without an official enumerable job feed', async () => {
-  assert.deepEqual(await run(), [])
+test('Pocket FM propagates official inventory failures instead of an unobserved zero', async () => {
+  await assert.rejects(run({ fetchText: async () => { throw Error('Pocket FM official source unavailable') } }), /official source unavailable/)
 })

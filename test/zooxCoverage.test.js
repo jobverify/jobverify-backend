@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
@@ -23,7 +22,8 @@ test('Zoox is covered only by its exact-name first-party provider', () => {
   assert.equal(provider.companyName, 'Zoox')
   assert.equal(provider.companyDomain, 'zoox.com')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-page-fail-closed')
+  assert.equal(provider.adapter, 'script')
+  assert.match(provider.modulePath, /zoox[\\/]script\.js$/)
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'Zoox').map((item) => item.source),
     ['zoox'],
@@ -32,9 +32,9 @@ test('Zoox is covered only by its exact-name first-party provider', () => {
   assert.equal(nearNameReport.unmatchedCount, 2)
 })
 
-test('Zoox scraper fails closed without a verified enumerable public jobs feed', async () => {
+test('Zoox dedicated scraper propagates official source failures instead of reporting unobserved zero', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'zoox')
 
   assert.ok(scraper, 'Expected Zoox scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  await assert.rejects(scraper.run({ fetchText: async () => { throw Error('Zoox official source unavailable') } }), /Zoox official source unavailable/)
 })

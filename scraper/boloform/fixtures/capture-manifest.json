@@ -1,0 +1,52 @@
+{
+  "source": "boloform",
+  "captureMethod": "Root-owned isolated local Chrome direct native fetch; unmodified request URL, final URL, status, body and capture time retained. DOM observations separate.",
+  "files": [
+    {
+      "file": "bare-pages.dom.json.gz",
+      "sha256": "1796eb3d549f32c117f2b67546c7dc3788f3dda143d843fc7f56a55e60304bbd",
+      "uncompressedSHA256": "8c97e946589dc4b1f7bd2ccf69937dc06e2a9e327f830cf0f1e92a45a3b03b77",
+      "bytes": 1328
+    },
+    {
+      "file": "bare-pages.json.gz",
+      "sha256": "687f5c0e0aa29668dcfc0d202f433a977f8711b141b14a8851283d38a4eabd2d",
+      "uncompressedSHA256": "11cd35d26fa843c6d3f3b2eef8d212d1f13981d43f0d8ada9bb792dd598fa029",
+      "bytes": 2808
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "c053393bafc0494a1849720060e2319ddde7473cd08e4ad6a172839ee17031a7",
+      "uncompressedSHA256": "3922ed20609aa4b72cb808ffa0914324ce2dc4ce66fabfc5d2338fba1d890d15",
+      "bytes": 1332
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "4faa7cebc7b37447fe2bc3de7e9d40f63a40057d51ea451d2e5d6079c77e79c5",
+      "uncompressedSHA256": "08137945ab835923a6f4abd0cd81a4e14d79f8c80759d183c14b58f4fc1fda79",
+      "bytes": 2816
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://boloform.se/",
+      "finalUrl": "https://boloform.se/",
+      "status": 404,
+      "capturedAt": "2026-10-23T08:25:03.359Z",
+      "error": null,
+      "file": "bare-pages.json.gz",
+      "bodySHA256": "7bf65639b82b9ec420b215b8a8817d0f4ba73afb516e6f287514d031fb79f592",
+      "bodyBytes": 2516
+    },
+    {
+      "url": "https://www.boloform.se/",
+      "finalUrl": "https://www.boloform.se/",
+      "status": 404,
+      "capturedAt": "2026-10-23T08:24:04.692Z",
+      "error": null,
+      "file": "official-pages.json.gz",
+      "bodySHA256": "68a0e4951aff2e4903bf16f6e24d0dfbeb95ee1b9eed092a809d2b720a84e275",
+      "bodyBytes": 2516
+    }
+  ]
+}

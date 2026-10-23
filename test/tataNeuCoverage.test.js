@@ -5,7 +5,7 @@ import { generateCompanyCoverageReport } from '../scraper-support/providers/comp
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
 import { run } from '../scraper/tataneu/script.js'
 
-test('Tata Neu resolves only to its exact-name first-party provider', () => {
+test('Tata Neu resolves only to its exact-name provider', () => {
   const report = generateCompanyCoverageReport({
     csvText: 'company_name\nTata Neu\n',
     catalog: getScraperCatalog(),
@@ -17,6 +17,8 @@ test('Tata Neu resolves only to its exact-name first-party provider', () => {
   )
 })
 
-test('Tata Neu fails closed rather than returning Tata Digital or Tata group jobs', async () => {
-  assert.deepEqual(await run(), [])
+test('Tata Neu fails closed on unavailable inventory without inheriting parent openings', async () => {
+ let fetched=false
+ await assert.rejects(run({fetchImpl:async()=>{fetched=true;throw Error('offline fixture')}}),{code:'TATANEU_COVERAGE_GAP',sourceListingComplete:false,lifecycleCleanupAllowed:false})
+ assert.equal(fetched,true)
 })

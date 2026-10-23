@@ -14,6 +14,12 @@ export function resolveExtractionAuditTimeout(value = 45000) {
   return timeout
 }
 
+export function isExtractionAuditCacheReusable(row, { now = Date.now(), capturePublicAts = false } = {}) {
+  const age = now - new Date(row?.completedAt).getTime()
+  return age >= 0 && age < 48 * 3600000
+    && (!capturePublicAts || (Array.isArray(row.retainedNativeApiEvidence) && row.retainedNativeApiEvidence.length > 0))
+}
+
 export function selectCatalogExtractionAuditProviders(catalog, {
   runtime = null, sourceIds = null, includePublished = false, classifyImplementation = classifyProviderImplementation,
 } = {}) {
@@ -28,7 +34,7 @@ export function selectCatalogExtractionAuditProviders(catalog, {
     .sort((a, b) => Number(b.adapter !== 'script') - Number(a.adapter !== 'script') || a.source.localeCompare(b.source))
 }
 
-export function runIsolatedExtraction(provider, { outputDirectory, timeoutMs = 45000 } = {}) {
+export function runIsolatedExtraction(provider, { outputDirectory, timeoutMs = 45000, capturePublicAts = false } = {}) {
   timeoutMs = resolveExtractionAuditTimeout(timeoutMs)
   const attemptedAt = new Date().toISOString()
   fs.mkdirSync(outputDirectory, { recursive: true })
@@ -52,12 +58,13 @@ export function runIsolatedExtraction(provider, { outputDirectory, timeoutMs = 4
     }
     const failure = outcome => ({ source: provider.source, attemptedAt, completedAt: new Date().toISOString(), outcome,
       mode: 'isolated-direct-live-extraction-no-database', productionWrites: false,
-      rawJobs: null, indiaJobs: null, eligibleJobs: null, inventoryEvidence: null })
+      rawJobs: null, rawJobsBasis: 'unavailable-failed-attempt', indiaJobs: null, eligibleJobs: null, inventoryEvidence: null })
     const timer = setTimeout(() => finish(failure('extraction-timeout')), timeoutMs)
     child.once('message', finish)
     child.once('error', () => finish(failure('audit-process-failed')))
-    child.once('exit', () => finish(failure('audit-process-exited-without-result')))
-    child.send({ provider })
+    child.once('exit', (exitCode, signal) => finish({ ...failure('audit-process-exited-without-result'),
+      auditProcessExit: { exitCode: Number.isInteger(exitCode) ? exitCode : null, signal: signal || null } }))
+    child.send({ provider, outputDirectory: path.resolve(outputDirectory), capturePublicAts })
   })
 }
 
@@ -75,14 +82,17 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   const providers = selectCatalogExtractionAuditProviders(getScraperCatalog(), {
     runtime, sourceIds: ids, includePublished: args.includes('--include-published'),
   })
+  const capturePublicAts = args.includes('--capture-public-ats')
+  if (capturePublicAts && (!ids?.length || providers.some(provider => provider.adapter !== 'publicAts'))) {
+    throw new Error('--capture-public-ats requires explicit publicAts source IDs')
+  }
   fs.mkdirSync(path.join(output, 'sources'), { recursive: true })
   const completed = new Map()
   for (const provider of providers) {
     const file = path.join(output, 'sources', `${provider.source}.json`)
     if (!args.includes('--refresh') && fs.existsSync(file)) {
       const row = JSON.parse(fs.readFileSync(file, 'utf8'))
-      const age = Date.now() - new Date(row.completedAt).getTime()
-      if (age >= 0 && age < 48 * 3600000) completed.set(provider.source, row)
+      if (isExtractionAuditCacheReusable(row, { capturePublicAts })) completed.set(provider.source, row)
     }
   }
   const summarize = () => {
@@ -102,7 +112,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       while (index < providers.length) {
         const provider = providers[index++]
         if (completed.has(provider.source)) continue
-        const result = await runIsolatedExtraction(provider, { outputDirectory: path.join(output, 'isolated', provider.source), timeoutMs })
+        const result = await runIsolatedExtraction(provider, { outputDirectory: path.join(output, 'isolated', provider.source), timeoutMs, capturePublicAts })
         fs.writeFileSync(path.join(output, 'sources', `${provider.source}.json`), JSON.stringify(result, null, 2) + '\n')
         completed.set(provider.source, result)
       }

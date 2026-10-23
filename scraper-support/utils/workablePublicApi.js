@@ -64,7 +64,7 @@ const validateRecord = (record, accountUid, currentTime) => {
   return [...new Map(locations.map(location => [locationKey(location), location])).values()]
 }
 
-const detailJob = (record, detail, locations, config, scrapedAt) => {
+export const mapWorkablePublicDetail = (record, detail, locations, config, scrapedAt) => {
   assertNativePayload(detail)
   const currentTime = Date.parse(scrapedAt)
   const detailLocations = validateRecord(detail, config.accountUid, currentTime)
@@ -151,7 +151,7 @@ export const createWorkablePublicApiScraper = config => ({
       signal?.throwIfAborted()
       const detail = await fetchJson(`https://apply.workable.com/api/v2/accounts/${config.tenant}/jobs/${record.shortcode}`, { signal })
       if (!detail) fail('India detail is missing')
-      jobs.push(detailJob(record, detail, locations, config, scrapedAt))
+      jobs.push(mapWorkablePublicDetail(record, detail, locations, config, scrapedAt))
     }
     signal?.throwIfAborted()
     const selected = maxJobs > 0 ? jobs.slice(0, maxJobs) : jobs

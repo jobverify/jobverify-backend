@@ -1,0 +1,1664 @@
+{
+  "nativeBoardComplete": true,
+  "nativePublicJobCount": 103,
+  "nativePrimaryIndiaJobCount": 0,
+  "nativeIndiaJobCount": null,
+  "nativeSecondaryCountryScopeComplete": false,
+  "nativePagesFetched": 11,
+  "exclusions": [
+    {
+      "id": "15839",
+      "reference": "2026-15839",
+      "title": "CDD - Acheteur Systèmes et Soutien F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdd-acheteur-systemes-et-soutien-f-h_15839.aspx",
+      "nativeListingPublicationDate": "2026-10-23",
+      "nativeCorporatePublicationDate": "2026-10-21",
+      "postingDate": "2026-10-21",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15690",
+      "reference": "2026-15690",
+      "title": "Acheteur Pièces Primaires F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-acheteur-pieces-primaires-f-h_15690.aspx",
+      "nativeListingPublicationDate": "2026-10-23",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-23",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15653",
+      "reference": "2026-15653",
+      "title": "Acheteur Hors Production F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-acheteur-hors-production-f-h_15653.aspx",
+      "nativeListingPublicationDate": "2026-10-23",
+      "nativeCorporatePublicationDate": "2026-10-21",
+      "postingDate": "2026-10-21",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15568",
+      "reference": "2026-15568",
+      "title": "Apprenti(e) chef(fe) de projet Usine 4.0 Connectée F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-apprenti-e-chef-fe-de-projet-usine-4-0-connectee-f-h_15568.aspx",
+      "nativeListingPublicationDate": "2026-10-23",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-23",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15013",
+      "reference": "2026-15013",
+      "title": "Ajusteur/Ajusteuse F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-ajusteuse-f-h_15013.aspx",
+      "nativeListingPublicationDate": "2026-10-23",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-23",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15901",
+      "reference": "2026-15901",
+      "title": "Stage : Processus de câblage pour les essais de vulnérabilité électromagnétique et foudres F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-processus-de-cablage-pour-les-essais-de-vulnerabilite-electromagnetique-et-foudres-f-h_15901.aspx",
+      "nativeListingPublicationDate": "2026-10-22",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-22",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15274",
+      "reference": "2026-15274",
+      "title": "Responsable contrôle de gestion F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-controle-de-gestion-f-h_15274.aspx",
+      "nativeListingPublicationDate": "2026-10-22",
+      "nativeCorporatePublicationDate": "2026-10-21",
+      "postingDate": "2026-10-21",
+      "nativeLocations": [
+        "France, Hauts de France, 59 - Seclin"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15853",
+      "reference": "2026-15853",
+      "title": "Stage Ingénieur/e : Développement de modèles pour Avant-Projets Avions militaires F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-developpement-de-modeles-pour-avant-projets-avions-militaires-f-h_15853.aspx",
+      "nativeListingPublicationDate": "2026-10-21",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-21",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15890",
+      "reference": "2026-15890",
+      "title": "Ingénieur qualité produit - Structure F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-produit-structure-f-h_15890.aspx",
+      "nativeListingPublicationDate": "2026-10-21",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-21",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15714",
+      "reference": "2026-15714",
+      "title": "Ajusteur F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-f-h_15714.aspx",
+      "nativeListingPublicationDate": "2026-10-21",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-21",
+      "nativeLocations": [
+        "France, Hauts de France, 59 - Seclin"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15713",
+      "reference": "2026-15713",
+      "title": "Technicien usineur F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-usineur-f-h_15713.aspx",
+      "nativeListingPublicationDate": "2026-10-21",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-21",
+      "nativeLocations": [
+        "France, Hauts de France, 59 - Seclin"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15036",
+      "reference": "2026-15036",
+      "title": "CQPM Intégrateur/rice Câbleur/se Aéronautique F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cqpm-integrateur-rice-cableur-se-aeronautique-f-h_15036.aspx",
+      "nativeListingPublicationDate": "2026-10-21",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-21",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15033",
+      "reference": "2026-15033",
+      "title": "Ajusteur/Ajusteuse F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-ajusteuse-f-h_15033.aspx",
+      "nativeListingPublicationDate": "2026-10-21",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-21",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15797",
+      "reference": "2026-15797",
+      "title": "Stage Modélisation fonctionnelle l'ensemble propulsif du Vortex-D",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-modelisation-fonctionnelle-l-ensemble-propulsif-du-vortex-d-_15797.aspx",
+      "nativeListingPublicationDate": "2026-10-20",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-20",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15748",
+      "reference": "2026-15748",
+      "title": "Gestionnaire de production ligne F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-gestionnaire-de-production-ligne-f-h_15748.aspx",
+      "nativeListingPublicationDate": "2026-10-20",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-20",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "14992",
+      "reference": "2026-14992",
+      "title": "Chef/fe d'équipe de Production - Station d'assemblage structure F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-chef-fe-d-equipe-de-production-station-d-assemblage-structure-f-h_14992.aspx",
+      "nativeListingPublicationDate": "2026-10-20",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-20",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "14951",
+      "reference": "2025-14951",
+      "title": "Ingénieur(e) Moyens de développement - Dev Advocate F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-e-moyens-de-developpement-dev-advocate-f-h_14951.aspx",
+      "nativeListingPublicationDate": "2026-10-20",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-20",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "14743",
+      "reference": "2025-14743",
+      "title": "Responsable Pays F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-pays-f-h_14743.aspx",
+      "nativeListingPublicationDate": "2026-10-20",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-20",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15876",
+      "reference": "2026-15876",
+      "title": "Stagiaire support à l'Ingénierie des rechanges Falcon F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stagiaire-support-a-l-ingenierie-des-rechanges-falcon-f-h_15876.aspx",
+      "nativeListingPublicationDate": "2026-10-19",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-19",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15640",
+      "reference": "2026-15640",
+      "title": "Correspondant Logistique Rechanges Egypte F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-correspondant-logistique-rechanges-egypte-f-h_15640.aspx",
+      "nativeListingPublicationDate": "2026-10-19",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-19",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [
+        "Informations générales Le poste est rattaché au responsable de la section RAFALE Egypte de la Direction Logistique Opérationnelle & Transformation Numérique (DLO & TN) de la Direction Générale du Soutien Militaire (DGSM). Il consiste à gérer un po"
+      ],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15616",
+      "reference": "2026-15616",
+      "title": "Correspondant Logistique Rechanges France F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-correspondant-logistique-rechanges-france-f-h_15616.aspx",
+      "nativeListingPublicationDate": "2026-10-19",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-19",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15444",
+      "reference": "2026-15444",
+      "title": "Opérateur/trice Test Fuselage F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-operateur-trice-test-fuselage-f-h_15444.aspx",
+      "nativeListingPublicationDate": "2026-10-19",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-19",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15322",
+      "reference": "2026-15322",
+      "title": "Instructeur/Concepteur pédagogique Avionique Rafale F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-instructeur-concepteur-pedagogique-avionique-rafale-f-h_15322.aspx",
+      "nativeListingPublicationDate": "2026-10-19",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-19",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15258",
+      "reference": "2026-15258",
+      "title": "Responsable Instruction F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-instruction-f-h_15258.aspx",
+      "nativeListingPublicationDate": "2026-10-19",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-19",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15256",
+      "reference": "2026-15256",
+      "title": "Responsable Instruction F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-instruction-f-h_15256.aspx",
+      "nativeListingPublicationDate": "2026-10-19",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-19",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15870",
+      "reference": "2026-15870",
+      "title": "Stage ingénieur/e : Intégration d'algorithmes d'optimisation dans un code de calcul éléments finis F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-integration-d-algorithmes-d-optimisation-dans-un-code-de-calcul-elements-finis-f-h_15870.aspx",
+      "nativeListingPublicationDate": "2026-10-16",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-16",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15827",
+      "reference": "2026-15827",
+      "title": "Stage - Modèles d'IA pour la génération de bases aérodynamiques F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-modeles-d-ia-pour-la-generation-de-bases-aerodynamiques-f-h_15827.aspx",
+      "nativeListingPublicationDate": "2026-10-16",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-16",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15769",
+      "reference": "2026-15769",
+      "title": "Ingénieur qualité F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-f-h_15769.aspx",
+      "nativeListingPublicationDate": "2026-10-16",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-16",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15789",
+      "reference": "2026-15789",
+      "title": "CDIC - Chargé de travaux Généraliste (TCE) F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdic-charge-de-travaux-generaliste-tce-f-h_15789.aspx",
+      "nativeListingPublicationDate": "2026-10-16",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-16",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15722",
+      "reference": "2026-15722",
+      "title": "Technicien maintenance industrielle / infrastructure et travaux neufs F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-maintenance-industrielle-infrastructure-et-travaux-neufs-f-h_15722.aspx",
+      "nativeListingPublicationDate": "2026-10-16",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-16",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15754",
+      "reference": "2026-15754",
+      "title": "Spécialiste Support Technique – Spécialiste vecteur ATL2 F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-specialiste-support-technique-specialiste-vecteur-atl2-f-h_15754.aspx",
+      "nativeListingPublicationDate": "2026-10-16",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-16",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15868",
+      "reference": "2026-15868",
+      "title": "Concepteur développeur DevLead F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-concepteur-developpeur-devlead-f-h_15868.aspx",
+      "nativeListingPublicationDate": "2026-10-16",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-16",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15867",
+      "reference": "2026-15867",
+      "title": "Contrôleur qualité Falcon F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-qualite-falcon-f-h_15867.aspx",
+      "nativeListingPublicationDate": "2026-10-15",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-15",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15725",
+      "reference": "2026-15725",
+      "title": "Contrôleur Qualité Aménagement Electrique F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-qualite-amenagement-electrique-f-h_15725.aspx",
+      "nativeListingPublicationDate": "2026-10-15",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-15",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15783",
+      "reference": "2026-15783",
+      "title": "Administrateur Support Utilisateur/Informatique F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-administrateur-support-utilisateur-informatique-f-h_15783.aspx",
+      "nativeListingPublicationDate": "2026-10-15",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-15",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15858",
+      "reference": "2026-15858",
+      "title": "Ajusteur équipements mécaniques F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-equipements-mecaniques-f-h_15858.aspx",
+      "nativeListingPublicationDate": "2026-10-15",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-15",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15856",
+      "reference": "2026-15856",
+      "title": "Câbleur équipements mécaniques F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cableur-equipements-mecaniques-f-h_15856.aspx",
+      "nativeListingPublicationDate": "2026-10-15",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-15",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15273",
+      "reference": "2026-15273",
+      "title": "Stage de content manager - restructuration d'une base de connaissances F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-de-content-manager-restructuration-d-une-base-de-connaissances-f-h_15273.aspx",
+      "nativeListingPublicationDate": "2026-10-15",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-15",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15855",
+      "reference": "2026-15855",
+      "title": "Rectifieur F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-rectifieur-f-h_15855.aspx",
+      "nativeListingPublicationDate": "2026-10-15",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-15",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15854",
+      "reference": "2026-15854",
+      "title": "Ingénieur maintenance moyens industriels et généraux F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-maintenance-moyens-industriels-et-generaux-f-h_15854.aspx",
+      "nativeListingPublicationDate": "2026-10-15",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-15",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15816",
+      "reference": "2026-15816",
+      "title": "CDD - Administrateur Infrastructure SI F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdd-administrateur-infrastructure-si-f-h_15816.aspx",
+      "nativeListingPublicationDate": "2026-10-15",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-15",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15548",
+      "reference": "2026-15548",
+      "title": "Gestionnaire de production principal F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-gestionnaire-de-production-principal-f-h_15548.aspx",
+      "nativeListingPublicationDate": "2026-10-14",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-14",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15356",
+      "reference": "2026-15356",
+      "title": "Contrôleur avion F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-avion-f-h_15356.aspx",
+      "nativeListingPublicationDate": "2026-10-14",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-14",
+      "nativeLocations": [
+        "France, PACA, 13 - Istres"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15852",
+      "reference": "2026-15852",
+      "title": "Stage Ingénieur/e en Automatisation d'audits de cybersécurité par Intelligence Artificielle (IA) F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-en-automatisation-d-audits-de-cybersecurite-par-intelligence-artificielle-ia-f-h_15852.aspx",
+      "nativeListingPublicationDate": "2026-10-14",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-14",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15840",
+      "reference": "2026-15840",
+      "title": "Stage - M&A et Relations Investisseurs F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-m-a-et-relations-investisseurs-f-h_15840.aspx",
+      "nativeListingPublicationDate": "2026-10-14",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-14",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15851",
+      "reference": "2026-15851",
+      "title": "Stage Ingénieur/e en conception maintenance : Étude d'optimisation des plans d'entretien Rafale F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-en-conception-maintenance-etude-d-optimisation-des-plans-d-entretien-rafale-f-h_15851.aspx",
+      "nativeListingPublicationDate": "2026-10-14",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-14",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15850",
+      "reference": "2026-15850",
+      "title": "Stage - Développement d'algorithme Intelligence Artificielle au service du Soutien F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-developpement-d-algorithme-intelligence-artificielle-au-service-du-soutien-f-h_15850.aspx",
+      "nativeListingPublicationDate": "2026-10-13",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-13",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15032",
+      "reference": "2026-15032",
+      "title": "CQPM Assembleur/se Monteur/se de Systèmes Mécanisés F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cqpm-assembleur-se-monteur-se-de-systemes-mecanises-f-h_15032.aspx",
+      "nativeListingPublicationDate": "2026-10-13",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-13",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15799",
+      "reference": "2026-15799",
+      "title": "Contrôleur de gestion F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-de-gestion-f-h_15799.aspx",
+      "nativeListingPublicationDate": "2026-10-13",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-13",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15818",
+      "reference": "2026-15818",
+      "title": "Logisticien/ne F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-logisticien-ne-f-h_15818.aspx",
+      "nativeListingPublicationDate": "2026-10-13",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-13",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 64 - Biarritz"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15837",
+      "reference": "2026-15837",
+      "title": "Technicien Méthodes Composite F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-methodes-composite-f-h_15837.aspx",
+      "nativeListingPublicationDate": "2026-10-13",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-13",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 64 - Biarritz"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15848",
+      "reference": "2026-15848",
+      "title": "Stage Bureau d'industrialisation - Maitrise des outils coupants en atelier F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-bureau-d-industrialisation-maitrise-des-outils-coupants-en-atelier-f-h_15848.aspx",
+      "nativeListingPublicationDate": "2026-10-13",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-13",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 86 - Poitiers"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15828",
+      "reference": "2026-15828",
+      "title": "Stage - Ingénieur/e Intelligence Artificielle (RAG)",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-stage-ingenieur-e-intelligence-artificielle-rag-_15828.aspx",
+      "nativeListingPublicationDate": "2026-10-12",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-12",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15211",
+      "reference": "2026-15211",
+      "title": "Ingénieur.e du numérique - concepteur développeur logiciel filière électricité avion (H/F) F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-e-du-numerique-concepteur-developpeur-logiciel-filiere-electricite-avion-h-f-f-h_15211.aspx",
+      "nativeListingPublicationDate": "2026-10-09",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-09",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "14733",
+      "reference": "2025-14733",
+      "title": "Architecte technique SI SAP/ERP F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-architecte-technique-si-sap-erp-f-h_14733.aspx",
+      "nativeListingPublicationDate": "2026-10-08",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-08",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15825",
+      "reference": "2026-15825",
+      "title": "Technicien montage F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-montage-f-h_15825.aspx",
+      "nativeListingPublicationDate": "2026-10-08",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-08",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15823",
+      "reference": "2026-15823",
+      "title": "Chef de Projet junior Relations écoles Salon du Bourget 2027 F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-chef-de-projet-junior-relations-ecoles-salon-du-bourget-2027-f-h_15823.aspx",
+      "nativeListingPublicationDate": "2026-10-07",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-07",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15800",
+      "reference": "2026-15800",
+      "title": "Responsable comptable F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-comptable-f-h_15800.aspx",
+      "nativeListingPublicationDate": "2026-10-07",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-07",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15821",
+      "reference": "2026-15821",
+      "title": "Ingénieur Concepteur en électronique F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-concepteur-en-electronique-f-h_15821.aspx",
+      "nativeListingPublicationDate": "2026-10-07",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-07",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15815",
+      "reference": "2026-15815",
+      "title": "Logisticien/ne F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-logisticien-ne-f-h_15815.aspx",
+      "nativeListingPublicationDate": "2026-10-07",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-07",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 64 - Biarritz"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15817",
+      "reference": "2026-15817",
+      "title": "Gestionnaire administration du personnel - CDD F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-gestionnaire-administration-du-personnel-cdd-f-h_15817.aspx",
+      "nativeListingPublicationDate": "2026-10-07",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-07",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15782",
+      "reference": "2026-15782",
+      "title": "Concepteur Fonctionnel MES APRISO F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-concepteur-fonctionnel-mes-apriso-f-h_15782.aspx",
+      "nativeListingPublicationDate": "2026-10-07",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-07",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15119",
+      "reference": "2026-15119",
+      "title": "Monteur équipements mécaniques F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-monteur-equipements-mecaniques-f-h_15119.aspx",
+      "nativeListingPublicationDate": "2026-10-07",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-07",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15801",
+      "reference": "2026-15801",
+      "title": "Acheteur contrat F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-acheteur-contrat-f-h_15801.aspx",
+      "nativeListingPublicationDate": "2026-10-05",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-05",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15775",
+      "reference": "2026-15775",
+      "title": "Technicien moyens d'essais F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-moyens-d-essais-f-h_15775.aspx",
+      "nativeListingPublicationDate": "2026-10-01",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-10-01",
+      "nativeLocations": [
+        "France, PACA, 13 - Istres"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15788",
+      "reference": "2026-15788",
+      "title": "CDIC - Chargé de travaux ELEC F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdic-charge-de-travaux-elec-f-h_15788.aspx",
+      "nativeListingPublicationDate": "2026-09-29",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-29",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15603",
+      "reference": "2026-15603",
+      "title": "Soudeur / Soudeuse F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-soudeur-soudeuse-f-h_15603.aspx",
+      "nativeListingPublicationDate": "2026-09-29",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-29",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15770",
+      "reference": "2026-15770",
+      "title": "Logisticien / Logisticienne F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-logisticien-logisticienne-f-h_15770.aspx",
+      "nativeListingPublicationDate": "2026-09-28",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-28",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15724",
+      "reference": "2026-15724",
+      "title": "CDD - Chargé de travaux Généraliste (TCE) F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cdd-charge-de-travaux-generaliste-tce-f-h_15724.aspx",
+      "nativeListingPublicationDate": "2026-09-23",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-23",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15706",
+      "reference": "2026-15706",
+      "title": "Caractérisation d'une liaison de données chiffrée via SATCOM F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-caracterisation-d-une-liaison-de-donnees-chiffree-via-satcom-f-h_15706.aspx",
+      "nativeListingPublicationDate": "2026-09-21",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-21",
+      "nativeLocations": [
+        "France, PACA, 13 - Istres"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15759",
+      "reference": "2026-15759",
+      "title": "Mécanicien de piste Falcon F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-mecanicien-de-piste-falcon-f-h_15759.aspx",
+      "nativeListingPublicationDate": "2026-09-18",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-18",
+      "nativeLocations": [
+        "France, PACA, 13 - Istres"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15758",
+      "reference": "2026-15758",
+      "title": "Mécanicien de piste Rafale F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-mecanicien-de-piste-rafale-f-h_15758.aspx",
+      "nativeListingPublicationDate": "2026-09-18",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-18",
+      "nativeLocations": [
+        "France, PACA, 13 - Istres"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15134",
+      "reference": "2026-15134",
+      "title": "Instructeur(trice)/Concepteur(trice) pédagogique Avionique Rafale F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-instructeur-trice-concepteur-trice-pedagogique-avionique-rafale-f-h_15134.aspx",
+      "nativeListingPublicationDate": "2026-09-17",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-17",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15522",
+      "reference": "2026-15522",
+      "title": "Supplier Development Manager F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-supplier-development-manager-f-h_15522.aspx",
+      "nativeListingPublicationDate": "2026-09-17",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-17",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15736",
+      "reference": "2026-15736",
+      "title": "Ingénieur outils métier F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-outils-metier-f-h_15736.aspx",
+      "nativeListingPublicationDate": "2026-09-14",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-14",
+      "nativeLocations": [
+        "France"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15734",
+      "reference": "2026-15734",
+      "title": "PILOTE OPERATIONNEL FALCON (GPO) F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-pilote-operationnel-falcon-gpo-f-h_15734.aspx",
+      "nativeListingPublicationDate": "2026-09-14",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-14",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15727",
+      "reference": "2026-15727",
+      "title": "Assistante au sein de la Direction des ventes F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-assistante-au-sein-de-la-direction-des-ventes-f-h_15727.aspx",
+      "nativeListingPublicationDate": "2026-09-10",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-10",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15419",
+      "reference": "2026-15419",
+      "title": "Responsable contrôle de gestion - Production F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-responsable-controle-de-gestion-production-f-h_15419.aspx",
+      "nativeListingPublicationDate": "2026-09-10",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-10",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Martignas"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15527",
+      "reference": "2026-15527",
+      "title": "Préparateur F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-preparateur-f-h_15527.aspx",
+      "nativeListingPublicationDate": "2026-09-10",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-10",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Martignas"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15711",
+      "reference": "2026-15711",
+      "title": "Rédacteur de documentation de vol F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-redacteur-de-documentation-de-vol-f-h_15711.aspx",
+      "nativeListingPublicationDate": "2026-09-09",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-09",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15576",
+      "reference": "2026-15576",
+      "title": "Ingénieur qualité produit - Produits Métalliques F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-produit-produits-metalliques-f-h_15576.aspx",
+      "nativeListingPublicationDate": "2026-09-08",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-08",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15667",
+      "reference": "2026-15667",
+      "title": "Infirmier(e) de santé au travail F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-infirmier-e-de-sante-au-travail-f-h_15667.aspx",
+      "nativeListingPublicationDate": "2026-09-08",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-08",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15168",
+      "reference": "2026-15168",
+      "title": "Juriste d'affaires/ Affaires internationales F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-juriste-d-affaires-affaires-internationales-f-h_15168.aspx",
+      "nativeListingPublicationDate": "2026-09-08",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-08",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15700",
+      "reference": "2026-15700",
+      "title": "Revue technique documentaire atelier de maintenance des batteries avions F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-revue-technique-documentaire-atelier-de-maintenance-des-batteries-avions-f-h_15700.aspx",
+      "nativeListingPublicationDate": "2026-09-08",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-08",
+      "nativeLocations": [
+        "France, PACA, 13 - Istres"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15687",
+      "reference": "2026-15687",
+      "title": "Technicien qualité fournisseurs électroniques F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-qualite-fournisseurs-electroniques-f-h_15687.aspx",
+      "nativeListingPublicationDate": "2026-09-03",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-03",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15598",
+      "reference": "2026-15598",
+      "title": "Technicien de bureau technique - CDD F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-de-bureau-technique-cdd-f-h_15598.aspx",
+      "nativeListingPublicationDate": "2026-09-02",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-09-02",
+      "nativeLocations": [
+        "France, PACA, 13 - Istres"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15678",
+      "reference": "2026-15678",
+      "title": "Ingénieur qualité produit/fournisseur - Aérostructure F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ingenieur-qualite-produit-fournisseur-aerostructure-f-h_15678.aspx",
+      "nativeListingPublicationDate": "2026-08-31",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-08-31",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [
+        "Vous faîtes preuve d'autonomie, de dynamisme et d'esprit d'initiative. Vous êtes également ouvert à une expatriation en Inde à moyen terme. #EnsemblePlusLoin Dassault Aviation est un groupe aéronautique français, concepteur et fabricant d'avions militaires, d'avions d'affaires et de "
+      ],
+      "countryScopeComplete": false,
+      "reason": "France-primary-future-India-expatriation-scope-unresolved"
+    },
+    {
+      "id": "15221",
+      "reference": "2026-15221",
+      "title": "Contrôleur filiales F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-filiales-f-h_15221.aspx",
+      "nativeListingPublicationDate": "2026-08-27",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-08-27",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "14736",
+      "reference": "2025-14736",
+      "title": "Contrôleur spécialisé CND (niveau 1) F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-specialise-cnd-niveau-1-f-h_14736.aspx",
+      "nativeListingPublicationDate": "2026-08-26",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-08-26",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15661",
+      "reference": "2026-15661",
+      "title": "Chargé de Mobilité Internationale (F/H) F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-charge-de-mobilite-internationale-f-h-f-h_15661.aspx",
+      "nativeListingPublicationDate": "2026-08-19",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-08-19",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [
+        "tres destinations. Le succès à l'export du Rafale et la sortie du Falcon 6X et les projets industriels de la Société en Inde ne vont que faire croître les effectifs gérés par le PMI. Vous travaillerez au sein d'une équipe de 6 personnes basée à Saint-Cloud et mais également en étroit"
+      ],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15658",
+      "reference": "2026-15658",
+      "title": "Ajusteur F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-ajusteur-f-h_15658.aspx",
+      "nativeListingPublicationDate": "2026-08-17",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-08-17",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Martignas"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "14609",
+      "reference": "2025-14609",
+      "title": "Opérateur traitements des matériaux F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-operateur-traitements-des-materiaux-f-h_14609.aspx",
+      "nativeListingPublicationDate": "2026-07-31",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-07-31",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "14599",
+      "reference": "2025-14599",
+      "title": "Contrôleur spécialisé CND (niveau 2) F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-controleur-specialise-cnd-niveau-2-f-h_14599.aspx",
+      "nativeListingPublicationDate": "2026-07-31",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-07-31",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15124",
+      "reference": "2026-15124",
+      "title": "Technicien d'atelier TT-TS F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-d-atelier-tt-ts-f-h_15124.aspx",
+      "nativeListingPublicationDate": "2026-07-08",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-07-08",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15504",
+      "reference": "2026-15504",
+      "title": "FalconCare Support Contract Manager F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-falconcare-support-contract-manager-f-h_15504.aspx",
+      "nativeListingPublicationDate": "2026-06-18",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-06-18",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15488",
+      "reference": "2026-15488",
+      "title": "Utilisation de IA pour la conception de documentation Falcon F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-utilisation-de-ia-pour-la-conception-de-documentation-falcon-f-h_15488.aspx",
+      "nativeListingPublicationDate": "2026-06-16",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-06-16",
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15422",
+      "reference": "2026-15422",
+      "title": "Customer Service Manager (Responsable support Client) F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-customer-service-manager-responsable-support-client-f-h_15422.aspx",
+      "nativeListingPublicationDate": "2026-05-28",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-05-28",
+      "nativeLocations": [
+        "France, Ile de France, 92 - Saint-Cloud"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15130",
+      "reference": "2026-15130",
+      "title": "Technicien de mesure F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-technicien-de-mesure-f-h_15130.aspx",
+      "nativeListingPublicationDate": "2026-05-26",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-05-26",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15104",
+      "reference": "2026-15104",
+      "title": "Rayonneur F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-rayonneur-f-h_15104.aspx",
+      "nativeListingPublicationDate": "2026-05-26",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-05-26",
+      "nativeLocations": [
+        "France, Rhône-Alpes, 74 - Argonay"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15034",
+      "reference": "2026-15034",
+      "title": "Intégrateur/trice Câbleur/euse F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-integrateur-trice-cableur-euse-f-h_15034.aspx",
+      "nativeListingPublicationDate": "2026-05-26",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-05-26",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15046",
+      "reference": "2026-15046",
+      "title": "Mécanicien/Mécanicienne Aéronautique F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-mecanicien-mecanicienne-aeronautique-f-h_15046.aspx",
+      "nativeListingPublicationDate": "2026-05-26",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-05-26",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15028",
+      "reference": "2026-15028",
+      "title": "Amélioration continue - Qualité - Stage F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-amelioration-continue-qualite-stage-f-h_15028.aspx",
+      "nativeListingPublicationDate": "2026-05-05",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-05-05",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    },
+    {
+      "id": "15035",
+      "reference": "2026-15035",
+      "title": "CQPM Ajusteur/se Assembleur/se de structures aéronefs F/H",
+      "sourceUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-cqpm-ajusteur-se-assembleur-se-de-structures-aeronefs-f-h_15035.aspx",
+      "nativeListingPublicationDate": "2026-04-02",
+      "nativeCorporatePublicationDate": null,
+      "postingDate": "2026-04-02",
+      "nativeLocations": [
+        "France, Ile de France, 95 - Cergy"
+      ],
+      "country": "France",
+      "nativeSecondaryCountryMentions": [],
+      "countryScopeComplete": true,
+      "reason": "explicit-native-primary-country-outside-India"
+    }
+  ]
+}

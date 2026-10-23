@@ -8,15 +8,16 @@
   "dryRunFile": "aviatrixsystems/jobs.json",
   "companyCareerPage": "https://aviatrix.ai/company/careers/",
   "companyDomain": "aviatrix.ai",
-  "atsPlatform": "official-first-party-careers-client-rendered-no-verified-feed",
+  "atsPlatform": "greenhouse",
   "countryFilter": "India",
-  "paginationStrategy": "verified-first-party-careers-page-sentinel",
-  "extractionStrategy": "client-rendered-page-without-verified-enumerable-feed+return-empty",
+  "paginationStrategy": "complete-greenhouse-posting-response-with-native-office-tree",
+  "extractionStrategy": "verified-first-party-greenhouse-jobs-and-office-country-scope",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-25",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
+  "verifiedOn": "2026-10-23",
+  "verifiedPublicJobCount": 17,
+  "verifiedIndiaJobCount": 5,
   "officialCareersPageUrl": "https://aviatrix.ai/company/careers/",
-  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://aviatrix.ai/company/careers/ is the live first-party Aviatrix careers surface. The public page is client-rendered and no stable verified public listing feed was confirmed. This exact-name provider pins the CSV company Aviatrix Systems to that official surface and fails closed rather than using third-party listings or fuzzy substitutions."
+  "verifiedSurfaceSummary": "Rechecked 2026-10-23: official Aviatrix careers JavaScript calls its aviatrix Greenhouse board. Native full response has 17 roles, including 5 India roles. Extraction validates employer/job/application identity, native totals and office-country bindings; unknown scope remains incomplete. Captures retained under scraper/aviatrixsystems/fixtures.",
+  "boardToken": "aviatrix"
 }

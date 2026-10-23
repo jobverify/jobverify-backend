@@ -1,0 +1,93 @@
+{
+  "source": "boat",
+  "captures": [
+    {
+      "captureFile": "native-company.json.gz",
+      "url": "https://www.linkedin.com/company/boat-lifestyle",
+      "finalUrl": "https://www.linkedin.com/company/boat-lifestyle",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:30:26.217Z",
+      "bodyBytes": 332802,
+      "bodySHA256": "304f0c2696d607f52074e20e0fbf7ffad6e8b4ec1071dcf00269cd5e0c0833d7",
+      "captureSHA256": "36a8cddc4652c3fe1ecb65583bf251b10250738975483e567818e57bf4d0459e",
+      "gzipSHA256": "4b6b9d4e5d2e0e3772b27ef2b7e32c6d97803c0463fd8814ca5730a515183689"
+    },
+    {
+      "captureFile": "native-details.json.gz",
+      "url": "https://in.linkedin.com/jobs/view/visual-designer-at-boat-lifestyle-4477625835",
+      "finalUrl": "https://in.linkedin.com/jobs/view/visual-designer-at-boat-lifestyle-4477625835",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:33:33.458Z",
+      "bodyBytes": 323335,
+      "bodySHA256": "d4f285724cc0fcf632370e85edf52fcbd7929105f1a2d19910e8ddfa23c87bae",
+      "captureSHA256": "049771cba5cb5fefada460358db3be6e2b5e63c7ecd65f3d3f82c5266dd247d4",
+      "gzipSHA256": "b77065092476c8f3eea1ee424ffc13654f4336ed66e9a2a08603a41358f5ce4a"
+    },
+    {
+      "captureFile": "native-details.json.gz",
+      "url": "https://in.linkedin.com/jobs/view/visual-designer-at-boat-lifestyle-4470905951",
+      "finalUrl": "https://in.linkedin.com/jobs/view/visual-designer-at-boat-lifestyle-4470905951",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:33:33.469Z",
+      "bodyBytes": 320870,
+      "bodySHA256": "3e205ad9b59aeb8c87e63c1bd55ee6f787568d95ef5244597b34b98eb6c21443",
+      "captureSHA256": "049771cba5cb5fefada460358db3be6e2b5e63c7ecd65f3d3f82c5266dd247d4",
+      "gzipSHA256": "b77065092476c8f3eea1ee424ffc13654f4336ed66e9a2a08603a41358f5ce4a"
+    },
+    {
+      "captureFile": "native-details.json.gz",
+      "url": "https://in.linkedin.com/jobs/view/product-marketing-at-boat-lifestyle-4480339068",
+      "finalUrl": "https://in.linkedin.com/jobs/view/product-marketing-at-boat-lifestyle-4480339068",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:33:33.474Z",
+      "bodyBytes": 298411,
+      "bodySHA256": "4ee16cd6e1b59586a70868ab43adbe0d868e72c5f79d8a2e5477baac396b6d5b",
+      "captureSHA256": "049771cba5cb5fefada460358db3be6e2b5e63c7ecd65f3d3f82c5266dd247d4",
+      "gzipSHA256": "b77065092476c8f3eea1ee424ffc13654f4336ed66e9a2a08603a41358f5ce4a"
+    },
+    {
+      "captureFile": "native-details.json.gz",
+      "url": "https://in.linkedin.com/jobs/view/performance-marketing-specialist-marketplaces-ads-at-boat-lifestyle-4477103602",
+      "finalUrl": "https://in.linkedin.com/jobs/view/performance-marketing-specialist-marketplaces-ads-at-boat-lifestyle-4477103602",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:33:33.325Z",
+      "bodyBytes": 309381,
+      "bodySHA256": "e29c036ecab5f3ab0efc2f456ca4b132c76138ed15cae6e5cc1738d95229ba65",
+      "captureSHA256": "049771cba5cb5fefada460358db3be6e2b5e63c7ecd65f3d3f82c5266dd247d4",
+      "gzipSHA256": "b77065092476c8f3eea1ee424ffc13654f4336ed66e9a2a08603a41358f5ce4a"
+    },
+    {
+      "captureFile": "native-jobs.json.gz",
+      "url": "https://www.linkedin.com/jobs/boat-lifestyle-jobs-worldwide?f_C=13356517&pageNum=0",
+      "finalUrl": "https://www.linkedin.com/jobs/boat-lifestyle-jobs-worldwide?f_C=13356517&pageNum=0",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:31:08.357Z",
+      "bodyBytes": 115432,
+      "bodySHA256": "5b9aef6bb82c69921be50492f7e3c26d7d43a924f7901bfbbac3544209e1009d",
+      "captureSHA256": "3c508545257fb0efcc035d76e2eacfe3c607e61775373c142b5c91ed4d0b79a0",
+      "gzipSHA256": "afe67254f72f1271741dd0f9dd59de4d0884570fcf755557bffda3725ecc42b6"
+    },
+    {
+      "captureFile": "native-jobs.json.gz",
+      "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=13356517&start=0",
+      "finalUrl": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?f_C=13356517&start=0",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:31:07.965Z",
+      "bodyBytes": 26,
+      "bodySHA256": "ea12acf875ac1dffa5de9dd8f5c5a54a41cf50370705c4694aef841aa2b28a36",
+      "captureSHA256": "3c508545257fb0efcc035d76e2eacfe3c607e61775373c142b5c91ed4d0b79a0",
+      "gzipSHA256": "afe67254f72f1271741dd0f9dd59de4d0884570fcf755557bffda3725ecc42b6"
+    },
+    {
+      "captureFile": "official-careers.json.gz",
+      "url": "https://www.boat-lifestyle.com/pages/boat-careers",
+      "finalUrl": "https://www.boat-lifestyle.com/pages/boat-careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T06:29:22.188Z",
+      "bodyBytes": 2063669,
+      "bodySHA256": "4f59146c0d7d3f0e74afabddc8f7695f1041c8268169efb1c11c74ac65f6675c",
+      "captureSHA256": "5a57447bcac349a30c47e4d89e8050c96e804c9213077f253c4f25744b7450db",
+      "gzipSHA256": "3b37a3c5e992b19ef45f41ea37c37a3a55033d3c561d7f87509b830823ec3544"
+    }
+  ]
+}

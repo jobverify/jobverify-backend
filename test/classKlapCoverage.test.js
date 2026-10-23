@@ -28,6 +28,6 @@ test('ClassKlap resolves only to its exact-name first-party provider', () => {
   )
 })
 
-test('ClassKlap fails closed without a trustworthy public official listing feed', async () => {
-  assert.deepEqual(await run(), [])
+test('ClassKlap reports unavailable native coverage without false zero', async () => {
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('offline')}}),e=>e.code==='CLASSKLAP_COVERAGE_GAP'&&e.inventoryEvidence.reportedTotal===null&&e.lifecycleCleanupAllowed===false)
 })

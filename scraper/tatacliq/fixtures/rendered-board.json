@@ -1,0 +1,55 @@
+{
+  "url": "https://cliqonnect.darwinbox.in/ms/candidatev2/main/careers/home",
+  "text": "Home\nOpen Jobs\nEN\nSign In\n\nThank you for choosing us for your next chapter!\n\nWe Have 25 Open Jobs\nSearch by role, department or location\nPowered by:\ndarwinbox\n|\nPrivacy Policy",
+  "links": [
+    {
+      "text": "Home",
+      "href": "https://cliqonnect.darwinbox.in/ms/candidatev2/main/careers/home"
+    },
+    {
+      "text": "Open Jobs",
+      "href": "https://cliqonnect.darwinbox.in/ms/candidatev2/main/careers/allJobs"
+    },
+    {
+      "text": "We Have 25 Open Jobs",
+      "href": "https://cliqonnect.darwinbox.in/ms/candidatev2/main/careers/allJobs"
+    },
+    {
+      "text": "darwinbox",
+      "href": "https://www.darwinbox.com/?utm_source=dbox.darwinbox.com&utm_medium=powered-by-darwinbox&utm_campaign=product-traffic&utm_content=image"
+    },
+    {
+      "text": "Privacy Policy",
+      "href": "https://darwinbox.com/privacy-policy.php"
+    }
+  ],
+  "buttons": [
+    {
+      "text": "EN",
+      "id": "drop-btn-272"
+    },
+    {
+      "text": "",
+      "id": ""
+    },
+    {
+      "text": "Sign In",
+      "id": ""
+    },
+    {
+      "text": "",
+      "id": ""
+    }
+  ],
+  "resources": [
+    "https://cliqonnect.darwinbox.in/ms/candidateapi/candidate/getAmplifyScript",
+    "https://cliqonnect.darwinbox.in/ms/candidateapi/candidate/getAmplifyScript",
+    "https://cliqonnect.darwinbox.in/ms/candidateapi/candidate/getAmplifyScript",
+    "https://cliqonnect.darwinbox.in/ms/candidateapi/candidate/getAmplifyScript",
+    "https://cliqonnect.darwinbox.in/ms/candidateapi/candidate/getAmplifyScript",
+    "https://cliqonnect.darwinbox.in/ms/candidateapi/candidate/getAmplifyScript",
+    "https://cliqonnect.darwinbox.in/ms/candidateapi/candidate/getAmplifyScript",
+    "https://cliqonnect.darwinbox.in/ms/candidateapi/getCompanyConfig?is_preview=false&companyId=main",
+    "https://cliqonnect.darwinbox.in/ms/candidateapi/groupcompanycareersetting?companyId=main"
+  ]
+}

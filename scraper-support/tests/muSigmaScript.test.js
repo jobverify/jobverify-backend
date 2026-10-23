@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { execFileSync } from 'node:child_process'
 
 const loadMuSigmaModule = async () => {
   try {
@@ -143,4 +144,56 @@ test('run validates the official Mu Sigma careers page and decorates LinkedIn op
     'https://in.linkedin.com/jobs/view/senior-data-engineer-at-mu-sigma-4432100001?position=1&pageNum=0',
   )
   assert.equal(jobs[0].scrapedAt, '2026-07-09T00:00:00.000Z')
+})
+
+test('Mu Sigma keeps undated cards without borrowing fields from the next card', async () => {
+  const musigma = await loadMuSigmaModule()
+  const html = sampleSearchHtml.replace(
+    '<time class="job-search-card__listdate" datetime="2026-07-08"></time>',
+    '',
+  )
+  const listings = musigma.extractSearchResults(html)
+
+  assert.equal(listings.length, 1)
+  assert.equal(listings[0].jobId, '4432100001')
+  assert.equal(listings[0].postingDate, null)
+  assert.equal(listings[0].location, 'Bengaluru, Karnataka, India')
+})
+
+test('Mu Sigma does not complete an incomplete card using a later card', async () => {
+  const musigma = await loadMuSigmaModule()
+  const incomplete = sampleSearchHtml.slice(0, sampleSearchHtml.indexOf('</div>') + 6)
+    .replace('<h3 class="base-search-card__title">Senior Data Engineer</h3>', '')
+    .replace('4432100001', '1111111111')
+  const listings = musigma.extractSearchResults(incomplete + sampleSearchHtml)
+
+  assert.deepEqual(listings.map(job => job.jobId), ['4432100001'])
+})
+
+test('Mu Sigma accepts reordered attributes and the LinkedIn new-job date class', async () => {
+  const musigma = await loadMuSigmaModule()
+  const html = sampleSearchHtml
+    .replace('class="base-card base-card--link job-search-card" data-entity-urn="urn:li:jobPosting:4432100001"',
+      'data-entity-urn="urn:li:jobPosting:4432100001" class="job-search-card base-card--link base-card"')
+    .replace('class="job-search-card__listdate" datetime="2026-07-08"',
+      'datetime="2026-07-08" class="job-search-card__listdate--new"')
+  const listings = musigma.extractSearchResults(html)
+
+  assert.equal(listings.length, 1)
+  assert.equal(listings[0].postingDate, '2026-07-08')
+})
+
+test('Mu Sigma parses many incomplete cards within an externally enforced deadline', () => {
+  // An in-process test timeout cannot interrupt a synchronous regex stall.
+  const undated = sampleSearchHtml.slice(0, sampleSearchHtml.indexOf('</div>') + 6)
+    .replace(/<time\b[^>]*><\/time>/g, '')
+  const moduleUrl = new URL('../../scraper/musigma/script.js', import.meta.url).href
+  const output = execFileSync(process.execPath, ['--input-type=module', '-e', `
+    import { readFileSync } from 'node:fs';
+    import { extractSearchResults } from ${JSON.stringify(moduleUrl)};
+    const jobs = extractSearchResults(readFileSync(0, 'utf8'));
+    console.log(JSON.stringify({ count: jobs.length, dates: [...new Set(jobs.map(job => job.postingDate))] }));
+  `], { input: undated.repeat(100), encoding: 'utf8', timeout: 5000 })
+
+  assert.deepEqual(JSON.parse(output), { count: 100, dates: [null] })
 })

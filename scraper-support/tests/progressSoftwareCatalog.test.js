@@ -60,19 +60,20 @@ test('Progress Software local catalog captures the verified first-party careers 
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-10-23')
+  assert.equal(provider.verifiedPublicJobCount, 26)
+  assert.equal(provider.verifiedIndiaJobCount, 10)
+  assert.equal(provider.inventoryVerificationPolicy, 'live-parser-evidence-required')
   assert.match(provider.dryRunFile, /progresssoftware[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /2026-10-23/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.progress\.com\/company\/careers/i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/www\.progress\.com\/company\/careers\/open-positions/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /\b11\b/i)
-  assert.match(provider.verifiedSurfaceSummary, /Manager, Software Engineering/i)
-  assert.match(provider.verifiedSurfaceSummary, /Principal Software Engineer \( Lead RUST Developer\)/i)
-  assert.match(provider.verifiedSurfaceSummary, /Technical Support Engineer, Senior 1\(Open Edge\/ Oracle DBA\)/i)
+  assert.match(provider.verifiedSurfaceSummary, /26 public roles/i)
+  assert.match(provider.verifiedSurfaceSummary, /10 India roles/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Progress Software'), false)
 
   assert.equal(progressSoftware.PROVIDER_METADATA.source, PROGRESS_SOFTWARE_CATALOG.source)

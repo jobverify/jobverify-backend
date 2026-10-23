@@ -13,7 +13,7 @@ const PROVIDER_METADATA = { ...{
   "normalizationProfile": "engineering-default",
   "countryFilter": "India",
   "paginationStrategy": "native-unfiltered-GET-next-links;all-advertised-pages;closing-board-check",
-  "extractionStrategy": "native-role-ID-and-visible-job-reference;full-visible-and-JobPosting-description;typed-country",
+  "extractionStrategy": "native-ID-and-reference;complete-visible-and-JobPosting-content;delimiter-whitespace-location-comparison;explicit-grouped-India-cities;source-dates",
   "companyDomain": "burohappold.com",
   "officialHomepageUrl": "https://www.burohappold.com/careers/",
   "companyCareerPage": "https://vacancies.burohappold.com/",
@@ -22,11 +22,11 @@ const PROVIDER_METADATA = { ...{
   "verifiedAt": null,
   "verifiedPublicJobCount": null,
   "verifiedIndiaJobCount": null,
-  "verificationDisposition": "implemented-offline-runtime-unverified",
+  "verificationDisposition": "actual-native-row-and-location-variants-replay-validated-live-recheck-pending",
   "verifiedInventoryStatus": "unverified",
   "zeroResultPolicy": "coverage-gap",
-  "remediationStatus": "implemented-offline-runtime-validation-pending",
-  "runtimeQualification": "unqualified-offline-fixture-port-only",
+  "remediationStatus": "native-variants-corrected-live-validation-pending",
+  "runtimeQualification": "retained-replay80-India-details-with-explicit-unknowns;whole-source-and-production-unqualified",
   "backfillMode": "live-parser",
   "originalModulePath": "../workbookbatch10b/failClosedSentinel.js",
   "sourceScopeComplete": false,
@@ -37,7 +37,7 @@ const PROVIDER_METADATA = { ...{
   "sourceRetainedFullIndiaDetails": 1,
   "sourceNativeObservationCompletedAt": "2026-10-21T00:57:07.069Z",
   "sourceNativeDetailObservationCompletedAt": "2026-10-21T01:03:22.545Z",
-  "verifiedSurfaceSummary": "Three retained native HTTP response-text captures document the corporate vacancy handoff, ten first-page cards behind 24 advertised pages, and one complete Bengaluru role2633. The exact vacancy total and later23 page inventories are unknown. Native URL ID agrees with visible job reference; full visible and schema descriptions agree apart from paragraph whitespace. Native publication19October and expiry31December have day precision. No current extraction, persistence or public visibility qualification is claimed.",
+  "verifiedSurfaceSummary": "Official corporate careers site links the branded vacancy portal. Actual17:23:58.991→17:25:40.445Z extraction retained123 HTTP responses across24 listing pages/239 observed rows. Source contract corrections recover80 native India details in retained-body replay, including six explicitly grouped India city lists. Role2551 has a legitimate double-hyphen slug but its detail was not fetched in the original trial; its outcome remains unknown until live recheck. Two role/reference mismatches and genuine country/description/location disagreements remain rejected. Reported total, whole-employer completeness, production settings/counts and public publishing outcomes remain unknown.",
   "bindingEvidence": {
     "verified": false,
     "officialBrandHandoffDocumented": true,
@@ -48,7 +48,13 @@ const PROVIDER_METADATA = { ...{
     "aliasesCreated": false,
     "applicationsOpened": false
   },
-  "sourceScopeNotes": "Native Buro Happold Limited employer label is preserved separately from registered brand and unknown legal-employer qualification. Role2633 has explicit addressCountry India, addressLocality Bengaluru and postal560038; no state is invented. Native careershub application href is retained without visiting any member/login/application form. GET page links are followed; POST search/send forms are never submitted. An observed partial card count is not substituted for an unadvertised exact inventory total. The historical folder name is retained for compatibility; execution uses the native HTML portal."
+  "sourceScopeNotes": "Native Buro Happold Limited employer label is preserved separately from registered brand and unknown legal-employer qualification. Role2633 has explicit addressCountry India, addressLocality Bengaluru and postal560038; no state is invented. Native careershub application href is retained without visiting any member/login/application form. GET page links are followed; POST search/send forms are never submitted. An observed partial card count is not substituted for an unadvertised exact inventory total. The historical folder name is retained for compatibility; execution uses the native HTML portal. Preserve comma/semicolon-separated native locality components and raw grouped postal/address fields without pairing postal codes to cities. Compare only delimiter-adjacent whitespace for visible/listing locations; differing words remain rejected. Explicit native foreign-country/employer exclusions do not require India-only expiry corroboration and never become published India jobs. India expiry and identity checks remain enforced. All raw source dates remain unchanged.",
+  "sourceRetainedLatestListingRows": 239,
+  "sourceRetainedLatestIndiaDetails": 80,
+  "sourceRetainedLatestListingPages": 24,
+  "sourceRetainedLatestAttemptCompletedAt": "2026-10-22T17:25:40.445Z",
+  "sourceRetainedUnfetchedDetailID": "2551",
+  "sourceCurrentInventoryCounts": null
 }, modulePath: path.join(dir, 'script.js'), dryRunFile: path.join(dir, 'jobs.json') };
 export default PROVIDER_METADATA;
 export { PROVIDER_METADATA };

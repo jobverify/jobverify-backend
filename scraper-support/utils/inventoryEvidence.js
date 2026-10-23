@@ -121,3 +121,25 @@ export const isFreshCompleteInventoryEvidence = (evidence, {
   return age >= 0 && age <= maxAgeHours * 3600000
     && (evidence.status !== 'verified-empty' || isVerifiedEmptyEvidence(evidence))
 }
+
+const UNVERIFIED_ZERO_OUTCOMES = new Set([
+  'coverage-gap', 'blocked-zero', 'unverified-zero', 'discovery-only', 'unverified', 'unverified-empty',
+])
+
+/** Explicit attempt flags take precedence over contradictory inventory labels. */
+export const hasIncompleteScraperAttempt = (attempt) => Boolean(attempt && (
+  attempt.partial === true || attempt.staleCheckSkipped === true || attempt.skipped === true
+  || attempt.softFailure === true || attempt.upstreamOutage === true || attempt.failureKind
+  || attempt.detailHealth?.complete === false || attempt.filteredEmptyDescription > 0
+  || UNVERIFIED_ZERO_OUTCOMES.has(attempt.zeroJobEvidence)
+))
+
+/** Historical checks retain their completion clock; current freshness is separate. */
+export const isCompleteScraperAttempt = (attempt, { now = new Date(), maxAgeHours = 48 } = {}) => {
+  if (attempt?.success !== true || hasIncompleteScraperAttempt(attempt)) return false
+  const reference = toIsoTimestamp(now)
+  const suppliedCompletion = attempt.completedAt != null && attempt.completedAt !== ''
+  const completedAt = suppliedCompletion ? toIsoTimestamp(attempt.completedAt) : reference
+  if (!reference || !completedAt || +new Date(completedAt) <= 0 || new Date(completedAt) > new Date(reference)) return false
+  return isFreshCompleteInventoryEvidence(attempt.inventoryEvidence, { now: completedAt, maxAgeHours })
+}

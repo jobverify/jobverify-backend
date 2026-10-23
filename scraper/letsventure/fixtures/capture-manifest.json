@@ -1,0 +1,208 @@
+{
+  "source": "letsventure",
+  "captureMethod": "Root-owned isolated public Chrome fetch. Unmodified body/status/finalURL/time; DOM companions are navigation observations only.",
+  "files": [
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "c8f753e442bff5d33ebcc2b94a201d5912f6a2c5f10b5d69a55c017d1c63f44f",
+      "uncompressedSHA256": "7aa639a43f7b03ab6404a4edbba82dde3153837259ca88b2bd74e076936a1d4d",
+      "bytes": 28822
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "525a747aa911b49e5abe85cfd1ba45e270f21fd540479aac116484d6adefb7f1",
+      "uncompressedSHA256": "8f440eda921fbe435af1f698d21126441eaea4f53abbc73bc7c82cec82a4aa05",
+      "bytes": 325012
+    },
+    {
+      "file": "lvx-employer-pages.dom.json.gz",
+      "sha256": "0189a7325396f4e9643eac8834f4679b9c423187eed59e0bea71d4452b37c8ab",
+      "uncompressedSHA256": "436574ec8287f30374728f5951478c8070b3a7d809ca5413d695a39d62113296",
+      "bytes": 73246
+    },
+    {
+      "file": "lvx-employer-pages.json.gz",
+      "sha256": "54d70bdd4be323945bc93275d93521032e45b7564351b9763a716cce1bdbd839",
+      "uncompressedSHA256": "36fd0bb6391f7f6e03bb88ccfd477908b2569e18d924795d2906f58cefb5c4c8",
+      "bytes": 560915
+    },
+    {
+      "file": "native-seed-pages.dom.json.gz",
+      "sha256": "b35e68ff3f9b1741ac464cffe2d642c90e42bb0b2a58bc75414dd37423d558f0",
+      "uncompressedSHA256": "bdcc3c4d4fb20489e8ee25c7782254722527e31bb50c6003e916684e47cae162",
+      "bytes": 44923
+    },
+    {
+      "file": "native-seed-pages.json.gz",
+      "sha256": "c0f0e16f37c0dde0bb7a5eee18eecbeb88e10bbc85a100f16a323897181c94bc",
+      "uncompressedSHA256": "bfddb7455e7f5594a4fc3c8f0fca2931615c9a605a02e454fa4b7c309f5464fa",
+      "bytes": 293449
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "64afb1db24efee4befe56ce4d066b2b1d6592d63662bd6f7b0b1cff221736b52",
+      "uncompressedSHA256": "1c34f17e8e4bf577dcfbcab4fe3803b2ef55740d7341292cf2526e35297634df",
+      "bytes": 16811
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "cb4f8ccd4a18273cd4b64e1b2830164fdab3eae514f327523fde11ab4edb815a",
+      "uncompressedSHA256": "4c23fdd5247134f1ee9c0846635d4fa9485d21c10fc4a84bb7ce820e3b98b5c7",
+      "bytes": 143
+    },
+    {
+      "file": "rebrand-pages.dom.json.gz",
+      "sha256": "64afb1db24efee4befe56ce4d066b2b1d6592d63662bd6f7b0b1cff221736b52",
+      "uncompressedSHA256": "1c34f17e8e4bf577dcfbcab4fe3803b2ef55740d7341292cf2526e35297634df",
+      "bytes": 16811
+    },
+    {
+      "file": "rebrand-pages.json.gz",
+      "sha256": "d7b9099e973df29a5bd65abed94ecabb9cc0e1fc248eabdcbd5794d6226f9622",
+      "uncompressedSHA256": "617fe5efe1c740343022c5dc8803eaa11cf81f14f44c18e8e18371daa56fb01e",
+      "bytes": 147134
+    },
+    {
+      "file": "zoho-detail-pages.dom.json.gz",
+      "sha256": "3d5de0e1e6ded020c378b4cef9953d3006be34e8b311bed1cc0a6bb10c793c88",
+      "uncompressedSHA256": "77bef1af6c6375c80e52d122981f019f2eff6587eaba45cdcef37a713c15a9e2",
+      "bytes": 8674
+    },
+    {
+      "file": "zoho-detail-pages.json.gz",
+      "sha256": "5f038a6a321f42690672232e5ea223136cff5697f4a18f7d112b962bdef7a04c",
+      "uncompressedSHA256": "f3db79bd1f3f5447fcaccf67d82a3d88c70957a925b66f772add4a3dd63d5b4d",
+      "bytes": 5324566
+    },
+    {
+      "file": "zoho-pages.dom.json.gz",
+      "sha256": "7fa3f9830c5dd34712cae5281f2477956fd00b1a3dfbfeca247cb681b1467a47",
+      "uncompressedSHA256": "4d5ac2a25f0605d03e260340ba96e1f762c56d567eb4b22cc14b99f4d8885794",
+      "bytes": 7971
+    },
+    {
+      "file": "zoho-pages.json.gz",
+      "sha256": "937f0a9fd6d74ec157c15f4fc167f25b429c864b7c6e2e553b770d8e429ea22d",
+      "uncompressedSHA256": "8af521244e4c7b17e4b4ac0149c972a351ff89399c8f983859125144dd84eb6e",
+      "bytes": 1763366
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://www.linkedin.com/company/letsventure",
+      "finalUrl": "https://www.linkedin.com/company/letsventure",
+      "status": 404,
+      "capturedAt": "2026-10-23T08:54:51.065Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "8f447ee2be2aa3e41252dfe0a24a87385e659fecc33970a39dc952dd767f6fba",
+      "bodyBytes": 319687
+    },
+    {
+      "url": "https://www.linkedin.com/company/lvxventures",
+      "finalUrl": "https://www.linkedin.com/company/lvxventures",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:58:19.141Z",
+      "file": "lvx-employer-pages.json.gz",
+      "bodySHA256": "a5e86543c45da9fac7675f4042030bd87c41d6777912800fe7f48581faa272a8",
+      "bodyBytes": 358003
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=3325282&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=3325282&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:58:21.029Z",
+      "file": "lvx-employer-pages.json.gz",
+      "bodySHA256": "d3afe56cdd30f107fe6fe978f31b54d8d615d0bf0de422f0ad9afec5625e388f",
+      "bodyBytes": 89361
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=3325282&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=3325282&location=Worldwide",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:58:21.744Z",
+      "file": "lvx-employer-pages.json.gz",
+      "bodySHA256": "df06176c7b827a73351a4b6d3fb747de40056a8510bfa3b54e0b7cca28322ee2",
+      "bodyBytes": 89416
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/marketing-manager-at-lvx-4466053550",
+      "finalUrl": "https://www.linkedin.com/jobs/view/marketing-manager-at-lvx-4466053550",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:57:52.475Z",
+      "file": "native-seed-pages.json.gz",
+      "bodySHA256": "217ccc95d9f9f2e6cbf3a805b079a85125d4536136f331d84b14031a371bc36e",
+      "bodyBytes": 279941
+    },
+    {
+      "url": "https://lvxventures.com/",
+      "finalUrl": "https://lvxventures.com/",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:58:09.359Z",
+      "file": "rebrand-pages.json.gz",
+      "bodySHA256": "9c131cf411c484927e31e1514063d489087289cdd6726300bbf27adcae746e07",
+      "bodyBytes": 94669
+    },
+    {
+      "url": "https://lvxventures.com/lvx-in-news/letsventure-rebrands-as-lvx-and-expands-into-growth-stage-investment",
+      "finalUrl": "https://lvxventures.com/lvx-in-news/letsventure-rebrands-as-lvx-and-expands-into-growth-stage-investment",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:58:09.830Z",
+      "file": "rebrand-pages.json.gz",
+      "bodySHA256": "c1b9263aa704a9ed850a22213964783d8d38e7961e65b4c389eea41cd6c9bbe6",
+      "bodyBytes": 46094
+    },
+    {
+      "url": "https://letsventure.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite",
+      "finalUrl": "https://letsventure.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:57:45.075Z",
+      "file": "zoho-detail-pages.json.gz",
+      "bodySHA256": "8139b3bca4bc640562fdacdea0326759bca5952d4b9c69a240ec130af981f38d",
+      "bodyBytes": 2009
+    },
+    {
+      "url": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000323017/Senior-Frontend-Engineer?source=CareerSite",
+      "finalUrl": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000323017/Senior-Frontend-Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:57:45.293Z",
+      "file": "zoho-detail-pages.json.gz",
+      "bodySHA256": "da0df27cdc010b89ef7e522c95770790fbe1c27bf878392435ce9cf2e43821b3",
+      "bodyBytes": 1730967
+    },
+    {
+      "url": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000323001/Senior-Backend-Software-Engineer?source=CareerSite",
+      "finalUrl": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000323001/Senior-Backend-Software-Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:57:46.341Z",
+      "file": "zoho-detail-pages.json.gz",
+      "bodySHA256": "2371e1f6351cac7f2ac7dd90f4eda1d7761ea9e9f8a9981b8c988c4b3c297a03",
+      "bodyBytes": 1730647
+    },
+    {
+      "url": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000278015/Product-Manager?source=CareerSite",
+      "finalUrl": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000278015/Product-Manager?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:57:47.343Z",
+      "file": "zoho-detail-pages.json.gz",
+      "bodySHA256": "c3c77f5f270425f4e8f6c2abcb08afc9dd7b8ce2c95786b07543df9fb55a687a",
+      "bodyBytes": 1732255
+    },
+    {
+      "url": "https://letsventure.zohorecruit.in/jobs/Careers",
+      "finalUrl": "https://letsventure.zohorecruit.in/jobs/Careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:54:46.681Z",
+      "file": "zoho-pages.json.gz",
+      "bodySHA256": "aefd6eeb11827d9cdd085e3c1bf9a92d414a517effc80a8ea57cf948e597312b",
+      "bodyBytes": 1722494
+    }
+  ],
+  "transportFailures": [
+    {
+      "url": "https://www.letsventure.com/",
+      "capturedAt": "2026-10-23T08:54:40.861Z",
+      "error": "TypeError: Failed to fetch",
+      "file": "official-pages.json.gz"
+    }
+  ]
+}

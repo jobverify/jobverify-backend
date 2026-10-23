@@ -1,0 +1,146 @@
+{
+  "capturedFrom": "2026-10-23T03:51:29.532Z",
+  "capturedThrough": "2026-10-23T04:06:14.914Z",
+  "listingPages": 18,
+  "nativeRoleCount": 345,
+  "indiaJobCount": 14,
+  "indiaJobs": [
+    {
+      "id": "215941",
+      "title": "Software Engineer Intern",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "215948",
+      "title": "Software Engineer Intern",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "215949",
+      "title": "Software Engineer Intern",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "216487",
+      "title": "Senior Accountant I",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "215937",
+      "title": "Data Science Intern",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "215938",
+      "title": "JAVA Software Engineer Intern",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "214164",
+      "title": "Director, PE Shared Services",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "215680",
+      "title": "Game Designer II",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "216456",
+      "title": "Tax Manager",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "216404",
+      "title": "Senior Tax Analyst",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "215904",
+      "title": "Senior Accountant I",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "216036",
+      "title": "Project Management Intern",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "215906",
+      "title": "Senior Accountant II",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    },
+    {
+      "id": "216125",
+      "title": "Team Lead, PE Shared Services",
+      "locations": [
+        "Hyderabad, Telangana, India"
+      ],
+      "postingDate": null,
+      "hasDescription": true
+    }
+  ],
+  "inventoryEvidence": {
+    "status": "complete-inventory",
+    "surface": "https://jobs.ea.com/en_US/careers/Home/",
+    "firstParty": true,
+    "listingComplete": true,
+    "pagesFetched": 18,
+    "reportedTotal": 345,
+    "indiaFacetCount": 14,
+    "verifiedAt": "2026-10-23T04:10:32.847Z",
+    "reason": "counted-native-avature-pages-and-all-primary-secondary-detail-locations-reconciled"
+  }
+}

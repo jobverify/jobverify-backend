@@ -1,5 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {createDailyhuntScraper} from './native.js'
+export {createDailyhuntScraper} from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -7,20 +9,13 @@ export const SOURCE = 'dailyhunt'
 export const COMPANY = 'Dailyhunt'
 export const FIRST_PARTY_ROOT_URL = 'https://www.eternoinfo.com/'
 
-export const createDailyhuntScraper = () => ({
-  async run() {
-    // Eterno's public first-party careers page accepts resumes but has no public job listing feed.
-    return []
-  },
-})
-
-export const run = async (options = {}) => createDailyhuntScraper().run(options)
+export const run = async (options = {}) => createDailyhuntScraper(options).run(options)
 
 const isDirectExecution = process.argv[1]
   ?.replaceAll('\\', '/')
   .endsWith('/scraper/dailyhunt/script.js')
 
-if (isDirectExecution || process.argv.includes('--dry-run')) {
+if (isDirectExecution) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 

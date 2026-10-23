@@ -1,0 +1,180 @@
+{
+  "source": "giottus",
+  "captureMethod": "Root-owned isolated local Chrome browser direct native fetch. Unmodified request URL, final URL, HTTP status, body and capture time retained; companion DOM/network inspection retained separately.",
+  "files": [
+    {
+      "file": "about-pages.dom.json.gz",
+      "sha256": "a9476224fdc1ca8a90675e960640c817a9cc28e619dbbc4a58868fbaa6345a5a",
+      "uncompressedSHA256": "3286dc2662c0da2e16d06d91475a4294055b8d1bf8e7d71465be102ea7c82b9f",
+      "bytes": 11138
+    },
+    {
+      "file": "about-pages.json.gz",
+      "sha256": "f7327fe133ac7170a76884dcf6af7a9a6307c922a8ce97d1e794c36881ba4294",
+      "uncompressedSHA256": "30e80dcda33ddd2074a33c3d34e0baefbb64a4892589eb980f6e2496f808b86a",
+      "bytes": 76996
+    },
+    {
+      "file": "client-pages.dom.json.gz",
+      "sha256": "130787d75d227f088836b49220c6bb20ec2fc7be21618294be8c4c0cfe2c4a59",
+      "uncompressedSHA256": "804cc8e49ffc1624cfed4ff530b0bbc55e11f609c7d69e0e98fba26c1b77da52",
+      "bytes": 37512
+    },
+    {
+      "file": "client-pages.json.gz",
+      "sha256": "3c8f3deb78a06b9f84248e02011c41b12395239853dedbce72886e5821f2ad24",
+      "uncompressedSHA256": "2c23f8f0740056f145ea92cbf35e7fc4b7f57d4b892c10e7e0b9938648bb1ed0",
+      "bytes": 128288
+    },
+    {
+      "file": "hiring-post-pages.dom.json.gz",
+      "sha256": "fdba93ec2cad598dd12587628bac0aaf5516a38b796c703e4334900e0200b008",
+      "uncompressedSHA256": "0ecdc15a63396289ae52616771a12479134121a74de79c16a5eaa75081ae9531",
+      "bytes": 16236
+    },
+    {
+      "file": "hiring-post-pages.json.gz",
+      "sha256": "b4656dcd5631484390a619b895ccf0f99ee419f5f65071dcb594846161959a89",
+      "uncompressedSHA256": "c99d271081669b550b206318b22f2046b7a750780d2e333154951e6f13881550",
+      "bytes": 114855
+    },
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "bd383139c522dc70b76ca0e45e83ced3d11823b1e2c488ba8acfa4aec111418d",
+      "uncompressedSHA256": "be10af5fcc8c78d0806d54202fe8ee8888de00b8552c1d827579f90d0c452e18",
+      "bytes": 5933
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "76d4e776e477e293afe4c006dfc54814f54d04d6c5bfdadc2f499a814258e5f8",
+      "uncompressedSHA256": "46d16226cb3f76cfdc9d7fe4694f60c2f65be3d1010e8a101017bc787281d281",
+      "bytes": 524136
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "5a1d3c2f63b135deb62c5dfd4d76f432bf54a26527aa9c2a911512bb9793cac7",
+      "uncompressedSHA256": "b65746f1b55a1bb8c6c94f9244bfc90f500a1a8c6f2b7183b924bcb6546ca5c3",
+      "bytes": 37514
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "6ca9da17dadaaf5ec39c364ea430a13c24009b1053e80be2ac215afa6365a3f6",
+      "uncompressedSHA256": "622922d2cd0b3383ad2e02f33e93a431c6166b84c9f48ac672da429d0f4867ec",
+      "bytes": 96092
+    },
+    {
+      "file": "wellfound-pages.dom.json.gz",
+      "sha256": "f778847480ea027fdb412a9299de04097d0f669941a988faf74c5a6f44ec322a",
+      "uncompressedSHA256": "a53f4792aa89f4fda7255b6d59fd6850ca5104a52329bdc8ac6387f7b5f84c68",
+      "bytes": 928
+    },
+    {
+      "file": "wellfound-pages.json.gz",
+      "sha256": "928f64ebd2e2a78d53628ba2b33c478a5555022d949967fcbc9c5048ded8ec4c",
+      "uncompressedSHA256": "bd7a42e036ec765c991b91139f4b40ae10e988be3883047c77967ccb1ca11a5c",
+      "bytes": 24678
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://www.giottus.com/about",
+      "finalUrl": "https://www.giottus.com/about",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:10:33.091Z",
+      "file": "about-pages.json.gz",
+      "bodySHA256": "5edbbce8f9e28327ba59d71463bf9fac61348e447dc14bd5a1b93b3ac78dfd4d",
+      "bodyBytes": 68613
+    },
+    {
+      "url": "https://www.linkedin.com/posts/giottus_hiring-jobs-bengalurujobs-activity-7480196975502573570-awU_",
+      "finalUrl": null,
+      "status": null,
+      "error": "TypeError: Failed to fetch",
+      "capturedAt": "2026-10-23T08:10:33.950Z",
+      "file": "about-pages.json.gz",
+      "bodySHA256": null,
+      "bodyBytes": null
+    },
+    {
+      "url": "https://www.giottus.com/js/pages/2.3.49/home.min.js",
+      "finalUrl": "https://www.giottus.com/js/pages/2.3.49/home.min.js",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:12:26.161Z",
+      "file": "client-pages.json.gz",
+      "bodySHA256": "f8549df86885f1ca68cf0d2d521822e6fc6cc25226056d83dfa3daa4153f3613",
+      "bodyBytes": 127245
+    },
+    {
+      "url": "https://www.linkedin.com/posts/giottus_hiring-jobs-bengalurujobs-activity-7480196975502573570-awU_",
+      "finalUrl": "https://www.linkedin.com/posts/giottus_hiring-jobs-bengalurujobs-activity-7480196975502573570-awU_",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:12:32.422Z",
+      "file": "hiring-post-pages.json.gz",
+      "bodySHA256": "18970746a58ebd17a33c33a85dbeccd75bedd527997b7d869752b5ad8d53da48",
+      "bodyBytes": 110030
+    },
+    {
+      "url": "https://www.linkedin.com/company/giottus/",
+      "finalUrl": "https://www.linkedin.com/company/giottus/",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:09:26.764Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "b304a3d30691c568599e043f4b23d4996521a435245a994e9a90db7eb314d917",
+      "bodyBytes": 322029
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=13603844&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13603844&location=India",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:09:27.619Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "f1baaffed25e67f0078912ecdba949f6380fe3ec62215e1a6aed8410f0034205",
+      "bodyBytes": 89361
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=13603844&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13603844&location=Worldwide",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:09:28.448Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "0ae7919a921a39743b0ac1bafd28efbb33462593bc48bbdc7e5bbacbec01f21c",
+      "bodyBytes": 89416
+    },
+    {
+      "url": "https://www.giottus.com/",
+      "finalUrl": "https://www.giottus.com/",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:09:23.552Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "ef98eb4079a0f6a57ba8bc4e408183e8007f6e8904ee7f20a442faa1ef0863c2",
+      "bodyBytes": 85854
+    },
+    {
+      "url": "https://wellfound.com/company/giottus",
+      "finalUrl": "https://wellfound.com/company/giottus",
+      "status": 403,
+      "error": null,
+      "capturedAt": "2026-10-23T08:13:53.733Z",
+      "file": "wellfound-pages.json.gz",
+      "bodySHA256": "6ff98731765f34e6664c509d9ed936e402fa9ae3b78b3fed12fc79bed84c07d7",
+      "bodyBytes": 11765
+    },
+    {
+      "url": "https://wellfound.com/company/giottus/jobs",
+      "finalUrl": "https://wellfound.com/company/giottus/jobs",
+      "status": 403,
+      "error": null,
+      "capturedAt": "2026-10-23T08:13:54.265Z",
+      "file": "wellfound-pages.json.gz",
+      "bodySHA256": "bcc6368165d35d59684b0ccc5ba8d6a8539150c66021bfe6192eb4464003a719",
+      "bodyBytes": 11780
+    }
+  ]
+}

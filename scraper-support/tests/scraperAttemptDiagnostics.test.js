@@ -46,7 +46,9 @@ test('status and history retain fresh attempt diagnostics without inheriting cou
     await upsertScraperStatus('example', diagnostics)
     assert.equal(update.$set.latestAttempt.rawRecords, 10)
     assert.deepEqual(update.$set.latestAttempt.inventoryEvidence, evidence)
-    assert.equal(new Date(update.$set.lastCompleteCheckAt).toISOString(), diagnostics.completedAt)
+    // This fixture has one missing description, so complete history stays intact.
+    assert.equal(Object.hasOwn(update.$set, 'lastCompleteCheckAt'), false)
+    assert.equal(Object.hasOwn(update.$set, 'lastCompleteJobsFound'), false)
     const doc = new ScraperStatus({ source: 'example', lastRanAt: new Date(), lastSuccess: true, ...update.$set }).toObject()
     assert.equal(doc.latestAttempt.rawRecords, 10)
 

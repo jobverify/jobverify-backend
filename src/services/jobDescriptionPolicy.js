@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { getSourceDescription } from '../utils/jobSourceContent.js';
+import { getSourceDescription, hasSourceDescription } from '../utils/jobSourceContent.js';
 
 export const REWRITE_MODEL = JSON.parse(readFileSync(new URL('../../rewriting/model.json', import.meta.url), 'utf8'));
 export const SECTION_TITLES = {
@@ -36,8 +36,8 @@ export const buildRewriteInput = (job = {}) => {
 
 export const buildDescriptionSourceUpdate = (job, existing, { mode = 'off', now = new Date() } = {}) => {
   if (job.preserveExistingSourceContent === true && existing) return {};
+  if (existing && !hasSourceDescription(job)) return {};
   const input = buildRewriteInput(job);
-  if (!input.sourceDescription && existing) return {};
   // Older records stored employer fields before dedicated provenance fields existed.
   // Recognizing those values initializes metadata without queuing an unchanged job.
   const previousSource = existing && existing.sourceContentHashVersion !== 2 ? {

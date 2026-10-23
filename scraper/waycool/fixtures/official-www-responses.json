@@ -1,0 +1,14 @@
+[
+  {
+    "url": "https://www.waycool.in/career",
+    "finalUrl": "https://www.waycool.in/career",
+    "status": 404,
+    "capturedAt": "2026-10-23T06:17:48.553Z",
+    "body": "<!DOCTYPE HTML>\n<html lang='en-us'>\n  <head>\n    <title>Not Found</title>\n  </head>\n  <body>\n    HTTP Status: 404 (not found)\n  </body>\n</html>"
+  },
+  {
+    "url": "https://www.waycool.in/",
+    "error": "TypeError: Failed to fetch",
+    "capturedAt": "2026-10-23T06:17:48.253Z"
+  }
+]

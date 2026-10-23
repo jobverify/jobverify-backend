@@ -1,30 +1,67 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
+const PROVIDER_METADATA = { ...{
   "source": "esw",
   "companyName": "ESW",
-  "adapter": "script",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json'),
-  "atsPlatform": "workbook-exact-name-sentinel",
+  "adapter": "publicAts",
+  "catalogOverride": true,
+  "atsPlatform": "greenhouse",
+  "boardToken": "esw",
+  "companyCareerPage": "https://esw.com/careers/",
+  "jobsBoardUrl": "https://job-boards.greenhouse.io/esw",
   "countryFilter": "India",
-  "paginationStrategy": "none",
-  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-  "parser": "custom-script",
+  "parser": "shared-public-ATS-Greenhouse-native-content",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-29",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
-  "verifiedSurfaceSummary": "Workbook batch 08 exact-name sentinel for ESW added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-  "backfillMode": "sentinel",
+  "paginationStrategy": "complete-single-public-API-response-reconciled-with-meta.total;reject-truncation",
+  "extractionStrategy": "native-description-and-first-published;explicit-India-location;no-application-fetches",
+  "backfillMode": "live-shared-adapter",
   "originalAdapter": "script",
   "originalAtsPlatform": "workbook-exact-name-sentinel",
   "originalModulePath": "../workbookbatch08/failClosedSentinel.js",
-  "originalDryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\workbookbatch08\\esw.jobs.json"
-}
-
+  "zeroResultPolicy": "coverage-gap",
+  "sourceScopeComplete": false,
+  "lifecycleCleanupAllowed": false,
+  "bindingEvidence": {
+    "verified": true,
+    "verifiedAt": "2026-10-22T21:18:50.897Z",
+    "matchedLinks": [
+      "https://job-boards.greenhouse.io/esw/jobs/8902123002",
+      "https://job-boards.greenhouse.io/esw/jobs/8690613002"
+    ],
+    "officialCareerPage": "https://esw.com/careers/",
+    "bindingSurface": "https://esw.com/careers/open-roles/",
+    "bindingScope": "company-advertised-Greenhouse-board;whole-employer-scope-unresolved",
+    "applicationsOpened": false,
+    "scriptsExecuted": false
+  },
+  "verifiedOn": null,
+  "verifiedAt": null,
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "verifiedInventoryStatus": "unverified",
+  "runtimeQualification": "actual-isolated-public-API-extraction-and-loopback-local-persistence-only",
+  "remediationStatus": "native-single-response-no-India-primary-location-match;whole-employer-scope-and-production-unobserved",
+  "sourceResearchObservedAt": "2026-10-22T21:13:42.432Z",
+  "sourceResearchNativeListingRows": 3,
+  "sourceResearchIndiaLocationMatches": 0,
+  "verifiedSurfaceSummary": "Company-advertised Greenhouse board verified through retained official content. Actual isolated GET completed 2026-10-22T21:28:07.945Z: 3 native records reconcile meta.total; 0 India jobs, 0 eligible. Loopback persistence saved 0, repeat inserts0; visible with experienced enabled0/disabled0. Prior inventory and complete-check history preserved. Full employer/secondary-location scope and current production publication remain unknown; this is not a verified company zero.",
+  "sourceScopeNotes": "Read only the public complete jobs?content=true response, including full native descriptions, original first_published dates and application links. Reconcile meta.total and reject incomplete/error responses. Existing shared India filtering and quality rules remain in force. No India matches does not establish company-wide zero openings. Whole-employer/secondary-location scope remains unresolved; complete-check promotion and lifecycle cleanup are disabled.",
+  "verificationDisposition": "observed-no-India-primary-location-match;not-verified-company-zero",
+  "sourceLatestLiveAttemptedAt": "2026-10-22T21:28:07.415Z",
+  "sourceLatestLiveCompletedAt": "2026-10-22T21:28:07.945Z",
+  "sourceLatestLiveOutcome": "unverified-zero",
+  "sourceLatestLiveObservedListingCount": 3,
+  "sourceLatestLiveIndiaJobs": 0,
+  "sourceLatestLiveEligibleJobs": 0,
+  "sourceLatestLiveNativeSingleResponseComplete": true,
+  "sourceLatestLiveHTTPResponses": 1,
+  "sourceLatestLiveHTTPStatus": 200,
+  "localPersistenceSavedJobs": 0,
+  "localPersistenceRepeatInserted": 0,
+  "localVisibilityExperiencedEnabled": 0,
+  "localVisibilityExperiencedDisabled": 0,
+  "sourceNativeObservationCompletedAt": "2026-10-22T21:28:07.945Z"
+}, modulePath: path.join(currentDir, 'script.js'), dryRunFile: path.join(currentDir, 'jobs.json') }
 export default PROVIDER_METADATA
 export { PROVIDER_METADATA }

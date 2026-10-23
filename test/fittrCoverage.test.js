@@ -26,6 +26,8 @@ test('Fittr resolves approved case variants to its literal exact-name first-part
   )
 })
 
-test('Fittr fails closed because its official surface has no employee listing feed', async () => {
-  assert.deepEqual(await run(), [])
+test('Fittr fails closed with typed unknown coverage when the native source is unavailable', async () => {
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('unavailable')}}),{
+    code:'FITTR_COVERAGE_GAP',sourceListingComplete:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,
+  })
 })

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../scraper-support/providers/index.js'
@@ -23,7 +24,6 @@ test('Woven by Toyota is covered only by its exact-name first-party provider', (
   assert.equal(provider.companyName, 'Woven by Toyota')
   assert.equal(provider.companyDomain, 'woven.toyota')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-page-fail-closed')
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'Woven by Toyota').map((item) => item.source),
     ['wovenbytoyota'],
@@ -32,9 +32,24 @@ test('Woven by Toyota is covered only by its exact-name first-party provider', (
   assert.equal(nearNameReport.unmatchedCount, 2)
 })
 
-test('Woven by Toyota scraper fails closed when the public careers page shows no matching roles', async () => {
+test('Woven by Toyota provider retains verified native inventory after live handoff validation', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'wovenbytoyota')
 
   assert.ok(scraper, 'Expected Woven by Toyota scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  const root = new URL('../scraper/wovenbytoyota/fixtures/', import.meta.url)
+  const official = JSON.parse(readFileSync(new URL('careers-response.json', root)))
+  const clients = JSON.parse(readFileSync(new URL('client-api-responses.json', root)))
+  const pages = JSON.parse(readFileSync(new URL('listing-responses.json', root)))
+  const jobs = await scraper.run({ fetchPage: async url => {
+    const page = [official, ...clients].find(page => page.url === url)
+    if (!page) throw new Error('Unrecorded unrelated client chunk')
+    return { status: page.status, url, html: page.body }
+  }, fetchJson: async url => {
+    const page = pages.find(page => page.url === url)
+    assert.ok(page, 'Expected captured native page')
+    return JSON.parse(page.body)
+  } })
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 148)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })

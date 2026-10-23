@@ -1,0 +1,124 @@
+{
+  "source": "fittr",
+  "captureMethod": "Root-owned isolated Chrome direct native fetch. Exact request URL, final URL, HTTP status, capture time and body retained. Separate application navigation DOM observation did not resolve a final application target; no HTTP result inferred from navigation or CORS failure.",
+  "files": [
+    {
+      "file": "application-navigation.dom.json.gz",
+      "sha256": "ced446663df5773762e9583bc3c7c78fd0c64a2f903af5f3ee2fa168088e0c65",
+      "uncompressedSHA256": "92081fdba482c3e04bd3d5e92fd859b94dd9611cc0b39587a893f8f5c1e40629",
+      "bytes": 880
+    },
+    {
+      "file": "application-navigation.json.gz",
+      "sha256": "c56c0d08573b7497eaa9c28aa6d0c61275e182c852871520143db6558d354f2c",
+      "uncompressedSHA256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "ed899fcb21343b97890ac7bb61b3b4df6f701914c9791cf9b87ee1181e90ee52",
+      "uncompressedSHA256": "6f4f7b6e575534111ad585534c570dda063bc808d331c1b294ecdc483c5cd08c",
+      "bytes": 71330
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "814a863535f997f4b7c8112b2c2f93da5b349ca4d89210f575648a9193ac02f5",
+      "uncompressedSHA256": "0c439983fe2aae27c86b5866961f8336cbf661521670adc8e6c612f2702ddaf3",
+      "bytes": 878864
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "a969279231d352433698827e52be8b1adea35bc2dcaeef34d03414d5919f8a61",
+      "uncompressedSHA256": "c0958876daba0c0df21bcede02182b32e66434894746dc0fb5c0feab3e0ecbd8",
+      "bytes": 18259
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "89046b984228b31c5afb919eb52f80e2f12df514858140753dc72bf09d2fc89e",
+      "uncompressedSHA256": "f5b92ebb03892514640e2bdc9f277315c1c0f7733ba1d697270ca614917b10b1",
+      "bytes": 387402
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://www.linkedin.com/company/fittr/",
+      "finalUrl": "https://www.linkedin.com/company/fittr/",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:24:24.917Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "91ef5585a085dc4e6e2cb96e8ec069f3c45a735e6e61b65934c7ce691856e777",
+      "bodyBytes": 363452
+    },
+    {
+      "url": "https://www.linkedin.com/company/fittr/jobs/",
+      "finalUrl": null,
+      "status": null,
+      "error": "TypeError: Failed to fetch",
+      "capturedAt": "2026-10-23T08:24:26.963Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": null,
+      "bodyBytes": null
+    },
+    {
+      "url": "https://www.linkedin.com/posts/fittr_punejobs-hiring-fittr-activity-7414647927740223489-d-cQ",
+      "finalUrl": "https://www.linkedin.com/posts/fittr_punejobs-hiring-fittr-activity-7414647927740223489-d-cQ",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:24:27.662Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "c3260f8f55266fb9b0340e2f9eace91fc048063f304dd140ff3bbf7ae214b4f8",
+      "bodyBytes": 161576
+    },
+    {
+      "url": "https://www.linkedin.com/posts/fittr_hiring-productdesigner-uxdesign-activity-7454432934230495232-hKaX",
+      "finalUrl": "https://www.linkedin.com/posts/fittr_hiring-productdesigner-uxdesign-activity-7454432934230495232-hKaX",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:24:28.710Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "7c6489242cc16de41e4eba11574c3e696204f3ff7e978c1e0ed1012ee68b1967",
+      "bodyBytes": 136700
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=2970058&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=2970058&location=India",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:24:29.528Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "dfa577b4d4d6497e2577e66be5b4e149bfee10f4a26b63956b6c0a5b0fd26642",
+      "bodyBytes": 89379
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=2970058&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=2970058&location=Worldwide",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:24:30.173Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "018551557dc8abeab62dc652b59dacc7ce7ba6e9b80eaaf5cabd0bad519badae",
+      "bodyBytes": 89434
+    },
+    {
+      "url": "https://www.fittr.com/",
+      "finalUrl": "https://www.fittr.com/",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:24:17.884Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "84f06dcd3de0200019599282821f05351681b2e97a031dc16a4eecafd549ca2f",
+      "bodyBytes": 177663
+    },
+    {
+      "url": "https://www.fittr.com/become-a-coach/",
+      "finalUrl": "https://www.fittr.com/become-a-coach/",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:24:18.420Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "e0129d4aac9d5498104e76df275a0e6660d2c0f9af785072e4db8303b49da920",
+      "bodyBytes": 196669
+    }
+  ]
+}
