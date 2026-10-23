@@ -100,4 +100,7 @@ test('native source allows only official resources and public role URLs learned 
 test('normal fetch transport remains anonymous with redirects manual and no application interaction',async()=>{
  const m=mock();const jobs=await run({now,fetchImpl:async(url,request)=>{
   assert.equal(request.method,'GET');assert.equal(request.credentials,'omit');assert.equal(request.redirect,'manual')
-  const p=await m.transport(url,request);return{url,status:p.status,headers:new Headers(p.he
+  const p=await m.transport(url,request);return{url,status:p.status,headers:new Headers(p.headers),body:new ReadableStream({start(c){c.enqueue(p.body);c.close()}})}
+ }})
+ assert.equal(jobs.length,4);assert.equal(m.calls.length,7)
+})
