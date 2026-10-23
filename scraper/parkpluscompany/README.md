@@ -1,0 +1,3 @@
+Literal Park Plus catalogue entry has unresolved exact employer identity. Configured URL currently identifies Park+ in its actual Organization schema. This does not establish that separate literal entry is that employer. Runtime bounded probe throws typed PARKPLUSCOMPANY_COVERAGE_GAP; no shared Park+ jobs or false zero. Counts unknown, cleanup disabled. An authoritative exact-entity relationship or correct employer recruiting URL is needed to recover vacancies for this source.
+
+Actual public response envelopes are gzipped with SHA manifest. No production writes or deployment. Verify with node --test scraper/parkpluscompany/script.test.js.

@@ -1,0 +1,13 @@
+{
+  "url": "https://www.easemytrip.com/",
+  "title": "502",
+  "text": "502 Bad Gateway",
+  "links": [],
+  "scripts": [],
+  "network": [
+    {
+      "url": "https://www.easemytrip.com/careernew.html",
+      "status": 200
+    }
+  ]
+}

@@ -23,7 +23,7 @@ test('Avataar is covered only by its exact-name first-party provider', () => {
   assert.equal(provider.companyName, 'Avataar')
   assert.equal(provider.companyDomain, 'avataar.ai')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'exact-name-fail-closed-sentinel')
+  assert.equal(provider.atsPlatform, 'officially-linked-employer-search-unverified-company-scope')
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'Avataar').map((item) => item.source),
     ['avataar'],
@@ -32,9 +32,9 @@ test('Avataar is covered only by its exact-name first-party provider', () => {
   assert.equal(nearNameReport.unmatchedCount, 1)
 })
 
-test('Avataar scraper fails closed without an official public careers feed', async () => {
+test('Avataar registered scraper reports inaccessible recruiting as a coverage gap', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'avataar')
 
   assert.ok(scraper, 'Expected Avataar scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  await assert.rejects(scraper.run({fetchImpl:async url=>({status:403,url,text:async()=>'<h1>Forbidden</h1>'})}),{code:'AVATAAR_COVERAGE_GAP'})
 })

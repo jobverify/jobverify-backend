@@ -1,0 +1,7 @@
+{
+  "url": "https://apimw.tatacliq.com/content-aggregator-service/v1/pages/landing/custom/careers",
+  "finalUrl": "https://apimw.tatacliq.com/content-aggregator-service/v1/pages/landing/custom/careers",
+  "status": 400,
+  "capturedAt": "2026-10-23T05:10:44.773Z",
+  "body": "{\"errors\":[{\"message\":\"x-tenant-id header is required\",\"type\":\"MissingTenantHeaderError\",\"code\":\"40014\"}],\"result\":\"x-tenant-id header is required\"}"
+}

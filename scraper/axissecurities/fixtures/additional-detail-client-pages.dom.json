@@ -1,0 +1,79 @@
+{
+  "url": "https://axissecurities.ripplehire.com/candidate/?token=aA6ANFk4CHLUkuOVBmxq&source=CAREERSITE#detail",
+  "title": "Axis Securities Limited Careers | Latest jobs at Axis Securities Limited - Ripplehire.com",
+  "text": "",
+  "links": [],
+  "scripts": [
+    "https://connect.facebook.net/en_US/all.js?hash=e086390496a13a4870602ce511be2e14",
+    "https://www.googletagmanager.com/gtag/js?id=G-F63V75W9TP&cx=c&gtm=4e6al1",
+    "https://www.googletagmanager.com/gtm.js?id=GTM-5S8SPXL",
+    "https://www.google-analytics.com/analytics.js",
+    "https://axissecurities.ripplehire.com/candidate/candresource/js/ga.js",
+    "https://axissecurities.ripplehire.com/candidate/candresource/assets/js/vendor/jquery-3.6.0.min.js",
+    "https://axissecurities.ripplehire.com/candidate/candresource/assets/js/vendor/metronic.js",
+    "https://axissecurities.ripplehire.com/candidate/candresource/assets/js/vendor/layout.js",
+    "https://axissecurities.ripplehire.com/candidate/candresource/js/jquery.loadmask.min.js",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/require_main.js",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/app.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/i18next.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/i18nextXHRBackend.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/jquery-3.6.0.min.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/json2.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/jquery.cookie.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/custom-us.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/backbone.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/backbone.marionette.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/candidates_app.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/backbone-validation-amd.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/controller/common_controller.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/entities/company.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/controller/candidatejobdesc_controller.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/view/common_view.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/jquery.loadmask.min.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/view/candidatedashboardlayout_view.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/view/breadcrumbpanel_view.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/view/jobbannerpanel_view.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/view/candidatejobdesc_view.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/view/candidateemailshare_view.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/entities/validator.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/entities/i18nkeys.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/moment.min.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/ripplehire-custom.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/view/model_region.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/toastr.min.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/scripts/sharescript.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/serialize.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/jquery.slimscroll.min.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/jquery.uniform.min.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/bootstrap-multiselect.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/text.js?v=v735",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/blueimp-gallery.min.js",
+    "https://axissecurities.ripplehire.com/candidate/candresource/candidate/vendor/require.js"
+  ],
+  "network": [
+    {
+      "url": "https://axissecurities.ripplehire.com/candidate/?token=aA6ANFk4CHLUkuOVBmxq&source=CAREERSITE",
+      "status": 200
+    },
+    {
+      "url": "https://axissecurities.ripplehire.com/candidate/getcompanylang?token=aA6ANFk4CHLUkuOVBmxq&source=CAREERSITE",
+      "status": 200
+    },
+    {
+      "url": "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/controller/candidatejobdesc_controller.js?v=v735",
+      "status": 200
+    },
+    {
+      "url": "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/view/jobbannerpanel_view.js?v=v735",
+      "status": 200
+    },
+    {
+      "url": "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/view/candidatejobdesc_view.js?v=v735",
+      "status": 200
+    },
+    {
+      "url": "https://axissecurities.ripplehire.com/candidate/candresource/candidate/apps/candidates/controller/candidatejobdesc_controller.js?v=v735",
+      "status": 200
+    }
+  ]
+}

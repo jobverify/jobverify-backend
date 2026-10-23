@@ -1,0 +1,435 @@
+{
+  "source": "letstransport",
+  "capturedBy": "Root-exclusive browser session, 2026-10-23",
+  "fixtures": [
+    {
+      "file": "auzmor-careers.json",
+      "sha256": "e26212d2c933b7c6c5871a5cde34710dd6ac83ffc2ca57b92d7529c559bf05a0",
+      "compressedFile": "auzmor-careers.json.gz",
+      "compressedSha256": "2b94283868084b0121c1d1029ae36c20921e0085a9dca1859a773f34f0b9a8b0",
+      "responses": [
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:56:17.794Z",
+          "bodySha256": "9e0d44f4c422c91346fc8591afa3da95d81f06ec2ca2ecbfaf5ba6e2350675dc"
+        }
+      ]
+    },
+    {
+      "file": "auzmor-extra.json",
+      "sha256": "eb0eb9d25613af6796fced8e4dfae48dac67cc5a75559bdf21ac19c1fe07ef6a",
+      "compressedFile": "auzmor-extra.json.gz",
+      "compressedSha256": "0ff6503cb3127eb9358fd8ffab8688357cc1afbd4548025ffc42714817537029",
+      "responses": [
+        {
+          "url": "https://hire.auzmor.com/config.js",
+          "finalUrl": "https://hire.auzmor.com/config.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:56:30.763Z",
+          "bodySha256": "6650e0366b67dfff6cedb0b25015b384abbbad97b7c5b10ae894ebda1b5da5e5"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/280260704c3e4d2ea7a578d94af51512",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/280260704c3e4d2ea7a578d94af51512",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:56:32.518Z",
+          "bodySha256": "3d5bc5266dfb5aa7c8c14c931a9d38902be6ca14606a8095231cec5fb113aefa"
+        }
+      ]
+    },
+    {
+      "file": "auzmor-job-details.json",
+      "sha256": "bd4cec88689b0fe1481dfb71ecaba8c61ced3232a3812231694f380672033df3",
+      "compressedFile": "auzmor-job-details.json.gz",
+      "compressedSha256": "a141133515878d6db60f7964ea4a893648effdd033f3d12c1702b445bdba1c38",
+      "responses": [
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/ef6b57aa3e4f4e0ea10b778b28c6e134",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/ef6b57aa3e4f4e0ea10b778b28c6e134",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:04.431Z",
+          "bodySha256": "42f2d381a3b0ce1e8c9b483fb8c475702c2e58e9dc26da1c83d8dcc35e340a49"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/1b5084aead0b4526acda72cc2ad83eda",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/1b5084aead0b4526acda72cc2ad83eda",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:05.091Z",
+          "bodySha256": "57c62c1c13294d3f6d55d228b57c0a6e309f4a747144cf44596cdb89c500da1c"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/f810d790f69f440b8df2e3b3102bb067",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/f810d790f69f440b8df2e3b3102bb067",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:06.021Z",
+          "bodySha256": "757581fa0b061929a93ed5931fef9824e8435468032168a62bed904a1b857fd2"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/8198d47d42f445d6b74b22a48397851a",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/8198d47d42f445d6b74b22a48397851a",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:06.928Z",
+          "bodySha256": "82e99ba4dfdf40046b281094d523926b35a89e4527dc883e2217f0c78ea34d14"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/280260704c3e4d2ea7a578d94af51512",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/280260704c3e4d2ea7a578d94af51512",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:06.939Z",
+          "bodySha256": "3d5bc5266dfb5aa7c8c14c931a9d38902be6ca14606a8095231cec5fb113aefa"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/4c864bd82bcb4e00863336b673c0696a",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/4c864bd82bcb4e00863336b673c0696a",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:07.889Z",
+          "bodySha256": "33f120a941b2eaf092764af37cc91fd067e9f72c8871764d6eb568b3ae202ed7"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/307aedc6509441be952e4303cac5401b",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/307aedc6509441be952e4303cac5401b",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:08.564Z",
+          "bodySha256": "311e1c9dff65f4219a8a2fdcf7b9736d3a3b730089524d303ef9c6c9631f9826"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/57d777575b0645cf8cb3fec808aeb477",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/57d777575b0645cf8cb3fec808aeb477",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:09.241Z",
+          "bodySha256": "6a2ebb2d08008205adfec06f197efff5bf6cda959430025faea141b073f4dcd2"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/074fd62c48014c40adec1cf07c4a6010",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/074fd62c48014c40adec1cf07c4a6010",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:09.904Z",
+          "bodySha256": "bc08fb5bccbfeee18fa7da6e0ec45069a728d81ed60ae995883b852e77c183a7"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/280cd33249784ab28b36212ffad7a69a",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/280cd33249784ab28b36212ffad7a69a",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:10.617Z",
+          "bodySha256": "c108ec6493d8325ca6f2c6db09f772e0c6bbf78334e0b38c20817ade79c3d5fd"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/7c15a3ea69a34db3ba83b266903b7a60",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/7c15a3ea69a34db3ba83b266903b7a60",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:11.609Z",
+          "bodySha256": "0eb757e738445118af535c303138e66c2f31b96751dae9478f7756bd4bbfbef4"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/d4020f98c24d4bb08b08a120ec6a45a1",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/d4020f98c24d4bb08b08a120ec6a45a1",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:12.304Z",
+          "bodySha256": "7aefcc80d02fc130d4c0fd698c46a9aadea6f87a0228426f64227fcccc535ea1"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/085b7ef3cdb24c1e9c2f57988afab2e7",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/085b7ef3cdb24c1e9c2f57988afab2e7",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:12.972Z",
+          "bodySha256": "34ee1da516c0be226d299d746302e2809cf34dcad80cb71d45afaf17aa4f69dc"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/1de7615d70b64bb2aac5bfb0c2a664ad",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/1de7615d70b64bb2aac5bfb0c2a664ad",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:13.630Z",
+          "bodySha256": "659d08c7148f796194bcf7cf1bdba42d6069e664f508aa0998014d902412fbbf"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/e8118d80358c4030a2c34d0b61177f6a",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/e8118d80358c4030a2c34d0b61177f6a",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:14.258Z",
+          "bodySha256": "f4e9a6fe2add58d192d2ceee4d180b80630088985246cb48eae90bb314583a16"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/205324b31cd04eec9b3ab0807469b39f",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/205324b31cd04eec9b3ab0807469b39f",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:14.899Z",
+          "bodySha256": "ca2ffea1e2d8a5e61caecee08bad464989c84c5bf34c62b37a7fc63ad19e69d2"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/8643c658e375472a9285266c6cc2f8f6",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/8643c658e375472a9285266c6cc2f8f6",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:15.572Z",
+          "bodySha256": "9d92dcc7ebe13802d785b61b87ea278797a888b4d7c894a842f7b7291c78ed19"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/e490d41bd2cc451fa720c048daeaaa82",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/e490d41bd2cc451fa720c048daeaaa82",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:16.226Z",
+          "bodySha256": "94ebfb3ce53bbaeb5470b93189aff07557e045290c0f8368d45d74195ced8b89"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/4969b5aa4b63476ca2211ec16acbfc71",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/4969b5aa4b63476ca2211ec16acbfc71",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:16.890Z",
+          "bodySha256": "a52fae242e40438070d7b858b328840c032dde1eaf300986a20dc718ebd97178"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/400ac5e627a54c808e978687a0e485fd",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/400ac5e627a54c808e978687a0e485fd",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:17.552Z",
+          "bodySha256": "489ba41a8103e9347543c44ea693ffb98a715a431b4b94d4dc8046c09084a867"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/003a78823679436b9a821a27e427675d",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/003a78823679436b9a821a27e427675d",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:18.207Z",
+          "bodySha256": "e4478121de254f3e2402ae7e9c16c4165cbdc2fc7af2b458fb558968e02615f5"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/74762af3a5764a33a3cca6ff5c01e282",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/74762af3a5764a33a3cca6ff5c01e282",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:18.869Z",
+          "bodySha256": "1ebdadc2b679bf2885ed2d4ad4bf9853863d90009017d021b390b0f2e8046afd"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/ff749946722f4b84bd98b3cc37488b2a",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/ff749946722f4b84bd98b3cc37488b2a",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:19.553Z",
+          "bodySha256": "9f48ed1de1f54aaaa2f5c58776533b3ecb81cac564898ecbfecb7bd2a96d0e92"
+        },
+        {
+          "url": "https://hire.auzmor.com/letstransport/careers/30cd81122ead4530b90a8bf41212a881",
+          "finalUrl": "https://hire.auzmor.com/letstransport/careers/30cd81122ead4530b90a8bf41212a881",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:20.220Z",
+          "bodySha256": "44346bb7ef3a8c0cb39ba28d4459663de79712f0f490fb670f3c93bdae4388a6"
+        }
+      ]
+    },
+    {
+      "file": "auzmor-native-apis.json",
+      "sha256": "10bb262f7d90adfe86bd132832b58320d038085fb27a10e472654557a8c32613",
+      "compressedFile": "auzmor-native-apis.json.gz",
+      "compressedSha256": "025c4ad9390df454a1007ec7229bc6a303bcc7fa73f70269c6da65f12e688d26",
+      "responses": [
+        {
+          "url": "https://hire.api.auzmor.com/api/v1/careers/letstransport/groupByDepartment",
+          "finalUrl": "https://hire.api.auzmor.com/api/v1/careers/letstransport/groupByDepartment",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:56:43.223Z",
+          "bodySha256": "2a0f85b8c73891c1d0742e330519a37567f816ba66ccf0c1e7424336dcf36bbb"
+        },
+        {
+          "url": "https://hire.api.auzmor.com/api/v1/careers/letstransport/filters",
+          "finalUrl": "https://hire.api.auzmor.com/api/v1/careers/letstransport/filters",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:56:43.843Z",
+          "bodySha256": "c3a2b538898e5d3e1df983e330a9bfcb8e59f18220c273fbdfbf9c4c9d62f3d7"
+        },
+        {
+          "url": "https://hire.api.auzmor.com/api/v1/organization/domain/letstransport",
+          "finalUrl": "https://hire.api.auzmor.com/api/v1/organization/domain/letstransport",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:56:44.167Z",
+          "bodySha256": "2626a1d65a2771201ea80d3a4eb6a631a7cd48f03b65b7542c40a15f1620c4ca"
+        }
+      ]
+    },
+    {
+      "file": "linkedin-listing.json",
+      "sha256": "ece5b50f53bc5cea113b174a45f201f11a5f9810d7f150b1428a318516718354",
+      "compressedFile": "linkedin-listing.json.gz",
+      "compressedSha256": "e7a42265350afa3b3498c05d26b431f5cca902ad0292114904ac6c2bfc0a127b",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/authwall?trk=bf&trkInfo=AQGX-hfeqKLgBQAAAaFnjPNIczYVGNLlB-xKh29hMM0bJgahrGAtNDHEXvepwQ2vRSAYNaSfKtHuZOVYd130TJhFCklchjUZTHUoLKCzKQnSAiFphAGEZxEbovlErFMjg412Vh4=&original_referer=&sessionRedirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fletstransport-jobs-worldwide%3Ff_C%3D6472988%26trk%3Dtop-card_top-card-primary-button-top-card-primary-cta",
+          "finalUrl": "https://www.linkedin.com/authwall?trk=bf&trkInfo=AQGX-hfeqKLgBQAAAaFnjPNIczYVGNLlB-xKh29hMM0bJgahrGAtNDHEXvepwQ2vRSAYNaSfKtHuZOVYd130TJhFCklchjUZTHUoLKCzKQnSAiFphAGEZxEbovlErFMjg412Vh4=&original_referer=&sessionRedirect=https%3A%2F%2Fwww.linkedin.com%2Fjobs%2Fletstransport-jobs-worldwide%3Ff_C%3D6472988%26trk%3Dtop-card_top-card-primary-button-top-card-primary-cta",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:57:33.647Z",
+          "bodySha256": "89bd2ca5936ab0c97aecb4d5f4c7cee6a28ba35bbeca23494c5264c26c1a694d"
+        }
+      ]
+    },
+    {
+      "file": "linkedin-native-details.json",
+      "sha256": "0edf9d33e091ab321afad6001d8b96f8de603f78f7cbeab66039fdda9a73b7f5",
+      "compressedFile": "linkedin-native-details.json.gz",
+      "compressedSha256": "d4331dbe67f42362f5100054ab6c88191865569ebe6bdc285032f99c4ff2cfb8",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/letstransport/",
+          "finalUrl": "https://www.linkedin.com/company/letstransport/",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:58.947Z",
+          "bodySha256": "62834cd96778232dcb32ec5659e62b90ed6102fe66e97ae69c5d1ef522516fd8"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/letstransport-jobs-worldwide?f_C=6472988&trk=top-card_top-card-primary-button-top-card-primary-cta",
+          "finalUrl": "https://www.linkedin.com/jobs/letstransport-jobs-worldwide?f_C=6472988&trk=top-card_top-card-primary-button-top-card-primary-cta",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:58:59.708Z",
+          "bodySha256": "5327e4e54b5c6150f954d6bdb66000df53790e65c5b92506acb8a5d56924affa"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447873014?position=1&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=Avkn%2FFb4iDueHYnJhfqPcw%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447873014?position=1&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=Avkn%2FFb4iDueHYnJhfqPcw%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:59:00.514Z",
+          "bodySha256": "d3906479ff57aed0d5a4eb91a2db0c95fc2787f75f28e1b7e240ff4b6c320ded"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447873015?position=2&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=z8o%2BBu5P%2Br0qrNWqYXr%2B9Q%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447873015?position=2&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=z8o%2BBu5P%2Br0qrNWqYXr%2B9Q%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:59:01.511Z",
+          "bodySha256": "7fc03f196d78032cb1cb7caec5808086d564d84b4e229746a7e72cd855b07531"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/associate-regional-business-manager-at-letstransport-4447856855?position=3&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=sxfo5G3mMMgP1Cdq41d5xw%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/associate-regional-business-manager-at-letstransport-4447856855?position=3&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=sxfo5G3mMMgP1Cdq41d5xw%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:59:02.658Z",
+          "bodySha256": "421703add2925aed604d347ef6336a7dd7652b9f825cc44a89bad7aa07c98feb"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447853842?position=4&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=IkLjMqBegu44A1Fc%2FVwIJA%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447853842?position=4&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=IkLjMqBegu44A1Fc%2FVwIJA%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:59:03.584Z",
+          "bodySha256": "501b2e279824542efb83c1b283186e2524b2e740a7e75e29c6d26e518ebdb060"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/senior-development-engineer-3-at-letstransport-4447868642?position=5&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=XqZ8Ic%2FP6hfS3Crs9NUtTQ%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/senior-development-engineer-3-at-letstransport-4447868642?position=5&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=XqZ8Ic%2FP6hfS3Crs9NUtTQ%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:59:04.455Z",
+          "bodySha256": "77986a5287b948c1ef29ff1586a340a7086d424cc2b169159b96423fd3be202f"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/regional-sourcing-manager-north-at-letstransport-4447864738?position=6&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=E3q2UhbwV3OjXHnPOWvjaA%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/regional-sourcing-manager-north-at-letstransport-4447864738?position=6&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=E3q2UhbwV3OjXHnPOWvjaA%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:59:05.364Z",
+          "bodySha256": "dfea18e729264dfc15a02b3bdca0c24c16fe0c72da902a7e030021b6329e63f6"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/operations-internship-in-chennai-bangalore-at-letstransport-4475899742?position=7&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=NjQlEf8dV5NKXWkPh%2Bu%2FbQ%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/operations-internship-in-chennai-bangalore-at-letstransport-4475899742?position=7&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=NjQlEf8dV5NKXWkPh%2Bu%2FbQ%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:59:06.183Z",
+          "bodySha256": "f738bfcb9088df5f38d8beb72ebdfdf53785a4f45991ad98712ded5d965ec79b"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/operations-internship-in-chennai-bangalore-at-letstransport-4475888982?position=8&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=cEZvfQeQwefN%2B56lXQzsXg%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/operations-internship-in-chennai-bangalore-at-letstransport-4475888982?position=8&pageNum=0&refId=gAUeyoUS0SB45Vs0lKckTw%3D%3D&trackingId=cEZvfQeQwefN%2B56lXQzsXg%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:59:07.004Z",
+          "bodySha256": "73ed5b6f34ec529fa2161b2fa4fcaa35d036c0ea7fa1ba17d037ca9c6b0cd29b"
+        }
+      ]
+    },
+    {
+      "file": "linkedin-requested-listing.json",
+      "sha256": "2905892c998c8fd3d7827fed07c813a71eb539e0e3390e075c7bdcb146c5f495",
+      "compressedFile": "linkedin-requested-listing.json.gz",
+      "compressedSha256": "5590e74cf6405f501011174d6bb4e2c6e01bcf49ea3318b3f8f728a7d798d085",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/letstransport-jobs-worldwide?f_C=6472988&trk=top-card_top-card-primary-button-top-card-primary-cta",
+          "finalUrl": "https://www.linkedin.com/jobs/letstransport-jobs-worldwide?f_C=6472988&trk=top-card_top-card-primary-button-top-card-primary-cta",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:57:51.511Z",
+          "bodySha256": "dfe9579e18f3170d7213d760c974361b6ed4c0371a3cb6d04572126f14bdec52"
+        }
+      ]
+    },
+    {
+      "file": "official-hiring.json",
+      "sha256": "a5976d9bff78b47a11b6e646c006e41a89d23b575443d5a60c130c0d3c588162",
+      "compressedFile": "official-hiring.json.gz",
+      "compressedSha256": "a8a38cb21c1fd53faca7d65879a79ed49065441d6eb7fb9584bdc7c00cd403d6",
+      "responses": [
+        {
+          "url": "https://letstransport.in/we-are-hiring/",
+          "finalUrl": "https://letstransport.in/we-are-hiring/",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:56:04.623Z",
+          "bodySha256": "ecb21ddc4b7845d2f033b637a5615e24bc8bb75a5e8850f60eaf1cf26686ca50"
+        }
+      ]
+    },
+    {
+      "file": "canonical-native-details.json",
+      "sha256": "692350d47f6aa9e08a64eda87104ee04cabca0dc5414e19a861ca2d0b2766f94",
+      "compressedFile": "canonical-native-details.json.gz",
+      "compressedSha256": "1e0a9ba365d106903f0a72c587734f9616c0afa9e8857af026ccd9d5eb7e7a75",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447873014",
+          "finalUrl": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447873014",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:11:48.384Z",
+          "bodySha256": "0f571caa1f8e833dfcef22adb6f646ad7cd840037914a31ca02d2e13bf20c6c7"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447873015",
+          "finalUrl": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447873015",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:11:49.303Z",
+          "bodySha256": "985b8f3ba50f00d262c1148c96b4ad8eada04c508c015ffe3564e8a3b8b96458"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/associate-regional-business-manager-at-letstransport-4447856855",
+          "finalUrl": "https://www.linkedin.com/jobs/view/associate-regional-business-manager-at-letstransport-4447856855",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:11:50.472Z",
+          "bodySha256": "cbb99cdb8c9593cf77742226bc5a795a07a8361a4fe439630dfcc8810a93c9ba"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447853842",
+          "finalUrl": "https://www.linkedin.com/jobs/view/business-development-manager-at-letstransport-4447853842",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:11:51.615Z",
+          "bodySha256": "2e4a74eecc7a192305c27b9964a6ff08617107e792119cd946ca0bf2a1c813ed"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/senior-development-engineer-3-at-letstransport-4447868642",
+          "finalUrl": "https://www.linkedin.com/jobs/view/senior-development-engineer-3-at-letstransport-4447868642",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:11:52.688Z",
+          "bodySha256": "db83902cbff40b2ea8ba73256fb176765c584e1558145406282dd1b81b693e88"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/regional-sourcing-manager-north-at-letstransport-4447864738",
+          "finalUrl": "https://www.linkedin.com/jobs/view/regional-sourcing-manager-north-at-letstransport-4447864738",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:11:53.928Z",
+          "bodySha256": "27fe3ba00de01e9c917fb77aac0fce5f78ffe5b324ae426adc76e410399453d8"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/operations-internship-in-chennai-bangalore-at-letstransport-4475899742",
+          "finalUrl": "https://www.linkedin.com/jobs/view/operations-internship-in-chennai-bangalore-at-letstransport-4475899742",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:11:54.862Z",
+          "bodySha256": "82e0c1352edc5321adf0d83beadfc726ce2ed337bbad888a2409a3dd720e432b"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/operations-internship-in-chennai-bangalore-at-letstransport-4475888982",
+          "finalUrl": "https://www.linkedin.com/jobs/view/operations-internship-in-chennai-bangalore-at-letstransport-4475888982",
+          "status": 200,
+          "capturedAt": "2026-10-23T07:11:55.829Z",
+          "bodySha256": "315e13b7d1909b6cf3a252637601e3b25a9c5c19b43f117d2848e37b2e2224c7"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,384 @@
+{
+  "capturedOn": "2026-10-23",
+  "scope": "official Samsung global board count and fully enumerated India facet; exact existing Research overlap; no authenticated/application reads",
+  "files": [
+    {
+      "file": "native-india-responses.json.gz",
+      "fileSHA256": "d3e37cacd666584af5c73a105636debb7f6a1120a1a3762801e515c0e710cd12",
+      "decodedFileSHA256": "4dcaf71b11f2f45d6f9f0346baeb8e30b50efae25c2d3c1758ea3a2a79692075",
+      "responses": [
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/jobs",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/jobs",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:15.161Z",
+          "requestBody": {
+            "appliedFacets": {
+              "Location_Country": [
+                "c4f78be1a8f14da0ab49ce1162348a5e"
+              ]
+            },
+            "limit": 20,
+            "offset": 0,
+            "searchText": ""
+          },
+          "bodySHA256": "33c31cee1f1ad77a9e9193da97db904ee64bfa3cdcde00837f22faebc5ac2a15"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/jobs",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/jobs",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:16.058Z",
+          "requestBody": {
+            "appliedFacets": {
+              "Location_Country": [
+                "c4f78be1a8f14da0ab49ce1162348a5e"
+              ]
+            },
+            "limit": 20,
+            "offset": 20,
+            "searchText": ""
+          },
+          "bodySHA256": "404dbbd4ac14c158604aa5db1ad6a645d1e244ab0b8166642b583ff6f776e5d5"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Angkor-West-Bangalore-India/SRAM-Memory-Design_R119756",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Angkor-West-Bangalore-India/SRAM-Memory-Design_R119756",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:16.501Z",
+          "requestBody": null,
+          "bodySHA256": "95537f89dcd4632a17db6856c17cd6c12c338b005fae7b5351cfe38d67292d47"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Angkor-West-Bangalore-India/Senior-Staff-Engineer_R120924",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Angkor-West-Bangalore-India/Senior-Staff-Engineer_R120924",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:16.521Z",
+          "requestBody": null,
+          "bodySHA256": "12dc53df64b7628925249cbe86d7d9f8bd3cf59b46966a5d45aae76b4f779923"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/AMS-Verification-Engineer_R119757",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/AMS-Verification-Engineer_R119757",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:16.642Z",
+          "requestBody": null,
+          "bodySHA256": "7b7574de7f1632f22bf53a2fc46c58ece3a40696c61e7ebc4b692b783c65a344"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/Phoenix-Building-Bangalore-India/HW-I-P-Lab-Lead_R119924",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/Phoenix-Building-Bangalore-India/HW-I-P-Lab-Lead_R119924",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:16.654Z",
+          "requestBody": null,
+          "bodySHA256": "f814ee7cf6b05c1dbccd08ca0aae85dc0ed6d6583b3a5ada56b8bcc4a3e8ede0"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Software---Embedded--Firmware-Storage-----Memory-Team_R55619-2",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Software---Embedded--Firmware-Storage-----Memory-Team_R55619-2",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:17.081Z",
+          "requestBody": null,
+          "bodySHA256": "1b5d8f5ff8890853c2d9383638f4b03b662a654d4e2d05690589a2eed94b38e8"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Analog-Circuit-Design---IO-Design-Engineer_R118179-1",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Analog-Circuit-Design---IO-Design-Engineer_R118179-1",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:17.101Z",
+          "requestBody": null,
+          "bodySHA256": "cbc8c3708ee27979b2bacbe36eea7a54d499400cc8edb33fd65109733a3579ba"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SRAM-QA-Engineer_R118178",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SRAM-QA-Engineer_R118178",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:17.142Z",
+          "requestBody": null,
+          "bodySHA256": "6a7a148b0599fc7a068fb43aa6b7f1a6dbdf3ad086e9487b288e23a410f3e2f6"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Analog-Circuit-Design-Lead-Engineer-HSI_R118176",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Analog-Circuit-Design-Lead-Engineer-HSI_R118176",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:17.168Z",
+          "requestBody": null,
+          "bodySHA256": "ece92745e4fb43c235ee03897224b22125980f245cdbc10522721c254e76a6e1"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Analog-Circuit-Design-QA-Lead-Engineer_R118175",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Analog-Circuit-Design-QA-Lead-Engineer_R118175",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:17.576Z",
+          "requestBody": null,
+          "bodySHA256": "7cc842c26733c0566b6e94aaee88dbdec9b1c5b12db3b999a71d1644df51ba4f"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/STD-Cell-QA-Engineer_R118173",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/STD-Cell-QA-Engineer_R118173",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:17.617Z",
+          "requestBody": null,
+          "bodySHA256": "6a3c914c58c496e90f61eeff007ee89350f5d7b65407acc936120ae0d2b9b4eb"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Library-Design-Engineer_R118171-1",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Library-Design-Engineer_R118171-1",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:17.676Z",
+          "requestBody": null,
+          "bodySHA256": "c76b89c6fec9892323b0fb140a466963ca5c5cbad5e4097c110e82b8dd400f3e"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SRAM-QA-Engineer_R118172",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SRAM-QA-Engineer_R118172",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:17.702Z",
+          "requestBody": null,
+          "bodySHA256": "3f2345b372413dbe464d09a11ec7f266e997342bf1894245e8ed03bb84d13f6c"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SRAM-Layout-Engineer_R118170",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SRAM-Layout-Engineer_R118170",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:18.119Z",
+          "requestBody": null,
+          "bodySHA256": "15c959f8a61441cdaa6d7e1f49b9a193f6ae9e4e1654e5ee0426bd0cde67c89c"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/Phoenix-Building-Bangalore-India/Careers---SRI-B_R114583",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/Phoenix-Building-Bangalore-India/Careers---SRI-B_R114583",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:18.121Z",
+          "requestBody": null,
+          "bodySHA256": "994cda1f5beb0f933986e31b016991ccd11a3171b4fea5fcfc5185857da999b5"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SRAM-Design-Engineer_R117344",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SRAM-Design-Engineer_R117344",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:18.190Z",
+          "requestBody": null,
+          "bodySHA256": "9c524c77f64e1cfe3b353e9fa3bec752796c3999c225ffbf4156cda20bd4754e"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SRAM-Layout-Engineer_R117290-1",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SRAM-Layout-Engineer_R117290-1",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:18.194Z",
+          "requestBody": null,
+          "bodySHA256": "c2eefeaa7ae304ee7a33100afeeb49c433a3319505e2d06918308346e45fd581"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/IP-Design-Verification-Engineer_R117217",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/IP-Design-Verification-Engineer_R117217",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:18.906Z",
+          "requestBody": null,
+          "bodySHA256": "13d9164e18ce5718e805df998cf544691925675bcae829676608c2e0b8e98995"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/IP-RTL-Design-Engineer_R117218",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/IP-RTL-Design-Engineer_R117218",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:18.906Z",
+          "requestBody": null,
+          "bodySHA256": "90ac7951ade81e6a08cdb3f3aadfa76ef17a751515e652c74c6eb9ad281d5c75"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Firmware-Development_R116887",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Firmware-Development_R116887",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:18.907Z",
+          "requestBody": null,
+          "bodySHA256": "628a14f2550d92146ad2ff9bb71c5230a7f0d44015394a99edf4c6738599fc87"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/RTL-Design-Engineer_R117216",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/RTL-Design-Engineer_R117216",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:18.908Z",
+          "requestBody": null,
+          "bodySHA256": "ad7dbfde4a3a3a29f3420180721fe00a1236b35786cb72a8cab0f5933d67ed3e"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/DRAM-Senior-Security-Architect_R116885",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/DRAM-Senior-Security-Architect_R116885",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:19.351Z",
+          "requestBody": null,
+          "bodySHA256": "30b86063eb243e492579f5698d10c8daa29e41d9e4d74ed88a9db64b111c1e6a"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/DRAM-Linux-Kernel-Architect_R116884-1",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/DRAM-Linux-Kernel-Architect_R116884-1",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:19.424Z",
+          "requestBody": null,
+          "bodySHA256": "1de0a1d6732ffc9f878a1b0f2422341f62644bc9d958eae573f8f13623deb062"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/IP-RTL-Design-Engineer_R115142",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/IP-RTL-Design-Engineer_R115142",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:19.425Z",
+          "requestBody": null,
+          "bodySHA256": "6768e70dcbd5ce4905c166140cc31048a474ba8d9ffce75849e2ce93b2ae40f7"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/DRAM-Firmware-Architect_R116883",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/DRAM-Firmware-Architect_R116883",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:19.408Z",
+          "requestBody": null,
+          "bodySHA256": "6c387582b644a5b08d0620271aa08d5e63f08bf9bd5f0e790c676c2c59d2e7d6"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SOC-DV-Emulation-Engineer_R115139",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SOC-DV-Emulation-Engineer_R115139",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:19.789Z",
+          "requestBody": null,
+          "bodySHA256": "2d687fa1beb421a69528546fb304a5773023040165241a1543d25bf14536a91f"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SOC-Design-Verification-Engineer_R115109",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SOC-Design-Verification-Engineer_R115109",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:19.871Z",
+          "requestBody": null,
+          "bodySHA256": "c33aae108cd231782bfa645256587f623f554ee232f583e8b2cd3f45991a94da"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SOC-RTL-Design-Engineer_R115108",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/SOC-RTL-Design-Engineer_R115108",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:19.895Z",
+          "requestBody": null,
+          "bodySHA256": "b76e60c8f5992f587ff99746f0853618c7ca190d8c7edfbc792cba29ed93106c"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Linux-BSP-Engineer_R114954",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Linux-BSP-Engineer_R114954",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:19.934Z",
+          "requestBody": null,
+          "bodySHA256": "631c1af56845c459bb5f068e4eebd6470141437b7a7fe33b20045b45da99f2eb"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/STA-Synthesis-Engineer_R114597",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/STA-Synthesis-Engineer_R114597",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:20.297Z",
+          "requestBody": null,
+          "bodySHA256": "98180012f47034b28dcb8aca7d539f172578aea95efe8b8454e75857b9e88fe6"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Physical-Design---Foundry-Team_R55611-3",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/SSIR-Goldstone-Bangalore-India/Physical-Design---Foundry-Team_R55611-3",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:20.344Z",
+          "requestBody": null,
+          "bodySHA256": "7dfeb71b44f8b06c920b081b1cdfbe9fd59f77a2dc679b33b548285ebb955b87"
+        }
+      ]
+    },
+    {
+      "file": "native-initial.json.gz",
+      "fileSHA256": "c9d7c8c048a4322ab0ef66b9cd391245d9c91c26720b029844c338caab50b078",
+      "decodedFileSHA256": "afbc12f2790a7bbdd014b6da47b308084d264eea0ea8eea4a5d13030d47bf7da",
+      "responses": [
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/jobs",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/jobs",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:35:48.021Z",
+          "requestBody": {
+            "appliedFacets": {},
+            "limit": 20,
+            "offset": 0,
+            "searchText": ""
+          },
+          "bodySHA256": "533e112d1bbc1b5cd0f48d9aec00d82f1c152499886c17144e100abe44e7a1dc"
+        },
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/jobs",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/jobs",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:35:47.544Z",
+          "requestBody": {
+            "appliedFacets": {
+              "Location_Country": [
+                "c4f78be1a8f14da0ab49ce1162348a5e"
+              ]
+            },
+            "limit": 20,
+            "offset": 0,
+            "searchText": ""
+          },
+          "bodySHA256": "33c31cee1f1ad77a9e9193da97db904ee64bfa3cdcde00837f22faebc5ac2a15"
+        }
+      ]
+    },
+    {
+      "file": "official-careers.json.gz",
+      "fileSHA256": "17deb5be19f273678c03886a142b3bf7bf957924f19a5bbe6cb2647d2ad026d7",
+      "decodedFileSHA256": "3324e47e3d36ee6eb251f2dc744eb985a517534fd7c7e7d0bd8bc47b6dec3853",
+      "responses": [
+        {
+          "url": "https://www.samsung.com/in/about-us/careers/",
+          "finalUrl": "https://www.samsung.com/in/about-us/careers/",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:36:34.504Z",
+          "requestBody": null,
+          "bodySHA256": "115f5c7610ca70148fd13bc6624af1e4ddad7af0856bfa44006156ee65a00598"
+        }
+      ]
+    },
+    {
+      "file": "research-official-careers.json.gz",
+      "fileSHA256": "cecd3451a2e763af6416f15140e5f62f5bdf22a43e1ae87dc5bd56fd5717ec57",
+      "decodedFileSHA256": "c7a690ff215cd626124a50983a9ae8f8c7133025fde5965541a869ee0cc168e0",
+      "responses": [
+        {
+          "url": "https://research.samsung.com/careers",
+          "finalUrl": "https://research.samsung.com/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:43:09.393Z",
+          "requestBody": null,
+          "bodySHA256": "874e7e3c62e1a8617b4c1beebc1a0ff58ed0eab4aba85913fa172d1eebcedcb0"
+        }
+      ]
+    },
+    {
+      "file": "research-overlap.json.gz",
+      "fileSHA256": "15b037b0a70126b104d21bfc345102298060dc5ec66ab214fbe0ebf4fff58e99",
+      "decodedFileSHA256": "fe8699034d278808fc29d718e7cce2fccbf861136b29dd784716eaa989def7c4",
+      "responses": [
+        {
+          "url": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/jobs",
+          "finalUrl": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/jobs",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:37:25.877Z",
+          "requestBody": {
+            "appliedFacets": {
+              "Location_Country": [
+                "c4f78be1a8f14da0ab49ce1162348a5e"
+              ],
+              "hiringCompany": [
+                "189767dd6c9201554f3e5312a7290a85"
+              ],
+              "locations": [
+                "189767dd6c9201b802603c83a5292c78"
+              ]
+            },
+            "limit": 20,
+            "offset": 0,
+            "searchText": ""
+          },
+          "bodySHA256": "78b0e1b14af08055a32fe8964d92d9cbf3769316e47f1b8d5977c81dae1767eb"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "eligibleJobCount": 0,
+  "inventoryEvidence": {
+    "status": "discovery-only",
+    "surface": "https://www.linkedin.com/company/aye-finance-ltd/",
+    "firstParty": false,
+    "listingComplete": false,
+    "pagesFetched": 5,
+    "reportedTotal": null,
+    "indiaFacetCount": null,
+    "verifiedAt": "2026-10-23T07:25:00.000Z",
+    "reason": "Corporate careers handoff unverified; homepage capture was CloudFront403. Independent native LinkedIn employer 9381588 has reciprocal ayefin.com identity. filtered-search-no-match; independently-discovered-role-watch-list; observed 0 India-filtered cards, visited 2 details, recovered 2 exact-employer explicit-India observations, 0 with verified active application controls. 2 observations excluded because active application controls are absent. Unvisited cards and country-ambiguous metro roles excluded. Worldwide inventory, secondary scope, precise detail publication and expiry remain unknown."
+  },
+  "observations": {
+    "cards": [
+      {
+        "id": "4474071845",
+        "path": "/jobs/view/relationship-manager-at-aye-finance-ltd-4474071845",
+        "title": "Relationship Manager",
+        "location": "Raxaul, Bihar, India",
+        "rawUrl": "https://www.linkedin.com/jobs/view/relationship-manager-at-aye-finance-ltd-4474071845",
+        "postingDate": null
+      },
+      {
+        "id": "4471197446",
+        "path": "/jobs/view/sales-executive-at-aye-finance-ltd-4471197446",
+        "title": "Sales Executive",
+        "location": "Dalsingh Sarai, Bihar, India",
+        "rawUrl": "https://www.linkedin.com/jobs/view/sales-executive-at-aye-finance-ltd-4471197446",
+        "postingDate": null
+      }
+    ],
+    "displayedSearchTotal": null,
+    "visitedDetails": 2,
+    "details": [
+      {
+        "jobId": "4474071845",
+        "title": "Relationship Manager",
+        "location": "Raxaul, Bihar, India",
+        "employer": "Aye Finance Ltd",
+        "country": "India",
+        "sourceUrl": "https://in.linkedin.com/jobs/view/relationship-manager-at-aye-finance-ltd-4474071845",
+        "sourceDescription": "Company Description Aye Finance Ltd., headquartered in Gurgaon, is a new-age financial services company focused on providing business loans to small and micro enterprises across India. Since 2014, the company has pursued strong, sustainable growth in this under-banked segment while maintaining high standards of credit quality. Aye Finance aims to unlock significant business opportunities and transformative social impact by enabling financially excluded yet profitable businesses to access formal credit. The team combines sound business practices, deep understanding of micro-enterprises, and a commitment to technology-driven solutions that improve financial inclusion. Aye Finance is known for being a supportive workplace that values people—entrepreneurs, investors, and employees alike—and promotes growth for all stakeholders. Role Description The Relationship Manager role at Aye Finance Ltd. is a full-time, on-site position based in Raxaul. The Relationship Manager is responsible for sourcing and managing clients in the small and micro enterprise segment, including identifying prospective customers, explaining loan products, and supporting them through the application and documentation process. This role involves conducting field visits, assessing business viability, collecting and verifying customer information, and ensuring accurate data entry into internal systems. The Relationship Manager will maintain ongoing relationships with borrowers, monitor repayment behavior, and proactively address customer queries and issues. The role also includes coordinating with internal teams for credit assessment, loan disbursement, and collections, while consistently adhering to company policies and regulatory guidelines. Qualifications Candidates should possess strong relationship-building and customer service skills, with the ability to communicate clearly and respectfully with diverse small and micro business owners. Candidates should possess solid sales and business development skills, including lead generation, negotiation, and closing, preferably in financial services or related sectors. Candidates should possess analytical and evaluation skills to assess business viability, review financial information, and support sound credit decisions. Candidates should possess basic technology and data management skills, including comfort with mobile/desktop applications, documentation, and accurate record-keeping. Candidates should possess local market knowledge and field-operations capability, including willingness to travel locally for client visits and collections. Relevant qualifications such as a bachelor’s degree in business, finance, commerce, or a related field are preferred; experience in microfinance, NBFCs, or MSME lending is an added advantage. Candidates should possess a high level of integrity, adherence to compliance standards, and a strong orientation toward financial inclusion and socio-economic impact.",
+        "postingDate": null,
+        "nativeDetailPublicationDate": null,
+        "closingDate": null,
+        "nativeRelativeDateText": [
+          "2 weeks ago"
+        ],
+        "activeApplyVerified": false,
+        "exclusion": "no-active-native-application-control"
+      },
+      {
+        "jobId": "4471197446",
+        "title": "Sales Executive",
+        "location": "Dalsingh Sarai, Bihar, India",
+        "employer": "Aye Finance Ltd",
+        "country": "India",
+        "sourceUrl": "https://in.linkedin.com/jobs/view/sales-executive-at-aye-finance-ltd-4471197446",
+        "sourceDescription": "Company Description Aye Finance Ltd, headquartered in Gurgaon, is a new-age finance company focused on providing business loans to small and micro enterprises across India. Since 2014, the organization has grown rapidly in this under-banked segment while maintaining strong credit standards. Aye Finance aims to unlock a major business opportunity and create transformative social impact by bringing millions of profitable small enterprises into the formal financial system. The team combines sound business practices, deep understanding of micro-enterprises, and a passion for socio-economic growth, supported by robust technology, automation, and process innovation. Aye Finance places high value on people—entrepreneurs, investors, and employees—and fosters a culture that is both performance-driven and inclusive. Role Description This is a full-time, on-site Sales Executive role based in Dalsingh Sarai. The Sales Executive will identify and engage small and micro business owners, explain Aye Finance’s loan offerings, and support customers through the end-to-end loan application and approval process. The role includes generating leads through local market visits and referrals, conducting initial credit assessments, collecting and verifying documentation, and coordinating with internal credit and operations teams to ensure timely disbursals. The Sales Executive will maintain strong relationships with existing customers, monitor repayments, and address service-related queries. The position also requires tracking daily sales activities, meeting assigned targets, and providing feedback from the field to help improve products and processes. Qualifications Experience in sales, business development, or field marketing, preferably in financial services or lending to small businesses. Strong customer relationship management and negotiation skills, with the ability to build trust and credibility in local markets. Basic understanding of credit, lending processes, and documentation requirements for small and micro enterprises. Proficiency in local language(s) and working knowledge of English; ability to communicate clearly and professionally with diverse stakeholders. Comfort with using smartphones, basic digital tools, and company applications for data entry, reporting, and customer follow-up. Highly self-motivated, target-oriented, and able to work independently while collaborating effectively with branch and regional teams. Minimum educational qualification typically at the undergraduate level; relevant experience in field sales may be considered in lieu of formal education where appropriate. Familiarity with the local business environment in and around Dalsingh Sarai and willingness to travel within the region as required.",
+        "postingDate": null,
+        "nativeDetailPublicationDate": null,
+        "closingDate": null,
+        "nativeRelativeDateText": [
+          "4 weeks ago"
+        ],
+        "activeApplyVerified": false,
+        "exclusion": "no-active-native-application-control"
+      }
+    ]
+  }
+}

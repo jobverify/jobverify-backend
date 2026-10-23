@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { SKAN_CATALOG } from './catalog.js'
 
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { getScraperCatalog } from '../../scraper-support/providers/index.js'
@@ -22,6 +26,18 @@ test('Skan resolves only to its exact-name first-party provider', () => {
   )
 })
 
-test('Skan fails closed when its official careers surface has no enumerable openings', async () => {
-  assert.deepEqual(await run(), [])
+test('Skan local catalog and captured current native careers remain deterministic', async () => {
+  const read = name => JSON.parse(gunzipSync(readFileSync(new URL(`./fixtures/${name}.json.gz`, import.meta.url))))
+  const active = JSON.parse(readFileSync(new URL('./fixtures/additional-native-api-pages.json', import.meta.url)))[0]
+  const captures = [read('careers-response'), ...read('detail-responses'), active]
+  const jobs = await run({ now: active.capturedAt, fetchText: async url => { const capture = captures.find(row => row.url === url); assert.ok(capture, url); return capture.body } })
+  assert.equal(jobs.length, 16)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 65)
+  assert.equal(SKAN_CATALOG.inventoryVerificationPolicy, 'live-parser-evidence-required')
+  assert.equal(SKAN_CATALOG.atsPlatform, 'keka')
+  assert.equal(SKAN_CATALOG.verifiedPublicJobCount, null)
+  assert.equal(SKAN_CATALOG.verifiedIndiaJobCount, null)
+  assert.equal(SKAN_CATALOG.observedNativePublicJobCount, 64)
+  assert.equal(SKAN_CATALOG.observedIndiaCandidates, 16)
+  assert.equal(SKAN_CATALOG.lifecycleCleanupAllowed, false)
 })

@@ -23,7 +23,7 @@ test('Park+ India is covered only by its exact-name first-party provider', () =>
   assert.equal(provider.companyName, 'Park+ India')
   assert.equal(provider.companyDomain, 'parkplus.io')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'exact-name-fail-closed-sentinel')
+  assert.equal(provider.atsPlatform, 'corporate-linked-native-linkedin-employer')
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'Park+ India').map((item) => item.source),
     ['parkplusindia'],
@@ -38,9 +38,9 @@ test('Park+ India is covered only by its exact-name first-party provider', () =>
   )
 })
 
-test('Park+ India scraper fails closed without a public official application feed', async () => {
+test('Park+ India scraper exposes unavailable coverage without false zero', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'parkplusindia')
 
   assert.ok(scraper, 'Expected Park+ India scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  await assert.rejects(scraper.run({fetchImpl:async()=>{throw Error('offline')}}),error=>error.code==='PARKPLUSINDIA_COVERAGE_GAP'&&error.inventoryEvidence.reportedTotal===null&&error.lifecycleCleanupAllowed===false)
 })

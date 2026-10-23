@@ -1,0 +1,93 @@
+{
+  "source": "carehealthinsurance",
+  "capturedOn": "2026-10-23",
+  "receiptFiles": [
+    {
+      "file": "care-browser-captures.json.gz",
+      "rawSHA256": "e98d713663d1f728642a29163a3f4bdd5fcdd4aa620868dfcc55539a614d46ed",
+      "gzipSHA256": "9d6f7610a477744366e7c2f6c0d16ae2eaadc8596e97d8421ea48cec22dc8283",
+      "rawBytes": 229325,
+      "gzipBytes": 47372,
+      "responses": [
+        {
+          "url": "https://www.careinsurance.com/rhicl/careers",
+          "finalUrl": "https://www.careinsurance.com/rhicl/careers",
+          "status": 200,
+          "bodySHA256": "b8380abf183fa6c44ac63105bd407f3cc5445c7f4431a6ada335d59bb7519a55",
+          "bodyBytes": 100086
+        },
+        {
+          "url": "https://www.careinsurance.com/rhicl/careers/job-search",
+          "finalUrl": "https://www.careinsurance.com/rhicl/careers/job-search",
+          "status": 200,
+          "bodySHA256": "bd4357ef2633e441a71f4ff015a0e9297ad4c52ea263769d4b83bdae5ba26673",
+          "bodyBytes": 119307
+        }
+      ]
+    },
+    {
+      "file": "career-client.json.gz",
+      "rawSHA256": "c0d886dc777bd422dce2802adf974a0b2485761a48f2d2a85d4977a5fbaa3663",
+      "gzipSHA256": "c6a1793bb52c6693768d9517137a39337ad568605878e90952fa1a531e5afa38",
+      "rawBytes": 2821,
+      "gzipBytes": 891,
+      "responses": [
+        {
+          "url": "https://www.careinsurance.com/rhicl/public/js/career.min.js",
+          "finalUrl": "https://www.careinsurance.com/rhicl/public/js/career.min.js",
+          "status": 200,
+          "bodySHA256": "2245ac2acc7c4a65ad97e50eb5aaf1aecd12c6779208604e8224c37566978ef9",
+          "bodyBytes": 2411
+        }
+      ]
+    },
+    {
+      "file": "native-opening-responses.json.gz",
+      "rawSHA256": "b794a3376766486aea6a81be8c099b92aa1a38ff9f0caef7a529cf697b95e286",
+      "gzipSHA256": "23bba33a7d0a410c60b51b79a7932afffa794a433c73b3f3c70d0d1f6a35b942",
+      "rawBytes": 98503,
+      "gzipBytes": 14757,
+      "responses": [
+        {
+          "url": "https://www.careinsurance.com/rhicl/getOpenings/0",
+          "finalUrl": "https://www.careinsurance.com/rhicl/getOpenings/0",
+          "status": 200,
+          "bodySHA256": "375fb41699fdb2751bb486f7bcf9b72e9567a642bff86ea3a8d891c50c2b7278",
+          "bodyBytes": 20479
+        },
+        {
+          "url": "https://www.careinsurance.com/rhicl/getOpenings/1",
+          "finalUrl": "https://www.careinsurance.com/rhicl/getOpenings/1",
+          "status": 200,
+          "bodySHA256": "20f7abfa2220e1de50ed31b89b73d97a898d557ffd46c65e7de2c556c0b60e23",
+          "bodyBytes": 69929
+        },
+        {
+          "url": "https://www.careinsurance.com/rhicl/getOpenings/2",
+          "finalUrl": "https://www.careinsurance.com/rhicl/getOpenings/2",
+          "status": 200,
+          "bodySHA256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "bodyBytes": 2
+        }
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "file": "non-sales-dom.json.gz",
+      "rawSHA256": "bffbe33bf95ee8663ce09c461ead6d187b67db8bf0a271d06c47ccba10b45d80",
+      "gzipSHA256": "de5ebd997f8b960d08b9ee9ac5b914b25893540d041abdfe9584059c684eacb8",
+      "rawBytes": 21779,
+      "gzipBytes": 6950,
+      "responses": []
+    },
+    {
+      "file": "reviewed-inline-client.json.gz",
+      "rawSHA256": "6e2c701cca98ba4e97bbc10726d4a7df6c7493350666ebe345652b02fe6c4481",
+      "gzipSHA256": "e9c09e9292c65d70a603307caece040f187b67848ecb4eb7c9f4a04c82f71089",
+      "rawBytes": 7308,
+      "gzipBytes": 1452,
+      "responses": []
+    }
+  ]
+}

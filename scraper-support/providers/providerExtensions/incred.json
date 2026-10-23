@@ -7,15 +7,19 @@
   "dryRunFile": "incred/jobs.json",
   "companyCareerPage": "https://incred.com/Career-Page/",
   "companyDomain": "incred.com",
-  "atsPlatform": "official-first-party-careers-page-no-enumerable-public-listings",
+  "atsPlatform": "first-party-careers-unverified-inventory",
   "countryFilter": "India",
-  "paginationStrategy": "verified-first-party-careers-page-sentinel",
-  "extractionStrategy": "verified-first-party-careers-page-without-enumerable-openings+return-empty",
+  "paginationStrategy": "no-verified-complete-native-inventory",
+  "extractionStrategy": "bounded-fresh-native-careers-check+typed-coverage-gap",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-25",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
+  "verifiedOn": "2026-10-23",
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
   "officialCareersPageUrl": "https://incred.com/Career-Page/",
-  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://incred.com/Career-Page/ is InCred Financial Services' first-party careers page. It explicitly reports no current opening and exposes no trustworthy enumerable public job feed, so this exact-name provider fails closed and returns no jobs until InCred publishes public openings."
+  "verifiedSurfaceSummary": "October 23, 2026: the official InCred Financial Services careers page server-renders No Current Opening before its dynamic native inventory has loaded. The reviewed native client POSTs https://api.turbohire.co/api/careerpagejobs and filters Result locally by company. Its actual browser-native request returned HTTP 401 Authorization denied while the page retained the empty-looking sentinel. Group company tabs, jobs@incred.com, tech.jobs@incred.com and LinkedIn job updates are advertised. Runtime validates the fresh official page and reports a typed coverage gap with unknown public and India counts. The loading/error sentinel cannot certify a real empty inventory.",
+  "contactEmails": [
+    "jobs@incred.com",
+    "tech.jobs@incred.com"
+  ]
 }

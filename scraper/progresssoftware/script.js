@@ -1,9 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
 import PROGRESS_SOFTWARE_CATALOG from './catalog.js'
+import { parseNativeListing, parseNativeDetail, readPage, urlKey } from './native.js'
+import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+export { parseNativeListing, parseNativeDetail }
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -47,14 +49,11 @@ const htmlToLines = (html = '') => String(html ?? '')
   .map((line) => normalizeWhitespace(line))
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url, { signal } = {}) => {
+  const response = await fetch(url, { signal, headers: { 'User-Agent': USER_AGENT, Accept: 'text/html' } })
+  if (response.status !== 200 || urlKey(response.url) !== urlKey(url)) throw new Error('Progress Software HTTP or redirect identity failure')
+  return response.text()
+}
 
 const getLastHeadingBefore = (html = '', index = 0) => {
   const precedingHtml = String(html ?? '').slice(0, index)
@@ -271,8 +270,50 @@ export const extractJobFromDetailPage = (html = '', listingCard = {}) => {
 }
 
 export const createProgressSoftwareScraper = () => ({
-  async run() {
-    return []
+  async run({ fetchText = defaultFetchText, signal, timeoutMs = 120000, now = () => new Date().toISOString() } = {}) {
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 300000) throw new Error('Progress Software invalid request budget')
+    signal?.throwIfAborted()
+    const deadline = new AbortController(), combined = composeAbortSignals(signal, deadline.signal)
+    const timer = setTimeout(() => deadline.abort(new Error('Progress Software source timed out')), timeoutMs)
+    let onAbort
+    const aborted = new Promise((_, reject) => { onAbort = () => reject(combined.reason); combined.addEventListener('abort', onAbort, { once: true }) })
+    try {
+      const collect = async () => {
+        let pagesFetched = 0
+        const request = async url => {
+          combined.throwIfAborted()
+          const html = await fetchText(url, { signal: combined })
+          combined.throwIfAborted()
+          readPage(html)
+          pagesFetched++
+          return html
+        }
+        const home = await request(CAREERS_HOME_URL)
+        if (!hasOfficialCareersHomeSignal(home)) throw new Error('Progress Software official careers handoff changed')
+        const homeDoc = readPage(home), openings = homeDoc.nodes(node => node.tag === 'a' && homeDoc.text(node) === 'View Open Positions')
+        if (!openings.length || !openings.every(link => {
+          try { return urlKey(new URL(link.attrs.href, CAREERS_HOME_URL).href) === urlKey(OPEN_POSITIONS_URL) } catch { return false }
+        })) throw new Error('Progress Software active openings handoff changed')
+        const inventory = parseNativeListing(await request(OPEN_POSITIONS_URL)), records = []
+        for (let index = 0; index < inventory.records.length; index += 4) {
+          const batch = await Promise.allSettled(inventory.records.slice(index, index + 4).map(async row => parseNativeDetail(await request(row.detailUrl), row)))
+          for (const result of batch) { if (result.status === 'rejected') throw result.reason; records.push(result.value) }
+        }
+        combined.throwIfAborted()
+        const jobs = records.filter(job => job.country === 'India'), checkedAt = now()
+        if (jobs.length !== inventory.indiaCount) throw new Error('Progress Software native India facet/detail counts disagree')
+        if (!Number.isFinite(Date.parse(checkedAt))) throw new Error('Progress Software invalid check time')
+        const complete = jobs.every(job => job.sourceDetailComplete)
+        if (!complete) for (const job of jobs) job.sourceListingComplete = false
+        return attachInventoryEvidence(jobs.map(job => ({ ...job, scrapedAt: checkedAt, companyCareerPage: OPEN_POSITIONS_URL, atsPlatform: 'official-company-careers' })), {
+          status: complete ? 'complete-inventory' : 'discovery-only', surface: OPEN_POSITIONS_URL, firstParty: true,
+          listingComplete: complete, pagesFetched, reportedTotal: inventory.records.length, indiaFacetCount: jobs.length,
+          verifiedAt: checkedAt, reason: complete ? 'complete-native-ssr-cards-itemlist-country-facets-and-verified-jobposting-details'
+            : 'selected-india-role-source-description-missing',
+        })
+      }
+      return await Promise.race([collect(), aborted])
+    } finally { clearTimeout(timer); combined.removeEventListener('abort', onAbort) }
   },
 })
 

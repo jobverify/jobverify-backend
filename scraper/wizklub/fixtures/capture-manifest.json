@@ -1,0 +1,320 @@
+{
+  "source": "wizklub",
+  "captureMethod": "Root-owned isolated Chrome direct native fetch. Exact request URL, final URL, HTTP status, capture time and body retained. DOM observations are separate; no HTTP status is inferred from them.",
+  "files": [
+    {
+      "file": "futurz-pages.dom.json.gz",
+      "sha256": "26026a2c38aef214ec2cbe3fff3aa9f86c0a41fa4eb0e892abb09c284cedce77",
+      "uncompressedSHA256": "9fb7f238574f9f8082ef8608a26d3d552b21213d89b1083564d80e2494c6c96c",
+      "bytes": 1512
+    },
+    {
+      "file": "futurz-pages.json.gz",
+      "sha256": "9b7fd4b52648cbdfbc8ca0ff103c6f325f18ad8a80ac9d8fef3566971f727505",
+      "uncompressedSHA256": "7ba904c7e50375c82a8ceeb60c544fd25adb12f22affc78d06c48148d0b59717",
+      "bytes": 76108
+    },
+    {
+      "file": "infinity-pages.dom.json.gz",
+      "sha256": "718cacd5acf0f663acb7d594f6a21b19008086fc6f48ca445b2d9bd5d4edd4d6",
+      "uncompressedSHA256": "61cc9691203090d2230e65a9be5df5d43fa7ee08c9bf4497121a5385097860b7",
+      "bytes": 3375
+    },
+    {
+      "file": "infinity-pages.json.gz",
+      "sha256": "3608dc61d9a61c953c02d06ccee6cbb01a75177b8e76294cfebb0b4bcd2c8c2f",
+      "uncompressedSHA256": "0c4fe2c04e8d6e475b4e9cd5a44b7f2421d7a933899775e8eeb0fb4a253e44fd",
+      "bytes": 135790
+    },
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "0124993fd128b7dadf8cd53248409a48f4c9078631067526530adf435ded37d7",
+      "uncompressedSHA256": "03030cb1e47c6e851b366113fe04caf0a53b4850ab05ae6fc434007813a4d3d7",
+      "bytes": 4268
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "b3776fa348e4a280c6d879f64caeb7ba8b689c14e57f24dafdf1f6844538a603",
+      "uncompressedSHA256": "2cf1c86073c33826d6496bfb533a4465d3eb24af4f9c155db1ff24f0ede402f7",
+      "bytes": 48880
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "8702c61f340e99a1e7795978cc1c38b90b9d11ed00b594bf1c91ce67f9e2c202",
+      "uncompressedSHA256": "07dec1c275d653960b313101bc6bc60844a2eb3221e9c296daadd98c70f6f39d",
+      "bytes": 118
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "e55b01c341f47cf59a6dd8c98709ed15bba017e80e580fc9ca8316867a63d5da",
+      "uncompressedSHA256": "2ee45b276b1c948cf69baeb2cb7aef070a9320adfe87d068b3d4996f6b8373b1",
+      "bytes": 49723
+    },
+    {
+      "file": "parent-employer-pages.dom.json.gz",
+      "sha256": "bc943ed5739220a2145494308b01f440862a375c53a25a88bb6f0fe2c85275f6",
+      "uncompressedSHA256": "853bb5fa682d3fcbf83a610ccac4857899e9079eb2e2cdfaa4963b3085b5cffc",
+      "bytes": 11120
+    },
+    {
+      "file": "parent-employer-pages.json.gz",
+      "sha256": "894e8a221f86dac0eebdc363f8c32c4164d796fed88dbd1fe0223fc3a52aa5e3",
+      "uncompressedSHA256": "6670fe16c8f769a21d28925d6d376c147c013ef10b350aca42299856f05d299c",
+      "bytes": 323895
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://www.linkedin.com/company/wizklubfuturz",
+      "finalUrl": "https://www.linkedin.com/company/wizklubfuturz",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:38:58.640Z",
+      "file": "futurz-pages.json.gz",
+      "bodySHA256": "d9201e2726794bd406070cfe72c4e3ac88a998cf39985bb1d3bf95e1946c955e"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/area-manager-at-infinity-learn-4477806380",
+      "finalUrl": "https://www.linkedin.com/jobs/view/area-manager-at-infinity-learn-4477806380",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:38:59.512Z",
+      "file": "futurz-pages.json.gz",
+      "bodySHA256": "eadb820887fdbb1a3fd496fd5db76a6cd6265d0de2dfc43df650d98e1f7d3a6e"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=53495338&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=53495338&location=India",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:39:00.097Z",
+      "file": "futurz-pages.json.gz",
+      "bodySHA256": "bf5ee1dbacb4c9322583cfc3c6b0ab37ff7087cc3f8e26fe9fa93972cd1270c8"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=53495338&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=53495338&location=Worldwide",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:39:00.612Z",
+      "file": "futurz-pages.json.gz",
+      "bodySHA256": "cab0d85efc400eb9e0d49141bb7f910e98c3a58d73a502936b53342d53e2a02d"
+    },
+    {
+      "url": "https://www.linkedin.com/company/infinity-learn",
+      "finalUrl": "https://www.linkedin.com/company/infinity-learn",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:39:03.438Z",
+      "file": "infinity-pages.json.gz",
+      "bodySHA256": "3f6ed1707bc7d4041d93a05fcc1ccb6cfe4abff4e1bf827901cca2b9e2ada21a"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/coding-and-robotics-trainer-at-infinity-learn-4480357313",
+      "finalUrl": "https://www.linkedin.com/jobs/view/coding-and-robotics-trainer-at-infinity-learn-4480357313",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:39:04.511Z",
+      "file": "infinity-pages.json.gz",
+      "bodySHA256": "e5c87281d26e01bbbec712d0f64ee017a2d45e3ebf4dc5de1dd916e1653dd735"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/area-sales-manager-at-infinity-learn-4478763469",
+      "finalUrl": "https://www.linkedin.com/jobs/view/area-sales-manager-at-infinity-learn-4478763469",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:39:05.359Z",
+      "file": "infinity-pages.json.gz",
+      "bodySHA256": "e6103732778addf47878d20f2ebec2b0ba358bc4f134ec522f496a21d04207b2"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/area-manager-at-infinity-learn-4477806380",
+      "finalUrl": "https://www.linkedin.com/jobs/view/area-manager-at-infinity-learn-4477806380",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:39:06.311Z",
+      "file": "infinity-pages.json.gz",
+      "bodySHA256": "eac41a1739dc54cc5db52512494cdf200184fa18f34c4e86ecbb0b27d1232ca2"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=24988334&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=24988334&location=India",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:39:06.936Z",
+      "file": "infinity-pages.json.gz",
+      "bodySHA256": "e1c286f8596b97bf167c02689e1228f4698eb4aa72d260abfaac3a3652386bdd"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=24988334&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=24988334&location=Worldwide",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:39:07.671Z",
+      "file": "infinity-pages.json.gz",
+      "bodySHA256": "4fb719cba68f954a3cdd1fd307c2780932979accf0d94d24f6e5d7739c5c38e5"
+    },
+    {
+      "url": "https://www.linkedin.com/company/wizklub-learning",
+      "finalUrl": "https://www.linkedin.com/company/wizklub-learning",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:38:54.122Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "67834525fecf9846074a6a87fcfeeae81a63be51f5e94041bbb5720d5e56c45a"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=74233894&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=74233894&location=India",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:38:54.687Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "cc63e436a76efaf47e064eddc0896f54dc3532d43174330d398ee23404cc1795"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=74233894&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=74233894&location=Worldwide",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:38:55.380Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "1ee2d93e6e61e1151ef21d5740eb7f13a297dd0201f9b4903545c88c046ab5c5"
+    },
+    {
+      "url": "https://www.wizklub.com/",
+      "finalUrl": "https://www.wizklub.com/",
+      "status": 403,
+      "error": null,
+      "capturedAt": "2026-10-23T08:38:41.424Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "8b73b6ccd7091d6d9d23adaab2baae3c4abf6de06df8efdd03215ee9376fa035"
+    },
+    {
+      "url": "https://dev.wizklub.com/",
+      "finalUrl": "https://dev.wizklub.com/",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:38:42.204Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "e9d1b49162b1ad173bb065c56c83f00f6b7d47857bc08d6d115c94af75f36d2a"
+    },
+    {
+      "url": "https://dev.wizklub.com/company/about-us/",
+      "finalUrl": "https://dev.wizklub.com/company/about-us/",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:38:42.336Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "014cb9829c847029ac40028b9a8b10c66c681c3985377e3cc257855199504848"
+    },
+    {
+      "url": "https://www.linkedin.com/company/infinity-learn-by-sri-chaitanya",
+      "finalUrl": "https://www.linkedin.com/company/infinity-learn-by-sri-chaitanya",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:16.051Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "fe909365bebda1b3c192a7225fd12c40b51be6caaa94caeafbe857f87c9736a2"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=78106236&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=78106236&location=India",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:16.854Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "83c0a7a9d6c85ed63ca56cfff0126413a82270590966dbc1e4a5d69d8f66bc6a"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=78106236&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=78106236&location=Worldwide",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:17.537Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "5687b4bbd704dae9a6e4553b9243611a3c3cbacadfb54f7d65bb19283a581641"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/technical-lead-backend-at-infinity-learn-4448188661?position=1&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=%2FYeGSVAlWa64VeIjfBvMew%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/technical-lead-backend-at-infinity-learn-4448188661?position=1&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=%2FYeGSVAlWa64VeIjfBvMew%3D%3D",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:18.406Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "51c3fad018680bdb1e8c012c5f05a36b148b2257de26f4d36f8e27be949d6ed3"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/infinity-learn-product-manager-at-infinity-learn-4447218735?position=2&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=MqQ2%2BiBQ1EKxwYiLQH2FCA%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/infinity-learn-product-manager-at-infinity-learn-4447218735?position=2&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=MqQ2%2BiBQ1EKxwYiLQH2FCA%3D%3D",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:19.362Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "8e883a720de212fca82f6329657fc269529a56a945a5123a60cb1a2c20efd7c3"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/tech-lead-backend-engineering-python-fastapi-at-infinity-learn-4467924260?position=3&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=EQZ3s9GG3LvLOypvVs%2BqVA%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/tech-lead-backend-engineering-python-fastapi-at-infinity-learn-4467924260?position=3&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=EQZ3s9GG3LvLOypvVs%2BqVA%3D%3D",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:20.445Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "0e8435a3acfc176ecb3ca5ac50239b6e0e5a2d26d5847ecc875a71218448aecd"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/growth-product-manager-at-infinity-learn-4476562407?position=4&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=cyOIJUABrV%2FuFK4o2TMMvg%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/growth-product-manager-at-infinity-learn-4476562407?position=4&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=cyOIJUABrV%2FuFK4o2TMMvg%3D%3D",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:21.789Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "b7056da02db6e0886df6ec0a46e844583ea5b7ef2509c47acca03bee6f2a2178"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/senior-manager-at-infinity-learn-4480985964?position=5&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=KR16edAphVyEXZZB8H1FyQ%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/senior-manager-at-infinity-learn-4480985964?position=5&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=KR16edAphVyEXZZB8H1FyQ%3D%3D",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:22.711Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "37cb0f8cfc88fcb60435043654d0027771fa920b2c16252a51ce4116d8167486"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/game-developer-at-infinity-learn-4448192572?position=6&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=bFUXsH%2FvQVuGf5UqfUgkYw%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/game-developer-at-infinity-learn-4448192572?position=6&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=bFUXsH%2FvQVuGf5UqfUgkYw%3D%3D",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:23.602Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "ad38301825fc4abaff2fb6d91c1ccf02c02b3514f38904d85ed51883c7c99cfc"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/academic-counsellor-at-infinity-learn-4479433789?position=7&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=Bzxs%2Fp2%2Fe5xg%2FdcMQgme5Q%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/academic-counsellor-at-infinity-learn-4479433789?position=7&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=Bzxs%2Fp2%2Fe5xg%2FdcMQgme5Q%3D%3D",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:24.565Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "b8fbd2c3b1cda2210d92ed21cb180e9d39b5af49cedd673427be8f00cb168a8d"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/business-analyst-at-infinity-learn-4482461979?position=8&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=RK8tPjBawKrO20mygpmedg%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/business-analyst-at-infinity-learn-4482461979?position=8&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=RK8tPjBawKrO20mygpmedg%3D%3D",
+      "status": 200,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:25.479Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "2c61e83eebe8b8181d84184cf310a752a89e5cf23b8369ec4829535d3355507b"
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/associate-or-senior-associate-b2b-online-execution-at-infinity-learn-4479120651?position=9&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=Sd%2FentAOAmuMfC23Bws5cA%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/associate-or-senior-associate-b2b-online-execution-at-infinity-learn-4479120651?position=9&pageNum=0&refId=0FGmUdVfY7zH5HgPwTeyYw%3D%3D&trackingId=Sd%2FentAOAmuMfC23Bws5cA%3D%3D",
+      "status": 429,
+      "error": null,
+      "capturedAt": "2026-10-23T08:41:26.199Z",
+      "file": "parent-employer-pages.json.gz",
+      "bodySHA256": "c8a44ed34475393301a2b3246826b2b2d6bdb4df15a744922ae66b16bfb001cb"
+    }
+  ]
+}

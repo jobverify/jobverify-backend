@@ -48,15 +48,18 @@ import {
   readInventoryEvidence,
 } from './utils/inventoryEvidence.js'
 import { extractionDetailHealth } from './utils/extractionDetailHealth.js'
+import { extractionRawJobMetrics } from './utils/extractionRawJobMetrics.js'
+import { initializeScraperProxyEnvironment } from './utils/proxyEnvironment.js'
 
 const isDryRun = process.argv.includes('--dry-run')
 const isParallel = process.argv.includes('--parallel')
 
-export const buildScraperAttemptDiagnostics = (jobs, analysis = analyzePublishableJobs(jobs)) => ({
-  rawRecords: jobs.length,
+export const buildScraperAttemptDiagnostics = (jobs, analysis = analyzePublishableJobs(jobs), provider = {}) => ({
+  rawRecords: extractionRawJobMetrics(provider, jobs, readInventoryEvidence(jobs)).rawJobs,
   jobs: analysis.indiaJobs.length,
   eligibleJobs: analysis.eligibleJobs.length,
   filteredNonIndia: analysis.filterCounts.nonIndia,
+  filteredOld: analysis.filterCounts.old,
   filteredClosed: analysis.filterCounts.closed,
   filteredInvalidUrl: analysis.filterCounts.invalidUrl,
   filteredEmptyDescription: analysis.filterCounts.emptyDescription,
@@ -971,6 +974,7 @@ const runScraperAttemptWithRetryPolicy = async (scraper, { signal = null } = {})
 // Runs all scrapers sequentially and saves results to MongoDB.
 export const runAll = async ({ stopSignal = null } = {}) => {
   assertLiveMongoUriConfigured()
+  initializeScraperProxyEnvironment()
 
   const selected = selectScrapersForRun(buildScrapers())
   selected.scrapers = isolateDryRunSnapshots(selected.scrapers)
@@ -1123,7 +1127,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       capturedAt = new Date()
       rawCaptureFile = await saveRawSourceCapture(jobs, { source: scraper.name, dryRun: isDryRun, now: capturedAt })
       const publishableAnalysis = analyzePublishableJobs(jobs)
-      attemptDiagnostics = buildScraperAttemptDiagnostics(jobs, publishableAnalysis)
+      attemptDiagnostics = buildScraperAttemptDiagnostics(jobs, publishableAnalysis, scraper.provider || { source: scraper.name })
       const indiaJobs = publishableAnalysis.indiaJobs
       const zeroJobEvidence = resolveZeroJobOutcome(scraper, jobs, indiaJobs)
       const cities = [...new Set(indiaJobs.map(j => j.city).filter(Boolean))].sort()
@@ -1338,7 +1342,7 @@ export const runScraper = async (
     throwIfAborted(lifecycleSignal)
     const retry = getRetryMetadata(jobs)
     const publishableAnalysis = analyzePublishableJobs(jobs)
-    attemptDiagnostics = buildScraperAttemptDiagnostics(jobs, publishableAnalysis)
+    attemptDiagnostics = buildScraperAttemptDiagnostics(jobs, publishableAnalysis, scraper.provider || { source: scraper.name })
     const indiaJobs = publishableAnalysis.indiaJobs
     const zeroJobEvidence = resolveZeroJobOutcome(scraper, jobs, indiaJobs)
     const dataQuality = indiaJobs.reduce((total, job = {}) => ({

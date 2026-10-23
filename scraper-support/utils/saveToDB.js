@@ -11,6 +11,7 @@ import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { normalizeCity } from './cityNormalizer.js'
 import { filterIndiaJobs } from './indiaLocationFilter.js'
+import { extractionDetailHealth } from './extractionDetailHealth.js'
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
 import {
   formatStoredLocationLabel,
@@ -29,7 +30,7 @@ import { enrichJobsWithPublicExperience } from './publicExperienceEnrichment.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
 import { saveLocalJobOutbox } from './localJobOutbox.js'
 import { buildDescriptionSourceUpdate } from '../../src/services/jobDescriptionPolicy.js'
-import { getSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { getSourceDescription, hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { postScrapePersistencePatch } from '../../src/services/postScrapeClassification.js'
 import { refreshJobDatasetSummary } from '../../src/services/jobDatasetSummaryService.js'
 import {
@@ -282,6 +283,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
     options.missesBeforeExpiry ?? process.env.SCRAPER_JOB_MISSES_BEFORE_EXPIRY,
   )
   const {
+    indiaJobs,
     eligibleJobs,
     filterCounts,
   } = analyzePublishableJobs(jobs, {
@@ -510,11 +512,11 @@ export const saveToDB = async (jobs, source, options = {}) => {
 
   let shouldRefreshDatasetSummary = operations.length > 0
   const incompleteListing = jobs.some((job) => job?.sourceListingComplete === false)
-  // Enumeration can be complete while role details are not. Eligibility drops
-  // those roles before fingerprints are built, so that reduced set must never
-  // mark their previously saved versions as unseen.
+  // Missing descriptions no longer reject otherwise eligible jobs. Incomplete
+  // detail collection still cannot authorize cleanup of previous vacancies.
   const incompleteDetails = jobs.some((job) => job?.sourceDetailComplete === false)
-    || filterCounts.emptyDescription > 0
+    || indiaJobs.some((job) => !hasSourceDescription(job))
+    || extractionDetailHealth(indiaJobs).nativeCollections?.some((collection) => !collection.complete) === true
   const incompleteSource = incompleteListing || incompleteDetails
   const authorizedEmptyLifecycle = currentFingerprints.length === 0
     && options.authoritativeEmpty === true

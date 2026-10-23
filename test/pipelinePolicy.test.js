@@ -47,6 +47,18 @@ test('rewrite item failures and source races are non-blocking while execution er
   assert.equal(stageOutcome('rewrite', { reason: 'worker_error', pendingEstimate: 2 }, 1), 'failed');
   assert.equal(stageOutcome('rewrite', { failed: 1, pendingEstimate: 2 }, 0), 'incomplete');
 });
+
+test('a normal rewrite budget stop hands off pending work without hiding real errors or cancellation', () => {
+  const summary = { interrupted: true, budgetExhausted: true, stopReason: 'budget_exhausted',
+    pendingEstimate: 19446, failed: 34, published: 2 };
+  assert.equal(stageOutcome('rewrite', summary, 0), 'completed');
+  assert.equal(stageOutcome('rewrite', { reason: 'workflow_budget_exhausted' }, 0), 'completed');
+  assert.equal(stageOutcome('rewrite', summary, 1), 'failed');
+  assert.equal(stageOutcome('rewrite', { ...summary, errorType: 'MongoServerError' }, 0), 'failed');
+  assert.equal(stageOutcome('rewrite', { ...summary, reason: 'worker_error' }, 0), 'failed');
+  assert.equal(stageOutcome('rewrite', { ...summary, cancelled: true, stopReason: 'cancelled' }, 0), 'incomplete');
+  assert.equal(stageOutcome('classification', summary, 0), 'incomplete');
+});
 test('classification uses only a current published rewrite with original fallback and identity', () => {
   const original={sourceDescription:'Employer original',description:'Validated rewrite'};
   original.sourceContentHash=buildRewriteInput(original).inputHash;

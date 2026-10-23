@@ -1,0 +1,14 @@
+{
+  "kind": "browser-tool-transport-failure",
+  "url": "https://www.getcruise.com/careers/",
+  "observedLogTimestamp": "2026-10-23T04:45:33.344Z",
+  "timestampProvenance": "Browser console log timestamp supplied by the root browser operator; approximate time of navigation failure",
+  "navigationWaitUntil": "domcontentloaded",
+  "error": "Error: browserBackend.callTool: net::ERR_CERT_DATE_INVALID at https://www.getcruise.com/careers/",
+  "httpResponseCaptured": false,
+  "tlsVerificationDisabled": false,
+  "additionalBrowserChecks": [
+    { "url": "https://www.getcruise.com/", "errorCode": "net::ERR_CERT_DATE_INVALID", "httpResponseCaptured": false },
+    { "url": "https://getcruise.com/careers/", "errorCode": "net::ERR_CERT_DATE_INVALID", "httpResponseCaptured": false }
+  ]
+}

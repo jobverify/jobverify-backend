@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
-import { run } from '../scraper/yournest/script.js'
+import { run, PROVIDER_METADATA } from '../scraper/yournest/script.js'
 
 test('YourNest resolves to its exact-name first-party provider', () => {
   const report = generateCompanyCoverageReport({
@@ -19,6 +19,12 @@ test('YourNest resolves to its exact-name first-party provider', () => {
   )
 })
 
-test('YourNest fails closed without an enumerable first-party careers feed', async () => {
-  assert.deepEqual(await run(), [])
+test('YourNest fails closed with injected transport when inventory is unavailable', async () => {
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('offline')}}), error=>(
+    error.code==='YOURNEST_COVERAGE_GAP' && error.lifecycleCleanupAllowed===false
+    && error.inventoryEvidence.reportedTotal===null
+  ))
+  assert.equal(PROVIDER_METADATA.atsPlatform,'pyjamahr-native-anonymous-api')
+  assert.equal(PROVIDER_METADATA.sourceListingComplete,false)
+  assert.equal(PROVIDER_METADATA.verifiedPublicJobCount,null)
 })

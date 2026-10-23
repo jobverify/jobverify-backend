@@ -1,0 +1,126 @@
+{
+  "source": "zoox",
+  "company": "Zoox",
+  "verifiedOn": "2026-10-23",
+  "verificationDisposition": "complete-current-native-lever-inventory-with-zero-india-locations",
+  "bindingChain": [
+    "https://zoox.com/careers",
+    "https://zoox.com/_next/static/chunks/pages/careers-f5d415fc3e2c5db9.js",
+    "https://api.lever.co/v0/postings/zoox?limit=999"
+  ],
+  "enumerationSurface": "https://api.lever.co/v0/postings/zoox?mode=json&skip=0&limit=100",
+  "publicBoard": "https://jobs.lever.co/zoox",
+  "paginationContractSource": "https://github.com/lever/postings-api#get-a-list-of-job-postings",
+  "pagination": {
+    "pageSizes": [
+      100,
+      100,
+      37
+    ],
+    "terminalShortPage": true,
+    "nativeBoardPostingCount": 237
+  },
+  "verifiedPublicJobCount": 237,
+  "verifiedIndiaJobCount": 0,
+  "listingComplete": true,
+  "nativeCountryCounts": {
+    "US": 236,
+    "GB": 1
+  },
+  "nativeLocationLabels": [
+    "Foster City, CA",
+    "San Diego, CA",
+    "Seattle, WA",
+    "Boston, MA",
+    "Hayward, CA",
+    "Houston, TX",
+    "San Francisco, CA",
+    "Fremont, CA",
+    "Las Vegas, NV",
+    "Phoenix, AZ",
+    "Dallas, TX",
+    "Banbury, UK",
+    "Atlanta, GA",
+    "Los Angeles, CA"
+  ],
+  "publicationDatePolicy": "native createdAt preserved separately; no publication date invented from creation",
+  "playbackInventoryEvidence": {
+    "status": "complete-inventory",
+    "surface": "https://api.lever.co/v0/postings/zoox",
+    "firstParty": true,
+    "listingComplete": true,
+    "pagesFetched": 3,
+    "reportedTotal": 237,
+    "indiaFacetCount": 0,
+    "verifiedAt": "2026-10-23T03:39:25.563Z",
+    "reason": "official-client-binding-terminal-lever-pages-and-public-board-reconciled"
+  },
+  "evidence": [
+    {
+      "file": "careers-response.json",
+      "sha256": "dea932a072dd1f047d26f22328f8c0c2135eedfbf7f62698cd38efe43621044f",
+      "responses": [
+        {
+          "url": "https://zoox.com/careers",
+          "finalUrl": "https://zoox.com/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:33:21.579Z",
+          "bodySha256": "513c3ec3763db6b570fe71cdf9fb452aee56f2926902da8ea1b8f6818c745b66"
+        }
+      ]
+    },
+    {
+      "file": "client-api-responses.json",
+      "sha256": "699b0ca95d668639902b377bd8075fc6f83ae384dc4372d2a5c19c30a78d0953",
+      "responses": [
+        {
+          "url": "https://zoox.com/_next/static/chunks/pages/careers-f5d415fc3e2c5db9.js",
+          "finalUrl": "https://zoox.com/_next/static/chunks/pages/careers-f5d415fc3e2c5db9.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:34:10.999Z",
+          "bodySha256": "02d45c0cb71769cb48f95fa6cd33bf1fd42373ee617c7b0d4c0a0f4ecfb1786c"
+        }
+      ]
+    },
+    {
+      "file": "listing-responses.json",
+      "sha256": "733e96470b4673cda72a6616d01b8b55803087f0dd9606698240a917b103a872",
+      "responses": [
+        {
+          "url": "https://api.lever.co/v0/postings/zoox?mode=json&skip=0&limit=100",
+          "finalUrl": "https://api.lever.co/v0/postings/zoox?mode=json&skip=0&limit=100",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:33:47.930Z",
+          "bodySha256": "549fe3ff75184f1577c1c46415ddfa9ff46c18407aedce292d8715c3b364d556"
+        },
+        {
+          "url": "https://api.lever.co/v0/postings/zoox?mode=json&skip=100&limit=100",
+          "finalUrl": "https://api.lever.co/v0/postings/zoox?mode=json&skip=100&limit=100",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:33:52.234Z",
+          "bodySha256": "b55048c1df44dfe9e9557d355c52027c371adcbab0281749c0c887c446c25d64"
+        },
+        {
+          "url": "https://api.lever.co/v0/postings/zoox?mode=json&skip=200&limit=100",
+          "finalUrl": "https://api.lever.co/v0/postings/zoox?mode=json&skip=200&limit=100",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:33:53.397Z",
+          "bodySha256": "8cc97ca2525f8fe6c72a30a8da9b3c49bab250c6c31a3e8dfe4183a9babfab5b"
+        }
+      ]
+    },
+    {
+      "file": "board-response.json",
+      "sha256": "75da50b20e6648239d1e4aee0c3a36ec5cac168ea2cffe16725612852ba3f195",
+      "responses": [
+        {
+          "url": "https://jobs.lever.co/zoox",
+          "finalUrl": "https://jobs.lever.co/zoox",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:34:29.879Z",
+          "bodySha256": "196439881bc1ae897f62ccb25d2c9ce3d2cfb04def1c6ea37ec4a6359126dc03"
+        }
+      ]
+    }
+  ]
+}

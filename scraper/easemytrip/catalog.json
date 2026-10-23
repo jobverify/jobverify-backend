@@ -1,0 +1,23 @@
+{
+  "source": "easemytrip",
+  "companyName": "EaseMyTrip",
+  "adapter": "script",
+  "modulePath": "../easemytrip/script.js",
+  "dryRunFile": "easemytrip/jobs.json",
+  "companyCareerPage": "https://www.easemytrip.com/career.html",
+  "companyDomain": "easemytrip.com",
+  "atsPlatform": "first-party-native-careers-inline-role-client",
+  "countryFilter": "India",
+  "paginationStrategy": "reviewed-inline-client-complete-array-with-unresolved-country",
+  "extractionStrategy": "fresh-home-handoff+safe-literal-native-role-array+published-employer-application-form+explicit-country-coverage-gap",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-10-23",
+  "verifiedPublicJobCount": 12,
+  "officialCareersPageUrl": "https://www.easemytrip.com/",
+  "verifiedSurfaceSummary": "October 23 2026: home Current Openings links current /career.html. Its active inline native client contains12 role records with descriptions and published Google employer application form. Safe literal parsing does not execute remote JavaScript. Native locations are Gurugram/Noida/Mumbai/Delhi or Remote without explicit country. Twelve discoveries retained but eligible output withheld with reported12/unknownIndia coverage gap; no guessed job requisition or public date, no lifecycle cleanup. Generic form employer identity verified read-only; no submission.",
+  "verifiedIndiaJobCount": null,
+  "sourceScopeComplete": false,
+  "sourceListingComplete": false,
+  "lifecycleCleanupAllowed": false
+}

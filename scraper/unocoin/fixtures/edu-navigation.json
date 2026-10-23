@@ -1,0 +1,6 @@
+{
+  "url": "https://edu.unocoin.com/",
+  "capturedAt": "2026-10-23T07:22:18.821976+00:00",
+  "error": "Playwright native navigation net::ERR_ABORTED at https://edu.unocoin.com/; no response body/status captured",
+  "observation": "transport-navigation-failure"
+}

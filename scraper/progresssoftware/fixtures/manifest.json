@@ -1,0 +1,326 @@
+{
+  "captureMethod": "native browser same-origin source responses; gzip preserves raw capture envelopes",
+  "sources": [
+    {
+      "file": "careers-response.json.gz",
+      "captureSha256": "c635aeecbb46eec781577d3f8e7205c0d2258b6b53bb5f735952fbef73682916",
+      "gzipSha256": "32648e5892a7f3cc9bdb72d4c22296ac080e08cae8175c1d90fa9713b9636644",
+      "url": "https://www.progress.com/company/careers",
+      "finalUrl": "https://www.progress.com/company/careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:45.924Z",
+      "bodyBytes": 129333,
+      "bodySha256": "28b5a4174538da701b0006c170e469f150178c0783178a2d42d4bbbe6983fde6"
+    },
+    {
+      "file": "listing-response.json.gz",
+      "captureSha256": "0e921a2fe15456a219eb140430dabec8fefbfd12ec16d8f5f5a5f9ca14be8af1",
+      "gzipSha256": "0511371bb0ea320ddedf568dc893b8078bb85d40c60112fe4366d8da63fbda41",
+      "url": "https://www.progress.com/company/careers/open-positions",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:05.019Z",
+      "bodyBytes": 107047,
+      "bodySha256": "66d932bb8d0bffbffc9d74f4e875c76cfb502c2ba836be003b19636015591ce6"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/campaign-manager---maternity-cover-o6yQAfwO",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/campaign-manager---maternity-cover-o6yqafwo",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:32.031Z",
+      "bodyBytes": 94276,
+      "bodySha256": "0f69f57a7ad032e7b2f48015dc0522ee8bf6ab0ed346aadf8741e48c9be9a352"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/workday-hris-specialist-principal-(-payroll-benefits)-o1cQAfwn",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/workday-hris-specialist-principal-(-payroll-benefits)-o1cqafwn",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:31.709Z",
+      "bodyBytes": 98680,
+      "bodySha256": "4e6f6daf2ba7e95b3ad047d8b7f27b3d4e9d8f548c52d02b46aee3723716cd38"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/manager-cybersecurity-platform-operations-oRDLAfwz",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/manager-cybersecurity-platform-operations-ordlafwz",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:33.038Z",
+      "bodyBytes": 91199,
+      "bodySha256": "b1647c1d08aeed7be9a1bcfa1cdffc808fadaa394761e8492041660ada0b368b"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/manager-cybersecurity-platform-operations-okazAfwn",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/manager-cybersecurity-platform-operations-okazafwn",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:33.242Z",
+      "bodyBytes": 91555,
+      "bodySha256": "734be0df911342f46e4651b1383a2be1d73c7dfd21abce63dae2c99c2f388bae"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/principal-cybersecurity-analyst-oWtBAfwk",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/principal-cybersecurity-analyst-owtbafwk",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:32.773Z",
+      "bodyBytes": 86034,
+      "bodySha256": "7f8fd12bbf0dbafd132f65c27b076cb952c20f09634511f495b7153dd20fe463"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/corporate-counsel-otAMAfw9",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/corporate-counsel-otamafw9",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:33.696Z",
+      "bodyBytes": 86648,
+      "bodySha256": "47f54ab9e7b5e6d98097fff3122c50d922c2c3f5ea0375c916172d09540f2221"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/product-counsel-oamWAfwM",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/product-counsel-oamwafwm",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:35.624Z",
+      "bodyBytes": 98873,
+      "bodySha256": "c5555976fa2884960b333aea19f2b5d921f5ce5e81e07afd3a13bc4a2a7e936f"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/product-counsel-owuXAfwh",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/product-counsel-owuxafwh",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:36.773Z",
+      "bodyBytes": 90661,
+      "bodySha256": "314eb9efda14da27e346e9f4cb58ed74e10484976273739581f72314e7f2c97f"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/senior-commercial-counsel-ooFWAfwj",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/senior-commercial-counsel-oofwafwj",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:36.552Z",
+      "bodyBytes": 93103,
+      "bodySha256": "b586d9e79dc8806ec6a1dc2dfa3da8023017987aba9246f2350446d949c7f6da"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/ai-product-manager-oT5rAfwJ",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/ai-product-manager-ot5rafwj",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:37.073Z",
+      "bodyBytes": 87587,
+      "bodySha256": "00e86c16e07a28970a809f04a1a4c484bf8a232b6a3b38dcea703006a70e3e0c"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/account-manager-oFyyAfw5",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/account-manager-ofyyafw5",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:36.211Z",
+      "bodyBytes": 93494,
+      "bodySha256": "5daebed1215b155355029d9e9d0c8393ca9b1c97b4202b71851c059b02f86612"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/inside-account-manager-oT1YAfwc",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/inside-account-manager-ot1yafwc",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:36.951Z",
+      "bodyBytes": 85761,
+      "bodySha256": "aafbbcfbf1a7a3e1d6802d595b480a1d88911fc5bb3fc8a559ada1d208d6ff6a"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/inside-account-manager-oNdcAfww",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/inside-account-manager-ondcafww",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:37.825Z",
+      "bodyBytes": 89924,
+      "bodySha256": "72381ada115ec2790e4860f8c1341ea588fa28028a424b645929480a045fc826"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/inside-partner-account-manager-oEiSAfw8",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/inside-partner-account-manager-oeisafw8",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:38.358Z",
+      "bodyBytes": 89595,
+      "bodySha256": "8a63beadfd76adf07481d7febb4cc235dae9341c23e2575fea819e0dae0b169b"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/inside-sales-account-manager-(us-shift)-ogsMAfwO",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/inside-sales-account-manager-(us-shift)-ogsmafwo",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:38.233Z",
+      "bodyBytes": 90150,
+      "bodySha256": "8d8ee1fbd5210939a60e5b7ddcd9f0fd924940ed06b9eed9792eb32de08da96c"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/inside-sales-account-manager-(us-shift)-o7nIAfww",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/inside-sales-account-manager-(us-shift)-o7niafww",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:38.174Z",
+      "bodyBytes": 90162,
+      "bodySha256": "3501c297c096de8d919c574d1b8d1bd42346393fc8a7f500136a6b17024cfae3"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/outbound-business-generation-representative-associate-(us-shift)-oSU5yfw9",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/outbound-business-generation-representative-associate-(us-shift)-osu5yfw9",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:37.971Z",
+      "bodyBytes": 88986,
+      "bodySha256": "d4385b72345d98b62e4ce340f0447f0023b58442fa55f48d4cca25fa59bad06d"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/senior-account-executive---southwest-us-territory-ofIEAfwV",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/senior-account-executive---southwest-us-territory-ofieafwv",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:38.040Z",
+      "bodyBytes": 91381,
+      "bodySha256": "54f5a815feff686892b10f1dd6ff4a8b63332843ac4e143da44f688985f99c48"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/senior-sales-manager---sitefinity-o4ckAfwU",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/senior-sales-manager---sitefinity-o4ckafwu",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:40.999Z",
+      "bodyBytes": 89315,
+      "bodySha256": "f86b3aae5150dedfd4dfeade4b655bb3adaa54f044b1bbff937ec1afbf894bc4"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/ai-native-builder-senior-(security-specialist)-oiYxAfw7",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/ai-native-builder-senior-(security-specialist)-oiyxafw7",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:40.563Z",
+      "bodyBytes": 95208,
+      "bodySha256": "51840476dc38cece65a39e82e16478b52346c6f9ede422fb985ee8e697bd3cbe"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/principal-rust-engineer-language-runtime-ogKzAfwT",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/principal-rust-engineer-language-runtime-ogkzafwt",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:40.774Z",
+      "bodyBytes": 95105,
+      "bodySha256": "9d21b4dafb3f4b516cb2c591f0e6896c036f413d023931fbc97359e3323f487d"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/senior-principal-software-engineer-opzFAfwX",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/senior-principal-software-engineer-opzfafwx",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:40.029Z",
+      "bodyBytes": 92902,
+      "bodySha256": "7ae50be3847c092ff34e9167e8aebcd7d332ccac172a9e34d4550ac7f0b746f7"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/software-architect-oO9JAfw0",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/software-architect-oo9jafw0",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:39.175Z",
+      "bodyBytes": 102908,
+      "bodySha256": "25af3edeb96eccffa92a31606876e7f3aca7921836d426c20bb55e8aaa8bdd7b"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/software-development-engineer-in-test-oWIFAfwD",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/software-development-engineer-in-test-owifafwd",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:39.363Z",
+      "bodyBytes": 87901,
+      "bodySha256": "c3a998a9fd2e9115a16ce11575226773dedbded5758265a8000b0b59736c33ee"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/software-engineer-principal-i-(java-)-oZyMyfwB",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/software-engineer-principal-i-(java-)-ozymyfwb",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:41.552Z",
+      "bodyBytes": 92242,
+      "bodySha256": "ca0947d44aeeccfdd6732e1e2f575e5728aada83d1c7026cb713f257597f0eb0"
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "captureSha256": "e4941550d0c0601d00c16c862280a56f1e83008c46e18726c38cdb4832c29962",
+      "gzipSha256": "e5f94bf5a8d2247f6183c1f7d265b0b983f7b532192296934a85af1d8ee1f2e8",
+      "url": "https://www.progress.com/company/careers/open-positions/vice-president-global-software-engineering-oj3SAfwy",
+      "finalUrl": "https://www.progress.com/company/careers/open-positions/vice-president-global-software-engineering-oj3safwy",
+      "status": 200,
+      "capturedAt": "2026-10-23T03:32:41.771Z",
+      "bodyBytes": 88806,
+      "bodySha256": "5f17d76a454bcf338456c865fade04e816816d831397b4d08ee09c9c27530463"
+    }
+  ],
+  "inventory": {
+    "reportedTotal": 26,
+    "indiaRoles": 10,
+    "detailsInspected": 26,
+    "completeness": "native cards / ItemList URLs / country facet counts, then all visible and JobPosting identities/geography",
+    "datePolicy": "Explicit JobPosting datePosted retained; no CMS creation/update dates promoted.",
+    "missingDescription": "Schema-only, heading-only or missing visible employer content retains job with incomplete detail/listing evidence."
+  },
+  "limitations": [
+    "No native zero-inventory state observed; an empty/malformed listing fails closed.",
+    "A changed pagination, card/facet, detail or employer contract fails rather than authorizing cleanup.",
+    "Jobvite application UI is not submitted; applyUrl uses the official verified role page."
+  ]
+}

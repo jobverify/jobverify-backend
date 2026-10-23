@@ -1,0 +1,57 @@
+[
+  {
+    "path": "official-pages.json.gz",
+    "sha256": "66e3099643d81a61b492004132680e9337424d40d8fcb0844c50b1711524217d",
+    "decodedSHA256": "825ade4f477feba0bdc5edbe69868aae9cc24c08c5fe8f15218db0dacd303989",
+    "receipts": [
+      {
+        "url": "https://www.farmtheory.in/",
+        "capturedAt": "2026-10-23T08:55:15.314Z",
+        "error": "TypeError: Failed to fetch",
+        "bodySHA256": null
+      }
+    ]
+  },
+  {
+    "path": "bare-pages.json.gz",
+    "sha256": "23079e70c25302cc5272292a223401c101d15390c8c2a96bd9ec37bbe37bce82",
+    "decodedSHA256": "53890a1a2eb1b9feac55e057051ad539d85c0f0b8b32ec76c2a7fa408f323f89",
+    "receipts": [
+      {
+        "url": "https://farmtheory.in/",
+        "finalUrl": "https://farmtheory.in/",
+        "status": 200,
+        "capturedAt": "2026-10-23T08:57:09.118Z",
+        "bodySHA256": "597329bb02301d9e64f6f737c39c134f8422475ce11e34cafe092c9f98cff024"
+      }
+    ]
+  },
+  {
+    "path": "linkedin-pages.json.gz",
+    "sha256": "7cbc32e31fbf5129e48f573fb83a307629959d951abe576c933ee233ab0e6eae",
+    "decodedSHA256": "6075bbc85a8c96986055fdca7aff40db335fb0a09456a8ff00e3a40fd03be495",
+    "receipts": [
+      {
+        "url": "https://www.linkedin.com/company/farmtheory",
+        "finalUrl": "https://www.linkedin.com/company/farmtheory",
+        "status": 200,
+        "capturedAt": "2026-10-23T08:57:18.376Z",
+        "bodySHA256": "26a05db11c2cec0dca1a8dd69ab55bb3a5bc9d3575854fa7e9b4ccc83015656c"
+      },
+      {
+        "url": "https://www.linkedin.com/jobs/search/?f_C=94727677&location=India",
+        "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=94727677&location=India",
+        "status": 200,
+        "capturedAt": "2026-10-23T08:57:20.295Z",
+        "bodySHA256": "eba88baca357851e730066b2d125a87d39da5172ec2a24fc0facff7e4b66bd27"
+      },
+      {
+        "url": "https://www.linkedin.com/jobs/search/?f_C=94727677&location=Worldwide",
+        "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=94727677&location=Worldwide",
+        "status": 200,
+        "capturedAt": "2026-10-23T08:57:20.871Z",
+        "bodySHA256": "3eabacc5dd7c9cc1a765583215480033a34c1cb2247e676f82116defcd50e4ca"
+      }
+    ]
+  }
+]

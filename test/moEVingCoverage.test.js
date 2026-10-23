@@ -20,8 +20,8 @@ test('MoEVing resolves only the exact CSV company name to its first-party ATS pr
   )
 })
 
-test('MoEVing fails closed until its official ATS exposes a verified enumerable listing feed', async () => {
+test('MoEVing rejects an unverified official ATS response instead of reporting empty inventory', async () => {
   const { run } = await import('../scraper/moeving/script.js')
 
-  assert.deepEqual(await run(), [])
+  await assert.rejects(run({ fetchText: async () => '<html><title>Careers</title></html>' }), /inventory unverified/)
 })

@@ -17,6 +17,13 @@ export const directConfiguration = start => {
 export const createStages = config => config.stages.map(s=>({...s,status:s.enabled?'waiting':'disabled'}));
 export function stageOutcome(key, summary={}, code=0) {
   if (['worker_error','disabled'].includes(summary.reason)) return 'failed';
+  if (key==='rewrite') {
+    // A normal budget stop leaves durable work for a later run. It must not
+    // block classification, and it must never conceal an execution failure.
+    if (code!==0 || summary.errorType || summary.stale>0) return 'failed';
+    if (summary.cancelled || summary.stopReason==='cancelled') return 'incomplete';
+    if (summary.stopReason==='budget_exhausted' || summary.budgetExhausted || summary.reason==='workflow_budget_exhausted') return 'completed';
+  }
   if (summary.interrupted || summary.budgetExhausted || summary.pendingEstimate>0 || summary.leased>0 || ['interrupted','workflow_budget_exhausted'].includes(summary.reason)) return 'incomplete';
   // Individual rewrite failures retain employer content; only execution errors block handoff.
   if (code!==0 || summary.stale>0 || (key!=='rewrite' && ((key!=='scraper'&&summary.failed>0) || summary.staleSources>0 || summary.concurrentChanges>0))) return 'failed';

@@ -1,0 +1,356 @@
+{
+  "capturedAt": "2026-10-23T05:06:26.918Z",
+  "source": "ultravioletteautomotive",
+  "retention": "Exact UTF-8 HTTP text bodies; large original JSON containers losslessly gzip compressed. No binary image payloads included.",
+  "files": [
+    {
+      "path": "official-response.json",
+      "storedSHA256": "f864526ebcbab432ba3f4757e54f3c404e1b47cce73f675a9bb795fc4a0e7fa4",
+      "exactJSONSHA256": "f864526ebcbab432ba3f4757e54f3c404e1b47cce73f675a9bb795fc4a0e7fa4",
+      "exactJSONBytes": 87527,
+      "storedBytes": 87527
+    },
+    {
+      "path": "official-client-response.json",
+      "storedSHA256": "6de06044c82496782fb80727779c0042bc1215be645824e942fbf802fee57442",
+      "exactJSONSHA256": "6de06044c82496782fb80727779c0042bc1215be645824e942fbf802fee57442",
+      "exactJSONBytes": 22032,
+      "storedBytes": 22032
+    },
+    {
+      "path": "legacy-official-response.json",
+      "storedSHA256": "c7b31dc042d955096ff02747948c0510b4fccca43d7f7f2e0f9b7583cec6c6f4",
+      "exactJSONSHA256": "c7b31dc042d955096ff02747948c0510b4fccca43d7f7f2e0f9b7583cec6c6f4",
+      "exactJSONBytes": 38458,
+      "storedBytes": 38458
+    },
+    {
+      "path": "native-responses.json.gz",
+      "storedSHA256": "60ba09b618dcf085d79baca76d25df7d1502300748f30390ecb5718d870a539c",
+      "exactJSONSHA256": "7bd36b9a3a05a9388eb2c998bb3d78fae986022b6700be9b33e85accae3c75f1",
+      "exactJSONBytes": 1790774,
+      "storedBytes": 345762
+    },
+    {
+      "path": "detail-responses.json.gz",
+      "storedSHA256": "9e5b0385383044f7b48daacadfcbdb9520ee6143ef5148cd77866cf6bd19d6c1",
+      "exactJSONSHA256": "d8f7bc39fa72ed65a5f88d57486f7d008042eb3feec0f09f3534042cc57dc2fc",
+      "exactJSONBytes": 60584331,
+      "storedBytes": 11742705
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://www.ultraviolette.com/careers",
+      "finalUrl": "https://www.ultraviolette.com/careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:05:17.997Z",
+      "bodyBytes": 69528,
+      "bodySHA256": "046167ec078c5ede366d8ef24321125899f0dadeee99366eae3bd125c90089de"
+    },
+    {
+      "url": "https://www.ultraviolette.com/_next/static/chunks/pages/careers-5a4ca1b737cbd447.js",
+      "finalUrl": "https://www.ultraviolette.com/_next/static/chunks/pages/careers-5a4ca1b737cbd447.js",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:09:57.182Z",
+      "bodyBytes": 20853,
+      "bodySHA256": "e152b02551e3cd81681de94ea6a2b003bc7a78c5a07291f67181275feee5b7d0"
+    },
+    {
+      "url": "https://www.ultraviolette.com/de/careers",
+      "finalUrl": "https://www.ultraviolette.com/de/careers",
+      "status": 404,
+      "capturedAt": "2026-10-23T05:05:04.997Z",
+      "bodyBytes": 35115,
+      "bodySHA256": "27a810fe9924c2584fc179f4eaa31b3cbbcb120994d7a04c62a032085c734d3f"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:05:58.919Z",
+      "bodyBytes": 1734584,
+      "bodySHA256": "5a0b02f75bdb963690d14a1ed3da8e53dbf6ad36b1f7be6235522b7ab3bb46cc"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:05:58.824Z",
+      "bodyBytes": 13700,
+      "bodySHA256": "22d334df3a0400a42f524113ef3a5aa9d26bb8d0c76535e4f770abcbbead047f"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000001914204/Senior-Engineer-Lead-Battery-Management-Systems?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000001914204/Senior-Engineer-Lead-Battery-Management-Systems?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:22.508Z",
+      "bodyBytes": 1766337,
+      "bodySHA256": "1344742df71c0a05b7a44bdf7d0f98953253b00c268804e2210ab8bc579b9da1"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009892771/Assistant-Manager-Supplier-Qualiity-Forging-Machining-Die-Casting?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009892771/Assistant-Manager-Supplier-Qualiity-Forging-Machining-Die-Casting?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:22.516Z",
+      "bodyBytes": 1745871,
+      "bodySHA256": "243d8a4e344aa0cd98eb175c0707ba4e5d07df0cc6293a20039c3044ac935a4a"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009892732/Senior-Mechanical-engineer?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009892732/Senior-Mechanical-engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:22.755Z",
+      "bodyBytes": 1725932,
+      "bodySHA256": "798cfce28b7034e08cd4fa132bec99169a5925394b0622242dd5387e0049ebfe"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000001750164/Principal-Electronics-Engineer-Embedded-Hardware?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000001750164/Principal-Electronics-Engineer-Embedded-Hardware?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:22.660Z",
+      "bodyBytes": 1763134,
+      "bodySHA256": "07077ef0375a2553c6d3b8b17428a1d53f605d517fef190ed8cb95f9b67c2017"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009717285/Intern-BOM-Analyst?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009717285/Intern-BOM-Analyst?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:22.753Z",
+      "bodyBytes": 1726449,
+      "bodySHA256": "026e766e23351f7986965c03f1d01e5213b82d747cc88bb7286c6c55d8a7c929"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009553261/Finance-Executive?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009553261/Finance-Executive?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:23.244Z",
+      "bodyBytes": 1725961,
+      "bodySHA256": "eaad30f2ae31b0ed47ac985daab472a23af3641b7050843dd1b0f068d9e73275"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009384143/System-Engineering-Intern?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009384143/System-Engineering-Intern?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:23.270Z",
+      "bodyBytes": 1780078,
+      "bodySHA256": "34d8fc8dbde8a3e56cda89d5aa4c5a3045194b2c1ebe137bb8106735d4d0038e"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009381079/Engineer?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009381079/Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:23.268Z",
+      "bodyBytes": 1736117,
+      "bodySHA256": "d1a75515113f951bec34bc116a7679b47cb3abc7cba354346bd30d414d7d1628"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009340018/CRM-Associate?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009340018/CRM-Associate?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:23.268Z",
+      "bodyBytes": 1726963,
+      "bodySHA256": "9933fda8c11dd8ec4abc9a7db4e7f58ed07b75c1e9cec6ba10773e9e000916f0"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009280013/Design-Engineer-Plastics?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009280013/Design-Engineer-Plastics?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:23.321Z",
+      "bodyBytes": 1761576,
+      "bodySHA256": "92ec44192b66db7ce7478e4a47ecf4805eeafd9a2b7c504dd5cc1f4cb23c7ce1"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009166014/CRM-Associate?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000009166014/CRM-Associate?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:24.250Z",
+      "bodyBytes": 1726959,
+      "bodySHA256": "430c1033d9be19b9b4aadb89af3ba923e31dfad2ed38666f0a3c03281089cb81"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008521592/UI-UX-Designer-Web-Experience?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008521592/UI-UX-Designer-Web-Experience?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:24.287Z",
+      "bodyBytes": 1805572,
+      "bodySHA256": "0b2d84e56e5f0fa459dda8a1e417b6f8d855cb5753729245c4ccf6df1e302f56"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008438017/Lead-Sr-Failure-Analysis-Engineer-Electrical-Electronics?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008438017/Lead-Sr-Failure-Analysis-Engineer-Electrical-Electronics?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:24.286Z",
+      "bodyBytes": 1731764,
+      "bodySHA256": "891b1103a264f2b1368c8750f3e4ff21b6cae942449b90ba48ebf5304e6d66c4"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008410021/Technical-Program-Manager-Charging-Infrastructure?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008410021/Technical-Program-Manager-Charging-Infrastructure?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:24.288Z",
+      "bodyBytes": 1731789,
+      "bodySHA256": "808d698f0af7d1e7dc00de616dc6a8c777035936aac177c8eb8622ed1ee59508"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008217078/Sourcing-Development-Engineer-Non-Metallics?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008217078/Sourcing-Development-Engineer-Non-Metallics?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:24.265Z",
+      "bodyBytes": 1737178,
+      "bodySHA256": "7cb3abf876b9f3a5f476b6db9f812933ee4b69f198ee6aa226e3e8869bde48ff"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008222118/Senior-Software-Engineer-Bluetooth?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008222118/Senior-Software-Engineer-Bluetooth?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:24.696Z",
+      "bodyBytes": 1725865,
+      "bodySHA256": "ae0b994e2ef2ac63c7aadc6ba518982b0022c5b9958aacadc62f965b215f8179"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008222042/QT-QML-Developer?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008222042/QT-QML-Developer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:24.696Z",
+      "bodyBytes": 1729700,
+      "bodySHA256": "ff75592840332bddabda20addd625bcbd8bec0a4b31575b5681ae9ac7d65e331"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008222003/Power-Electronics-Engineer?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008222003/Power-Electronics-Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:24.697Z",
+      "bodyBytes": 1726349,
+      "bodySHA256": "d844ecae4cd1c7f6011465012f96853da938227ed574a7de82569974f1fe7f4e"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008220096/Technical-Trainer-Electric-Vehicles-EV?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008220096/Technical-Trainer-Electric-Vehicles-EV?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:24.697Z",
+      "bodyBytes": 1725967,
+      "bodySHA256": "97780c9a740c38048b90d3a8d823f7c00526de8e8a8d741dd2f9fb5542bfeb96"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008220045/Warranty-Executive?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008220045/Warranty-Executive?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:24.686Z",
+      "bodyBytes": 1728850,
+      "bodySHA256": "92d2342de01597e7f14385ef167208cfb64b711271b8e6e2018dfa9b31e72e80"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008206095/AM-Manager-Manufacturing-Engineering?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008206095/AM-Manager-Manufacturing-Engineering?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:25.293Z",
+      "bodyBytes": 1725424,
+      "bodySHA256": "f86396bbef60ded57ccc3bb15cbead8462ce05c9885377451bbfca4b5ae38717"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008213181/Test-Automation-Engineer?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008213181/Test-Automation-Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:25.298Z",
+      "bodyBytes": 1738345,
+      "bodySHA256": "ad0b8d213f822665f33be4317d9ab72484896df9645f1d20e1ce75b5762fa7a5"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008213007/Senior-Executive-Assistant-Manager-Social-Media-International-Business?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008213007/Senior-Executive-Assistant-Manager-Social-Media-International-Business?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:25.293Z",
+      "bodyBytes": 1731421,
+      "bodySHA256": "df3817bf8b95f5e47200be8b693d105bdfe1fa0f990d4aea90e34960d37fbf0c"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008179002/Senior-Design-Engineer?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008179002/Senior-Design-Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:25.299Z",
+      "bodyBytes": 1740743,
+      "bodySHA256": "af2bfd61fc6968bb5e0e7a3e895dcddc22974251b02c788cf1b8a4d62d4f7e52"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008083133/Deputy-Manager-Process-Excellence?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008083133/Deputy-Manager-Process-Excellence?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:25.296Z",
+      "bodyBytes": 1730695,
+      "bodySHA256": "d70eca7e42ee54fe60f87693b3a814abf4480466575ac5e80689e8a6695fefcf"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008083054/AGM-Process-Excellance?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008083054/AGM-Process-Excellance?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:26.196Z",
+      "bodyBytes": 1732342,
+      "bodySHA256": "0285377f53bc78c39b63b845959abfdc420dfdddb23740c202a55bec16522df0"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008013170/Lead-Automation-Android?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008013170/Lead-Automation-Android?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:26.194Z",
+      "bodyBytes": 1737241,
+      "bodySHA256": "8d1485cd49ffdf292a64e6db2d150ed65a01df62ed55bbba7c9d59869b4b9ece"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008013122/Product-Manager-Connected-Vehicle?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000008013122/Product-Manager-Connected-Vehicle?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:26.171Z",
+      "bodyBytes": 1737329,
+      "bodySHA256": "86027f55f83bb5d41c8c4cea1669dc9a0a87e35ff74e4a630353f558608ade63"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000007803023/Lead-Software-Engineer-Rust?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000007803023/Lead-Software-Engineer-Rust?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:26.188Z",
+      "bodyBytes": 1732832,
+      "bodySHA256": "1c2b6adb6d0b73ce183317f1db9abe8610d38c42f6010f906b524f08eb50d777"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000007143055/Senior-Engineer-QMS?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000007143055/Senior-Engineer-QMS?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:26.205Z",
+      "bodyBytes": 1725678,
+      "bodySHA256": "606e9bbc8ae1609fca62654ccb4ba274f0e50bd74ab64b48c3e321dbd3a1e4c8"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000007052389/Power-Electronics-Engineer?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000007052389/Power-Electronics-Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:26.923Z",
+      "bodyBytes": 1741419,
+      "bodySHA256": "2710a42eb75f9e1f1525b8e78135a00cc5f564b6a0321bab7b43cf91ca35fec7"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000006256140/Industralization-Engineer?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000006256140/Industralization-Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:26.937Z",
+      "bodyBytes": 1730627,
+      "bodySHA256": "d60f1cdd90a5ed8e8a0a8d59f828dcfdd2aed0a4c2312f0239c4aaed1e9361d3"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000003311082/Senior-Design-Engineer?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000003311082/Senior-Design-Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:26.905Z",
+      "bodyBytes": 1735841,
+      "bodySHA256": "3b8a994b29039d7af5a59a76f2f8055eb9b4e9af7c4abe38438071c155efef7c"
+    },
+    {
+      "url": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000002636005/Senior-Engineer-Electronics-Sourcing?source=CareerSite",
+      "finalUrl": "https://ultraviolette.zohorecruit.in/jobs/Careers/89246000002636005/Senior-Engineer-Electronics-Sourcing?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T05:06:26.918Z",
+      "bodyBytes": 1728369,
+      "bodySHA256": "a2c51a20d7988c79b3fdf27285b71b04bd76743a632ded7d96e7227b392abd90"
+    }
+  ]
+}

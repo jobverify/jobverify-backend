@@ -1,0 +1,65 @@
+{
+  "source": "easemytrip",
+  "files": [
+    {
+      "file": "native-application-form.json",
+      "fileSHA256": "242f6df42f4e54a3df908e28117a5b357d45a5e4672ffebde2cb6abcf510019e",
+      "responses": [
+        {
+          "url": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform",
+          "finalUrl": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:59:44.811Z",
+          "bodySHA256": "04af6a75246e167b80e5cf2b184a485b5dce0fc19bd50b819c1e60649b347871"
+        }
+      ]
+    },
+    {
+      "file": "official-careers.json",
+      "fileSHA256": "bb55c2616171e9effd262c9867ef1b04b001f8b85db29c4806b8423de32bbca9",
+      "responses": [
+        {
+          "url": "https://www.easemytrip.com/career.html",
+          "finalUrl": "https://www.easemytrip.com/career.html",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:55:22.325Z",
+          "bodySHA256": "aedce09d65e3216661cb3375190624ad3b1d0c1f2e7162a810aa369cf5fab722"
+        }
+      ]
+    },
+    {
+      "file": "official-home.json",
+      "fileSHA256": "3f9006e3a95224f85aa0bd804dd41152f94bd9dff0f8b2ecd44edfb5f0ec7fbe",
+      "responses": [
+        {
+          "url": "https://www.easemytrip.com/",
+          "finalUrl": "https://www.easemytrip.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:53:34.088Z",
+          "bodySHA256": "ef55f17f6f61560cb50902332c6231ae324c5ca42c4d11a9ef92cae74a111ed0"
+        }
+      ]
+    },
+    {
+      "file": "additional-legacy-careers-pages.dom.json",
+      "fileSHA256": "7ff088badb4bcb1768580b6de356bc385122ceefccdf07b0db487c051f6bf797",
+      "responses": [],
+      "observationOnly": true
+    },
+    {
+      "file": "additional-legacy-careers-pages.json",
+      "fileSHA256": "942a3b16c1740d70430464b83e72bbdee3b0ef7e495c86bb98a1040809e5e17c",
+      "responses": [
+        {
+          "url": "https://www.easemytrip.com/careernew.html",
+          "finalUrl": "https://www.easemytrip.com/careernew.html",
+          "status": 200,
+          "capturedAt": "2026-10-23T09:48:54.035Z",
+          "bodySHA256": "1335df31e03ec9347dab22b9d18703415cd672f35e6746ccd806b4fbdaad8285",
+          "bodyBytes": 54427
+        }
+      ]
+    }
+  ],
+  "productionWrites": false
+}

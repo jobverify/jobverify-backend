@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.candere.com/ is the first-party Candere by Kalyan Jewellers India surface and that its public careers handoff at https://candere.jobsoid.com/ currently says No Current Openings. This provider is pinned fail-closed and returns no jobs until the trusted surface exposes an enumerable India opening.'
+  'Rechecked the official https://candere.jobsoid.com/ board on 2026-10-23: its native server-rendered Current Openings section explicitly says No Current Openings. Each run fetches and validates the board identity and empty section before attaching verified-empty evidence. Fetch, identity and schema failures throw; newly advertised openings require verified native parsing and cannot be reported as zero.'
 
 export const CANDERE_CATALOG = {
   source: 'candere',
@@ -13,13 +13,13 @@ export const CANDERE_CATALOG = {
   adapter: 'script',
   companyCareerPage: 'https://candere.jobsoid.com/',
   companyDomain: 'candere.com',
-  atsPlatform: 'jobsoid-no-current-openings-sentinel',
+  atsPlatform: 'jobsoid',
   countryFilter: 'India',
   paginationStrategy: 'single-jobsoid-board-validation',
-  extractionStrategy: 'verified-first-party-careers-handoff-with-no-current-openings+return-empty',
+  extractionStrategy: 'live-native-jobsoid-board-identity-and-explicit-empty-validation',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-25',
+  verifiedOn: '2026-10-23',
   verifiedPublicJobCount: 0,
   verifiedIndiaJobCount: 0,
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,

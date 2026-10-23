@@ -23,13 +23,11 @@ test('CropIn resolves approved case variants to its literal-name official provid
   )
 })
 
-test('CropIn fails closed without enumerable official public openings', async () => {
+test('CropIn catalog identifies its official Keka inventory adapter', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'cropin')
   assert.ok(provider)
   assert.equal(provider.companyCareerPage, 'https://www.cropin.com/career/')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.verifiedPublicJobCount, 0)
-
-  const { run } = await import('../scraper/cropin/script.js')
-  assert.deepEqual(await run(), [])
+  assert.equal(provider.atsPlatform, 'keka-official-bound-active-inventory')
+  assert.equal(provider.officialCareersHandoffUrl, 'https://cropinhrms.keka.com/careers/')
 })

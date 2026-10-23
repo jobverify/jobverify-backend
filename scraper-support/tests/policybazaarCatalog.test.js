@@ -52,17 +52,19 @@ test('Policybazaar local catalog captures the verified first-party inline career
   assert.equal(provider.paginationStrategy, 'single-first-party-inline-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-inline-job-cards+shared-first-party-position-select-application-form+page-anchored-listings-only',
+    'first-party-inline-role-observations+explicit-role-location-and-vacancy-coverage-gap',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
-  assert.equal(provider.verifiedPublicOpeningCount, 4)
+  assert.equal(provider.verifiedOn, '2026-10-23')
+  assert.equal(provider.verifiedPublicOpeningCount, null)
+  assert.equal(provider.observedRoleCardCount, 4)
+  assert.equal(provider.currentInventoryStatus, 'coverage-gap')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /policybazaar[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 23, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.policybazaar\.com\/careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /4 inline public role cards/i)
+  assert.match(provider.verifiedSurfaceSummary, /4 inline role cards/i)
   assert.match(provider.verifiedSurfaceSummary, /Associate Sales Consultant/i)
   assert.match(provider.verifiedSurfaceSummary, /Careers in Technology/i)
   assert.match(provider.verifiedSurfaceSummary, /position-select resume upload form/i)

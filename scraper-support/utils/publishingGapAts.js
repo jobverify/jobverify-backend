@@ -135,6 +135,7 @@ export const createPublishingGapAtsScraper = (provider) => ({
     }))
     const innerEvidence = readInventoryEvidence(mapped)
     const incompleteReasons = [...nativeReasons]
+    if (provider.sourceScopeComplete === false) incompleteReasons.push('provider-source-scope-unresolved')
     // Ashby's helper only maps the validated complete single response. The API
     // portal engine additionally owns Greenhouse/Lever pagination and details;
     // its evidence and lifecycle guards cannot be promoted by this wrapper.
@@ -145,6 +146,10 @@ export const createPublishingGapAtsScraper = (provider) => ({
     if (jobs.some(job => !hasSourceDescription(job))) incompleteReasons.push('selected-role-description-unavailable')
     const listingComplete = incompleteReasons.length === 0
     if (!listingComplete) for (const job of jobs) job.sourceListingComplete = false
+    if (provider.sourceScopeComplete === false) for (const job of jobs) {
+      job.sourceScopeComplete = false
+      job.lifecycleCleanupAllowed = false
+    }
     return attachInventoryEvidence(jobs, {
       status: listingComplete ? records.length === 0 ? 'verified-empty' : 'complete-inventory' : 'discovery-only',
       surface: url,

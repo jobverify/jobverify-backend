@@ -1,28 +1,84 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
+import {fileURLToPath} from 'node:url'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+const PROVIDER_METADATA={...{
   "source": "decathlon",
   "companyName": "Decathlon",
   "adapter": "script",
-  "atsPlatform": "workbook-exact-name-sentinel",
-  "countryFilter": "India",
-  "paginationStrategy": "none",
-  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-  "parser": "custom-script",
+  "catalogOverride": true,
+  "atsPlatform": "digitalrecruiters-public-api",
+  "parser": "shared-native-collector+native-public-API-JobPosting-and-profile-validation",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-08-08",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
-  "verificationDisposition": "no-trustworthy-exact-name-public-jobs-flow-verified-locally",
-  "verifiedSurfaceSummary": "Workbook batch 10 exact-name sentinel for Decathlon added on Saturday, August 8, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
+  "companyDomain": "decathlon.in",
+  "companyCareerPage": "https://joinus.decathlon.in/en",
+  "jobsBoardUrl": "https://api.digitalrecruiters.com/public/v1/careers-site/job-ads?domainName=joinus.decathlon.in&limit=100&page=1&locale=en_GB",
+  "countryFilter": "India",
+  "paginationStrategy": "native100-row-public-search;all-pages;stable-reported-total;closing-first-page-check",
+  "extractionStrategy": "official-corporate/careers/API-tenant-binding;anonymous-read-only-search-POST;native-role-GET;composite-job-ad-and-address-identity",
+  "backfillMode": "live-parser",
+  "originalAdapter": "script",
+  "originalAtsPlatform": "workbook-exact-name-sentinel",
   "originalModulePath": "../workbookbatch10d/failClosedSentinel.js",
-  "backfillMode": "workday",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json')
-}
-
+  "zeroResultPolicy": "coverage-gap",
+  "sourceScopeComplete": false,
+  "lifecycleCleanupAllowed": false,
+  "verifiedOn": null,
+  "verifiedAt": null,
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "verifiedInventoryStatus": "unverified",
+  "runtimeQualification": "locally-live-qualified-positive-partial;native-Node-HTTP-with-configured-proxy",
+  "verificationDisposition": "native-India-extraction-and-local-publishing-validated;whole-employer-and-production-unverified",
+  "sourceResearchNativeListedTotal": 342,
+  "sourceResearchPages": 4,
+  "sourceResearchRepresentativeFullDetails": 3,
+  "nativePostingDatePolicy": "JobPosting.datePosted retained;republished_at recorded separately and never substituted",
+  "descriptionPolicy": "native description plus native profile;no generated content;rendered HTML not asserted",
+  "applicationLinkPolicy": "native public role page;application action never visited",
+  "bindingEvidence": {
+    "verified": true,
+    "officialCorporateHome": "https://www.decathlon.in/",
+    "corporateCareersLink": "https://joinus.decathlon.in/en",
+    "nativeTenantID": "DN9vX1RE",
+    "nativeCompanyID": 75,
+    "nativeDomain": "joinus.decathlon.in",
+    "nativeAPIBase": "https://api.digitalrecruiters.com/public/v1",
+    "nativeHiringOrganization": "Decathlon Sports India Pvt Ltd",
+    "applicationsVisited": false,
+    "scriptsExecuted": false
+  },
+  "verifiedSurfaceSummary": "Decathlon: native Node HTTP with configured proxy reads 342 advertised India roles and all details with zero failures;61 eligible and locally saved,281 rejected for age. Repeat insertion0;public predicates expose61 when experienced jobs are enabled and0when disabled. Native original posting dates/full employer content preserved. Whole-employer/legal inventory and current production visibility unknown;cleanup forbidden.",
+  "sourceLatestLiveObservedAt": "2026-10-23T06:46:26.880Z",
+  "sourceLatestLiveRawJobs": 342,
+  "sourceLatestLiveIndiaJobs": 342,
+  "sourceLatestLiveEligibleJobs": 61,
+  "sourceLatestLiveFilteredOld": 281,
+  "sourceLatestLiveNativeDetailFailures": 0,
+  "sourceLatestLiveReadCount": 349,
+  "sourceLatestLiveSearchPOSTs": 5,
+  "nativePublicationPrecision": "day",
+  "nativeRepublishedTimestampUsedAsPostingDate": false,
+  "nativeShortCompleteEmployerTextPreserved": true,
+  "nativeCountryOnlyAddressesNotGeocoded": true,
+  "sourceLiveTransport": "native Node fetch using supported proxy environment from existing Windows system routes",
+  "localPersistenceSavedJobs": 61,
+  "localPersistenceRepeatInserted": 0,
+  "localVisibilityExperiencedEnabled": 61,
+  "localVisibilityExperiencedDisabled": 0,
+  "localCityVisibility": {
+    "Bangalore": 8,
+    "Gurgaon": 13,
+    "Gurugram": 0,
+    "Mumbai": 11,
+    "Delhi": 1,
+    "Hyderabad": 0,
+    "Chennai": 5,
+    "Remote": 0
+  },
+  "sourceLatestLiveNativeHTTPReads": 349,
+  "nativeNodeTransportQualifiedWithConfiguredProxy": true,
+  "unconfiguredDirectNodeTransportQualified": false,
+  "systemProxyLauncherQualified": true
+},modulePath:path.join(currentDir,'script.js'),dryRunFile:path.join(currentDir,'jobs.json')}
 export default PROVIDER_METADATA
-export { PROVIDER_METADATA }
+export {PROVIDER_METADATA}

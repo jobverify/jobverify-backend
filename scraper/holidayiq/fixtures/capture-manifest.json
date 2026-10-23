@@ -1,0 +1,71 @@
+{
+  "source": "holidayiq",
+  "capturedBy": "root browser helper; actual response receipts",
+  "files": [
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "3fa43f80c32af6531137463fc228d6e4da44359d16ea3d890ef14e233fb33929",
+      "uncompressedSHA256": "251e93b166039e1ca0daeffd0e2bf1331b5e226b8c7f22c0f7db7f4533dc0511"
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "f19e7395f5dc67f97e1fa5f4a781492d1d08e2ba0ae71f5cd7e2d8df85d727d7",
+      "uncompressedSHA256": "8a8f74e1441fec31cbe20082e35a37096aa9d363ab97dd05d2f4c788f2447087"
+    },
+    {
+      "file": "parent-pages.json.gz",
+      "sha256": "5c8c28ae4ba27e7390e921f356b91c7ba45f813bf57c792381f9567840325768",
+      "uncompressedSHA256": "a2ec359a3937190477f983f39e24e3dabc26e6710eeb60cab88ff08784fd8093"
+    }
+  ],
+  "responses": [
+    {
+      "file": "official-pages.json.gz",
+      "url": "https://www.holidayiq.com/",
+      "status": 403,
+      "finalUrl": "https://www.holidayiq.com/",
+      "capturedAt": "2026-10-23T08:55:24.375Z",
+      "bodySHA256": "f4a8bc28a1f6f514ce03ea77b94d03eba6ec618472e9bc3fd09051adc4519124"
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/company/www-holidayiq-com",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/company/www-holidayiq-com",
+      "capturedAt": "2026-10-23T08:57:24.560Z",
+      "bodySHA256": "d6ea5049ef6653abc1c27a3cdcf96fcc7ac987eac71b579d808900856b7c7c85"
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=404342&location=India",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=404342&location=India",
+      "capturedAt": "2026-10-23T08:57:26.715Z",
+      "bodySHA256": "54d781196bcde280e74f1b233255ca41203f8b7623cca905155ddab61b2e3bc0"
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=404342&location=Worldwide",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=404342&location=Worldwide",
+      "capturedAt": "2026-10-23T08:57:27.568Z",
+      "bodySHA256": "10af4336d593be43ae10d092bf03c214eecfb023849fbe5d4d3dea88ba0592d2"
+    },
+    {
+      "file": "parent-pages.json.gz",
+      "url": "https://corporate.lastminute.com/about-us/our-global-network/",
+      "status": 200,
+      "finalUrl": "https://corporate.lastminute.com/about-us/our-global-network/",
+      "capturedAt": "2026-10-23T08:57:38.532Z",
+      "bodySHA256": "c41a6350a1322c1e260cff985456156d340bbfa20c6db18d512c2225b88285c7"
+    },
+    {
+      "file": "parent-pages.json.gz",
+      "url": "https://corporate.lastminute.com/careers/jobs/",
+      "status": 200,
+      "finalUrl": "https://corporate.lastminute.com/careers/jobs/",
+      "capturedAt": "2026-10-23T08:57:38.873Z",
+      "bodySHA256": "bea3a344c5340c9035c28c14e751d4639b82f650d3f95790c77cd38fd6d043e4"
+    }
+  ]
+}

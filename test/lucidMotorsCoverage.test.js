@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
+import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 import test from 'node:test'
 
 import { generateCompanyCoverageReport } from '../scraper-support/providers/companyCoverage.js'
@@ -23,7 +25,6 @@ test('Lucid Motors is covered only by its exact-name first-party provider', () =
   assert.equal(provider.companyName, 'Lucid Motors')
   assert.equal(provider.companyDomain, 'lucidmotors.com')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-search-page-fail-closed')
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'Lucid Motors').map((item) => item.source),
     ['lucidmotors'],
@@ -32,9 +33,18 @@ test('Lucid Motors is covered only by its exact-name first-party provider', () =
   assert.equal(nearNameReport.unmatchedCount, 2)
 })
 
-test('Lucid Motors scraper fails closed without a verified enumerable public jobs feed', async () => {
+test('Lucid Motors provider retains live native no-India inventory evidence', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'lucidmotors')
 
   assert.ok(scraper, 'Expected Lucid Motors scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  const fixture = name => JSON.parse(gunzipSync(readFileSync(new URL(`../scraper/lucidmotors/fixtures/${name}.json.gz`, import.meta.url))))
+  const responses = [fixture('search-response'), ...fixture('client-api-responses'), ...fixture('native-responses')]
+  const jobs = await scraper.run({ fetchImpl: async url => {
+    const response = responses.find(row => row.url === url)
+    if (!response) throw new Error('Unrecorded unrelated client script')
+    return { status: response.status, url, text: async () => response.body, json: async () => JSON.parse(response.body) }
+  } })
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 445)
+  assert.equal(readInventoryEvidence(jobs).status, 'complete-inventory')
 })

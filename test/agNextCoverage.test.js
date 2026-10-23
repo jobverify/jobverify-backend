@@ -21,6 +21,6 @@ test('AgNext resolves approved case variants to its exact-name official provider
   assert.deepEqual(report.unmatched.map((item) => item.companyName), ['Ag Next'])
 })
 
-test('AgNext fails closed without a verified public job listing parser', async () => {
-  assert.deepEqual(await run(), [])
+test('AgNext rejects a failed official response instead of certifying an empty inventory', async () => {
+  await assert.rejects(run({ fetchImpl: async () => new Response('Unavailable', { status: 503 }) }), /HTTP 503/)
 })

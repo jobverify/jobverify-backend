@@ -52,4 +52,12 @@ test('GitHub CLI registers direct roots, reports work and dispatches separate co
  const dispatched=(await fs.readFile(dispatchFile,'utf8')).trim().split('\n').map(JSON.parse);
  assert.equal(dispatched.length,2);assert.match(dispatched[0].url,/rewrite-descriptions.yml/);assert.match(dispatched[1].url,/classify-jobs.yml/);
  assert.ok(dispatched.every(item=>item.body.inputs.pipeline_id===record._id&&item.body.inputs.pipeline_sha===env.GITHUB_SHA));
+ // A lost completion event must not leave the next direct invocation locked out.
+ await run('register','classification',1103);
+ await run('report','classification',1103,{PIPELINE_JOB_RESULT:'success'});
+ await run('register','classification',1104,{TEST_REMOTE_RUN_ID:'1103'});
+ const recovered=await PipelineRun.findOne({'stages.githubRunId':1103}).lean();
+ const replacement=await PipelineRun.findOne({activeKey:'database'}).lean();
+ assert.equal(recovered.status,'completed');assert.equal(recovered.activeKey,undefined);
+ assert.equal(replacement.stages[2].githubRunId,1104);
 });

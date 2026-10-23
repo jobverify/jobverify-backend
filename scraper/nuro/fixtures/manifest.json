@@ -1,0 +1,65 @@
+{
+  "capturedBy": "browser native response capture; source bodies preserved without executing downloaded code",
+  "sources": [
+    {
+      "url": "https://www.nuro.ai/careers",
+      "finalUrl": "https://www.nuro.ai/careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:52:00.838Z",
+      "bodyBytes": 116502,
+      "bodySha256": "3aa50eb2aae23383430709298526be90a2ef327395b9b9ea52bafc4da6b27698"
+    },
+    {
+      "url": "https://boards-api.greenhouse.io/v1/boards/nuro/jobs/?content=true",
+      "finalUrl": "https://boards-api.greenhouse.io/v1/boards/nuro/jobs/?content=true",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:55:36.374Z",
+      "bodyBytes": 884392,
+      "bodySha256": "3772792a97cefb19fecf556f1923adb91a66a43be8e5d773b3bc3f8939e88079"
+    },
+    {
+      "url": "https://www.nuro.ai/_nuxt/7114896.modern.js",
+      "finalUrl": "https://www.nuro.ai/_nuxt/7114896.modern.js",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:53:25.164Z",
+      "bodyBytes": 21165,
+      "bodySha256": "ca58a4a75126c8b4334cf3d32e917192790e48b1ab106ce0eee0ba4ce007b22f"
+    },
+    {
+      "url": "https://www.nuro.ai/_nuxt/7012d54.js",
+      "finalUrl": "https://www.nuro.ai/_nuxt/7012d54.js",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:53:26.067Z",
+      "bodyBytes": 9574,
+      "bodySha256": "12327d297080407fc1c65f861608b41dee1529afbc4ef2217f1904e40fd41d81"
+    },
+    {
+      "url": "https://www.nuro.ai/_nuxt/2b454b5.modern.js",
+      "finalUrl": "https://www.nuro.ai/_nuxt/2b454b5.modern.js",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:53:25.165Z",
+      "bodyBytes": 9147,
+      "bodySha256": "19eda97436889d9e1d64d402611cff79cf42e4be5c0839fd95d81c57101c7f25"
+    }
+  ],
+  "nativeContract": {
+    "officialPage": "https://www.nuro.ai/careers",
+    "feed": "https://boards-api.greenhouse.io/v1/boards/nuro/jobs/?content=true",
+    "handoff": "active same-origin Nuxt script calls axios.get(feed) and populateJobs(data.jobs)",
+    "completeness": "jobs array length equals meta.total with distinct native IDs",
+    "reportedTotal": 101,
+    "indiaTotal": 0,
+    "foreignLabels": [
+      "Mountain View, California (HQ)",
+      "California - SF",
+      "California - LA"
+    ],
+    "detailHealth": "India roles without substantive source descriptions remain in output with incomplete detail/listing flags and discovery-only evidence.",
+    "requestBounds": "Full fetch and body operation raced against caller abort, request deadline <=30 seconds, and total run deadline120 seconds."
+  },
+  "limitations": [
+    "Unrecognized native geography fails; no inference from unknown or bare Remote labels.",
+    "Official API binding requires the recognizable Nuxt axios call signature; changed client contracts fail.",
+    "No active India records observed; India projection exercised with synthetic mutations of native records."
+  ]
+}

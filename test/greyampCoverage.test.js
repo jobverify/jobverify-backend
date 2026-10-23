@@ -21,6 +21,6 @@ test('Greyamp resolves only to its exact-name first-party provider', () => {
   )
 })
 
-test('Greyamp fails closed when its official careers page has no enumerable openings', async () => {
-  assert.deepEqual(await run(), [])
+test('Greyamp rejects an unavailable official careers surface instead of certifying zero', async () => {
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('unavailable')}}),/unavailable/)
 })

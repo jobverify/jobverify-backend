@@ -1,0 +1,137 @@
+{
+  "source": "doubtnut",
+  "captureMechanism": "Root-owned browser helper actual response envelopes; failed fetches retain no invented HTTP facts",
+  "files": [
+    {
+      "file": "earlier-sales-pages.dom.json.gz",
+      "sha256": "036140a2f45439910d0f1f12dd9d8770baf05e06de1244efe408ee99981d561e",
+      "uncompressedSHA256": "a8be2a7695eeb970d151572504a1479fba5f58c0281f4800cc8f97a22af89a89",
+      "uncompressedBytes": 26153
+    },
+    {
+      "file": "earlier-sales-pages.json.gz",
+      "sha256": "215f4693163f88059fe88fffcb5ae062a63d92c9a568cf13ed5f727715ac26b3",
+      "uncompressedSHA256": "837ee3f62ad630eba249c9b1c6bc633daa5db66d747555c20663f25297481bee",
+      "uncompressedBytes": 186548
+    },
+    {
+      "file": "freshteam-pages.dom.json.gz",
+      "sha256": "4c12f618bd342e9d96b2e66c3deb38f29f5d46f81dcf272db9b6dc1e7fae6ef5",
+      "uncompressedSHA256": "09accb4cacfbb7b6e2067c789d7913f70d319824aa32712764678632ee5021c7",
+      "uncompressedBytes": 550
+    },
+    {
+      "file": "freshteam-pages.json.gz",
+      "sha256": "5ecabc56baa56de219fbe5ca8b79d5d95a78e2f9b36581e40846ed794721ee6f",
+      "uncompressedSHA256": "b55087b7c3781aa109e8189d9e0145576e91958a82bfa322f76326fc52f374c3",
+      "uncompressedBytes": 2383
+    },
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "ac8d18fcfa6601736143ea266eb785712d00ce638ee2e43ac655464a0aed052e",
+      "uncompressedSHA256": "6074cd61eb1e44ad43858f3c46bde01e6fe22de2163810c8d81c36ff579a0a4c",
+      "uncompressedBytes": 30281
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "d56ed8efbd5aa14603624f5abbb6349c584c88710df55e6eebacd1aa7056fe5c",
+      "uncompressedSHA256": "cecf49665af9932f6a82d45af00de7f8c268082ae84f679baa7216d22fe1724e",
+      "uncompressedBytes": 731547
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "337c7d206ba0fa8a64ec594a1e98d1f6ab3e1f1d392e2b6fa2bf6588ce4c86fe",
+      "uncompressedSHA256": "e12f33f4fed028248121f51cc04b2c2a6f2103aed879155356deba824524c50f",
+      "uncompressedBytes": 674
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "688cc20655e7091eaf958b00360768e062d0675592b5b368eddead01b337a277",
+      "uncompressedSHA256": "72bfd0af2afd38868e758ba0213abfcdb82c969e31a7dc3492b23ea177dcdd2f",
+      "uncompressedBytes": 140
+    }
+  ],
+  "responses": [
+    {
+      "file": "earlier-sales-pages.json.gz",
+      "url": "https://www.linkedin.com/posts/doubtnut_hiring-doubtnutishiring-sales-activity-7112793826741694464-DcwY",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/posts/doubtnut_hiring-doubtnutishiring-sales-activity-7112793826741694464-DcwY",
+      "capturedAt": "2026-10-23T08:41:29.440Z",
+      "bodySHA256": "4cd30cb47f58906afcba9dfc3db076673b7dcbccc0a9988a7b68ccea68b96e68",
+      "error": null
+    },
+    {
+      "file": "freshteam-pages.json.gz",
+      "url": "https://doubtnut.freshteam.com/jobs",
+      "status": 200,
+      "finalUrl": "https://doubtnut.freshteam.com/jobs",
+      "capturedAt": "2026-10-23T08:37:31.499Z",
+      "bodySHA256": "cb99ec1dca84ce08f1e1fafbac6f52d6104eb80d6f514a71b0b412a45e4c44ce",
+      "error": null
+    },
+    {
+      "file": "freshteam-pages.json.gz",
+      "url": "https://doubtnut.freshteam.com/",
+      "status": 200,
+      "finalUrl": "https://doubtnut.freshteam.com/",
+      "capturedAt": "2026-10-23T08:37:31.812Z",
+      "bodySHA256": "cb99ec1dca84ce08f1e1fafbac6f52d6104eb80d6f514a71b0b412a45e4c44ce",
+      "error": null
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/company/doubtnut",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/company/doubtnut",
+      "capturedAt": "2026-10-23T08:38:47.222Z",
+      "bodySHA256": "8bd7b2be28141cebbddea3e660c40b2abfdfa0a48ca7f9974951c621ebb943a5",
+      "error": null
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/posts/doubtnut_freshteam-activity-6646810686842376192-dm44",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/posts/doubtnut_freshteam-activity-6646810686842376192-dm44",
+      "capturedAt": "2026-10-23T08:38:48.336Z",
+      "bodySHA256": "ec53b36b6d4507184ef9d04756a490ee343469eb326d5aa309b81af4e9fa6ade",
+      "error": null
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/posts/doubtnut_hiring-doubtnutishiring-sales-activity-7122989063283863553-9t1E",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/posts/doubtnut_hiring-doubtnutishiring-sales-activity-7122989063283863553-9t1E",
+      "capturedAt": "2026-10-23T08:38:49.229Z",
+      "bodySHA256": "3aec5bd9a5a812426ae6bfb12dd89e621b74b94729cf34e07283869ef2390bd2",
+      "error": null
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=13222185&location=India",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13222185&location=India",
+      "capturedAt": "2026-10-23T08:38:50.070Z",
+      "bodySHA256": "0cceedcf351fb938c017716f692b80c929307b6f4577fc75264fcda371a7422b",
+      "error": null
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=13222185&location=Worldwide",
+      "status": 200,
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13222185&location=Worldwide",
+      "capturedAt": "2026-10-23T08:38:50.779Z",
+      "bodySHA256": "fce1404e015314004d3bd48f2a66b2eac614bb7fe7140161e067c83b48f3b8f0",
+      "error": null
+    },
+    {
+      "file": "official-pages.json.gz",
+      "url": "https://www.doubtnut.com/",
+      "status": null,
+      "finalUrl": null,
+      "capturedAt": "2026-10-23T08:37:28.145Z",
+      "bodySHA256": null,
+      "error": "TypeError: Failed to fetch"
+    }
+  ]
+}

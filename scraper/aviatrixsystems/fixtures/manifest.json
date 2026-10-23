@@ -1,0 +1,48 @@
+{
+  "purpose": "Official careers client binds Aviatrix Greenhouse board; posting inventory and native office country tree captured for extraction.",
+  "captures": [
+    {
+      "file": "careers-response.json",
+      "sha256": "34c6ba81ccc824f1fb3847cd02f625eb136d743fb9d34b09d63d182531a13cb5",
+      "url": "https://aviatrix.ai/company/careers/department/",
+      "finalUrl": "https://aviatrix.ai/company/careers/department/",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:41:13.940Z",
+      "bodySha256": "ee19632a48a2164514c25ff0f839a1f66ef559c26ef21144dba023f4106a9136"
+    },
+    {
+      "file": "client-api-responses.json",
+      "sha256": "96d44c004d2ab1750fd978abfb26b8a2141c7d37680d5f4633e63d1091eff21c",
+      "responses": [
+        {
+          "url": "https://aviatrix.ai/_next/static/chunks/pages/company/careers/department-46d553272cd33efe.js?dpl=dpl_38ZVGMWkcEr9uLggc2Sw4QdQLk5z",
+          "status": 200,
+          "capturedAt": "2026-10-23T02:57:00.315Z",
+          "bodySha256": "730e63b3271f3c7516ae52f480949000aae1738d414f75585b6c4f919d9579b3"
+        }
+      ]
+    },
+    {
+      "file": "departments.json",
+      "sha256": "d2ba14083f58f288be79e00e5c6f323004c0dbfd06c7360d2a1471f9e5db239c"
+    },
+    {
+      "file": "jobs-response.json",
+      "sha256": "d27842f924a81729984cd16583e44369e76da7a6ddfa584019eb4b85b3c0ee0d",
+      "url": "https://boards-api.greenhouse.io/v1/boards/aviatrix/jobs?content=true",
+      "finalUrl": "https://boards-api.greenhouse.io/v1/boards/aviatrix/jobs?content=true",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:41:18.877Z",
+      "bodySha256": "3cbcca7b4bd3900d9956e6d3fd64b687799d11d327bd17a5d291d44cce695b6b"
+    },
+    {
+      "file": "offices-response.json",
+      "sha256": "ddfd63876a2ac9094f2c53312c9f8023db3d1ba10acc75379dd6dee9e854cffc",
+      "url": "https://boards-api.greenhouse.io/v1/boards/aviatrix/offices?render_as=tree",
+      "finalUrl": "https://boards-api.greenhouse.io/v1/boards/aviatrix/offices?render_as=tree",
+      "status": 200,
+      "capturedAt": "2026-10-23T02:49:45.419Z",
+      "bodySha256": "8e0d2ae55b83cfb74cbe25ccee09d93c78635fd0ee0e46f07a01ba1270e16b4e"
+    }
+  ]
+}

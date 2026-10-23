@@ -3,8 +3,14 @@ import test from 'node:test'
 
 import { extractJobDetail, run } from './script.js'
 
-test('Electronic Arts fails closed when no trustworthy public jobs contract is verified', async () => {
-  assert.deepEqual(await run(), [])
+test('Electronic Arts propagates official source failure instead of reporting unobserved empty jobs', async () => {
+  await assert.rejects(run({ fetchPage: async () => { throw Error('EA official source unavailable') } }), /EA official source unavailable/)
+})
+
+test('Electronic Arts honors caller cancellation before observing official inventory', async () => {
+  const controller = new AbortController()
+  controller.abort(new Error('stop EA source'))
+  await assert.rejects(run({ signal: controller.signal }), /stop EA source/)
 })
 
 test('extractJobDetail derives experience requirements from EA job descriptions', () => {

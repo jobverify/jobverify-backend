@@ -8,14 +8,16 @@
   "dryRunFile": "zoox/jobs.json",
   "companyCareerPage": "https://zoox.com/careers",
   "companyDomain": "zoox.com",
-  "atsPlatform": "official-first-party-careers-page-fail-closed",
+  "atsPlatform": "lever",
   "countryFilter": "India",
-  "paginationStrategy": "official-careers-page-sentinel",
-  "extractionStrategy": "verified-first-party-careers-page+return-empty-until-public-job-feed-is-verifiable",
+  "paginationStrategy": "native-unfiltered-skip-limit-terminal-page+full-board-identity-reconciliation",
+  "extractionStrategy": "live-current-firstparty-careers-client-binding+lever-native-inventory",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-25",
-  "verifiedPublicJobCount": 0,
+  "verifiedOn": "2026-10-23",
+  "verifiedPublicJobCount": 237,
   "verifiedIndiaJobCount": 0,
-  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://zoox.com/careers is Zoox's first-party careers page. The live public page currently rendered the Zoox careers shell with a job-search section that reported no results instead of exposing a stable enumerable jobs feed that could be verified from this surface, so this exact-name provider fails closed and returns no jobs."
+  "verifiedSurfaceSummary": "October 23, 2026 current Zoox careers client identifies the zoox Lever feed. Three unfiltered native API pages and the complete public board reconcile 237 roles (236 US, one UK), with no India roles. Each run verifies current employer/client binding, native board identity, countries and all locations. Missing core descriptions or unknown secondary scope retain incomplete evidence. Native creation timestamps are not treated as publication dates.",
+  "atsBoardToken": "zoox",
+  "inventoryVerificationPolicy": "live-parser-evidence-required"
 }

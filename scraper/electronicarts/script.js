@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { runElectronicArtsNative } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -261,9 +262,7 @@ const fetchText = async (url, referer = `${BASE_URL}/en_US/careers`) => {
   return response.text()
 }
 
-// The current EA surface is not a verified public jobs contract. Stay empty
-// rather than treating an unverified page shape as authoritative job data.
-export const run = async () => []
+export const run = async (options = {}) => runElectronicArtsNative(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

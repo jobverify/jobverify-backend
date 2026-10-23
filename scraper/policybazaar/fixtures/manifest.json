@@ -1,0 +1,82 @@
+{
+  "capturedOn": "2026-10-23",
+  "source": "policybazaar",
+  "format": "UTF-8 JSON with raw textual HTTP bodies; gzip for large packet",
+  "files": [
+    {
+      "file": "official-responses.json.gz",
+      "uncompressedSHA256": "6388fe5a1099702bfce38016255015ae8f8039b634c56e0bddde805a706b1def",
+      "responses": [
+        {
+          "url": "https://www.policybazaar.com/careers/",
+          "finalUrl": "https://www.policybazaar.com/careers/",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:37:01.218Z",
+          "bodyBytes": 574433,
+          "bodySHA256": "82093b48349d35cc0a5c734e740afc51466d103f249607744b8f43048dc0287b"
+        },
+        {
+          "url": "https://www.policybazaar.com/templates/policybazaar/js/html5new.js",
+          "finalUrl": "https://www.policybazaar.com/templates/policybazaar/js/html5new.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:37:01.230Z",
+          "bodyBytes": 2298,
+          "bodySHA256": "023f69047fa5b469bcb066e7af1b9df80fdcfc5757e67ac2759368f4c3fef10a"
+        },
+        {
+          "url": "https://www.policybazaar.com/akam/13/6034f2be",
+          "finalUrl": "https://www.policybazaar.com/akam/13/6034f2be",
+          "status": 404,
+          "capturedAt": "2026-10-23T05:37:01.376Z",
+          "bodyBytes": 9,
+          "bodySHA256": "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+        },
+        {
+          "url": "https://www.policybazaar.com/G78HENNc2/jkDEKHg-g/DE7hbp7V9DuGft/Ji1MAQ/HlYqPC/hRGH0",
+          "finalUrl": "https://www.policybazaar.com/G78HENNc2/jkDEKHg-g/DE7hbp7V9DuGft/Ji1MAQ/HlYqPC/hRGH0",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:37:01.844Z",
+          "bodyBytes": 603911,
+          "bodySHA256": "fd5c6377c2ab718fc2c14dce144a399c30f0127f5fdf8f63996a7e9f6842d198"
+        },
+        {
+          "url": "https://www.policybazaar.com/G78HENNc2/jkDEKHg-g/hw7hbp7V/Z2ZTAQ/O20kcQ/YkLFgY?v=6d887ab1-0952-f381-87c7-6b02dcb217c5",
+          "finalUrl": "https://www.policybazaar.com/G78HENNc2/jkDEKHg-g/hw7hbp7V/Z2ZTAQ/O20kcQ/YkLFgY?v=6d887ab1-0952-f381-87c7-6b02dcb217c5",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:37:01.953Z",
+          "bodyBytes": 518903,
+          "bodySHA256": "efe2612754b90836b5e5cf6aba84b2447873050fbadae2a1c7381aaad3bae3b2"
+        }
+      ]
+    },
+    {
+      "file": "native-careers-clients.json",
+      "uncompressedSHA256": "7a827236af828804bd9b2e64b721155891889e4f8155af04c4466da2a9613d41",
+      "responses": [
+        {
+          "url": "https://static.pbcdn.in/cdn/js/career/career-new-launch.min.js?v=1868",
+          "finalUrl": "https://static.pbcdn.in/cdn/js/career/career-new-launch.min.js?v=1868",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:38:48.249Z",
+          "bodyBytes": 17628,
+          "bodySHA256": "1a6657b5ee979f1fef3185d3b403082504d34688ab8faea891f5047c5a415c76"
+        },
+        {
+          "url": "https://static.pbcdn.in/cdn/js/career/main.min.js?v=1868",
+          "finalUrl": "https://static.pbcdn.in/cdn/js/career/main.min.js?v=1868",
+          "status": 200,
+          "capturedAt": "2026-10-23T05:38:48.380Z",
+          "bodyBytes": 5510,
+          "bodySHA256": "786587e33d1f03cbacbc8f0f619fa8e90c99e58ee03eac2771d8ef04b2383b0d"
+        }
+      ]
+    }
+  ],
+  "review": {
+    "officialSurface": "https://www.policybazaar.com/careers/",
+    "observedRoleCardCount": 4,
+    "verifiedPublicOpeningCount": null,
+    "currentInventoryStatus": "coverage-gap",
+    "reason": "Native roles have no role-specific explicit country/location or finite vacancy count. Seven hiring-city offices are separate from every role. Native clients only open resume forms and POST candidate multipart data; no listing API, pagination or role-location binding. #career-loc appears in obsolete JSON assignment but no corresponding native input/select exists and the actual POST is form-data. Unbound search-discovered Policybazaar Trakstar board excluded."
+  }
+}

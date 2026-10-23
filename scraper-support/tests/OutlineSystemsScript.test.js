@@ -9,11 +9,11 @@ const loadModule = async () => {
   }
 }
 
-test('Outline Systems sentinel remains an empty fail-closed provider', async () => {
+test('Outline Systems reports unavailable coverage instead of a false empty inventory', async () => {
   const outline = await loadModule()
 
   assert.equal(outline.SOURCE, 'outlinesystems')
   assert.equal(outline.COMPANY, 'Outline Systems')
-  assert.equal(outline.CAREERS_URL, 'https://www.outlinesys.com/careers')
-  assert.deepEqual(await outline.run(), [])
+  assert.equal(outline.CAREERS_URL, 'https://www.linkedin.com/company/outline-systems')
+  await assert.rejects(outline.run({fetchImpl:async()=>{throw Error('offline')}}),e=>e.code==='OUTLINESYSTEMS_COVERAGE_GAP'&&e.inventoryEvidence.reportedTotal===null&&e.lifecycleCleanupAllowed===false)
 })

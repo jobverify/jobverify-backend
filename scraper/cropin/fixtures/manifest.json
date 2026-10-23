@@ -1,0 +1,100 @@
+{
+  "source": "cropin",
+  "verifiedOn": "2026-10-23",
+  "disposition": "verified-empty-native-active-array",
+  "nativeTotal": 0,
+  "indiaFacetCount": 0,
+  "listingComplete": true,
+  "paginationContract": "Reviewed captured native JobWidget fetches the whole unfiltered active array in one request, then applies department/location filters locally. No page/cursor request parameters.",
+  "futureNonemptyDisposition": "coverage-gap-until-native-role-location-description-date-and-detail-contracts-verified",
+  "captures": [
+    {
+      "file": "official-response.json",
+      "sha256": "949f4f5f858725b1a72aa562e7e0d7d0ed79ddda826d2ceab8d2af8e50f24ef4",
+      "responses": [
+        {
+          "url": "https://www.cropin.com/career/",
+          "finalUrl": "https://www.cropin.com/career/",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:46.574Z",
+          "bodySha256": "4e8bc21a70de2886a6d4c788350337249f4a3e83f4133c111b8488d176b51059"
+        }
+      ]
+    },
+    {
+      "file": "board-response.json",
+      "sha256": "5ff41e91ebc5347c28761653c6b65be060b8301417e768107454c4a375a1f12b",
+      "responses": [
+        {
+          "url": "https://cropinhrms.keka.com/careers/",
+          "finalUrl": "https://cropinhrms.keka.com/careers/",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:46:55.629Z",
+          "bodySha256": "e0329084ceff3f24ec5e49ad9f293d0dc129dd462c550ad7c23749f2bb83d57f"
+        }
+      ]
+    },
+    {
+      "file": "native-responses.json.gz",
+      "sha256": "47ee3f4dc2ff1f8adb1f6f66d06a676fbc53225fe9603de88fd6ae5a2d6862cb",
+      "responses": [
+        {
+          "url": "https://cropinhrms.keka.com/ats/documents/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e/careerportal/bccf7d2c2fd8455185c3c33332efea3e.html",
+          "finalUrl": "https://cropinhrms.keka.com/ats/documents/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e/careerportal/bccf7d2c2fd8455185c3c33332efea3e.html",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:47:07.703Z",
+          "bodySha256": "a2b4ad4f16b8a27909fbea3f27827e951f3863d39ba02bf726c6ffedaf83ea3c"
+        },
+        {
+          "url": "https://cropinhrms.keka.com/careers/api/embedjobs/js/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e",
+          "finalUrl": "https://cropinhrms.keka.com/careers/api/embedjobs/js/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:47:07.798Z",
+          "bodySha256": "176878893ddcd1a0dabb3b84d1c8a98bde7c16c6ace1af2871db06c741fa022b"
+        },
+        {
+          "url": "https://cropinhrms.keka.com/careers/api/organization/default/careerportalinfo",
+          "finalUrl": "https://cropinhrms.keka.com/careers/api/organization/default/careerportalinfo",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:47:07.797Z",
+          "bodySha256": "48e6e68914887e39f167f301590245b2312b1a49d3ce94649cd669bc72ceeaba"
+        },
+        {
+          "url": "https://cropinhrms.keka.com/careers/api/embedjobs/grouplinkstatus/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e",
+          "finalUrl": "https://cropinhrms.keka.com/careers/api/embedjobs/grouplinkstatus/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:47:07.855Z",
+          "bodySha256": "e6df21daeeed53bbd52bd27f01cdde394a06139d1dfdd9cec5463752abda95b0"
+        },
+        {
+          "url": "https://cropinhrms.keka.com/careers/api/embedjobs/default/active/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e",
+          "finalUrl": "https://cropinhrms.keka.com/careers/api/embedjobs/default/active/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:47:07.844Z",
+          "bodySha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "url": "https://cropinhrms.keka.com/careers/api/embedjobs/default/colorcode/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e",
+          "finalUrl": "https://cropinhrms.keka.com/careers/api/embedjobs/default/colorcode/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:47:07.844Z",
+          "bodySha256": "d095452d2be6b6593f41ac5922857836b60e06b53402adb69be46169d1495d5a"
+        },
+        {
+          "url": "https://cropinhrms.keka.com/careers/api/embedjobs/default/sociallinks",
+          "finalUrl": "https://cropinhrms.keka.com/careers/api/embedjobs/default/sociallinks",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:47:07.852Z",
+          "bodySha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        {
+          "url": "https://cropinhrms.keka.com/careers/api/embedjobs/departments/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e",
+          "finalUrl": "https://cropinhrms.keka.com/careers/api/embedjobs/departments/953bbd12-8a46-443b-8c3e-a6fdf7bbd11e",
+          "status": 200,
+          "capturedAt": "2026-10-23T04:47:07.853Z",
+          "bodySha256": "7b5c74eb455cb06a1b3b93bdbb91048d7694f1f392152578880bd5f2a4f24d7c"
+        }
+      ]
+    }
+  ]
+}

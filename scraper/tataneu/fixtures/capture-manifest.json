@@ -1,0 +1,246 @@
+{
+  "source": "tataneu",
+  "capturedOn": "2026-10-23",
+  "notes": "Native HTTP receipts distinct from rendered DOM/navigation. Errors retain no status/final URL; no fabricated Responses. Runtime replays exact parent profile, India/Worldwide lists and public form API. Administrative form timestamps and timezone are not role publication/country.",
+  "files": [
+    {
+      "file": "application-navigation.dom.json.gz",
+      "sha256": "10c4baf4f369908c3e11dc88da982b538a954f288203694bd57897103c8b9708",
+      "uncompressedSHA256": "a02907efd3632d394d79a2967229da81831b7dd3cee70f1b6da7cd747787ab08",
+      "bytes": 549
+    },
+    {
+      "file": "application-navigation.json.gz",
+      "sha256": "c56c0d08573b7497eaa9c28aa6d0c61275e182c852871520143db6558d354f2c",
+      "uncompressedSHA256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 23
+    },
+    {
+      "file": "career-pages.dom.json.gz",
+      "sha256": "0604a2cac97eab2faa780cc59f3d299f67eacccb475d87daa5907098790a6302",
+      "uncompressedSHA256": "682c69dd0610aa2244e7dc5c20719f01f1ab7013ab97965a00d1dff954ac9358",
+      "bytes": 371
+    },
+    {
+      "file": "career-pages.json.gz",
+      "sha256": "b5607ceeeb765afaff2f2aab75a4e062e928fdfc216c7df3664060275f2abbfd",
+      "uncompressedSHA256": "06d752a98033c3f14b41aab03118da5602ac9e9d58018240f2806d4b80cb9852",
+      "bytes": 142
+    },
+    {
+      "file": "data-science-navigation.dom.json.gz",
+      "sha256": "bc11796e7cf0494973f2746cffeb8a9ad84ed077ccdbf11c9a3ff7a16789fa98",
+      "uncompressedSHA256": "e828d3cd7838c8a9c92b8252a91c5f9053e0b2d377b34bfdf00341ef701db679",
+      "bytes": 7158
+    },
+    {
+      "file": "data-science-navigation.json.gz",
+      "sha256": "c56c0d08573b7497eaa9c28aa6d0c61275e182c852871520143db6558d354f2c",
+      "uncompressedSHA256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 23
+    },
+    {
+      "file": "form-api-pages.dom.json.gz",
+      "sha256": "f37da5ae493fe39119e979e6d57dc25aca0286f05fdc71dc8c1023fad23a6040",
+      "uncompressedSHA256": "0b30d0fc17037d9dccf30deb98510da5ab8280e5ff49bc3337b44cca6a0eb69d",
+      "bytes": 1521
+    },
+    {
+      "file": "form-api-pages.json.gz",
+      "sha256": "731b530f3bd7bf9162e1e48a4e47627706e32d3f2140f65d3237bbdfc6d65751",
+      "uncompressedSHA256": "a4836d749451eaf740609c8426a5dcf3b0a0915382a63f0a7399b6e2da7b6912",
+      "bytes": 3517
+    },
+    {
+      "file": "group-jobs-pages.dom.json.gz",
+      "sha256": "560325f0216f3863187cf0ea2bff316597d8c38b3ea756665caf2b04f1ac7c23",
+      "uncompressedSHA256": "eb5d3e86ae5635571102b87f165c3d39b6030791c3093e88c50e66838b0f9b6d",
+      "bytes": 2705
+    },
+    {
+      "file": "group-jobs-pages.json.gz",
+      "sha256": "ed635201730dd7962026d4691b18e3b6f798020b3c0b2dacabe87408489b72bf",
+      "uncompressedSHA256": "b8505fe144dc01e397235b0b319d09583ffcb3743ed1884ca45f8d1140745cb1",
+      "bytes": 12582
+    },
+    {
+      "file": "hiring-profile-pages.dom.json.gz",
+      "sha256": "9607fdd3d0c7b2618bd3416905337e9507090c6d0ab2ea042b637730badb6020",
+      "uncompressedSHA256": "320a9745f7318c250f90c1cd0d11c7bb6026074a8c7e3f65401fd6f683536e5f",
+      "bytes": 1424
+    },
+    {
+      "file": "hiring-profile-pages.json.gz",
+      "sha256": "3fb11428e55a4fb4405516ff08cf35f4cf3868d902f5a18f2ebc90b435e847cf",
+      "uncompressedSHA256": "44761cb06657066a0739b8392c3dac7f55f0330fd20bc9776ca0395ef8714afd",
+      "bytes": 78745
+    },
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "9f6eb5fc99fca3e2b19ca68771866f1e681df3bf555fc3e3d71534765423ed8c",
+      "uncompressedSHA256": "50afffc2662f625127f1acd0f8465b59f2040fd53f27ac66e067fc77b2b574a1",
+      "bytes": 1479
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "fa162071bae9fcd6d470fa2f5e659f6a134ede6b111ee1e7e088d0b4827268fc",
+      "uncompressedSHA256": "2935d183eeb7b3346edcc3e74c64b196d45bff33089d0ad1bb987da9f0ed8d53",
+      "bytes": 61422
+    },
+    {
+      "file": "native-post-pages.dom.json.gz",
+      "sha256": "da1cf0f217f551aff6a33f72eee319ef5d1c2e12fca7c18d7cdd3a3015faea6a",
+      "uncompressedSHA256": "118e3bf350df5f1e7b9d95cb0cbf28144e7154f833ff25cfcb6b32cace3009a3",
+      "bytes": 20664
+    },
+    {
+      "file": "native-post-pages.json.gz",
+      "sha256": "bac20200cd59c8b91dc585511b86bc135b9c541073ec732c417ec17bd0cf321f",
+      "uncompressedSHA256": "99e64f4cd24e800124965610355ec97bb3258abf7e66b834150e18cff9a3c146",
+      "bytes": 77237
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "69867f8e960e26d4e41771ffb7a59b1490e152be1c8789f358ea255b91f95638",
+      "uncompressedSHA256": "3611ac55efedb6da1e1b4eed96545f61d04ceedb22c055e03f3af7a569adeedf",
+      "bytes": 255
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "163b7fc80e4facd6b23a72d9cf09dbed1cc257df08a4113d0d008716bebf7e28",
+      "uncompressedSHA256": "6e2c8d9448765946c8729fab5b07b9981b193a177533bbd30bdf965f37bcb8dc",
+      "bytes": 182
+    },
+    {
+      "file": "visual-form-pages.dom.json.gz",
+      "sha256": "dd5c688a9b1b33ef0ce49449f46efbf383539a8884037c58b0b9fd76a9399c4c",
+      "uncompressedSHA256": "d6f84a64e5601528c26275f9630907de2aaec26c0f8e02c41aa3b5b0b04b336f",
+      "bytes": 1511
+    },
+    {
+      "file": "visual-form-pages.json.gz",
+      "sha256": "2f8d48f69fa0d6fbd2eb28ff6c8858c427d1a0e03a99835221d1c4fdb09ca617",
+      "uncompressedSHA256": "223dd7c80befaecf2e3e9fe9c3220c94d14c134a4e0954912435727c40044332",
+      "bytes": 19462
+    }
+  ],
+  "responses": [
+    {
+      "file": "career-pages.json.gz",
+      "url": "https://career.tatadigital.in/",
+      "finalUrl": null,
+      "status": null,
+      "capturedAt": "2026-10-23T09:17:37.170Z",
+      "error": "TypeError: Failed to fetch",
+      "bodySHA256": null
+    },
+    {
+      "file": "form-api-pages.json.gz",
+      "url": "https://forms.cloud.microsoft/formapi/api/46701b23-cd77-488a-b5cd-723b90824131/users/cf32b297-884a-4db8-9d6a-4bd3f59972cc/light/runtimeFormsWithResponses('IxtwRnfNiki1zXI7kIJBMZeyMs9KiLhNnWpL0_WZcsxUM1kwUkdSQ0EzMTJIVFkxTU43VEdKVEFUOS4u')?$expand=questions($expand=choices)&$top=1",
+      "finalUrl": "https://forms.cloud.microsoft/formapi/api/46701b23-cd77-488a-b5cd-723b90824131/users/cf32b297-884a-4db8-9d6a-4bd3f59972cc/light/runtimeFormsWithResponses('IxtwRnfNiki1zXI7kIJBMZeyMs9KiLhNnWpL0_WZcsxUM1kwUkdSQ0EzMTJIVFkxTU43VEdKVEFUOS4u')?$expand=questions($expand=choices)&$top=1",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:27:59.747Z",
+      "error": null,
+      "bodySHA256": "e38dba189c5f7cb101dd700e2234d8244543ff37ec93ed980da0b3d4af4e8dae"
+    },
+    {
+      "file": "group-jobs-pages.json.gz",
+      "url": "https://www.tata.com/careers/jobs/joblisting",
+      "finalUrl": "https://www.tata.com/careers/jobs/joblisting",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:20:08.376Z",
+      "error": null,
+      "bodySHA256": "f9f21ac9b0769ff3ca88e59abe7bc14ed123f1457a990487d6e3d19a3f23e6d5"
+    },
+    {
+      "file": "hiring-profile-pages.json.gz",
+      "url": "https://www.linkedin.com/in/shayaksen",
+      "finalUrl": "https://www.linkedin.com/in/shayaksen",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:21:21.053Z",
+      "error": null,
+      "bodySHA256": "923c542fc38335cf873d96808b1667de064af923857231e9366dd37cb9361e2d"
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/company/tata-digital/",
+      "finalUrl": "https://www.linkedin.com/company/tata-digital/",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:21:16.044Z",
+      "error": null,
+      "bodySHA256": "04a22732f2e05b86aa7a7b37c72c1ca27506afdc264be5eb441be5760f372ae4"
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=26653083&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=26653083&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:21:16.718Z",
+      "error": null,
+      "bodySHA256": "a4f7b864055af7fe79471bae35abf9ced51bfecf2e78b39fe13251237cfd3808"
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=26653083&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=26653083&location=Worldwide",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:21:17.387Z",
+      "error": null,
+      "bodySHA256": "0d04ad4c9e05a519d5f3037a4229cf936069c5069ca00074a3f3f94055739216"
+    },
+    {
+      "file": "native-post-pages.json.gz",
+      "url": "https://in.linkedin.com/in/shayaksen",
+      "finalUrl": "https://in.linkedin.com/in/shayaksen",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:23:42.828Z",
+      "error": null,
+      "bodySHA256": "77fc6b3282b5ff2636193e83a45487d6c15b816db67e50ac35a171b58622da1e"
+    },
+    {
+      "file": "native-post-pages.json.gz",
+      "url": "https://www.linkedin.com/posts/gauravsingh2611_sr-manager-performance-marketing-activity-7358108363827695618-mFTx",
+      "finalUrl": null,
+      "status": null,
+      "capturedAt": "2026-10-23T09:23:50.197Z",
+      "error": "TypeError: Failed to fetch",
+      "bodySHA256": null
+    },
+    {
+      "file": "native-post-pages.json.gz",
+      "url": "https://www.linkedin.com/posts/nitinhardeniya_hiring-datascience-machinelearning-activity-7303757975934881792-vzmq",
+      "finalUrl": null,
+      "status": null,
+      "capturedAt": "2026-10-23T09:23:51.269Z",
+      "error": "TypeError: Failed to fetch",
+      "bodySHA256": null
+    },
+    {
+      "file": "official-pages.json.gz",
+      "url": "https://www.tatadigital.in/work-with-us",
+      "finalUrl": null,
+      "status": null,
+      "capturedAt": "2026-10-23T09:17:22.281Z",
+      "error": "TypeError: Failed to fetch",
+      "bodySHA256": null
+    },
+    {
+      "file": "official-pages.json.gz",
+      "url": "https://www.tata.com/business/tata-digital/tata-neu",
+      "finalUrl": null,
+      "status": null,
+      "capturedAt": "2026-10-23T09:17:23.167Z",
+      "error": "TypeError: Failed to fetch",
+      "bodySHA256": null
+    },
+    {
+      "file": "visual-form-pages.json.gz",
+      "url": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=IxtwRnfNiki1zXI7kIJBMZeyMs9KiLhNnWpL0_WZcsxUM1kwUkdSQ0EzMTJIVFkxTU43VEdKVEFUOS4u",
+      "finalUrl": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=IxtwRnfNiki1zXI7kIJBMZeyMs9KiLhNnWpL0_WZcsxUM1kwUkdSQ0EzMTJIVFkxTU43VEdKVEFUOS4u",
+      "status": 200,
+      "capturedAt": "2026-10-23T09:23:37.620Z",
+      "error": null,
+      "bodySHA256": "9d5b8b4232012cf24353137f39bb5428e1855da287cb292d66b84dd76c0000d0"
+    }
+  ]
+}

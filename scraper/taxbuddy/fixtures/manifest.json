@@ -1,0 +1,45 @@
+{
+  "source": "taxbuddy",
+  "files": [
+    {
+      "file": "native-company.json",
+      "fileSHA256": "33b0a0a3af8eeca04fea105310e83a39855377fdaf29fd214fb8efdf55f33084",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/tax-buddy-india/",
+          "finalUrl": "https://www.linkedin.com/company/tax-buddy-india/",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:30:21.225Z",
+          "bodySHA256": "aaacdf59df56969f404fe4b9883438d3b361c56fa681609d4062dc5c54edf7d2"
+        }
+      ]
+    },
+    {
+      "file": "native-jobs.json",
+      "fileSHA256": "53a304d3280f246d3738dfd9588a03d242ea8ad8578d1e4fdb6ad102266ec88f",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=14564264&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=14564264&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:32:26.300Z",
+          "bodySHA256": "c8b71008fd12bf4fa3dd31ad7833997f9709104c0cc0accbcd9d359854479480"
+        }
+      ]
+    },
+    {
+      "file": "official-home.json",
+      "fileSHA256": "5f99f49090f81d535d3fc5d73c6117809765f7639655e4d8eea86b85801faa4c",
+      "responses": [
+        {
+          "url": "https://www.taxbuddy.com/",
+          "finalUrl": "https://www.taxbuddy.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T06:28:37.450Z",
+          "bodySHA256": "1ded7d0e09ebb32884543864c74726f830dd3335bc787d1f9ce2c7fe3184b15e"
+        }
+      ]
+    }
+  ],
+  "productionWrites": false
+}

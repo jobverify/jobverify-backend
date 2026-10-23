@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import { buildDescriptionSourceUpdate, buildRewriteInput, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
 
 const job = { title: 'Software Engineer', company: 'Example', sourceDescription: 'Role overview: Build Python services for customer applications. Responsibilities: Design reliable APIs and maintain Python services. Required qualifications: At least 2 years of software development experience is required. Preferred qualifications: AWS experience is nice to have.' };
+
+test('empty markup from newly eligible jobs cannot replace existing employer content', () => {
+  for (const sourceDescription of ['<p>&nbsp;<br></p>', '&#160;&#xA0;', '<!-- no details --><script>ignored()</script>']) {
+    assert.deepEqual(buildDescriptionSourceUpdate({ ...job, sourceDescription }, job), {});
+  }
+});
 const paragraph = (text, evidence) => ({ text, evidence, style: 'paragraph' });
 const output = () => ({ sections: [
   { key: 'overview', items: [paragraph('Build Python services for customer applications.', 'Build Python services for customer applications.')] },

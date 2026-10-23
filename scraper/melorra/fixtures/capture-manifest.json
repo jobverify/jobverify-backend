@@ -1,0 +1,118 @@
+{
+  "source": "melorra",
+  "captureMethod": "Isolated public Chrome fetch; DOM companions are navigation observations, not raw response bodies. No authentication or challenge bypass.",
+  "files": [
+    {
+      "file": "about-pages.dom.json.gz",
+      "sha256": "26d012e9be86fbeffb9ec0e788576b5dd8bff5cd1250349c52d97fe6a487cc3f",
+      "uncompressedSHA256": "4941163f576b351861b5db29954b7272d1c5303914b8364ee4135c9927050bb1",
+      "bytes": 69160
+    },
+    {
+      "file": "about-pages.json.gz",
+      "sha256": "c42e8acb8e13e772bc3c693b088a21ee94c927213fa75e359e133b89bf991c85",
+      "uncompressedSHA256": "852b3ceb873bfe9d5d4c080227fafaa964ac109fca8c738a5d4eb2bba42f51bd",
+      "bytes": 173081
+    },
+    {
+      "file": "build-pages.dom.json.gz",
+      "sha256": "cd04d0c26bb2a3c79d569bd63f36b8ada4b5fc8e9e71e34eea3a3d84f975c400",
+      "uncompressedSHA256": "d0751976d3cbcc68dd68fac4dfb07f79ff26cec131e4ffc8d5264038bcc6332c",
+      "bytes": 13190
+    },
+    {
+      "file": "build-pages.json.gz",
+      "sha256": "b407baa00b55e1f726a2dcc384aba790a8687c1ca3e7b26228c44b40c0fee29e",
+      "uncompressedSHA256": "c2b8d5fa3b019c8520b73bd26817dbd8ffc684a94d9187c86757f68a9edfd01c",
+      "bytes": 13299
+    },
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "e1c0284153749bf182e82f2fe0fdc62e314de73420a44f6965e6cf860e68dcc2",
+      "uncompressedSHA256": "4b085d41339be27e978c5ae0498343ee7d13585a3ea1ef8fb1a0f4f00c7a1f8c",
+      "bytes": 5927
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "62e8f5a02db7d4377d4df3ab23e3badcffd3556be07d9dc2a0de46a00b450359",
+      "uncompressedSHA256": "b846cf9335d275534ba33aca8169af182754a639303431f2ddfe55782bb186a7",
+      "bytes": 358374
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "660fa2169cbeeab33bc1166bf13851eb3b82fca68d13ece7af0057b944073d76",
+      "uncompressedSHA256": "d123c583fa3c4233841474ead87efe6c06b3863e5427521adfdbf3c960d6e6bf",
+      "bytes": 83388
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "8c358d401068fe7c866ae272d3e53564d44c90a2d0bd89c6468e3a32ca41fc52",
+      "uncompressedSHA256": "94b10f57922c072c94941cdb57951c9ea9b82fe93b07447b66906055dacf54e2",
+      "bytes": 302739
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://www.melorra.com/about/",
+      "finalUrl": "https://www.melorra.com/about/",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:10:30.261Z",
+      "file": "about-pages.json.gz",
+      "bodySHA256": "30a1d9a6b3a25ed9a6fecc0c7cc1d1f6d7ce1436be1a60833586b500c9a69e9f",
+      "bodyBytes": 167015
+    },
+    {
+      "url": "https://sas.melorra.com/_next/static/edR-9OnsZ9nnQ-EswTlAK/_buildManifest.js",
+      "finalUrl": "https://sas.melorra.com/_next/static/edR-9OnsZ9nnQ-EswTlAK/_buildManifest.js",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:12:36.012Z",
+      "file": "build-pages.json.gz",
+      "bodySHA256": "14d2f9318c6eef2864ab876ea5625be9c9d376ff3e8ee04b249c69164fe3a7e8",
+      "bodyBytes": 12300
+    },
+    {
+      "url": "https://www.linkedin.com/company/melorra",
+      "finalUrl": "https://www.linkedin.com/company/melorra",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:09:36.183Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "d7775f62f7781f5f9de833889f3be394aad5d5a0a74f6288e02574efd49ba50e",
+      "bodyBytes": 163858
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=13238231&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13238231&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:09:36.964Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "f0bb854e89eebff0a3000544e649823cf8aa5a3d610ac491e92a89fd399cdfef",
+      "bodyBytes": 89313
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=13238231&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13238231&location=Worldwide",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:09:37.492Z",
+      "file": "linkedin-pages.json.gz",
+      "bodySHA256": "d57a65c04f7c8e154e03872bc8ccd4906ec30dcd84035e9b96aa5cc8a446fc21",
+      "bodyBytes": 89368
+    },
+    {
+      "url": "https://www.melorra.com/",
+      "finalUrl": "https://www.melorra.com/",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:09:33.322Z",
+      "file": "official-pages.json.gz",
+      "bodySHA256": "d970fea585518789b2902ead155774b29bedac2e152dc9e150de0af4ec7c7d18",
+      "bodyBytes": 286891
+    }
+  ],
+  "transportFailures": [
+    {
+      "url": "https://sas.melorra.com/_next/static/edR-9OnsZ9nnQ-EswTlAK/_buildManifest.js",
+      "capturedAt": "2026-10-23T08:10:30.333Z",
+      "error": "TypeError: Failed to fetch",
+      "file": "about-pages.json.gz"
+    }
+  ]
+}

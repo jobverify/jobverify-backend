@@ -1,20 +1,22 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {PROVIDER_METADATA} from './script.js'
 
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
+import { getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('CogniTensor is an exact first-party fail-closed provider', () => {
-  const provider = getScraperCatalog().find((item) => item.source === 'cognitensor')
+test('CogniTensor candidate preserves exact employer with incomplete native scope', () => {
+  const provider = PROVIDER_METADATA
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'CogniTensor')
   assert.equal(provider.exactCompanyMatchOnly, true)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://www.cognitensor.com/')
+  assert.equal(provider.companyCareerPage, 'https://www.cognitensor.com/company/careers')
   assert.equal(provider.companyDomain, 'cognitensor.com')
-  assert.equal(provider.verifiedPublicJobCount, 0)
-  assert.match(provider.atsPlatform, /^official-first-party-/)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
+  assert.equal(provider.atsPlatform, 'native-employer-linkedin')
   assert.match(provider.modulePath, /cognitensor[\\/]script\.js$/i)
 })
 
@@ -33,7 +35,5 @@ test('CogniTensor covers only the literal CSV company name without fuzzy substit
     ['Cognitensor Technologies', 'Cognitiv'],
   )
 
-  const scraper = buildScrapers().find((item) => item.name === 'cognitensor')
-  assert.ok(scraper)
-  assert.deepEqual(await scraper.run(), [])
+  assert.equal(PROVIDER_METADATA.sourceListingComplete, false)
 })

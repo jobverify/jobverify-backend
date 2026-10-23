@@ -19,6 +19,6 @@ test('WayCool resolves only to its exact-name first-party provider', () => {
   assert.deepEqual(report.unmatched.map((item) => item.companyName), ['WayCool Technologies'])
 })
 
-test('WayCool fails closed when its official careers surface has no enumerable public openings', async () => {
-  assert.deepEqual(await run(), [])
+test('WayCool reports unavailable official recruiting as a coverage gap', async () => {
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('offline')}}),{code:'WAYCOOL_COVERAGE_GAP'})
 })

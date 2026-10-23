@@ -1,0 +1,143 @@
+{
+  "source": "pocketfm",
+  "company": "Pocket FM",
+  "verifiedOn": "2026-10-23",
+  "verificationDisposition": "live-official-client-asset-chain-and-reconciled-native-lever-inventory",
+  "bindingChain": [
+    "https://pocketfm.com/",
+    "https://pocketfm.com/_next/static/chunks/2y_ptw0orekjx.js",
+    "https://pocketfm.com/_next/static/chunks/0plbo-9g--9fh.js",
+    "https://jobs.lever.co/pocketfm"
+  ],
+  "nativeBoardBrand": "Pocket Entertainment Corp",
+  "verifiedPublicJobCount": 10,
+  "verifiedIndiaJobCount": 2,
+  "listingComplete": true,
+  "publicationDatePolicy": "createdAt retained as nativeCreatedAt; postingDate unknown unless explicitly supplied as datePosted",
+  "paginationContractSource": "https://github.com/lever/postings-api#get-a-list-of-job-postings",
+  "nativeApiPagination": {
+    "skip": 0,
+    "limit": 100,
+    "returned": 10,
+    "terminalShortPage": true,
+    "publicBoardPostingCount": 10
+  },
+  "jobs": [
+    {
+      "jobId": "2436065b-281d-4347-8366-9a60b99dc5a5",
+      "title": "Director - Analytics",
+      "location": "Bangalore, India",
+      "sourceUrl": "https://jobs.lever.co/pocketfm/2436065b-281d-4347-8366-9a60b99dc5a5",
+      "applyUrl": "https://jobs.lever.co/pocketfm/2436065b-281d-4347-8366-9a60b99dc5a5/apply",
+      "nativeCreatedAt": 1787179468535,
+      "postingDate": null
+    },
+    {
+      "jobId": "5b82d0d8-4ca5-4d87-ad95-eb5b8e5fb9c8",
+      "title": "Manager - Business Finance",
+      "location": "Bangalore, India",
+      "sourceUrl": "https://jobs.lever.co/pocketfm/5b82d0d8-4ca5-4d87-ad95-eb5b8e5fb9c8",
+      "applyUrl": "https://jobs.lever.co/pocketfm/5b82d0d8-4ca5-4d87-ad95-eb5b8e5fb9c8/apply",
+      "nativeCreatedAt": 1787213798007,
+      "postingDate": null
+    }
+  ],
+  "playbackInventoryEvidence": {
+    "status": "complete-inventory",
+    "surface": "https://api.lever.co/v0/postings/pocketfm",
+    "firstParty": true,
+    "listingComplete": true,
+    "pagesFetched": 1,
+    "reportedTotal": 10,
+    "indiaFacetCount": 2,
+    "verifiedAt": "2026-10-23T03:24:00.864Z",
+    "reason": "official-client-binding-terminal-lever-pages-and-public-board-reconciled"
+  },
+  "evidence": [
+    {
+      "file": "home-response.json",
+      "sha256": "c1894f2e36f7d494f6bed619ed5fac0d213b05ba86ae101ae79f0b6a7df95f17",
+      "responses": [
+        {
+          "url": "https://pocketfm.com/",
+          "finalUrl": "https://pocketfm.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:07:00.763Z",
+          "bodySha256": "e120d9a600aa2fbc4fe272ece195d5c084038bd34e314b364c0f9f24c3659860"
+        }
+      ]
+    },
+    {
+      "file": "client-api-responses.json",
+      "sha256": "b43ab99c1ae87091ccb20c58ad94d7b07ef09f82108b9c85ba46aad6492eb602",
+      "responses": [
+        {
+          "url": "https://pocketfm.com/_next/static/chunks/0plbo-9g--9fh.js",
+          "finalUrl": null,
+          "status": 200,
+          "capturedAt": "2026-10-23T03:13:11.651Z",
+          "bodySha256": "289ab73abb89792136e36c4205c788908e2d9ec785b23f1896f2a1d392626e18"
+        }
+      ]
+    },
+    {
+      "file": "client-parent-responses.json",
+      "sha256": "32d91bce726fc81071e40e1a925d2265ce41e2d2b3faa65e8b5c063120d3afa5",
+      "responses": [
+        {
+          "url": "https://pocketfm.com/_next/static/chunks/2y_ptw0orekjx.js",
+          "finalUrl": "https://pocketfm.com/_next/static/chunks/2y_ptw0orekjx.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:22:08.442Z",
+          "bodySha256": "03ca01b5d0d3c3763478a66ad500075d142ad38af0083a3a2416675b010df2b9"
+        },
+        {
+          "url": "https://pocketfm.com/_next/static/chunks/0plbo-9g--9fh.js",
+          "finalUrl": "https://pocketfm.com/_next/static/chunks/0plbo-9g--9fh.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:22:08.479Z",
+          "bodySha256": "289ab73abb89792136e36c4205c788908e2d9ec785b23f1896f2a1d392626e18"
+        }
+      ]
+    },
+    {
+      "file": "listing-responses.json",
+      "sha256": "2ef3e38cea031f05d1c72ddaa3d3a113dc28234ae0c4e47bdfe6a8265c50dedf",
+      "responses": [
+        {
+          "url": "https://api.lever.co/v0/postings/pocketfm?mode=json&skip=0&limit=100",
+          "finalUrl": "https://api.lever.co/v0/postings/pocketfm?mode=json&skip=0&limit=100",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:11:54.493Z",
+          "bodySha256": "cb94c83c65e5054bd1f2b43fef233d9bd09c40f13148b0271d4caea3260daa36"
+        }
+      ]
+    },
+    {
+      "file": "board-response.json",
+      "sha256": "644497f6099a5613b91a0d823129b8652184cda9e4af3401935f79366fdd6126",
+      "responses": [
+        {
+          "url": "https://jobs.lever.co/pocketfm",
+          "finalUrl": "https://jobs.lever.co/pocketfm",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:11:47.438Z",
+          "bodySha256": "7be14c709e733ad040572cddbd247f1d331bce95ba2d3aedc4fb4c0c81cce758"
+        }
+      ]
+    },
+    {
+      "file": "jobs-response.json",
+      "sha256": "0cb2d1e6e2ce11217639cbd8fc8caa2d8cce484af8011006e2cee6bd010f5c91",
+      "responses": [
+        {
+          "url": "https://api.lever.co/v0/postings/pocketfm?mode=json",
+          "finalUrl": "https://api.lever.co/v0/postings/pocketfm?mode=json",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:08:09.311Z",
+          "bodySha256": "cb94c83c65e5054bd1f2b43fef233d9bd09c40f13148b0271d4caea3260daa36"
+        }
+      ]
+    }
+  ]
+}

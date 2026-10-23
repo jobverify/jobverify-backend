@@ -1,0 +1,17 @@
+{
+  "kind": "browser-network-observation",
+  "observedAt": "2026-10-23T07:32:53.017Z",
+  "sequence": [
+    {
+      "url": "https://carriere.dassault-aviation.com/accueil.aspx?LCID=1036",
+      "status": 301
+    },
+    {
+      "url": "https://dassault-aviation-cand.talent-soft.com//accueil.aspx?LCID=1036",
+      "status": 200
+    }
+  ],
+  "rawRedirectHeadersCaptured": false,
+  "rawRedirectBodyCaptured": false,
+  "note": "Actual Playwright navigation and static network request listing observed this sequence. Later response-header retrieval failed because browser context closed. Offline redirect Location is modeled from the observed target, not claimed as a raw HTTP receipt."
+}

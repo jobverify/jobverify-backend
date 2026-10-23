@@ -1,0 +1,663 @@
+{
+  "source": "skan",
+  "verifiedOn": "2026-10-23",
+  "inventory": {
+    "global": 65,
+    "explicitIndia": 17,
+    "initiallyVisible": 32,
+    "scopeComplete": false,
+    "publicationDate": null,
+    "observationContext": "Original corporate embedded HTML and native detail capture only; active API cross-check below supersedes current eligibility and totals."
+  },
+  "captures": [
+    {
+      "file": "careers-response.json.gz",
+      "rawCaptureSha256": "b9b7fc6aa4d2b8a871d0098a98a944dcfaaf7932bd1c823c7915480323485f9c",
+      "gzipSha256": "7b2f77289da2a812a0eedfa3d6958575520b6dd283ed8ac54b15e055bc067396",
+      "responses": [
+        {
+          "url": "https://www.skan.ai/careers",
+          "finalUrl": "https://www.skan.ai/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:52:47.512Z",
+          "bodySha256": "7d08661563454a88f467545a44abbc1667434957f77bf5c0e7fcc61aae75f235",
+          "bodyBytes": 471400
+        }
+      ]
+    },
+    {
+      "file": "keka-responses.json.gz",
+      "rawCaptureSha256": "76dfc2dcab6bd3c29e7809d1e6789af77ddf905ea5a5528f96d2f7e1f69c9f0d",
+      "gzipSha256": "0f73aa96490517da19137ece872327e9740784479844826edc71eb0056b69c66",
+      "responses": [
+        {
+          "url": "https://skanai.keka.com/careers/",
+          "finalUrl": "https://skanai.keka.com/careers/",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:53:05.182Z",
+          "bodySha256": "f58913c6fa5acf980e8865d2c3e149c191a34c21918dceb8c8c4f5f11ff3d865",
+          "bodyBytes": 1675
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/89302",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/89302",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:53:05.225Z",
+          "bodySha256": "9eb785f186a2fa97b88fb84d1cb8ccfed5bea81edad927e608ac31519865e1df",
+          "bodyBytes": 17835
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/91352",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/91352",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:53:05.243Z",
+          "bodySha256": "e1530aa5d5207158b7f01fb0c01e2d945d058bd4b70fe74145cab6b0fcbb0981",
+          "bodyBytes": 19121
+        }
+      ]
+    },
+    {
+      "file": "detail-responses.json.gz",
+      "rawCaptureSha256": "cb9a511efef14353984e2f9118b7baf4b47b13c31e6ae0da54f8085953b4dddf",
+      "gzipSha256": "817d297b7e5b64ca87cffa6af0796591ad68125f8b49d282738d33f0746aef01",
+      "responses": [
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/89302",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/89302",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:53:59.495Z",
+          "bodySha256": "9eb785f186a2fa97b88fb84d1cb8ccfed5bea81edad927e608ac31519865e1df",
+          "bodyBytes": 17835
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/84034",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/84034",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:53:59.547Z",
+          "bodySha256": "3763516f0cb8bf1ffb1b524395e806edc3882bb3316cace52b2ab5b231af0655",
+          "bodyBytes": 17152
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/84032",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/84032",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:53:59.542Z",
+          "bodySha256": "c9adf0b755b15a798b8e9ed281734b188547fc788fcbf2ad2b26503dfd6a1680",
+          "bodyBytes": 13459
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/84031",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/84031",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:53:59.973Z",
+          "bodySha256": "51adcab60ba281f86db3f4759df2b564630e4882a719c1a8e74cd6b87f2e5cab",
+          "bodyBytes": 13489
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/84028",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/84028",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:53:59.940Z",
+          "bodySha256": "a89d73e7266a73609e68042c013c6e476b3bdb2491c53221f320287fd2cc7c6d",
+          "bodyBytes": 15123
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/93350",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/93350",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:53:59.882Z",
+          "bodySha256": "0fa4725ff5b890ad7d536db02b3dadfa59a722a36328dc465cd048430c9040a2",
+          "bodyBytes": 14400
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/70339",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/70339",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:53:59.545Z",
+          "bodySha256": "382d47f0cdeab0e4e8af6c9bb7cc9b5d76bc9af83ccf489031f4348fb1680bfd",
+          "bodyBytes": 16129
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/91343",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/91343",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.043Z",
+          "bodySha256": "c6d6bdc08b605f83c0dc36002ba6a9f61993fca16c163453cde5dba63a3f553a",
+          "bodyBytes": 20395
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/88924",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/88924",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.227Z",
+          "bodySha256": "44bf0a38fd7c7d1d13b8ca558811aa79f48a20e40697f5e5623074d30b2f57dc",
+          "bodyBytes": 18934
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/78271",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/78271",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.406Z",
+          "bodySha256": "fa151b89c47f60b12669f09fc7a4fe77df0239be5d4c3a6015d496731dfa8389",
+          "bodyBytes": 19782
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/78302",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/78302",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.315Z",
+          "bodySha256": "8ca0e129c5b725c09131bae3a158ca4248db3cb244f492b99f1720e731da0627",
+          "bodyBytes": 14477
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/78274",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/78274",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.229Z",
+          "bodySha256": "b2edafd21e5c0f0b592e7f61bc20cbae28069de84d0e9a59fae4a951496d781c",
+          "bodyBytes": 19629
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/72446",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/72446",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.314Z",
+          "bodySha256": "772b2550a2a785b87a8a864b5b97058dcfcb9d376dbd994923fc5355579f6e94",
+          "bodyBytes": 14557
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/67026",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/67026",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.316Z",
+          "bodySha256": "ef6c4340059658866fe2b0ca35125c284d1fc0d18db8b0adab0aac8309026488",
+          "bodyBytes": 16562
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/91352",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/91352",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.408Z",
+          "bodySha256": "e1530aa5d5207158b7f01fb0c01e2d945d058bd4b70fe74145cab6b0fcbb0981",
+          "bodyBytes": 19121
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/91347",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/91347",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.408Z",
+          "bodySha256": "335011083418239702324a85f8c7bd86f1f7b538f542fa0a9c60d457eef3c664",
+          "bodyBytes": 16183
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/56436",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/56436",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.563Z",
+          "bodySha256": "a1cface3668a8b69799df1694d6d3f79010b2fd4d0b3eee27f30640419e6aa15",
+          "bodyBytes": 16166
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/91548",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/91548",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.565Z",
+          "bodySha256": "6197545f733fd5a7f161fdae26f9505483b44aab69b2e1b988cf6c64beb85d06",
+          "bodyBytes": 21463
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/86878",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/86878",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.565Z",
+          "bodySha256": "1994a57c3ceeabd5db7147f86ed59c6e625872b1f86f1213269128247c6efe88",
+          "bodyBytes": 12412
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/84021",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/84021",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.625Z",
+          "bodySha256": "4a393267739c22768ba7f6fe7e141b1c34cfe3224e7145ee665a313f2fee1dfa",
+          "bodyBytes": 25406
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/63803",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/63803",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.623Z",
+          "bodySha256": "2d0f836760c32a0f8368b3dbbfb9d4c02d5cf54dc381646db3cd0b968d1e5a83",
+          "bodyBytes": 19848
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/57010",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/57010",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.673Z",
+          "bodySha256": "2f79cca2161d28e290dfa2db318d114c2aa5ba49e981bf6b5d975c9e53c804a1",
+          "bodyBytes": 12486
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/93140",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/93140",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.626Z",
+          "bodySha256": "1a01203543c506d51ecdc1cf611bad82fb9643ba6b0934a6b115b6b58467b3a9",
+          "bodyBytes": 13721
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/89560",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/89560",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.674Z",
+          "bodySha256": "7982b5f573478cd7347df049a9153fb5dc21dc759f6eb77cf8025b1bd664386f",
+          "bodyBytes": 19879
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/89559",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/89559",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.799Z",
+          "bodySha256": "28a1ec103b2da5e2b51a6124921c8822fb4bc127db2c879ad8190f40c0da2b2c",
+          "bodyBytes": 18200
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/89333",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/89333",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.811Z",
+          "bodySha256": "782894a0bb0a7ec312acb42540b2e3692c1ee22ce02eaa40668335a693b30ac8",
+          "bodyBytes": 19926
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/88098",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/88098",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.854Z",
+          "bodySha256": "a93c7cfd8f777d79c30bc7049b1a0f478ae08904de6cdc52e5878faba1ceb3af",
+          "bodyBytes": 14530
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/93198",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/93198",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.860Z",
+          "bodySha256": "711c334302f7ac1a25aadceab9cf37fc69449b76865f55c8a51aee7d90c26c01",
+          "bodyBytes": 21166
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/89919",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/89919",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.927Z",
+          "bodySha256": "458147134b918e42e3e10366e1400c0b3f0577f14499bf018d875d3a6f649387",
+          "bodyBytes": 14077
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/88111",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/88111",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.914Z",
+          "bodySha256": "d0594e835a427c2026e8526ed40fb7deba72d897dc2c03556b2664ab51f211b1",
+          "bodyBytes": 19327
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/86442",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/86442",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.860Z",
+          "bodySha256": "ba3de8461d182d842fbf4d939c5aa78c41de45cfdde17abebb2d066f06fb2983",
+          "bodyBytes": 19763
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/86221",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/86221",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:00.863Z",
+          "bodySha256": "0dfa16ccccbb7e185ec58e663dfbdc0bab27fd50704e6c44f3cec7083de4b889",
+          "bodyBytes": 22044
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/88097",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/88097",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.065Z",
+          "bodySha256": "f13f0f5f14a7919b55f10a58b2b599d5bf25e776d057e77227cf29a88c308cf2",
+          "bodyBytes": 16863
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/87357",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/87357",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.095Z",
+          "bodySha256": "7c37dd9f4745ea9ec9d7db9a25a11e5970b9804be7684866050692e7745b291d",
+          "bodyBytes": 14756
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/86218",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/86218",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.278Z",
+          "bodySha256": "34c71c88ee7c32cef0a1d184ffb147d5397a4fa46b427cea2908a8b61e0b435f",
+          "bodyBytes": 21525
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/86216",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/86216",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.209Z",
+          "bodySha256": "6ae4b5642da6061fe9f5d5d4611fe3edcc80e1093a0ca5f95c275d248ecb3976",
+          "bodyBytes": 22837
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/86214",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/86214",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.171Z",
+          "bodySha256": "79bd94c48d2b3891ab61f5033296995af1c4f18d9fd467077ef2b5f9f94c7833",
+          "bodyBytes": 21623
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/86211",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/86211",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.166Z",
+          "bodySha256": "1c6dc337a204bc56bb14a905f4a9c4f94a831821f3177c851fa6e9c85844537a",
+          "bodyBytes": 21624
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/86207",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/86207",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.097Z",
+          "bodySha256": "00acf5463096dca39b475aafc2f1c16b17df6b973dda700ac26345338db1508b",
+          "bodyBytes": 20968
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/86203",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/86203",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.168Z",
+          "bodySha256": "da040535d60976695cbc90aa466eab0ee7a92b82a0678ad67dd2bf4010afceee",
+          "bodyBytes": 20395
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/84447",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/84447",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.458Z",
+          "bodySha256": "5fb5b204b4206ee6da095d69406b3eb577bb0cfc5566c28c0ebd1581cceb1aaf",
+          "bodyBytes": 20370
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/84026",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/84026",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.450Z",
+          "bodySha256": "9973d6a2c7ffcd214b8def3caaa5fec69e697a36feb0bf56662cebe88941be00",
+          "bodyBytes": 13912
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/84025",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/84025",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.529Z",
+          "bodySha256": "b85c4ad3075a8db82ee8d23623898e0a9d36030b9eb573b71c14f0a34d91fe0e",
+          "bodyBytes": 17806
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/84024",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/84024",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.524Z",
+          "bodySha256": "bf7fc1fb1b8027ba8e326608b6072d60e7176959c9eabbe766ed7f272a0810c9",
+          "bodyBytes": 16382
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/84023",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/84023",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.459Z",
+          "bodySha256": "15a0b063ff710ac506026469982f7f0e4f8667c91c239ce5f8a80a62ee3de8dc",
+          "bodyBytes": 13735
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/83827",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/83827",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.499Z",
+          "bodySha256": "6278fa4649d6d27bac4afea196dfc587b74146e70df15f3e419825f9b48cf919",
+          "bodyBytes": 20111
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/83290",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/83290",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.561Z",
+          "bodySha256": "4a4b6a15df35fc9d05cbf5a300017bec3c6147c90da71d9a519dbc0a6a06ca81",
+          "bodyBytes": 14712
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/83098",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/83098",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.522Z",
+          "bodySha256": "0342e129f09ae8b3da9d1268d2a2d1d2ec30c070655c9f635a58b7c51141d9fa",
+          "bodyBytes": 22065
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/82558",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/82558",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.706Z",
+          "bodySha256": "9cf34cab0d2d7c63acf1ef813a79234b645aa6be73c98a84c456e0674a007939",
+          "bodyBytes": 15897
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/81110",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/81110",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.712Z",
+          "bodySha256": "c2c4e2775c440eb024116964d4b4f1e48d265f7a03797e444d0c7a96109e8731",
+          "bodyBytes": 26080
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/78305",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/78305",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.799Z",
+          "bodySha256": "5a54763a04dc0d2954a187006216906f1ddd24ce33e92fd609d7a7cf8aa2e684",
+          "bodyBytes": 16363
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/77245",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/77245",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.717Z",
+          "bodySha256": "2902d466f12f14fd6283088dca69f165a11e520802dfc70586d098f5cd314fdb",
+          "bodyBytes": 13135
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/77244",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/77244",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.768Z",
+          "bodySha256": "b74ff1efc38c1255f055f35215f6a6923b3a560ed977c275e2fbbacbfef8f694",
+          "bodyBytes": 11097
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/77169",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/77169",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.800Z",
+          "bodySha256": "f7266b41305c842d7703beef2f6cdfb9844a224a3c94da281ecf2564451a3a69",
+          "bodyBytes": 15070
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/77163",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/77163",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.800Z",
+          "bodySha256": "be02ca4fea4962b0239528997293378af5a279bf609d39840eef99aef0ace8e3",
+          "bodyBytes": 10229
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/74118",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/74118",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.800Z",
+          "bodySha256": "5b36d872b5bfd979ca821ecc391c436769444419408e34c1aa2e73328e302c22",
+          "bodyBytes": 17798
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/64464",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/64464",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.937Z",
+          "bodySha256": "a4162aa3c102f76a2652a7641711ddc12149f703d99bcfec939661f0c62c2d97",
+          "bodyBytes": 18619
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/62172",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/62172",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.947Z",
+          "bodySha256": "09e721dc8c546d0d1597ea2a8aae37694c1d9917449069c259232020895cd855",
+          "bodyBytes": 15137
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/56445",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/56445",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.948Z",
+          "bodySha256": "c68de45579c12f4b944b9e8a6f88bde6921e76c4555c0a76af6e0f505ab5b132",
+          "bodyBytes": 14301
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/56444",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/56444",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.956Z",
+          "bodySha256": "8050eeb14fdce45b55e7ba16bb980b717484f4cbf92309a7a8c63ca0291fec5e",
+          "bodyBytes": 14904
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/56429",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/56429",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:02.015Z",
+          "bodySha256": "c5d851561656fb64a7c535ad7ef1a3f6466cca628b24673abba138cabf6e6df9",
+          "bodyBytes": 12393
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/56428",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/56428",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:02.016Z",
+          "bodySha256": "fd4d8bf89be4b3cd4866c3a4c08afc6e8f9151fd6851cd8acf5c2e7b0bdc41c9",
+          "bodyBytes": 12298
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/56420",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/56420",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:02.018Z",
+          "bodySha256": "69b63fceeb77c83ed551438d122cf4763356a781ae7cc2155b9a99eb15d8810b",
+          "bodyBytes": 14221
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/53564",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/53564",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:01.988Z",
+          "bodySha256": "4e556163da44b813643bf4ce5401de2c89f1ad814ba9bdb0e90a0dd35667e8f6",
+          "bodyBytes": 18307
+        },
+        {
+          "url": "https://skanai.keka.com/careers/jobdetails/42722",
+          "finalUrl": "https://skanai.keka.com/careers/jobdetails/42722",
+          "status": 200,
+          "capturedAt": "2026-10-23T03:54:02.150Z",
+          "bodySha256": "f02e116625a3a36b0609c48b4bef47cb346320ba1506e020ebf15f41dbb1101a",
+          "bodyBytes": 11958
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "file": "additional-client-pages.dom.json",
+      "fileSHA256": "671a18ea967a4f1a34db88f2820eafe448ce5767f38b178323e9f65cfd14c7e7",
+      "responses": [],
+      "observationOnly": true
+    },
+    {
+      "file": "additional-client-pages.json",
+      "fileSHA256": "415e585280229777f6e7bfae3d7c23fbe5901070f9c0705149749d83a72364f9",
+      "responses": [
+        {
+          "url": "https://skanai.keka.com/ats/documents/d83629ac-cbae-4575-a5b0-a6e0e556f459/careerportal/93bb49f98977448584015734d74aebd8.html",
+          "finalUrl": "https://skanai.keka.com/ats/documents/d83629ac-cbae-4575-a5b0-a6e0e556f459/careerportal/93bb49f98977448584015734d74aebd8.html",
+          "status": 200,
+          "capturedAt": "2026-10-23T09:44:54.876Z",
+          "bodySHA256": "869e4655a18dbeece08049506bc72bca755225dd278e7c48401174ad8c235524",
+          "bodyBytes": 12602
+        },
+        {
+          "url": "https://cdn.keka.com/careers/v/2026/scripts/app/app.min.js",
+          "finalUrl": "https://cdn.keka.com/careers/v/2026/scripts/app/app.min.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T09:44:55.165Z",
+          "bodySHA256": "e2585ba1c4a259792330b7524042e3376994836454234a6da414eb1eeaaf315f",
+          "bodyBytes": 79753
+        }
+      ]
+    },
+    {
+      "file": "additional-native-api-pages.dom.json",
+      "fileSHA256": "b2d973b8cfcb9600dd298e82154cce853c63db2f4df25a26ec93c17ad1e90f6f",
+      "responses": [],
+      "observationOnly": true
+    },
+    {
+      "file": "additional-native-api-pages.json",
+      "fileSHA256": "d61e52162469b6108b0b24b9e36c95a0e9967d47a573a2cba22dc94be855ea69",
+      "responses": [
+        {
+          "url": "https://skanai.keka.com/careers/api/jobs/default/active",
+          "finalUrl": "https://skanai.keka.com/careers/api/jobs/default/active",
+          "status": 200,
+          "capturedAt": "2026-10-23T09:46:07.315Z",
+          "bodySHA256": "966e40e45efd793eed1a92db9e2cb66cf062c5a621da35c972090b5850f15b59",
+          "bodyBytes": 1103285
+        },
+        {
+          "url": "https://skanai.keka.com/careers/api/embedjobs/js/d83629ac-cbae-4575-a5b0-a6e0e556f459",
+          "finalUrl": "https://skanai.keka.com/careers/api/embedjobs/js/d83629ac-cbae-4575-a5b0-a6e0e556f459",
+          "status": 200,
+          "capturedAt": "2026-10-23T09:46:07.777Z",
+          "bodySHA256": "176878893ddcd1a0dabb3b84d1c8a98bde7c16c6ace1af2871db06c741fa022b",
+          "bodyBytes": 100640
+        }
+      ]
+    }
+  ],
+  "latestActiveApiObservation": {
+    "url": "https://skanai.keka.com/careers/api/jobs/default/active",
+    "capturedAt": "2026-10-23T09:46:07.315Z",
+    "corporateEmbeddedCount": 65,
+    "nativeActiveCount": 64,
+    "explicitIndiaActiveCandidates": 16,
+    "unconfirmedActiveIds": [
+      "42722"
+    ],
+    "eligibleAfterExistingFilters": 3,
+    "nativePublicationDatesAvailable": true,
+    "geographyConflict": true,
+    "sourceListingComplete": false,
+    "sourceScopeComplete": false,
+    "lifecycleCleanupAllowed": false,
+    "verifiedCompanyTotal": null,
+    "verifiedIndiaFacetCount": null
+  }
+}

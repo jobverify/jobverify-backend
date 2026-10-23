@@ -4,7 +4,7 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('Giottus is registered as an exact-company official sentinel provider', () => {
+test('Giottus is registered as an exact-company provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'giottus')
   const scraper = buildScrapers().find((item) => item.name === 'giottus')
 
@@ -13,7 +13,7 @@ test('Giottus is registered as an exact-company official sentinel provider', () 
   assert.equal(provider.companyName, 'Giottus')
   assert.equal(provider.companyDomain, 'giottus.com')
   assert.equal(provider.companyCareerPage, 'https://www.giottus.com/')
-  assert.equal(provider.atsPlatform, 'official-first-party-site-no-verified-careers-feed')
+  assert.equal(provider.source, 'giottus')
   assert.match(scraper.dryRunFile, /giottus[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({
@@ -33,11 +33,12 @@ test('Giottus is registered as an exact-company official sentinel provider', () 
   )
 })
 
-test('Giottus fails closed when no official careers feed is verified', async () => {
+test('Giottus fails closed on an unavailable native surface', async () => {
   const giottus = await import('../../scraper/giottus/script.js')
 
   assert.equal(giottus.SOURCE, 'giottus')
   assert.equal(giottus.COMPANY, 'Giottus')
   assert.equal(giottus.FIRST_PARTY_ROOT_URL, 'https://www.giottus.com/')
-  assert.deepEqual(await giottus.run(), [])
+  await assert.rejects(giottus.run({fetchImpl:async()=>{throw new Error('unavailable')}}),{code:'GIOTTUS_COVERAGE_GAP'})
 })
+

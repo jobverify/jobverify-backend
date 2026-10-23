@@ -16,8 +16,12 @@
       "sha256": "14cf1303ca9ac3abd94816850532f9f9a69ac66fbaca3776fc6f9061c2fac1d1"
     }
   },
-  "policyVersion": "job-description-source-sections-v13",
-  "outputFormat": "source-sections",
+  "policyVersion": "job-description-bounded-edits-v14",
+  "outputFormat": "source-edits",
+  "maxModelEdits": 2,
+  "maxPromptCandidates": 6,
+  "maxEditCharacters": 160,
+  "maxPromptSourceCharacters": 320,
   "enableThinking": false,
   "cpuThreads": 4,
   "contextTokens": 8192,

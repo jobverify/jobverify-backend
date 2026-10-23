@@ -1,0 +1,88 @@
+[
+  {
+    "file": "official-home.json",
+    "gzipFile": "official-home.json.gz",
+    "sha256": "a5fb0ce3e78f073e062aa11c70f23b9a1c1703bef1d1bb94c3256c2a03cfcdad",
+    "gzipSHA256": "400e3c3a73eba797cf40d6e22f71edd691809204a62531687143ceb8a257f39a",
+    "bytes": 1108,
+    "envelopes": [
+      {
+        "url": "https://www.ayefin.com/",
+        "finalUrl": "https://www.ayefin.com/",
+        "status": 403,
+        "capturedAt": "2026-10-23T07:18:07.179Z",
+        "bodySHA256": "96a3850b4950f985702360c630f0f5d03cc04d0f6d2305040425de9c4633d7c9"
+      }
+    ]
+  },
+  {
+    "file": "native-employer.json",
+    "gzipFile": "native-employer.json.gz",
+    "sha256": "911c502a6f0a2966e76c1c7d70adb4acfbd59608d71f43747603d307897fb45c",
+    "gzipSHA256": "366aadc833ea22ecee9b549a7005885f3087fe9e471b7f522172c41a22832bda",
+    "bytes": 359950,
+    "envelopes": [
+      {
+        "url": "https://www.linkedin.com/company/aye-finance-ltd/",
+        "finalUrl": "https://www.linkedin.com/company/aye-finance-ltd/",
+        "status": 200,
+        "capturedAt": "2026-10-23T07:20:45.757Z",
+        "bodySHA256": "9cc33a28d6ace9933c74fdc513516444998d2125d240cde7ea4d397251efb0df"
+      }
+    ]
+  },
+  {
+    "file": "native-jobs.json",
+    "gzipFile": "native-jobs.json.gz",
+    "sha256": "398332126678c675921e271f78b7b19f4ee247c479d46095fe03aa7b217eb58d",
+    "gzipSHA256": "82e01d5fbcb7df796273ec12bac8408433ae9f5555c597c83e0e11b650706312",
+    "bytes": 93708,
+    "envelopes": [
+      {
+        "url": "https://www.linkedin.com/jobs/search/?f_C=9381588&location=India",
+        "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=9381588&location=India",
+        "status": 200,
+        "capturedAt": "2026-10-23T07:21:08.622Z",
+        "bodySHA256": "f95926ab8711bf044b02c37404a64dd23b1518c2e2d4a6f6fd9c71a0050eee55"
+      }
+    ]
+  },
+  {
+    "file": "native-direct-details.json",
+    "gzipFile": "native-direct-details.json.gz",
+    "sha256": "3efd1d935f4cab5efa3bfd1f5a50d427a674773807c340171c1234718b2e1308",
+    "gzipSHA256": "4d917681cbe9f04499c98edcb6d3a528be8c32fa9b4c10dd895fdf34e6e5fa8d",
+    "bytes": 629154,
+    "envelopes": [
+      {
+        "url": "https://www.linkedin.com/jobs/view/relationship-manager-at-aye-finance-ltd-4474071845",
+        "finalUrl": "https://www.linkedin.com/jobs/view/relationship-manager-at-aye-finance-ltd-4474071845",
+        "status": 200,
+        "capturedAt": "2026-10-23T07:23:13.522Z",
+        "bodySHA256": "42480fc328bf6333346405517f091856e6d5359df85336fe63393531a29a2060"
+      },
+      {
+        "url": "https://www.linkedin.com/jobs/view/sales-executive-at-aye-finance-ltd-4471197446",
+        "finalUrl": "https://www.linkedin.com/jobs/view/sales-executive-at-aye-finance-ltd-4471197446",
+        "status": 200,
+        "capturedAt": "2026-10-23T07:23:14.435Z",
+        "bodySHA256": "e093a0d6532c1ff9483631484445997d6ad384a6cd907f0e5eaf7a95990edf51"
+      },
+      {
+        "url": "https://www.linkedin.com/jobs/search/?f_C=3621275",
+        "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=3621275",
+        "status": 200,
+        "capturedAt": "2026-10-23T07:23:15.039Z",
+        "bodySHA256": "e202d0b4efc5e2c79d4806e1878771f837d02bed1ac082cbd03ef8e1225d8fdb"
+      }
+    ]
+  },
+  {
+    "file": "replay-summary.json",
+    "gzipFile": "replay-summary.json.gz",
+    "sha256": "a92215aacf9068c21f17d6c9bcc8f509025d31ec891e3d7f91f15b68d4b0f197",
+    "gzipSHA256": "586f8a2ce6ab0117400607280d557ffcb094bc4a1f5af02ef69dcf25ea6fb96a",
+    "bytes": 8712,
+    "envelopes": null
+  }
+]

@@ -19,6 +19,12 @@ test('Kinara Capital resolves to its exact-name first-party provider', () => {
   )
 })
 
-test('Kinara Capital fails closed without a verified public listings feed', async () => {
-  assert.deepEqual(await run(), [])
+test('Kinara Capital reports an unavailable public listings feed as incomplete coverage', async () => {
+  await assert.rejects(run({ fetchImpl: async () => ({ status: 503 }) }), error => {
+    assert.equal(error.code, 'KINARACAPITAL_COVERAGE_GAP')
+    assert.equal(error.sourceListingComplete, false)
+    assert.equal(error.inventoryEvidence.status, 'coverage-gap')
+    assert.equal(error.inventoryEvidence.reportedTotal, null)
+    return true
+  })
 })

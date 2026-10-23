@@ -18,10 +18,10 @@ test('AppSecure resolves only to its exact-name first-party provider', () => {
   assert.deepEqual(report.unmatched.map((item) => item.companyName), ['AppSure'])
 })
 
-test('AppSecure fails closed when its official site has no verified public careers feed', async () => {
+test('AppSecure source transport failure cannot certify empty inventory', async () => {
   const modulePath = new URL('../scraper/appsecure/script.js', import.meta.url)
   assert.equal(existsSync(modulePath), true)
 
   const { run } = await import(modulePath)
-  assert.deepEqual(await run(), [])
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('offline')}}),error=>error.code==='APPSECURE_COVERAGE_GAP'&&error.inventoryEvidence.reportedTotal===null&&error.lifecycleCleanupAllowed===false)
 })

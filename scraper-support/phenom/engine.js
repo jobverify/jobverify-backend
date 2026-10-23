@@ -159,7 +159,7 @@ const nativeElements = value => {
   return { scripts, links }
 }
 
-const extractNativeModel = (html, marker) => {
+export const extractNativeModel = (html, marker) => {
   const models = []
   for (const { type, body } of nativeElements(html).scripts) {
     if (!['', 'text/javascript', 'application/javascript', 'module'].includes(type)) continue
@@ -364,7 +364,7 @@ const getPrimaryJobLocation = (jobPosting) => {
   }
 }
 
-const extractPhAppDdo = (html) => extractNativeModel(html, 'ddo')
+export const extractPhAppDdo = (html) => extractNativeModel(html, 'ddo')
 
 const slugifyTitle = (title) => normalizeWhitespace(title)
   ?.normalize('NFKD')

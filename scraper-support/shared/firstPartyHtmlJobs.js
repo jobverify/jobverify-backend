@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js';
 import { nativePostingJobs, requireNative } from './nativeJobPosting.js';
+import { mapWithConcurrency } from '../utils/mapWithConcurrency.js';
 export const MAX_HTML_BYTES = 2 * 1024 * 1024;
 export const HTML_REQUEST_TIMEOUT_MS = 20000;
 const sha = value => crypto.createHash('sha256').update(value).digest('hex');
@@ -55,16 +56,21 @@ export function createHTMLTransport(config, { fetchImpl = globalThis.fetch, sign
 
 export function createFirstPartyHTMLScraper(config) {
   async function collect(options = {}) {
+    const maxRequests = config.maxRequests === undefined ? 512 : config.maxRequests;
+    const detailConcurrency = config.detailConcurrency === undefined ? 1 : config.detailConcurrency;
+    requireNative(Number.isSafeInteger(maxRequests) && maxRequests > 0 && maxRequests <= 2048, 'Invalid native request budget');
+    requireNative(Number.isSafeInteger(detailConcurrency) && detailConcurrency > 0 && detailConcurrency <= 8, 'Invalid native detail concurrency');
     const signal = options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(540000)]) : AbortSignal.timeout(540000);
     const transport = options.transport || createHTMLTransport(config, { ...options, signal });
     const result = { source: config.source, status: 'unknown', jobs: [], exclusions: [], failures: [], unknownRawFailures: [], retainedResponses: [], listingRecords: [], observedListingCount: 0, nativeReportedTotal: null, pagesFetched: 0, listingPaginationComplete: false, rawJobs: null, indiaJobs: null, eligibleJobs: null, savedJobs: null, visibleJobs: null, cleanupAllowed: false, verifiedZeroInventory: false, sourceScopeComplete: false, wholeCompanyScope: false };
+    if (config.maxRequests !== undefined || config.detailConcurrency !== undefined) result.collectionLimits = { maxRequests, detailConcurrency };
     const failure = (stage, error, candidate = null) => { result.failures.push({ stage, ...reason(error) }); if (candidate) result.unknownRawFailures.push({ stage, candidate }); };
     let requestCount = 0, totalBytes = 0;
     const read = async url => {
       let current = url; const seen = new Set();
       for (let hop = 0; hop <= 3; hop++) {
         config.validateURL(current); signal.throwIfAborted();
-        requireNative(++requestCount <= 512 && !seen.has(current), 'Native request/redirect bound'); seen.add(current);
+        requireNative(++requestCount <= maxRequests && !seen.has(current), 'Native request/redirect bound'); seen.add(current);
         const response = await transport(current, { method: 'GET', redirect: 'manual', credentials: 'omit', signal });
         requireNative(response && response.url === current && response.bodyComplete === true && Number.isInteger(response.status) && response.headers && !Array.isArray(response.headers) && response.body instanceof Uint8Array, 'Incomplete native transport response');
         const body = Buffer.from(response.body); totalBytes += body.length;
@@ -78,8 +84,16 @@ export function createFirstPartyHTMLScraper(config) {
           requireNative(config.sameReadIdentity(current, target), 'Native redirect changes source/scope/role'); current = target; continue;
         }
         requireNative(response.status === 200, 'HTTP ' + response.status + ' native upstream response');
-        requireNative(typeof headers['content-type'] === 'string' && headers['content-type'].split(';')[0].trim().toLowerCase() === 'text/html', 'Unexpected native content type');
-        const html = new TextDecoder('utf-8', { fatal: true }).decode(body); requireNative(html.trim(), 'Empty native HTML'); return html;
+        const expectedContentType = config.expectedContentType ? config.expectedContentType(current) : 'text/html';
+        requireNative(['text/html', 'application/json', 'text/markdown', 'text/javascript', 'application/javascript'].includes(expectedContentType)
+          && typeof headers['content-type'] === 'string' && headers['content-type'].split(';')[0].trim().toLowerCase() === expectedContentType, 'Unexpected native content type');
+        const html = new TextDecoder('utf-8', { fatal: true }).decode(body); requireNative(html.trim(), 'Empty native HTML');
+        const frame = config.resolveReadFrame?.(html, current);
+        if (frame) {
+          requireNative(hop < 3 && config.sameReadIdentity(current, frame), 'Native frame changes source/scope/role or exceeds bound');
+          config.validateURL(frame); current = frame; continue;
+        }
+        return html;
       }
       throw Error('Incomplete native redirects');
     };
@@ -113,12 +127,19 @@ export function createFirstPartyHTMLScraper(config) {
     }
     const candidates = result.listingRecords.filter(config.candidateForIndia);
     result.candidateDetails = candidates.length;
-    for (const row of candidates) {
+    const details = await mapWithConcurrency(candidates, detailConcurrency, async row => {
       let html;
       try {
-        html = await read(row.url); const fact = config.parseDetail(html, row);
-        if (fact.excluded) result.exclusions.push(fact); else result.jobs.push(fact);
-      } catch (error) { failure('native-detail', error, { ...row, rawDetailHTML: html || null }); }
+        html = await read(row.url); const fact = await config.parseDetail(html, row);
+        return { fact };
+      } catch (error) { return { error, row, html }; }
+    });
+    // Emit details and failures in listing order even when reads finish out of
+    // order. Retained bytes keep their real request and completion timestamps.
+    for (const detail of details) {
+      if (detail.error) failure('native-detail', detail.error, { ...detail.row, rawDetailHTML: detail.html || null });
+      else if (detail.fact.excluded) result.exclusions.push(detail.fact);
+      else result.jobs.push(detail.fact);
     }
     if (firstPage) {
       try {
@@ -126,13 +147,17 @@ export function createFirstPartyHTMLScraper(config) {
         requireNative(config.pageFingerprint(closing) === config.pageFingerprint(firstPage), 'Native inventory changed during check'); result.closingInventoryMatches = true;
       } catch (error) { result.closingInventoryMatches = false; failure('closing-inventory', error); }
     }
+    if (detailConcurrency > 1) {
+      result.retainedResponses.sort((a, b) => a.url.localeCompare(b.url));
+      result.retainedResponseOrder = 'URL; repeated resources retain capture order; timestamps retain actual HTTP timing';
+    }
     result.status = result.failures.length ? 'partial' : 'native-listed-scope-read';
     return result;
   }
   async function run(options = {}) {
     const result = await collect(options);
     if (!result.jobs.length && result.failures.length) throw Object.assign(Error(config.companyName + ' native collection incomplete; cleanup forbidden'), { name: 'NativeHTMLIncompleteError', code: 'NATIVE_HTML_INCOMPLETE', nativeEvidence: result });
-    const jobs = attachInventoryEvidence(nativePostingJobs(result, config), {
+    const jobs = attachInventoryEvidence((config.projectJobs || nativePostingJobs)(result, config), {
       status: 'coverage-gap', surface: config.boardURL, firstParty: Boolean(result.handoffVerified), listingComplete: false,
       pagesFetched: result.pagesFetched, reportedTotal: result.nativeReportedTotal,
       indiaFacetCount: null, verifiedAt: null,

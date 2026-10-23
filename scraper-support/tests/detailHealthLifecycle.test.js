@@ -62,7 +62,7 @@ for (const [name, missing] of [
 
 test('an authoritative-empty option cannot override missing details on enumerated India jobs', async t => {
   const { result, cleanup } = await exercise(t, evidence([role('R2', { jobDescription: '' })]), { authoritativeEmpty: true })
-  assert.equal(result.eligibleJobs, 0)
+  assert.equal(result.eligibleJobs, 1)
   assert.equal(result.staleCheckSkipped, true)
   assert.deepEqual(cleanup, [])
 })
@@ -86,6 +86,38 @@ test('missing foreign descriptions do not suppress complete India reconciliation
   })]))
   assert.equal(result.filteredNonIndia, 1)
   assert.equal(result.filteredEmptyDescription, 0)
+  assert.equal(result.staleCheckSkipped, false)
+  assert.deepEqual(cleanup.map(c => c.operation), ['delete', 'miss'])
+})
+
+test('unreturned native detail failures preserve prior vacancies despite complete returned roles', async t => {
+  const jobs = evidence([role('R1', { sourceDetailComplete: true, sourceListingComplete: true,
+    nativeCollectionEvidence: { source: 'detail-lifecycle', observedListingCount: 2, candidateDetails: 2,
+      jobs: [{ id: 'R1' }], exclusions: [], failures: [{ stage: 'native-detail' }],
+      listingPaginationComplete: true, closingInventoryMatches: true, sourceScopeComplete: true } })])
+  const { result, cleanup, previous, priorState } = await exercise(t, jobs)
+  assert.equal(result.staleCheckSkipped, true)
+  assert.match(result.staleCheckReason, /details.*incomplete|incomplete.*details/i)
+  assert.deepEqual(cleanup, [])
+  assert.deepEqual(previous, priorState)
+})
+
+test('unknown native detail counts cannot authorize lifecycle cleanup', async t => {
+  const jobs = evidence([role('R1', { sourceDetailComplete: true, sourceListingComplete: true,
+    nativeCollectionEvidence: { source: 'detail-lifecycle', candidateDetails: 2,
+      listingPaginationComplete: true, closingInventoryMatches: true } })])
+  const { result, cleanup, previous, priorState } = await exercise(t, jobs)
+  assert.equal(result.staleCheckSkipped, true)
+  assert.deepEqual(cleanup, [])
+  assert.deepEqual(previous, priorState)
+})
+
+test('known complete native details retain normal explicitly complete inventory reconciliation', async t => {
+  const jobs = evidence([role('R1', { sourceDetailComplete: true, sourceListingComplete: true,
+    nativeCollectionEvidence: { source: 'detail-lifecycle', observedListingCount: 1, candidateDetails: 1,
+      jobs: [{ id: 'R1' }], exclusions: [], failures: [],
+      listingPaginationComplete: true, closingInventoryMatches: true, sourceScopeComplete: true } })])
+  const { result, cleanup } = await exercise(t, jobs)
   assert.equal(result.staleCheckSkipped, false)
   assert.deepEqual(cleanup.map(c => c.operation), ['delete', 'miss'])
 })

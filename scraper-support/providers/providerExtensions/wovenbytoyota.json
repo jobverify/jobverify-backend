@@ -8,14 +8,16 @@
   "dryRunFile": "wovenbytoyota/jobs.json",
   "companyCareerPage": "https://woven.toyota/en/careers/",
   "companyDomain": "woven.toyota",
-  "atsPlatform": "official-first-party-careers-page-fail-closed",
+  "atsPlatform": "lever",
   "countryFilter": "India",
-  "paginationStrategy": "official-careers-page-sentinel",
-  "extractionStrategy": "verified-first-party-careers-page+return-empty-when-public-search-has-no-matching-roles",
+  "paginationStrategy": "native-lever-unfiltered-skip-limit-terminal-page",
+  "extractionStrategy": "live-official-client-handoff+native-lever-inventory+source-country-scope",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-25",
-  "verifiedPublicJobCount": 0,
+  "verifiedOn": "2026-10-23",
+  "verifiedPublicJobCount": 148,
   "verifiedIndiaJobCount": 0,
-  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://woven.toyota/en/careers/ is Woven by Toyota's first-party careers page. The live public careers surface currently shows an Open roles section with the message No matching roles found, so this exact-name provider fails closed and returns no jobs instead of inventing openings from other Toyota entities or third-party listings."
+  "verifiedSurfaceSummary": "October 23, 2026 official English careers client identifies the woven-by-toyota Lever board. Two unfiltered native pages enumerate 148 roles, none in India. The rendered No matching roles shell is not inventory evidence. Runtime requires current handoff, bounded native pagination and resolved location scope.",
+  "atsBoardToken": "woven-by-toyota",
+  "inventoryVerificationPolicy": "live-parser-evidence-required"
 }

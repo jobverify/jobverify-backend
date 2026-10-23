@@ -23,6 +23,6 @@ test('Namma Yatri resolves only to its exact-name first-party provider', () => {
   )
 })
 
-test('Namma Yatri fails closed without a first-party or official ATS listings surface', async () => {
-  assert.deepEqual(await run(), [])
+test('Namma Yatri reports unavailable native coverage without a false zero', async () => {
+  await assert.rejects(run({fetchImpl:async()=>{throw Error('offline')}}),error=>error.code==='NAMMAYATRI_COVERAGE_GAP'&&error.inventoryEvidence.reportedTotal===null&&error.lifecycleCleanupAllowed===false)
 })

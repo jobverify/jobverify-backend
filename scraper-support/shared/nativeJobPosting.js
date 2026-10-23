@@ -60,7 +60,10 @@ export function readNativeJobPosting(html, row, config) {
     : contentKey(visibleDescriptionHTML) === contentKey(posting.description);
   requireNative(descriptionsMatch, 'Visible/JobPosting description mismatch');
   const visibleLocations = config.visibleLocations(doc);
-  requireNative(JSON.stringify(visibleLocations.map(key)) === JSON.stringify(row.locations.map(key)), 'Visible/listing location mismatch');
+  const locationsMatch = config.compareLocationLabels
+    ? config.compareLocationLabels(visibleLocations, row.locations) === true
+    : JSON.stringify(visibleLocations.map(key)) === JSON.stringify(row.locations.map(key));
+  requireNative(locationsMatch, 'Visible/listing location mismatch');
   const locations = Array.isArray(posting.jobLocation) ? posting.jobLocation : [posting.jobLocation];
   requireNative(locations.length > 0 && locations.length <= 32, 'Missing native job locations');
   const addresses = locations.map(location => {
@@ -72,7 +75,8 @@ export function readNativeJobPosting(html, row, config) {
   });
   const hints = row.countries.map(nativeCountryName).filter(Boolean);
   if (hints.length) requireNative(hints.every(country => addresses.some(address => address.country === country)) && addresses.every(address => hints.includes(address.country)), 'Listing/JobPosting country conflict');
-  const posted = nativeDate(posting.datePosted, { required: true }), closing = nativeDate(posting.validThrough);
+  const readDate = config.readNativeDate || nativeDate;
+  const posted = readDate(posting.datePosted, { required: true }), closing = readDate(posting.validThrough);
   requireNative(!closing.iso || closing.iso >= posted.iso, 'Native expiry precedes publication');
   const organization = posting.hiringOrganization;
   requireNative(organization && typeof organization.name === 'string' && organization.name.trim(), 'Missing native employer label');
@@ -94,7 +98,18 @@ export function readNativeJobPosting(html, row, config) {
 }
 
 export function nativePostingJobs(result, config) {
-  return result.jobs.map(fact => {
+  // Retain the complete batch once. Repeating raw responses and every detail
+  // on every projected job makes serialization grow with jobs times inventory.
+  const { jobs, listingRecords, retainedResponses, unknownRawFailures, exclusions, ...summary } = result;
+  const compact = {
+    ...summary, extractedDetailJobs: jobs.length, listingRecordCount: listingRecords.length,
+    unknownRawFailureCount: unknownRawFailures.length, excludedDetailJobs: exclusions.length,
+    fullBatchEvidenceOnFirstExtractedJob: true, firstExtractedJobID: jobs[0]?.id ?? null,
+    ...(config.compactResponseReferences === true
+      ? { retainedResponseCount: retainedResponses.length, retainedResponsesOnFirstExtractedJob: true }
+      : { retainedResponses: retainedResponses.map(({ url, status, bodyBytes, bodySHA256, requestedAt, completedAt }) => ({ url, status, bodyBytes, bodySHA256, requestedAt, completedAt })) }),
+  };
+  return result.jobs.map((fact, index) => {
     const india = fact.nativeCountryAddresses.filter(address => address.country === 'India');
     const labels = india.map(({ raw }) => [...new Set([raw.addressLocality, raw.addressRegion, 'India'].filter(value => typeof value === 'string' && value.trim()))].join(', '));
     return {
@@ -113,7 +128,7 @@ export function nativePostingJobs(result, config) {
       nativeSchemaDescription: fact.nativeSchemaDescription, nativeVisibleDescriptionHTML: fact.nativeVisibleDescriptionHTML,
       sourceDetailComplete: true, sourceDetailStatus: 'complete', sourceListingComplete: false,
       sourceScopeComplete: false, lifecycleCleanupAllowed: false, publicEligibility: null,
-      nativeFacts: fact, nativeCollectionEvidence: result,
+      nativeFacts: fact, nativeCollectionEvidence: index === 0 ? result : compact,
     };
   });
 }

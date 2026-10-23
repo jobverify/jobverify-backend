@@ -8,15 +8,16 @@
   "dryRunFile": "rivian/jobs.json",
   "companyCareerPage": "https://careers.rivian.com/work",
   "companyDomain": "rivian.com",
-  "atsPlatform": "official-first-party-careers-page-india-enumeration-unverified-fail-closed",
+  "atsPlatform": "icims-jibe",
   "countryFilter": "India",
-  "paginationStrategy": "official-first-party-careers-page-without-verified-india-enumeration-sentinel",
-  "extractionStrategy": "official-first-party-careers-page-without-stable-verified-india-listing-feed+return-empty",
+  "paginationStrategy": "native-limit-100-pages-with-stable-total-and-unique-public-identities",
+  "extractionStrategy": "live-official-careers-search-scope+public-native-api+primary-secondary-country-inventory",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-26",
-  "verifiedPublicJobCount": 0,
+  "verifiedOn": "2026-10-23",
+  "verifiedPublicJobCount": 947,
   "verifiedIndiaJobCount": 0,
   "officialCareersPageUrl": "https://careers.rivian.com/work",
-  "verifiedSurfaceSummary": "Verified on July 26, 2026 that https://careers.rivian.com/work is Rivian's first-party careers surface. A stable, verified India-specific public listing enumeration was not established for this provider, so the exact-name scraper fails closed rather than inferring jobs from broad global listings or third-party sources."
+  "verifiedSurfaceSummary": "October 23, 2026 Rivian official careers search and current employer-only search configuration bind its public iCIMS/Jibe API. Ten native pages reconcile 947 Rivian Automotive roles across seven explicit countries, with no India roles. Runtime verifies current scope, stable total, native employer/application identities and all native primary/secondary locations; failed or changed listings cannot certify zero.",
+  "inventoryVerificationPolicy": "live-parser-evidence-required"
 }

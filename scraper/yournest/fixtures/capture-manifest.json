@@ -1,0 +1,102 @@
+{
+  "source": "yournest",
+  "captureMethod": "Root-owned isolated Chrome native fetches preserve request/final URL, status, body and capture time. Separate DOM observations do not infer HTTP status.",
+  "files": [
+    {
+      "file": "api-pages.dom.json.gz",
+      "sha256": "2653f27ccc9263fff35c83f7121dd6bd22233b46aa50f6c3adefab9921737e6c",
+      "uncompressedSHA256": "dfefa74fa972fbaaa9bf79e71524b68dbcca7f486b8a097595866f7f716c8a78",
+      "bytes": 7870
+    },
+    {
+      "file": "api-pages.json.gz",
+      "sha256": "50de3f637ae88cab41b73855c848a7de258d59cafc443c9ced99550cf379fd8a",
+      "uncompressedSHA256": "32f23471852658bcc9ab52af41ec1d900290b846015289ea692fdd43db6af3b9",
+      "bytes": 1715
+    },
+    {
+      "file": "application-pages.dom.json.gz",
+      "sha256": "00fd3e662436e872dad4f7b899b6d343fce756c6b3e787672cb9d8a674813a57",
+      "uncompressedSHA256": "9f33a7819c496e7fbd9d46b90f77f5c680cb5ec39f7595fa7b09ce5f175641bc",
+      "bytes": 7902
+    },
+    {
+      "file": "application-pages.json.gz",
+      "sha256": "0b550ee5bae615e628f4d6951e340b09f3ad6b6e8e748fffc8358c09c61fb192",
+      "uncompressedSHA256": "0f5f9f45422350faf676e2567a52bcbf98a313fabec6987bc32b9936ebbba659",
+      "bytes": 109511
+    },
+    {
+      "file": "client-pages.dom.json.gz",
+      "sha256": "6612591ada532d3bf6d78c69cfaf3d7328404e8ca45bb0fe76d97eb97a21a4a0",
+      "uncompressedSHA256": "b2cd52ef2c22e1f45c2dc114c7358df449cd5dd1f5f82f6b4ee96ab0badd083c",
+      "bytes": 7749
+    },
+    {
+      "file": "client-pages.json.gz",
+      "sha256": "acf9b631b60d08ea1934970ae8ca2a4ec79713235a30410f9674d0de0d3468e0",
+      "uncompressedSHA256": "b02978665931fcc450fb3d41f892a769ef77aae6262f40741bac542def865e4c",
+      "bytes": 972393
+    },
+    {
+      "file": "detail-pages.dom.json.gz",
+      "sha256": "c82d6ca46d3051fe0d5bda26ccef08b3dc8fe17a4eab986703a075ce10e3d9be",
+      "uncompressedSHA256": "16a340c35c1605ae186d50700f49493b2d0e077ac6705dcfbeb7c1b427b55551",
+      "bytes": 7911
+    },
+    {
+      "file": "detail-pages.json.gz",
+      "sha256": "9220a0b49f02b86df3eb7fe1ebadb93d286d8285e4bcb9590f3592a79fa2f7da",
+      "uncompressedSHA256": "dac44bc32d9eb701db093e3e7bd8a268ffe9b1ba274e0e116b04e38c0bd2718d",
+      "bytes": 25833
+    },
+    {
+      "file": "linkedin-pages.dom.json.gz",
+      "sha256": "dbb55af95e50e523d563ca592c35e08f8da85baf28492f0bdb5536fcd55326f6",
+      "uncompressedSHA256": "942bc1fbdc57e6243558257ab695a944b6d32504f0bef144ea2b997081ca9d77",
+      "bytes": 69324
+    },
+    {
+      "file": "linkedin-pages.json.gz",
+      "sha256": "b722bae59dec032100ba2eff792e8468ae56ad41f7a9430b26b469086a9dbecc",
+      "uncompressedSHA256": "2fdb3a727356335011a2252260d4687c209d0c7b254eef1054139fbb1ecf19d6",
+      "bytes": 548835
+    },
+    {
+      "file": "native-seed-pages.dom.json.gz",
+      "sha256": "59606ba02a315bbf34d3e0a5fb02e72987928829350a36fa47a69ea242973e8a",
+      "uncompressedSHA256": "59db491c9a59e4ac458c8fca9980100d7ad557cdfa021ed5d9870186a7b536c1",
+      "bytes": 39339
+    },
+    {
+      "file": "native-seed-pages.json.gz",
+      "sha256": "4b00628797abab5320fad031e68a7370289f81022dde7cc04b27763ffaa2e961",
+      "uncompressedSHA256": "f2424aa5642b62a89a4ed5e33c72c674ee2cdcb2b217bb65fab161cf7e0f0aba",
+      "bytes": 302463
+    },
+    {
+      "file": "official-pages.dom.json.gz",
+      "sha256": "dada19cc4ab9568648e4f5e5eca5f36b4aa5e43003b94c4329a2bea8c3ad050f",
+      "uncompressedSHA256": "16d64a7d3aa2e5d8b03d71b6de570b98b4f2b04a5ec55f2f63e70a52f973bcf9",
+      "bytes": 12165
+    },
+    {
+      "file": "official-pages.json.gz",
+      "sha256": "6f47cc63ffe7d656c71d3d3641c322338b32c76b205cd582f1243770d1991d14",
+      "uncompressedSHA256": "57e0f56e6bc764a12d0a8f10f1dacfd1934dc296328bcd77cc3d9901b389f4c1",
+      "bytes": 6695
+    },
+    {
+      "file": "pyjama-pages.dom.json.gz",
+      "sha256": "005f51e82592478cd07e332e15761543f2212ce830a0f52eccd462f480e9e676",
+      "uncompressedSHA256": "1d06fda7cdcfc9ff6772ab642af77e2f692d7b9cf2f66f9eb01b3ec2da03c8d2",
+      "bytes": 7485
+    },
+    {
+      "file": "pyjama-pages.json.gz",
+      "sha256": "5700fd267b7cb7ad632018591aaba3a3ec57dd15f3db2762679426ee48327cc6",
+      "uncompressedSHA256": "e868e75c61d34e51a0143fcd86bc4525cc322a1f0e6f1400d1ceeb398279c586",
+      "bytes": 46792
+    }
+  ]
+}
