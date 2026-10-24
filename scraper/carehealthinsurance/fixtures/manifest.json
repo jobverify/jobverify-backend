@@ -89,5 +89,57 @@
       "gzipBytes": 1452,
       "responses": []
     }
-  ]
+  ],
+  "captures": [
+    {
+      "file": "fresh-native-pages.json.gz",
+      "sha256": "17477439dbf0431a3da1a5f4ce7ed459916a229d695e6e2ae16f583d4680b75c",
+      "uncompressedSha256": "b2a474e91aad76ae51c0c22c15e929aa0981b9040035ec8aff8a2f576d5f559e",
+      "responses": [
+        {
+          "url": "https://www.careinsurance.com/rhicl/careers",
+          "finalUrl": "https://www.careinsurance.com/rhicl/careers",
+          "status": 403,
+          "capturedAt": "2026-10-23T13:40:58.283Z",
+          "bodySha256": "6fb642c9722aee986cce786d017effa930afc753f09bd1a2183235b248f28844"
+        },
+        {
+          "url": "https://www.careinsurance.com/rhicl/careers/job-search",
+          "finalUrl": "https://www.careinsurance.com/rhicl/careers/job-search",
+          "status": 403,
+          "capturedAt": "2026-10-23T13:40:58.401Z",
+          "bodySha256": "d4f80ecbf871ff6b89cbf64719b9140bd8b3ed81bf5e20a2817adc55718cf721"
+        },
+        {
+          "url": "https://www.careinsurance.com/rhicl/getOpenings/0",
+          "finalUrl": "https://www.careinsurance.com/rhicl/getOpenings/0",
+          "status": 403,
+          "capturedAt": "2026-10-23T13:40:58.545Z",
+          "bodySha256": "5886012c196f471cca5681a176ac36d285fe8627b617a77bd9473522efdb93eb"
+        },
+        {
+          "url": "https://www.careinsurance.com/rhicl/getOpenings/1",
+          "finalUrl": "https://www.careinsurance.com/rhicl/getOpenings/1",
+          "status": 403,
+          "capturedAt": "2026-10-23T13:40:58.658Z",
+          "bodySha256": "6ae713ef75622d1a811a9a2e16d5bf8f1678ec4a4bcd637da327bfeac91eacf0"
+        },
+        {
+          "url": "https://www.careinsurance.com/rhicl/getOpenings/2",
+          "finalUrl": "https://www.careinsurance.com/rhicl/getOpenings/2",
+          "status": 403,
+          "capturedAt": "2026-10-23T13:40:58.768Z",
+          "bodySha256": "92d3293147419194412f3b17ba9dadd5768d30cfc5fa3c16a7ca4596283acbfa"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "file": "fresh-native-pages.dom.json",
+      "sha256": "9e051ef11f3023cf1ef0ab1e38364b8a9a2798551466e9100943d7ee4635aa7d",
+      "evidenceType": "DOM navigation observation, not HTTP response"
+    }
+  ],
+  "latestInvestigation": "2026-10-23 public captures: all five native pages return403, historical arrays retained separately"
 }

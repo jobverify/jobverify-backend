@@ -140,6 +140,8 @@ const phenomScraper = createPhenomScraper({
   baseUrl: 'https://careers.nttdata.com',
   searchPath: '/global/en/search-results',
   scraperDir: currentDir,
+  defaultDetailConcurrency: 4,
+  defaultDetailEnrichmentBudgetMs: 150000,
 })
 
 export const {

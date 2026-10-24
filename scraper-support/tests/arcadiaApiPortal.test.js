@@ -41,6 +41,7 @@ test('runApiPortalScraper filters Arcadia first-party Rippling jobs to India-fac
     applyUrl: 'https://ats.rippling.com/arcadiacareers/jobs/03382773-43a8-4859-a3c8-2e35fc329e17',
     sourceUrl: 'https://ats.rippling.com/arcadiacareers/jobs/03382773-43a8-4859-a3c8-2e35fc329e17',
     source: 'arcadia',
+    sourceListingComplete: false,
     jobId: '03382773-43a8-4859-a3c8-2e35fc329e17',
     requisitionId: '03382773-43a8-4859-a3c8-2e35fc329e17',
     department: 'Engineering',

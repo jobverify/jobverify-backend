@@ -30,3 +30,15 @@ export function stageOutcome(key, summary={}, code=0) {
   return 'completed';
 }
 export const isTerminal = status => ['completed','failed','incomplete','cancelled','interrupted'].includes(status);
+
+/** A successful handoff may still leave queue work and rejected items. */
+export const describeStageCompletion = (key, summary = {}, outcome) => ({
+  ...summary,
+  handoffReady: outcome === 'completed',
+  processingComplete: outcome === 'completed' && !summary.interrupted && !summary.budgetExhausted
+    && summary.stopReason !== 'budget_exhausted' && summary.reason !== 'workflow_budget_exhausted'
+    && !(summary.pendingEstimate > 0) && !(summary.leased > 0),
+  ...(key === 'rewrite' && Number.isFinite(summary.queued) ? {
+    unpublishedEstimate: Math.max(0, summary.queued - (summary.published || 0)),
+  } : {}),
+});

@@ -46,9 +46,9 @@ test('EaseMyTrip enforces elapsed deadline when synchronous work starves abort t
   return captured(url)
  }}),e=>e.code==='EASEMYTRIP_COVERAGE_GAP'&&/deadline/.test(e.message))
 })
-test('EaseMyTrip retains native12 role facts without certifying city-only India scope',async()=>{
+test('EaseMyTrip returns native12 city-policy roles without certifying country or inventory completeness',async()=>{
  const jobs=await scraper.run({fetchImpl:replay()})
- assert.equal(jobs.length,0)
+ assert.equal(jobs.length,12)
  assert.equal(readInventoryEvidence(jobs)?.status,'coverage-gap')
  assert.equal(readInventoryEvidence(jobs).reportedTotal,12)
  assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null)

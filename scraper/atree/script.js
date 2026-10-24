@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { decodeNativeEntities } from '../../scraper-support/utils/activeNativeHtml.js'
 
 import {
   ATREE_CATALOG,
@@ -115,7 +116,7 @@ const extractTitle = (html = '') => {
   return normalizeWhitespace(match?.[1]) || null
 }
 
-const normalizeTitle = (value) => normalizeWhitespace(value)
+const normalizeTitle = (value) => normalizeWhitespace(decodeNativeEntities(value))
 
 const extractAllAnchors = (html = '', baseUrl) =>
   [...String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
@@ -132,7 +133,11 @@ const extractAllAnchors = (html = '', baseUrl) =>
 const isAcceptedApplyUrl = (value) => {
   try {
     const url = new URL(String(value ?? ''))
-    return url.hostname === 'forms.gle'
+    const nativeApplication = url.origin === 'https://erp.atree.org'
+      && !url.username && !url.password && !url.hash
+      && url.pathname === '/job_application/new'
+      && /^\?job_title=HR-OPN-\d{4}-\d{4}$/.test(url.search)
+    return nativeApplication || url.hostname === 'forms.gle'
       || url.hostname === 'docs.google.com'
       || url.hostname === 'mail.google.com'
   } catch {
@@ -256,7 +261,7 @@ export const extractListingCards = (html = '') =>
       if (!headingUrl || !viewUrl || !sameUrl(headingUrl, viewUrl)) return null
 
       return {
-        title: stripTags(match[2]),
+        title: normalizeTitle(stripTags(match[2])),
         deadline: normalizeWhitespace(match[3]),
         detailUrl: viewUrl,
       }

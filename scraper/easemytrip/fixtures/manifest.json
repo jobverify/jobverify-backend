@@ -59,6 +59,34 @@
           "bodyBytes": 54427
         }
       ]
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "fileSHA256": "1c9068c187a839edbb50b963539a53ac00693721db4137eec10690199ecc5179",
+      "uncompressedSha256": "9fffb9aed06b40b20e58161670ac1bc93ad1c390c5e53b188fa35fcb86659397",
+      "responses": [
+        {
+          "url": "https://www.easemytrip.com/",
+          "finalUrl": "https://www.easemytrip.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:55:37.570Z",
+          "bodySHA256": "8258027691f582b8fd0d3703d1cc730e85e63bf4694408be1c617ea4e794f589"
+        },
+        {
+          "url": "https://www.easemytrip.com/career.html",
+          "finalUrl": "https://www.easemytrip.com/career.html",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:55:37.781Z",
+          "bodySHA256": "aedce09d65e3216661cb3375190624ad3b1d0c1f2e7162a810aa369cf5fab722"
+        },
+        {
+          "url": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform",
+          "finalUrl": "https://docs.google.com/forms/d/e/1FAIpQLScn5D94mZ3r3hq7hpv9OQfxmPFWuM6wzq5eWpTx8citbCqWLQ/viewform",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:55:38.784Z",
+          "bodySHA256": "5a08257edf4a8b361b50e9a576768c3efeabf9a93c8a9d433f07c23ac4db7243"
+        }
+      ]
     }
   ],
   "productionWrites": false

@@ -6,6 +6,8 @@ import { activeHead } from '../../scraper-support/utils/activeNativeHtml.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 import { requireProof, validateCompany, validateListing, readDetail } from './parser.js'
+import {isJobInPublicLocationScope} from '../../src/utils/publicJobLocationScope.js'
+import {isNativeBareCityInPublicScope} from '../../scraper-support/shared/nativeCityScope.js'
 
 export const SOURCE = 'axissecurities'
 export const COMPANY = 'Axis Securities'
@@ -112,10 +114,20 @@ export const run = async options => {
   const result = await inspectInventory(options)
   const complete = result.listingComplete && result.detailsComplete && result.unknownCountryCount === 0
     && result.details.filter(fact => fact.country === 'India').every(fact => fact.description)
-  const jobs = result.details.filter(fact => fact.country === 'India').map(fact => ({
+  // Central Delhi is the native publisher's observed district label; it is
+  // already accepted as Delhi by the existing public location rule.
+  const bareCity=label=>isNativeBareCityInPublicScope(label,{extraLabels:['central delhi']})
+  const jobs = result.details.filter(fact => {
+    const location=fact.row.jobLocation
+    if(fact.country&&fact.country!=='India')return false
+    // Country remains unknown for bare city labels. Use the existing public
+    // city gate, and withhold unresolved composites or explicit foreign facts.
+    if(!fact.country&&!bareCity(location))return false
+    return isJobInPublicLocationScope({country:fact.country,location})
+  }).map(fact => ({
     source: SOURCE, company: COMPANY, jobId: fact.row.jobSeq, requisitionId: fact.row.jobCode, title: fact.row.jobTitle,
     sourceUrl: detailUrl(fact.row.jobSeq), applyUrl: detailUrl(fact.row.jobSeq), link: detailUrl(fact.row.jobSeq),
-    country: 'India', location: fact.row.jobLocation, city: null, state: null,
+    country: fact.country, location: fact.row.jobLocation, city: null, state: null,
     jobDescription: fact.description, sourceDescription: fact.description, nativeDescriptionHTML: fact.row.jobDesc,
     experienceRequired: fact.row.jobReqExp || null, employmentType: fact.row.jobType === 'R' ? 'Full-time' : null,
     postingDate: fact.publicationDate, postedAt: fact.publicationDate, nativePublicationSource: fact.publicationSource,
@@ -128,7 +140,7 @@ export const run = async options => {
   return attachInventoryEvidence(jobs,{ status: complete ? result.reportedTotal === 0 ? 'verified-empty' : 'complete-inventory' : 'coverage-gap',
     firstParty: true, surface: SEARCH_URL, listingComplete: complete, pagesFetched: result.pagesFetched, reportedTotal: result.reportedTotal,
     indiaFacetCount: null, verifiedAt: result.verifiedAt, reason: complete ? 'Native paginated public inventory fully reconciled with employer-bound detail and explicit countries.'
-      : `${result.unknownCountryCount} native details have unknown country; ${result.missingDescriptionCount} lack a substantive JD. Native listings=${result.listings.length}/${result.reportedTotal}; hydrated details=${result.details.length}. No zero-India claim.` })
+      : `${result.unknownCountryCount} native details have unknown country; ${result.missingDescriptionCount} lack a substantive JD. Native listings=${result.listings.length}/${result.reportedTotal}; hydrated details=${result.details.length}. ${jobs.length} satisfy the existing public location policy; unknown countries remain null. No zero-India claim.` })
 }
 export const createAxisSecuritiesScraper = () => ({ run })
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

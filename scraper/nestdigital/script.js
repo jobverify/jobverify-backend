@@ -37,7 +37,8 @@ const titleCase = (value) => normalizeWhitespace(value)
   .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
   .join(' ') || null
 
-const defaultFetchText = (url) => fetch(url, {
+const defaultFetchText = (url, { signal } = {}) => fetch(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -51,7 +52,8 @@ const defaultFetchText = (url) => fetch(url, {
   return response.text()
 })
 
-const defaultFetchJson = (url) => fetch(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetch(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -229,9 +231,20 @@ export const createNestDigitalScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
+    fetchText: suppliedFetchText = defaultFetchText,
+    fetchJson: suppliedFetchJson = defaultFetchJson,
+    signal,
   } = {}) {
+    signal?.throwIfAborted()
+    const request = async (fetcher, url) => {
+      signal?.throwIfAborted()
+      const requestSignal = AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(20000)])
+      const value = await fetcher(url, { signal: requestSignal })
+      signal?.throwIfAborted()
+      return value
+    }
+    const fetchText = url => request(suppliedFetchText, url)
+    const fetchJson = url => request(suppliedFetchJson, url)
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('NeST Digital careers page no longer matches the verified official public careers surface')
@@ -259,15 +272,16 @@ export const createNestDigitalScraper = ({
         throw new Error('NeST Digital verified jobs API changed materially: positive totals no longer produce first-page hits')
       }
 
-      for (const hit of hits) {
-        const jobId = hit?._source?.job
-        if (!jobId) continue
+      for (let start = 0; start < hits.length; start += 3) {
+        signal?.throwIfAborted()
+        const batch = await Promise.all(hits.slice(start, start + 3).map(async hit => {
+          const jobId = hit?._source?.job
+          if (!jobId) return null
 
-        const detailPayload = await fetchJson(buildJobDetailUrl(jobId))
-        const normalizedJob = normalizeJob(hit, detailPayload, now)
-        if (normalizedJob) {
-          normalizedJobs.push(normalizedJob)
-        }
+          const detailPayload = await fetchJson(buildJobDetailUrl(jobId))
+          return normalizeJob(hit, detailPayload, now)
+        }))
+        normalizedJobs.push(...batch.filter(Boolean))
       }
 
       const totalPages = Math.max(1, Math.ceil(totalHits / safePageSize))
@@ -280,6 +294,7 @@ export const createNestDigitalScraper = ({
       throw new Error('NeST Digital verified jobs API changed materially: no India jobs normalized from current search results')
     }
 
+    signal?.throwIfAborted()
     return normalizedJobs
   },
 })

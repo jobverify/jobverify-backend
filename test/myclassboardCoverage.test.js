@@ -33,16 +33,16 @@ test('MyClassboard preserves exact caller cancellation before and during request
   }}),error=>error===reason)
  }
 })
-test('MyClassboard exact official employer native capture replay recovers17 India roles with original dates',async()=>{
+test('MyClassboard exact official employer native capture replay recovers18 India roles with original dates',async()=>{
  const jobs=await run({fetchImpl:replay()})
- assert.equal(jobs.length,17);assert.equal(jobs.nativeCollectionEvidence.nativeRecordCount,21)
+ assert.equal(jobs.length,18);assert.equal(jobs.nativeCollectionEvidence.nativeRecordCount,21)
  assert.equal(jobs.nativeCollectionEvidence.corporateCardCount,16)
- assert.deepEqual(jobs.nativeCollectionEvidence.exclusions.map(r=>r.id),['142099','141291','141278','59073'])
+ assert.deepEqual(jobs.nativeCollectionEvidence.exclusions.map(r=>r.id),['142099','141291','141278'])
  const evidence=readInventoryEvidence(jobs);assert.equal(evidence.status,'discovery-only');assert.equal(evidence.listingComplete,false);assert.equal(evidence.reportedTotal,null);assert.equal(evidence.indiaFacetCount,null)
  assert.equal(jobs.find(j=>j.jobId==='135633').postingDate,'2026-07-23T11:22:15.4Z')
  for(const job of jobs){assert.equal(job.country,'India');assert.ok(job.jobDescription.length>60);assert.equal(job.applyUrl,'https://mcb.keka.com/careers/applyjob/'+job.jobId)}
  const qualified=analyzePublishableJobs(jobs,{now:new Date('2026-10-23T07:30:00Z')})
- assert.equal(qualified.filterCounts.old,13)
+ assert.equal(qualified.filterCounts.old,14)
  assert.deepEqual(qualified.eligibleJobs.map(j=>j.jobId),['143683','143062','59685','50237'])
 })
 test('MyClassboard application form, active button and public date drift fail closed',async()=>{

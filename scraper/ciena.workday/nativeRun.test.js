@@ -5,6 +5,15 @@ import test from 'node:test'
 import {run} from './script.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 const fixture=()=>JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/native-20261021.json.gz',import.meta.url))))
+for (const employer of ['Ciena (Asia) Limited, Philippine Branch', 'Ciena Communications, Inc.']) {
+ test('native India roles preserve current Ciena legal employer: ' + employer, async t => {
+  const { jobs } = await replay(t, packet => {
+   if (packet.url.includes('/job/')) { const value = JSON.parse(packet.body); value.hiringOrganization.name = employer; packet.body = JSON.stringify(value) }
+  })
+  assert.equal(jobs.length, 8)
+  assert.ok(jobs.every(job => job.nativeEmployer === employer))
+ })
+}
 async function replay(t,change,options={}){
  const {packets,capturedTrial}=fixture(),counts={posts:0,details:0},calls=[],used=new Set()
  t.mock.method(globalThis,'fetch',async(url,init={})=>{

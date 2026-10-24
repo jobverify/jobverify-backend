@@ -197,6 +197,141 @@
           "bodySha256": "f39a769ae166d6d4fda8e490a6053259b0edf99d2dfe3486234dc3c384a390e2"
         }
       ]
+    },
+    {
+      "file": "fresh-native-pages.json.gz",
+      "sha256": "5041afa75643c86b90f9d7b925c520b8509f2e6ee09017570edcba8d7b4d5a96",
+      "uncompressedSha256": "8d1fc1a91031d9db3860f46442eb01dd12d8f89e479f89866caba5bdcbe47417",
+      "responses": [
+        {
+          "url": "https://www.greyamp.com/careers",
+          "finalUrl": "https://www.greyamp.com/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:41:00.900Z",
+          "bodySha256": "c032ac83862975b5b7111c5690b60bf23c4733c5ec01725c124654966c616c6f"
+        },
+        {
+          "url": "https://www.greyamp.com/api/job-openings",
+          "finalUrl": "https://www.greyamp.com/api/job-openings",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:41:02.398Z",
+          "bodySha256": "e7c5757881d14f3e1c67feb3ea7de9442a9dc7b2cfede92d7c36621523fceb76"
+        }
+      ]
+    },
+    {
+      "file": "native-employer-pages.json.gz",
+      "sha256": "53ad1fd1d282460ddc669d3399a50b46d70e875f46da39d2791d2b17584a7342",
+      "uncompressedSha256": "a5309b2b5774c0b4433e9757a4e6c6c264fc8bac0607ca7f3737c3371afc1426",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/greyamp-consulting/",
+          "finalUrl": "https://www.linkedin.com/company/greyamp-consulting/",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:41:39.449Z",
+          "bodySha256": "022c2e1bb8b6339b3bfd371a1d2e730ff2c49a10adb6a76bf35bf02e8b71f7e0"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=13422302&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13422302&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:41:40.186Z",
+          "bodySha256": "0154df072590a29742383fbf3e598f393149509e39e94655ccb5d18ed510b2bf"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=13422302&location=Worldwide",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13422302&location=Worldwide",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:41:40.646Z",
+          "bodySha256": "f11fc83a52da017325ddcd14542c946cbd40b8125edf9d48fcb0298a9030574c"
+        }
+      ]
+    },
+    {
+      "file": "fresh-client-application.json.gz",
+      "sha256": "3f58e9823b31ed005187f4260b0ac6f68e849709bf6ee305524bbb52d2a930f0",
+      "uncompressedSha256": "3c2c82dd9d37ddc59a752aba105c19187fce2b0534784b49e9b46c11d1314a76",
+      "responses": [
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/2rrquw9a_28mi.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/2rrquw9a_28mi.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:43:51.486Z",
+          "bodySha256": "04672a075565f5936087599dc1e72271425079dff8edbd9c1e4c7549e048593f"
+        }
+      ]
+    },
+    {
+      "file": "fresh-application-page.json.gz",
+      "sha256": "3c1cbb205276a0b578f128a8097928cfeb91e34e1a3f24f437315cd4100c90d0",
+      "uncompressedSha256": "9ff93209ffd9ea47b38b49e42c234b0e2adefbd618f48953284e2a5655717e48",
+      "responses": [
+        {
+          "url": "https://docs.google.com/forms/d/e/1FAIpQLSe5uopMDdaOyyPwMSVOJjtd2C9UU4tlOTzegWBvsmFQaxp-lw/viewform",
+          "finalUrl": "https://docs.google.com/forms/d/e/1FAIpQLSe5uopMDdaOyyPwMSVOJjtd2C9UU4tlOTzegWBvsmFQaxp-lw/viewform",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:44:13.025Z",
+          "bodySha256": "24323a9439e4b64aa535dff81f889fe52f04b8a8a98a85902963dca0199ec5fe"
+        }
+      ]
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "sha256": "3db4d5c657736f01da9d224a10c2b5ed199d38898d5527d71b79b7fca5c9859a",
+      "uncompressedSha256": "6bda3908ce44cef986027802e47a9b8538f0b28c6beb3afe0e377a373516bea2",
+      "responses": [
+        {
+          "url": "https://www.greyamp.com/careers",
+          "finalUrl": "https://www.greyamp.com/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:37:19.738Z",
+          "bodySha256": "c032ac83862975b5b7111c5690b60bf23c4733c5ec01725c124654966c616c6f"
+        },
+        {
+          "url": "https://www.greyamp.com/_next/static/chunks/2rrquw9a_28mi.js",
+          "finalUrl": "https://www.greyamp.com/_next/static/chunks/2rrquw9a_28mi.js",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:37:19.844Z",
+          "bodySha256": "04672a075565f5936087599dc1e72271425079dff8edbd9c1e4c7549e048593f"
+        },
+        {
+          "url": "https://www.greyamp.com/api/job-openings",
+          "finalUrl": "https://www.greyamp.com/api/job-openings",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:37:20.117Z",
+          "bodySha256": "e7c5757881d14f3e1c67feb3ea7de9442a9dc7b2cfede92d7c36621523fceb76"
+        },
+        {
+          "url": "https://docs.google.com/forms/d/e/1FAIpQLSe5uopMDdaOyyPwMSVOJjtd2C9UU4tlOTzegWBvsmFQaxp-lw/viewform",
+          "finalUrl": "https://docs.google.com/forms/d/e/1FAIpQLSe5uopMDdaOyyPwMSVOJjtd2C9UU4tlOTzegWBvsmFQaxp-lw/viewform",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:37:21.227Z",
+          "bodySha256": "f74725f36473c4d14ce1d50fe078b4ac2f04b33a39ef6bf0adc65b779de38879"
+        }
+      ]
     }
-  ]
+  ],
+  "files": [
+    {
+      "file": "fresh-native-pages.dom.json",
+      "sha256": "26f47337cc8d6b0bd3593baeee5d8a9721e228bd840d61f629477626c6f3c0f1",
+      "evidenceType": "DOM navigation observation, not HTTP response"
+    },
+    {
+      "file": "native-employer-pages.dom.json",
+      "sha256": "68e1a429a49876794354686d3b39d0a9c1f1ed59e836eec0ffee1c5eadc922d9",
+      "evidenceType": "DOM navigation observation, not HTTP response"
+    },
+    {
+      "file": "fresh-client-application.dom.json",
+      "sha256": "14966735673da4e68db99db3b2564b01ce424337913f7ff19797800211f97339",
+      "evidenceType": "DOM navigation observation, not HTTP response"
+    },
+    {
+      "file": "fresh-application-page.dom.json",
+      "sha256": "65ceeb80a691b72b2a9464ef7d903c8cc23e4975bb5e522d44568953f081b6e6",
+      "evidenceType": "DOM navigation observation, not HTTP response"
+    }
+  ],
+  "latestInvestigation": "October 23, 2026: all three native roles qualify under the existing public city policy. Only the exact published travel suffix is separated from their Bangalore base; full locations and travel notes remain intact. Countries and publication dates remain null. The linked employer application form exposes matching role choices. The shared form URL is generic, so native role IDs preserve three distinct fingerprints. Country coverage remains incomplete: coverage-gap, listingComplete=false, unknown India total, no lifecycle cleanup."
 }

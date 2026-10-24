@@ -11,7 +11,7 @@
   "atsPlatform": "corporate-email-invitation+independent-native-employer-authored-iimjobs-api+linkedin-scoped-search",
   "countryFilter": "India",
   "paginationStrategy": "exact-employer-India+Worldwide-scoped-search-observations;whole-company-inventory-unresolved",
-  "extractionStrategy": "active-corporate-email-navigation+Next-Storyblok-team-invitation+reciprocal-native-employer-identity;native-employer-posted-API-creatorDomain-proof+country-exclusion+earliest-creation-preservation",
+  "extractionStrategy": "native-employer-authored-role-ID-domain-status+all-native-city-labels+original-earliest-native-dates+country-truth",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
   "verifiedOn": "2026-10-23",
@@ -22,8 +22,11 @@
   "lifecycleCleanupAllowed": false,
   "officialCareersPageUrl": "https://www.xto10x.com/about",
   "firstParty": false,
-  "verifiedSurfaceSummary": "Fresh corporate homepage/about200 captures show Careers and Join Us pointing to hungryforimpact@xto10x.com, a generic invitation rather than a specific job. Active Next/Storyblok team component confirms the email destination. Independent native LinkedIn employer xto10x org14628973 links back to the exact corporate domain; corporate outgoing LinkedIn handoff is unproven, so recruiting inventory firstParty remains false. Current exact selected-company India and Worldwide searches show no matches, retained strictly as scoped observations, never company-empty certification. No eligible current India role is recovered. Whole-company counts unknown, cleanup disabled. Leadership Hiring is a customer service offering; portfolio or startup-network roles are not attributed to xto10x. Actual native iimjobs API recovers employer-authored Strategy Consultant1728041 and Engagement Manager1728042: creatorDomainName xto10x.com, recruiter340446, crawled0, active/status/applyStatus1 and hasExpiredfalse. Both earliest native createdTime1787941800000 (2026-08-28T18:30Z), separate millisecond creation Aug29. City-only Bangalore/Delhi NCR labels with null address/coordinates provide no explicit country, so excluded; neither role is refreshed into recency. PeopleCues navigation fails certificate validation with TLS verification preserved.",
+  "verifiedSurfaceSummary": "Exact employer-authored iimjobs records1728041/1728042 provide Bangalore and DelhiNCR native labels, not merely opaque IDs. All native labels must satisfy existing public city policy; country staysnull, all locations retained, no HQ/country inference. Native introText fullJDs retained; missing/title-only/section-label JDs staypartial. Earliest native creation2026-08-28T18:30Z remains unchanged, both age-excluded. Domain/creator/company/crawled0/status/active/apply/expiry bindings remain critical; new country/date/expiry/alternate-location/JD carriers require review. Native JSON APIs explicitly negotiateJSON. Secondary LinkedIn discovery runs after critical native extraction; errors retain dated roles with explicit gaps. Corporate invitation remains generic, outgoing recruiting handoff unproven, firstPartyfalse, unknown total/country completeness and cleanupdisabled. Current live results recorded separately.",
   "fixtureManifest": "scraper/xto10x/fixtures/capture-manifest.json",
   "nativeObservedRecordCount": 2,
-  "nativeExcludedUnknownCountryCount": 2
+  "nativeExcludedUnknownCountryCount": 2,
+  "observedPublicCityScopeJobCount": 2,
+  "observedNativeCountryUnknownCount": 2,
+  "observedEligibleCityScopeJobCount": 0
 }

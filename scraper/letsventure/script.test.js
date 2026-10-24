@@ -17,16 +17,19 @@ import {createHash} from 'node:crypto'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 const receipts=['rebrand-pages.json','lvx-employer-pages.json','zoho-pages.json','zoho-detail-pages.json','native-seed-pages.json'].flatMap(f=>JSON.parse(gunzipSync(readFileSync(new URL('./fixtures/'+f+'.gz',import.meta.url)))))
 const replay=rows=>async url=>{const r=rows.find(r=>r.url===url);assert.ok(r,'uncaptured '+url);const response=new Response(r.body,{status:r.status});Object.defineProperty(response,'url',{value:r.finalUrl});return response}
-test('actual LVX rebrand and native published remote roles remain country-unknown, not verified empty',async()=>{const jobs=await run({fetchImpl:replay(receipts),now:'2026-10-23T09:00:00Z'});assert.equal(jobs.length,0);assert.equal(readInventoryEvidence(jobs).reportedTotal,null);assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(jobs.nativeCollectionEvidence.excludedNativeCandidates.length,4);assert.ok(jobs.nativeCollectionEvidence.excludedNativeCandidates.slice(0,3).every(j=>j.country===null&&j.nativeDateOpenedIsPublicationDate===false));assert.equal(jobs.nativeCollectionEvidence.lifecycleCleanupAllowed,false)})
+test('actual LVX rebrand and native remote roles retain unknown countries and public original dates',async()=>{const jobs=await run({fetchImpl:replay(receipts),now:'2026-10-23T09:00:00Z'});assert.equal(jobs.length,3);assert.equal(readInventoryEvidence(jobs).reportedTotal,null);assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(jobs.nativeCollectionEvidence.excludedNativeCandidates.length,1);assert.ok(jobs.nativeCollectionEvidence.nativeCandidates.every(j=>j.country===null&&j.nativeDateOpenedIsPublicationDate===true));assert.equal(jobs.nativeCollectionEvidence.lifecycleCleanupAllowed,false)})
 
 test('changed exact identity, newly explicit job country, date/expiry schema and pagination require review',async()=>{for(const [predicate,edit]of [
  [r=>r.url.includes('/lvx-in-news/'),b=>b.replaceAll('LetsVenture rebrands as LVX','Unrelated company rebrand')],
  [r=>r.url==='https://www.linkedin.com/company/lvxventures',b=>b.replaceAll('urn:li:organization:3325282','urn:li:organization:7')],
  [r=>r.url.includes('/recruit/v2/public/'),b=>b.replaceAll('"Country":""','"Country":"India"')],
  [r=>r.url.includes('/recruit/v2/public/'),b=>b.replace('"info":{','"info":{"hasMore":true,')],
+ ])await assert.rejects(run({fetchImpl:replay(receipts.map(r=>predicate(r)?{...r,body:edit(r.body)}:r))}),gap)})
+
+test('independent search or seed drift preserves native original-date roles with explicit discovery gaps',async()=>{for(const [predicate,edit]of [
  [r=>r.url.includes('/jobs/search/'),b=>b+'<script type="application/ld+json">{"@type":"JobPosting","datePosted":"2026-10-23"}</script>'],
  [r=>r.url.includes('/jobs/view/'),b=>b.replace('</h1>','</h1><time>First published January 1,2025</time>')],
- ])await assert.rejects(run({fetchImpl:replay(receipts.map(r=>predicate(r)?{...r,body:edit(r.body)}:r))}),gap)})
+ ]){const jobs=await run({fetchImpl:replay(receipts.map(r=>predicate(r)?{...r,body:edit(r.body)}:r))});assert.equal(jobs.length,3);assert.equal(jobs.nativeCollectionEvidence.independentDiscoveryGaps.length,1);assert.equal(readInventoryEvidence(jobs).listingComplete,false)}})
 test('unbounded body text fallback is not used',async()=>{let used=false;await assert.rejects(run({fetchImpl:async url=>({url,status:200,text:async()=>{used=true;return 'x'}})}),gap);assert.equal(used,false)})
 
 test('new API date/country/expiry fields require reconciliation before incomplete observations',async()=>{for(const key of ['datePosted','Published_Time','Applicant_Countries']){const changed=receipts.map(r=>r.url.includes('/recruit/v2/public/')?{...r,body:r.body.replace('"Remote_Job":"Yes"','"'+key+'":"new native fact","Remote_Job":"Yes"')}:r);await assert.rejects(run({fetchImpl:replay(changed)}),gap)}})

@@ -58,5 +58,33 @@
     "bodyBytes": 118,
     "bodySHA256": "ed6a7c7c15db91f2b6ffbaec4ccb7be48bd7853833e3e3e642ccf701fa90f3de",
     "captureFile": "continuation-responses.json.gz"
+  },
+  {
+    "file": "fresh-city-scope-runtime.json.gz",
+    "sha256": "5e8557ebfb386ed6d9d98573b6e65db8b42137d6d7ecc09da99732e0129345ee",
+    "uncompressedSha256": "aafb07e4405bafb91832c4692c0a77e9cea436fcd25329eb7e6cbac5e292ca28",
+    "responses": [
+      {
+        "url": "https://www.dexitglobal.com/careers/",
+        "finalUrl": "https://www.dexitglobal.com/careers/",
+        "status": 200,
+        "capturedAt": "2026-10-23T18:48:50.029Z",
+        "bodySHA256": "98c07f5b033b530bf2e22428c27be8bb8c6f2c1a834c7e3f76117210e88e615a"
+      },
+      {
+        "url": "https://www.dexitglobal.com/about-us/",
+        "finalUrl": "https://www.dexitglobal.com/about-us/",
+        "status": 200,
+        "capturedAt": "2026-10-23T18:48:51.732Z",
+        "bodySHA256": "322810de3073c957d0d3d7191173b37a95d2bbe5fe45e6c4d2322d7befc50681"
+      },
+      {
+        "url": "https://www.dexitglobal.com/currentopenings/helpdesk-executive/",
+        "finalUrl": "https://www.dexitglobal.com/currentopenings/helpdesk-executive/",
+        "status": 200,
+        "capturedAt": "2026-10-23T18:48:53.730Z",
+        "bodySHA256": "5e884233513d1b069c777750ce2ed78e849c1b0db46578f7f7d249f9b1996a8d"
+      }
+    ]
   }
 ]

@@ -32,7 +32,10 @@ export const buildSourceEdits = input => {
     offset += line.length + 1;
   }
   const candidates = inventory.sources.filter(unit => {
-    if (unit.locked || unit.field || unit.text.length < 15 || unit.text.length > REWRITE_MODEL.maxPromptSourceCharacters) return false;
+    // Every factual source word must survive an edit. Longer statements remain
+    // verbatim instead of asking the model to shorten them below the edit cap.
+    if (unit.locked || unit.field || unit.text.length < 15
+      || unit.text.length > Math.min(REWRITE_MODEL.maxPromptSourceCharacters, REWRITE_MODEL.maxEditCharacters)) return false;
     const position = source.indexOf(unit.text);
     const zone = position < 0 ? undefined : zones.filter(zone => zone.offset <= position).at(-1);
     if (zone?.company) return false;
@@ -60,22 +63,29 @@ export const buildSourceEdits = input => {
   return { ...inventory, candidates, schema, messages };
 };
 
-export const expandSourceEdits = (value, input) => {
-  if (!value || Object.keys(value).some(key => key !== 'edits') || !Array.isArray(value.edits) || value.edits.length > REWRITE_MODEL.maxModelEdits) return null;
+export const expandSourceEdits = (value, input, onInvalid = () => {}) => {
+  const reject = (code, detail = {}) => { onInvalid({ code, ...detail }); return null; };
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => key !== 'edits') || !Array.isArray(value.edits)) return reject('invalid_edit_schema');
+  if (value.edits.length > REWRITE_MODEL.maxModelEdits) return reject('too_many_edits');
   const { sources, candidates } = buildSourceEdits(input), allowed = new Map(candidates.map(unit => [unit.id, unit])), groups = new Map(), seen = new Set();
-  for (const item of value.edits) {
-    if (!item || Object.keys(item).some(key => !['source', 'text'].includes(key)) || !Number.isInteger(item.source)
-      || !allowed.has(item.source) || seen.has(item.source) || typeof item.text !== 'string'
-      || !item.text.trim() || item.text.length > REWRITE_MODEL.maxEditCharacters || !/^[ -~]+$/.test(item.text)) return null;
+  for (const [itemIndex, item] of value.edits.entries()) {
+    const detail = { itemIndex, sourceId: item?.source, text: typeof item?.text === 'string' ? item.text : undefined,
+      evidence: allowed.get(item?.source)?.text };
+    if (!item || typeof item !== 'object' || Array.isArray(item) || Object.keys(item).some(key => !['source', 'text'].includes(key))
+      || typeof item.text !== 'string' || !item.text.trim()) return reject('invalid_edit_schema', detail);
+    if (!Number.isInteger(item.source) || !allowed.has(item.source)) return reject('invalid_source_id', detail);
+    if (seen.has(item.source)) return reject('duplicate_source_id', detail);
+    if (item.text.length > REWRITE_MODEL.maxEditCharacters) return reject('edit_too_long', detail);
+    if (!/^[ -~]+$/.test(item.text)) return reject('invalid_edit_characters', detail);
     seen.add(item.source);
     const unit = allowed.get(item.source), key = unit.section || 'overview';
-    if (!preservesSourceWords(unit.text, item.text)) return null;
+    if (!preservesSourceWords(unit.text, item.text)) return reject('source_words_changed', { ...detail, section: key });
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push({ source: item.source, text: item.text });
   }
   if (!groups.size) {
     const anchor = sources.find(unit => unit.section === 'overview' && !unit.field) || sources.find(unit => unit.field === 'title') || sources[0];
-    if (!anchor) return null;
+    if (!anchor) return reject('missing_source_anchor');
     groups.set(anchor.section || 'overview', [{ source: anchor.id }]);
   }
   return expandReferencedSections({ sections: [...groups].map(([key, items]) => ({ key, items })) }, input);

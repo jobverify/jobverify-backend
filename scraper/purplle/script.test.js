@@ -23,17 +23,20 @@ test('Purplle resolves to its exact-name first-party provider', () => {
 const capture = JSON.parse(readFileSync(new URL('./fixtures/official-careers.json', import.meta.url)))
 const discovery = JSON.parse(readFileSync(new URL('./fixtures/linkedin-discovery.json', import.meta.url)))
 const details = JSON.parse(readFileSync(new URL('./fixtures/linkedin-native-details.json', import.meta.url)))
+const capturedResponse=(body,status,url)=>{const r=new Response(body,{status});Object.defineProperty(r,'url',{value:url});return r}
 const fixtureFetch = async url => {
   const key = value => new URL(value).pathname.replace(/\/$/, '')
   const item = [capture, ...details, ...discovery].find(item => key(item.url) === key(url))
   assert.ok(item, `uncaptured URL ${url}`)
-  return { ok: item.status === 200, status: item.status, url: item.finalUrl, text: async () => item.body }
+  return capturedResponse(item.body,item.status,item.finalUrl)
 }
 
 test('Purplle comments contain three historical roles and none are emitted as current jobs', async () => {
   const jobs = await createPurplleScraper({ fetchImpl: fixtureFetch }).run()
-  assert.deepEqual(jobs.map(job => job.jobId), ['4480815433', '4448025772', '4474047271', '4474129089', '4474113514', '4441617213'])
-  assert.ok(jobs.every(job => job.country === 'India' && job.sourceListingComplete === false))
+  assert.deepEqual(jobs.map(job => job.jobId), ['4480815433', '4479287979', '4479503345', '4448025772', '4474047271', '4405646318', '4474129089', '4474113514', '4441617213'])
+  assert.equal(jobs.filter(job=>job.country==='India').length,6)
+  assert.equal(jobs.filter(job=>job.country===null).length,3)
+  assert.ok(jobs.every(job => job.sourceListingComplete === false))
   assert.ok(jobs.every(job => job.sourceDescription?.length > 100 && job.sourceDetailComplete === true))
   assert.ok(jobs.every(job => job.activeApplyVerified === true && job.closingDate === null))
   const evidence = readInventoryEvidence(jobs)
@@ -50,7 +53,7 @@ test('Purplle stops at HTTP429 without emitting unvisited cards', async () => {
     attempted.push(url)
     return fixtureFetch(url)
   } }).run()
-  assert.equal(jobs.length, 6)
+  assert.equal(jobs.length, 9)
   assert.equal(attempted.filter(url => url.includes('/jobs/view/')).length, 10)
   assert.equal(jobs.find(job => job.jobId === '4474107749'), undefined)
   assert.match(readInventoryEvidence(jobs).reason, /429/)
@@ -58,52 +61,46 @@ test('Purplle stops at HTTP429 without emitting unvisited cards', async () => {
 
 test('Purplle refuses a changed corporate email or outgoing employer identity', async () => {
   for (const html of [capture.body.replaceAll('career@purplle.com', 'career@other.com'), capture.body.replaceAll('/company/2706205', '/company/123')]) {
-    await assert.rejects(createPurplleScraper({ fetchImpl: async url => ({ ok: true, status: 200, url, text: async () => html }) }).run(), { code: 'PURPLLE_COVERAGE_GAP' })
+    await assert.rejects(createPurplleScraper({ fetchImpl: async url => capturedResponse(html,200,url) }).run(), { code: 'PURPLLE_COVERAGE_GAP' })
   }
 })
 
 test('Purplle bounds uncooperative fetch and response body by the aggregate deadline', async () => {
-  for (const fetchImpl of [async () => new Promise(() => {}), async url => ({ ok: true, status: 200, url, text: async () => new Promise(() => {}) })]) {
+  for (const fetchImpl of [async () => new Promise(() => {}), async url => capturedResponse(new ReadableStream({pull(){return new Promise(()=>{})}}),200,url)]) {
     await assert.rejects(createPurplleScraper({ fetchImpl, timeoutMs: 15 }).run(), { code: 'PURPLLE_COVERAGE_GAP' })
   }
 })
 
 test('Purplle propagates exact caller abort through an uncooperative body read', async () => {
   const controller = new AbortController(), reason = new Error('stop-purplle')
-  await assert.rejects(createPurplleScraper({ fetchImpl: async url => ({ ok: true, status: 200, url, text: async () => {
-    controller.abort(reason)
-    return new Promise(() => {})
-  } }) }).run({ signal: controller.signal }), error => error === reason)
+  await assert.rejects(createPurplleScraper({ fetchImpl: async url => capturedResponse(new ReadableStream({pull(){controller.abort(reason);return new Promise(()=>{})}}),200,url) }).run({ signal: controller.signal }), error => error === reason)
 })
 
 test('Purplle rejects newly introduced structured role scope or expiry until reconciled', async () => {
   await assert.rejects(createPurplleScraper({ fetchImpl: async url => {
     const response = await fixtureFetch(url)
     const html = await response.text()
-    return { ...response, text: async () => url.includes('4480815433') ? html.replace('</head>', '<script type="application/ld+json">{"@type":"JobPosting","validThrough":"2020-01-01","jobLocation":{"address":{"addressCountry":"US"}}}</script></head>') : html }
+    return capturedResponse(url.includes('4480815433') ? html.replace('</head>', '<script type="application/ld+json">{"@type":"JobPosting","validThrough":"2020-01-01","jobLocation":{"address":{"addressCountry":"US"}}}</script></head>') : html,response.status,response.url)
   } }).run(), { code: 'PURPLLE_COVERAGE_GAP' })
 })
 
 test('Purplle requires exact response URL before trusting body identity', async () => {
-  await assert.rejects(createPurplleScraper({ fetchImpl: async url => ({ ...(await fixtureFetch(url)), url: undefined }) }).run(), { code: 'PURPLLE_COVERAGE_GAP' })
+  await assert.rejects(createPurplleScraper({ fetchImpl: async url => {const r=await fixtureFetch(url);return capturedResponse(await r.text(),r.status,undefined)} }).run(), { code: 'PURPLLE_COVERAGE_GAP' })
 })
 
 test('Purplle cancels oversized streamed native bodies before reading remaining chunks', async () => {
   let cancelled = false
-  await assert.rejects(createPurplleScraper({ fetchImpl: async url => ({ ok: true, status: 200, url,
-    body: { getReader: () => ({ read: async () => ({ done: false, value: new Uint8Array(3000001) }), cancel: async () => { cancelled = true } }) },
-    text: async () => capture.body,
-  }) }).run(), { code: 'PURPLLE_COVERAGE_GAP' })
+  await assert.rejects(createPurplleScraper({ fetchImpl: async url => capturedResponse(new ReadableStream({pull(c){c.enqueue(new Uint8Array(3000001))},cancel(){cancelled=true}}),200,url) }).run(), { code: 'PURPLLE_COVERAGE_GAP' })
   assert.equal(cancelled, true)
 })
 
 test('Purplle hidden native JD remains eligible with null description after active role verification', async () => {
   const jobs = await createPurplleScraper({ fetchImpl: async url => {
     const response = await fixtureFetch(url), html = await response.text()
-    return { ...response, text: async () => url.includes('4480815433')
-      ? html.replace(/<div\b([^>]*class="[^"]*show-more-less-html__markup[^"]*"[^>]*)>/, '<div hidden $1>') : html }
+    return capturedResponse(url.includes('4480815433')
+      ? html.replace(/<div\b([^>]*class="[^"]*show-more-less-html__markup[^"]*"[^>]*)>/, '<div hidden $1>') : html,response.status,response.url)
   } }).run()
-  assert.equal(jobs.length, 6)
+  assert.equal(jobs.length, 9)
   assert.equal(jobs[0].sourceDescription, null)
   assert.equal(jobs[0].sourceDetailComplete, false)
   assert.equal(jobs[0].activeApplyVerified, true)

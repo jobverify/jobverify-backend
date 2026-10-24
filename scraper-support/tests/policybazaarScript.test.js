@@ -8,7 +8,10 @@ const html = `<!doctype html><html><head><title>Policybazaar Careers</title></he
 <li><p class="heading">Don't see a Job Opening which interests you?</p><p class="text">Share your resume and dream role with us.</p></li></ul>
 <div>Currently hiring for</div><span class="city-location">Gurugram</span><span class="city-location">Mumbai</span>
 <form id="careerFormReferer"><select id="refPosition"><option value="">Position applied for</option><option value="Associate Sales Consultant">Associate Sales Consultant</option></select><input type="file"></form></body></html>`
-const response = (body = html, overrides = {}) => ({ status: 200, url: CAREERS_URL, text: async () => body, ...overrides })
+const response = (body = html, overrides = {}) => {
+ const stream=overrides.text?new ReadableStream({async start(c){try{const value=await overrides.text();c.enqueue(new TextEncoder().encode(value));c.close()}catch(error){c.error(error)}}}):body
+ const r=new Response(stream,{status:overrides.status??200});Object.defineProperty(r,'url',{value:overrides.url??CAREERS_URL});return r
+}
 
 test('generic hiring cities do not become a role country, location, remote status, requisition or publication date', () => {
   const jobs = extractSearchResults(html)

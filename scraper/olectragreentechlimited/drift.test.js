@@ -22,5 +22,29 @@ test('Olectra replacement Next careers and detail pages publish three verified I
 
 test('Olectra rejects mismatched job details and unknown role geography', async () => {
   await assert.rejects(scraper.run({ fetchText: async url => (await readCurrent(url)).replaceAll('Seetharampur, Telangana', 'Remote') }), /geography|location/i)
-  await assert.rejects(scraper.run({ fetchText: async url => (await readCurrent(url)).replace(url.includes('/openings/') ? '"jobStatus":"Open"' : '__never__', '"jobStatus":"Closed"') }), /closed|status|detail/i)
+  await assert.rejects(scraper.run({ fetchText: async url => (await readCurrent(url)).replace(url.includes('/openings/') ? '"jobStatus":"Open"' : '__never__', '"jobStatus":"Unknown"') }), /closed|status|detail/i)
+})
+
+test('Olectra skips explicitly closed details still linked by the careers listing', async () => {
+  const jobs = await scraper.run({ fetchText: async url => (await readCurrent(url)).replace(
+    url.includes('/openings/') ? '"jobStatus":"Open"' : '__never__', '"jobStatus":"Closed"') })
+  assert.deepEqual(jobs, [])
+})
+
+test('Olectra does not trust closed status on a mismatched role', async () => {
+  await assert.rejects(scraper.run({ fetchText: async url => (await readCurrent(url)).replace(
+    url.includes('/openings/') ? '"jobStatus":"Open"' : '__never__', '"jobStatus":"Closed","documentId":"wrong-identity"') }), /detail|identity|mismatch/i)
+})
+
+test('Olectra accepts its current empty careers listing with rendered no-openings text', async () => {
+  const jobs = await scraper.run({ fetchText: async url => url.endsWith('/career')
+    ? fixture('olectra-empty-career.html') : readCurrent(url) })
+  assert.deepEqual(jobs, [])
+})
+
+test('Olectra cannot verify an empty listing from Next data without rendered matching text', () => {
+  const original = fixture('olectra-empty-career.html')
+  const scriptStart = original.indexOf('<script id="__NEXT_DATA__"')
+  const html = original.slice(0, scriptStart).replaceAll('suitable opportunity arises.', 'future opportunities.') + original.slice(scriptStart)
+  assert.throws(() => scraper.extractCurrentOpeningSummaries(html), /rendered no-openings evidence/i)
 })

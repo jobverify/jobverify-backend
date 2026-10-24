@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { normalizeInventoryEvidence, attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { activeDocument, requireProof, readListings, roleUrl, publicationDate, readDetail } from './parser.js'
+import {readEmployerBranches,resolveWorkBranch,FINANCING_PARTNERS_URL,BRANCHES_URL} from './branches.js'
 import { nativeCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 import { activeHead } from '../../scraper-support/utils/activeNativeHtml.js'
 
@@ -66,12 +67,13 @@ export const createKisshtScraper = () => ({
           method:'POST',headers:{'Content-Type':'application/json; charset=utf-8'},
           body:JSON.stringify({JDFileName:'',OrgCode:'',KeyName:''}),
         })))
+        const branches=readEmployerBranches(await read(FINANCING_PARTNERS_URL),await read(BRANCHES_URL))
         const jobs=[]
         let cursor=0, fatal=null, unknownCountry=0
         const selected=rows.filter(row=>{
-          const country=nativeCountryName(row.Country_Name)
+          const branch=resolveWorkBranch(row,branches),country=branch?.country
           if(!country)unknownCountry++
-          return country==='India'
+          return nativeCountryName(row.Country_Name)==='India'&&country==='India'
         })
         // Four workers stop taking new work as soon as any request fails.
         await Promise.all(Array.from({length:Math.min(4,selected.length)},async()=>{
@@ -79,10 +81,12 @@ export const createKisshtScraper = () => ({
             const row=selected[cursor++]
             try{
               const detail=readDetail(await read(roleUrl(row)),row)
-              const date=publicationDate(row.PublishDate)
+              const date=publicationDate(row.PublishDate),branch=resolveWorkBranch(row,branches)
               jobs.push({id:String(row.ERFCode),jobId:String(row.ERFCode),requisitionId:row.Req_No,source:SOURCE,company:COMPANY,
                 title:row.Position_Name.trim()+(row.ExternalJobName?' - '+row.ExternalJobName.trim():''),
-                country:'India',city:row.City_Name||null,location:[row.LOCATIONNAME,row.State_Name,'India'].filter(Boolean).join(', '),
+                country:branch.country,city:branch.city,state:branch.state,location:[branch.city,branch.state,branch.country].filter(Boolean).join(', '),
+                fingerprintLocation:[row.LOCATIONNAME,row.State_Name,'India'].filter(Boolean).join(', '),
+                nativeComplianceLocation:{city:row.City_Name||null,location:row.LOCATIONNAME,state:row.State_Name,country:row.Country_Name},nativeWorkBranch:branch,
                 postedAt:date,postingDate:date,nativePublicationDate:date,nativePublicationField:date?'PublishDate':null,
                 sourceUrl:roleUrl(row),applyUrl:detail.applyUrl,link:detail.applyUrl,
                 sourceDescription:detail.description,jobDescription:detail.description,
@@ -96,7 +100,7 @@ export const createKisshtScraper = () => ({
         jobs.sort((a,b)=>rows.findIndex(r=>String(r.ERFCode)===a.id)-rows.findIndex(r=>String(r.ERFCode)===b.id))
         return attachInventoryEvidence(jobs,{status:'discovery-only',surface:LISTING_URL,firstParty:true,
           listingComplete:false,pagesFetched,reportedTotal:rows.length,indiaFacetCount:unknownCountry?null:selected.length,
-          verifiedAt:new Date().toISOString(),reason:'Complete native client inventory; secondary branch location country and lifecycle scope remain unverified'})
+          verifiedAt:new Date().toISOString(),reason:`Native client inventory observed ${rows.length} records; ${selected.length} exact legal-employer work branches have explicit India postal-country evidence, ${unknownCountry} branch-country mappings remain unknown. Compliance address never substitutes for workplace; scope incomplete and cleanup disabled.`})
       })()])
     } catch (error) {
       controller.abort()

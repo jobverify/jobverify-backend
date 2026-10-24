@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -157,6 +158,13 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
+  const document = readNativeDocument(page)
+  if (document.nodes(node => node.tag === 'title').some(node => normalizeWhitespace(node.raw) === 'Careers | Conviva')
+    && document.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical' && node.attrs.href === 'https://www.conviva.ai/careers').length === 1
+    && document.nodes(node => node.tag === 'h1').some(node => document.text(node) === 'We work with the best')
+    && document.nodes(node => node.tag === 'section' && node.attrs.id === 'openings').length === 1
+    && document.nodes(node => node.tag === 'div' && node.attrs.id === 'grnhse_app').length === 1
+    && extractGreenhouseEmbedUrl(page) === GREENHOUSE_EMBED_URL) return true
 
   return /<title>\s*Careers\s*&amp;\s*Job Listings\s*[-–—]\s*Join the Conviva Team\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.conviva\.ai\/job-listings\/["']/i.test(page)
@@ -189,6 +197,12 @@ export const normalizeGreenhouseJobUrl = (value, jobId) => {
     const normalizedHost = url.hostname.replace(/^www\./i, '').toLowerCase()
     const normalizedPathname = url.pathname.replace(/\/+$/, '')
     const ghJid = normalizeWhitespace(url.searchParams.get('gh_jid'))
+
+    if (url.protocol === 'https:' && !url.username && !url.password
+      && ['boards.greenhouse.io', 'job-boards.greenhouse.io'].includes(normalizedHost)
+      && normalizedPathname === `/conviva/jobs/${canonicalJobId}`) {
+      return `https://job-boards.greenhouse.io/conviva/jobs/${canonicalJobId}`
+    }
 
     if (normalizedHost !== 'conviva.ai') return null
     if (normalizedPathname !== `/careers/job/${canonicalJobId}`) return null

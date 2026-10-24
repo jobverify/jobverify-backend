@@ -19,7 +19,7 @@ const arrayCount = (value, arrayKey, countKey) => {
 // the same batch. Keep this separate from returned-job counters and never copy
 // role bodies, descriptions or error messages into status records.
 function nativeCollections(jobs) {
-  const collections = [], seen = new Set()
+  const collections = [], seen = new Set(), observations = [], fullReferences = new Map()
   for (const job of jobs) {
     const evidence = data(job, 'nativeCollectionEvidence')
     if (!evidence || typeof evidence !== 'object'
@@ -52,20 +52,51 @@ function nativeCollections(jobs) {
       ? candidateDetails === parsedDetails + excludedDetails + unextractedDetailFailures : null
     const listingPaginationComplete = sourceMatches ? boolean(data(evidence, 'listingPaginationComplete')) : null
     const closingInventoryMatches = sourceMatches ? boolean(data(evidence, 'closingInventoryMatches')) : null
+    const countryCountsPresent = data(evidence, 'observedIndiaListingCount') !== undefined || data(evidence, 'nonIndiaListingCount') !== undefined
+    const observedIndiaRows = sourceMatches ? count(data(evidence, 'observedIndiaListingCount')) : null
+    const excludedNonIndiaRows = sourceMatches ? count(data(evidence, 'nonIndiaListingCount')) : null
+    const observedListingRows = sourceMatches ? count(data(evidence, 'observedListingCount')) : null
     const collection = {
       source, evidenceSource, sourceMatches,
       observedListingRows: sourceMatches ? count(data(evidence, 'observedListingCount')) : null,
       candidateDetails, parsedDetails, excludedDetails, unextractedDetailFailures, otherFailures, failureStages,
       countsReconciled, listingPaginationComplete, closingInventoryMatches,
       sourceScopeComplete: sourceMatches ? boolean(data(evidence, 'sourceScopeComplete')) : null,
+      ...(countryCountsPresent ? { nativeListingCountryCounts: { observedIndiaRows, excludedNonIndiaRows,
+        reconciled: [observedIndiaRows, excludedNonIndiaRows, observedListingRows].every(n => n !== null)
+          ? observedIndiaRows + excludedNonIndiaRows === observedListingRows : null } } : {}),
       complete: countsReconciled === true && unextractedDetailFailures === 0 && otherFailures === 0
         && listingPaginationComplete === true && closingInventoryMatches === true,
     }
     const responses = data(evidence, 'retainedResponses')
     const frame = response => ['url', 'bodySHA256', 'requestedAt', 'completedAt'].map(key => scalar(data(response, key)))
     const firstID = scalar(data(evidence, 'firstExtractedJobID') ?? data(data(data(evidence, 'jobs'), '0'), 'id'))
+    const compactReference = !Array.isArray(responses)
+      && data(evidence, 'retainedResponsesOnFirstExtractedJob') === true
+      && data(evidence, 'fullBatchEvidenceOnFirstExtractedJob') === true
+    const responseCount = Array.isArray(responses) ? count(responses.length) : count(data(evidence, 'retainedResponseCount'))
+    const referenceKey = sourceMatches && firstID !== null && responseCount !== null
+      ? JSON.stringify([collection, firstID, responseCount]) : null
     const identity = JSON.stringify([collection, firstID, Array.isArray(responses)
-      ? [frame(data(responses, '0')), frame(data(responses, String(responses.length - 1)))] : null])
+      ? [frame(data(responses, '0')), frame(data(responses, String(responses.length - 1)))] : null,
+      ...(compactReference ? ['declared-compact-reference', responseCount] : [])])
+    observations.push({ collection, identity, referenceKey, compactReference })
+    if (referenceKey !== null && Array.isArray(responses) && Array.isArray(data(evidence, 'jobs'))) {
+      if (!fullReferences.has(referenceKey)) fullReferences.set(referenceKey, new Set())
+      fullReferences.get(referenceKey).add(identity)
+    }
+  }
+  // Opt-in compact responses explicitly point back to the first extracted job.
+  // Resolve only a unique full batch with identical counters,source,first ID
+  // and response count. Different full checks remain separate observations.
+  for (const observation of observations) {
+    let { collection, identity } = observation
+    if (observation.compactReference) {
+      const matches = fullReferences.get(observation.referenceKey)
+      if (matches?.size === 1) identity = matches.values().next().value
+      else collection = { ...collection, complete: false, ...(matches?.size > 1
+        ? { nativeEvidenceReferenceAmbiguous: true } : { nativeEvidenceReferenceMissing: true }) }
+    }
     if (!seen.has(identity)) { seen.add(identity); collections.push(collection) }
   }
   return collections

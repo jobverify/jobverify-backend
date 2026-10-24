@@ -266,3 +266,31 @@ test('Figma run tolerates non-India page and API drift while India job links sta
     true,
   )
 })
+
+test('Figma verifies a newly published India role through its active Greenhouse application when the careers index lags', async () => {
+ const figma = await loadFigmaModule()
+ const id = 9990004004
+ const newRole = { ...greenhousePayload.jobs[0], id,
+  absolute_url: `https://boards.greenhouse.io/figma/jobs/${id}?gh_jid=${id}` }
+ const jobs = await figma.run({
+  fetchText: async url => url === figma.CAREERS_URL ? officialCareersHtml : `<html><head>
+   <title>Job Application for ${newRole.title} at Figma</title>
+   <link rel="canonical" href="https://job-boards.greenhouse.io/figma/jobs/${id}?gh_jid=${id}">
+   </head><body><h1>${newRole.title}</h1><form id="application-form" action="/figma/jobs/${id}?gh_jid=${id}"></form></body></html>`,
+  fetchJson: async () => ({ jobs: [...greenhousePayload.jobs, newRole] }),
+ })
+ assert.ok(jobs.some(job => job.sourceUrl === newRole.absolute_url))
+})
+
+test('Figma rejects an unseen India role whose application targets another job', async () => {
+ const figma = await loadFigmaModule(), id = 9990004004
+ const newRole = { ...greenhousePayload.jobs[0], id,
+  absolute_url: `https://boards.greenhouse.io/figma/jobs/${id}?gh_jid=${id}` }
+ await assert.rejects(figma.run({
+  fetchText: async url => url === figma.CAREERS_URL ? officialCareersHtml : `<html><head>
+   <title>Job Application for ${newRole.title} at Figma</title>
+   <link rel="canonical" href="https://job-boards.greenhouse.io/figma/jobs/${id}?gh_jid=${id}">
+   </head><body><h1>${newRole.title}</h1><form id="application-form" action="/figma/jobs/123?gh_jid=123"></form></body></html>`,
+  fetchJson: async () => ({ jobs: [...greenhousePayload.jobs, newRole] }),
+ }), /verified public Greenhouse job links/)
+})

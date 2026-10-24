@@ -137,6 +137,141 @@
           "bodySha256": "c8a44ed34475393301a2b3246826b2b2d6bdb4df15a744922ae66b16bfb001cb"
         }
       ]
+    },
+    {
+      "file": "fresh-official-pages.json.gz",
+      "sha256": "9cc658a85177f0f3e42a39a63c18c08fda62c0aaec574c9e55b59f3e98d0204a",
+      "uncompressedSha256": "4faa0bcd9bf211a513ecb505e18556b070abf2dd4f8a20e1dbd40ae6a5116780",
+      "observations": [
+        {
+          "url": "https://www.purplle.com/careers",
+          "finalUrl": "https://www.purplle.com/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:39.036Z",
+          "bodySha256": "a5dc1c1326063db9b5f1a2374d425d3e994f0ea105d7735a73e14a689a619b08"
+        }
+      ]
+    },
+    {
+      "file": "fresh-linkedin-pages.json.gz",
+      "sha256": "0dc5974ff17302268f76b1021b7d4c3369a3f24fe347418e2fa955afa3bcfc12",
+      "uncompressedSha256": "40530b543d1c6e1b9a68561cbb09341b6ddaf89b2e96ced9aa157d2726e7219e",
+      "observations": [
+        {
+          "url": "https://www.linkedin.com/company/purplle-com/",
+          "finalUrl": "https://www.linkedin.com/company/purplle-com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:43.624Z",
+          "bodySha256": "5ca3d497aa6e98f2efc44c98539891b15e1680bc46528fdd2e15eccc3143f82a"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=2706205&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=2706205&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:44.474Z",
+          "bodySha256": "08803e562a38f123bd9134ce23aba15f49e902802e9f4f7a5654269fba06da34"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/facility-management-executive-at-purplle-com-4480815433?position=1&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=5MtTGKRGnsfA8s5UhQtzYA%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/facility-management-executive-at-purplle-com-4480815433?position=1&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=5MtTGKRGnsfA8s5UhQtzYA%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:45.580Z",
+          "bodySha256": "67a3409268a375ab03464b9a7bd2420c8c22d26a2dff11bc85a04c1c11104b61"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/senior-product-manager-at-purplle-com-4479287979?position=2&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=Q6LNJeurnJIoj2zyZphM9g%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/senior-product-manager-at-purplle-com-4479287979?position=2&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=Q6LNJeurnJIoj2zyZphM9g%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:46.544Z",
+          "bodySha256": "3a8b0f72c05f6b79ff8dc5891df7043605deabc483fee63a2059a079ee7daa31"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/product-manager-%E2%80%94-brand-platform-at-purplle-com-4479503345?position=3&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=BUqsUpe2vASU7bw8RNkQjw%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/product-manager-%E2%80%94-brand-platform-at-purplle-com-4479503345?position=3&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=BUqsUpe2vASU7bw8RNkQjw%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:47.444Z",
+          "bodySha256": "57a7c8ad23a9f96959642f551ce561e4cfc3e1dd18319a35eea9d8534c153fc2"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/key-accounts-manager-at-purplle-com-4448025772?position=4&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=NziiYxpgu4%2B8oXYu6NdUmg%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/key-accounts-manager-at-purplle-com-4448025772?position=4&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=NziiYxpgu4%2B8oXYu6NdUmg%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:48.379Z",
+          "bodySha256": "af66ecc305a947ee2c605581931d10de53b4f61bddf78205946030731ce14b8e"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/pickers-and-packers-at-purplle-com-4474047271?position=5&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=w6vBjoD3BUGGI2fVLcyLIA%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/pickers-and-packers-at-purplle-com-4474047271?position=5&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=w6vBjoD3BUGGI2fVLcyLIA%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:49.224Z",
+          "bodySha256": "de749aea009bd1fae901be44c9411b2d4260673e77023c2ff1db37d6decb4252"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/senior-manager-r-d-hair-care-at-purplle-com-4405646318?position=6&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=PnCP%2F9NS3sOJtgbXSAvm2Q%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/senior-manager-r-d-hair-care-at-purplle-com-4405646318?position=6&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=PnCP%2F9NS3sOJtgbXSAvm2Q%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:50.099Z",
+          "bodySha256": "a713ad44fc924b85e562c6e852f53b3098ec152c42022b10047cbad4e6349610"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/manager-%E2%80%93-revenue-kochi-at-purplle-com-4474129089?position=7&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=p9hr4jlpMLW0PTPgebbhXQ%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/manager-%E2%80%93-revenue-kochi-at-purplle-com-4474129089?position=7&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=p9hr4jlpMLW0PTPgebbhXQ%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:51.091Z",
+          "bodySha256": "530f587ebed6b941627614a636f9719e9f852ee57a628498062eae7e1875e6f6"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/assistant-manager-%E2%80%93-revenue-kochi-at-purplle-com-4474113514?position=8&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=3j9E8G9VsLRvCqkLKyQTkA%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/assistant-manager-%E2%80%93-revenue-kochi-at-purplle-com-4474113514?position=8&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=3j9E8G9VsLRvCqkLKyQTkA%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:52.329Z",
+          "bodySha256": "90a502b1d5c78da70c12a816f1fcc8f263dcd1320c1a2a9f2697f55eb01a0e49"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/area-manager-visual-merchandiser-at-purplle-com-4441617213?position=9&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=qK3RHxpkBOJ%2BknYul1JUuQ%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/area-manager-visual-merchandiser-at-purplle-com-4441617213?position=9&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=qK3RHxpkBOJ%2BknYul1JUuQ%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T12:41:53.287Z",
+          "bodySha256": "72b40a5a5670ad7017dd33fe45f8d62d3d44285a5dfdaf20db8d47db95022551"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/senior-executive-%E2%80%93-revenue-kochi-at-purplle-com-4474107749?position=10&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=bG4jb8J0P6CUq7h9T5StHA%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/senior-executive-%E2%80%93-revenue-kochi-at-purplle-com-4474107749?position=10&pageNum=0&refId=79MLbNdK4qTxHSdLAFz4jw%3D%3D&trackingId=bG4jb8J0P6CUq7h9T5StHA%3D%3D",
+          "status": 429,
+          "capturedAt": "2026-10-23T12:41:53.764Z",
+          "bodySha256": "c8a44ed34475393301a2b3246826b2b2d6bdb4df15a744922ae66b16bfb001cb"
+        }
+      ]
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "sha256": "450464521fff025284d20e59ccf5d0e0d01ab46b0d1bf40b28555c2e5049b5e1",
+      "uncompressedSha256": "f3fc9c90526ac0194565eb67e5ea0bb01e7a92dc05330611bc8c53c7b7944eb6",
+      "captureMethod": "Actual ordinary Node public GET responses; stopped on first429; no retry",
+      "observations": [
+        {
+          "url": "https://www.purplle.com/careers",
+          "finalUrl": "https://www.purplle.com/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T19:22:47.016Z",
+          "bodySha256": "a356dcf3883fa20446242c18b9d27f08fcc2cb1f4948b6f3f3915dd21087ee43"
+        },
+        {
+          "url": "https://www.linkedin.com/company/purplle-com/",
+          "finalUrl": "https://www.linkedin.com/company/purplle-com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T19:22:48.349Z",
+          "bodySha256": "cb4616d32fc7914943ad084e988cc981c7cbf6ae7eba94e4b55c017642dfd259"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=2706205&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=2706205&location=India",
+          "status": 429,
+          "capturedAt": "2026-10-23T19:22:48.682Z",
+          "bodySha256": "7f21baf22d7ae7f8481decf0db0d6768cf061515e5b489d179cb22bcdc8739ff"
+        }
+      ]
     }
-  ]
+  ],
+  "freshObservation": "Fresh isolated Chrome inspection again stopped at tenth detail HTTP429,9successful details,6explicitIndia. No new unique eligible roles claimed."
 }

@@ -148,7 +148,9 @@ export const hasOfficialHomepageSignal = (html = '') => {
 
   return /<title>\s*Perforce Delphix \| Intelligent Data Automation Platform\s*<\/title>/i.test(page)
     && text.includes('perforce delphix')
-    && text.includes('make data fast, trusted, and ai-ready')
+    && (text.includes('make data fast, trusted, and ai-ready')
+      || (text.includes('perforce delphix: trusted test data for ai-driven software delivery')
+        && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.perforce\.com\/products\/delphix["']/i.test(page)))
     && text.includes('intelligent data automation platform')
 }
 

@@ -6,6 +6,7 @@ import { createPhenomScraper } from '../phenom/engine.js'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { analyzePublishableJobs } from '../utils/publishableJobMetrics.js'
 import { createAbbScraper } from '../../scraper/abb.workday/script.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 
 const scraper = createPhenomScraper({ companyName: 'Example', source: 'phenom-health',
   baseUrl: 'https://careers.example.com', scraperDir: fileURLToPath(new URL('.', import.meta.url)) })
@@ -39,7 +40,9 @@ test('explicit zero detail budget retains teaser only outside publishable descri
   assert.equal(jobs[0].sourceListingTeaser, row(1).descriptionTeaser)
   assert.equal(jobs[0].sourceDetailComplete, false)
   assert.equal(jobs[0].sourceDetailFailureKind, 'budget-exhausted')
-  assert.equal(analyzePublishableJobs(jobs).eligibleJobs.length, 0)
+  // Retain the listing for later enrichment without promoting its teaser to source content.
+  assert.equal(analyzePublishableJobs(jobs).eligibleJobs.length, 1)
+  assert.equal(hasSourceDescription(jobs[0]), false)
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })
 
@@ -48,12 +51,13 @@ for (const [kind, response] of [
   ['identity-mismatch', () => detail(row('wrong'))],
   ['identity-mismatch', () => detail({ ...row(1), jobId: 'wrong' })],
   ['upstream', () => { throw new Error('HTTP 503') }],
-]) test('Phenom leaves missing full native detail ineligible with failure kind ' + kind + ' ' + response, async () => {
+]) test('Phenom retains incomplete listings for enrichment with failure kind ' + kind + ' ' + response, async () => {
   const jobs = await scraper.run({ fetchText: async url => isListing(url) ? page([row(1)]) : response() })
   assert.equal(jobs[0].jobDescription, null)
   assert.equal(jobs[0].sourceDetailComplete, false)
   assert.equal(jobs[0].sourceDetailFailureKind, kind)
-  assert.equal(analyzePublishableJobs(jobs).eligibleJobs.length, 0)
+  assert.equal(analyzePublishableJobs(jobs).eligibleJobs.length, 1)
+  assert.equal(hasSourceDescription(jobs[0]), false)
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })
 

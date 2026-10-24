@@ -308,6 +308,17 @@ const currentPayatuFetch = (f, overrides = {}) => async url => {
   if (new URL(url).origin === 'https://bandit.fit' && f.details[slug]) return f.details[slug]
   throw new Error('Unexpected Payatu request: ' + url)
 }
+for (const [nativeLocation, expectedLocation] of [['Delhi', 'Delhi, India'], ['Delhi/BLR', 'Delhi / Bangalore, India']]) {
+ test(`Payatu accepts employer-board ${nativeLocation} roles with matching detail geography`, async () => {
+  const f = await currentPayatuFixtures(), { run } = await import('../../scraper/payatu/script.js')
+  f.board = f.board.replaceAll('Pune ·', nativeLocation + ' ·')
+  for (const slug of f.slugs) f.details[slug] = f.details[slug].replaceAll('· Pune</span>', '· ' + nativeLocation + '</span>')
+  const jobs = await run({ fetchText: currentPayatuFetch(f) })
+  const changed = jobs.filter(job => job.city === 'Delhi')
+  assert.ok(changed.length > 0)
+  assert.ok(changed.every(job => job.country === 'India' && job.location === expectedLocation))
+ })
+}
 test('Payatu follows current employer-linked board and returns all ten active India application pages', async () => {
   const f = await currentPayatuFixtures(), { run } = await import('../../scraper/payatu/script.js')
   const jobs = await run({ fetchText: currentPayatuFetch(f) })

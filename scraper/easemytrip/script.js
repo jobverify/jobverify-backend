@@ -5,6 +5,8 @@ import { document, decode } from '../../scraper-support/shared/rmkNativePairHtml
 import { parseJavaScriptLiteral } from '../../scraper-support/utils/safeLiteral.js'
 import { activeHead } from '../../scraper-support/utils/activeNativeHtml.js'
 import { attachInventoryEvidence, normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { isNativeBareCityInPublicScope } from '../../scraper-support/shared/nativeCityScope.js'
+import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
 
 export const SOURCE = 'easemytrip'
 export const COMPANY = 'EaseMyTrip'
@@ -20,9 +22,16 @@ const activeDocument=html=>{
 }
 const activeText=value=>{const doc=activeDocument(value);return doc.text(doc.root)}
 const description=role=>{
- const html=[role.about,...role.resp,...role.profile].join('\n'),doc=activeDocument(html)
+ const fields=[role.about,...role.resp,...role.profile],doc=activeDocument(fields.join('\n'))
  const prose=n=>n.inactive||/^(?:h[1-6]|strong|b|script|style)$/.test(n.tag)?'':n.children.map(c=>typeof c==='string'?decode(c):prose(c)).join(' ')
- return /[\p{L}\p{N}]/u.test(prose(doc.root))?doc.text(doc.root):null
+ const key=value=>String(value||'').replace(/[\s\p{P}\p{S}]+/gu,'').toLowerCase()
+ const title=key(activeText(role.title)),placeholders=new Set(['jd','jobdescription','responsibilities','requirements'])
+ const substantive=fields.some(field=>{
+  if(typeof field!=='string'||!field.trim())return false
+  const content=activeDocument(field),core=key(prose(content.root))
+  return /[\p{L}\p{N}]/u.test(core)&&core!==title&&!placeholders.has(core)
+ })
+ return substantive?doc.text(doc.root):null
 }
 export const inspectInventory = async ({fetchImpl=fetch,signal,timeoutMs=45000,now=()=>new Date().toISOString()}={})=>{
  signal?.throwIfAborted()
@@ -106,7 +115,16 @@ export const inspectInventory = async ({fetchImpl=fetch,signal,timeoutMs=45000,n
  finally{clearTimeout(timer);combined.removeEventListener('abort',listener);controller.abort(Error('EaseMyTrip inspection ended'))}
 }
 export const run=async options=>{
- const inspected=await inspectInventory(options),jobs=attachInventoryEvidence([],inspected.inventoryEvidence)
+ const inspected=await inspectInventory(options)
+ const eligibleLocations=inspected.roles.filter(role=>isNativeBareCityInPublicScope(role.location))
+ const jobs=attachInventoryEvidence(eligibleLocations.map(role=>({
+  ...role,source:SOURCE,company:COMPANY,city:getValidIndiaCityForJob({country:null,location:role.location}),
+  jobId:null,requisitionId:null,applicationUrlIsGeneric:true,link:role.applyUrl,
+  sourceDescription:role.description,jobDescription:role.description,
+  sourceDetailComplete:role.description!==null,sourceDetailStatus:role.description===null?'missing-description':'complete',
+  sourceEmploymentType:role.employmentType,sourceExperienceRequired:role.experience,experienceRequired:role.experience,
+  postedAt:null,sourceListingComplete:false,sourceGeographyComplete:false,
+ })),{...inspected.inventoryEvidence,reason:inspected.inventoryEvidence.reason+`; ${eligibleLocations.length} satisfy existing public city/Remote policy with country and publication date preserved as null`})
  Object.defineProperty(jobs,'nativeCollectionEvidence',{value:inspected})
  return jobs
 }

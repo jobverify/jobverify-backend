@@ -35,6 +35,16 @@ test('replaces sentinel with reconciled India details across three global pages'
 })
 
 const mutateJSON=(p,fn)=>{if(p.url.includes('/wday/cxs/')){const b=JSON.parse(p.body);fn(b,p);p.body=JSON.stringify(b)}}
+test('HTML structured title entities reconcile with the exact native requisition', async () => {
+ const jobs = await source.run(options(p => {
+  mutateJSON(p, body => {
+   for (const row of body.jobPostings || []) if (row.bulletFields?.[0] === 'JR-1062') row.title += ' & Data'
+   if (body.jobPostingInfo?.jobReqId === 'JR-1062') body.jobPostingInfo.title += ' & Data'
+  })
+  mutateLD(p, schema => { schema.title += ' &amp; Data'; schema.identifier.name += ' &amp; Data' })
+ }))
+ assert.equal(jobs.find(job => job.jobId === 'JR-1062').title, 'Senior Security Engineer (Defensive) & Data')
+})
 for(const[name,mutate]of[
  ['duplicate page identities',(p)=>mutateJSON(p,(b,p)=>{if(p.requestBody&&JSON.parse(p.requestBody).offset===20)b.jobPostings[0]=fixture().packets.filter(x=>x.requestBody)[0]&&JSON.parse(fixture().packets.find(x=>x.requestBody).body).jobPostings[0]})],
  ['short nonfinal page',(p)=>mutateJSON(p,b=>{if(b.jobPostings?.length)b.jobPostings.pop()})],

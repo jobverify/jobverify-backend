@@ -58,12 +58,15 @@ export function createFirstPartyHTMLScraper(config) {
   async function collect(options = {}) {
     const maxRequests = config.maxRequests === undefined ? 512 : config.maxRequests;
     const detailConcurrency = config.detailConcurrency === undefined ? 1 : config.detailConcurrency;
+    const maxAggregateBytes = config.maxAggregateBytes === undefined ? 64 * 1024 * 1024 : config.maxAggregateBytes;
     requireNative(Number.isSafeInteger(maxRequests) && maxRequests > 0 && maxRequests <= 2048, 'Invalid native request budget');
     requireNative(Number.isSafeInteger(detailConcurrency) && detailConcurrency > 0 && detailConcurrency <= 8, 'Invalid native detail concurrency');
+    requireNative(Number.isSafeInteger(maxAggregateBytes) && maxAggregateBytes > 0 && maxAggregateBytes <= 256 * 1024 * 1024, 'Invalid native aggregate byte budget');
     const signal = options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(540000)]) : AbortSignal.timeout(540000);
     const transport = options.transport || createHTMLTransport(config, { ...options, signal });
     const result = { source: config.source, status: 'unknown', jobs: [], exclusions: [], failures: [], unknownRawFailures: [], retainedResponses: [], listingRecords: [], observedListingCount: 0, nativeReportedTotal: null, pagesFetched: 0, listingPaginationComplete: false, rawJobs: null, indiaJobs: null, eligibleJobs: null, savedJobs: null, visibleJobs: null, cleanupAllowed: false, verifiedZeroInventory: false, sourceScopeComplete: false, wholeCompanyScope: false };
     if (config.maxRequests !== undefined || config.detailConcurrency !== undefined) result.collectionLimits = { maxRequests, detailConcurrency };
+    if (config.maxAggregateBytes !== undefined) result.collectionLimits = { ...result.collectionLimits, maxRequests, detailConcurrency, maxAggregateBytes };
     const failure = (stage, error, candidate = null) => { result.failures.push({ stage, ...reason(error) }); if (candidate) result.unknownRawFailures.push({ stage, candidate }); };
     let requestCount = 0, totalBytes = 0;
     const read = async url => {
@@ -74,7 +77,7 @@ export function createFirstPartyHTMLScraper(config) {
         const response = await transport(current, { method: 'GET', redirect: 'manual', credentials: 'omit', signal });
         requireNative(response && response.url === current && response.bodyComplete === true && Number.isInteger(response.status) && response.headers && !Array.isArray(response.headers) && response.body instanceof Uint8Array, 'Incomplete native transport response');
         const body = Buffer.from(response.body); totalBytes += body.length;
-        requireNative(body.length <= MAX_HTML_BYTES && totalBytes <= 64 * 1024 * 1024, 'Native HTML aggregate/body bound');
+        requireNative(body.length <= MAX_HTML_BYTES && totalBytes <= maxAggregateBytes, 'Native HTML aggregate/body bound');
         const headers = Object.fromEntries(Object.entries(response.headers).map(([key, value]) => [key.toLowerCase(), value]));
         requireNative(Object.keys(headers).length === Object.keys(response.headers).length, 'Duplicate response header casing');
         result.retainedResponses.push({ url: current, status: response.status, headers, bodyBytes: body.length, bodySHA256: sha(body), rawBodyBase64: body.toString('base64'), bodyRepresentation: 'complete decoded HTTP response body; not compressed wire bytes', requestedAt: response.requestedAt || null, completedAt: response.completedAt || null, provenance: response.provenance || null });

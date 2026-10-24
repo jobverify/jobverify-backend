@@ -30,3 +30,12 @@ test('unspecified experience filter matches uncertain results but excludes nonnu
   assert.equal(jobMatchesSavedFilters({ job: manager, filters: { experienceYear: 'unspecified' } }), false);
   assert.ok(buildSemanticExperienceConstraint('unspecified'));
 });
+
+test('uncertain source experience cannot inherit stale numeric years from the public experienced label', () => {
+  const classification = resolveClassification({ title: 'Engineer', description: 'Build software.' }, null, { mode: 'enforce' });
+  const job = { jobType: 'Full-time Experienced', experienceYears: [3, 5], classification };
+  assert.equal(jobMatchesSavedFilters({ job, filters: { experienceYear: 'unspecified' } }), true);
+  assert.equal(jobMatchesSavedFilters({ job, filters: { experienceYear: '3' } }), false);
+  assert.equal(jobMatchesSavedFilters({ job, filters: { experienceYear: '5' } }), false);
+  assert.equal(buildSemanticExperienceConstraint(3)?.['classification.resolved.experienceYears'], 3);
+});

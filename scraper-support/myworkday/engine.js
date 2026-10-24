@@ -1326,7 +1326,8 @@ export const extractWorkdayStructuredDetail = payload => {
       label: typeof value === 'string' ? value.trim() : value?.descriptor?.trim(),
       countryScope: resolveWorkdayCxsPrimaryCountryScope(index === 0
         ? { ...posting, country: value?.country || posting.country }
-        : { country: value?.country }),
+        : { country: value?.country || (value === resolveWorkdayRequisitionLocationBinding(posting)?.publicLocation
+          ? posting.jobRequisitionLocation.country : null) }),
     }))
     .filter(({ label }) => label && !isGroupedLocationLabel(label))
   const locations = [...new Set(locationRecords.map(({ label }) => label))]
@@ -1490,14 +1491,41 @@ const resolveWorkdayCxsPrimaryLocation = (info = {}) => (
     : info.location
 )
 
+// The requisition office has its own country and may differ from all public
+// posting locations. Only an explicitly listed office can be published.
+const resolveWorkdayRequisitionLocationBinding = (info = {}) => {
+  const nested = info.jobRequisitionLocation
+  if (!info.country || !nested?.country || typeof info.location !== 'string'
+    || typeof nested.descriptor !== 'string' || !Array.isArray(info.additionalLocations)) return null
+  const countryLabels = country => (typeof country === 'string'
+    ? [country] : [country?.descriptor, country?.alpha2Code])
+    .filter(value => typeof value === 'string' && value.trim())
+    .map(value => value.trim().toLowerCase())
+  const officeKey = (label, countries) => {
+    let key = typeof label === 'string' ? label.trim().toLowerCase() : ''
+    for (const country of countries.flatMap(countryLabels)) {
+      if (key.endsWith(', ' + country)) key = key.slice(0, -(country.length + 2)).trim()
+    }
+    return key
+  }
+  const nestedKey = officeKey(nested.descriptor, [nested.country])
+  if (!nestedKey || !info.location.trim() || /^unknown$/i.test(nestedKey)
+    || isGroupedLocationLabel(nested.descriptor) || !countryLabels(info.country).length
+    || !countryLabels(nested.country).length
+    || nestedKey === officeKey(info.location, [info.country, nested.country])) return null
+  const matches = info.additionalLocations.filter(location => officeKey(location, [nested.country]) === nestedKey)
+  return { publicLocation: matches.length === 1 ? matches[0] : null }
+}
+
 const resolveWorkdayCxsPrimaryCountryScope = (info = {}) => {
+  const nestedCountry = resolveWorkdayRequisitionLocationBinding(info) ? null : info.jobRequisitionLocation?.country
   const countryValues = [
     typeof info.country === 'string' ? info.country : null,
     info.country?.descriptor,
     info.country?.alpha2Code,
-    typeof info.jobRequisitionLocation?.country === 'string' ? info.jobRequisitionLocation.country : null,
-    info.jobRequisitionLocation?.country?.descriptor,
-    info.jobRequisitionLocation?.country?.alpha2Code,
+    typeof nestedCountry === 'string' ? nestedCountry : null,
+    nestedCountry?.descriptor,
+    nestedCountry?.alpha2Code,
   ].filter((value) => typeof value === 'string' && value.trim())
   const hasIndia = countryValues.some((value) => /^(?:india|in|ind)$/i.test(value.trim()))
   const hasForeign = countryValues.some((value) => {
@@ -1577,40 +1605,54 @@ const fetchWorkdayScopePayload = async ({
 }
 
 const workdayLocationEvidenceKey = value => String(value || '').trim().toLowerCase()
+// City-only secondary labels do not carry the primary location's country.
+// These known non-India cities can be excluded independently; unknown campus
+// labels still require current native country evidence from this board.
+const WORKDAY_NON_INDIA_CITY_LABELS = new Set([
+  'launceston', 'brisbane', 'perth', 'townsville', 'adelaide', 'melbourne',
+])
 
-// Countries belong to the primary location only. Opaque secondary labels may
-// borrow country evidence solely from matching primary labels in this run.
+// Bind countries to the office they describe. Opaque labels may reuse only
+// matching office-country evidence from this run.
 const buildWorkdayLocationCountryEvidence = candidates => {
   const evidence = new Map()
   for (const candidate of candidates) {
     const info = candidate.scopePayload?.jobPostingInfo
-    const scope = resolveWorkdayCxsPrimaryCountryScope(info)
-    const countries = [info.country, info.jobRequisitionLocation?.country].filter(Boolean)
-    const fields = countries.map(country => typeof country === 'string'
-      ? { [/^[a-z]{2}$/i.test(country.trim()) ? 'code' : 'name']: workdayLocationEvidenceKey(country) }
-      : Object.fromEntries([['code', 'alpha2Code'], ['name', 'descriptor'], ['id', 'id']]
-        .flatMap(([key, property]) => typeof country[property] === 'string' && country[property].trim()
-          ? [[key, workdayLocationEvidenceKey(country[property])]] : [])))
-    const countryScopes = countries.map(country => resolveWorkdayCxsPrimaryCountryScope({ country })).filter(Boolean)
-    const conflict = new Set(countryScopes).size > 1 || fields.some((country, index) => fields.slice(index + 1).some(other => (
-      !['code', 'id'].some(key => country[key] && country[key] === other[key])
-      && ['code', 'name', 'id'].some(key => country[key] && other[key] && country[key] !== other[key])
-    )))
-    candidate.scopeCountryConflict = conflict
-    if (!scope && !conflict) continue
-    const identifiers = new Set(fields.flatMap(country => Object.entries(country).map(([key, value]) => key + ':' + value)))
-    if (!identifiers.size) continue
-    const label = workdayLocationEvidenceKey(resolveWorkdayCxsPrimaryLocation(info))
-    const previous = evidence.get(label)
-    if (!previous) evidence.set(label, { scope, identifiers, conflict })
-    else {
-      const strongConflict = ['code:', 'id:'].some(prefix => {
-        const oldValues = [...previous.identifiers].filter(value => value.startsWith(prefix))
-        const newValues = [...identifiers].filter(value => value.startsWith(prefix))
-        return oldValues.length > 0 && newValues.length > 0 && !newValues.some(value => previous.identifiers.has(value))
-      })
-      if (conflict || strongConflict || previous.scope !== scope || ![...identifiers].some(value => previous.identifiers.has(value))) previous.conflict = true
-      for (const value of identifiers) previous.identifiers.add(value)
+    const binding = resolveWorkdayRequisitionLocationBinding(info)
+    const secondary = binding?.publicLocation
+    const bindings = [{ label: resolveWorkdayCxsPrimaryLocation(info),
+      countries: [info.country, ...(binding ? [] : [info.jobRequisitionLocation?.country])].filter(Boolean) }]
+    if (secondary) bindings.push({ label: secondary, countries: [info.jobRequisitionLocation.country] })
+    candidate.scopeCountryConflict = false
+    for (const binding of bindings) {
+      const { countries } = binding
+      const scope = resolveWorkdayCxsPrimaryCountryScope({ country: countries[0], jobRequisitionLocation: { country: countries[1] } })
+      const fields = countries.map(country => typeof country === 'string'
+        ? { [/^[a-z]{2}$/i.test(country.trim()) ? 'code' : 'name']: workdayLocationEvidenceKey(country) }
+        : Object.fromEntries([['code', 'alpha2Code'], ['name', 'descriptor'], ['id', 'id']]
+          .flatMap(([key, property]) => typeof country[property] === 'string' && country[property].trim()
+            ? [[key, workdayLocationEvidenceKey(country[property])]] : [])))
+      const countryScopes = countries.map(country => resolveWorkdayCxsPrimaryCountryScope({ country })).filter(Boolean)
+      const conflict = new Set(countryScopes).size > 1 || fields.some((country, index) => fields.slice(index + 1).some(other => (
+        !['code', 'id'].some(key => country[key] && country[key] === other[key])
+        && ['code', 'name', 'id'].some(key => country[key] && other[key] && country[key] !== other[key])
+      )))
+      candidate.scopeCountryConflict ||= conflict
+      if (!scope && !conflict) continue
+      const identifiers = new Set(fields.flatMap(country => Object.entries(country).map(([key, value]) => key + ':' + value)))
+      if (!identifiers.size) continue
+      const label = workdayLocationEvidenceKey(binding.label)
+      const previous = evidence.get(label)
+      if (!previous) evidence.set(label, { scope, identifiers, conflict })
+      else {
+        const strongConflict = ['code:', 'id:'].some(prefix => {
+          const oldValues = [...previous.identifiers].filter(value => value.startsWith(prefix))
+          const newValues = [...identifiers].filter(value => value.startsWith(prefix))
+          return oldValues.length > 0 && newValues.length > 0 && !newValues.some(value => previous.identifiers.has(value))
+        })
+        if (conflict || strongConflict || previous.scope !== scope || ![...identifiers].some(value => previous.identifiers.has(value))) previous.conflict = true
+        for (const value of identifiers) previous.identifiers.add(value)
+      }
     }
   }
   return evidence
@@ -1628,6 +1670,7 @@ const resolveWorkdayScopeLocations = (candidate, countryEvidence, source) => {
       if (known?.conflict) throw new Error('CXS location has conflicting current primary-country evidence: ' + location)
       if (known) return known.scope
       if (isWorkdayJobInPublicIndiaScope({ location })) return 'india'
+      if (WORKDAY_NON_INDIA_CITY_LABELS.has(workdayLocationEvidenceKey(location))) return 'foreign'
       if (isClearlyOutsidePublicIndiaScope({ location })) return 'foreign'
       return null
     })

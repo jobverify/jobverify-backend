@@ -51,6 +51,20 @@ test('persisted authoritative categories and experience filters agree with Mongo
   assert.deepEqual((await Job.find(buildJobFilterConditions({ experienceYear: '0' })).lean().exec()).map(job => job.jobType), ['Intern']);
   assert.deepEqual((await Job.find(buildJobFilterConditions({ experienceYear: 'unspecified' })).lean().exec()).map(job => job.jobType), ['Full-time Experienced']);
 
+  await t.test('uncertain source experience excludes stale numeric years in Mongo and saved filters', async () => {
+    const unknown = stored.find(job => job.classification.resolved.jobType === 'Unspecified');
+    assert.ok(unknown);
+    await Job.updateOne({ _id: unknown._id }, { $set: { experienceYears: [3, 5] } });
+    const stale = await Job.findById(unknown._id).lean();
+    for (const experienceYear of ['3', '5']) {
+      const matches = await Job.find({ $and: [{ _id: unknown._id }, buildJobFilterConditions({ experienceYear })] }).lean();
+      assert.equal(matches.length, 0);
+      assert.equal(jobMatchesSavedFilters({ job: stale, filters: { experienceYear } }), false);
+    }
+    assert.equal(jobMatchesSavedFilters({ job: stale, filters: { experienceYear: 'unspecified' } }), true);
+    await Job.updateOne({ _id: unknown._id }, { $set: { experienceYears: unknown.experienceYears } });
+  });
+
   await t.test('rescrapes with valid descriptions update all authoritative fields together', async () => {
     const job = { title: 'Senior Engineer', company: 'Recovery Company', location: 'Bangalore, India', city: 'Bangalore', country: 'India', source: 'recovery', applyUrl: 'https://example.com/jobs/recovery', sourceUrl: 'https://example.com/jobs/recovery', sourceEmploymentType: 'Full-time', description: 'A permanent role requiring 5 years of professional experience.' };
     const normalized = normalizeScrapedJob(job);
@@ -68,12 +82,16 @@ test('persisted authoritative categories and experience filters agree with Mongo
     assert.equal(saved.classification.resolved.seniority, saved.seniority);
     assert.equal(saved.description, job.description);
 
-    // An empty later scrape cannot publish or replace an already valid source.
+    // An empty partial rescrape retains the verified source for enrichment.
     const skipped = await saveToDB([{ ...job, description: null, preserveExistingSourceContent: true }], 'recovery', options);
-    assert.equal(skipped.filteredEmptyDescription, 1);
+    assert.equal(skipped.filteredEmptyDescription, 0);
     assert.equal(skipped.inserted, 0);
-    assert.equal(skipped.updated, 0);
-    assert.deepEqual(await Job.findOne({ fingerprint }).lean().exec(), saved);
+    assert.equal(skipped.updated, 1);
+    const retained = await Job.findOne({ fingerprint }).lean().exec();
+    assert.equal(retained.sourceDescription, saved.sourceDescription);
+    assert.equal(retained.sourceContentHash, saved.sourceContentHash);
+    assert.equal(retained.description, saved.description);
+    assert.deepEqual(retained.experienceYears, saved.experienceYears);
   });
 
   await t.test('the previous cohort overrides employer zero in Mongo, API responses and filters', async () => {

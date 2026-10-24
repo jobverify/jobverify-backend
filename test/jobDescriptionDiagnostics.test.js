@@ -25,6 +25,18 @@ test('diagnostics omit exception messages, configuration and unrelated model fie
   assert.match(text, /Public employer wording/);
 });
 
+test('edit rejection artifacts retain the rule and exact selected source for replay', () => {
+  const diagnostics = createRewriteDiagnostics();
+  diagnostics.record({ reason: 'source_words_changed', diagnostic: { code: 'source_words_changed',
+    sourceId: 33, itemIndex: 0, text: 'Build APIs.', evidence: 'Build and maintain APIs.',
+    configuration: 'must not leak' } });
+  const sample = diagnostics.snapshot().samples[0];
+  assert.equal(sample.validation.code, 'source_words_changed');
+  assert.equal(sample.validation.sourceId, 33);
+  assert.equal(sample.validation.evidence, 'Build and maintain APIs.');
+  assert.equal(sample.validation.configuration, undefined);
+});
+
 test('partial output is preserved and repeated truncations leave room for other rejection reasons', () => {
   const diagnostics = createRewriteDiagnostics();
   for (let i = 0; i < 28; i++) diagnostics.record({ id: String(i), reason: 'truncated',

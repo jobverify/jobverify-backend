@@ -27,6 +27,48 @@ const fixturesDir = path.join(
 const readFixture = (name) =>
   JSON.parse(readFileSync(path.join(fixturesDir, name), 'utf8'))
 
+test('Eightfold HTTP-success envelope may contain its blank message/body error sentinel', async () => {
+ const provider = expandApiPortalProviderTemplate({ source: 'eightfold-test', companyName: 'Example',
+  companyCareerPage: 'https://example.eightfold.ai/careers', countryFilter: 'India', atsPlatform: 'eightfold',
+  template: 'eightfold', templateOptions: { host: 'example.eightfold.ai', domain: 'example.com' } })
+ const payload = { status: 200, error: { message: '', body: '' }, data: { positions: [], count: 0 } }
+ assert.deepEqual(await runApiPortalScraper({ provider, fetchJson: async () => payload }), [])
+ for (const change of [
+  { error: { message: 'denied', body: '' } }, { error: { message: '', body: 'unavailable' } },
+  { error: { message: '', body: '', code: 'failed' } }, { status: 500 }, { success: false },
+ ]) await assert.rejects(runApiPortalScraper({ provider, fetchJson: async () => ({ ...payload, ...change }) }), /upstream error/)
+ await assert.rejects(runApiPortalScraper({ provider: { ...provider, atsPlatform: 'other' }, fetchJson: async () => payload }), /upstream error/)
+})
+
+test('Eightfold offsets advance by returned rows when the server caps the requested page size', async () => {
+ const provider = expandApiPortalProviderTemplate({ source: 'eightfold-capped', companyName: 'Example',
+  companyCareerPage: 'https://example.eightfold.ai/careers', countryFilter: 'India', atsPlatform: 'eightfold',
+  template: 'eightfold', templateOptions: { host: 'example.eightfold.ai', domain: 'example.com' } })
+ provider.config.detail.enabled = false
+ provider.config.mapping.sourceUrl = 'publicUrl'
+ provider.config.mapping.applyUrl = 'publicUrl'
+ const offsets = []
+ const jobs = await runApiPortalScraper({ provider, fetchJson: async url => {
+  const offset = Number(new URL(url).searchParams.get('start')); offsets.push(offset)
+  assert.equal(new URL(url).searchParams.get('limit'), '50')
+  return { data: { positions: offset < 2 ? [{ id: offset + 1, name: 'Engineer ' + offset, locations: ['Bengaluru, India'], publicUrl: 'https://example.eightfold.ai/careers/job/' + (offset + 1) }] : [], count: 2 } }
+ } })
+ assert.deepEqual(offsets, [0, 1])
+ assert.equal(jobs.length, 2)
+})
+
+test('Eightfold uses explicit timestamp ordering and preserves a configured sort', async () => {
+ for (const sortBy of [undefined, 'relevance']) {
+  const provider = expandApiPortalProviderTemplate({ source: 'eightfold-sort', companyName: 'Example',
+   companyCareerPage: 'https://example.eightfold.ai/careers', atsPlatform: 'eightfold', template: 'eightfold',
+   templateOptions: { host: 'example.eightfold.ai', domain: 'example.com', ...(sortBy ? { sortBy } : {}) } })
+  await runApiPortalScraper({ provider, fetchJson: async url => {
+   assert.equal(new URL(url).searchParams.get('sort_by'), sortBy || 'timestamp')
+   return { data: { positions: [], count: 0 } }
+  } })
+ }
+})
+
 test('normalizeApiPortalConfig expands defaults for a direct API provider', () => {
   const config = normalizeApiPortalConfig({
     discovery: {

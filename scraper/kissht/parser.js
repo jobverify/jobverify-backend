@@ -26,6 +26,7 @@ export const readListings = payload => {
   requireProof(payload?.d && typeof payload.d.obj1==='string' && typeof payload.d.obj2==='string','invalid ASP.NET listing envelope')
   const rows=JSON.parse(payload.d.obj1),facets=JSON.parse(payload.d.obj2)
   requireProof(Array.isArray(rows) && Array.isArray(facets) && facets.some(f=>f.OrgLabel==='Business Unit' && f.AsFieldName==='Company_Name'),'unverified brand facet')
+  requireProof(facets.some(f=>f.OrgLabel==='Compliance Location'&&f.AsFieldName==='LOCATIONNAME'),'native compliance-location contract changed')
   const ids=new Set(),tokens=new Set()
   for(const row of rows){
     requireProof(Number.isSafeInteger(row.ERFCode)&&row.ERFCode>0&&row.ERF_Code===row.ERFCode&&!ids.has(row.ERFCode),'invalid or duplicate requisition')

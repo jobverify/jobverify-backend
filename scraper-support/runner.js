@@ -7,6 +7,7 @@ import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
+import { summarizeScraperRun } from './utils/scraperRunSummary.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.resolve(currentDir, '../.env'), quiet: true })
@@ -1661,14 +1662,7 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
     }
     if (shutdown.requested) process.exitCode = shutdown.exitCode
     if (process.env.PIPELINE_SUMMARY_FILE) {
-      const pipelineSummary = {
-        scanned: rows.length, completed: rows.filter(row => row.success).length,
-        skipped: rows.filter(row => row.skipped).length, failed: totalFailures, warnings,
-        inserted: rows.reduce((sum,row) => sum + (row.inserted || 0), 0),
-        updated: rows.reduce((sum,row) => sum + (row.updated || 0), 0),
-        interrupted: shutdown.requested,
-        pendingEstimate: rows.filter(row => row.classificationPending).length,
-      }
+      const pipelineSummary = summarizeScraperRun(rows, { interrupted: shutdown.requested })
       fs.mkdirSync(path.dirname(process.env.PIPELINE_SUMMARY_FILE), { recursive: true })
       fs.writeFileSync(process.env.PIPELINE_SUMMARY_FILE, JSON.stringify(pipelineSummary))
       if (pipelineSummary.pendingEstimate > 0) process.exitCode = 1

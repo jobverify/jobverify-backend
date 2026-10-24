@@ -8,7 +8,7 @@ import { runVerifiedWorkdayBoardUnion } from '../shared/workdayBoardUnion.js'
 const sourceDir = fileURLToPath(new URL('../../scraper/cmegroup.workday/', import.meta.url))
 const fixture = () => JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/cmegroup.workday/fixtures/native-20261021.json.gz', import.meta.url))))
 
-async function runWithAddress(t, label) {
+async function runWithAddress(t, label, transform = () => {}) {
   const { packets, checkedAt } = fixture()
   t.mock.method(globalThis, 'fetch', async (url, init = {}) => {
     const packet = packets.find(p => p.url === String(url) && p.method === (init.method ?? 'GET')
@@ -19,6 +19,7 @@ async function runWithAddress(t, label) {
       const payload = JSON.parse(body)
       payload.jobPostingInfo.location = label
       payload.jobPostingInfo.jobRequisitionLocation.descriptor = label
+      transform(payload.jobPostingInfo)
       body = JSON.stringify(payload)
     }
     const response = new Response(body, { status: packet.status })
@@ -34,6 +35,17 @@ async function runWithAddress(t, label) {
   }, { now: () => checkedAt, retryBaseDelayMs: 0,
     requestScheduler: { acquire: async () => () => {}, recordRateLimit() {}, minIntervalMs: 0 } })
 }
+
+test('foreign primary country retains an explicitly listed India additional location', async t => {
+  const jobs = await runWithAddress(t, 'Remote-Philippines', info => {
+    const country = { descriptor: 'Philippines', id: 'e56f1daf83e04bacae794ba5c5593560', alpha2Code: 'PH' }
+    info.country = { descriptor: country.descriptor, id: country.id }
+    info.jobRequisitionLocation.country = country
+    info.additionalLocations = ['Bangalore']
+  })
+  assert.equal(jobs.length, 16)
+  assert.ok(jobs.every(job => job.country === 'India'))
+})
 
 for (const label of [
   'No. 2, IT Park, Bangalore, India',

@@ -1,5 +1,8 @@
 import {document} from '../../scraper-support/shared/rmkNativePairHtml.js'
 import {requireNative,oneNative,nativeDate,nativeLocationCountryName} from '../../scraper-support/shared/nativeJobPosting.js'
+import {isNativeBareCityInPublicScope} from '../../scraper-support/shared/nativeCityScope.js'
+import {getValidIndiaCityForJob} from '../../src/utils/publicJobLocationScope.js'
+import {extractActiveDescription} from '../../scraper-support/utils/activeNativeHtml.js'
 
 export const HOME_URL='https://www.xto10x.com/', ABOUT_URL='https://www.xto10x.com/about'
 export const EMPLOYER_URL='https://www.linkedin.com/company/xto10x-tech'
@@ -35,6 +38,9 @@ export function verifyCorporate(html,{about=false}={}) {
 }
 export function verifyNativeEmployerPost(html,record,{now=()=>new Date().toISOString()}={}) {
  const envelope=JSON.parse(html),row=envelope.data
+ const reviewedFields=new Set(['locations','location','otherLocation','address','latitude','longitude','createdTime','createdTimeMs','createdTimeNoMillis','hasExpired','jobStatusInfo'])
+ const carrier=key=>/countr|locat|address|latitude|longitude|expir|valid.?through|closing|publish|posted/i.test(key)||!/candidate$/i.test(key)&&/date|(?:created|modified|updated)[_-]?(?:at|time)/i.test(key)
+ requireNative(row&&Object.keys(row).every(key=>!carrier(key)||reviewedFields.has(key)),'Unreviewed native country/date/expiry carrier')
  requireNative(row?.id===record.id&&row.title?.trim()===record.title&&row.jobDetailUrl===record.url,'Native employer-posted job identity changed')
  requireNative(row.creatorDomainName==='xto10x.com'&&row.createdBy===340446&&row.companyData?.companyName==='xto10x'&&row.careerCompanyName==='xto10x'&&row.crawled===0,'Exact employer-authored primary posting proof changed')
  requireNative(row.status===1&&row.active===1&&row.applyStatus===1&&row.hasExpired===false&&row.permanentlyRemoved===false&&row.applyUrl==='','Native active application or expiry contract changed')
@@ -44,11 +50,13 @@ export function verifyNativeEmployerPost(html,record,{now=()=>new Date().toISOSt
  requireNative(row.createdTimeNoMillis===null&&row.jobStatusInfo===null,'Unreviewed native date/status metadata')
  requireNative(Array.isArray(row.locations)&&row.locations.length>0&&row.locations.every(l=>Object.keys(l).every(k=>['id','name'].includes(k))&&Number.isSafeInteger(l.id)&&typeof l.name==='string'),'Unreviewed native location shape')
  requireNative(JSON.stringify(row.locations)===JSON.stringify(row.location)&&row.address===null&&row.latitude===null&&row.longitude===null,'Unreviewed native country/address contract')
+ requireNative(row.otherLocation===''&&row.state===1&&row.jobJdContent===null,'Unreviewed native location or description carrier')
  const explicitCountries=row.locations.map(l=>nativeLocationCountryName(l.name)).filter(Boolean)
  requireNative(explicitCountries.length===0,'Native post now supplies country; renewed eligibility review required')
- return {id:String(row.id),title:row.title.trim(),sourceURL:record.url,apiURL:apiURL(row.id),firstParty:false,employerAuthored:true,creatorDomainName:row.creatorDomainName,nativeEmployerName:row.companyData.companyName,nativeRecord:row,nativeDates:dates,nativeEarliestDate:earliest,explicitCountries,excluded:true,exclusionReason:'no-explicit-native-job-country',activeApplicationFlags:{status:row.status,active:row.active,applyStatus:row.applyStatus,hasExpired:row.hasExpired},sourceScopeComplete:false,lifecycleCleanupAllowed:false}
+ const cityScope=row.locations.every(l=>isNativeBareCityInPublicScope(l.name,{extraLabels:['delhi ncr']}))
+ return {id:String(row.id),title:row.title.trim(),sourceURL:record.url,apiURL:apiURL(row.id),firstParty:false,employerAuthored:true,creatorDomainName:row.creatorDomainName,nativeEmployerName:row.companyData.companyName,nativeRecord:row,nativeDates:dates,nativeEarliestDate:earliest,explicitCountries,excluded:!cityScope,exclusionReason:cityScope?null:'outside-existing-public-city-scope',activeApplicationFlags:{status:row.status,active:row.active,applyStatus:row.applyStatus,hasExpired:row.hasExpired},sourceScopeComplete:false,lifecycleCleanupAllowed:false}
 }
-export async function collectNative({read,now}) {
+export async function collectNative({read,now,signal}) {
  const about=verifyCorporate(await read(ABOUT_URL),{about:true})
  const home=verifyCorporate(await read(HOME_URL))
  const employer=activeDocument(await read(EMPLOYER_URL))
@@ -56,12 +64,31 @@ export async function collectNative({read,now}) {
  requireNative(employer.nodes(n=>n.tag==='a'&&n.attrs['data-tracking-control-name']==='about_website').some(n=>{
   try{const link=new URL(n.attrs.href),target=new URL(link.searchParams.get('url'));return link.origin==='https://www.linkedin.com'&&link.pathname==='/redir/redirect'&&target.href===HOME_URL}catch{return false}
  }),'Native exact employer corporate website changed')
- for(const [url,scope] of [[INDIA_URL,'India'],[WORLDWIDE_URL,'Worldwide']]){
+ const scopedSearches=[],independentDiscoveryGaps=[]
+ const inspectIndependentSearches=async()=>{for(const [url,scope] of [[INDIA_URL,'India'],[WORLDWIDE_URL,'Worldwide']]){
   const listing=activeDocument(await read(url))
   requireNative(listing.nodes(n=>n.tag==='input'&&n.attrs.name==='f_C'&&n.attrs.value==='14628973'&&Object.hasOwn(n.attrs,'checked')).length===1,'Native exact employer search facet changed')
   requireNative(listing.nodes(n=>n.tag==='h1'&&listing.text(n)==='We couldn’t find a match for Jobs jobs in '+scope).length===1&&listing.nodes(n=>listing.hasClass(n,'job-search-card')).length===0,'Native scoped search inventory changed; role-level enumeration required')
- }
- const exclusions=[]
- for(const record of NATIVE_POSTS)exclusions.push(verifyNativeEmployerPost(await read(apiURL(record.id)),record,{now}))
- return {jobs:[],firstParty:false,nativeRecordCount:exclusions.length,exclusions,observations:{home,about,nativeEmployer:{url:EMPLOYER_URL,organizationID:'14628973',employerName:'xto10x',reciprocalCorporateWebsite:HOME_URL,corporateOutgoingHandoffProven:false},scopedSearches:[{url:INDIA_URL,observedCards:0},{url:WORLDWIDE_URL,observedCards:0}]},reason:'Recovered two active employer-authored native iimjobs records (creatorDomainName xto10x.com; crawled0), excluded because location labels provide cities only and no explicit job country. Earliest native creation2026-08-28 retained; no date refresh. Corporate Careers and Join Us are generic email invitations. Exact-employer LinkedIn searches have no matches. No corporate outgoing recruiting handoff proven; firstParty false. Whole-company inventory unknown; cleanup disabled.'}
+  scopedSearches.push({url,observedCards:0})
+ }}
+ const nativeCandidates=[]
+ for(const record of NATIVE_POSTS)nativeCandidates.push(verifyNativeEmployerPost(await read(apiURL(record.id),{json:true}),record,{now}))
+ const exclusions=nativeCandidates.filter(r=>r.excluded)
+ const jobs=nativeCandidates.filter(r=>!r.excluded).map(fact=>{
+  const row=fact.nativeRecord
+  requireNative(row.introText==null||typeof row.introText==='string','Invalid native description')
+  const raw=row.introText,core=typeof raw==='string'&&extractActiveDescription(raw.replace(/<(h[1-6]|strong|b)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,''))
+  const key=value=>String(value||'').replace(/[^\p{L}\p{N}]/gu,'').toLowerCase()
+  const sourceDescription=core&&key(core)!==key(fact.title)&&!/^(?:responsibilities|requirements)\s*[:.!]*$/i.test(core)?raw:null
+  const locations=row.locations.map(l=>l.name)
+  return {source:'xto10x',company:'XTO10X',title:fact.title,jobId:fact.id,requisitionId:null,
+   sourceUrl:fact.sourceURL,applyUrl:fact.sourceURL,link:fact.sourceURL,country:null,
+   locations,location:locations.join(', '),city:getValidIndiaCityForJob({country:null,location:locations[0]}),
+   postingDate:fact.nativeEarliestDate.parsed.iso,postedAt:fact.nativeEarliestDate.parsed.iso,closingDate:null,
+   nativeDates:fact.nativeDates,nativeEarliestDate:fact.nativeEarliestDate,
+   sourceDescription,jobDescription:sourceDescription,sourceDetailComplete:sourceDescription!==null,sourceDetailStatus:sourceDescription===null?'missing-description':'complete',
+   sourceListingComplete:false,sourceScopeComplete:false,sourceGeographyComplete:false,lifecycleCleanupAllowed:false}
+ })
+ try{await inspectIndependentSearches()}catch(error){if(signal?.aborted)throw signal.reason;independentDiscoveryGaps.push({reason:error.message})}
+ return {jobs,inventoryStatus:'coverage-gap',firstParty:false,nativeRecordCount:nativeCandidates.length,nativeCandidates,exclusions,independentDiscoveryGaps,observations:{home,about,nativeEmployer:{url:EMPLOYER_URL,organizationID:'14628973',employerName:'xto10x',reciprocalCorporateWebsite:HOME_URL,corporateOutgoingHandoffProven:false},scopedSearches},reason:'Employer-authored native iimjobs records preserve earliest native creation dates without refresh. All native city labels must satisfy existing public policy; countries remain null. Corporate Careers/JoinUs are generic email invitations. '+(independentDiscoveryGaps.length?'Independent discovery unavailable: '+independentDiscoveryGaps.map(g=>g.reason).join('; '):'Scoped searches show no matches only.')+' No outgoing recruiting handoff or whole-company completeness proven; cleanup disabled.'}
 }

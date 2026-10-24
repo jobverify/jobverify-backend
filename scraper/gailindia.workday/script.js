@@ -1,18 +1,12 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export const SOURCE = "gailindia"
-export const COMPANY = "GAIL India"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-08"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 11 exact-name sentinel for GAIL India added on Saturday, August 8, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
-
-export const run = async () => createFailClosedSentinelScraper().run()
+import {fileURLToPath} from 'node:url'
+import {collectNativeNotices} from './collector.js'
+import {GAIL_CATALOG} from './catalog.js'
+export {SOURCE,COMPANY} from './parser.js'
+export const CAREERS_URL=GAIL_CATALOG.companyCareerPage,DISPOSITION='official-native-public-notice-and-PDF',VERIFIED_ON=null
+export const PROVIDER_METADATA=GAIL_CATALOG,VERIFIED_SURFACE_SUMMARY=GAIL_CATALOG.verifiedSurfaceSummary
+export const run=options=>collectNativeNotices(options)
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
@@ -22,6 +16,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
-    await saveToDB(jobs, SOURCE)
+    await saveToDB(jobs, GAIL_CATALOG.source)
   }
 }
