@@ -4,9 +4,15 @@ import { registerHooks } from 'node:module'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence } from '../../utils/inventoryEvidence.js'
 
 const [scenario, directory] = process.argv.slice(2)
-const state = { started: [], saved: [], history: null, finished: null }
+const state = { started: [], saved: [], history: null, finished: null, persistenceOptions: {} }
+const inventory = (jobs, status = jobs.length ? 'complete-inventory' : 'verified-empty') => attachInventoryEvidence(jobs, {
+  status, firstParty: true, listingComplete: status !== 'discovery-only',
+  surface: 'https://example.invalid/careers', pagesFetched: 1,
+  reportedTotal: jobs.length, verifiedAt: new Date().toISOString(),
+})
 globalThis.runnerWarningFixture = {
   check: boundary => {
     if (scenario === boundary) throw new Error(`shared ${boundary}`)
@@ -14,7 +20,7 @@ globalThis.runnerWarningFixture = {
   build: () => {
     if (scenario === 'runner-code-error') throw new ReferenceError('shared provider catalog code failed')
     return ['broken', 'healthy'].map(name => ({ name, sourceLifecycleTimeoutMs: 0,
-      dryRunFile: scenario === 'artifact-error' ? directory : undefined, run: async () => {
+      dryRunFile: scenario === 'artifact-error' ? directory : path.join(directory, `${name}.json`), run: async () => {
       state.started.push(name)
       if (scenario === 'all-fail' || (name === 'broken' && ['source-failure', 'fatal-source'].includes(scenario))) {
         throw Object.assign(new Error('source inventory contract failed'), {
@@ -25,23 +31,41 @@ globalThis.runnerWarningFixture = {
       if (name === 'broken' && scenario === 'null-row') return [null]
       if (name === 'broken' && scenario === 'scalar-row') return ['not a job record']
       if (name === 'broken' && scenario === 'array-row') return [[]]
-      return []
+      if (name === 'broken' && scenario === 'blocked-zero') return inventory([], 'discovery-only')
+      if (name === 'broken' && scenario === 'unverified-zero') return []
+      if (name === 'broken' && ['incomplete-details', 'missing-evidence', 'incomplete-inventory', 'stale-evidence', 'complete-inventory'].includes(scenario)) {
+        const jobs = [{ title: 'Engineer', location: 'Bengaluru, India', country: 'India',
+          description: scenario === 'incomplete-details' ? '' : 'Build and operate reliable applications.',
+          applyUrl: 'https://example.invalid/careers/engineer' }]
+        if (scenario === 'missing-evidence') return jobs
+        const result = inventory(jobs, scenario === 'incomplete-inventory' ? 'discovery-only' : 'complete-inventory')
+        if (scenario === 'stale-evidence') return attachInventoryEvidence(result, { ...result[Symbol.for('jobverify.inventory-evidence')],
+          verifiedAt: new Date(Date.now() - 72 * 3600_000).toISOString() })
+        return result
+      }
+      return inventory([])
     } }))
   },
-  save: async (_jobs, name) => {
+  save: async (_jobs, name, options) => {
+    state.persistenceOptions[name] = { replaceExisting: options.replaceExisting, authoritativeEmpty: options.authoritativeEmpty }
     if (scenario === 'persistence-error') throw new TypeError('shared persistence code failed')
     if (scenario === 'quota-error') throw new Error('over your space quota. Writes are blocked on your cluster.')
     if (name === 'broken' && scenario === 'pending') {
       throw Object.assign(new Error('source persistence unfinished'), { classificationPending: true })
     }
     state.saved.push(name)
-    return { inserted: 1 }
+    return { inserted: 1, updated: 2 }
+  },
+  snapshot: async (jobs, file) => {
+    fs.writeFileSync(file, JSON.stringify(jobs))
+    state.saved.push(path.basename(file, '.json'))
   },
   history: (_startedAt, summary) => { state.history = summary },
   finished: details => {
     state.finished = details
     globalThis.runnerWarningFixture.check('finish-error')
   },
+  status: name => ({ isActive: !(scenario === 'inactive' && name === 'broken') }),
 }
 const stubs = new Map([
   [new URL('../../providers/index.js', import.meta.url).href,
@@ -49,7 +73,7 @@ const stubs = new Map([
   [new URL('../../utils/saveToDB.js', import.meta.url).href, `
     export const saveToDB = (...args) => globalThis.runnerWarningFixture.save(...args)
     export const purgeExpiredJobsForQuotaRecovery = async () => ({ deletedCount: 0 })
-    export const saveDryRunSnapshot = async () => { throw new Error('Unexpected dry-run write') }
+    export const saveDryRunSnapshot = (...args) => globalThis.runnerWarningFixture.snapshot(...args)
   `],
   [new URL('../../utils/scraperPersistence.js', import.meta.url).href, `
     export const ensureScrapersSeeded = async () => globalThis.runnerWarningFixture.check('seed-error')
@@ -60,9 +84,9 @@ const stubs = new Map([
     export const markPipelineRunFinished = (...args) => globalThis.runnerWarningFixture.finished(...args)
   `],
   [new URL('../../../src/models/ScraperStatus.js', import.meta.url).href,
-    `export default { findOne: () => ({ lean: () => ({ exec: async () => {
+    `export default { findOne: ({ source }) => ({ lean: () => ({ exec: async () => {
       globalThis.runnerWarningFixture.check('active-status-error')
-      return { isActive: true }
+      return globalThis.runnerWarningFixture.status(source)
     } }) }) }`],
   [new URL('../../../src/services/jobDatasetSummaryService.js', import.meta.url).href,
     'export const refreshJobDatasetSummary = async () => {}'],
@@ -89,6 +113,7 @@ process.env.SCRAPER_RUN_LEASE = '0'
 process.env.SCRAPER_CONCURRENCY = '1'
 process.env.SCRAPER_FAILURE_ABORT_THRESHOLD = '1'
 process.env.PIPELINE_SUMMARY_FILE = path.join(directory, 'summary.json')
+process.env.SCRAPER_CHECKPOINT_FILE = path.join(directory, 'run-state.json')
 process.on('exit', () => fs.writeFileSync(path.join(directory, 'state.json'), JSON.stringify(state)))
 const runner = new URL('../../runner.js', import.meta.url)
 process.argv[1] = fileURLToPath(runner)

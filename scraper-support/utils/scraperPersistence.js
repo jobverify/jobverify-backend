@@ -6,6 +6,7 @@
 import mongoose from "mongoose";
 import { DEFAULT_JOB_RETENTION_DAYS } from "../../src/utils/jobLifecycle.js";
 import { hasIncompleteScraperAttempt, isCompleteScraperAttempt } from "./inventoryEvidence.js";
+import { normalizeScraperTaskResult, summarizeScraperHistory } from "./scraperOutcome.js";
 
 // Lazy-load models to prevent circular dependency issues
 let ScraperStatus;
@@ -18,7 +19,7 @@ const ATTEMPT_DIAGNOSTIC_FIELDS = [
   "rawRecords", "filteredNonIndia", "filteredClosed", "filteredInvalidUrl",
   "filteredEmptyDescription", "filteredNonJob", "zeroJobEvidence", "inventoryEvidence", "detailHealth",
   "attemptedAt", "completedAt", "staleCheckSkipped", "staleCheckReason",
-  "softFailure", "upstreamOutage", "failureKind", "partial", "skipped",
+  "softFailure", "upstreamOutage", "failureKind", "partial", "skipped", "processingComplete",
 ];
 
 const attemptDiagnostics = (result) => Object.fromEntries(
@@ -202,11 +203,8 @@ export const writeScraperRun = async (ranAt, summary) => {
   const ScraperRunModel = await getScraperRunModel();
 
   const sourcesMap = {};
-  let totalJobs = 0;
-  let sourcesSucceeded = 0;
-  let sourcesFailed = 0;
-
-  for (const [sourceName, sourceSummary] of Object.entries(summary)) {
+  for (const [sourceName, rawSourceSummary] of Object.entries(summary)) {
+    const sourceSummary = normalizeScraperTaskResult(rawSourceSummary);
     sourcesMap[encodeScraperRunSourceKey(sourceName)] = {
       ...attemptDiagnostics(sourceSummary),
       success: sourceSummary.success,
@@ -225,22 +223,12 @@ export const writeScraperRun = async (ranAt, summary) => {
       error: sourceSummary.error || null,
     };
 
-    if (sourceSummary.success) {
-      totalJobs += sourceSummary.jobs || 0;
-      sourcesSucceeded++;
-    } else {
-      sourcesFailed++;
-    }
   }
 
   await ScraperRunModel.create({
     ranAt,
     sources: sourcesMap,
-    overall: {
-      totalJobs,
-      sourcesSucceeded,
-      sourcesFailed,
-    },
+    overall: summarizeScraperHistory(Object.values(sourcesMap)),
   });
 };
 

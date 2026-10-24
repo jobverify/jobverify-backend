@@ -23,6 +23,10 @@ const { default: ScraperRun } = await import("../src/models/ScraperRun.js");
 const { default: UserSuggestion } = await import("../src/models/UserSuggestion.js");
 const { default: HiringObservation } = await import('../src/models/HiringObservation.js');
 const { default: Application } = await import('../src/models/Application.js');
+const { default: ApplicationMailbox } = await import('../src/models/ApplicationMailbox.js');
+const { default: ApplicationMailboxAuth } = await import('../src/models/ApplicationMailboxAuth.js');
+const { default: ApplicationMail } = await import('../src/models/ApplicationMail.js');
+const { default: AutoApplyAttempt } = await import('../src/models/AutoApplyAttempt.js');
 const { default: Resume } = await import('../src/models/Resume.js');
 const { default: ResumeArtifact } = await import('../src/models/ResumeArtifact.js');
 const { default: TailoredResume } = await import('../src/models/TailoredResume.js');
@@ -48,6 +52,10 @@ const MODELS = [
   ["UserSuggestion", UserSuggestion],
   ['HiringObservation', HiringObservation],
   ['Application', Application],
+  ['ApplicationMailbox', ApplicationMailbox],
+  ['ApplicationMailboxAuth', ApplicationMailboxAuth],
+  ['ApplicationMail', ApplicationMail],
+  ['AutoApplyAttempt', AutoApplyAttempt],
   ['Resume', Resume],
   ['ResumeArtifact', ResumeArtifact],
   ['TailoredResume', TailoredResume],

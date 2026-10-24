@@ -1,0 +1,46 @@
+{
+  "stage": "phase2-public-source-recovery",
+  "status": "implemented-independently-reviewed",
+  "scope": "Fill missing immutable source descriptions from exact employer role JobPosting schema, preserving prior nonempty employer content. No claim all archived invisible jobs recovered.",
+  "red": {
+    "tests": 5,
+    "passed": 3,
+    "failed": 2,
+    "failure": "Matching employer HTML was discarded when sourceDescription was explicitly null."
+  },
+  "verification": {
+    "tests": 79,
+    "passed": 79,
+    "failed": 0,
+    "log": "phase2-public-source-tests.log",
+    "includes": "Real isolated local Mongo saveToDB and actual public query; mismatched employer stays hidden.",
+    "note": "The 79-test run preceded the final srcdoc-only guard; integrated bundle and independent probes verify the final state separately."
+  },
+  "productionActions": false,
+  "sha256": {
+    "rewriting/publicPostingDescription.js": "d524b5884e095b16fc8de7a0d1fea480b5fb09ee6a5351588be4f64f599ef940",
+    "scraper-support/tests/publicExperienceEnrichment.test.js": "9102a7627dfd4c5f8d420c156aff9eb53923efca7965f0384eded17a4e591793",
+    "scraper-support/tests/publicSourceDescriptionPersistence.test.js": "ff5aa91184b4a1bf628480889fe3e796d8507a51130c2a30d02369486d39feb1",
+    "scraper-support/tests/publicSourceDescriptionRecovery.test.js": "c8c1dad849d1de9eef5198b8346ed81f2878c7b157059fe5e775814d307ba9b2",
+    "scraper-support/utils/activeNativeHtml.js": "0824ea989085831aeb6a2a20d27447e31e9beeb97caf4ee05560f9d0e5942e97",
+    "scraper-support/utils/publicExperienceEnrichment.js": "c43334d690db58c03609bdee8e724a931d4823026dc055f19dacf11f71f0b384",
+    "test/publicPostingDescription.test.js": "6096a8632c0a8a9a77fdbbe7d6f02b5295dd126215f7e958c22c2484bae77118"
+  },
+  "reviewRepairs": [
+    "Inactive schemas and placeholder-only descriptions rejected using active native DOM reader.",
+    "Exact schema title preserved despite overlapping page heading.",
+    "Actual successful final response URL required; default fetch/browser transport preserves response receipts.",
+    "Custom text-only fetches cannot fill immutable source description.",
+    "Numeric-zero supplied native identifiers compared by presence, not truthiness.",
+    "Only active iframes on a successful exact wrapper response may delegate to a matching child role page.",
+    "Iframe srcdoc, including empty srcdoc, overrides src and cannot delegate.",
+    "Exact URL comparisons include fragment routes."
+  ],
+  "independentReview": {
+    "status": "no remaining actionable finding",
+    "reviewer": "provider_descriptions",
+    "focusedTestsPassed": 75,
+    "additionalProbesPassed": 14,
+    "probeArtifact": "phase2-generic-independent-probes.mjs"
+  }
+}

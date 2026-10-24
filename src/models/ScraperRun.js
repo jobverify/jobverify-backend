@@ -32,6 +32,7 @@ const ScraperRunSourceSchema = new Schema(
     attemptedAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
     partial: { type: Boolean, default: null },
+    processingComplete: { type: Boolean, default: null },
     skipped: { type: Boolean, default: null },
     softFailure: { type: Boolean, default: null },
     upstreamOutage: { type: Boolean, default: null },

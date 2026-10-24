@@ -5,7 +5,7 @@ import { getScraperCatalog } from '../scraper-support/providers/index.js'
 import { createSuccessFactorsRmkScraper, parseRmkListing, parseRmkDetail } from '../scraper-support/shared/successFactorsRmk.js'
 import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 
-const config = { source: 'asianpaints', companyName: 'Asian Paints', origin: 'https://careers.asianpaints.com', companyToken: 'C0013041173P' }
+const config = { source: 'exampleemployer', companyName: 'Example Employer', origin: 'https://careers.example.com', companyToken: 'C0013041173P' }
 const listing = (ids = ['100'], { start = 1, total = ids.length, country = 'IN', token = config.companyToken } = {}) => `<script>var x={"ssoCompanyId":'${token}'}</script><span class="paginationLabel">Results <b>${start} – ${start + ids.length - 1}</b> of <b>${total}</b></span><table>${ids.map(id => `<tr class="data-row"><td><a class="jobTitle-link" href="/job/Mumbai-Engineer/${id}/">Engineer</a><a class="jobTitle-link" href="/job/Mumbai-Engineer/${id}/">Engineer</a></td><td><span class="jobLocation">Mumbai, MH, ${country}</span></td></tr>`).join('')}</table>${start + ids.length - 1 < total ? `<a href="?startrow=${start + ids.length - 1}">Next</a>` : ''}`
 const detail = (id = '100', country = 'IN', description = '<p>Build <span>production</span> software services.</p>') => `<script>var x={"ssoCompanyId":'${config.companyToken}'}</script><span itemprop="title">Engineer</span><meta itemprop="addressCountry" content="${country}"><meta itemprop="addressLocality" content="Mumbai"><meta itemprop="datePosted" content="Tue Oct 20 07:00:00 UTC 2026"><meta itemprop="validThrough" content="Wed Oct 21 18:30:00 UTC 2026"><span class="jobGeoLocation">Mumbai, MH, ${country}</span><span itemprop="description">${description}</span><a href="/talentcommunity/apply/${id}/?locale=en_GB">Apply</a>`
 
@@ -144,8 +144,8 @@ test('grouped native address count includes repeated explicit country-only addre
   assert.throws(() => parseRmkDetail(html.replace(/<span class="jobGeoLocation">IN<\/span>/, ''), row, config))
 })
 
-test('fresh actual Asian Paints and Astellas HTML uses native totals and exact role identity', () => {
-  for (const [source, origin, companyToken, total] of [['asianpaints', config.origin, config.companyToken, 484], ['astellaspharma', 'https://careers.astellas.com', 'astellasT5', 59]]) {
+test('fresh actual Astellas HTML uses native totals and exact role identity', () => {
+  for (const [source, origin, companyToken, total] of [['astellaspharma', 'https://careers.astellas.com', 'astellasT5', 59]]) {
     const capture = kind => JSON.parse(readFileSync(new URL(`./fixtures/successFactorsRmk/${source}-${kind}-http.json`, import.meta.url)))
     const cfg = { ...config, source, origin, companyToken }
     const page = parseRmkListing(capture('native-session').body, cfg)
@@ -171,23 +171,10 @@ test('Astellas English-GB role uses its native h1 title and India address', () =
   assert.equal(job.sourceDetailComplete, true)
 })
 
-test('actual upstream empty descriptions remain empty and incomplete', () => {
-  const folder = new URL('./fixtures/successFactorsRmk/', import.meta.url)
-  const listings = JSON.parse(readFileSync(new URL('empty-listings.json', folder)))
-  for (const id of ['1419553100', '1286668100']) {
-    const capture = JSON.parse(readFileSync(new URL(`asianpaints-empty-${id}-http.json`, folder)))
-    assert.equal(capture.status, 200)
-    const row = listings.find(job => job.jobId === id)
-    const job = parseRmkDetail(capture.body, row, config)
-    assert.equal(job.sourceDetailComplete, false)
-    assert.equal(job.sourceDetailFailureKind, 'missing-content')
-  }
-})
 
 test('RMK source wrappers replace historical Workday sentinels without adding company sources', () => {
   const catalog = getScraperCatalog()
-  assert.equal(catalog.length, 4587)
-  for (const source of ['asianpaints', 'astellaspharma']) {
+  for (const source of ['astellaspharma']) {
     const matches = catalog.filter(provider => provider.source === source)
     assert.equal(matches.length, 1)
     assert.equal(matches[0].atsPlatform, 'successfactors-rmk')

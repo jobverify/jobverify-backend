@@ -7,7 +7,7 @@ import path from 'node:path';
 import { buildRewriteInput, validateRewrite, REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
 import { buildReferencedSections, expandReferencedSections } from '../rewriting/sectionProtocol.js';
 import { createRewriteClient as createProductionRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
-// Historical v13 transport remains replayable; the production v14 edit protocol has separate coverage.
+// Historical v13 transport remains replayable independently of production defaults.
 const createRewriteClient = options => createProductionRewriteClient({ ...options, format: 'source-sections' });
 
 const overview = 'Build Python services for customer applications.';
@@ -118,8 +118,8 @@ test('production client uses the compact source protocol and publishes through t
   let saved;
   const stats = await rewriteCandidates([value], { client, deadline: Date.now() + 10000,
     update: async (filter, update) => { saved = { filter, update }; return { matchedCount: 1 }; } });
-  assert.equal(client.format, 'source-sections'); assert.equal(REWRITE_MODEL.maxOutputTokens, 1024);
-  assert.equal(requests[0].max_tokens, 1024); assert.equal(stats.published, 1);
+  assert.equal(client.format, 'source-sections');
+  assert.equal(requests[0].max_tokens, REWRITE_MODEL.maxOutputTokens); assert.equal(stats.published, 1);
   assert.equal(saved.filter.sourceContentHash, value.sourceContentHash);
   assert.equal(saved.update.$set.sourceDescription, undefined);
   assert.match(saved.update.$set.description, /At least 2 years/);

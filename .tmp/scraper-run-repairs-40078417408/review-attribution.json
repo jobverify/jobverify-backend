@@ -1,0 +1,304 @@
+{
+  "generatedAt": "2026-10-24T15:29:46.289Z",
+  "head": "c88c747d584e36e471506e23f651acd8a32ce060",
+  "method": "Same current tests against current production or virtual HEAD versions of owned modules and their filesystem reads; unrelated current worktree modules/configurations and local Kissht retirement retained; external fetch forbidden in both modes; no checkout mutation.",
+  "current": {
+    "log": ".tmp/scraper-run-repairs-40078417408/review-current.log",
+    "tests": 124,
+    "pass": 102,
+    "fail": 22,
+    "failures": [
+      {
+        "location": "scraper-support\\tests\\scraperRecordNormalization.test.js:6:1",
+        "name": "normalizeScrapedJob enriches engineering jobs into the unified scraper schema"
+      },
+      {
+        "location": "scraper-support\\tests\\scriptDefaultFetchContract.test.js:12:1",
+        "name": "script catalog entries that destructure fetchText provide a production default fetcher"
+      },
+      {
+        "location": "test\\firstScraperSelection.test.js:10:1",
+        "name": "first 1000 selection follows the executable catalog order through its boundary"
+      },
+      {
+        "location": "test\\graphcoreCoverage.test.js:10:1",
+        "name": "Graphcore is covered only by its exact-name first-party provider"
+      },
+      {
+        "location": "test\\graphcoreCoverage.test.js:35:1",
+        "name": "Graphcore scraper returns no jobs when the official jobs page has no openings"
+      },
+      {
+        "location": "test\\jobClassification.test.js:38:1",
+        "name": "trusted fresher eligibility outranks title-based manager assumptions and contradictory confident AI"
+      },
+      {
+        "location": "test\\jobClassification.test.js:122:1",
+        "name": "preferred-only years remain preferred and cannot exclude freshers"
+      },
+      {
+        "location": "test\\jobClassification.test.js:142:1",
+        "name": "all explicit source arrangements override a contradictory model label"
+      },
+      {
+        "location": "test\\jobClassification.test.js:157:1",
+        "name": "written-out experience years are retained and no-experience facts cannot become prior-required"
+      },
+      {
+        "location": "test\\partialPublishingReportFacts.test.js:64:1",
+        "name": "cached actual Zee facts survive a legitimate current-source hash change without calling its publication gate"
+      },
+      {
+        "location": "test\\partialPublishingReportFacts.test.js:74:1",
+        "name": "actual Navi38/36/missing2 remains partial history after72hours without publication or source-code reads"
+      },
+      {
+        "location": "test\\publishingGapPersistence.test.js:5:1",
+        "name": "fresh extracted jobs survive real local persistence and the exact public query without duplicates"
+      },
+      {
+        "location": "test\\scraperWorkflowSchedule.test.js:14:1",
+        "name": "scraper workflow runs every day at 02:08 AM IST"
+      },
+      {
+        "location": "test\\userSavedJobs.test.js:155:1",
+        "name": "getSavedJobs applies the public job visibility scope"
+      },
+      {
+        "location": "test\\userSavedJobs.test.js:294:1",
+        "name": "saveJob only accepts jobs that are still publicly visible"
+      },
+      {
+        "location": "test\\waymoCoverage.test.js:14:1",
+        "name": "Waymo coverage matches only the literal CSV company name"
+      },
+      {
+        "location": "test\\waymoCoverage.test.js:39:1",
+        "name": "Waymo scraper fails closed without a verified enumerable extraction contract"
+      },
+      {
+        "location": "test\\workdayPartialPublishing.test.js:25:62",
+        "name": "exact independently reviewed blackrock partial capture accepts only its 42 healthy selected native India roles"
+      },
+      {
+        "location": "test\\workdayPartialPublishing.test.js:25:62",
+        "name": "exact independently reviewed blackstone partial capture accepts only its 4 healthy selected native India roles"
+      },
+      {
+        "location": "test\\workdayPartialPublishing.test.js:38:1",
+        "name": "partial Workday dispatcher rejects complete, wrong source, truncation, false counts, content, native identity and date precision mutations"
+      },
+      {
+        "location": "test\\workdayPartialPublishing.test.js:78:1",
+        "name": "new Workday version retains null counts and original clocks and rejects success/full-extraction/provenance inventions"
+      },
+      {
+        "location": "test\\workdayPartialPublishing.test.js:84:1",
+        "name": "current-code Workday freezer preserves all original proof bytes and refuses replacement or escaped output"
+      }
+    ]
+  },
+  "baseline": {
+    "log": ".tmp/scraper-run-repairs-40078417408/review-baseline.log",
+    "tests": 124,
+    "pass": 102,
+    "fail": 22,
+    "failures": [
+      {
+        "location": "scraper-support\\tests\\scraperRecordNormalization.test.js:6:1",
+        "name": "normalizeScrapedJob enriches engineering jobs into the unified scraper schema"
+      },
+      {
+        "location": "scraper-support\\tests\\scriptDefaultFetchContract.test.js:12:1",
+        "name": "script catalog entries that destructure fetchText provide a production default fetcher"
+      },
+      {
+        "location": "test\\firstScraperSelection.test.js:10:1",
+        "name": "first 1000 selection follows the executable catalog order through its boundary"
+      },
+      {
+        "location": "test\\graphcoreCoverage.test.js:10:1",
+        "name": "Graphcore is covered only by its exact-name first-party provider"
+      },
+      {
+        "location": "test\\graphcoreCoverage.test.js:35:1",
+        "name": "Graphcore scraper returns no jobs when the official jobs page has no openings"
+      },
+      {
+        "location": "test\\jobClassification.test.js:38:1",
+        "name": "trusted fresher eligibility outranks title-based manager assumptions and contradictory confident AI"
+      },
+      {
+        "location": "test\\jobClassification.test.js:122:1",
+        "name": "preferred-only years remain preferred and cannot exclude freshers"
+      },
+      {
+        "location": "test\\jobClassification.test.js:142:1",
+        "name": "all explicit source arrangements override a contradictory model label"
+      },
+      {
+        "location": "test\\jobClassification.test.js:157:1",
+        "name": "written-out experience years are retained and no-experience facts cannot become prior-required"
+      },
+      {
+        "location": "test\\partialPublishingReportFacts.test.js:64:1",
+        "name": "cached actual Zee facts survive a legitimate current-source hash change without calling its publication gate"
+      },
+      {
+        "location": "test\\partialPublishingReportFacts.test.js:74:1",
+        "name": "actual Navi38/36/missing2 remains partial history after72hours without publication or source-code reads"
+      },
+      {
+        "location": "test\\publishingGapPersistence.test.js:5:1",
+        "name": "fresh extracted jobs survive real local persistence and the exact public query without duplicates"
+      },
+      {
+        "location": "test\\scraperWorkflowSchedule.test.js:14:1",
+        "name": "scraper workflow runs every day at 02:08 AM IST"
+      },
+      {
+        "location": "test\\userSavedJobs.test.js:155:1",
+        "name": "getSavedJobs applies the public job visibility scope"
+      },
+      {
+        "location": "test\\userSavedJobs.test.js:294:1",
+        "name": "saveJob only accepts jobs that are still publicly visible"
+      },
+      {
+        "location": "test\\waymoCoverage.test.js:14:1",
+        "name": "Waymo coverage matches only the literal CSV company name"
+      },
+      {
+        "location": "test\\waymoCoverage.test.js:39:1",
+        "name": "Waymo scraper fails closed without a verified enumerable extraction contract"
+      },
+      {
+        "location": "test\\workdayPartialPublishing.test.js:25:62",
+        "name": "exact independently reviewed blackrock partial capture accepts only its 42 healthy selected native India roles"
+      },
+      {
+        "location": "test\\workdayPartialPublishing.test.js:25:62",
+        "name": "exact independently reviewed blackstone partial capture accepts only its 4 healthy selected native India roles"
+      },
+      {
+        "location": "test\\workdayPartialPublishing.test.js:38:1",
+        "name": "partial Workday dispatcher rejects complete, wrong source, truncation, false counts, content, native identity and date precision mutations"
+      },
+      {
+        "location": "test\\workdayPartialPublishing.test.js:78:1",
+        "name": "new Workday version retains null counts and original clocks and rejects success/full-extraction/provenance inventions"
+      },
+      {
+        "location": "test\\workdayPartialPublishing.test.js:84:1",
+        "name": "current-code Workday freezer preserves all original proof bytes and refuses replacement or escaped output"
+      }
+    ]
+  },
+  "identicalFailedTestNames": true,
+  "sourceCatalog": {
+    "current": {
+      "log": ".tmp/scraper-run-repairs-40078417408/review-source-catalog-0.log",
+      "tests": 2,
+      "pass": 0,
+      "fail": 2,
+      "failures": [
+        {
+          "location": "scraper\\cargill.workday\\catalog.test.js:4:1",
+          "name": "Cargill replaces one sentinel with current binding and leaves runtime totals unknown"
+        },
+        {
+          "location": "scraper\\colgatepalmolive.workday\\catalog.test.js:4:1",
+          "name": "Colgate replaces its sentinel with one current native SAP binding and unknown company counts"
+        }
+      ]
+    },
+    "baseline": {
+      "log": ".tmp/scraper-run-repairs-40078417408/review-source-catalog-1.log",
+      "tests": 2,
+      "pass": 0,
+      "fail": 2,
+      "failures": [
+        {
+          "location": "scraper\\cargill.workday\\catalog.test.js:4:1",
+          "name": "Cargill replaces one sentinel with current binding and leaves runtime totals unknown"
+        },
+        {
+          "location": "scraper\\colgatepalmolive.workday\\catalog.test.js:4:1",
+          "name": "Colgate replaces its sentinel with one current native SAP binding and unknown company counts"
+        }
+      ]
+    }
+  },
+  "workdayFrozenReceiptMismatches": [
+    {
+      "source": "blackrock",
+      "file": "scraper-support/shared/workdayBoardUnion.js",
+      "expected": "46e2753c7886b1ac93c2bf45347c02d3b1153dd16d056baab8367b84ee706599",
+      "current": "f3be91f10a2908b86b2dfa87a438956a94ed71fd2b668e4c4f7cb755b5852686",
+      "head": "f3be91f10a2908b86b2dfa87a438956a94ed71fd2b668e4c4f7cb755b5852686",
+      "currentEqualsHeadAfterLFNormalization": true
+    },
+    {
+      "source": "blackrock",
+      "file": "scraper-support/myworkday/engine.js",
+      "expected": "0c341bde15c6c4588f0901b65172da5fed31e5aab2605b006b927fda43c94fad",
+      "current": "3265b8d24388ff37a2db84a95d44c72f553d28f827bd7f947902c3f95479ef18",
+      "head": "3ccbcef5f7513fff52b77770a33a6f382e080c012d8a4deb0dc6e66e1a9c2577",
+      "currentEqualsHeadAfterLFNormalization": true
+    },
+    {
+      "source": "blackrock",
+      "file": "src/utils/publicJobLocationScope.js",
+      "expected": "16c36aa6693e4f72b0a00b92219ce38e00dfa3a67b75d263145d56b21788706b",
+      "current": "c4e98a1e984ba800218aa8db202f1c83e46089fa9a1388e6e1fad0e8cf9eb018",
+      "head": "d862ffec852edaf6498ee1896cea36b09ea4a576b2f888f6181df0d63dec8964",
+      "currentEqualsHeadAfterLFNormalization": true
+    },
+    {
+      "source": "blackrock",
+      "file": "scraper-support/utils/inventoryEvidence.js",
+      "expected": "83ffe749c3cf0b1f54e719cd6a0591400c0b4ad12454405efefe1e6a1958545f",
+      "current": "950f8320d50b1df6e9bf7e6ed8ee3d376ada21031732f3942d9ca763c37cad12",
+      "head": "6c76d01d933a4df05b8d6113afd6acd98f03415d664020824e35f2b26d5e90bd",
+      "currentEqualsHeadAfterLFNormalization": true
+    },
+    {
+      "source": "blackstone",
+      "file": "scraper-support/shared/workdayBoardUnion.js",
+      "expected": "46e2753c7886b1ac93c2bf45347c02d3b1153dd16d056baab8367b84ee706599",
+      "current": "f3be91f10a2908b86b2dfa87a438956a94ed71fd2b668e4c4f7cb755b5852686",
+      "head": "f3be91f10a2908b86b2dfa87a438956a94ed71fd2b668e4c4f7cb755b5852686",
+      "currentEqualsHeadAfterLFNormalization": true
+    },
+    {
+      "source": "blackstone",
+      "file": "scraper-support/myworkday/engine.js",
+      "expected": "0c341bde15c6c4588f0901b65172da5fed31e5aab2605b006b927fda43c94fad",
+      "current": "3265b8d24388ff37a2db84a95d44c72f553d28f827bd7f947902c3f95479ef18",
+      "head": "3ccbcef5f7513fff52b77770a33a6f382e080c012d8a4deb0dc6e66e1a9c2577",
+      "currentEqualsHeadAfterLFNormalization": true
+    },
+    {
+      "source": "blackstone",
+      "file": "src/utils/publicJobLocationScope.js",
+      "expected": "16c36aa6693e4f72b0a00b92219ce38e00dfa3a67b75d263145d56b21788706b",
+      "current": "c4e98a1e984ba800218aa8db202f1c83e46089fa9a1388e6e1fad0e8cf9eb018",
+      "head": "d862ffec852edaf6498ee1896cea36b09ea4a576b2f888f6181df0d63dec8964",
+      "currentEqualsHeadAfterLFNormalization": true
+    },
+    {
+      "source": "blackstone",
+      "file": "scraper-support/utils/inventoryEvidence.js",
+      "expected": "83ffe749c3cf0b1f54e719cd6a0591400c0b4ad12454405efefe1e6a1958545f",
+      "current": "950f8320d50b1df6e9bf7e6ed8ee3d376ada21031732f3942d9ca763c37cad12",
+      "head": "6c76d01d933a4df05b8d6113afd6acd98f03415d664020824e35f2b26d5e90bd",
+      "currentEqualsHeadAfterLFNormalization": true
+    }
+  ],
+  "limits": [
+    "Not attribution of all 481 full-suite failures.",
+    "Offline Graphcore/Waymo direct-run tests reject attempted live network in both modes; this establishes both adapters already attempted fetching, not present-day remote availability.",
+    "Workday hash gates fail before offline replay; unchanged HEAD mismatches require independent revalidation rather than receipt replacement.",
+    "Raw-capture contract change and final Waymo/history fixes verified separately by task owners."
+  ]
+}

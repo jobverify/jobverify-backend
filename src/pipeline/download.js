@@ -46,7 +46,9 @@ async function downloadGithubFile(repo,endpoint,file,{token,signal,budget}) {
 }
 
 /** Snapshot only resources associated with this pipeline; never scan shared caches. */
-export async function createPipelineBundle(run,{root=backendRoot,token=process.env.GITHUB_PAT,signal=new AbortController().signal}={}) {
+export async function createPipelineBundle(run,{root=backendRoot,token=process.env.GITHUB_PAT,signal=new AbortController().signal,kind='all'}={}) {
+  if(!['all','logs','artifacts'].includes(kind))throw pipelineError('Choose logs or artifacts for the download.',400);
+  const includeLogs=kind!=='artifacts',includeArtifacts=kind!=='logs';
   // Validate before constructing local paths or attachment names.
   localLogPath(run._id,'scraper');
   const directory=await fs.mkdtemp(path.join(os.tmpdir(),'jobverify-pipeline-'));
@@ -57,7 +59,7 @@ export async function createPipelineBundle(run,{root=backendRoot,token=process.e
     await fs.rm(directory,{recursive:true,force:true});
   };
   const zip=new JSZip(),budget={remaining:2*1024**3};
-  const manifest={pipelineId:run._id,target:run.target,repo:run.repo,status:run.status,createdAt:new Date().toISOString(),snapshot:!isTerminal(run.status),stages:[]};
+  const manifest={pipelineId:run._id,kind,target:run.target,repo:run.repo,status:run.status,createdAt:new Date().toISOString(),snapshot:!isTerminal(run.status),stages:[]};
   let index=0;
   const addFile=(name,file)=>{
     // JSZip pauses later entries. Defer opening their files until consumption
@@ -86,12 +88,12 @@ export async function createPipelineBundle(run,{root=backendRoot,token=process.e
       if(run.target==='local'){
         const log=path.join(root,'.cache/pipeline/logs',`${run._id}-${key}.log`);
         const summary=path.join(root,'.cache/pipeline',`${run._id}-${key}.json`);
-        await collect(`${key}/logs.txt`,file=>pipeline(createReadStream(log,{encoding:'utf8'}),redactLines,createWriteStream(file),{signal}));
-        await collect(`${key}/artifacts/summary.json`,async file=>fs.writeFile(file,redactLog(await fs.readFile(summary,'utf8'))));
+        if(includeLogs)await collect(`${key}/logs.txt`,file=>pipeline(createReadStream(log,{encoding:'utf8'}),redactLines,createWriteStream(file),{signal}));
+        if(includeArtifacts)await collect(`${key}/artifacts/summary.json`,async file=>fs.writeFile(file,redactLog(await fs.readFile(summary,'utf8'))));
       }else if(stage.githubRunId&&/^\d+$/.test(String(stage.githubRunId))){
         const options={token,signal,budget};
-        await collect(`${key}/logs.zip`,file=>downloadGithubFile(run.repo,`/actions/runs/${stage.githubRunId}/logs`,file,options));
-        try{
+        if(includeLogs)await collect(`${key}/logs.zip`,file=>downloadGithubFile(run.repo,`/actions/runs/${stage.githubRunId}/logs`,file,options));
+        if(includeArtifacts)try{
           for(let page=1;;page++){
             signal.throwIfAborted();
             const data=await githubRequest(run.repo,`/actions/runs/${stage.githubRunId}/artifacts?per_page=100&page=${page}`,{token});
@@ -105,11 +107,11 @@ export async function createPipelineBundle(run,{root=backendRoot,token=process.e
           }
         }catch(error){signal.throwIfAborted();entry.unavailable.push({file:`${key}/artifacts`,reason:redactLog(error.status?error.message:'Could not list GitHub artifacts.')});}
       }else entry.unavailable.push({reason:'No GitHub workflow run has been recorded for this stage.'});
-      if(stage.summary)zip.file(`${key}/stage-summary.json`,redactLog(JSON.stringify(stage.summary,null,2)));
+      if(includeArtifacts&&stage.summary)zip.file(`${key}/stage-summary.json`,redactLog(JSON.stringify(stage.summary,null,2)));
     }
     zip.file('manifest.json',JSON.stringify(manifest,null,2));
-    zip.file('README.txt','Pipeline logs and artifacts\n\nSee manifest.json for stage states, included files and unavailable resources.\nGitHub logs and artifacts are preserved as ZIPs inside each stage folder.\nLocal downloads include full redacted logs and saved per-run summaries; shared caches are excluded.\nDownloads of active pipelines are snapshots. Files may still be generated.\nExpired/deleted GitHub resources cannot be recovered. Remote downloads have a 2 GiB total limit.\n');
+    zip.file('README.txt',`Pipeline ${kind==='all'?'logs and artifacts':kind}\n\nSee manifest.json for stage states, included files and unavailable resources.\nOnly the requested resource types are included. GitHub downloads are preserved as ZIPs inside each stage folder.\nLocal logs are fully redacted; local artifacts contain saved per-run summaries. Shared caches are excluded.\nDownloads of active pipelines are snapshots. Files may still be generated.\nExpired/deleted GitHub resources cannot be recovered. Remote downloads have a 2 GiB total limit.\n`);
     const stream=new Readable().wrap(zip.generateNodeStream({streamFiles:true,compression:'STORE'}));
-    return {filename:`pipeline-${run._id}.zip`,stream,cleanup};
+    return {filename:`pipeline-${run._id}${kind==='all'?'':`-${kind}`}.zip`,stream,cleanup};
   }catch(error){await cleanup();throw error;}
 }

@@ -13,6 +13,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
+import { summarizeScraperHistory } from "../scraper-support/utils/scraperOutcome.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(currentDir, "../.env") });
@@ -157,18 +158,7 @@ try {
         update: {
           $set: {
             sources: remainingSources,
-            overall: {
-              totalJobs: sourceResults.reduce(
-                (sum, result) => sum + Number(result?.jobsFound || 0),
-                0,
-              ),
-              sourcesSucceeded: sourceResults.filter(
-                ({ success }) => success === true,
-              ).length,
-              sourcesFailed: sourceResults.filter(
-                ({ success }) => success === false,
-              ).length,
-            },
+            overall: summarizeScraperHistory(sourceResults),
           },
         },
       },

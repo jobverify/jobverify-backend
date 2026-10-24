@@ -5,6 +5,10 @@ import {
 } from '../shared/pdfText.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { normalizeScrapedJob } from './normalizeScrapedJob.js'
+import { hasSourceDescription, getSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { publicPostingDescription, isExactPublicJobUrl } from '../../rewriting/publicPostingDescription.js'
+import { activeIframeSources, extractActiveDescription, readNativeDocument } from './activeNativeHtml.js'
+import { normalizeLifecycleDate } from '../../src/utils/jobLifecycle.js'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -25,9 +29,8 @@ const SKIP_HOSTNAMES = new Set([
   'localhost',
   '127.0.0.1',
 ])
-const oracleCandidateExperienceDetailCache = new Map()
-const fountainBoardConfigCache = new Map()
-const ceipalCareerPortalJobsCache = new Map()
+const PROVIDER_CACHE_TTL_MS = 5 * 60 * 1000
+const createProviderCaches = () => ({ oracle: new Map(), fountain: new Map(), ceipal: new Map() })
 
 export class PublicExperienceFetchTimeoutError extends Error {
   constructor(url, timeoutMs) {
@@ -802,6 +805,7 @@ const defaultFetchText = async (url, {
   signal = null,
   timeoutMs = resolvePublicExperienceFetchTimeoutMs(),
   pdfTextExtractionTimeoutMs = resolvePdfTextExtractionTimeoutMs(),
+  includeResponseMetadata = false,
 } = {}) => {
   throwIfAborted(signal)
   const request = createLinkedRequestSignal({ url, timeoutMs, signal })
@@ -821,14 +825,17 @@ const defaultFetchText = async (url, {
     }
 
     const contentType = response.headers?.get?.('content-type') || ''
+    let html
     if (PDF_CONTENT_TYPE_PATTERN.test(contentType) || /\.pdf(?:$|\?)/i.test(String(url))) {
-      return await extractTextFromPdfBuffer(await response.arrayBuffer(), {
+      html = await extractTextFromPdfBuffer(await response.arrayBuffer(), {
         signal,
         timeoutMs: pdfTextExtractionTimeoutMs,
       })
+    } else {
+      html = await response.text()
     }
 
-    return await response.text()
+    return includeResponseMetadata ? { html, url: response.url, status: response.status } : html
   } finally {
     request.dispose()
   }
@@ -857,7 +864,8 @@ const defaultFetchJson = async (url, options = {}) => {
       throw new Error(`HTTP ${response.status} for ${url}`)
     }
 
-    return await response.json()
+    const payload = await response.json()
+    return options.includeResponseMetadata ? { payload, url: response.url, status: response.status } : payload
   } finally {
     request.dispose()
   }
@@ -915,8 +923,8 @@ const isEmbeddedGreenhouseJobUrl = (jobUrl) => {
 }
 
 const extractEmbeddedPublicJobUrl = (html, baseUrl = null) => {
-  for (const match of String(html ?? '').matchAll(/<iframe\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)) {
-    const candidateUrl = toAbsoluteUrl(match[1], baseUrl)
+  for (const src of activeIframeSources(html)) {
+    const candidateUrl = toAbsoluteUrl(src, baseUrl)
     if (candidateUrl && isEmbeddedGreenhouseJobUrl(candidateUrl)) {
       return candidateUrl
     }
@@ -935,15 +943,28 @@ const isSmartRecruitersPublicJobUrl = (jobUrl) => {
 
 const getOrCreateAsyncCacheEntry = (cache, key, loader) => {
   if (!key) return Promise.resolve().then(loader)
-  if (cache.has(key)) return cache.get(key)
+  const cached = cache.get(key)
+  if (cached && cached.expiresAt > Date.now()) return cached.pending
+  cache.delete(key)
+  if (cache.size >= 128) cache.delete(cache.keys().next().value)
 
   const pending = Promise.resolve().then(loader)
-  cache.set(key, pending)
+  const entry = { pending, expiresAt: Date.now() + PROVIDER_CACHE_TTL_MS }
+  cache.set(key, entry)
   pending.catch(() => {
-    cache.delete(key)
+    if (cache.get(key) === entry) cache.delete(key)
   })
   return pending
 }
+
+const providerPayload = response => response && Object.hasOwn(response, 'payload') ? response.payload : response
+const verifiedProviderResponse = (response, url) => response?.status >= 200 && response.status < 300
+  && Object.hasOwn(response, 'payload') && isExactPublicJobUrl(response.url, url)
+const verifiedPageResponse = (response, url) => response?.status >= 200 && response.status < 300
+  && typeof response.html === 'string' && isExactPublicJobUrl(response.url, url)
+const sameNativeTitle = (left, right) => Boolean(normalizeWhitespace(left))
+  && normalizeWhitespace(left).toLowerCase() === normalizeWhitespace(right)?.toLowerCase()
+const joinProviderSourceParts = (...parts) => parts.filter(value => extractActiveDescription(value)).join('\n\n')
 
 const joinProviderDescriptionParts = (...parts) => {
   const description = parts
@@ -977,9 +998,12 @@ const inferExperienceFromDescriptionText = (description) => {
 }
 
 const buildNormalizedProviderEnrichedJob = (job = {}, updates = {}) => {
+  const sourceDescription = hasSourceDescription(job) ? getSourceDescription(job)
+    : (updates.sourceDescription || getSourceDescription(job))
   const normalized = normalizeScrapedJob({
     ...job,
     ...updates,
+    sourceDescription,
   }, {
     source: job.source || null,
   })
@@ -987,6 +1011,7 @@ const buildNormalizedProviderEnrichedJob = (job = {}, updates = {}) => {
   return {
     ...job,
     ...updates,
+    sourceDescription,
     title: normalized.title,
     description: normalized.jobDescription || normalizeWhitespace(updates.description) || job.description || null,
     jobDescription: normalized.jobDescription || normalizeWhitespace(updates.jobDescription) || job.jobDescription || null,
@@ -1034,9 +1059,11 @@ const buildOracleCandidateExperienceDetailApiUrl = (job = {}) => {
 
   try {
     const parsed = new URL(String(publicJobUrl))
-    if (!/\/hcmUI\/CandidateExperience\//i.test(parsed.pathname)) {
-      return null
-    }
+    const nativeSite = parsed.pathname.match(/\/hcmUI\/CandidateExperience\/[^/]+\/sites\/([^/]+)/i)?.[1]
+    const nativeId = parsed.pathname.match(/\/job\/([^/]+)/i)?.[1]
+    if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('.oraclecloud.com') || !nativeSite
+      || decodeURIComponent(nativeSite) !== siteNumber
+      || (nativeId && decodeURIComponent(nativeId) !== jobId)) return null
 
     return `${parsed.origin}/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%22${encodeURIComponent(jobId)}%22,siteNumber=${encodeURIComponent(siteNumber)}`
   } catch {
@@ -1045,25 +1072,67 @@ const buildOracleCandidateExperienceDetailApiUrl = (job = {}) => {
 }
 
 const extractOracleCandidateExperienceDetailRecord = (payload) => {
-  if (Array.isArray(payload?.items) && payload.items[0]) {
-    return payload.items[0]
-  }
+  if (Array.isArray(payload?.items)) return payload.items.length === 1 ? payload.items[0] : null
+  return payload?.Id != null ? payload : null
+}
 
-  return payload || {}
+const nativeOracleDate = value => {
+  if (value == null || value === '') return null
+  if (typeof value !== 'string') return undefined
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|[+-](\d{2}):(\d{2})))?$/)
+  if (!match) return undefined
+  const [, year, month, day, hour, minute, second, offsetHour, offsetMinute] = match.map(Number)
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
+  const monthDays = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  if (month < 1 || month > 12 || day < 1 || day > monthDays[month - 1]
+    || hour > 23 || minute > 59 || second > 59 || offsetHour > 23 || offsetMinute > 59) return undefined
+  return normalizeLifecycleDate(value) || undefined
+}
+
+const nativeDateConflicts = (suppliedValue, nativeDate, exactness) => {
+  const supplied = normalizeLifecycleDate(suppliedValue)
+  if (!supplied || !nativeDate) return false
+  const calendarOnly = exactness === false || (exactness !== true && typeof suppliedValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(suppliedValue))
+  return calendarOnly ? supplied.toISOString().slice(0, 10) !== nativeDate.toISOString().slice(0, 10)
+    : supplied.getTime() !== nativeDate.getTime()
 }
 
 const enrichJobWithOracleCandidateExperienceDetail = async (job = {}, {
   fetchJson = defaultFetchJson,
+  cache = new Map(),
+  signal = null,
 } = {}) => {
   const detailApiUrl = buildOracleCandidateExperienceDetailApiUrl(job)
   if (!detailApiUrl) return job
 
-  const payload = await getOrCreateAsyncCacheEntry(
-    oracleCandidateExperienceDetailCache,
+  const response = await getOrCreateAsyncCacheEntry(
+    cache,
     detailApiUrl,
-    () => fetchJson(detailApiUrl),
+    () => { throwIfAborted(signal); return fetchJson(detailApiUrl, { signal }) },
   )
-  const detail = extractOracleCandidateExperienceDetailRecord(payload)
+  throwIfAborted(signal)
+  if (Object.hasOwn(response || {}, 'payload') && !verifiedProviderResponse(response, detailApiUrl)) return job
+  const detail = extractOracleCandidateExperienceDetailRecord(providerPayload(response))
+  if (!detail || String(detail.Id) !== extractOracleCandidateExperienceJobId(job) || !sameNativeTitle(detail.Title, job.title)) return job
+  if (detail.PrimaryLocationCountry && !/^(?:IN|IND|India)$/i.test(detail.PrimaryLocationCountry)) return job
+  const lifecycle = {}
+  if (verifiedProviderResponse(response, detailApiUrl)) {
+    const start = nativeOracleDate(detail.ExternalPostedStartDate)
+    const end = nativeOracleDate(detail.ExternalPostedEndDate)
+    if (start === undefined || end === undefined) return job
+    const suppliedStart = normalizeLifecycleDate(job.postingDate || job.postedAt)
+    const scraped = normalizeLifecycleDate(job.scrapedTimestamp || job.scrapedAt)
+    const startWasScrapeFallback = suppliedStart && scraped && suppliedStart.getTime() === scraped.getTime()
+    if ((!startWasScrapeFallback && nativeDateConflicts(job.postingDate || job.postedAt, start, job.sourcePostingDateIsExact))
+      || nativeDateConflicts(job.closingDate, end, job.sourceClosingDateIsExact)) return job
+    if (start) lifecycle.postingDate = lifecycle.postedAt = start.toISOString()
+    if (end) {
+      lifecycle.closingDate = end.toISOString()
+      lifecycle.sourceClosingDateIsExact = /T/i.test(String(detail.ExternalPostedEndDate))
+    }
+  }
+  const sourceDescription = joinProviderSourceParts(detail.ExternalDescriptionStr, detail.ExternalResponsibilitiesStr,
+    detail.ShortDescriptionStr, detail.ExternalQualificationsStr)
   const providerDescription = joinProviderDescriptionParts(
     detail.ExternalDescriptionStr,
     detail.ExternalResponsibilitiesStr,
@@ -1079,45 +1148,62 @@ const enrichJobWithOracleCandidateExperienceDetail = async (job = {}, {
   }
 
   return buildNormalizedProviderEnrichedJob(job, {
+    ...lifecycle,
     title: normalizeWhitespace(detail.Title) || job.title,
     description: providerDescription,
     jobDescription: providerDescription,
+    ...(verifiedProviderResponse(response, detailApiUrl) && /^(?:IN|IND|India)$/i.test(detail.PrimaryLocationCountry || '')
+      && sourceDescription ? { sourceDescription } : {}),
     experienceRequired: providerExperience,
   })
 }
 
-const extractFountainBoardConfig = (html) => {
-  for (const match of String(html ?? '').matchAll(
-    /https:\/\/careers\.[^"'\s<]+\/[a-z0-9-]+\/[0-9a-f-]{36}/gi,
-  )) {
-    try {
-      const parsed = new URL(match[0])
-      const [accountSlug, brandId] = parsed.pathname.split('/').filter(Boolean)
-      if (!accountSlug || !brandId) continue
+const fountainBoardConfig = value => {
+  try {
+    const parsed = new URL(value)
+    const [accountSlug, brandId, extra] = parsed.pathname.split('/').filter(Boolean)
+    const rekrutek = ['careers.rekrutek.ai', 'careers.hire.rekrutek.ai'].includes(parsed.hostname)
+    const fountain = /^careers\.[a-z0-9-]+\.fountain\.com$/i.test(parsed.hostname)
+    if (parsed.protocol !== 'https:' || parsed.search || parsed.hash || extra || (!rekrutek && !fountain)
+      || !/^[a-z0-9-]+$/i.test(accountSlug || '') || !/^[0-9a-f-]{36}$/i.test(brandId || '')) return null
+    return { accountSlug, brandId, boardUrl: parsed.href, rekrutek,
+      apiOrigin: rekrutek ? 'https://hire.rekrutek.ai' : `https://${parsed.hostname.replace(/^careers\./i, '')}` }
+  } catch { return null }
+}
 
-      return {
-        accountSlug,
-        brandId,
-        apiOrigin: `https://${parsed.hostname.replace(/^careers\./i, '')}`,
-      }
-    } catch {
-      // Try the next candidate URL.
-    }
-  }
-
-  return null
+const extractFountainBoardConfig = html => {
+  const configs = readNativeDocument(html).nodes(node => node.tag === 'a')
+    .map(node => fountainBoardConfig(node.attrs.href)).filter(Boolean)
+  const unique = [...new Map(configs.map(config => [config.boardUrl, config])).values()]
+  return unique.length === 1 ? unique[0] : null
 }
 
 const loadFountainBoardConfig = async (job = {}, {
   fetchText = defaultFetchText,
+  cache = new Map(),
+  signal = null,
 } = {}) => {
   const careersUrl = normalizeWhitespace(job.companyCareerPage)
   if (!careersUrl) return null
 
   return getOrCreateAsyncCacheEntry(
-    fountainBoardConfigCache,
+    cache,
     careersUrl,
-    async () => extractFountainBoardConfig(await fetchText(careersUrl)),
+    async () => {
+      throwIfAborted(signal)
+      const companyPage = await fetchText(careersUrl, { signal })
+      throwIfAborted(signal)
+      const declared = extractFountainBoardConfig(publicPageHtml(companyPage))
+      if (!declared) return null
+      if (!verifiedPageResponse(companyPage, careersUrl)) return { ...declared, verified: false }
+      const board = await fetchText(declared.boardUrl, { signal })
+      throwIfAborted(signal)
+      const current = fountainBoardConfig(board?.url)
+      const sameScope = current?.accountSlug === declared.accountSlug && current?.brandId === declared.brandId
+      const verified = board?.status >= 200 && board.status < 300 && sameScope
+        && (isExactPublicJobUrl(board.url, declared.boardUrl) || (!declared.rekrutek && current.rekrutek))
+      return verified ? { ...current, verified: true } : { ...declared, verified: false }
+    },
   )
 }
 
@@ -1139,21 +1225,46 @@ const buildFountainPortalApplicationFormUrl = ({
 const enrichJobWithFountainPortalDetail = async (job = {}, {
   fetchText = defaultFetchText,
   fetchJson = defaultFetchJson,
+  cache = new Map(),
+  publicPageReceipt = null,
+  signal = null,
 } = {}) => {
   const publicJobUrl = resolvePublicJobUrl(job)
   const jobId = normalizeWhitespace(job.jobId || job.requisitionId)
-  if (!publicJobUrl || !jobId || !/fountain\.com/i.test(publicJobUrl)) {
-    return job
-  }
+  let roleUrl
+  try { roleUrl = new URL(publicJobUrl) } catch { return job }
+  const oldRole = roleUrl.pathname.match(/^\/([^/]+)\/apply\/([^/]+)\/?$/)
+  const newRole = roleUrl.pathname.match(/^\/apply\/([^/]+)\/opening\/([^/]+)\/?$/)
+  const role = roleUrl.hostname.endsWith('.fountain.com') ? oldRole
+    : roleUrl.hostname === 'apply.rekrutek.ai' ? newRole : null
+  if (!role || roleUrl.protocol !== 'https:' || !jobId) return job
 
-  const boardConfig = await loadFountainBoardConfig(job, { fetchText })
+  const boardConfig = await loadFountainBoardConfig(job, { fetchText, cache, signal })
+  if (!boardConfig || boardConfig.accountSlug !== role[1]) return job
   const portalUrl = buildFountainPortalApplicationFormUrl({
     ...boardConfig,
     jobId,
   })
   if (!portalUrl) return job
 
-  const payload = await fetchJson(portalUrl)
+  throwIfAborted(signal)
+  const response = await fetchJson(portalUrl, { signal })
+  throwIfAborted(signal)
+  if (Object.hasOwn(response || {}, 'payload') && !verifiedProviderResponse(response, portalUrl)) return job
+  const payload = providerPayload(response)
+  const funnel = payload?.funnel
+  if (!funnel || !sameNativeTitle(funnel.title, job.title)
+    || (funnel.external_id != null && String(funnel.external_id) !== jobId)
+    || (funnel.slug && funnel.slug !== role[2]) || funnel.active === false
+    || (funnel.country_code && funnel.country_code !== 'IN')
+    || (payload.brand?.external_id && payload.brand.external_id !== boardConfig.brandId)) return job
+  const expectedRoleUrl = boardConfig.rekrutek
+    ? `https://apply.rekrutek.ai/apply/${role[1]}/opening/${role[2]}` : publicJobUrl
+  const verified = boardConfig.verified && verifiedPageResponse(publicPageReceipt, expectedRoleUrl)
+    && verifiedProviderResponse(response, portalUrl) && String(funnel.external_id) === jobId
+    && funnel.slug === role[2] && funnel.active === true && funnel.country_code === 'IN'
+    && payload.brand?.external_id === boardConfig.brandId
+  const sourceDescription = extractActiveDescription(funnel.position_description_html) ? funnel.position_description_html : null
   const providerDescription = joinProviderDescriptionParts(
     payload?.funnel?.position_description_html,
   )
@@ -1168,24 +1279,18 @@ const enrichJobWithFountainPortalDetail = async (job = {}, {
     title: normalizeWhitespace(payload?.funnel?.title) || job.title,
     description: providerDescription,
     jobDescription: providerDescription,
+    ...(verified && sourceDescription ? { sourceDescription } : {}),
     experienceRequired: providerExperience,
   })
 }
 
 const extractCeipalWidgetConfig = (html) => {
-  const scriptTag = String(html ?? '').match(
-    /<script\b[^>]*src=["']https:\/\/jobsapi\.ceipal\.com\/APISource\/widget\.js["'][^>]*><\/script>/i,
-  )?.[0]
-  if (!scriptTag) return null
-
-  const apiKey = extractAttributeValue(scriptTag, 'data-ceipal-api-key')
-  const careerPortalId = extractAttributeValue(scriptTag, 'data-ceipal-career-portal-id')
-  if (!apiKey || !careerPortalId) return null
-
-  return {
-    apiKey,
-    careerPortalId,
-  }
+  const configs = readNativeDocument(html).nodes(node => node.tag === 'script'
+    && node.attrs.src === 'https://jobsapi.ceipal.com/APISource/widget.js')
+    .map(node => ({ apiKey: node.attrs['data-ceipal-api-key'], careerPortalId: node.attrs['data-ceipal-career-portal-id'] }))
+    .filter(value => value.apiKey && value.careerPortalId)
+  const unique = [...new Map(configs.map(value => [JSON.stringify(value), value])).values()]
+  return unique.length === 1 ? unique[0] : null
 }
 
 const buildCeipalWidgetUrl = ({ apiKey, careerPortalId } = {}) =>
@@ -1232,36 +1337,51 @@ const extractCeipalCareerPortalApplyUrl = (job = {}) => normalizeWhitespace(
 const loadCeipalCareerPortalJobs = async (job = {}, {
   fetchText = defaultFetchText,
   fetchJson = defaultFetchJson,
+  cache = new Map(),
+  signal = null,
 } = {}) => {
   const careersUrl = normalizeWhitespace(job.companyCareerPage)
-  if (!careersUrl) return new Map()
+  if (!careersUrl) return { jobsByKey: new Map(), bindingVerified: false }
 
   return getOrCreateAsyncCacheEntry(
-    ceipalCareerPortalJobsCache,
+    cache,
     careersUrl,
     async () => {
-      const widgetConfig = extractCeipalWidgetConfig(await fetchText(careersUrl))
-      if (!widgetConfig) return new Map()
+      throwIfAborted(signal)
+      const companyPage = await fetchText(careersUrl, { signal })
+      throwIfAborted(signal)
+      const widgetConfig = extractCeipalWidgetConfig(publicPageHtml(companyPage))
+      if (!widgetConfig) return { jobsByKey: new Map(), bindingVerified: false }
+      const bindingVerified = verifiedPageResponse(companyPage, careersUrl)
 
       const jobsByKey = new Map()
-      for (let page = 1; ; page += 1) {
-        const payload = await fetchJson(
-          buildCeipalCareerPortalApiUrl({ apiKey: widgetConfig.apiKey, page }),
-          buildCeipalCareerPortalRequestOptions({
+      const seenIds = new Set()
+      for (let page = 1; page <= 100; page += 1) {
+        throwIfAborted(signal)
+        const apiUrl = buildCeipalCareerPortalApiUrl({ apiKey: widgetConfig.apiKey, page })
+        const response = await fetchJson(
+          apiUrl,
+          { ...buildCeipalCareerPortalRequestOptions({
             apiKey: widgetConfig.apiKey,
             careerPortalId: widgetConfig.careerPortalId,
             page,
-          }),
+          }), signal },
         )
+        throwIfAborted(signal)
+        if (Object.hasOwn(response || {}, 'payload') && !verifiedProviderResponse(response, apiUrl)) throw new Error('CEIPAL native response identity changed')
+        const payload = providerPayload(response)
+        if (!Array.isArray(payload?.results)) throw new Error('CEIPAL native response has no job records')
         const results = Array.isArray(payload?.results) ? payload.results : []
         if (results.length === 0) break
 
         for (const rawJob of results) {
           const country = normalizeWhitespace(rawJob?.country)
-          const jobId = normalizeWhitespace(rawJob?.job_id || rawJob?.id)
+          const jobId = normalizeWhitespace(rawJob?.job_id ?? rawJob?.id)
+          if (jobId && seenIds.has(jobId)) throw new Error('CEIPAL native role identity is ambiguous')
+          if (jobId) seenIds.add(jobId)
           const sourceUrl = extractCeipalCareerPortalSourceUrl(rawJob)
           const applyUrl = extractCeipalCareerPortalApplyUrl(rawJob)
-          if (!jobId || !sourceUrl || !applyUrl || !/india/i.test(country || '')) {
+          if (!jobId || !sourceUrl || !applyUrl || !/^India$/i.test(country || '')) {
             continue
           }
 
@@ -1276,11 +1396,14 @@ const loadCeipalCareerPortalJobs = async (job = {}, {
             sourceUrl,
             applyUrl,
             jobDescription: providerDescription,
+            sourceDescription: joinProviderSourceParts(rawJob?.public_job_desc, rawJob?.requistion_description),
+            sourceVerified: bindingVerified && verifiedProviderResponse(response, apiUrl),
             experienceRequired: providerExperience,
           }
 
           for (const key of [jobId, sourceUrl, applyUrl]) {
-            jobsByKey.set(key, normalizedJob)
+            if (jobsByKey.has(key) && jobsByKey.get(key)?.jobId !== jobId) jobsByKey.set(key, null)
+            else if (!jobsByKey.has(key)) jobsByKey.set(key, normalizedJob)
           }
         }
 
@@ -1290,7 +1413,7 @@ const loadCeipalCareerPortalJobs = async (job = {}, {
         }
       }
 
-      return jobsByKey
+      return { jobsByKey, bindingVerified }
     },
   )
 }
@@ -1298,15 +1421,20 @@ const loadCeipalCareerPortalJobs = async (job = {}, {
 const enrichJobWithCeipalCareerPortalDetail = async (job = {}, {
   fetchText = defaultFetchText,
   fetchJson = defaultFetchJson,
+  cache = new Map(),
+  signal = null,
 } = {}) => {
   const publicJobUrl = resolvePublicJobUrl(job)
-  if (!publicJobUrl || !/ceipal\.(?:com|in)/i.test(publicJobUrl)) {
-    return job
-  }
+  try {
+    const url = new URL(publicJobUrl)
+    if (url.protocol !== 'https:' || !/\.ceipal\.(?:com|in)$/i.test(url.hostname)) return job
+  } catch { return job }
 
-  const jobsByKey = await loadCeipalCareerPortalJobs(job, {
+  const { jobsByKey } = await loadCeipalCareerPortalJobs(job, {
     fetchText,
     fetchJson,
+    cache,
+    signal,
   })
   const matchedJob = jobsByKey.get(normalizeWhitespace(job.jobId))
     || jobsByKey.get(normalizeWhitespace(job.sourceUrl))
@@ -1314,11 +1442,16 @@ const enrichJobWithCeipalCareerPortalDetail = async (job = {}, {
   if (!matchedJob?.jobDescription && !matchedJob?.experienceRequired) {
     return job
   }
+  if (!sameNativeTitle(matchedJob.title, job.title)
+    || (job.jobId != null && String(job.jobId) !== matchedJob.jobId)
+    || ![job.sourceUrl, job.applyUrl, job.link].filter(Boolean).some(url =>
+      [matchedJob.sourceUrl, matchedJob.applyUrl].some(nativeUrl => isExactPublicJobUrl(url, nativeUrl)))) return job
 
   return buildNormalizedProviderEnrichedJob(job, {
     title: matchedJob.title || job.title,
     description: matchedJob.jobDescription,
     jobDescription: matchedJob.jobDescription,
+    ...(matchedJob.sourceVerified && matchedJob.sourceDescription ? { sourceDescription: matchedJob.sourceDescription } : {}),
     experienceRequired: normalizeWhitespace(job.experienceRequired) || matchedJob.experienceRequired,
   })
 }
@@ -1326,6 +1459,9 @@ const enrichJobWithCeipalCareerPortalDetail = async (job = {}, {
 const enrichJobWithProviderSpecificPublicData = async (job = {}, {
   fetchText = defaultFetchText,
   fetchJson = defaultFetchJson,
+  providerCaches = createProviderCaches(),
+  publicPageReceipt = null,
+  signal = null,
 } = {}) => {
   let enriched = job
 
@@ -1333,8 +1469,11 @@ const enrichJobWithProviderSpecificPublicData = async (job = {}, {
     try {
       enriched = await enrichJobWithOracleCandidateExperienceDetail(enriched, {
         fetchJson,
+        cache: providerCaches.oracle,
+        signal,
       })
     } catch {
+      throwIfAborted(signal)
       // Keep the best prior result when the public Oracle detail API cannot be reached.
     }
   }
@@ -1344,8 +1483,12 @@ const enrichJobWithProviderSpecificPublicData = async (job = {}, {
       enriched = await enrichJobWithFountainPortalDetail(enriched, {
         fetchText,
         fetchJson,
+        cache: providerCaches.fountain,
+        publicPageReceipt,
+        signal,
       })
     } catch {
+      throwIfAborted(signal)
       // Keep the best prior result when the public portal API cannot be reached.
     }
   }
@@ -1355,8 +1498,11 @@ const enrichJobWithProviderSpecificPublicData = async (job = {}, {
       enriched = await enrichJobWithCeipalCareerPortalDetail(enriched, {
         fetchText,
         fetchJson,
+        cache: providerCaches.ceipal,
+        signal,
       })
     } catch {
+      throwIfAborted(signal)
       // Keep the best prior result when the public CEIPAL API cannot be reached.
     }
   }
@@ -1364,9 +1510,26 @@ const enrichJobWithProviderSpecificPublicData = async (job = {}, {
   return enriched
 }
 
+const publicPageHtml = response => typeof response === 'object' && response !== null
+  ? String(response.html ?? '') : String(response ?? '')
+
 export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
   const publicJobUrl = resolvePublicJobUrl(job)
-  const pageText = stripHtmlToText(html)
+  // Text-only injected fetches remain useful for experience inference, but
+  // cannot prove where a canonical employer description was actually served.
+  const responseUrl = html && typeof html === 'object' && html.status >= 200 && html.status < 300
+    ? html.url : null
+  html = publicPageHtml(html)
+  // A normalized listing may explicitly carry a missing immutable description.
+  // Only an exact employer/role schema can fill that field; inferred visible
+  // page text and generated display summaries remain separate evidence.
+  const recoveredPosting = responseUrl && !hasSourceDescription(job)
+    ? publicPostingDescription({ ...job, sourceUrl: publicJobUrl }, html, responseUrl)
+    : null
+  const sourceJob = recoveredPosting
+    ? { ...job, sourceDescription: recoveredPosting.description }
+    : job
+  const pageText = stripHtmlToText(recoveredPosting?.description || html)
   const trimmedPageText = trimTrailingJobSiteChrome(pageText) || pageText
   const pageSummary = extractPageSummary(html)
   const pageTitle = extractTitle(html)
@@ -1392,7 +1555,8 @@ export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
   const relevantPageTextLooksLikeNoDescriptionPlaceholder =
     looksLikeNoDescriptionPlaceholder(relevantPageText)
   const hasJobSpecificPageTitle =
-    textContainsComparable(pageTitle, job.title)
+    Boolean(recoveredPosting)
+    || textContainsComparable(pageTitle, job.title)
     || textContainsComparable(primaryHeading, job.title)
   const bodyTitleMatchIndex = findComparableTextIndex(trimmedPageText, job.title)
   const hasJobSpecificVisibleTitle = Boolean(
@@ -1488,8 +1652,8 @@ export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
     .join('\n\n') || null
 
   const normalized = normalizeScrapedJob({
-    ...job,
-    title: hasUsablePublicEvidence && hasJobSpecificPageTitle ? (preferredPublicTitle || job.title) : job.title,
+    ...sourceJob,
+    title: !recoveredPosting && hasUsablePublicEvidence && hasJobSpecificPageTitle ? (preferredPublicTitle || job.title) : job.title,
     experienceRequired: job.experienceRequired || explicitExperience,
     description: composedPublicDescription,
     jobDescription: composedPublicDescription,
@@ -1498,7 +1662,7 @@ export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
   })
 
   return {
-    ...job,
+    ...sourceJob,
     title: normalized.title,
     description: normalized.jobDescription || retainedExistingDescription || null,
     jobDescription: normalized.jobDescription
@@ -1519,6 +1683,7 @@ export const enrichJobWithPublicExperience = async (job = {}, {
   fetchTimeoutMs = resolvePublicExperienceFetchTimeoutMs(),
   pdfTextExtractionTimeoutMs = resolvePdfTextExtractionTimeoutMs(),
   signal = null,
+  providerCaches = createProviderCaches(),
 } = {}) => {
   throwIfAborted(signal)
   const promotedJob = promoteExistingPublicEvidence(job)
@@ -1531,6 +1696,7 @@ export const enrichJobWithPublicExperience = async (job = {}, {
     signal,
     timeoutMs: fetchTimeoutMs,
     pdfTextExtractionTimeoutMs,
+    includeResponseMetadata: true,
   }))
   const canUseDefaultFetch = !fetchText && !shouldSkipDefaultFetch(jobUrl)
   const canUseBrowserFetch = Boolean(fetchBrowserText || getBrowserText)
@@ -1549,8 +1715,11 @@ export const enrichJobWithPublicExperience = async (job = {}, {
     enriched = promotedJob
   }
 
-  const embeddedPublicJobUrl = rawFetchedHtml
-    ? extractEmbeddedPublicJobUrl(rawFetchedHtml, jobUrl)
+  const hasVerifiedWrapperResponse = rawFetchedHtml && typeof rawFetchedHtml === 'object'
+    && rawFetchedHtml.status >= 200 && rawFetchedHtml.status < 300
+    && isExactPublicJobUrl(rawFetchedHtml.url, jobUrl)
+  const embeddedPublicJobUrl = hasVerifiedWrapperResponse
+    ? extractEmbeddedPublicJobUrl(publicPageHtml(rawFetchedHtml), jobUrl)
     : null
   if (
     embeddedPublicJobUrl
@@ -1577,6 +1746,7 @@ export const enrichJobWithPublicExperience = async (job = {}, {
         ...requestOptions,
         signal,
         fetchTimeoutMs,
+        includeResponseMetadata: true,
       })
     : null)
   if (!hasSufficientPublicJobEvidence(enriched) && providerFetchJson) {
@@ -1584,7 +1754,11 @@ export const enrichJobWithPublicExperience = async (job = {}, {
     enriched = await enrichJobWithProviderSpecificPublicData(enriched, {
       fetchText: fetchImpl,
       fetchJson: providerFetchJson,
+      providerCaches,
+      publicPageReceipt: rawFetchedHtml,
+      signal,
     })
+    throwIfAborted(signal)
   }
 
   enriched = preserveListingOnlyPublicVerification(job, promotedJob, enriched)
@@ -1615,7 +1789,7 @@ export const enrichJobWithPublicExperience = async (job = {}, {
 
     if (
       !hasSufficientPublicJobEvidence(browserEnriched)
-      && looksLikeTransientBrowserRenderShell(browserHtml, jobUrl)
+      && looksLikeTransientBrowserRenderShell(publicPageHtml(browserHtml), jobUrl)
     ) {
       const retriedBrowserHtml = await browserFetchImpl(jobUrl)
       browserEnriched = inferExperienceFromPublicPageHtml(browserEnriched, retriedBrowserHtml)
@@ -1630,6 +1804,7 @@ export const enrichJobWithPublicExperience = async (job = {}, {
 
 export const enrichJobsWithPublicExperience = async (jobs = [], options = {}) => {
   const concurrency = Math.max(1, Number.isInteger(options.concurrency) ? options.concurrency : 4)
+  const providerCaches = createProviderCaches()
   const results = new Array(jobs.length)
   let cursor = 0
   let browserFallback = null
@@ -1669,6 +1844,11 @@ export const enrichJobsWithPublicExperience = async (jobs = [], options = {}) =>
     const queues = sessions.map(() => Promise.resolve())
     const warmedUrlsBySession = sessions.map(() => new Set())
     let sessionCursor = 0
+    const fetchBrowserPage = async (sessionIndex, url) => {
+      const page = await sessions[sessionIndex].fetchPage(url)
+      if (!(page.status >= 200 && page.status < 300)) throw new Error(`HTTP ${page.status} for ${url}`)
+      return page
+    }
 
     const fetchBrowserText = (url) => {
       const sessionIndex = sessionCursor % sessions.length
@@ -1683,7 +1863,7 @@ export const enrichJobsWithPublicExperience = async (jobs = [], options = {}) =>
             warmedUrlsBySession[sessionIndex].add(url)
           }
 
-          return sessions[sessionIndex].fetchText(url)
+          return fetchBrowserPage(sessionIndex, url)
         },
         async () => {
           if (
@@ -1694,7 +1874,7 @@ export const enrichJobsWithPublicExperience = async (jobs = [], options = {}) =>
             warmedUrlsBySession[sessionIndex].add(url)
           }
 
-          return sessions[sessionIndex].fetchText(url)
+          return fetchBrowserPage(sessionIndex, url)
         },
       )
       queues[sessionIndex] = next.catch(() => {})
@@ -1718,6 +1898,7 @@ export const enrichJobsWithPublicExperience = async (jobs = [], options = {}) =>
       cursor += 1
       results[currentIndex] = await enrichJobWithPublicExperience(jobs[currentIndex], {
         ...options,
+        providerCaches,
         fetchBrowserText: options.fetchBrowserText || null,
         getBrowserText: options.fetchBrowserText
           ? null

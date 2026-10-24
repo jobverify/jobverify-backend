@@ -18,7 +18,10 @@
       "verified": true,
       "checkedAt": "2026-10-20T20:54:17.156Z",
       "officialURL": "https://www.abb.com/global/en",
-      "matchedLinks": ["https://global.abb/group/en/careers", "https://careers.abb/global/en/home"],
+      "matchedLinks": [
+        "https://global.abb/group/en/careers",
+        "https://careers.abb/global/en/home"
+      ],
       "evidenceOrigin": "actual-rendered-corporate-anchor-and-direct-HTTP-handoff",
       "proofManifest": "../artifacts/full-catalog/audit-live-repairs-017-providers.json"
     },
@@ -6997,20 +7000,6 @@
     "companyDomain": "chakraventures.com",
     "verifiedOn": "2026-08-13",
     "verifiedSurfaceSummary": "Verified on Thursday, August 13, 2026 that https://chakraventures.com/, /careers, /jobs, and /lander each currently fail with repeated connect timeouts, so no trustworthy public jobs surface is reachable on the first-party domain."
-  },
-  {
-    "source": "chalo",
-    "companyName": "Chalo",
-    "adapter": "script",
-    "modulePath": "../chalo/script.js",
-    "companyCareerPage": "https://chalo.com/jobs",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-first-party-jobs-page",
-    "extractionStrategy": "homepage-plus-jobs-page-inline-cards+same-page-apply-form",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "chalo.com"
   },
   {
     "source": "chargebee",
@@ -14466,20 +14455,6 @@
     "companyDomain": "godharinfratech.com"
   },
   {
-    "source": "godigit",
-    "companyName": "Go Digit General Insurance",
-    "adapter": "script",
-    "modulePath": "../godigit/script.js",
-    "companyCareerPage": "https://www.godigit.com/careers",
-    "atsPlatform": "darwinbox",
-    "countryFilter": "India",
-    "paginationStrategy": "page-query",
-    "extractionStrategy": "browser-session+json-search-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "godigit.com"
-  },
-  {
     "source": "goibibo",
     "companyName": "Goibibo",
     "companyCareerPage": "https://www.goibibo.com/careers/",
@@ -16260,28 +16235,6 @@
     "verifiedPublicJobCount": 0,
     "verifiedIndiaJobCount": 0,
     "verifiedSurfaceSummary": "Verified on Saturday, August 15, 2026 that ICICI Bank's first-party careers homepage at https://careers.icici.bank.in/CareerApplicant/Career/Home, the public listing page at https://careers.icici.bank.in/CareerApplicant/career/job-listing/, the encrypted search API at https://careers.icici.bank.in/CareerApplicantApi/Career/Search/1, the public detail page at https://careers.icici.bank.in/CareerApplicant/Career/job-details/2204493, and the detail API at https://careers.icici.bank.in/CareerApplicantApi/Career/getSingleJob/1/2204493 all returned the same first-party 200 Error incident shell with \"This page can't be displayed\" and an incident ID instead of a scraper-visible public jobs surface. This provider therefore returns an honest empty result until ICICI Bank restores a trustworthy public careers feed."
-  },
-  {
-    "source": "icicisecurities",
-    "companyName": "ICICI Securities",
-    "officialBrandName": "ICICI Securities",
-    "adapter": "script",
-    "modulePath": "../icicisecurities/script.js",
-    "dryRunFile": "icicisecurities/jobs.json",
-    "companyCareerPage": "https://www.icicisecurities.com/careers-current-opening",
-    "listingApiUrl": "https://www.icicisecurities.com/get-branches",
-    "companyDomain": "icicisecurities.com",
-    "atsPlatform": "official-company-ajax-careers",
-    "countryFilter": "India",
-    "verifiedRawJobCount": 4,
-    "verifiedActiveJobCount": 1,
-    "verifiedActiveSampleTitle": "Private Wealth Relationship Manager",
-    "paginationStrategy": "single-official-page-plus-json-listing-endpoint",
-    "extractionStrategy": "verified-current-openings-page+first-party-json-listing-endpoint+closing-date-filter",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on July 16, 2026 that the richer live ICICI Securities first-party careers surface is https://www.icicisecurities.com/careers-current-opening, which loads public listings from the first-party JSON endpoint https://www.icicisecurities.com/get-branches. The verified feed returned 4 public rows on the verified date, but only 1 active opening still had a closing date on or after July 16, 2026: \"Private Wealth Relationship Manager\". Older rows remained in the feed with past closing dates, so the scraper filters stale postings fail-closed instead of guessing which expired jobs are still valid."
   },
   {
     "source": "icumedical",

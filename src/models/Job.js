@@ -134,6 +134,7 @@ export const JobSchema = new Schema(
         message: "applyUrl must be an http(s) URL",
       },
     },
+    applicationUrlIsGeneric: { type: Boolean, default: false },
     companyCareerPage: {
       type: String,
       default: null,
@@ -234,6 +235,10 @@ JobSchema.index({ status: 1, isPublicIndia: 1, locationKeys: 1, sortDate: -1, _i
 JobSchema.index({ status: 1, isPublicIndia: 1, companyKey: 1, locationKeys: 1, sortDate: -1, _id: -1 });
 JobSchema.index({ source: 1, status: 1, missedScrapeCount: 1 });
 JobSchema.index({ source: 1, status: 1, lastSeenAt: 1 });
+JobSchema.index({ applicationUrlIsGeneric: 1, applyUrl: 1 }, {
+  name: 'shared_application_surface',
+  partialFilterExpression: { applicationUrlIsGeneric: true },
+});
 JobSchema.index({ location: 1 });
 JobSchema.index({ city: 1 });
 JobSchema.index({ locations: 1 });

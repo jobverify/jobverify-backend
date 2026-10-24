@@ -1,18 +1,20 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { createPublishingGapAtsScraper } from '../../scraper-support/utils/publishingGapAts.js'
+import { verifyOfficialAtsBinding } from '../../scraper-support/utils/officialAtsBinding.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "gocardless"
 export const COMPANY = "GoCardless"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for GoCardless added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://gocardless.com/about/careers'
+export const BOARD_URL = 'https://job-boards.greenhouse.io/gocardless'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = async ({ fetchPage, fetchJson, signal } = {}) => {
+  await verifyOfficialAtsBinding({ source: SOURCE, officialUrl: CAREERS_URL, boardUrl: BOARD_URL }, { fetchPage, signal })
+  return createPublishingGapAtsScraper({ source: SOURCE, companyName: COMPANY, atsPlatform: 'greenhouse', boardToken: 'gocardless' }).run({ fetchJson, signal })
+}
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

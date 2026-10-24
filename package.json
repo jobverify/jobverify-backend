@@ -91,7 +91,8 @@
     "pdfjs-dist": "^6.2.108",
     "razorpay": "^2.9.8",
     "tesseract.js": "^7.0.0",
-    "word-extractor": "^1.0.4"
+    "word-extractor": "^1.0.4",
+    "playwright": "1.60.0"
   },
   "devDependencies": {
     "mongodb-memory-server": "^11.2.0",

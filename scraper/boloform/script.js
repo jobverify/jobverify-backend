@@ -32,10 +32,10 @@ export const createBoloformScraper=(defaults={})=>({async run(options={}) {
   const cancelBody=reason=>{void Promise.resolve().then(()=>response.body?.cancel?.(reason)).catch(()=>{})}
   if(controller.signal.aborted)cancelBody(controller.signal.reason)
   controller.signal.throwIfAborted()
-  if(response.url!==FIRST_PARTY_ROOT_URL){const error=gap('Configured source final URL changed; exact employer review required');cancelBody(error);throw error}
-  if(response.status!==200){
+  if(response.url!==FIRST_PARTY_ROOT_URL||response.status!==200){
    retainedResponses.push({url:FIRST_PARTY_ROOT_URL,finalUrl:response.url,status:response.status,bodyUnread:true,capturedAt:new Date().toISOString()})
-   const error=Object.assign(gap('Configured employer source HTTP failure; inventory unavailable'),{status:response.status})
+   const reason=response.url!==FIRST_PARTY_ROOT_URL?'Configured source final URL changed; exact employer review required':'Configured employer source HTTP failure; inventory unavailable'
+   const error=Object.assign(gap(reason+'; HTTP '+response.status+' for '+FIRST_PARTY_ROOT_URL+'; final URL '+response.url),{status:response.status,requestUrl:FIRST_PARTY_ROOT_URL,finalUrl:response.url})
    cancelBody(error);throw error
   }
   let body

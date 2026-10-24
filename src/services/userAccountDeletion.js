@@ -17,6 +17,10 @@ import OutreachThread from '../models/OutreachThread.js';
 import OutreachTask from '../models/OutreachTask.js';
 import OutreachUsage from '../models/OutreachUsage.js';
 import { cleanupUserCampaignData } from './campaignService.js';
+import ApplicationMailbox from '../models/ApplicationMailbox.js';
+import ApplicationMailboxAuth from '../models/ApplicationMailboxAuth.js';
+import ApplicationMail from '../models/ApplicationMail.js';
+import AutoApplyAttempt from '../models/AutoApplyAttempt.js';
 
 // Keep the account until cleanup succeeds, so a failed deletion can be retried.
 export const removeUserAccount = async (user) => {
@@ -26,6 +30,7 @@ export const removeUserAccount = async (user) => {
   const userId = user._id;
   await User.updateOne({ _id: userId }, { $set: { outreachDeletingAt: new Date() } });
   await cleanupUserCampaignData(userId);
+  for (const Model of [ApplicationMailboxAuth, ApplicationMailbox, ApplicationMail, AutoApplyAttempt]) await Model.deleteMany({ user: userId });
   for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application, Resume, TailoredResume, ResumeArtifact, OutreachTask, OutreachThread, OutreachUsage]) {
     await Model.deleteMany({ user: userId });
   }

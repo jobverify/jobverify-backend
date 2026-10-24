@@ -1818,25 +1818,5 @@
     "backfillMode": "workday",
     "modulePath": "../rheinmetall.workday/script.js",
     "dryRunFile": "rheinmetall.workday/jobs.json"
-  },
-  {
-    "source": "rocheholding",
-    "companyName": "Roche Holding",
-    "adapter": "script",
-    "atsPlatform": "workbook-exact-name-sentinel",
-    "countryFilter": "India",
-    "paginationStrategy": "none",
-    "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-08-08",
-    "verifiedPublicJobCount": 0,
-    "verifiedIndiaJobCount": 0,
-    "verificationDisposition": "no-trustworthy-exact-name-public-jobs-flow-verified-locally",
-    "verifiedSurfaceSummary": "Workbook batch 11 exact-name sentinel for Roche Holding added on Saturday, August 8, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-    "originalModulePath": "../workbookbatch11b/failClosedSentinel.js",
-    "backfillMode": "workday",
-    "modulePath": "../rocheholding.workday/script.js",
-    "dryRunFile": "rocheholding.workday/jobs.json"
   }
 ]

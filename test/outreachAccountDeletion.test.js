@@ -16,6 +16,10 @@ import AccessEvent from '../src/models/AccessEvent.js';
 import TelegramLinkToken from '../src/models/TelegramLinkToken.js';
 import UserSuggestion from '../src/models/UserSuggestion.js';
 import Application from '../src/models/Application.js';
+import ApplicationMail from '../src/models/ApplicationMail.js';
+import ApplicationMailbox from '../src/models/ApplicationMailbox.js';
+import ApplicationMailboxAuth from '../src/models/ApplicationMailboxAuth.js';
+import AutoApplyAttempt from '../src/models/AutoApplyAttempt.js';
 import Resume from '../src/models/Resume.js';
 import TailoredResume from '../src/models/TailoredResume.js';
 import ResumeArtifact from '../src/models/ResumeArtifact.js';
@@ -32,14 +36,16 @@ test('account deletion blocks new outreach before revoking and removing all priv
   t.mock.method(Campaign, 'updateMany', async () => {});
   t.mock.method(SiteSettings, 'updateMany', async () => {});
   for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application,
-    PendingUser, AdminAudit, GmailConnection, GmailOAuthState, Campaign, OutreachThread, OutreachTask, OutreachUsage, Resume, TailoredResume, ResumeArtifact]) {
+    PendingUser, AdminAudit, GmailConnection, GmailOAuthState, Campaign, OutreachThread, OutreachTask, OutreachUsage,
+    ApplicationMail, ApplicationMailbox, ApplicationMailboxAuth, AutoApplyAttempt, Resume, TailoredResume, ResumeArtifact]) {
     t.mock.method(Model, 'deleteMany', async filter => { calls.push([Model.modelName, filter]); });
   }
   await removeUserAccount(user);
   assert.equal(calls[0][0], 'mark');
   assert.ok(calls[0][2].$set.outreachDeletingAt instanceof Date);
   assert.ok(calls.findIndex(([name]) => name === 'disconnect') < calls.findIndex(([name]) => name === 'OutreachThread'));
-  for (const name of ['GmailConnection', 'GmailOAuthState', 'Campaign', 'OutreachThread', 'OutreachTask', 'OutreachUsage', 'Resume', 'TailoredResume', 'ResumeArtifact']) {
+  for (const name of ['GmailConnection', 'GmailOAuthState', 'Campaign', 'OutreachThread', 'OutreachTask', 'OutreachUsage',
+    'ApplicationMail', 'ApplicationMailbox', 'ApplicationMailboxAuth', 'AutoApplyAttempt', 'Resume', 'TailoredResume', 'ResumeArtifact']) {
     assert.ok(calls.some(([model, filter]) => model === name && filter.user === user._id), name);
   }
   assert.deepEqual(calls.at(-1), ['User', { _id: user._id }]);

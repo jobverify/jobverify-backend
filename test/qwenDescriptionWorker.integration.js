@@ -9,7 +9,7 @@ import { REWRITE_MODEL, buildRewriteInput } from '../src/services/jobDescription
 import { prepareRewriteRuntime, startRewriteWorker, sha256File, workerMemoryBytes } from '../rewriting/worker.js';
 import { createRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
 
-test('the pinned Qwen CPU worker rewrites employer descriptions through the production client', { timeout: 720000 }, async () => {
+test('the pinned production CPU worker organizes employer descriptions through the production client', { timeout: 720000 }, async () => {
   const directory = process.env.DESCRIPTION_SMOKE_ASSET_DIR || fileURLToPath(new URL('../.cache/small-description-model-assets/', import.meta.url));
   const asset = REWRITE_MODEL.runtimeAssets[process.platform];
   assert.ok(asset, 'A pinned runtime must exist for this platform');
@@ -22,14 +22,14 @@ test('the pinned Qwen CPU worker rewrites employer descriptions through the prod
   const checkMemory = () => {
     const used = (1 - os.freemem() / os.totalmem()) * 100;
     peakHostMemory = Math.max(peakHostMemory, used);
-    if (used > 90) controller.abort(new Error('Host physical memory exceeded 90%; native Qwen check stopped.'));
+    if (used > 90) controller.abort(new Error('Host physical memory exceeded 90%; native description check stopped.'));
   };
   checkMemory();
   controller.signal.throwIfAborted();
   const monitor = setInterval(checkMemory, 1000);
   try {
     worker = await startRewriteWorker({ ...await prepareRewriteRuntime({ directory, signal: controller.signal }),
-      signal: controller.signal, port: 18779, logFile: path.join(directory, 'qwen-production-smoke.log') });
+      signal: controller.signal, port: 18779, logFile: path.join(directory, 'description-production-smoke.log') });
     const source = 'Role overview: Build Python services for customer applications. Responsibilities: Design reliable APIs and maintain Python services. Required qualifications: At least 2 years of software development experience is required. Preferred qualifications: AWS experience is nice to have.';
     const job = { _id: 'native-qwen', title: 'Software Engineer', company: 'Example', sourceDescription: source, status: 'active', descriptionRewrite: { status: 'pending', attempts: 0 } };
     const input = buildRewriteInput(job);

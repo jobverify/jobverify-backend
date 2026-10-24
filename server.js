@@ -15,6 +15,8 @@ import { reconcileActivePipeline } from './src/pipeline/recovery.js';
 import { recoverOutreachTasks } from './src/services/outreachService.js';
 import { recoverTailoredResumes } from './src/services/resumeTailoringService.js';
 import { processCampaignQueue } from './src/services/campaignService.js';
+import { processApplicationMailboxQueue } from './src/services/applicationMailboxService.js';
+import { processAutoApplyQueue } from './src/services/autoApplyService.js';
 
 async function main() {
   const port = parsePort(process.env.PORT);
@@ -40,6 +42,14 @@ async function main() {
   console.log(`Server is running on 0.0.0.0:${port}`);
 
   const stopTasks = [
+    createPeriodicTask(processAutoApplyQueue, {
+      intervalMs: 5000, runImmediately: true,
+      onError: () => console.error('[Automated applications] Worker could not finish.'),
+    }),
+    createPeriodicTask(processApplicationMailboxQueue, {
+      intervalMs: 15000, runImmediately: true,
+      onError: () => console.error('[Application mailbox] Sync could not finish.'),
+    }),
     createPeriodicTask(recoverTailoredResumes, {
       intervalMs: 5000, runImmediately: true,
       onError: () => console.error('[Resume tailoring] Recovery could not finish.'),

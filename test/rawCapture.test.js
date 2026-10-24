@@ -148,7 +148,10 @@ test('the dry runner captures rejected jobs before filtering and records scrape 
     provider: { adapter: 'workday', dryRunEnrichPublicExperience: false },
     run: async () => [{ title: 'Outside India', country: 'USA', city: 'New York', location: 'New York, USA', description: '<p>Original US advert.</p>', link: 'https://example.com/jobs/one' }],
   })
-  assert.equal(result.success, true)
+  assert.equal(result.success, false)
+  assert.equal(result.processingComplete, true)
+  assert.equal(result.softFailure, true)
+  assert.equal(result.failureKind, 'coverage_gap')
   assert.deepEqual(JSON.parse(await fs.readFile(path.join(directory, 'filtered', 'jobs.json'), 'utf8')), [])
   const captureFiles = await fs.readdir(path.join(directory, 'raw', 'filtered'))
   const capture = JSON.parse(await fs.readFile(path.join(directory, 'raw', 'filtered', captureFiles[0]), 'utf8'))

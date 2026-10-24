@@ -30,8 +30,12 @@ export const createLidoLearningScraper=(defaults={})=>({async run(options={}) {
    const cancelBody=reason=>{void Promise.resolve().then(()=>response.body?.cancel?.(reason)).catch(()=>{})}
    if(controller.signal.aborted)cancelBody(controller.signal.reason)
    controller.signal.throwIfAborted()
-   if(response.url!==url){const error=gap('Source final URL changed');cancelBody(error);throw error}
-   if(response.status!==200&&!(request.observeUnauthorized&&response.status===401)){const error=Object.assign(gap('Source HTTP failure'),{status:response.status});cancelBody(error);throw error}
+   if(response.url!==url||(response.status!==200&&!(request.observeUnauthorized&&response.status===401))){
+    retainedResponses.push({url,finalUrl:response.url,status:response.status,bodyUnread:true,capturedAt:new Date().toISOString()})
+    const reason=response.url!==url?'Source final URL changed':'Source HTTP failure'
+    const error=Object.assign(gap(reason+'; HTTP '+response.status+' for '+url+'; final URL '+response.url),{status:response.status,requestUrl:url,finalUrl:response.url})
+    cancelBody(error);throw error
+   }
    let body
    if(response.body?.getReader){
     const reader=response.body.getReader(),chunks=[];let bytes=0

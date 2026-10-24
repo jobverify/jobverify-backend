@@ -25,8 +25,8 @@ export const rewriteStopDetails = ({ budgetExpired = false, cancelled = false } 
   ? { interrupted: true, cancelled: true, stopReason: 'cancelled', reason: 'interrupted' }
   : budgetExpired ? { interrupted: true, budgetExhausted: true, stopReason: 'budget_exhausted', reason: 'workflow_budget_exhausted' } : {};
 
-// The prose protocol handles dense text and mixed headings through evidence validation.
-// Keep the compact protocol available for historical benchmarks and explicit callers.
+// Production uses compact source-fact decisions. Keep the prose protocols
+// available for explicit comparisons and historical regression coverage.
 export const assessDescriptionRewrite = (input, format = REWRITE_MODEL.outputFormat) => {
   if (['source-edits', 'source-sections'].includes(format)) {
     if (!input.eligible) return { ok: false, reason: 'insufficient_source' };
@@ -77,7 +77,7 @@ const readCompletionStream = async response => {
   }
 };
 
-export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-qwen',
+export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-lfm',
   format = REWRITE_MODEL.outputFormat, requestMs = REWRITE_MODEL.requestSeconds * 1000, planCacheDir, assertAlive = () => {} } = {}) => {
   if (!['source-edits', 'source-sections', 'sections', 'fact-plan'].includes(format)) throw new Error('Invalid rewrite output format');
   const url = new URL(endpoint);

@@ -44,6 +44,65 @@ const assertNoCompleteOverwrite = set => {
   for (const key of ['lastCompleteCheckAt', 'lastCompleteJobsFound', 'lastCompleteEligibleJobsFound']) assert.equal(Object.hasOwn(set, key), false, key);
 };
 
+test('processing-complete partial saves retain audit counts and never overwrite complete check state', async () => {
+  await withCapturedWrites(async ({ updates, histories }) => {
+    const attempt = fixture({ partial: true, processingComplete: true, inserted: 2, updated: 3,
+      detailHealth: { complete: false, incompleteJobs: 1 } });
+    await upsertScraperStatus('health-example', attempt);
+    await writeScraperRun(new Date(), { 'health-example': attempt });
+    assertNoCompleteOverwrite(updates.at(-1).$set);
+    const saved = histories[0].sources.get('health-example');
+    assert.equal(saved.processingComplete, true);
+    assert.equal(saved.partial, true);
+    assert.equal(saved.inserted, 2);
+    assert.equal(saved.updated, 3);
+    assert.equal(saved.detailHealth.complete, false);
+    assert.equal(histories[0].overall.totalJobs, 5);
+  });
+});
+
+test('history normalizes resumed unavailable and skipped attempts while retaining saved partial jobs', async () => {
+  await withCapturedWrites(async ({ histories }) => {
+    const empty = fixture({ jobs: 0, eligibleJobs: 0, zeroJobEvidence: 'verified-empty', processingComplete: true });
+    empty.inventoryEvidence = { ...empty.inventoryEvidence, status: 'verified-empty', reportedTotal: 0, indiaFacetCount: 0 };
+    await writeScraperRun(new Date(), {
+      blocked: fixture({ success: true, jobs: 0, eligibleJobs: 0, zeroJobEvidence: 'blocked-zero',
+        inventoryEvidence: { status: 'discovery-only', firstParty: false, listingComplete: false } }),
+      unverified: fixture({ success: true, jobs: 0, eligibleJobs: 0, zeroJobEvidence: 'unverified-zero', inventoryEvidence: null }),
+      skipped: { success: true, skipped: true, jobs: 0 },
+      partial: fixture({ success: true, partial: true, processingComplete: true, inserted: 2, updated: 3,
+        detailHealth: { complete: false, incompleteJobs: 1 } }),
+      empty,
+    });
+    const history = histories[0], sources = history.sources;
+    assert.equal(sources.get('blocked').success, false);
+    assert.equal(sources.get('blocked').softFailure, true);
+    assert.equal(sources.get('blocked').failureKind, 'coverage_gap');
+    assert.equal(sources.get('blocked').partial, true);
+    assert.equal(sources.get('blocked').processingComplete, null);
+    assert.equal(sources.get('blocked').zeroJobEvidence, 'blocked-zero');
+    assert.equal(sources.get('blocked').inventoryEvidence.status, 'discovery-only');
+    assert.equal(sources.get('unverified').success, false);
+    assert.equal(sources.get('unverified').softFailure, true);
+    assert.equal(sources.get('unverified').failureKind, 'coverage_gap');
+    assert.equal(sources.get('unverified').upstreamOutage, false);
+    assert.equal(sources.get('unverified').partial, true);
+    assert.equal(sources.get('unverified').processingComplete, null);
+    assert.equal(sources.get('unverified').inventoryEvidence, null);
+    assert.equal(sources.get('skipped').success, false);
+    assert.equal(sources.get('skipped').skipped, true);
+    assert.equal(sources.get('partial').success, true);
+    assert.equal(sources.get('partial').jobsFound, 5);
+    assert.equal(sources.get('partial').inserted, 2);
+    assert.equal(sources.get('partial').updated, 3);
+    assert.equal(sources.get('partial').detailHealth.complete, false);
+    assert.equal(sources.get('empty').success, true);
+    assert.equal(sources.get('empty').jobsFound, 0);
+    assert.deepEqual(history.overall, { totalJobs: 5, sourcesSucceeded: 2, sourcesFailed: 2 });
+    assert.equal(new ScraperRun(history).validateSync(), undefined);
+  });
+});
+
 test('legacy successful counters stay compatible without becoming evidence-backed complete counters', async () => {
   await withCapturedWrites(async ({ updates }) => {
     await upsertScraperStatus('health-example', { success: true, jobs: 5, eligibleJobs: 4 });

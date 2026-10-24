@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 const loadLindeIndiaModule = async () => {
@@ -53,6 +54,7 @@ const engineeringPortalHtml = `
 `
 
 const samplePayload = {
+  messageCode: {code:200,messages:'success'},
   totalRecords: 3,
   response: [
     {
@@ -123,6 +125,15 @@ const samplePayload = {
   ],
 }
 
+const fixture = name => JSON.parse(readFileSync(new URL(`./fixtures/lindeindia/${name}.json`, import.meta.url)))
+const detailPayload = record => ({messageCode:{code:200,messages:'success'},response:{
+  requisitionCode:record.jobCode,requisitionId:record.jobCode.split('/').at(-1),entityID:'1475',
+  jobTitle:record.jobTitle,organizationUnitComplete:record.organizationUnitComplete,
+  locationHierarchyComplete:record.locationHierarchyComplete,requisitionStatus:'OPEN',
+  CandidatePortalStartDate:record.jobPostedDate+' 00:00:00.0',CandidatePortalEndDate:record.jobClosureDate+' 00:00:00.0',
+  jobDescription:'<p>Provide engineering design and technical support for Linde projects.</p>',
+}})
+
 test('Linde India scraper keeps the verified official India handoff pinned', async () => {
   const lindeIndia = await loadLindeIndiaModule()
 
@@ -161,13 +172,14 @@ test('Linde India scraper keeps the verified official India handoff pinned', asy
     title: 'Engineer - Instrumentation & Controls',
     company: 'Linde India',
     department: 'Engineering',
-    location: 'Vadodara, India',
+    location: 'Vadodara, Gujarat, India',
     city: 'Vadodara',
+    state: 'Gujarat',
     country: 'India',
     jobId: 'LEI/E-I-C/1792684',
     requisitionId: 'LEI/E-I-C/1792684',
-    sourceUrl: 'https://leindiacareers.peoplestrong.com/job/detail/LEI%2FE-I-C%2F1792684',
-    applyUrl: 'https://leindiacareers.peoplestrong.com/job/detail/LEI%2FE-I-C%2F1792684',
+    sourceUrl: 'https://leindiacareers.peoplestrong.com/job/detail/LEI_E-I-C_1792684',
+    applyUrl: 'https://leindiacareers.peoplestrong.com/job/detail/LEI_E-I-C_1792684',
     employmentType: null,
     experienceRequired: '18-25 years',
     minimumQualification: null,
@@ -196,21 +208,25 @@ test('Linde India scraper returns only India jobs from the verified official eng
       requestedPages.push(url)
 
       if (url === lindeIndia.HOMEPAGE_URL) {
-        return { status: 200, html: homepageHtml }
+        return { status: 200, url, html: homepageHtml }
       }
 
       if (url === lindeIndia.JOB_LOCATIONS_URL) {
-        return { status: 200, html: jobLocationsHtml }
+        return { status: 200, url, html: jobLocationsHtml }
       }
 
       if (url === lindeIndia.ENGINEERING_PORTAL_URL) {
-        return { status: 404, html: engineeringPortalHtml }
+        return { status: 404, url, html: engineeringPortalHtml }
       }
 
       throw new Error(`Unexpected page URL: ${url}`)
     },
     fetchJson: async (url, options = {}) => {
       apiRequests.push({ url, options })
+      if (url.endsWith('/urlinfo')) return fixture('urlinfo')
+      if (url.endsWith('/layout?isPreview=false')) return fixture('layout')
+      const record = samplePayload.response.find(row=>lindeIndia.buildJobDetailsApiUrl(row.jobCode)===url)
+      if (record) return detailPayload(record)
       return samplePayload
     },
   })
@@ -220,11 +236,11 @@ test('Linde India scraper returns only India jobs from the verified official eng
     lindeIndia.JOB_LOCATIONS_URL,
     lindeIndia.ENGINEERING_PORTAL_URL,
   ])
-  assert.equal(apiRequests.length, 1)
-  assert.equal(apiRequests[0].url, lindeIndia.buildApiUrl())
-  assert.equal(apiRequests[0].options.method, 'POST')
-  assert.deepEqual(apiRequests[0].options.headers, lindeIndia.buildPublicHeaders())
-  assert.equal(apiRequests[0].options.body, JSON.stringify({}))
+  assert.equal(apiRequests.length, 5)
+  const listingRequest = apiRequests.find(request=>request.url===lindeIndia.buildApiUrl())
+  assert.equal(listingRequest.options.method, 'POST')
+  assert.deepEqual(listingRequest.options.headers, lindeIndia.buildPublicHeaders())
+  assert.equal(listingRequest.options.body, JSON.stringify({}))
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'lindeindia')
   assert.equal(jobs[0].company, 'Linde India')
@@ -243,7 +259,7 @@ test('Linde India scraper fails closed when the verified first-party surface dri
     lindeIndia.createLindeIndiaScraper().run({
       fetchPage: async (url) => {
         if (url === lindeIndia.HOMEPAGE_URL) {
-          return { status: 200, html: '<html><body><h1>Placeholder</h1></body></html>' }
+          return { status: 200, url, html: '<html><body><h1>Placeholder</h1></body></html>' }
         }
 
         throw new Error(`Unexpected page URL: ${url}`)
@@ -257,11 +273,11 @@ test('Linde India scraper fails closed when the verified first-party surface dri
     lindeIndia.createLindeIndiaScraper().run({
       fetchPage: async (url) => {
         if (url === lindeIndia.HOMEPAGE_URL) {
-          return { status: 200, html: homepageHtml }
+          return { status: 200, url, html: homepageHtml }
         }
 
         if (url === lindeIndia.JOB_LOCATIONS_URL) {
-          return { status: 200, html: '<html><body><h1>No India handoff here</h1></body></html>' }
+          return { status: 200, url, html: '<html><body><h1>No India handoff here</h1></body></html>' }
         }
 
         throw new Error(`Unexpected page URL: ${url}`)
@@ -275,15 +291,15 @@ test('Linde India scraper fails closed when the verified first-party surface dri
     lindeIndia.createLindeIndiaScraper().run({
       fetchPage: async (url) => {
         if (url === lindeIndia.HOMEPAGE_URL) {
-          return { status: 200, html: homepageHtml }
+          return { status: 200, url, html: homepageHtml }
         }
 
         if (url === lindeIndia.JOB_LOCATIONS_URL) {
-          return { status: 200, html: jobLocationsHtml }
+          return { status: 200, url, html: jobLocationsHtml }
         }
 
         if (url === lindeIndia.ENGINEERING_PORTAL_URL) {
-          return { status: 200, html: '<html><body><h1>Unknown shell</h1></body></html>' }
+          return { status: 200, url, html: '<html><body><h1>Unknown shell</h1></body></html>' }
         }
 
         throw new Error(`Unexpected page URL: ${url}`)

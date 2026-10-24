@@ -645,7 +645,7 @@ test('getJobMeta scopes each option group by the other active filters', async ()
   Job.countDocuments = async () => 1
   Job.distinct = async (field, filter) => {
     capturedFilters.set(field, filter)
-    if (field === 'company') return ['Acme Labs']
+    if (field === 'company') return Array.from({ length: 30 }, (_, index) => `Company ${index}`)
     if (field === 'city') return ['Bangalore']
     if (field === 'jobType') return ['Internship']
     if (field === 'primaryRoleDomain') return ['Data Science & AI']
@@ -691,6 +691,8 @@ test('getJobMeta scopes each option group by the other active filters', async ()
     assert.equal(res.statusCode, 200)
 
     const companyFilter = capturedCompanyFilter ?? capturedFilters.get('company')
+    assert.equal(res.body.data.companyCount, 30)
+    assert.ok(res.body.data.companies.length <= 24)
     assert.equal(companyFilter.companyKey, undefined)
     assert.equal(companyFilter.locationKeys, 'bangalore')
     assert.deepEqual(companyFilter.jobType, { $in: ['Intern', 'Internship'] })

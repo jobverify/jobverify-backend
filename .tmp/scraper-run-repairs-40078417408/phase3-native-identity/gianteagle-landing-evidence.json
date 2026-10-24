@@ -1,0 +1,12 @@
+{
+  "source": "gianteagle",
+  "requestedUrl": "https://jobs.gianteagle.com/in/hi/search-results",
+  "responseUrl": "https://jobs.gianteagle.com/in/hi/search-results",
+  "status": 200,
+  "title": "Search results | Find available job openings at Giant Eagle",
+  "bytes": 100682,
+  "totalHits": 10,
+  "jobs": 10,
+  "jobLinks": [],
+  "at": "2026-10-24T16:18:58.065Z"
+}

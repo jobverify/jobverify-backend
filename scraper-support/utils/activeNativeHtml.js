@@ -37,7 +37,7 @@ const dom = input => {
     }
     const style=(attrs.style||'').replace(/\/\*[\s\S]*?\*\//g,'')
     const hidden=Object.hasOwn(attrs,'hidden')||attrs['aria-hidden']?.toLowerCase()==='true'||/(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|content-visibility\s*:\s*hidden)\s*(?:!important\s*)?(?:;|$)/i.test(style)
-    const node = {tag,attrs,children:[],inert:parent.inert || hidden || tag === 'template' || (raw.has(tag) && !['script','title'].includes(tag))}
+    const node = {tag,attrs,children:[],activeFrame:tag==='iframe'&&!parent.inert&&!hidden,inert:parent.inert || hidden || tag === 'template' || (raw.has(tag) && !['script','title'].includes(tag))}
     parent.children.push(node)
     if (raw.has(tag)) {
       const end = tag === 'plaintext' ? null : new RegExp(`</${tag}\\s*>`, 'ig')
@@ -64,5 +64,12 @@ export const extractActiveDescription = value => {
 
 export const activeHead = html => {const tree=dom(html);return {titles:all(tree,n=>n.tag==='title').map(n=>norm(n.raw)),metas:all(tree,n=>n.tag==='meta').map(n=>n.attrs)}}
 export const activeScripts = html => all(dom(html),n=>n.tag==='script'&&!n.attrs.src).map(n=>n.raw||'')
+
+// An active iframe can delegate navigation, while its raw fallback body cannot
+// supply visible description text or activate nested frames.
+export const activeIframeSources = html => {
+ const frames=node=>node.activeFrame?(Object.hasOwn(node.attrs,'srcdoc')?[]:[node.attrs.src]):node.inert?[]:node.children.filter(child=>typeof child!=='string').flatMap(frames)
+ return frames(dom(html)).filter(value=>typeof value==='string'&&value.trim())
+}
 
 export const readNativeDocument=html=>{const root=dom(html);return{nodes:predicate=>all(root,predicate),text,hasClass:cls}}

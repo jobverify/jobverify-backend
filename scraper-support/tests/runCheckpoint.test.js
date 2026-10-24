@@ -14,6 +14,19 @@ const createTempCheckpoint = () => {
   }
 }
 
+test('terminal partial extraction survives resume without being rerun or losing processing outcome', t => {
+  const { directory, filePath } = createTempCheckpoint()
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const options = { filePath, sources: ['partial', 'blocked', 'pending'], mode: 'live', parallel: true, runId: 'partial-run' }
+  const first = openRunCheckpoint(options)
+  first.markSourceCompleted('partial', { success: true, partial: true, processingComplete: true, jobs: 2, inserted: 1, updated: 1 })
+  first.markSourceCompleted('blocked', { success: false, softFailure: true, failureKind: 'coverage_gap', processingComplete: true, zeroJobEvidence: 'blocked-zero' })
+  const resumed = openRunCheckpoint(options)
+  assert.deepEqual(resumed.pendingSources(options.sources), ['pending'])
+  assert.deepEqual(resumed.completedSummary().partial, { success: true, partial: true, processingComplete: true, jobs: 2, inserted: 1, updated: 1 })
+  assert.equal(resumed.completedSummary().blocked.processingComplete, true)
+})
+
 test('run checkpoint resumes only unfinished sources and preserves prior results', () => {
   const { directory, filePath } = createTempCheckpoint()
   const sources = ['alpha', 'beta', 'gamma']

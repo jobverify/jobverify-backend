@@ -6,11 +6,8 @@ import { hasSourceDescription } from '../src/utils/jobSourceContent.js'
 
 // These first-party hosts and native company tokens were independently observed.
 // Pin the reviewed original discovery bytes instead of accepting caller-defined identity.
-export const RMK_DISCOVERY_SHA256 = 'aba1397814bb9dae9596ae7e0191dc3b637b92900f6cc3aa3a958164cb57ad48'
+export const RMK_DISCOVERY_SHA256 = 'c4fbb0555f376f92b05e3bd8c4bb387f0c8a04d4a4a30891e44a52749365e42b'
 export const SUCCESSFACTORS_RMK_PARTIAL_CONTRACTS = Object.freeze({
-  asianpaints: Object.freeze({ source: 'asianpaints', companyName: 'Asian Paints', companyDomain: 'asianpaints.com',
-    origin: 'https://careers.asianpaints.com', companyToken: 'C0013041173P', nativeCompanyName: 'Asian Paints Ltd',
-    searchUrl: 'https://careers.asianpaints.com/search/', sourceScopeComplete: true }),
   astellaspharma: Object.freeze({ source: 'astellaspharma', companyName: 'Astellas Pharma', companyDomain: 'astellas.com',
     origin: 'https://careers.astellas.com', companyToken: 'astellasT5', nativeCompanyName: 'Astellas',
     searchUrl: 'https://careers.astellas.com/search?locale=en_GB', sourceScopeComplete: false }),

@@ -1,11 +1,14 @@
 import { loadConfig } from '../utils/loadConfig.js'
 import { fetchTextWithRetry, fetchJsonWithRetry } from '../utils/fetch.js'
-import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { nativeDetailReceiptKey, readNativeDetailReceipt, rememberNativeDetailReceipt, nativeDetailPassBudget, currentNativeDetailRecovery } from '../utils/nativeDetailRecovery.js'
 
 const DEFAULT_FETCH_TIMEOUT_MS = 15000
 const DEFAULT_LISTING_BUDGET_MS = 120000
 const DEFAULT_DETAIL_BUDGET_MS = 30000
+const MAX_DEFAULT_DETAIL_BUDGET_MS = 120000
+const DEFAULT_DETAIL_WORKER_WAVE_ALLOWANCE_MS = 1000
 const nonnegativeBudget = (value, fallback) => Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : fallback
 const incompleteSnapshot = message => Object.assign(new Error('PHENOM_INCOMPLETE_SNAPSHOT: ' + message), { code: 'PHENOM_INCOMPLETE_SNAPSHOT' })
 const requestWithSignal = async (fetcher, url, signal, requestOptions = {}) => {
@@ -383,7 +386,7 @@ export const createPhenomScraper = ({
   listingPredicate,
   scraperDir,
   targetCountry = 'India',
-  defaultDetailEnrichmentBudgetMs = DEFAULT_DETAIL_BUDGET_MS,
+  defaultDetailEnrichmentBudgetMs = null,
   defaultDetailConcurrency = 1,
 }) => {
   const config = loadConfig(scraperDir)
@@ -430,9 +433,16 @@ export const createPhenomScraper = ({
   const countryCode = value => {
     if (typeof value !== 'string') return null
     const parts=countryParts(value).map(part=>knownCountries.get(part.toLowerCase()))
+      .map(code => code ? new Intl.Locale('und-' + code).region : null)
     return parts.length && parts.every(Boolean) && new Set(parts).size===1 ? parts[0] : null
   }
   const prefixAgrees = (parts,full) => parts.length <= full.length && parts.every((part,index)=>part===full[index])
+  const isStateOnlyLocation = (record, label) => {
+    if (!record || normalizeWhitespace(record.city)) return false
+    const state = locationParts(record.state), full = locationParts(label)
+    return state.length > 0 && Boolean(countryCode(full.at(-1)))
+      && state.length === full.length - 1 && prefixAgrees(state, full.slice(0, -1))
+  }
   const resolveDetailLocation = value => {
     if (typeof value === 'string') return { consistent:true,target:countryMatchesTarget(value.split(',').at(-1)) }
     if (!value || typeof value !== 'object' || Array.isArray(value)
@@ -444,9 +454,10 @@ export const createPhenomScraper = ({
     const complete = locationParts(full)
     const fullCountry=countryCode(complete.at(-1))
     if (!fullCountry || country && countryCode(country)!==fullCountry) return {consistent:false,target:false}
-    const fullPrefix=complete.slice(0,-1),region=complete.slice(1,-1)
+    const fullPrefix=complete.slice(0,-1)
     const city = normalizeWhitespace(value.city)
     if (city && !/^not location specific$/i.test(city) && city.normalize('NFC').toLowerCase() !== complete[0]) return {consistent:false,target:false}
+    const region = isStateOnlyLocation(value, full) ? fullPrefix : complete.slice(1,-1)
     const state=normalizeWhitespace(value.state)
     if (state && !/^not location specific$/i.test(state) && !prefixAgrees(locationParts(state),region)) return {consistent:false,target:false}
     if (normalizeWhitespace(value.cityState) && !prefixAgrees(locationParts(value.cityState),fullPrefix)) return {consistent:false,target:false}
@@ -457,8 +468,24 @@ export const createPhenomScraper = ({
     }
     const short = locationParts(value.location)
     if (!short.length) return {consistent:true,target:fullCountry===countryCode(targetCountry)}
-    const shortCountry = knownCountries.get(short.at(-1))
+    const shortCountry = countryCode(short.at(-1))
     if (shortCountry && shortCountry!==fullCountry) return {consistent:false,target:false}
+    // A postal suffix is not a country. Bind it to the same office's explicit
+    // postal code and fully matching city/state, retaining the full country.
+    const postalCode = typeof value.postalCode === 'string' ? value.postalCode.trim() : null
+    const postalLabel = !shortCountry && fullCountry === 'IN' && countryCode(country) === fullCountry
+      && /^\d{6}$/.test(postalCode || '') && short.at(-1) === postalCode
+      && short.length - 1 === fullPrefix.length && prefixAgrees(short.slice(0, -1), fullPrefix)
+      && (value.cityStateZipCode == null || typeof value.cityStateZipCode === 'string'
+        && normalizeWhitespace(value.cityStateZipCode) === normalizeWhitespace(value.location))
+    // Native named offices may have no city. A name or identifier alone cannot
+    // supply geography: both must bind to this office's explicit country and
+    // consistent full region above.
+    const namedOffice = !shortCountry && countryCode(country) === fullCountry && fullPrefix.length > 0
+      && normalizeWhitespace(value.cityStateCountry) && (normalizeWhitespace(value.state) || city)
+      && typeof value.locationName === 'string' && typeof value.locationId === 'string' && value.locationId.trim()
+      && normalizeWhitespace(value.locationName) === normalizeWhitespace(value.location)
+    if (postalLabel || namedOffice) return { consistent: true, target: fullCountry === countryCode(targetCountry) }
     const shortPrefix = shortCountry ? short.slice(0,-1) : short
     // An abbreviated native label is usable only alongside the same office's
     // explicit country and full label, with every short component equal.
@@ -544,7 +571,7 @@ export const createPhenomScraper = ({
       return {
         title: normalizeWhitespace(job.title),
         location,
-        city: extractCity(location, job.city),
+        city: isStateOnlyLocation(job, location) ? null : extractCity(location, job.city),
         country: normalizeWhitespace(job.country),
         jobId: normalizeWhitespace(job.jobId || job.reqId),
         requisitionId: normalizeWhitespace(job.reqId || job.jobId),
@@ -612,7 +639,7 @@ export const createPhenomScraper = ({
       location: normalizeWhitespace(
         listing.location || structuredJob?.location || primaryLocation.location,
       ),
-      city: normalizeWhitespace(
+      city: isStateOnlyLocation(structuredJob, listing.location || structuredJob?.cityStateCountry) ? null : normalizeWhitespace(
         listing.city || structuredJob?.city || primaryLocation.city || extractCity(listing.location),
       ),
       country: normalizeWhitespace(
@@ -702,13 +729,13 @@ export const createPhenomScraper = ({
   const run = async (options = {}) => {
     const getPage = options.fetchText || fetchText
     const signal = options.signal
+    const recovery = options.nativeDetailRecovery ?? currentNativeDetailRecovery()
     signal?.throwIfAborted()
     // The central maxPages setting belongs to DOM scrapers, not this API-backed inventory.
     const maxPages = Number.isInteger(options.maxPages) ? Math.max(0, options.maxPages)
       : Number.isInteger(config.phenomMaxPages) ? Math.max(0, config.phenomMaxPages) : Infinity
     const maxJobs = Number.isInteger(options.maxJobs) ? Math.max(0, options.maxJobs) : Infinity
     const listingBudgetMs = nonnegativeBudget(options.listingBudgetMs ?? process.env.PHENOM_LISTING_BUDGET_MS, DEFAULT_LISTING_BUDGET_MS)
-    const detailBudgetMs = nonnegativeBudget(options.detailEnrichmentBudgetMs ?? process.env.PHENOM_DETAIL_ENRICHMENT_BUDGET_MS, defaultDetailEnrichmentBudgetMs)
     const detailConcurrency = Math.min(8, Math.max(1, Math.floor(Number(options.detailConcurrency ?? defaultDetailConcurrency)) || 1))
     if (maxPages === 0 || maxJobs === 0) throw incompleteSnapshot('nonpositive listing limit cannot establish an empty inventory')
     const seenRawIds = new Set()
@@ -776,7 +803,7 @@ export const createPhenomScraper = ({
           if (scope.unknown) uncertainScope = true
           if (!scope.target) continue
           const scopedRaw = { ...raw, country: targetCountry, cityStateCountry: scope.location,
-            city: scope.location ? extractCity(scope.location) : raw.city }
+            city: isStateOnlyLocation(raw, scope.location) ? null : scope.location ? extractCity(scope.location) : raw.city }
           if (typeof listingPredicate === 'function' && !listingPredicate(scopedRaw)) continue
           const [listing] = extractSearchResults({ jobs: [scopedRaw] })
           if (!listing) throw incompleteSnapshot('unparsed target-country listing')
@@ -826,7 +853,22 @@ export const createPhenomScraper = ({
       verifiedAt: new Date().toISOString(), reason: incomplete ? 'phenom-native-listing-incomplete-or-scope-uncertain'
         : 'phenom-native-total-unique-identities-and-target-scope-reconciled-detail-health-separate',
     })
-    if (!jobs.length || detailBudgetMs === 0) return jobs
+    // Every verified listing still needs its full native detail. Allow one
+    // second per worker wave beyond the base allowance, bounded independently
+    // of inventory size. Explicit source, environment and option budgets keep
+    // their exact limits, including zero and values above the implicit cap.
+    const requestedDetailBudgetMs = nonnegativeBudget(
+      options.detailEnrichmentBudgetMs ?? process.env.PHENOM_DETAIL_ENRICHMENT_BUDGET_MS,
+      defaultDetailEnrichmentBudgetMs ?? Math.min(
+        MAX_DEFAULT_DETAIL_BUDGET_MS,
+        DEFAULT_DETAIL_BUDGET_MS + Math.ceil(jobs.length / detailConcurrency) * DEFAULT_DETAIL_WORKER_WAVE_ALLOWANCE_MS,
+      ),
+    )
+    const detailBudgetMs = nativeDetailPassBudget(recovery, requestedDetailBudgetMs)
+    if (!jobs.length || detailBudgetMs === 0) {
+      if (recovery && requestedDetailBudgetMs > 0) recovery.pending += jobs.length
+      return jobs
+    }
     const detailController = new AbortController()
     const detailSignal = signal ? AbortSignal.any([signal, detailController.signal]) : detailController.signal
     const detailTimer = setTimeout(() => detailController.abort(new Error('Phenom optional detail budget expired')), detailBudgetMs)
@@ -838,9 +880,13 @@ export const createPhenomScraper = ({
           if (index >= jobs.length) return
           const listing = selected[index]
           try {
-            const detailHtml = await requestWithSignal(getPage, listing.sourceUrl, detailSignal)
-            const structured = extractStructuredJobDetail(detailHtml)
-            const posting = extractJobPostingJsonLd(detailHtml)
+            const receiptKey = nativeDetailReceiptKey('phenom', source, baseUrl, listing,
+              nativeListingSequences.get(listing), nativeListingCountries.get(listing))
+            const cached = readNativeDetailReceipt(recovery, receiptKey)
+            const detailHtml = cached ? null : await requestWithSignal(getPage, listing.sourceUrl, detailSignal)
+            const verifiedAt = cached?.fetchedAt ?? Date.now()
+            const structured = cached ? cached.payload.structured : extractStructuredJobDetail(detailHtml)
+            const posting = cached ? cached.payload.posting : extractJobPostingJsonLd(detailHtml)
             // Optional detail HTML must belong to the listing before it can change job identity or fields.
             const identifiers = [structured?.jobId, structured?.reqId].map(normalizeWhitespace).filter(Boolean)
             const expectedIds = [listing.jobId, listing.requisitionId]
@@ -852,7 +898,7 @@ export const createPhenomScraper = ({
               || detailCountryCode && standardisedCountryCode && detailCountryCode!==standardisedCountryCode
             const matchingNativeSequence = listingSequence && typeof structured?.jobSeqNo === 'string'
               && normalizeWhitespace(structured.jobSeqNo) === listingSequence
-            const canonical = normalizeWhitespace(extractCanonical(detailHtml))
+            const canonical = cached ? cached.payload.canonical : normalizeWhitespace(extractCanonical(detailHtml))
             const canonicalUrl = canonical ? new URL(canonical, listing.sourceUrl) : null
             const canonicalId = canonicalUrl?.pathname.split('/job/')[1]?.split('/')[0]
             const postingId = normalizeWhitespace(typeof posting?.identifier === 'string' ? posting.identifier : posting?.identifier?.value)
@@ -864,11 +910,20 @@ export const createPhenomScraper = ({
             const invalidLocationShape = detailLocations.some(value=>!resolveDetailLocation(value).consistent)
             const detailHasTargetLocation = detailLocations.some(detailLocationHasTarget)
             const structuredCountries = [structured?.country, structured?.ml_country, structured?.standardisedCountry]
-            const postingCountries = postingLocations.map(location => {
-              const country = location?.address?.addressCountry
-              return country && typeof country === 'object' && !Array.isArray(country) ? country.name : country
-            })
-            const invalidCountryShape = [...structuredCountries, ...postingCountries]
+            const suppliedPostingCountries = postingLocations.map(location => location?.address?.addressCountry)
+            const invalidPostingCountryShape = suppliedPostingCountries.some(country => country != null && (
+              typeof country === 'string' ? !country.trim()
+                : typeof country !== 'object' || Array.isArray(country) || typeof country.name !== 'string' || !country.name.trim()
+                  || country['@type'] != null && country['@type'] !== 'Country'
+                  || Object.keys(country).some(key => !['@type', 'name'].includes(key))
+            ))
+            const postingCountries = suppliedPostingCountries.map(country => country && typeof country === 'object'
+              && !Array.isArray(country) ? country.name : country)
+            const nativeOfficeCountries = detailLocations.map(location => countryCode(typeof location === 'string'
+              ? locationParts(location).at(-1) : location?.country || locationParts(location?.cityStateCountry).at(-1)))
+            const postingOfficeCountryConflict = nativeOfficeCountries.length > 0 && (!nativeOfficeCountries.every(Boolean)
+              || postingCountries.some(country => countryCode(country) && !nativeOfficeCountries.includes(countryCode(country))))
+            const invalidCountryShape = invalidPostingCountryShape || [...structuredCountries, ...postingCountries]
               .some(country => country != null && (typeof country !== 'string'
                 || country.trim() && countryParts(country).some(part => !knownCountries.has(part.toLowerCase()))))
             const detailCountries = [...structuredCountries, ...postingCountries].filter(value => typeof value === 'string' && value.trim())
@@ -881,7 +936,7 @@ export const createPhenomScraper = ({
               && corroboratedIndiaOffices.length > 0 && corroboratedIndiaOffices.length === detailLocations.length
               && (!posting || postingCountries.length > 0
                 && postingCountries.every(country => countryMatchesTarget(country) || /^IN$/i.test(String(country).trim())))
-            const targetDetailCountry = !primaryCountryConflict && !invalidCountryShape && !invalidLocationShape && corroboratedDerivedConflict && (detailHasTargetLocation || detailCountries.length > 0
+            const targetDetailCountry = !primaryCountryConflict && !postingOfficeCountryConflict && !invalidCountryShape && !invalidLocationShape && corroboratedDerivedConflict && (detailHasTargetLocation || detailCountries.length > 0
               && detailCountries.every(country => countryMatchesTarget(country)
                 || targetCountry === 'India' && /^IN$/i.test(country.trim())))
             if ((identifiers.length ? !identifiers.every(id => expectedIds.includes(id))
@@ -898,7 +953,7 @@ export const createPhenomScraper = ({
               jobs[index].sourceDetailFailureKind = 'identity-mismatch'
               continue
             }
-            const detail = extractJobDetail(detailHtml, listing)
+            const detail = cached ? cached.payload.detail : extractJobDetail(detailHtml, listing)
             if (!hasSourceDescription(detail)) {
               jobs[index].sourceDetailFailureKind = 'missing-content'
               continue
@@ -920,6 +975,20 @@ export const createPhenomScraper = ({
             }
             enriched.link = enriched.applyUrl
             enriched.sourceDetailComplete = true
+            if (recovery) {
+              enriched.sourceDetailVerifiedAt = new Date(verifiedAt).toISOString()
+              if (cached) enriched.sourceDetailFromRecovery = true
+              else rememberNativeDetailReceipt(recovery, receiptKey, {
+                // Cache the verified content and the exact evidence used by the
+                // guard above, without retaining the page's UI/scripts/assets.
+                structured: structured ? Object.fromEntries(['jobId', 'reqId', 'jobSeqNo', 'title', 'applyUrl', 'country',
+                  'ml_country', 'standardisedCountry', 'multi_location', 'multi_location_array'].filter(key => structured[key] !== undefined)
+                  .map(key => [key, structured[key]])) : null,
+                posting: posting ? Object.fromEntries(['identifier', 'title', 'jobLocation'].filter(key => posting[key] !== undefined)
+                  .map(key => [key, posting[key]])) : null,
+                canonical, detail,
+              }, verifiedAt)
+            }
             delete enriched.sourceDetailFailureKind
             jobs[index] = enriched
           } catch (error) {
@@ -934,6 +1003,13 @@ export const createPhenomScraper = ({
       clearTimeout(detailTimer)
     }
     signal?.throwIfAborted()
+    if (recovery) {
+      recovery.pending += jobs.filter(job => job.sourceDetailFailureKind === 'budget-exhausted').length
+      recovery.unrecoverable ||= jobs.some(job => job.sourceDetailFailureKind === 'upstream')
+      if (recovery.verifiedAt) attachInventoryEvidence(jobs, {
+        ...readInventoryEvidence(jobs), verifiedAt: new Date(recovery.verifiedAt).toISOString(),
+      })
+    }
     return jobs
   }
 
