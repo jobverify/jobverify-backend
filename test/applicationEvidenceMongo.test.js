@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import mongoose from 'mongoose';
+import { fileURLToPath } from 'node:url';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import Application from '../src/models/Application.js';
+import * as service from '../src/services/applicationService.js';
+
+test('application evidence is atomic, owner-scoped and preserves the first confirmation', { timeout: 90000 }, async t => {
+  assert.equal(typeof service.recordApplicationEvidence, 'function', 'The evidence recording service must exist');
+  process.env.MONGOMS_RUNTIME_DOWNLOAD = 'false';
+  const mongo = await MongoMemoryServer.create({ binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
+  t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
+  await mongoose.connect(mongo.getUri()); await Application.init();
+  const user = new mongoose.Types.ObjectId(); const other = new mongoose.Types.ObjectId();
+  const application = await service.recordApplicationOpen(user, { _id: new mongoose.Types.ObjectId(), title: 'Engineer', company: 'Example' });
+  const first = new Date('2026-10-20T10:00:00Z');
+  const manual = { key: 'manual', source: 'self_reported', observedAt: first, summary: 'Candidate confirmed submission.' };
+  assert.equal(await service.recordApplicationEvidence(other, application._id, manual), null);
+  await Promise.all(Array.from({ length: 4 }, () => service.recordApplicationEvidence(user, application._id, manual)));
+  const email = { key: 'gmail:connection:123', source: 'email', observedAt: new Date('2026-10-21T10:00:00Z'), summary: 'We received your application', reference: '123' };
+  await service.recordApplicationEvidence(user, application._id, email);
+  await service.recordApplicationEvidence(user, application._id, email);
+  await service.recordApplicationEvidence(user, application._id, manual);
+  const saved = await Application.findById(application._id).lean();
+  assert.equal(saved.status, 'applied');
+  assert.equal(saved.appliedAt.toISOString(), first.toISOString());
+  assert.equal(saved.confirmationSource, 'email');
+  assert.equal(saved.evidence.length, 2);
+  assert.equal(saved.evidence[1].reference, '123');
+  await assert.rejects(service.recordApplicationEvidence(user, application._id, { ...email, source: 'verified' }));
+});

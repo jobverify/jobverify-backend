@@ -16,6 +16,14 @@ const applicationSchema = new Schema({
   firstOpenedAt: { type: Date, default: Date.now, immutable: true },
   lastOpenedAt: { type: Date, default: Date.now },
   appliedAt: { type: Date, default: null },
+  confirmationSource: { type: String, enum: ['', 'self_reported', 'email', 'auto_apply'], default: '' },
+  evidence: { type: [new Schema({
+    key: { type: String, required: true, maxlength: 300 },
+    source: { type: String, required: true, enum: ['self_reported', 'email', 'auto_apply'] },
+    observedAt: { type: Date, required: true },
+    summary: { type: String, maxlength: 500, default: '' },
+    reference: { type: String, maxlength: 300, default: '' },
+  }, { _id: false })], default: [] },
 }, { timestamps: true });
 
 applicationSchema.index({ user: 1, job: 1 }, { unique: true });

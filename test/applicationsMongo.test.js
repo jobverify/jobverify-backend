@@ -55,10 +55,11 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   assert.equal((await request('/api/user/applications', { owner: null })).status, 401);
   const untracked = await request(`/api/jobs/${jobId}/click`, { method: 'POST' });
   assert.equal(untracked.status, 200);
-  assert.equal(untracked.body.data.application, null, 'Apply alone must not add a job');
-  assert.equal(await Application.countDocuments({ user }), 0);
+  assert.equal(untracked.body.data.application.status, 'opened', 'Apply tracks intent even with a personal CV');
+  assert.equal(untracked.body.data.application.appliedAt, null);
+  assert.equal(await Application.countDocuments({ user }), 1);
+  await Application.deleteMany({ user }); // Exercise resume-only history separately below.
   await TailoredResume.collection.insertOne({ _id: `${otherUser}:${jobId}`, user: otherUser, job: jobId, status: 'completed', outputFormat: 'latex-pdf', generationId: 'other-user-generation' });
-  assert.equal(await recordApplicationOpen(user, job), null, 'another user resume does not qualify');
   await TailoredResume.collection.insertOne({ _id: `${user}:${jobId}`, user, job: jobId, status: 'queued', output: null });
   for (const resumeStatus of ['queued', 'running', 'failed', 'completed']) {
     await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: resumeStatus } });
@@ -76,11 +77,8 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
     assert.equal((await request('/api/user/applications', { owner: otherUser })).body.data.length, 1, 'owners see only their own resume');
   }
   await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: 'queued' } });
-  assert.equal(await recordApplicationOpen(user, job), null, 'pending generation does not qualify');
   await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: 'failed' } });
-  assert.equal(await recordApplicationOpen(user, job), null, 'failed generation does not qualify');
   await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: 'completed', output: { summary: 'My tailored resume' } } });
-  assert.equal(await recordApplicationOpen(user, job), null, 'legacy JSON output does not qualify as a completed PDF');
   await TailoredResume.updateOne({ user, job: jobId }, { $set: { outputFormat: 'latex-pdf', generationId: 'my-completed-generation' } });
   const first = await request(`/api/jobs/${jobId}/click`, { method: 'POST' });
   assert.equal(first.status, 200, JSON.stringify(first.body));
@@ -118,10 +116,10 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   await Application.create({ user, job: legacyJob, status: 'applied', jobSnapshot: job });
   for (const status of ['all', 'opened', 'applied']) {
     const filtered = await request(`/api/user/applications?status=${status}&page=1`);
-    assert.deepEqual(filtered.body.summary, { total: 1, opened: 0, applied: 1 });
-    assert.equal(filtered.body.pagination.total, status === 'opened' ? 0 : 1);
-    assert.equal(filtered.body.data.length, status === 'opened' ? 0 : 1);
-    assert.ok(filtered.body.data.every(item => item.job === String(jobId)));
+    assert.deepEqual(filtered.body.summary, { total: 2, opened: 0, applied: 2 });
+    assert.equal(filtered.body.pagination.total, status === 'opened' ? 0 : 2);
+    assert.equal(filtered.body.data.length, status === 'opened' ? 0 : 2);
+    assert.ok(filtered.body.data.every(item => [String(jobId), String(legacyJob)].includes(item.job)));
   }
   const queuedJobs = Array.from({ length: 21 }, (_, index) => ({ ...job, _id: new mongoose.Types.ObjectId(), fingerprint: `queued-${index}` }));
   await Job.collection.insertMany(queuedJobs);
@@ -129,8 +127,8 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
     _id: `${user}:${listing._id}`, user, job: listing._id, status: 'queued', requestedAt: new Date(), output: null,
   })));
   const secondPage = await request('/api/user/applications?page=2');
-  assert.equal(secondPage.body.data.length, 2);
-  assert.deepEqual(secondPage.body.summary, { total: 22, opened: 21, applied: 1 });
+  assert.equal(secondPage.body.data.length, 3);
+  assert.deepEqual(secondPage.body.summary, { total: 23, opened: 21, applied: 2 });
   assert.equal(secondPage.body.pagination.totalPages, 2);
   const pendingPage = await request('/api/user/applications?status=opened');
   assert.equal(pendingPage.body.data.length, 20);

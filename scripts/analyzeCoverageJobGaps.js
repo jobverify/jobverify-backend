@@ -56,9 +56,14 @@ const readRunLogText = (logPath) => {
   return buffer.toString('utf8')
 }
 
+const COMPLETION_RECORD_PATTERN = /^\s*(?:(OK|PARTIAL|UNAVAILABLE|[✓✔✅])\s+)?\[([^\]]+)\]\s+(\d+)\s+India jobs\b(.*)$/i
+const FAILURE_RECORD_PATTERN = /^\s*(?:\S+\s+)?\[([^\]]+)\]\s+(FAILED|SOURCE\s+FAILED|UPSTREAM):\s*(.*)$/i
+
 export const isLogRecordBoundary = (line = '') => (
   /^\s*▶\s+\[\d+\//.test(line)
-  || /^\s*[✓✔✗]\s+\[[^\]]+\]\s+(?:\d+\s+India jobs|FAILED:|UPSTREAM:)/.test(line)
+  || COMPLETION_RECORD_PATTERN.test(line)
+  || FAILURE_RECORD_PATTERN.test(line)
+  || /^\s*(?:\[\d+\/[^\]]+\]\s+)?(?:Starting|Running)\s+\[[^\]]+\]/.test(line)
   || /\[[^\]]+\]\s+Failed to save status to DB:/i.test(line)
   || /\[\d+\/\d+\]\s+\[[^\]]+\]\s+Failed to verify active status from DB:/i.test(line)
   || /^\s*\[retry:[^\]]+\]/.test(line)
@@ -99,12 +104,12 @@ export const parsePipelineRowsFromLogGroups = (logGroups = []) => {
         startedSources.add(startedMatch[1])
       }
 
-      const successMatch = line.match(/^\s*(?:\S+\s+)?\[([^\]]+)\]\s+(\d+)\s+India jobs\b(.*)$/)
-      if (successMatch && !/\bPage\s+\d+:/i.test(line)) {
-        const [, source, jobsText, detail] = successMatch
+      const completionMatch = line.match(COMPLETION_RECORD_PATTERN)
+      if (completionMatch && !/\bPage\s+\d+:/i.test(line)) {
+        const [, label, source, jobsText, detail] = completionMatch
         latestBySource.set(source, {
           source,
-          status: 'OK',
+          status: ({ PARTIAL: 'Partial', UNAVAILABLE: 'Unavailable' })[label?.toUpperCase()] || 'OK',
           jobs: Number(jobsText),
           detail: detail.trim(),
           staleCleanupSkipped: /stale cleanup skipped/i.test(detail),
@@ -114,7 +119,7 @@ export const parsePipelineRowsFromLogGroups = (logGroups = []) => {
         continue
       }
 
-      const failureMatch = line.match(/^\s*(?:\S+\s+)?\[([^\]]+)\]\s+(FAILED|UPSTREAM):\s*(.*)$/i)
+      const failureMatch = line.match(FAILURE_RECORD_PATTERN)
       if (failureMatch) {
         const [, source, statusLabel, errorText] = failureMatch
         const error = `${errorText.trim()}${collectFailureContinuation(lines, index)}`
@@ -188,6 +193,8 @@ const SOFT_FAILURE_BUCKETS = new Set([
 ])
 
 export const bucketPipelineFailure = (pipeline = {}) => {
+  if (pipeline.status === 'Partial') return 'pipeline_partial_extraction'
+  if (pipeline.status === 'Unavailable') return 'pipeline_inventory_unavailable'
   const failureBucket = bucketFailure(pipeline.error || '')
 
   if (pipeline.status === 'Upstream' || SOFT_FAILURE_BUCKETS.has(failureBucket)) {
@@ -269,7 +276,7 @@ const main = async () => {
         category = 'pipeline_ok_0_jobs'
       } else if (pipeline?.status === 'OK') {
         category = 'pipeline_ok_but_no_active_source_docs'
-      } else if (pipeline?.status === 'Upstream' || pipeline?.status === 'Fail') {
+      } else if (['Partial', 'Unavailable', 'Upstream', 'Fail'].includes(pipeline?.status)) {
         category = bucketPipelineFailure(pipeline)
       } else if (startedSources.has(coverageRow.source)) {
         category = 'started_but_no_completion_line_in_interrupted_run'

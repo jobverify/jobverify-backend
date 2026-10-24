@@ -1,21 +1,21 @@
-/** Task completion and verified inventory are independent measurements. */
+import { isCompleteScraperAttempt, isFreshCompleteInventoryEvidence } from './inventoryEvidence.js';
+import { scraperTaskOutcome } from './scraperOutcome.js';
+
+/** Task completion, listing evidence and complete extraction are independent measurements. */
 export const summarizeScraperRun = (rows = [], { interrupted = false } = {}) => {
   const taskOutcomes = { succeeded: 0, skipped: 0, softFailed: 0, hardFailed: 0 };
-  let complete = 0;
+  let complete = 0, completeExtractions = 0;
   for (const row of rows) {
-    if (row.skipped === true) taskOutcomes.skipped++;
-    else if (row.success === true) taskOutcomes.succeeded++;
-    else if (row.softFailure === true) taskOutcomes.softFailed++;
-    else taskOutcomes.hardFailed++;
-    const evidence = row.inventoryEvidence;
-    if (evidence?.firstParty === true && evidence.listingComplete === true
-      && ['complete-inventory', 'verified-empty'].includes(evidence.status)) complete++;
+    taskOutcomes[scraperTaskOutcome(row)]++;
+    if (isFreshCompleteInventoryEvidence(row.inventoryEvidence, { now: row.completedAt || new Date() })) complete++;
+    if (isCompleteScraperAttempt(row)) completeExtractions++;
   }
   return {
-    scanned: rows.length, completed: rows.filter(row => row.success).length,
+    scanned: rows.length, completed: taskOutcomes.succeeded + taskOutcomes.skipped,
     skipped: taskOutcomes.skipped, failed: taskOutcomes.hardFailed,
-    warnings: rows.filter(row => row.success === false && !row.skipped).length,
+    warnings: taskOutcomes.softFailed + taskOutcomes.hardFailed,
     taskOutcomes, inventoryChecks: { complete, withoutCompleteEvidence: rows.length - complete },
+    extractionChecks: { complete: completeExtractions, incomplete: rows.length - completeExtractions },
     inserted: rows.reduce((sum, row) => sum + (row.inserted || 0), 0),
     updated: rows.reduce((sum, row) => sum + (row.updated || 0), 0),
     interrupted, pendingEstimate: rows.filter(row => row.classificationPending).length,

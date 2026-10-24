@@ -1,0 +1,120 @@
+{
+  "source": "cargill.workday",
+  "captureMethod": "Fresh headless Chromium, normal anonymous public navigation; bounded source reads, no forms or applications submitted.",
+  "sanitized": true,
+  "rawHttpBytesClaimed": false,
+  "fullSourceScrape": false,
+  "productionWrites": false,
+  "receipts": [
+    {
+      "file": "cargill-corporate-careers.json.gz",
+      "requestedUrl": "https://www.cargill.com/careers",
+      "finalUrl": "https://www.cargill.com/careers",
+      "responseUrl": "https://www.cargill.com/careers",
+      "httpStatus": 403,
+      "capturedAt": "2026-10-24T16:23:38.658Z",
+      "sanitizedBodySha256": "f9ad86347568792ccada26f0ade2580a109570180a2aeceff8f96be5bfd3b778",
+      "compressedSha256": "e25a4d67b062456ce18b051c5c32842442ab763f78e4fe0dce2b0020137bcee1",
+      "bodyBytes": 374
+    },
+    {
+      "file": "cargill-live-asset-0.json.gz",
+      "requestedUrl": "https://tbcdn.talentbrew.com/bundles/tb-corepack.js",
+      "finalUrl": "https://tbcdn.talentbrew.com/bundles/tb-corepack.js",
+      "responseUrl": null,
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:29:52.793Z",
+      "sanitizedBodySha256": "f1b4a0bc9413818f043290fe4b6944567a92888aa9e0a004673b1e90cd17c6a7",
+      "compressedSha256": "118efb76859a0a54efd97149cabc116814d4c3a2f936873304696dc2aaa76679",
+      "bodyBytes": 118570
+    },
+    {
+      "file": "cargill-live-asset-1.json.gz",
+      "requestedUrl": "https://tbcdn.talentbrew.com/js/client/search.js",
+      "finalUrl": "https://tbcdn.talentbrew.com/js/client/search.js",
+      "responseUrl": null,
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:29:52.818Z",
+      "sanitizedBodySha256": "f58913158b9aa603a2a21969c4533ae9023d26ff6699d5ac505ef9d469bd85dd",
+      "compressedSha256": "82735369e389c91a47c369006f293154c609df5ba2e809b1dc62a736a84d1546",
+      "bodyBytes": 42932
+    },
+    {
+      "file": "cargill-live-first-india-page.json.gz",
+      "requestedUrl": "https://careers.cargill.com/en/search-jobs/results?ActiveFacetID=1269750&CurrentPage=1&RecordsPerPage=15&Distance=50&RadiusUnitType=0&Keywords=&Location=&ShowRadius=False&IsPagination=False&CustomFacetName=&FacetTerm=&FacetType=0&FacetFilters%5B0%5D.ID=1269750&FacetFilters%5B0%5D.FacetType=2&FacetFilters%5B0%5D.Count=85&FacetFilters%5B0%5D.Display=India&FacetFilters%5B0%5D.IsApplied=true&FacetFilters%5B0%5D.FieldName=&SearchResultsModuleName=Search+Results&SearchFiltersModuleName=Search+Filters&SortCriteria=0&SortDirection=0&SearchType=5&PostalCode=&ResultsType=0&fc=&fl=&fcf=&afc=&afl=&afcf=",
+      "finalUrl": "https://careers.cargill.com/en/search-jobs/results?ActiveFacetID=1269750&CurrentPage=1&RecordsPerPage=15&Distance=50&RadiusUnitType=0&Keywords=&Location=&ShowRadius=False&IsPagination=False&CustomFacetName=&FacetTerm=&FacetType=0&FacetFilters%5B0%5D.ID=1269750&FacetFilters%5B0%5D.FacetType=2&FacetFilters%5B0%5D.Count=85&FacetFilters%5B0%5D.Display=India&FacetFilters%5B0%5D.IsApplied=true&FacetFilters%5B0%5D.FieldName=&SearchResultsModuleName=Search+Results&SearchFiltersModuleName=Search+Filters&SortCriteria=0&SortDirection=0&SearchType=5&PostalCode=&ResultsType=0&fc=&fl=&fcf=&afc=&afl=&afcf=",
+      "responseUrl": null,
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:29:53.424Z",
+      "sanitizedBodySha256": "f5ffc444ad3c1c541a8d117b8531c77c6f214c59aa28fcd29c84b55f9c053335",
+      "compressedSha256": "14d21aeb5a617262906405e619bdc253990a0d50c7eaac0c5782940c7cacb6ee",
+      "bodyBytes": 97118
+    },
+    {
+      "file": "cargill-live-role.json.gz",
+      "requestedUrl": "https://careers.cargill.com/en/job/bengaluru/consultant-tax-content-architect/23251/102323037920",
+      "finalUrl": "https://careers.cargill.com/en/job/bengaluru/consultant-tax-content-architect/23251/102323037920",
+      "responseUrl": "https://careers.cargill.com/en/job/bengaluru/consultant-tax-content-architect/23251/102323037920",
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:29:55.627Z",
+      "sanitizedBodySha256": "8b1a53b47dcca4ca41f1366f6d931cf3c35e8c86b30f96823055d632a96edcdd",
+      "compressedSha256": "5b0cbd57f670874f7cd2c3e3518f41e49abd7285d1dcb05436e2fc2b7ce83dab",
+      "bodyBytes": 68547
+    },
+    {
+      "file": "cargill-live-sap.json.gz",
+      "requestedUrl": "https://career2.successfactors.eu/sfcareer/jobreqcareer?jobId=336252&company=cargill&locale=en_US",
+      "finalUrl": "https://jobs.cargill.com/job/Bangalore-Consultant%2C-Tax-Content-Architect-Karn-560087/1375665057/",
+      "responseUrl": "https://jobs.cargill.com/job/Bangalore-Consultant%2C-Tax-Content-Architect-Karn-560087/1375665057/",
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:30:03.793Z",
+      "sanitizedBodySha256": "9056f9fe4574f73b2ead17ec34a70ff58b345e25ee32c0c9f38265e160e5b891",
+      "compressedSha256": "b0496677cd144f98d5a041397153d3ef1d82dd44488c0230f979214f92978c4c",
+      "bodyBytes": 51157
+    },
+    {
+      "file": "cargill-live-search.json.gz",
+      "requestedUrl": "https://careers.cargill.com/en/search-jobs",
+      "finalUrl": "https://careers.cargill.com/en/search-jobs",
+      "responseUrl": "https://careers.cargill.com/en/search-jobs",
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:29:52.610Z",
+      "sanitizedBodySha256": "f111cf0efe79d5d8c6c0b1f3ea30d9d1494b17bca6a0635fcc38468886d0437c",
+      "compressedSha256": "d34ea1d2b80028bef68f9fa67d0adfbfdba21957ffeb0ec70a289eeaa844d356",
+      "bodyBytes": 983255
+    },
+    {
+      "file": "native-2.json.gz",
+      "requestedUrl": "https://careers.cargill.com/",
+      "finalUrl": "https://careers.cargill.com/en",
+      "responseUrl": "https://careers.cargill.com/en",
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:21:11.012Z",
+      "sanitizedBodySha256": "6a4d0c521de6022a3ee789fcb74e57ec7bfe42291f18faaf6b41483af9193186",
+      "compressedSha256": "6a00f371d965193c98b0731bb6a9766243dcc4f840a02fac94d0c3b9146855a1",
+      "bodyBytes": 53671
+    },
+    {
+      "file": "native-3.json.gz",
+      "requestedUrl": "https://careers.cargill.com/en/search-jobs",
+      "finalUrl": "https://careers.cargill.com/en/search-jobs",
+      "responseUrl": "https://careers.cargill.com/en/search-jobs",
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:21:12.078Z",
+      "sanitizedBodySha256": "f111cf0efe79d5d8c6c0b1f3ea30d9d1494b17bca6a0635fcc38468886d0437c",
+      "compressedSha256": "56d6573a0e6ffa20de44593023fb59991723418a2b6854dbb53f4dabed1d29e8",
+      "bodyBytes": 983255
+    },
+    {
+      "file": "probe-3.json.gz",
+      "requestedUrl": "https://www.cargill.com/",
+      "finalUrl": "https://www.cargill.com/",
+      "responseUrl": "https://www.cargill.com/",
+      "httpStatus": 403,
+      "capturedAt": "2026-10-24T16:19:30.344Z",
+      "sanitizedBodySha256": "71fc2757513afce58538dac2e54a1bf40ee4d11fc62ca6a31cae8217430f41ff",
+      "compressedSha256": "9d48f7835cb074974da969479d66f684ab9c869a16032bbfee196c16ba2f2120",
+      "bodyBytes": 367
+    }
+  ]
+}

@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { spawnSync } from 'node:child_process'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import {
   bucketFailure,
@@ -8,6 +13,92 @@ import {
   collectFailureContinuation,
   parsePipelineRowsFromLogGroups,
 } from '../../scripts/analyzeCoverageJobGaps.js'
+
+const runnerFixture = fileURLToPath(new URL('./fixtures/runnerWarningPolicy.js', import.meta.url))
+for (const parallel of [false, true]) {
+  for (const { scenario, status, jobs, category } of [
+    { scenario: 'blocked-zero', status: 'Unavailable', jobs: 0, category: 'pipeline_inventory_unavailable' },
+    { scenario: 'unverified-zero', status: 'Unavailable', jobs: 0, category: 'pipeline_inventory_unavailable' },
+    { scenario: 'incomplete-details', status: 'Partial', jobs: 1, category: 'pipeline_partial_extraction' },
+    { scenario: 'complete-inventory', status: 'OK', jobs: 1 },
+  ]) {
+    test(`coverage parser retains ${scenario} from actual ${parallel ? 'parallel' : 'sequential'} runner output`, t => {
+      const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'coverage-completion-log-'))
+      t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+      const child = spawnSync(process.execPath, [runnerFixture, scenario, directory, '--dry-run', ...(parallel ? ['--parallel'] : [])], {
+        encoding: 'utf8', timeout: 15_000,
+      })
+      assert.equal(child.error, undefined)
+      assert.equal(child.status, 0, child.stdout + child.stderr)
+      const { latestBySource } = parsePipelineRowsFromLogGroups([{ text: child.stdout }])
+      const result = latestBySource.get('broken')
+      assert.equal(result?.status, status)
+      assert.equal(result.jobs, jobs)
+      assert.ok(result.detail.endsWith(path.join(directory, 'broken.json')))
+      if (category) assert.equal(bucketPipelineFailure(result), category)
+    })
+  }
+}
+
+test('coverage parsing recognizes explicit completion labels and ignores arbitrary status prefixes', () => {
+  const { latestBySource } = parsePipelineRowsFromLogGroups([{ text: [
+    '  OK [ascii] 1 India jobs | +1 fresh',
+    '  ✓ [tick] 2 India jobs | +2 fresh',
+    '  ✔ [heavy-tick] 3 India jobs | +3 fresh',
+    '  [unprefixed] 4 India jobs | +4 fresh',
+    '  DEBUG [unknown] 9 India jobs | telemetry only',
+    '  FAILED [not-success] 8 India jobs | diagnostic only',
+  ].join('\n') }])
+  assert.deepEqual([...latestBySource.values()].map(({ source, status, jobs }) => ({ source, status, jobs })), [
+    { source: 'ascii', status: 'OK', jobs: 1 },
+    { source: 'tick', status: 'OK', jobs: 2 },
+    { source: 'heavy-tick', status: 'OK', jobs: 3 },
+    { source: 'unprefixed', status: 'OK', jobs: 4 },
+  ])
+})
+
+test('failure continuations stop at new completion labels and current failure records', () => {
+  for (const boundary of [
+    '  UNAVAILABLE [next] 0 India jobs -> next.json',
+    '  PARTIAL [next] 2 India jobs | +1 fresh',
+    '  OK [next] 2 India jobs | +1 fresh',
+    '  ✓ [next] 2 India jobs | +1 fresh',
+    '  WARN [next] UPSTREAM: fetch failed',
+    '  WARN [next] SOURCE FAILED: invalid records',
+    '[2/4] Starting [next]...',
+  ]) {
+    assert.equal(collectFailureContinuation(['  ✗ [first] FAILED: parser error', '  first record detail', boundary], 0),
+      ' first record detail', boundary)
+  }
+})
+
+test('legacy and current failure formats retain multiline errors without swallowing completion records', () => {
+  const { latestBySource } = parsePipelineRowsFromLogGroups([{ text: [
+    '  ⚠ [upstream] UPSTREAM: fetch failed',
+    '  upstream detail',
+    '  UNAVAILABLE [unavailable] 0 India jobs -> unavailable.json',
+    '  ✗ [failed] FAILED: invalid result',
+    '  legacy detail',
+    '  PARTIAL [partial] 1 India jobs | +1 fresh',
+    '  WARN [current] SOURCE FAILED: malformed records',
+    '  current detail',
+    '  OK [healthy] 2 India jobs | +2 fresh',
+  ].join('\n') }])
+  assert.equal(latestBySource.get('upstream')?.status, 'Upstream')
+  assert.equal(latestBySource.get('upstream')?.error, 'fetch failed upstream detail')
+  assert.equal(latestBySource.get('failed')?.status, 'Fail')
+  assert.equal(latestBySource.get('failed')?.error, 'invalid result legacy detail')
+  assert.equal(latestBySource.get('current')?.status, 'Fail')
+  assert.equal(latestBySource.get('current')?.error, 'malformed records current detail')
+  assert.equal(latestBySource.get('unavailable')?.status, 'Unavailable')
+  assert.equal(latestBySource.get('partial')?.status, 'Partial')
+  assert.equal(latestBySource.get('healthy')?.status, 'OK')
+})
+
+test('incomplete extraction categories stay separate from successful or failed upstream checks', () => {
+  assert.equal(bucketPipelineFailure({ status: 'Partial', jobs: 1 }), 'pipeline_partial_extraction')
+  assert.equal(bucketPipelineFailure({ status: 'Unavailable', jobs: 0 }), 'pipeline_inventory_unavailable')
+})
 
 test('collectFailureContinuation stops before persistence warnings from other workers', () => {
   const lines = [

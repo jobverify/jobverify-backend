@@ -1,0 +1,79 @@
+{
+  "objective": "start fixing all these issues",
+  "goalStatus": "active",
+  "date": "2026-10-24",
+  "milestone": "Shared identity, truthful outcomes, bounded detail budgets, targeted source repairs and import safety",
+  "verification": {
+    "finalIntegrated": {
+      "exitCode": 0,
+      "tests": 536,
+      "passed": 536,
+      "failed": 0,
+      "testFiles": "final-test-files.json",
+      "log": "final-regressions.log"
+    },
+    "finalCoverageParser": {
+      "command": "node --test scraper-support/tests/coverageGapAnalysis.test.js",
+      "exitCode": 0,
+      "tests": 17,
+      "passed": 17,
+      "failed": 0
+    },
+    "syntax": {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "javascriptFiles": 16005
+    },
+    "fullProjectRun": {
+      "command": "npm test",
+      "exitCode": 1,
+      "tests": 23174,
+      "passed": 22680,
+      "failed": 481,
+      "skipped": 13,
+      "log": "full-tests.log",
+      "notes": "Ran during ongoing repairs; newly affected regressions were rerun after fixes. No claim that all recorded failures pre-existed or that the final full suite is green."
+    },
+    "baselineComparison": {
+      "selectedTestsPerVariant": 126,
+      "identicalFailuresPerVariant": 24,
+      "artifact": "review-attribution.json"
+    },
+    "independentReview": "No remaining actionable defects found in the implemented milestone; broader goal incomplete"
+  },
+  "productionActions": {
+    "databaseWrites": false,
+    "fullLiveScrape": false,
+    "deployment": false,
+    "commits": false,
+    "pushes": false
+  },
+  "remaining": [
+    "1609 current registered archived placeholders need supported extraction and current evidence",
+    "Unavailable or blocked source feeds and current hard-failure recovery remain unverified",
+    "374 current registered archived detail-incomplete sources need complete fresh detail recovery",
+    "High-volume Workday and Phenom tails need durable bounded enrichment/resume",
+    "28 saved-but-invisible sources need job-level content/publication verification",
+    "Untriaged remainder of broad full-suite failures and stale independent proof receipts remain",
+    "Production installation of declared shared-application index and controlled rollout have not occurred"
+  ],
+  "ownedProductionFileSha256": {
+    "scraper-support/utils/applicationIdentity.js": "23081d1bc18b002d6a3788658e47fe62d5b3423deafbe005a2e35c0b2b54656d",
+    "scraper-support/utils/saveToDB.js": "9e9f304f32e64dc63f860326ef10b92a004ef0013702fb4a7bf03bc6bd269e50",
+    "src/models/Job.js": "d88f8da5e2fc9c078ea1997a6fd8b49f9bca9737101b09f397ebc1730a529906",
+    "scraper-support/utils/scraperOutcome.js": "98615093048e928159f8ed7c18b23951453384d9e601ca80041f401f6f300aa9",
+    "scraper-support/utils/scraperRunSummary.js": "68f9a70c643df945f0fdf8f85393cb5c8a6fb8d57f451f73ea22123bbb03014f",
+    "scraper-support/utils/scraperPersistence.js": "d5f0ee56354ac9913003037c6c31787039699fcd944108cf517caec3febc615c",
+    "scraper-support/utils/runCheckpoint.js": "6e85ecc79124cc8ea214c4a73c4367d12dcad2314b3570711f4023bed4e7e278",
+    "src/models/ScraperRun.js": "9ca7fe6096efafe916d971f3a28f95cb359c35dd4f70a1cb9c578ef09a43c4cd",
+    "src/services/scraperMaintenance.js": "0669e55fdd35cc253ec8ff007daafc3afb5bb67393ecb628f6edc2ba4aab1874",
+    "scripts/purgeRetiredCompanyJobs.js": "9835e969f2818a2fbe1b4caf3c442249d7855e7814bf1ef7bf9859d15041a1c7",
+    "scraper-support/runner.js": "fad1b7cb908a7e1f8526f76478e9977af2d2967becc1b57f36834a0f13d1a6a1",
+    "scraper-support/finalSummaryFormatter.js": "fab6d92c31e1843444b6395959e9a68ae1171db64d0769b967550c2b2315e29d",
+    "scripts/analyzeCoverageJobGaps.js": "d5b9a11919af98266e2da3a2828d1a5b497953bcc6566a2918a81a32d673357c",
+    "scraper-support/utils/fetch.js": "111f919c48f8527f4e2f14ef69e150e5780e90f2cc267496623bc60403c3e254",
+    "scraper/waymo/script.js": "0e1e499b90eea6083eb4279248a27fa9795226166f80696f38e385488ede131c",
+    "scraper-support/phenom/engine.js": "67db46d6863051023a3ae3b23cb395634549c523576e8de9a26d012ed2eae21f",
+    ".github/workflows/scraper.yml": "4615d4580d9d0559ea2ffd1e5a7e358f17d4adf15b8c632b0c50f96b4885554d"
+  }
+}

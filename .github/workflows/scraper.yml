@@ -2,7 +2,7 @@ name: Jobverify Scraper Cron
 run-name: 'Scraper #${{ github.run_number }}'
 on:
   schedule:
-    - cron: '32 15 * * *' # Every day at 00:44 AM IST
+    - cron: '32 13 * * *' # Every day at 00:44 AM IST
   workflow_dispatch:
     inputs:
       pipeline_id:
@@ -70,12 +70,12 @@ jobs:
           SCRAPER_CONCURRENCY: ${{ vars.SCRAPER_CONCURRENCY }}
           SCRAPER_CHECKPOINT_FILE: '.cache/scraper-actions/run-state.json'
           SCRAPER_SOURCE_LIFECYCLE_TIMEOUT_MS: '1800000'
+          SCRAPER_NATIVE_DETAIL_RECOVERY: '1'
           PUBLIC_EXPERIENCE_FETCH_TIMEOUT_MS: '15000'
           PDF_TEXT_EXTRACTION_TIMEOUT_MS: '30000'
           WORKDAY_SCRAPER_TIMEOUT_MS: '210000'
-          WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS: '30000'
+          # Use the engine's bounded adaptive detail budget and paced shard workers.
           WORKDAY_REQUEST_TIMEOUT_MS: '20000'
-          WORKDAY_DETAIL_FETCH_CONCURRENCY: '1'
       - name: Save resumable source checkpoint
         if: always() && steps.scraper_run.outcome != 'skipped'
         uses: actions/cache/save@v4

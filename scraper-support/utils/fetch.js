@@ -87,7 +87,7 @@ const buildHtmlInsteadOfJsonError = (url, html) => {
   return new Error(`Expected JSON from ${url} but received HTML${title ? ` (${title})` : ''}`)
 }
 
-const buildHttpError = (response, url) => {
+export const buildHttpError = (response, url) => {
   const error = new Error(`HTTP ${response.status} for ${url}`)
   error.status = response.status
 

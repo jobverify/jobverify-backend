@@ -1073,7 +1073,7 @@ test('enrichJobWithPublicExperience follows embedded greenhouse iframes when the
       fetchedUrls.push(url)
 
       if (url === job.sourceUrl) {
-        return `
+        return { status: 200, url, html: `
           <html>
             <head>
               <title>InMobi Job Opening - Account Manager - Microsoft Advertising</title>
@@ -1095,7 +1095,7 @@ test('enrichJobWithPublicExperience follows embedded greenhouse iframes when the
               </div>
             </body>
           </html>
-        `
+        ` }
       }
 
       if (url === 'https://boards.greenhouse.io/inmobi/jobs/7959734') {

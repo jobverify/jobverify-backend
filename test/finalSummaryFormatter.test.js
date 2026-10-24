@@ -3,6 +3,28 @@ import test from 'node:test'
 
 import { formatFinalSummaryTable } from '../scraper-support/finalSummaryFormatter.js'
 
+test('console separates successful tasks from complete extraction and prioritizes skipped sources', () => {
+  const completedAt = new Date(Date.now() - 1000).toISOString()
+  const inventoryEvidence = { status: 'complete-inventory', firstParty: true, listingComplete: true,
+    surface: 'https://example.invalid/careers', pagesFetched: 1, verifiedAt: completedAt }
+  const output = formatFinalSummaryTable({
+    complete: { success: true, jobs: 1, inventoryEvidence, completedAt },
+    partial: { success: true, partial: true, jobs: 1, inventoryEvidence, completedAt, detailHealth: { complete: false } },
+    skipped: { success: true, skipped: true, jobs: 0 },
+    blocked: { success: false, softFailure: true, failureKind: 'coverage_gap', zeroJobEvidence: 'blocked-zero', jobs: 0 },
+    legacy: { success: true, jobs: 1 },
+  })
+  assert.match(output, /Tasks succeeded\s+\| 3/)
+  assert.match(output, /Skipped\s+\| 1/)
+  assert.match(output, /Task success rate\s+\| 60\.0%/)
+  assert.match(output, /Complete extractions\s+\| 1/)
+  assert.match(output, /Incomplete extractions\s+\| 4/)
+  assert.match(output, /Partial successful tasks\s+\| 2/)
+  assert.match(output, /Complete-extraction rate\s+\| 20\.0%/)
+  assert.doesNotMatch(output, /Successful-source rate/)
+  assert.match(output, /partial\s+\| 0\.0s\s+\| Partial/)
+})
+
 test('formatFinalSummaryTable renders bounded operational analytics tables', () => {
   const output = formatFinalSummaryTable({
     alpha: {
@@ -68,7 +90,7 @@ test('formatFinalSummaryTable renders bounded operational analytics tables', () 
   assert.match(output, /^[\x0A\x0D\x20-\x7E]+$/)
   assert.match(output, /Start time\s+\| unavailable/)
   assert.match(output, /RUN HEALTH/)
-  assert.match(output, /Success rate\s+\| 50\.0%/)
+  assert.match(output, /Task success rate\s+\| 50\.0%/)
   assert.match(output, /Zero India-job results\s+\| 1/)
   assert.match(output, /JOB YIELD/)
   assert.match(output, /Top-5 source share\s+\| 100\.0%/)
@@ -141,8 +163,8 @@ test('summary separates coverage gaps from successful inventory runs', () => {
     },
   })
 
-  assert.match(output, /Successful\s+\| 5/)
-  assert.match(output, /Coverage gaps\s+\| 1/)
+  assert.match(output, /Tasks succeeded\s+\| 3/)
+  assert.match(output, /Coverage gaps\s+\| 3/)
   assert.match(output, /Zero India-job results\s+\| 5/)
   assert.match(output, /Verified empty career surfaces\s+\| 1/)
   assert.match(output, /Fetched zero India-job results\s+\| 1/)
@@ -189,7 +211,7 @@ test('formatFinalSummaryTable reports wall-clock run timing and operational rate
   assert.match(output, /End time\s+\| 2026-08-18 08:37:36 IST/)
   assert.match(output, /Total time taken\s+\| 1h 37m 36\.7s/)
   assert.match(output, /Cumulative worker time\s+\| 13h 50m 6\.8s/)
-  assert.match(output, /Successful-source rate\s+\| 50\.0%/)
+  assert.match(output, /Task success rate\s+\| 50\.0%/)
   assert.match(output, /Job-yield rate\s+\| 50\.0%/)
   assert.match(output, /Missing-location rate\s+\| 25\.0%/)
 })

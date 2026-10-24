@@ -16,6 +16,7 @@ const cloneJson = (value) => JSON.parse(JSON.stringify(value))
 const CHECKPOINT_RESULT_FIELDS = [
   'success',
   'partial',
+  'processingComplete',
   'skipped',
   'softFailure',
   'upstreamOutage',

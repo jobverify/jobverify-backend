@@ -1,45 +1,5 @@
 [
   {
-    "source": "godigit",
-    "companyName": "Go Digit General Insurance",
-    "adapter": "script",
-    "modulePath": "../../scraper/godigit/script.js",
-    "companyCareerPage": "https://www.godigit.com/careers",
-    "companyDomain": "www.godigit.com",
-    "atsPlatform": "darwinbox",
-    "countryFilter": "India",
-    "paginationStrategy": "complete-native-public-pagination-with-total-reconciliation",
-    "extractionStrategy": "verified-official-handoff+complete-public-darwinbox-inventory",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "zeroResultPolicy": "evidence-required",
-    "backfillMode": "live-parser",
-    "catalogOverride": true,
-    "bindingEvidence": {
-      "verified": true,
-      "checkedAt": "2026-10-19T19:34:13.061Z",
-      "officialURL": "https://www.godigit.com/careers",
-      "httpStatus": 200,
-      "matchedLinks": [
-        "https://godigit.darwinbox.in/ms/candidatev2/a651fdd75445d1/careers/home"
-      ],
-      "inventorySurface": "https://godigit.darwinbox.in/ms/candidateapi/job/alljobs?companyId=a651fdd75445d1",
-      "bindingMethod": "official-company-page-links-to-exact-inventory-tenant",
-      "checks": [
-        {
-          "requestedURL": "https://www.godigit.com/careers",
-          "finalURL": "https://www.godigit.com/careers",
-          "httpStatus": 200
-        }
-      ]
-    },
-    "verifiedAt": "2026-10-19T19:32:27.906Z",
-    "verifiedInventoryStatus": "complete-inventory",
-    "verifiedPublicJobCount": 68,
-    "verifiedIndiaJobCount": 68,
-    "verificationNotes": "Fresh complete inventory and an exact public tenant link on the official company page verified during catalog remediation. Historical counts do not certify later runs."
-  },
-  {
     "source": "mindsprint",
     "companyName": "Mindsprint",
     "adapter": "script",

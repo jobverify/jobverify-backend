@@ -14,6 +14,10 @@ import { isGroupedLocationLabel } from '../../src/utils/jobLocations.js'
 import { isJobInPublicLocationScope } from '../../src/utils/publicJobLocationScope.js'
 import { extractWorkdayDetailLocations } from './locationDetails.js'
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
+import {
+  nativeDetailReceiptKey, readNativeDetailReceipt, rememberNativeDetailReceipt,
+  NativeDetailRecoveryPendingError, NATIVE_DETAIL_SCOPE_PASS_MS, nativeDetailPassBudget, currentNativeDetailRecovery,
+} from '../utils/nativeDetailRecovery.js'
 
 const DEFAULT_COUNTRY_FACET_PARAMETER = 'locationCountry'
 const DEFAULT_WORKDAY_DETAIL_FETCH_CONCURRENCY = 4
@@ -1355,6 +1359,7 @@ const fetchDetailedJobPayload = async (
     requestScheduler = workdayRequestScheduler,
     jobsApiUrl = null,
     nativePayload = undefined,
+    onNativePayload = null,
   } = {},
 ) => {
   try {
@@ -1376,7 +1381,9 @@ const fetchDetailedJobPayload = async (
           }, { signal, timeoutMs: requestTimeoutMs, source, requestScheduler, kind: 'detail' },
           async response => ({ response, bodyText: await response.text() }))
           if (response.status === 429 || response.status >= 500) throw buildWorkdayHttpFailureError(source, structuredUrl, response.status, response.headers)
-          const structured = response.ok ? extractWorkdayStructuredDetail(JSON.parse(bodyText)) : null
+          const payload = response.ok ? JSON.parse(bodyText) : null
+          const structured = extractWorkdayStructuredDetail(payload)
+          if (structured) onNativePayload?.(payload)
           if (structured) { circuitBreaker.recordSuccess(jobUrl); return structured }
         }
       } catch (error) {
@@ -1700,6 +1707,7 @@ const runWorkdayJobsApiScraper = async ({
   detailCircuitBreaker = new WorkdayHostCircuitBreaker(),
   detailEnrichmentState = { disabled: false, noticeLogged: false },
   detailEnrichmentBudgetMs = null,
+  nativeDetailRecovery = null,
 }) => {
   throwIfAborted(signal)
   const countryFacetParameter =
@@ -1901,7 +1909,9 @@ const runWorkdayJobsApiScraper = async ({
         }
 
         seenLinks.add(canonicalLink)
-        allCandidates.push({ job, canonicalLink, location })
+        allCandidates.push({ job, canonicalLink, location,
+          receiptKey: nativeDetailReceiptKey('workday', source, jobsApiUrl, canonicalLink, job.title, location, job.postedOn, job.bulletFields),
+        })
       }
 
       if (jobs.length > 0 && seenApiRecords.size === uniqueBeforePage) {
@@ -1929,16 +1939,62 @@ const runWorkdayJobsApiScraper = async ({
     const scopeCandidates = allCandidates.filter(({ location }) => !isWorkdayJobInPublicIndiaScope({
       location, city: extractCity(location),
     }))
-    await mapWithConcurrency(
-      scopeCandidates,
-      resolveWorkdayDetailFetchConcurrency(process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY, config.detailFetchConcurrency),
-      async (candidate) => {
-        candidate.scopePayload = await fetchWorkdayScopePayload({
-          candidate, jobsApiUrl, source, session, signal, requestTimeoutMs,
-          retryBaseDelayMs, circuitBreaker: detailCircuitBreaker, requestScheduler,
-        })
-      },
-    )
+    const matchesNativeRole = (payload, candidate) => {
+      const info = payload?.jobPostingInfo
+      const listingUrl = new URL(candidate.canonicalLink)
+      const postingPath = listingUrl.pathname
+      const nativeId = postingPath.match(/_([^/]+)$/)?.[1]
+      const reqId = typeof info?.jobReqId === 'string' ? info.jobReqId.trim() : null
+      const canonicalMatches = typeof info?.externalUrl === 'string'
+        && getSafeWorkdayUrl(info.externalUrl, candidate.canonicalLink) === candidate.canonicalLink
+      const nativePostingMatches = info?.jobPostingId === postingPath.split('/').at(-1)
+      const repeatedPosting = reqId && nativeId?.startsWith(reqId + '-')
+        && /^\d+$/.test(nativeId.slice(reqId.length + 1)) && (canonicalMatches || nativePostingMatches)
+      return Boolean(info && nativeId && reqId && (reqId === nativeId || repeatedPosting)
+        && (info.externalUrl == null || canonicalMatches)
+        && typeof info.title === 'string' && typeof candidate.job.title === 'string'
+        && info.title.trim() === candidate.job.title.trim())
+    }
+    const scopeController = new AbortController()
+    const scopeSignal = nativeDetailRecovery
+      ? (signal ? AbortSignal.any([signal, scopeController.signal]) : scopeController.signal) : signal
+    const scopeTimer = nativeDetailRecovery && scopeCandidates.length
+      ? setTimeout(() => scopeController.abort(new NativeDetailRecoveryPendingError(scopeCandidates.length)),
+        nativeDetailPassBudget(nativeDetailRecovery, NATIVE_DETAIL_SCOPE_PASS_MS)) : null
+    try {
+      await mapWithConcurrency(
+        scopeCandidates,
+        resolveWorkdayDetailFetchConcurrency(process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY, config.detailFetchConcurrency),
+        async (candidate) => {
+          const cached = readNativeDetailReceipt(nativeDetailRecovery, candidate.receiptKey)
+          if (cached && matchesNativeRole(cached.payload, candidate)) {
+            candidate.scopePayload = cached.payload
+            candidate.scopeFetchedAt = cached.fetchedAt
+            candidate.fromRecovery = true
+            return
+          }
+          if (scopeController.signal.aborted) return
+          try {
+            candidate.scopePayload = await fetchWorkdayScopePayload({
+              candidate, jobsApiUrl, source, session, signal: scopeSignal, requestTimeoutMs,
+              retryBaseDelayMs, circuitBreaker: detailCircuitBreaker, requestScheduler,
+            })
+            candidate.scopeFetchedAt = Date.now()
+            if (matchesNativeRole(candidate.scopePayload, candidate)) {
+              rememberNativeDetailReceipt(nativeDetailRecovery, candidate.receiptKey, candidate.scopePayload, candidate.scopeFetchedAt)
+            }
+          } catch (error) {
+            throwIfAborted(signal)
+            if (!scopeController.signal.aborted) throw error
+          }
+        },
+      )
+    } finally { clearTimeout(scopeTimer) }
+    const pendingScopeCount = scopeCandidates.filter(candidate => !candidate.scopePayload).length
+    if (pendingScopeCount) {
+      nativeDetailRecovery.pending += pendingScopeCount
+      throw new NativeDetailRecoveryPendingError(pendingScopeCount)
+    }
     const countryEvidence = buildWorkdayLocationCountryEvidence(scopeCandidates)
     for (const candidate of scopeCandidates) {
       const scope = resolveWorkdayScopeLocations(candidate, countryEvidence, source)
@@ -1957,10 +2013,10 @@ const runWorkdayJobsApiScraper = async ({
     )).length
     const pacedStartIntervalMs = Number.isFinite(requestScheduler?.minIntervalMs)
       ? Math.max(0, requestScheduler.minIntervalMs) : 0
-    const effectiveDetailBudgetMs = detailEnrichmentBudgetMs ?? Math.min(
+    const effectiveDetailBudgetMs = nativeDetailPassBudget(nativeDetailRecovery, detailEnrichmentBudgetMs ?? Math.min(
       MAX_DEFAULT_WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS,
       DEFAULT_WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS + pendingDetailCount * pacedStartIntervalMs,
-    )
+    ))
     const detailController = new AbortController()
     const budgetError = new Error(`[${source}] Workday detail enrichment budget exhausted`)
     budgetError.name = 'WorkdayDetailBudgetExceededError'
@@ -1977,15 +2033,20 @@ const runWorkdayJobsApiScraper = async ({
           process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY,
           config.detailFetchConcurrency,
         ),
-        async ({ job, canonicalLink, location, scopeLocations, scopeIndiaLocations, scopePayload }) => {
+        async (candidate) => {
+          const { job, canonicalLink, location, scopeLocations, scopeIndiaLocations, scopePayload } = candidate
           throwIfAborted(signal)
           if (scopeIndiaLocations && scopeIndiaLocations.length === 0) return null
           if (scopeLocations && !isWorkdayJobInPublicIndiaScope({ location, locations: scopeLocations })) return null
-          let detailPayload = scopePayload ? extractWorkdayStructuredDetail(scopePayload) : null
+          const cached = scopePayload ? null : readNativeDetailReceipt(nativeDetailRecovery, candidate.receiptKey)
+          const cachedPayload = cached && matchesNativeRole(cached.payload, candidate) ? cached.payload : null
+          let verifiedAt = candidate.scopeFetchedAt || (cachedPayload ? cached.fetchedAt : null)
+          let fromRecovery = candidate.fromRecovery || Boolean(cachedPayload)
+          let detailPayload = extractWorkdayStructuredDetail(scopePayload || cachedPayload)
           if (detailPayload) {
             // The required native scope phase already verified these addresses,
             // including India secondaries whose labels lack a country name.
-            detailPayload = { ...detailPayload, locations: scopeLocations,
+            if (scopePayload) detailPayload = { ...detailPayload, locations: scopeLocations,
               indiaScopeLocations: scopeIndiaLocations }
           } else if (detailEnrichmentState.disabled || detailController.signal.aborted) {
             detailPayload = createFallbackDetailPayload(detailEnrichmentState.disabled
@@ -2003,6 +2064,12 @@ const runWorkdayJobsApiScraper = async ({
                   requestScheduler,
                   jobsApiUrl,
                   nativePayload: scopePayload,
+                  onNativePayload: payload => {
+                    if (matchesNativeRole(payload, candidate)) {
+                      verifiedAt = Date.now()
+                      rememberNativeDetailReceipt(nativeDetailRecovery, candidate.receiptKey, payload, verifiedAt)
+                    }
+                  },
                 },
               )
             } catch (error) {
@@ -2025,6 +2092,10 @@ const runWorkdayJobsApiScraper = async ({
           const sourceDetailComplete = [detailPayload.sourceDescription, detailPayload.jobDescription]
             .some(value => typeof value === 'string' && value.trim())
           const detailFailureReason = getWorkdayDetailFallbackReason(detailPayload)
+          if (nativeDetailRecovery && !sourceDetailComplete) {
+            if (detailFailureReason?.name === 'WorkdayDetailBudgetExceededError' && detailEnrichmentBudgetMs !== 0) nativeDetailRecovery.pending++
+            else if (detailFailureReason) nativeDetailRecovery.unrecoverable = true
+          }
           const workdayJob = {
             jobId: extractJobId(canonicalLink),
             title: job.title,
@@ -2039,6 +2110,8 @@ const runWorkdayJobsApiScraper = async ({
             closingDate: null,
             jobDescription: detailPayload.jobDescription,
             sourceDetailComplete,
+            ...(sourceDetailComplete && nativeDetailRecovery && { sourceDetailVerifiedAt: new Date(verifiedAt || Date.now()).toISOString(),
+              ...(fromRecovery && { sourceDetailFromRecovery: true }) }),
             ...(!sourceDetailComplete && { sourceDetailFailureKind:
               detailFailureReason?.name === 'WorkdayDetailBudgetExceededError' ? 'budget-exhausted'
                 : detailFailureReason ? 'upstream' : 'missing-content' }),
@@ -2075,7 +2148,7 @@ const runWorkdayJobsApiScraper = async ({
       pagesFetched,
       reportedTotal,
       indiaFacetCount: allJobs.length,
-      verifiedAt: new Date().toISOString(),
+      verifiedAt: new Date(nativeDetailRecovery?.verifiedAt || Date.now()).toISOString(),
       reason: 'complete-workday-india-enumeration',
     })
   } finally {
@@ -2087,6 +2160,7 @@ const runWorkdayJobsApiScraper = async ({
 export const runWorkdayScraper = async (options) => {
   const { company, baseUrl, locationCountry, source, scraperDir } = options
   const signal = options.signal || null
+  const nativeDetailRecovery = options.nativeDetailRecovery ?? currentNativeDetailRecovery()
   const config = loadConfig(scraperDir)
   const envRequestTimeoutMs = Number.parseInt(process.env.WORKDAY_REQUEST_TIMEOUT_MS, 10)
   const requestTimeoutMs = [
@@ -2137,6 +2211,7 @@ export const runWorkdayScraper = async (options) => {
         detailCircuitBreaker,
         detailEnrichmentState,
         detailEnrichmentBudgetMs,
+        nativeDetailRecovery,
       })
     } catch (error) {
       throwIfAborted(signal)
@@ -2165,6 +2240,7 @@ export const runWorkdayScraper = async (options) => {
         detailCircuitBreaker,
         detailEnrichmentState,
         detailEnrichmentBudgetMs,
+        nativeDetailRecovery,
       })
     } catch (error) {
       throwIfAborted(signal)

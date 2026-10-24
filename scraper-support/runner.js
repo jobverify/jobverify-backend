@@ -8,6 +8,7 @@ import fs from 'fs'
 import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
 import { summarizeScraperRun } from './utils/scraperRunSummary.js'
+import { finishScraperProcessing, inventoryCleanupOptions } from './utils/scraperOutcome.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.resolve(currentDir, '../.env'), quiet: true })
@@ -18,6 +19,7 @@ import {
   saveToDB,
 } from './utils/saveToDB.js'
 import { getRetryMetadata, withRetry } from './utils/retry.js'
+import { runWithNativeDetailRecovery } from './utils/nativeDetailRecovery.js'
 import { analyzePublishableJobs } from './utils/publishableJobMetrics.js'
 import {
   upsertScraperStatus,
@@ -684,7 +686,7 @@ export const withSourceLifecycleTimeout = async (
   }
 }
 
-export const runScraperWithTimeout = async (
+const runBoundedScraperPass = async (
   scraper,
   timeoutMs = resolveScraperTimeoutMs(undefined, scraper),
   { abortGraceMs = DEFAULT_ABORT_GRACE_MS, signal = null } = {},
@@ -693,6 +695,7 @@ export const runScraperWithTimeout = async (
 
   let timeoutId
   let timeoutError = null
+  let onParentAbort = null
   const controller = new AbortController()
   let parentAbortReason = null
   const detachParentAbort = attachParentAbort(signal, controller, (reason) => {
@@ -715,8 +718,8 @@ export const runScraperWithTimeout = async (
         : new Promise(() => {}),
       signal
         ? new Promise((_, reject) => {
-            const onAbort = () => reject(getAbortReason(signal, 'Runner operation aborted'))
-            signal.addEventListener('abort', onAbort, { once: true })
+            onParentAbort = () => reject(getAbortReason(signal, 'Runner operation aborted'))
+            signal.addEventListener('abort', onParentAbort, { once: true })
           })
         : new Promise(() => {}),
     ])
@@ -729,7 +732,24 @@ export const runScraperWithTimeout = async (
   } finally {
     clearTimeout(timeoutId)
     detachParentAbort()
+    if (onParentAbort) signal.removeEventListener('abort', onParentAbort)
   }
+}
+
+export const runScraperWithTimeout = async (
+  scraper,
+  timeoutMs = resolveScraperTimeoutMs(undefined, scraper),
+  { abortGraceMs = DEFAULT_ABORT_GRACE_MS, signal = null,
+    nativeDetailRecovery = /^(?:1|true|yes)$/i.test(process.env.SCRAPER_NATIVE_DETAIL_RECOVERY || '') } = {},
+) => {
+  if (!nativeDetailRecovery) return runBoundedScraperPass(scraper, timeoutMs, { abortGraceMs, signal })
+  return runWithNativeDetailRecovery((recovery, recoverySignal) => {
+    // Leave a settlement margin inside the unchanged source attempt deadline.
+    recovery.passDeadlineAt = timeoutMs > 0 ? Date.now() + Math.max(1, timeoutMs - Math.min(1000, timeoutMs / 10)) : null
+    return runBoundedScraperPass({ ...scraper,
+      run: options => scraper.run({ ...options, nativeDetailRecovery: recovery }),
+    }, timeoutMs, { abortGraceMs, signal: recoverySignal })
+  }, { signal })
 }
 
 const formatPersistenceSummary = (result) => {
@@ -757,6 +777,15 @@ const formatPersistenceSummary = (result) => {
     ? ` | stale cleanup skipped: ${result.staleCheckReason || 'previous source jobs preserved'}`
     : ''
   return `${base}${updated}${nonIndia}${closed}${invalidUrl}${emptyDescription}${lifecycle}${expired}${staleCheck}`
+}
+
+const logSourceCompletion = (scraper, result) => {
+  const status = result.success !== true ? 'UNAVAILABLE' : (result.partial === true ? 'PARTIAL' : 'OK')
+  const saved = result.mode === 'dry-run'
+    ? `-> ${result.file}`
+    : `| ${formatPersistenceSummary(result)}`
+  console.log(`  ${status} [${scraper.name}] ${result.jobs} India jobs ${saved}`)
+  if (result.cities?.length) console.log(`  Cities: ${result.cities.join(', ')}`)
 }
 
 const formatStageDuration = (durationMs) => (
@@ -1152,9 +1181,9 @@ export const runAll = async ({ stopSignal = null } = {}) => {
           mode: 'dry-run',
           file: scraper.dryRunFile,
         }
-        console.log(`  OK [${scraper.name}] ${indiaJobs.length} India jobs -> ${scraper.dryRunFile}`)
       } else {
         result = await retryAfterMongoQuotaRecovery(() => saveToDB(jobs, scraper.name, {
+          ...inventoryCleanupOptions(attemptDiagnostics),
           refreshDatasetSummary: false,
           authoritativeEmpty: zeroJobEvidence === 'verified-empty',
           enrichPublicExperience: resolveLivePublicExperienceEnabled(scraper),
@@ -1163,26 +1192,19 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         }))
         result.jobs = indiaJobs.length
         result.cities = cities
-        console.log(
-          `  ✓ [${scraper.name}] ${indiaJobs.length} India jobs | ` +
-          formatPersistenceSummary(result),
-        )
       }
 
-      if (cities.length) console.log(`  Cities: ${cities.join(', ')}`)
       if (zeroJobEvidence) result.zeroJobEvidence = zeroJobEvidence
       result.retry = getRetryMetadata(jobs)
       result.durationMs = Date.now() - scraperStart
-      summary[scraper.name] = {
+      summary[scraper.name] = finishScraperProcessing({
         success: true,
         ...result,
         ...attemptDiagnostics,
         attemptedAt: new Date(scraperStart).toISOString(),
         completedAt: new Date().toISOString(),
-        ...(zeroJobEvidence === 'coverage-gap'
-          ? buildCoverageGapResult(scraper.name, zeroJobEvidence)
-          : {}),
-      }
+      })
+      logSourceCompletion(scraper, summary[scraper.name])
     } catch (err) {
       await saveRawSourceFailure(err, { source: scraper.name, dryRun: isDryRun, captureFile: rawCaptureFile })
       if (err instanceof LocalJobOutboxPersistenceError) throw err
@@ -1372,10 +1394,10 @@ export const runScraper = async (
         mode: 'dry-run',
         file: scraper.dryRunFile,
       }
-      console.log(`  OK [${scraper.name}] ${indiaJobs.length} India jobs -> ${scraper.dryRunFile}`)
     } else {
       result = await retryAfterMongoQuotaRecovery(() => saveToDB(jobs, scraper.name, {
         ...persistenceOptions,
+        ...inventoryCleanupOptions(attemptDiagnostics),
         refreshDatasetSummary: false,
         authoritativeEmpty: zeroJobEvidence === 'verified-empty',
         enrichPublicExperience: resolveLivePublicExperienceEnabled(scraper),
@@ -1384,28 +1406,21 @@ export const runScraper = async (
       }))
       result.jobs = indiaJobs.length
       result.cities = cities
-      console.log(
-        `  ✓ [${scraper.name}] ${indiaJobs.length} India jobs | ` +
-        formatPersistenceSummary(result),
-      )
     }
 
     throwIfAborted(lifecycleSignal)
-    if (cities.length) console.log(`  Cities: ${cities.join(', ')}`)
     if (zeroJobEvidence) result.zeroJobEvidence = zeroJobEvidence
     result.retry = retry
     result.dataQuality = dataQuality
     result.durationMs = Date.now() - scraperStart
-    const successResult = {
+    const successResult = finishScraperProcessing({
       success: true,
       ...result,
       ...attemptDiagnostics,
       attemptedAt: new Date(scraperStart).toISOString(),
       completedAt: new Date().toISOString(),
-      ...(zeroJobEvidence === 'coverage-gap'
-        ? buildCoverageGapResult(scraper.name, zeroJobEvidence)
-        : {}),
-    }
+    })
+    logSourceCompletion(scraper, successResult)
 
     await updateLiveScraperStatus(scraper.name, successResult, logStage)
     throwIfAborted(lifecycleSignal)
@@ -1651,8 +1666,8 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
     }))
 
     const rows = Object.values(summary)
-    const totalFailures = rows.filter(isHardSourceFailure).length
-    const warnings = rows.filter(row => row.success === false && !row.skipped).length
+    const pipelineSummary = summarizeScraperRun(rows, { interrupted: shutdown.requested })
+    const warnings = pipelineSummary.warnings
     if (warnings > 0) {
       console.warn(`[runner] Recorded ${warnings} source warning(s). See source diagnostics above.`)
     }
@@ -1662,7 +1677,6 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
     }
     if (shutdown.requested) process.exitCode = shutdown.exitCode
     if (process.env.PIPELINE_SUMMARY_FILE) {
-      const pipelineSummary = summarizeScraperRun(rows, { interrupted: shutdown.requested })
       fs.mkdirSync(path.dirname(process.env.PIPELINE_SUMMARY_FILE), { recursive: true })
       fs.writeFileSync(process.env.PIPELINE_SUMMARY_FILE, JSON.stringify(pipelineSummary))
       if (pipelineSummary.pendingEstimate > 0) process.exitCode = 1

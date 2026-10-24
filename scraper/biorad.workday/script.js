@@ -169,7 +169,12 @@ export async function run({fetchText, signal, maxPages = 100, maxJobs = null, no
     signal?.throwIfAborted()
     if (fetchText) { const value = await fetchText(url, {signal}); signal?.throwIfAborted(); return value }
     const response = await fetch(url, {signal:signal ? AbortSignal.any([signal, AbortSignal.timeout(25000)]) : AbortSignal.timeout(25000),redirect:'error'})
-    requireProof(response.status === 200 && response.url === url, `Native HTTP ${response.status}`)
+    if (response.status !== 200 || response.url !== url) {
+      const blocked = [202, 401, 403, 429, 451].includes(response.status)
+      throw Object.assign(new Error(`Bio-Rad: Native HTTP ${response.status} for ${url}; final URL ${response.url}`),
+        {status:response.status,requestUrl:url,finalUrl:response.url,stage:url === CAREERS_URL ? 'landing' : url.startsWith(SEARCH) ? 'listing' : 'detail',
+          ...(blocked ? {softFailure:true,upstreamOutage:false,failureKind:'blocked_or_access_denied',abortRetries:true} : {})})
+    }
     return response.text()
   }
   const landing = dom(await get(CAREERS_URL))

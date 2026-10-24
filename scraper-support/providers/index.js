@@ -571,7 +571,7 @@ const createWorkdayScraper = (provider) => ({
   name: provider.source,
   dryRunFile: provider.dryRunFile,
   provider,
-  run: async ({ signal } = {}) => {
+  run: async ({ signal, nativeDetailRecovery } = {}) => {
     const { runWorkdayScraper } = await import('../myworkday/engine.js')
     const jobs = await runWorkdayScraper({
       company: provider.companyName,
@@ -581,6 +581,7 @@ const createWorkdayScraper = (provider) => ({
       scraperDir: provider.sourceDirectory,
       boardIdentityVerified: provider.boardIdentityVerified === true,
       ...(signal === undefined ? {} : { signal }),
+      ...(nativeDetailRecovery === undefined ? {} : { nativeDetailRecovery }),
     })
 
     return decorateJobsWithProviderMetadata(jobs, provider)

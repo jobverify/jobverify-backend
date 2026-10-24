@@ -127,19 +127,6 @@ const EXPECTED_NON_SENTINEL_PROVIDERS = {
     verifiedIndiaJobCount: 0,
     verifiedSurfaceSummaryPattern: /No jobs available/i,
   },
-  betterplace: {
-    modulePath: '../../scraper/betterplace/script.js',
-    companyCareerPage: 'https://aj.betterplace.co.in/careers/',
-    companyDomain: 'betterplace.co.in',
-    atsPlatform: 'verified-first-party-careers-page-visible-cards',
-    paginationStrategy: 'single-first-party-careers-page',
-    extractionStrategy:
-      'verified-first-party-careers-page+public-visible-job-cards+betterplace-select-subdomain',
-    verifiedOn: '2026-07-30',
-    verifiedPublicJobCount: 18,
-    verifiedIndiaJobCount: 18,
-    verifiedSurfaceSummaryPattern: /public Betterplace Select careers page/i,
-  },
   basepair: {
     modulePath: '../../scraper/basepair/script.js',
     companyCareerPage: 'https://www.basepairtech.com/careers/',
@@ -314,7 +301,6 @@ const EXPECTED_BATCH_02_COMPANIES = [
   ['Artoo', 'artoo'],
   ['Artium Academy', 'artiumacademy'],
   ['Basepair', 'basepair'],
-  ['BetterPlace', 'betterplace'],
   ['Bhive', 'bhive'],
   ['Bluelearn', 'bluelearn'],
   ['BluSmart', 'blusmart'],
@@ -384,9 +370,6 @@ test('workbook batch 02 registers the expected providers and the scoped Cibil al
       assert.equal(provider.verifiedIndiaJobCount, expectedProvider.verifiedIndiaJobCount)
       assert.match(provider.verifiedSurfaceSummary, expectedProvider.verifiedSurfaceSummaryPattern)
       assert.doesNotMatch(provider.verifiedSurfaceSummary, /exact-name sentinel/i)
-      if (provider.source === 'betterplace') {
-        assert.equal(provider.verificationDisposition, 'verified-public-careers-cards')
-      }
       if (provider.source === 'aranca') {
         assert.equal(provider.verificationDisposition, 'verified-public-paginated-jobs-board')
         assert.equal(provider.officialJobsBoardUrl, 'https://www2.aranca.com/careers/')

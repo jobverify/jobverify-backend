@@ -133,7 +133,7 @@ export const createSpringboardScraper = () => ({
 
 export const run = async (options = {}) => createSpringboardScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url) || process.argv.includes('--dry-run')) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 

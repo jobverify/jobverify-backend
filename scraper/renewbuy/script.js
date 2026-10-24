@@ -60,8 +60,14 @@ function board(html) {
     return {id,title,location,url:roleURL(link.attrs.href,id),date}
   })
   const lists=doc.nodes(n=>n.tag==='script'&&n.attrs.type==='application/ld+json').map(n=>JSON.parse(n.raw)).filter(value=>value['@type']==='ItemList')
-  const items=one(lists,'structured native inventory').itemListElement
-  requireFact(Array.isArray(items)&&items.length===rows.length&&items.every((item,index)=>item['@type']==='ListItem'&&item.position===index+1&&norm(item.name)===rows[index].title&&item.disambiguatingDescription===COMPANY_NAME&&roleURL(item.url,rows[index].id)===rows[index].url),'structured inventory conflict')
+  // ItemList is optional search-page metadata. Visible cards already require
+  // the exact employer and country filters; every emitted role is independently
+  // verified against its native detail. This remains a partial inventory.
+  requireFact(lists.length<=1,'ambiguous structured native inventory')
+  if(lists.length){
+    const items=lists[0].itemListElement
+    requireFact(Array.isArray(items)&&items.length===rows.length&&items.every((item,index)=>item['@type']==='ListItem'&&item.position===index+1&&norm(item.name)===rows[index].title&&item.disambiguatingDescription===COMPANY_NAME&&roleURL(item.url,rows[index].id)===rows[index].url),'structured inventory conflict')
+  }
   return {rows, count:Number(countText)}
 }
 function detail(html, row, at) {

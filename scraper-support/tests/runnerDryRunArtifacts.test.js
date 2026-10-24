@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
+import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const loadDryRunRunner = async () => {
   const originalArgv = [...process.argv]
@@ -28,7 +29,8 @@ test('dry-run progress logs use only ASCII markers', async () => {
       name: 'ascii-log-source',
       provider: { adapter: 'custom' },
       dryRunFile,
-      run: async () => [],
+      run: async () => attachInventoryEvidence([], { status: 'verified-empty', firstParty: true, listingComplete: true,
+        surface: 'https://example.invalid/careers', pagesFetched: 1, reportedTotal: 0, verifiedAt: new Date().toISOString() }),
     })
 
     assert.equal(result.success, true)
@@ -156,12 +158,12 @@ test('dry-run runner reports publishable job counts and rejection totals for sum
 
     assert.equal(result.success, true)
     assert.equal(result.jobs, 5)
-    assert.equal(result.eligibleJobs, 3)
+    assert.equal(result.eligibleJobs, 2)
     assert.equal(result.filteredNonIndia, 1)
     assert.equal(result.filteredSenior, undefined)
     assert.equal(result.filteredInvalidUrl, 1)
     assert.equal(result.filteredClosed, 1)
-    assert.equal(result.filteredOld, undefined)
+    assert.equal(result.filteredOld, 1)
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true })
   }

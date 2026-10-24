@@ -15,7 +15,8 @@ export async function runNative(options={}){
    const headers={'Accept':body?'application/json':'text/html,application/javascript,application/json'}
    if(body){headers['Content-Type']='application/json';headers['X-CSRF-Token']=nonce;if(cookie)headers.Cookie=cookie}
    const r=await fetch(url,{method:body?'POST':'GET',body:body?JSON.stringify(body):undefined,headers,signal,redirect:'error'})
-   signal.throwIfAborted();check(r.status===200&&r.url===url,'Native HTTP status or final URL mismatch')
+   signal.throwIfAborted()
+   if(r.status!==200||r.url!==url)throw Object.assign(Error('Colgate public native contract: Native HTTP status or final URL mismatch; HTTP '+r.status+' for '+url+'; final URL '+r.url),{status:r.status,requestUrl:url,finalUrl:r.url})
    if(url===SEARCH)cookie=(r.headers.getSetCookie?.()??[]).map(s=>s.split(';')[0]).join('; ')
    const text=await r.text();signal.throwIfAborted();check(Buffer.byteLength(text)<=5000000,'Native response exceeds bounded size');return text
   })()])}finally{signal.removeEventListener('abort',onAbort)}

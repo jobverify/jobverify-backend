@@ -1,0 +1,54 @@
+{
+  "source": "biorad.workday",
+  "captureMethod": "Fresh headless Chromium, normal anonymous public navigation; bounded source reads, no forms or applications submitted.",
+  "sanitized": true,
+  "rawHttpBytesClaimed": false,
+  "fullSourceScrape": false,
+  "productionWrites": false,
+  "receipts": [
+    {
+      "file": "bio-sequential-detail.json.gz",
+      "requestedUrl": "https://careers.bio-rad.com/jobs/trade-compliance-spec-iii-chennai-india",
+      "finalUrl": "https://careers.bio-rad.com/jobs/trade-compliance-spec-iii-chennai-india",
+      "responseUrl": "https://careers.bio-rad.com/jobs/trade-compliance-spec-iii-chennai-india",
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:23:36.276Z",
+      "sanitizedBodySha256": "56ff03becd3de8b11d367b58ea72b368528f6a4eec51b14e1de28a69e4c3229e",
+      "compressedSha256": "01a13a60d12212c8856b7c07c8558d31aa553c198033d19af0bb1177831a7403",
+      "bodyBytes": 137293
+    },
+    {
+      "file": "bio-sequential-home.json.gz",
+      "requestedUrl": "https://careers.bio-rad.com/india",
+      "finalUrl": "https://careers.bio-rad.com/india",
+      "responseUrl": "https://careers.bio-rad.com/india",
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:23:26.114Z",
+      "sanitizedBodySha256": "ab3fd0f0f9e1191042daf5d738f73208a472547b127aa694e18ccfab7f0bc0f3",
+      "compressedSha256": "6b447a745afbc7fa08cf1e77e9602a1077aadf61e16a50653b594f7f85e2f5d5",
+      "bodyBytes": 110822
+    },
+    {
+      "file": "bio-sequential-listing.json.gz",
+      "requestedUrl": "https://careers.bio-rad.com/jobs/search?country_codes%5B%5D=IN",
+      "finalUrl": "https://careers.bio-rad.com/jobs/search?country_codes%5B%5D=IN",
+      "responseUrl": "https://careers.bio-rad.com/jobs/search?country_codes%5B%5D=IN",
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:23:31.345Z",
+      "sanitizedBodySha256": "33324922d82f3e9f4171f8518fa17b755c71caee092e89e5be2f70c002cfeeb2",
+      "compressedSha256": "8c64105652ff595e9766d753b2559b0c532b31563ea916e26fbceab932c495f0",
+      "bodyBytes": 183533
+    },
+    {
+      "file": "native-4.json.gz",
+      "requestedUrl": "https://careers.bio-rad.com/jobs/information-security-spec-ii-remote-india",
+      "finalUrl": "https://careers.bio-rad.com/jobs/information-security-spec-ii-remote-india",
+      "responseUrl": "https://careers.bio-rad.com/jobs/information-security-spec-ii-remote-india",
+      "httpStatus": 202,
+      "capturedAt": "2026-10-24T16:21:14.553Z",
+      "sanitizedBodySha256": "1f78e3aad3882f5a3f3b645b87556f2522aca345bdb7efd1c2289ffab9960dd3",
+      "compressedSha256": "0c4697e792763339625edf899200bd2fabc90632878fec883dacfbe16214ee29",
+      "bodyBytes": 1349
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
 import { setImmediate } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 
@@ -7,7 +8,23 @@ import { runWorkdayScraper } from '../myworkday/engine.js'
 import { WorkdayRequestScheduler } from '../myworkday/requestScheduler.js'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
-const exercise = async (t, { count = 192, mode = 'complete', grouped = false, ...overrides } = {}) => {
+const applyWorkflowWorkdayEnv = t => {
+  const workflow = readFileSync(new URL('../../.github/workflows/scraper.yml', import.meta.url), 'utf8')
+  const keys = ['WORKDAY_SCRAPER_TIMEOUT_MS', 'WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS',
+    'WORKDAY_REQUEST_TIMEOUT_MS', 'WORKDAY_DETAIL_FETCH_CONCURRENCY']
+  for (const key of keys) {
+    const previous = process.env[key]
+    const value = workflow.match(new RegExp('^\\s+' + key + ':\\s*[\'\"]?(\\d+)[\'\"]?\\s*$', 'm'))?.[1]
+    if (value === undefined) delete process.env[key]
+    else process.env[key] = value
+    t.after(() => {
+      if (previous === undefined) delete process.env[key]
+      else process.env[key] = previous
+    })
+  }
+}
+
+const exercise = async (t, { count = 192, mode = 'complete', grouped = false, fetchDelayMs = 0, ...overrides } = {}) => {
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.parse('2026-10-21T00:00:00Z') })
   const startedAt = Date.now()
   const api = 'https://health-fixture.wd930.myworkdayjobs.com/wday/cxs/health-fixture/External'
@@ -16,6 +33,9 @@ const exercise = async (t, { count = 192, mode = 'complete', grouped = false, ..
     locationsText: grouped ? '2 Locations' : 'Bangalore, India',
   }))
   const requests = []
+  const requestStarts = []
+  let active = 0
+  let maxActive = 0
   t.mock.method(globalThis, 'fetch', async (url, init = {}) => {
     if (init.method === 'POST') {
       const { offset, limit } = JSON.parse(init.body)
@@ -23,6 +43,14 @@ const exercise = async (t, { count = 192, mode = 'complete', grouped = false, ..
     }
     if (!String(url).includes('/job/')) return new Response('<html>Workday careers</html>')
     requests.push(String(url))
+    requestStarts.push(Date.now())
+    active += 1
+    maxActive = Math.max(maxActive, active)
+    if (fetchDelayMs) await new Promise(resolve => setTimeout(resolve, fetchDelayMs))
+    active -= 1
+    if (mode === 'rate-limited') return new Response('Too many requests', {
+      status: 429, headers: { 'retry-after': '1' },
+    })
     if (mode === 'upstream') return new Response('Request blocked', { status: 403 })
     if (!String(url).includes('/wday/cxs/')) return new Response('<html>No description</html>')
     const role = roles.find(role => String(url) === api + role.externalPath)
@@ -50,8 +78,31 @@ const exercise = async (t, { count = 192, mode = 'complete', grouped = false, ..
   assert.ok(completion, 'The finite budget must settle rather than leave background work alive')
   await run
   if (completion.error) throw completion.error
-  return { jobs: completion.jobs, requests, elapsedMs: Date.now() - startedAt }
+  return { jobs: completion.jobs, requests, requestStarts, maxActive, elapsedMs: Date.now() - startedAt }
 }
+
+test('production workflow completes a paced 192-role native-detail workload within its source deadline', async t => {
+  applyWorkflowWorkdayEnv(t)
+  const sourceTimeoutMs = Number(process.env.WORKDAY_SCRAPER_TIMEOUT_MS)
+  const { jobs, requests, requestStarts, maxActive, elapsedMs } = await exercise(t, { fetchDelayMs: 500 })
+  assert.equal(jobs.length, 192)
+  assert.equal(jobs.filter(job => job.sourceDetailComplete === true).length, 192)
+  assert.equal(requests.length, 192)
+  assert.ok(maxActive > 1 && maxActive <= 4, 'Native details must overlap only within the shard request capacity')
+  assert.ok(requestStarts.slice(1).every((start, index) => start - requestStarts[index] >= 250),
+    'Overlapping fetches must retain the shared shard start interval')
+  assert.ok(elapsedMs < sourceTimeoutMs)
+})
+
+test('production workflow detail workers retain shard Retry-After cooldowns', async t => {
+  applyWorkflowWorkdayEnv(t)
+  const { jobs, requests, requestStarts } = await exercise(t, { count: 12, mode: 'rate-limited' })
+  assert.ok(requests.length > 1 && requests.length <= 4)
+  assert.ok(requestStarts.slice(1).every((start, index) => start - requestStarts[index] >= 1000),
+    'Each in-flight worker must respect a previous detail worker\'s server cooldown')
+  assert.equal(jobs.length, 12)
+  assert.ok(jobs.every(job => job.sourceDetailComplete === false && job.sourceDetailFailureKind === 'upstream'))
+})
 
 test('implicit Workday detail budget accounts for the current paced workload instead of dropping a large inventory tail', async t => {
   const { jobs, requests } = await exercise(t)

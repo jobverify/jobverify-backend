@@ -179,7 +179,7 @@ const isDirectExecution = process.argv[1]
   ?.replaceAll('\\', '/')
   .endsWith('/scraper/okinawaautotech/script.js')
 
-if (isDirectExecution || process.argv.includes('--dry-run')) {
+if (isDirectExecution) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 

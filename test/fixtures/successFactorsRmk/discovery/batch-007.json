@@ -19,7 +19,7 @@
     "productionPublication": false
   },
   "summary": {
-    "investigated": 20,
+    "investigated": 19,
     "officialIdentities": 19,
     "officialCareerSurfaces": 16,
     "indexedOfficialCareerSurfaceCurrentlyInaccessible": [
@@ -46,7 +46,6 @@
       "asics"
     ],
     "verifiedVendorWithoutCompanyToken": [
-      "asianpaints",
       "assurant",
       "astellaspharma"
     ],
@@ -56,7 +55,6 @@
   "recommendations": {
     "currentIndiaDiscoveryLeads": [
       "arup",
-      "asianpaints",
       "asml",
       "asmlholding",
       "assurant",
@@ -530,69 +528,6 @@
         "proof/batch-007-open-19.json",
         "proof/batch-007-open-27.json",
         "proof/batch-007-open-32.json"
-      ]
-    },
-    {
-      "source": "asianpaints",
-      "companyName": "Asian Paints",
-      "officialURL": "https://www.asianpaints.com/",
-      "careersURL": "https://careers.asianpaints.com/search/",
-      "ats": {
-        "kind": "sap-career-site",
-        "token": null,
-        "host": "careers.asianpaints.com",
-        "boardURL": "https://careers.asianpaints.com/search/",
-        "handoffScope": "SAP vendor explicitly named in official career-site cookie disclosure; exact product/company token not exposed. Official role Apply stays on branded talentcommunity route.",
-        "vendor": "SAP",
-        "product": null
-      },
-      "checkedAt": "2026-10-20T19:05:33.582Z",
-      "disposition": "official-surface-verified-discovery-only",
-      "officialIdentityEvidenceStatus": "current-official-page",
-      "officialCareerSurfaceVerified": true,
-      "officialMatchedLinks": [
-        {
-          "from": "https://careers.asianpaints.com/search/",
-          "to": "https://careers.asianpaints.com/job/Bangalore-EXECUTIVE-N-WOOD-FINISHES-TECHNOLOGIST-KA/1401928000/",
-          "evidence": "Current listing link16 clicked, turn438view0."
-        },
-        {
-          "from": "https://careers.asianpaints.com/job/Bangalore-EXECUTIVE-N-WOOD-FINISHES-TECHNOLOGIST-KA/1401928000/",
-          "to": "https://careers.asianpaints.com/talentcommunity/apply/1401928000/?locale=en_GB",
-          "evidence": "Apply now link5 clicked; target Cache miss, turn441view0."
-        }
-      ],
-      "currentExtraction": {
-        "status": "not-run-discovery-only",
-        "verifiedPublicJobCount": null,
-        "verifiedIndiaJobCount": null,
-        "runtimeQualified": false
-      },
-      "observedIndiaRoles": [
-        {
-          "title": "EXECUTIVE N - WOOD FINISHES TECHNOLOGIST",
-          "location": "Bangalore, Karnataka, India",
-          "url": "https://careers.asianpaints.com/job/Bangalore-EXECUTIVE-N-WOOD-FINISHES-TECHNOLOGIST-KA/1401928000/",
-          "jobId": "15016",
-          "evidenceStatus": "current-official-listing-and-description-observed",
-          "freshnessNote": "Role detail cache is older than the current listing; application fetch unavailable. This remains a discovery lead."
-        }
-      ],
-      "blockedReason": "Discovery only: no runtime extraction, completeness gate, native detail-health check or production publication validation was run; runtime counts remain unknown.",
-      "aliases": [],
-      "notes": [
-        "The current search page exposes many India cards and pagination; no displayed total was promoted to a runtime count.",
-        "Workday-like source directory suffix is historical catalog metadata and does not override actual SAP-branded career-site evidence.",
-        "SAP vendor is verified; the exact native product/opaque company token remains unknown rather than assumed."
-      ],
-      "proofFiles": [
-        "proof/batch-007-search-04.json",
-        "proof/batch-007-search-10.json",
-        "proof/batch-007-open-09.json",
-        "proof/batch-007-open-20.json",
-        "proof/batch-007-click-13.json",
-        "proof/batch-007-click-16.json",
-        "proof/batch-007-click-17.json"
       ]
     },
     {
@@ -1249,349 +1184,14 @@
   ],
   "proofIntegrity": [
     {
-      "path": "proof/batch-007-selection.json",
-      "sha256": "2658d2876067968aaced7634aa58ddeaafb10c0d479d5b1a7a373b7fcb266e15",
-      "bytes": 9971
-    },
-    {
-      "path": "proof/batch-007-search-01.json",
-      "sha256": "5bdd0f68ade78f32cc30c8e01cbbda2b7041319635f070b90df80da0174bbc87",
-      "bytes": 39828
-    },
-    {
-      "path": "proof/batch-007-search-02.json",
-      "sha256": "6879685e1a4545df61a717de3e7ce17cafb0e9354bceb4dda58252063612eb23",
-      "bytes": 34005
-    },
-    {
-      "path": "proof/batch-007-search-07.json",
-      "sha256": "f372ce301df7620d86d77c299d5edfb93274cb89d1b7000d0823c54475e6121f",
-      "bytes": 36770
-    },
-    {
-      "path": "proof/batch-007-search-08.json",
-      "sha256": "2d54b7285d6e6e3ddf76ba12b57049809c6feb99768d01fb0045297962edfed1",
-      "bytes": 29448
-    },
-    {
-      "path": "proof/batch-007-search-17.json",
-      "sha256": "10e9163d84e41d85a5944ba9d79553d1d0144488cc3555578bca6597d52bcf36",
-      "bytes": 35345
-    },
-    {
-      "path": "proof/batch-007-search-11.json",
-      "sha256": "f5f83746f8ddbbb19cab7c1644b41a308ceca957c1cfc94f592038aab851bba4",
-      "bytes": 33532
-    },
-    {
-      "path": "proof/batch-007-search-13.json",
-      "sha256": "5c0d58b0fd3fbf63871aad6db3a92c3e8b3e0bc70eb450340e9a5280bf23b7d5",
-      "bytes": 29152
-    },
-    {
-      "path": "proof/batch-007-open-01.json",
-      "sha256": "23390b651c493b40a6435eccd44c4e3bfd251063a5ba982f48f65b1647d938ca",
-      "bytes": 4171
-    },
-    {
-      "path": "proof/batch-007-open-29.json",
-      "sha256": "bb662326a2d7e46165380ee53301502fb7e82cc6ddd36e1ca59291ff51c1d73a",
-      "bytes": 3349
-    },
-    {
-      "path": "proof/batch-007-open-31.json",
-      "sha256": "b2e282b1d7a5377512bca837b06d7637098189835457cd51932bfa3f87c3459e",
-      "bytes": 3273
-    },
-    {
-      "path": "proof/batch-007-click-01.json",
-      "sha256": "055562d8e978d8e77cd7ad1612f02af48a344ffd25aa23e4fe67ef4ec169f59c",
-      "bytes": 538
-    },
-    {
-      "path": "proof/batch-007-click-15.json",
-      "sha256": "b0be57e2a4499477f0c6de1f216be408c6e4bbf0ed5d178f8434e6466d0e6749",
-      "bytes": 2834
-    },
-    {
-      "path": "proof/batch-007-search-09.json",
-      "sha256": "dcd54ccd94c928a4149b789c989c8c969251421f5f0cea0ec586684c143902b8",
-      "bytes": 41704
-    },
-    {
-      "path": "proof/batch-007-search-12.json",
-      "sha256": "965388a30c4be15314d3d6a0e0234c8e20ea9859fee89a32456f9b2b7a48af02",
-      "bytes": 40505
-    },
-    {
-      "path": "proof/batch-007-search-15.json",
-      "sha256": "29915c17f83e60a2eb7ab786a273cd9ba0f55d2f24ad2188fa11b4c7bed2d0f6",
-      "bytes": 15661
-    },
-    {
-      "path": "proof/batch-007-open-02.json",
-      "sha256": "136944c55bef865ce0832fdeac41ed8d49e683b415981bcc23c36b0a7d04df0c",
-      "bytes": 6765
-    },
-    {
-      "path": "proof/batch-007-open-03.json",
-      "sha256": "8b569c846409324225e951aa54fb9e6126e1ad9d841dcbe30c832bf338006557",
-      "bytes": 4441
-    },
-    {
-      "path": "proof/batch-007-click-27.json",
-      "sha256": "b8a6ad9da8f9cfbd945edce0f5728290da5c68574f41ee42834566ad1c762a17",
-      "bytes": 512
-    },
-    {
-      "path": "proof/batch-007-search-03.json",
-      "sha256": "c00b3681689539e3475c963674c4c3862a692615f121011386213a5f2a1a8d91",
-      "bytes": 37832
-    },
-    {
       "path": "proof/batch-007-search-10.json",
       "sha256": "cdf366ac10e13cca3be70f1476eb182c010b27201cba704716ac4cb44df13638",
       "bytes": 32899
     },
     {
-      "path": "proof/batch-007-open-04.json",
-      "sha256": "0a47e2d630e1331b56cb82bcf60e32bef9e0e93ca43919b9cb3fd82d44e3c32f",
-      "bytes": 5192
-    },
-    {
-      "path": "proof/batch-007-open-21.json",
-      "sha256": "d7d44d1efe478396ad5909ca41f64e463bfbf3d5bf4dd03fed5ac1079e3e9a97",
-      "bytes": 7071
-    },
-    {
-      "path": "proof/batch-007-open-22.json",
-      "sha256": "332a62b8befa9a19d08dfcf57b57dc47acd2c812256b5d71b9fa94cd33a481df",
-      "bytes": 6788
-    },
-    {
-      "path": "proof/batch-007-click-02.json",
-      "sha256": "611d96f686f82d8542f6b6b5c031a17172663ec8946b6f60c8dae68d25c8ac7f",
-      "bytes": 517
-    },
-    {
-      "path": "proof/batch-007-click-14.json",
-      "sha256": "565244e3093fe057d6d37d2ad992572792f3e2253357be0c3f4ee5a06c673fbe",
-      "bytes": 556
-    },
-    {
-      "path": "proof/batch-007-click-22.json",
-      "sha256": "20c0fac564576f1ca230b3e7540dfcc204550e037a31aa83c6f903ef4b8c904a",
-      "bytes": 8375
-    },
-    {
-      "path": "proof/batch-007-open-05.json",
-      "sha256": "2c44da8949b5a23f9b0d068b0562857b44995f356d995b7536983fdaf69fc7b0",
-      "bytes": 15893
-    },
-    {
-      "path": "proof/batch-007-click-03.json",
-      "sha256": "536d78a09afccfc18cec43ebf361908e60cc1eae4a5ba883ec8c91426ddf0b55",
-      "bytes": 24142
-    },
-    {
-      "path": "proof/batch-007-search-14.json",
-      "sha256": "6ef2fd3e6671cebee645a338e8be35fe6020ae393e32c54ff8e174cb420cfe81",
-      "bytes": 37678
-    },
-    {
-      "path": "proof/batch-007-open-06.json",
-      "sha256": "ecb070b2b34a2e1809555e5e11406b05110ea1b568e92681faaf12010bf1776a",
-      "bytes": 9483
-    },
-    {
-      "path": "proof/batch-007-open-26.json",
-      "sha256": "739ddbfa0c2936da90b949581b8bb66dbe971600cb4f9fd059a30e1d9cc8b59f",
-      "bytes": 12885
-    },
-    {
-      "path": "proof/batch-007-click-19.json",
-      "sha256": "9c8763a7896f4a2822fc05b0d8e1cb5b9ca468f320fe5be321716b8ba9c2ded9",
-      "bytes": 5649
-    },
-    {
-      "path": "proof/batch-007-click-20.json",
-      "sha256": "74cca9202fb3c6b5ab6ef7eb9c7d7a4d477c05999643e7677c586af6b49b6d30",
-      "bytes": 12094
-    },
-    {
-      "path": "proof/batch-007-click-23.json",
-      "sha256": "b1eacef1ef75e5dac1d6b97c8bcc9a8c81e8e32c27a43c8a92a82b65cd8c381e",
-      "bytes": 12866
-    },
-    {
-      "path": "proof/batch-007-open-07.json",
-      "sha256": "1e2704fb5f2299fdba29f8b19515ee95796abd8be3d30302a92696706b5144ce",
-      "bytes": 1657
-    },
-    {
       "path": "proof/batch-007-search-04.json",
       "sha256": "15e3bf71f8c43a45851715758bba356d95e4e1e70136d6061664a2d39480e83b",
       "bytes": 37549
-    },
-    {
-      "path": "proof/batch-007-open-08.json",
-      "sha256": "3944d4cfc6de4c27c9354ba3e2d202fa8d15c415159eb18fd58b4ddbe1fd0a00",
-      "bytes": 532
-    },
-    {
-      "path": "proof/batch-007-open-19.json",
-      "sha256": "8ca6dc594e822c18e8c3d607c7329558064c8dfa66f19c83d981ef15601f9214",
-      "bytes": 587
-    },
-    {
-      "path": "proof/batch-007-open-27.json",
-      "sha256": "c9fdd853757267bd3a17fa7e50019d85eefdef5c462ecf87fac8814b38cbbd40",
-      "bytes": 571
-    },
-    {
-      "path": "proof/batch-007-open-32.json",
-      "sha256": "f576bd38ae3625113e7d0c8387ea22fc5cb785d074f987da27497ed84f986838",
-      "bytes": 649
-    },
-    {
-      "path": "proof/batch-007-open-09.json",
-      "sha256": "749f6dd1d202fc5464da6a3f7078dc9d421bc17baa107f28e835fd7aa2924654",
-      "bytes": 554
-    },
-    {
-      "path": "proof/batch-007-open-20.json",
-      "sha256": "03a7623e76d66441e2039b6197aa74981df0a26fec741c8a668acbb3830692fc",
-      "bytes": 10485
-    },
-    {
-      "path": "proof/batch-007-click-13.json",
-      "sha256": "e8d678ac80f8b63d6db4e8a11db105b61d3b852c83bbdbf0085d5e224bf43c99",
-      "bytes": 10444
-    },
-    {
-      "path": "proof/batch-007-click-16.json",
-      "sha256": "0c487e519554695931b2081fccbe13947f4a5c0f77dc4f39d2c51184819ee5b2",
-      "bytes": 7520
-    },
-    {
-      "path": "proof/batch-007-click-17.json",
-      "sha256": "f3ab2e818fa9074bfa161ca463f9b1ccda20ca1e7cd07272ed83b10ac7eb6a06",
-      "bytes": 561
-    },
-    {
-      "path": "proof/batch-007-open-10.json",
-      "sha256": "246f5d8b4c8523e0430c3ca94251ae7cefa3be69c9eb39c2f07a46c4dcd6baf7",
-      "bytes": 7912
-    },
-    {
-      "path": "proof/batch-007-click-04.json",
-      "sha256": "194d08d2c37bc6863e58874285db22af41f90b8cd979dc29bc542c09668dae8c",
-      "bytes": 6451
-    },
-    {
-      "path": "proof/batch-007-click-10.json",
-      "sha256": "1097b143f0b749000bce07a7dbedcdd36e6d60dda31242ac68d6b11a5ddfc094",
-      "bytes": 3988
-    },
-    {
-      "path": "proof/batch-007-click-24.json",
-      "sha256": "161f9f2053b02f82d4f606be36b7f6802726bae97be27dc9c8b87cccf6380ca5",
-      "bytes": 586
-    },
-    {
-      "path": "proof/batch-007-open-11.json",
-      "sha256": "9f9a36cf29d72b6214b525380ce6ee44f70544eda457b97b75601640e52a561e",
-      "bytes": 9505
-    },
-    {
-      "path": "proof/batch-007-open-23.json",
-      "sha256": "7c2de144e49b9c8e7568a9cab4fb98133438ddd571049a5fa606869e01b4a5a7",
-      "bytes": 10020
-    },
-    {
-      "path": "proof/batch-007-open-34.json",
-      "sha256": "e02a95de8508839fe3c808cf97f543713908cb0adaa9abc6bf1fd501d9dc96ff",
-      "bytes": 7000
-    },
-    {
-      "path": "proof/batch-007-click-05.json",
-      "sha256": "e3de5264cbd15671345970c5027c9ba55c3972d2b8d14dd024f150de38d4e582",
-      "bytes": 4844
-    },
-    {
-      "path": "proof/batch-007-click-28.json",
-      "sha256": "41eb2bd0a08a89334bf539d8b7adbe00d450c6cfb1afe2bd8ed50be9863f4599",
-      "bytes": 9489
-    },
-    {
-      "path": "proof/batch-007-open-30.json",
-      "sha256": "a3abd675a1b2a4cf275d204e2126e2a358817ef76f2f6aa1665a791828c7d5b4",
-      "bytes": 691
-    },
-    {
-      "path": "proof/batch-007-search-05.json",
-      "sha256": "40762fabf850f9a7a94a93fb72a476a1243b89359578a3f341232eda09f49c9f",
-      "bytes": 39060
-    },
-    {
-      "path": "proof/batch-007-search-16.json",
-      "sha256": "efab57eb6f9e076dbd561f6d65e4b05a99f01f4f856707f615a3df2e6c87ccbe",
-      "bytes": 40995
-    },
-    {
-      "path": "proof/batch-007-open-12.json",
-      "sha256": "ac9d62352652213b52b4380457ca034f0fdcac6282458b77395971870fe1f7d3",
-      "bytes": 18688
-    },
-    {
-      "path": "proof/batch-007-open-33.json",
-      "sha256": "0f692227714471fa5d31e57b8ce09a1665cf51d7be2b92aef62e00d8ff8a8e9d",
-      "bytes": 762
-    },
-    {
-      "path": "proof/batch-007-click-06.json",
-      "sha256": "34369f9b2bb3797839618a723c4f8d0307de40dda462a86eced30d9e129022f2",
-      "bytes": 564
-    },
-    {
-      "path": "proof/batch-007-open-13.json",
-      "sha256": "89e67e67db898cd2376679e8f48bbbc4942123b40e155b387b7d035c16140b6c",
-      "bytes": 16593
-    },
-    {
-      "path": "proof/batch-007-click-07.json",
-      "sha256": "eb1182f2a63cfe916cab77fdf73e719e445645cef4981db478ff1d837a1729ed",
-      "bytes": 11846
-    },
-    {
-      "path": "proof/batch-007-click-11.json",
-      "sha256": "f887df8639d0bc6bfe6dc0a81d298a383dfb7f8c4ac293e528bd34d849cd8c60",
-      "bytes": 578
-    },
-    {
-      "path": "proof/batch-007-open-14.json",
-      "sha256": "5a8853d5c7670eb9c4be1953bccff879aa4c2546ffe5ccdd5e15da400ec51156",
-      "bytes": 17068
-    },
-    {
-      "path": "proof/batch-007-click-08.json",
-      "sha256": "e6c52e57536a821500e3e8d7247e7f34fe9b6c541a914944b40a48f7d166d758",
-      "bytes": 3593
-    },
-    {
-      "path": "proof/batch-007-open-15.json",
-      "sha256": "a81704e4273a5852247b3b2128b07e77e492276657d1c06a329e8215dbe00332",
-      "bytes": 16475
-    },
-    {
-      "path": "proof/batch-007-open-24.json",
-      "sha256": "46897a04c4fee020b69ed7d8507266528d28b783925b62e6955af61739872f5f",
-      "bytes": 16899
-    },
-    {
-      "path": "proof/batch-007-click-21.json",
-      "sha256": "5dd407847b16cc482959ae515ea7fe826358c2115a55287b1062f12cb57bd3a6",
-      "bytes": 614
     },
     {
       "path": "proof/batch-007-search-06.json",
@@ -1622,41 +1222,6 @@
       "path": "proof/batch-007-click-29.json",
       "sha256": "977764253696a4543a474a7ac215779b7a17badd3b2b4260a4187770ee5c60e5",
       "bytes": 9555
-    },
-    {
-      "path": "proof/batch-007-open-17.json",
-      "sha256": "300b30e343baf35089aa22806d1ba4217882813a2505212551931069686accb2",
-      "bytes": 5055
-    },
-    {
-      "path": "proof/batch-007-click-12.json",
-      "sha256": "ff37a7398e381a45acfb0e39c4d38f362814aa18b4f66ee97a7f80007bf8290a",
-      "bytes": 14715
-    },
-    {
-      "path": "proof/batch-007-click-25.json",
-      "sha256": "fe4524efb31f70beb61d7f441821282be868f6528f44c2fe737b697ba6926841",
-      "bytes": 11868
-    },
-    {
-      "path": "proof/batch-007-click-26.json",
-      "sha256": "b795150268834b37f283f736350369b574c5c85b395cfb29ccd3d82361e3c690",
-      "bytes": 13170
-    },
-    {
-      "path": "proof/batch-007-open-18.json",
-      "sha256": "4708d288bd009263456d4fb11ca7c64f5513e907f7ad5a4311c9a88c8702650b",
-      "bytes": 7740
-    },
-    {
-      "path": "proof/batch-007-open-28.json",
-      "sha256": "8875faf862992b67c1ac4b21649c7609ccbeb353db9b27014d6595ae0146f87d",
-      "bytes": 712
-    },
-    {
-      "path": "proof/batch-007-click-09.json",
-      "sha256": "b24a93f0f4a049aacea08a147ab1f32de1cc6530f7aebdb356e92bc6ab470642",
-      "bytes": 582
     }
   ],
   "proofValidation": {

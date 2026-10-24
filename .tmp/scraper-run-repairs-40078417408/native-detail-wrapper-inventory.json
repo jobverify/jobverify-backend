@@ -1,0 +1,801 @@
+{
+  "registeredScriptEngineCalls": 86,
+  "workday": 53,
+  "phenom": 33,
+  "signalOnlyWrappers": [
+    "alation",
+    "alteryx",
+    "browserstack",
+    "cloudera",
+    "crowdstrikeindia",
+    "f5",
+    "cerence",
+    "chegg",
+    "imeg",
+    "lseg",
+    "magnaautomotive",
+    "mavenir",
+    "ohmiumoperationspltd",
+    "revature",
+    "siliconlabsindia",
+    "telstra",
+    "riministreet",
+    "zebratechnologies"
+  ],
+  "rows": [
+    {
+      "source": "abb",
+      "file": "scraper\\abb.workday\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "alation",
+      "file": "scraper\\alation.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "alteryx",
+      "file": "scraper\\alteryx.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "browserstack",
+      "file": "scraper\\browserstack.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "cloudera",
+      "file": "scraper\\cloudera.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "crowdstrikeindia",
+      "file": "scraper\\crowdstrikeindia.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "f5",
+      "file": "scraper\\f5.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "adobe",
+      "file": "scraper\\adobe\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "allianz",
+      "file": "scraper\\allianz\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "alphawavesemiindia",
+      "file": "scraper\\alphawavesemiindia.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "appdynamics",
+      "file": "scraper\\appdynamics\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "aptosindia",
+      "file": "scraper\\aptosindia.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "arcticwolfindia",
+      "file": "scraper\\arcticwolfindia.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "athenahealth",
+      "file": "scraper\\athenahealth\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "avantor",
+      "file": "scraper\\avantor\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "bcg",
+      "file": "scraper\\bcg\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "beckmancoulterdiagnostics",
+      "file": "scraper\\beckmancoulterdiagnostics\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "bentleysystems",
+      "file": "scraper\\bentleysystems\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "cerence",
+      "file": "scraper\\cerence.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "chegg",
+      "file": "scraper\\chegg.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "cisco",
+      "file": "scraper\\cisco\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "cloudlending",
+      "file": "scraper\\cloudlending.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "collinsaerospace",
+      "file": "scraper\\collinsaerospace\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "danahercorporation",
+      "file": "scraper\\danahercorporation\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "dedalus",
+      "file": "scraper\\dedalus.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "einfochips",
+      "file": "scraper\\einfochips.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "enfusion",
+      "file": "scraper\\enfusion.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "everest",
+      "file": "scraper\\everest.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "evolenthealth",
+      "file": "scraper\\evolenthealth.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "expedia",
+      "file": "scraper\\expedia\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "factset",
+      "file": "scraper\\factset.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "finastra",
+      "file": "scraper\\finastra.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "geaerospace",
+      "file": "scraper\\geaerospace\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "gianteagle",
+      "file": "scraper\\gianteagle\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "havasindia",
+      "file": "scraper\\havasindia.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "hotstar",
+      "file": "scraper\\hotstar.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "hpe",
+      "file": "scraper\\hpe\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "iginfotechindia",
+      "file": "scraper\\iginfotechindia.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "imeg",
+      "file": "scraper\\imeg.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "insightsoftware",
+      "file": "scraper\\insightsoftware.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "itronindia",
+      "file": "scraper\\itronindia.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "juniper",
+      "file": "scraper\\juniper\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "kbr",
+      "file": "scraper\\kbr\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "latticesemiconductorindia",
+      "file": "scraper\\latticesemiconductorindia\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "leicabiosystems",
+      "file": "scraper\\leicabiosystems\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "lexmarkindia",
+      "file": "scraper\\lexmarkindia\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "lowesindia",
+      "file": "scraper\\lowesindia\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "lseg",
+      "file": "scraper\\lseg.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "magnaautomotive",
+      "file": "scraper\\magnaautomotive.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "magnitudesoftware",
+      "file": "scraper\\magnitudesoftware.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "manhatten",
+      "file": "scraper\\manhatten\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "mars",
+      "file": "scraper\\mars\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "mavenir",
+      "file": "scraper\\mavenir.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "merck",
+      "file": "scraper\\merck\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "microfocus",
+      "file": "scraper\\microfocus\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "newfolddigital",
+      "file": "scraper\\newfolddigital.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "nttdataservices",
+      "file": "scraper\\nttdataservices\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "ohmiumoperationspltd",
+      "file": "scraper\\ohmiumoperationspltd.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "opentext",
+      "file": "scraper\\opentext\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "orangebusiness",
+      "file": "scraper\\orangebusiness\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "polaris",
+      "file": "scraper\\polaris.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "questglobal",
+      "file": "scraper\\questglobal\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "renaultgroup",
+      "file": "scraper\\renaultgroup\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "revature",
+      "file": "scraper\\revature.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "rocketindia",
+      "file": "scraper\\rocketindia\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "royalenfield",
+      "file": "scraper\\royalenfield\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "signifyinnovationlabs",
+      "file": "scraper\\signifyinnovationlabs\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "siliconlabsindia",
+      "file": "scraper\\siliconlabsindia.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "snowflake",
+      "file": "scraper\\snowflake\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "techwaveconsulting",
+      "file": "scraper\\techwaveconsulting\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "telstra",
+      "file": "scraper\\telstra.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "thermofisherscientific",
+      "file": "scraper\\thermofisherscientific\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "tranetechnologies",
+      "file": "scraper\\tranetechnologies\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "warnerbrosdiscovery",
+      "file": "scraper\\warnerbrosdiscovery\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "yokogawaindia",
+      "file": "scraper\\yokogawaindia.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "riministreet",
+      "file": "scraper\\riministreet.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "rocketsoftware",
+      "file": "scraper\\rocketsoftware\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "zebratechnologies",
+      "file": "scraper\\zebratechnologies.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": true
+    },
+    {
+      "source": "tricentis",
+      "file": "scraper\\tricentis.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "spheraindia",
+      "file": "scraper\\spheraindia\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "ecolab",
+      "file": "scraper\\ecolab.workday\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "insulet",
+      "file": "scraper\\insulet.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "fis",
+      "file": "scraper\\fis.workday\\script.js",
+      "engines": [
+        "phenom"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "fmc",
+      "file": "scraper\\fmc.workday\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "ptc",
+      "file": "scraper\\ptc\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    },
+    {
+      "source": "blackline",
+      "file": "scraper\\blackline\\script.js",
+      "engines": [
+        "myworkday"
+      ],
+      "contextFallback": true,
+      "signalOnlyDestructure": false
+    }
+  ]
+}

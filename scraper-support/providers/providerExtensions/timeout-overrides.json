@@ -28,10 +28,6 @@
     "scraperTimeoutMs": 1200000
   },
   {
-    "source": "roche",
-    "scraperTimeoutMs": 1200000
-  },
-  {
     "source": "salesforce",
     "scraperTimeoutMs": 1200000
   },

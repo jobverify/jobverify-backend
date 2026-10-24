@@ -6,6 +6,7 @@ import { setImmediate } from 'node:timers/promises'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { attachInventoryEvidence } from '../../utils/inventoryEvidence.js'
 
 const scenario = process.argv[2]
 const state = {
@@ -23,7 +24,8 @@ const source = (name, sourceLifecycleTimeoutMs = 0) => ({
   sourceLifecycleTimeoutMs,
   run: async () => {
     state.started.push(name)
-    return []
+    return attachInventoryEvidence([], { status: 'verified-empty', firstParty: true, listingComplete: true,
+      surface: 'https://example.invalid/careers', pagesFetched: 1, reportedTotal: 0, verifiedAt: new Date().toISOString() })
   },
 })
 globalThis.runnerLifecycleFixture = {

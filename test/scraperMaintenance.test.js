@@ -70,6 +70,25 @@ test('scraper purge removes linked MongoDB data and retains other sources, inclu
   assert.equal(await JobDatasetSummary.countDocuments({ key: 'public-active' }), 1);
   assert.equal((await purgeScraperData(reset)).deletedCount, 0, 'cleanup can be retried');
 
+  await t.test('history recomputation separates skipped and unavailable attempts while retaining partial jobs', async () => {
+    const runId = id();
+    await ScraperRun.collection.insertOne({ _id: runId, sources: {
+      'selected\uFF0Escraper': { success: true, jobsFound: 2 },
+      normalizedSkip: { success: false, skipped: true, jobsFound: 0 },
+      legacySkip: { success: true, skipped: true, jobsFound: 0 },
+      partial: { success: true, partial: true, jobsFound: 5, inserted: 2, updated: 3 },
+      blocked: { success: true, jobsFound: 0, zeroJobEvidence: 'blocked-zero' },
+      unverified: { success: true, jobsFound: 0, zeroJobEvidence: 'unverified-zero' },
+    } });
+    await purgeScraperData(reset);
+    const run = await ScraperRun.collection.findOne({ _id: runId });
+    assert.deepEqual(run.overall, { totalJobs: 5, sourcesSucceeded: 1, sourcesFailed: 2 });
+    assert.deepEqual(run.sources.partial, { success: true, partial: true, jobsFound: 5, inserted: 2, updated: 3 });
+    assert.equal(run.sources.normalizedSkip.skipped, true);
+    assert.equal(run.sources.legacySkip.skipped, true);
+    assert.equal(Object.hasOwn(run.sources, 'selected\uFF0Escraper'), false);
+  });
+
   await t.test('purge spans batches and clears references inserted during job deletion', async batch => {
     const jobs = Array.from({ length: 501 }, (_, index) => ({ _id: id(), fingerprint: `batch-${index}`, source: scraper.source, company: 'Selected', status: 'active' }));
     await Job.collection.insertMany(jobs);

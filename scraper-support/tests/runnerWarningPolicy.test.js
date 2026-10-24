@@ -8,19 +8,106 @@ import { fileURLToPath } from 'node:url'
 import { stageOutcome } from '../../src/pipeline/policy.js'
 
 const fixture = fileURLToPath(new URL('./fixtures/runnerWarningPolicy.js', import.meta.url))
-function runScenario(t, scenario, parallel) {
+function runScenario(t, scenario, parallel, { dryRun = false } = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'scraper-warning-policy-'))
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
-  const child = spawnSync(process.execPath, [fixture, scenario, directory, ...(parallel ? ['--parallel'] : [])], {
+  const child = spawnSync(process.execPath, [fixture, scenario, directory, ...(parallel ? ['--parallel'] : []), ...(dryRun ? ['--dry-run'] : [])], {
     encoding: 'utf8', timeout: 15_000,
   })
   assert.equal(child.error, undefined)
   const summaryPath = path.join(directory, 'summary.json')
-  return { ...child, state: JSON.parse(fs.readFileSync(path.join(directory, 'state.json'), 'utf8')),
+  return { ...child, directory, state: JSON.parse(fs.readFileSync(path.join(directory, 'state.json'), 'utf8')),
     summary: fs.existsSync(summaryPath) ? JSON.parse(fs.readFileSync(summaryPath, 'utf8')) : null }
 }
 for (const parallel of [false, true]) {
   const mode = parallel ? 'parallel' : 'sequential'
+  for (const dryRun of [false, true]) {
+    for (const { scenario, label, jobs } of [
+      { scenario: 'blocked-zero', label: 'UNAVAILABLE', jobs: 0 },
+      { scenario: 'unverified-zero', label: 'UNAVAILABLE', jobs: 0 },
+      { scenario: 'incomplete-details', label: 'PARTIAL', jobs: 1 },
+      { scenario: 'complete-inventory', label: 'OK', jobs: 1 },
+    ]) {
+      test(`${mode} ${dryRun ? 'dry' : 'live'} CLI logs normalized completion for ${scenario}`, t => {
+        const result = runScenario(t, scenario, parallel, { dryRun })
+        assert.equal(result.status, 0, result.stdout + result.stderr)
+        const lines = result.stdout.split(/\r?\n/).filter(line => line.includes('[broken]') && line.includes('India jobs'))
+        assert.equal(lines.length, 1)
+        if (label === 'OK') assert.match(lines[0], /^  (?:OK|✓) \[broken\] 1 India jobs/u)
+        else assert.ok(lines[0].startsWith(`  ${label} [broken] ${jobs} India jobs`), lines[0])
+        if (label !== 'OK') assert.doesNotMatch(lines[0], /\bOK\b|✓/u)
+        if (dryRun) {
+          const file = path.join(result.directory, 'broken.json')
+          assert.ok(lines[0].endsWith(` -> ${file}`), lines[0])
+          assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).length, jobs)
+        } else {
+          assert.match(lines[0], /\+1 fresh/)
+          assert.match(lines[0], /~2 updated/)
+        }
+        assert.ok(result.state.saved.includes('broken'))
+      })
+    }
+  }
+  for (const scenario of ['blocked-zero', 'unverified-zero']) {
+    test(`${mode} CLI reports ${scenario} as unavailable extraction after completing processing`, t => {
+      const result = runScenario(t, scenario, parallel)
+      assert.equal(result.status, 0, result.stdout + result.stderr)
+      const source = result.state.history.broken
+      assert.equal(source.success, false)
+      assert.equal(source.softFailure, true)
+      assert.equal(source.failureKind, 'coverage_gap')
+      assert.equal(source.zeroJobEvidence, scenario)
+      assert.equal(source.processingComplete, true)
+      assert.equal(result.summary.taskOutcomes.succeeded, 1)
+      assert.deepEqual(result.summary.extractionChecks, { complete: 1, incomplete: 1 })
+      assert.equal(stageOutcome('scraper', result.summary, result.status), 'completed')
+      assert.match(result.stdout, /Coverage gaps\s+\| 1/)
+    })
+  }
+  for (const scenario of ['incomplete-details', 'missing-evidence', 'incomplete-inventory', 'stale-evidence']) {
+    test(`${mode} CLI retains saved ${scenario} jobs as a terminal partial extraction`, t => {
+      const result = runScenario(t, scenario, parallel)
+      assert.equal(result.status, 0, result.stdout + result.stderr)
+      const source = result.state.history.broken
+      assert.equal(source.success, true)
+      assert.equal(source.partial, true)
+      assert.equal(source.processingComplete, true)
+      assert.equal(source.jobs, 1)
+      assert.equal(source.inserted, 1)
+      assert.equal(source.updated, 2)
+      assert.equal(result.state.persistenceOptions.broken.replaceExisting, false)
+      assert.equal(result.summary.inserted, 2)
+      assert.equal(result.summary.updated, 4)
+      assert.deepEqual(result.summary.extractionChecks, { complete: 1, incomplete: 1 })
+      assert.equal(stageOutcome('scraper', result.summary, result.status), 'completed')
+    })
+  }
+  test(`${mode} CLI permits cleanup only after complete current listing and details`, t => {
+    const result = runScenario(t, 'complete-inventory', parallel)
+    assert.equal(result.status, 0, result.stdout + result.stderr)
+    assert.equal(result.state.history.broken.success, true)
+    assert.notEqual(result.state.history.broken.partial, true)
+    assert.equal(result.state.history.broken.jobs, 1)
+    assert.notEqual(result.state.persistenceOptions.broken.replaceExisting, false)
+    assert.deepEqual(result.summary.extractionChecks, { complete: 2, incomplete: 0 })
+  })
+  test(`${mode} CLI keeps current verified empty inventories complete`, t => {
+    const result = runScenario(t, 'verified-empty', parallel)
+    assert.equal(result.status, 0, result.stdout + result.stderr)
+    assert.equal(result.state.history.broken.success, true)
+    assert.equal(result.state.history.broken.processingComplete, true)
+    assert.equal(result.state.persistenceOptions.broken.authoritativeEmpty, true)
+    assert.notEqual(result.state.persistenceOptions.broken.replaceExisting, false)
+    assert.deepEqual(result.summary.extractionChecks, { complete: 2, incomplete: 0 })
+  })
+  test(`${mode} CLI reports deactivated sources as skipped rather than successful extractions`, t => {
+    const result = runScenario(t, 'inactive', parallel)
+    assert.equal(result.status, 0, result.stdout + result.stderr)
+    assert.equal(result.summary.skipped, 1)
+    assert.equal(result.summary.taskOutcomes.succeeded, 1)
+    assert.deepEqual(result.summary.extractionChecks, { complete: 1, incomplete: 1 })
+    assert.match(result.stdout, /Skipped\s+\| 1/)
+  })
   test(`${mode} CLI warns for a failed source, saves the next source, and completes the scraper stage`, t => {
     const result = runScenario(t, 'source-failure', parallel)
     assert.equal(result.status, 0, result.stderr)

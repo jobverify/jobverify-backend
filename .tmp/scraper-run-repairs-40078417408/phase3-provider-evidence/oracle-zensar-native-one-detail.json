@@ -1,0 +1,133 @@
+{
+  "capturedAt": "2026-10-24T16:20:23.752Z",
+  "requestedUrl": "https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%22134637%22,siteNumber=CX_1",
+  "url": "https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%22134637%22,siteNumber=CX_1",
+  "status": 200,
+  "bodySha256": "4021cfeafdf4dc3230966e5e1bc4a02c4d18d967d408599fef6f330b4b5065d4",
+  "payload": {
+    "items": [
+      {
+        "Id": "134637",
+        "Title": "Oracle Recruiting Cloud(ORC) Functional",
+        "Category": null,
+        "RequisitionType": "Professional (Lateral, Experienced, Subcon Hiring)",
+        "JobGrade": null,
+        "RequisitionId": 300001062512880,
+        "ExternalPostedStartDate": "2026-10-23T15:12:43+00:00",
+        "JobLevel": null,
+        "JobSchedule": null,
+        "JobShift": "Day Job",
+        "StudyLevel": null,
+        "InternationalTravelRequired": null,
+        "ExternalContactName": null,
+        "ExternalContactEmail": null,
+        "ContractType": null,
+        "ExternalPostedEndDate": "2026-10-30T18:30:00+00:00",
+        "JobFamilyId": null,
+        "GeographyId": 100000012265123,
+        "GeographyNodeId": 300000250944646,
+        "ExternalDescriptionStr": "<ul>\n <li>Configurations of Job Requisition Templates, Geography Hierarchies, Candidate Selection Process (CSP) and CSP reasons, Job Application Flows, Career Site (Candidate Experience)</li>\n <li>Configurations of Recruiting Content Library such as Job Offer Templates, Disqualification questionnaire, Job specific questionnaire and Interview questionnaire, Involved in Requisition and Offer Approval Rules</li>\n <li>Experience in Career site configurations and Integrations with 3rd party applications</li>\n <li>Redwood UI transformation experience with hands on VB Studio</li>\n <li>Contextualize Journeys</li>\n <li>Guided Journeys</li>\n <li>Display properties for UI Changes</li>\n <li>Configurations of On-Boarding Check lists for Pre-Hire, New Hire</li>\n <li>Troubleshoot and optimize Redwood UX components and workflows.</li>\n <li>Provide end-user training, documentation, and post-implementation support.</li>\n <li>Participate in quarterly upgrade cycles and change control meetings.</li>\n <li>Excellent communication and stakeholder management skills</li>\n</ul>",
+        "CorporateDescriptionStr": "",
+        "OrganizationDescriptionStr": "",
+        "ShortDescriptionStr": "We are seeking an experienced Oracle Recruiting Cloud Functional Consultant with hands-on expertise in Oracle HCM Cloud and Redwood UI. The ideal candidate will lead the implementation, customization, and optimization of Oracle Recruiting Cloud (ORC) solutions, leveraging Redwood UX and Visual Builder Cloud Service (VBCS) to enhance user experience and streamline recruitment processes.",
+        "ContentLocale": "en",
+        "PrimaryLocation": "Telangana, India",
+        "PrimaryLocationCountry": "IN",
+        "ObjectVerNumberProfile": null,
+        "ApplyWhenNotPostedFlag": true,
+        "ExternalQualificationsStr": "",
+        "InternalQualificationsStr": "",
+        "InternalResponsibilitiesStr": "",
+        "ExternalResponsibilitiesStr": "",
+        "JobFunctionCode": null,
+        "HotJobFlag": false,
+        "TrendingFlag": true,
+        "BeFirstToApplyFlag": false,
+        "WorkplaceTypeCode": null,
+        "WorkplaceType": "",
+        "OtherRequisitionTitle": null,
+        "NumberOfOpenings": null,
+        "HiringManager": null,
+        "Organization": null,
+        "BusinessUnitId": 300000007812035,
+        "LegalEmployerId": 300000007701009,
+        "OrganizationId": 1,
+        "WorkerType": null,
+        "JobType": null,
+        "WorkMonths": null,
+        "WorkYears": null,
+        "WorkHours": null,
+        "WorkDays": null,
+        "LegalEmployer": null,
+        "BusinessUnit": null,
+        "Department": null,
+        "DomesticTravelRequired": null,
+        "JobFunction": null,
+        "secondaryLocations": [],
+        "media": [],
+        "workLocation": [
+          {
+            "LocationId": 300000007701993,
+            "LocationName": "HYDERABAD DLF SEZ",
+            "AddressLine1": "Block 3, 1st, 8th Floor,",
+            "AddressLine2": "Plot No.129-132, APHB Colony",
+            "AddressLine3": "Gachibowli",
+            "AddressLine4": null,
+            "Building": null,
+            "TownOrCity": "Hyderabad",
+            "PostalCode": "500019",
+            "Country": "IN",
+            "Region1": null,
+            "Region2": "Telangana",
+            "Region3": null,
+            "Longitude": "78.3115",
+            "Latitude": "17.47704"
+          }
+        ],
+        "otherWorkLocations": [],
+        "requisitionFlexFields": [
+          {
+            "Prompt": "Work from Anywhere",
+            "Value": "No",
+            "ControlType": "SingleChoiceList",
+            "SequenceNumber": 15
+          },
+          {
+            "Prompt": "Minimum Experience (In Years)",
+            "Value": "6",
+            "ControlType": "Decimal",
+            "SequenceNumber": 18
+          },
+          {
+            "Prompt": "Maximum Experience (In Years)",
+            "Value": "10",
+            "ControlType": "Decimal",
+            "SequenceNumber": 19
+          }
+        ],
+        "primaryLocationCoordinates": [
+          {
+            "GeographyNodeId": 300000250944646,
+            "GeographyId": 100000012265123,
+            "Latitude": "16.03563",
+            "Longitude": "77.92419",
+            "CountryCode": "IN"
+          }
+        ],
+        "skills": []
+      }
+    ],
+    "count": 1,
+    "hasMore": false,
+    "limit": 499,
+    "offset": 0,
+    "links": [
+      {
+        "rel": "self",
+        "href": "https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com:443/hcmRestApi/resources/11.13.18.05/recruitingCEJobRequisitionDetails",
+        "name": "recruitingCEJobRequisitionDetails",
+        "kind": "collection"
+      }
+    ]
+  }
+}

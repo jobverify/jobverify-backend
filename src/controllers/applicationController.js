@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import Application from '../models/Application.js';
 import TailoredResume from '../models/TailoredResume.js';
 import Job from '../models/Job.js';
-import { safeApplicationUrl } from '../services/applicationService.js';
+import { safeApplicationUrl, recordApplicationEvidence } from '../services/applicationService.js';
 import { respondWithInternalError } from '../utils/respondWithInternalError.js';
 
 const PAGE_SIZE = 20;
@@ -33,6 +33,8 @@ export async function getApplications(req, res) {
         canConfirm: { $ne: [{ $ifNull: ['$application._id', null] }, null] },
         firstOpenedAt: { $ifNull: ['$application.firstOpenedAt', null] },
         appliedAt: { $ifNull: ['$application.appliedAt', null] },
+        confirmationSource: { $ifNull: ['$application.confirmationSource', ''] },
+        evidence: { $ifNull: ['$application.evidence', []] },
         resumeStatus: '$status', resumeRequestedAt: { $ifNull: ['$requestedAt', '$createdAt'] },
         trackedAt: { $ifNull: ['$application.firstOpenedAt', { $ifNull: ['$requestedAt', '$createdAt'] }] },
         jobSnapshot: { $ifNull: ['$application.jobSnapshot', {
@@ -41,6 +43,18 @@ export async function getApplications(req, res) {
           applicationUrl: '$listing.applicationUrl', applyUrl: '$listing.applyUrl', sourceUrl: '$listing.sourceUrl',
         }] },
       } },
+      // Resume requests retain their existing place in the tracker. Applications
+      // made with another CV are equally durable and must not disappear here.
+      { $unionWith: { coll: Application.collection.name, pipeline: [
+        { $match: { user: new mongoose.Types.ObjectId(String(req.user._id)) } },
+        { $lookup: { from: TailoredResume.collection.name, let: { owner: '$user', jobId: '$job' }, pipeline: [
+          { $match: { $expr: { $and: [{ $eq: ['$user', '$$owner'] }, { $eq: ['$job', '$$jobId'] }] } } },
+          { $project: { _id: 1 } },
+        ], as: 'resume' } },
+        { $match: { 'resume.0': { $exists: false } } },
+        { $project: { job: 1, status: 1, firstOpenedAt: 1, appliedAt: 1, jobSnapshot: 1, evidence: 1, confirmationSource: 1,
+          canConfirm: { $literal: true }, trackedAt: '$firstOpenedAt' } },
+      ] } },
       { $facet: {
         items: [
           ...(status === 'all' ? [] : [{ $match: { status } }]),
@@ -72,17 +86,20 @@ export async function markApplicationApplied(req, res) {
     return res.status(400).json({ success: false, message: 'Invalid application ID.' });
   }
   try {
-    const filter = { _id: applicationId, user: req.user._id };
-    // Only the first manual confirmation sets the date. Repeated requests and
-    // reopening the employer page cannot change or clear that confirmation.
-    const application = await Application.findOneAndUpdate(
-      { ...filter, status: 'opened' },
-      { $set: { status: 'applied', appliedAt: new Date() } },
-      { new: true, runValidators: true },
-    ) ?? await Application.findOne(filter);
+    const application = await recordApplicationEvidence(req.user._id, applicationId, {
+      key: 'manual', source: 'self_reported', observedAt: new Date(), summary: 'Candidate confirmed submission on the employer website.',
+    });
     if (!application) return res.status(404).json({ success: false, message: 'Application not found.' });
     return res.status(200).json({ success: true, data: application });
   } catch (error) {
     return respondWithInternalError(res, error, { message: 'Could not save your application status.' });
   }
+}
+
+export async function getJobApplication(req, res) {
+  if (!mongoose.isObjectIdOrHexString(req.params.jobId)) return res.status(400).json({ success: false, message: 'Invalid job ID.' });
+  try {
+    const data = await Application.findOne({ user: req.user._id, job: req.params.jobId }).lean();
+    return res.json({ success: true, data });
+  } catch (error) { return respondWithInternalError(res, error, { message: 'Could not load your application.' }); }
 }

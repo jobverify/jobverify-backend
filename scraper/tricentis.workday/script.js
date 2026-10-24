@@ -28,10 +28,9 @@ export const run = async ({
   })
 
 const isDirectExecution = process.argv[1]
-  ?.replaceAll('\\', '/')
-  .endsWith('/scraper/tricentis/script.js')
+  && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 
-if (isDirectExecution || process.argv.includes('--dry-run')) {
+if (isDirectExecution) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
