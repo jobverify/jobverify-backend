@@ -41,6 +41,7 @@ test("retired-company purge removes only the selected provider data", async (t) 
       {
         _id: retiredJobId,
         title: "Retired Discovery role",
+        description: "Build reliable applications for the engineering team.",
         company: "Retired Discovery Co",
         source: "retired-co.wellfoundDirectory",
         fingerprint: "retired-discovery-fingerprint",
@@ -50,6 +51,7 @@ test("retired-company purge removes only the selected provider data", async (t) 
       {
         _id: retiredHimalayasJobId,
         title: "Retired Himalayas role",
+        description: "Build reliable applications for the engineering team.",
         company: "Retired Himalayas Co",
         source: "retired-co.himalayas.app",
         fingerprint: "retired-himalayas-fingerprint",
@@ -59,6 +61,7 @@ test("retired-company purge removes only the selected provider data", async (t) 
       {
         _id: keptJobId,
         title: "Kept role",
+        description: "Build reliable applications for the engineering team.",
         company: "Kept Co",
         source: "kept-co",
         fingerprint: "kept-fingerprint",
@@ -111,6 +114,11 @@ test("retired-company purge removes only the selected provider data", async (t) 
         "retired-co\uFF0EwellfoundDirectory": { success: true, jobsFound: 1 },
         "retired-co\uFF0Ehimalayas\uFF0Eapp": { success: true, jobsFound: 1 },
         "kept-co": { success: true, jobsFound: 1 },
+        "normalized-skip": { success: false, skipped: true, jobsFound: 0 },
+        "legacy-skip": { success: true, skipped: true, jobsFound: 0 },
+        "partial": { success: true, partial: true, jobsFound: 5, inserted: 2, updated: 3 },
+        "blocked": { success: true, jobsFound: 0, zeroJobEvidence: 'blocked-zero' },
+        "unverified": { success: true, jobsFound: 0, zeroJobEvidence: 'unverified-zero' },
       },
       overall: { totalJobs: 3, sourcesSucceeded: 3, sourcesFailed: 0 },
     });
@@ -150,15 +158,17 @@ test("retired-company purge removes only the selected provider data", async (t) 
     assert.deepEqual(user.savedJobs, [retiredHimalayasJobId, keptJobId]);
     assert.deepEqual(user.profile.profilePreferenceFilters.company, ["Retired Himalayas Co", "Kept Co"]);
     assert.deepEqual(user.profile.telegramAlertFilters.company, ["Retired Himalayas Co", "Kept Co"]);
+    assert.deepEqual(scraperRun.overall, {
+      totalJobs: 7,
+      sourcesSucceeded: 3,
+      sourcesFailed: 2,
+    });
     assert.deepEqual(summary.companies, ["Kept Co", "Retired Himalayas Co"]);
     assert.equal(summary.totalJobs, 2);
     assert.equal(summary.totalCompanies, 2);
-    assert.deepEqual(Object.keys(scraperRun.sources), ["retired-co\uFF0Ehimalayas\uFF0Eapp", "kept-co"]);
-    assert.deepEqual(scraperRun.overall, {
-      totalJobs: 2,
-      sourcesSucceeded: 2,
-      sourcesFailed: 0,
-    });
+    assert.deepEqual(Object.keys(scraperRun.sources), ["retired-co\uFF0Ehimalayas\uFF0Eapp", "kept-co",
+      "normalized-skip", "legacy-skip", "partial", "blocked", "unverified"]);
+    assert.deepEqual(scraperRun.sources.partial, { success: true, partial: true, jobsFound: 5, inserted: 2, updated: 3 });
     assert.equal(await database.collection("clicks").countDocuments({}), 2);
     assert.equal(await database.collection("jobalertdeliveries").countDocuments({}), 2);
     assert.equal(await database.collection("adminaudits").countDocuments({}), 4);

@@ -39,9 +39,11 @@ const portalShellHtml = `
 `
 
 const samplePayload = {
+  messageCode: { code: 200, messages: 'success' },
   totalRecords: 2,
   response: [
     {
+      organizationUnitComplete: 'NewVison>New Vision Softcom & Consultancy Pvt. Ltd>Business Units (BU)>Product Engineering>Application Development',
       organizationUnit: 'Product Engineering',
       jobPostedDate: '2026-07-17',
       locationHierarchyComplete: 'APAC>India>Pune>Hybrid>Pune office Standard>Maharashtra',
@@ -58,6 +60,7 @@ const samplePayload = {
       employmentTenureType: null,
     },
     {
+      organizationUnitComplete: 'NewVison>New Vision Softcom & Consultancy Pvt. Ltd>Business Units (BU)>AI & Analytics>Data Engineering',
       organizationUnit: 'AI & Analytics',
       jobPostedDate: '2026-07-17',
       locationHierarchyComplete: 'APAC>India>Pune>Hybrid>Pune office Standard>Maharashtra',
@@ -75,6 +78,16 @@ const samplePayload = {
     },
   ],
 }
+
+const detailPayload = record => ({
+  messageCode: {code:200,messages:'success'},
+  response: {
+    requisitionCode:record.jobCode,requisitionId:record.jobCode.split('/').at(-1),entityID:'1397',
+    jobTitle:record.jobTitle,organizationUnitComplete:record.organizationUnitComplete,
+    locationHierarchyComplete:record.locationHierarchyComplete,requisitionStatus:'OPEN',
+    jobDescription:'<p>Develop production software with Python and machine learning.</p>',
+  },
+})
 
 const loadCatalogModule = async () => {
   try {
@@ -164,8 +177,8 @@ test('NewVision Software & Consultancy validates the official careers page and m
       country: 'India',
       jobId: 'NVS/-PD/1803683',
       requisitionId: 'NVS/-PD/1803683',
-      sourceUrl: 'https://careers-newvision.peoplestrong.com/job/detail/NVS%2F-PD%2F1803683',
-      applyUrl: 'https://careers-newvision.peoplestrong.com/job/detail/NVS%2F-PD%2F1803683',
+      sourceUrl: 'https://careers-newvision.peoplestrong.com/job/detail/NVS_-PD_1803683',
+      applyUrl: 'https://careers-newvision.peoplestrong.com/job/detail/NVS_-PD_1803683',
       employmentType: null,
       experienceRequired: '5-8 years',
       minimumQualification: null,
@@ -186,8 +199,8 @@ test('NewVision Software & Consultancy validates the official careers page and m
       country: 'India',
       jobId: 'NVS/AE/1805060',
       requisitionId: 'NVS/AE/1805060',
-      sourceUrl: 'https://careers-newvision.peoplestrong.com/job/detail/NVS%2FAE%2F1805060',
-      applyUrl: 'https://careers-newvision.peoplestrong.com/job/detail/NVS%2FAE%2F1805060',
+      sourceUrl: 'https://careers-newvision.peoplestrong.com/job/detail/NVS_AE_1805060',
+      applyUrl: 'https://careers-newvision.peoplestrong.com/job/detail/NVS_AE_1805060',
       employmentType: 'Full Time',
       experienceRequired: '3-5 years',
       minimumQualification: null,
@@ -219,6 +232,8 @@ test('NewVision Software & Consultancy validates the official careers page and m
     },
     fetchJson: async (url, options = {}) => {
       apiRequests.push({ url, options })
+      const record = samplePayload.response.find(row => newVision.buildJobDetailsApiUrl(row.jobCode) === url)
+      if (record) return detailPayload(record)
       return samplePayload
     },
   })
@@ -227,7 +242,7 @@ test('NewVision Software & Consultancy validates the official careers page and m
     newVision.CAREERS_PAGE_URL,
     newVision.JOB_LISTINGS_URL,
   ])
-  assert.equal(apiRequests.length, 1)
+  assert.equal(apiRequests.length, 3)
   assert.equal(apiRequests[0].url, newVision.buildApiUrl())
   assert.equal(apiRequests[0].options.method, 'POST')
   assert.deepEqual(apiRequests[0].options.headers, newVision.buildPublicHeaders())
@@ -276,12 +291,14 @@ test('NewVision Software & Consultancy propagates the runner abort signal throug
 
       throw new Error(`Unexpected NewVision page URL: ${url}`)
     },
-    fetchJson: async (_url, options = {}) => {
+    fetchJson: async (url, options = {}) => {
       apiSignals.push(options.signal)
+      const record = samplePayload.response.find(row => newVision.buildJobDetailsApiUrl(row.jobCode) === url)
+      if (record) return detailPayload(record)
       return samplePayload
     },
   })
 
   assert.deepEqual(pageSignals, [controller.signal, controller.signal])
-  assert.deepEqual(apiSignals, [controller.signal])
+  assert.deepEqual(apiSignals, [controller.signal, controller.signal, controller.signal])
 })

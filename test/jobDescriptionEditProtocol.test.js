@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { buildRewriteInput, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
 import { buildSourceEdits, expandSourceEdits } from '../rewriting/editProtocol.js';
-import { createRewriteClient, rewriteCandidates, rewriteStopDetails, probeRewriteClient } from '../rewriting/runner.js';
+import { createRewriteClient as createProductionRewriteClient, rewriteCandidates, rewriteStopDetails, probeRewriteClient } from '../rewriting/runner.js';
+// Retain v14 bounded-edit coverage independently of the production model.
+const createRewriteClient = options => createProductionRewriteClient({ ...options, format: 'source-edits' });
 
 const overview = 'Build Python services for customer applications.';
 const duty = 'Design reliable APIs and maintain Python services.';

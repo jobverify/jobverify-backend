@@ -15,7 +15,7 @@ export const NATIVE_JOBS_URL = 'https://boards-api.greenhouse.io/v1/boards/nuro/
 const clean = value => typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
 // These native labels are explicit California locations observed in the
 // complete official feed. Unrecognized geography never implies non-India.
-const verifiedForeignLocations = new Set(['Mountain View, California (HQ)', 'California - SF', 'California - LA'])
+const verifiedForeignLocations = new Set(['Mountain View, California (HQ)', 'California - SF', 'California - LA', 'California - Santa Clara'])
 const explicitForeignCountry = /(?:^|[,;\s])(?:United States(?: of America)?|USA|United Kingdom|Canada|Germany|France|Japan|China|Australia|Singapore)(?:\s*\))?$/i
 const conflictingForeignSignal = /\b(?:California|United States(?: of America)?|USA|US|United Kingdom|UK|Canada|Germany|France|Japan|China|Australia|Singapore)\b/i
 const validNativeDate = value => {

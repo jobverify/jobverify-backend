@@ -75,7 +75,7 @@ export const downloadPipeline=endpoint(async(req,res)=>{
   res.once('close',disconnect);
   let bundle;
   try{
-    bundle=await createPipelineBundle(run,{signal:controller.signal});
+    bundle=await createPipelineBundle(run,{signal:controller.signal,kind:req.query.kind??'all'});
     controller.signal.throwIfAborted();
     res.attachment(bundle.filename);
     res.type('application/zip');

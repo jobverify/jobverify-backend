@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { composeAbortSignals, fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
+import { extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { NEW_VISION_SOFTWARE_CONSULTANCY_CATALOG } from './catalog.js'
 
@@ -24,6 +26,9 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const PAGE_REQUEST_TIMEOUT_MS = 30000
 const API_REQUEST_TIMEOUT_MS = 30000
+const DETAIL_PARTS = 'basic,organisational,descriprion,workflow,skill,qualification,certification,language,applied'
+const LEGAL_EMPLOYER = 'New Vision Softcom & Consultancy Pvt. Ltd'
+const fail = message => { throw new Error(`NewVision ${message}`) }
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -50,7 +55,7 @@ const dedupeParts = (parts = []) => parts.filter(
   (part, index) => index === 0 || part.toLowerCase() !== parts[index - 1].toLowerCase(),
 )
 
-const isRemoteStatusPart = (value) => /^(remote|hybrid|on-?site|work from home)$/i.test(
+const isRemoteStatusPart = (value) => /^(remote|hybrid|on-?site|work from home|work from office)$/i.test(
   normalizeWhitespace(value) || '',
 )
 
@@ -128,8 +133,48 @@ export const buildApiUrl = ({ offset = 0, limit = DEFAULT_PAGE_SIZE } = {}) => (
 )
 
 export const buildJobDetailUrl = (jobCode) => (
-  jobCode ? `${PORTAL_ORIGIN}/job/detail/${encodeURIComponent(jobCode)}` : null
+  jobCode ? `${PORTAL_ORIGIN}/job/detail/${encodeURIComponent(jobCode.replaceAll('/', '_'))}` : null
 )
+
+export const buildJobDetailsApiUrl = jobCode => `${PORTAL_ORIGIN}/api/cp/rest/altone/cp/job/${encodeURIComponent(jobCode.replaceAll('/', '_'))}/v2?part=${DETAIL_PARTS}&isReqId=false`
+
+const assertListingRecord = record => {
+  if (!record || !firstNonEmpty(record.jobTitle) || !/^NVS\/[^/]+\/\d+$/.test(record.jobCode || '')
+    || !String(record.organizationUnitComplete ?? '').split('>').includes(LEGAL_EMPLOYER)
+    || typeof record.locationHierarchyComplete !== 'string' || !record.locationHierarchyComplete.trim()
+    || (record.jobDetailUrl && record.jobDetailUrl !== buildJobDetailUrl(record.jobCode))) fail('listing employer, location or application identity is malformed')
+  const parts = record.locationHierarchyComplete.split('>').map(normalizeWhitespace)
+  if (!['APAC', 'USA'].includes(parts[0]) || !parts[1]) fail('listing country hierarchy is unrecognized')
+  if (parts[0] === 'APAC' && parts[1] !== 'India') fail('listing country hierarchy is unrecognized')
+  if (record.country && /^India$/i.test(record.country) !== (parts[1] === 'India')) fail('listing country conflicts with its location hierarchy')
+}
+
+const assertDetail = (listing, payload) => {
+  const detail = payload?.response
+  if (payload?.messageCode?.code !== 200 || !detail || detail.requisitionCode !== listing.jobCode
+    || String(detail.requisitionId) !== listing.jobCode.split('/').at(-1) || String(detail.entityID) !== '1397'
+    || detail.jobTitle !== listing.jobTitle || detail.organizationUnitComplete !== listing.organizationUnitComplete
+    || detail.locationHierarchyComplete !== listing.locationHierarchyComplete || detail.requisitionStatus !== 'OPEN') {
+    fail('detail identity, employer, open status or location conflicts with the listing')
+  }
+  if (!extractActiveDescription(detail.jobDescription)) fail('detail published description is missing')
+  return detail
+}
+
+const mapConcurrent = async (values, concurrency, action) => {
+  const results = new Array(values.length)
+  let cursor = 0
+  let failure = null
+  await Promise.allSettled(Array.from({ length: Math.min(concurrency, values.length) }, async () => {
+    while (cursor < values.length && !failure) {
+      const index = cursor++
+      try { results[index] = await action(values[index]) }
+      catch (error) { failure ??= error }
+    }
+  }))
+  if (failure) throw failure
+  return results
+}
 
 export const buildPublicHeaders = () => ({
   Origin: PORTAL_ORIGIN,
@@ -279,10 +324,17 @@ export const createNewVisionSoftwareConsultancyScraper = () => ({
     pageSize = DEFAULT_PAGE_SIZE,
     maxPages = Number.POSITIVE_INFINITY,
     maxJobs = null,
+    detailConcurrency = 6,
     now = () => new Date().toISOString(),
     signal,
   } = {}) {
+    signal?.throwIfAborted()
+    if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100
+      || !Number.isSafeInteger(detailConcurrency) || detailConcurrency < 1 || detailConcurrency > 12
+      || !(maxPages === Number.POSITIVE_INFINITY || (Number.isSafeInteger(maxPages) && maxPages > 0))
+      || (maxJobs != null && (!Number.isSafeInteger(maxJobs) || maxJobs < 1))) fail('inventory pagination or concurrency options are invalid')
     const careersPage = await fetchPage(CAREERS_PAGE_URL, { signal })
+    signal?.throwIfAborted()
     if (careersPage.status !== 200 || !hasOfficialCareersPageSignal(careersPage.html)) {
       throw new Error('NewVision Software & Consultancy verified official careers page no longer matches the known public surface')
     }
@@ -293,13 +345,20 @@ export const createNewVisionSoftwareConsultancyScraper = () => ({
     }
 
     const portalPage = await fetchPage(JOB_LISTINGS_URL, { signal })
+    signal?.throwIfAborted()
     if (portalPage.status !== 200 || !hasPublicPortalShell(portalPage.html)) {
       throw new Error('NewVision Software & Consultancy verified public PeopleStrong portal no longer matches the known public surface')
     }
 
     const jobs = []
+    const seen = new Set()
+    let total = null
+    let fetched = 0
+    let pagesFetched = 0
+    let complete = false
 
     for (let page = 0; page < maxPages; page += 1) {
+      signal?.throwIfAborted()
       const offset = page * pageSize
       const payload = await fetchJson(buildApiUrl({ offset, limit: pageSize }), {
         method: 'POST',
@@ -307,28 +366,53 @@ export const createNewVisionSoftwareConsultancyScraper = () => ({
         body: JSON.stringify(DEFAULT_SEARCH_BODY),
         signal,
       })
-
-      const pageJobs = extractSearchResults(payload)
-      const scrapedAt = now()
-      jobs.push(...pageJobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt,
-      })))
-
-      if (Number.isFinite(maxJobs) && jobs.length >= maxJobs) {
-        return jobs.slice(0, maxJobs)
+      signal?.throwIfAborted()
+      if (payload?.messageCode?.code !== 200 || !Array.isArray(payload.response)
+        || !Number.isSafeInteger(payload.totalRecords) || payload.totalRecords < 0
+        || (total != null && total !== payload.totalRecords)) fail('listing inventory or total is unavailable, malformed or changed during pagination')
+      total = payload.totalRecords
+      if (payload.response.length !== Math.min(pageSize, Math.max(total - offset, 0))) fail('listing inventory page count does not reconcile with its total')
+      for (const record of payload.response) {
+        assertListingRecord(record)
+        if (seen.has(record.jobCode)) fail('listing inventory repeats a requisition across pages')
+        seen.add(record.jobCode)
       }
-
-      const responseCount = Array.isArray(payload?.response) ? payload.response.length : 0
-      const totalRecords = Number.parseInt(String(payload?.totalRecords ?? ''), 10)
-
-      if (responseCount === 0) break
-      if (Number.isFinite(totalRecords) && offset + responseCount >= totalRecords) break
+      fetched += payload.response.length
+      pagesFetched += 1
+      let indiaListings = payload.response.filter(record => record.locationHierarchyComplete.split('>')[1] === 'India')
+      if (Number.isFinite(maxJobs)) indiaListings = indiaListings.slice(0, Math.max(0, maxJobs - jobs.length))
+      const scrapedAt = now()
+      const pageJobs = await mapConcurrent(indiaListings, detailConcurrency, async record => {
+        signal?.throwIfAborted()
+        const detail = assertDetail(record, await fetchJson(buildJobDetailsApiUrl(record.jobCode), {
+          method: 'GET', headers: buildPublicHeaders(), signal,
+        }))
+        signal?.throwIfAborted()
+        const job = extractSearchResults({response:[record]})[0]
+        const description = extractActiveDescription(detail.jobDescription)
+        return {
+          ...job, source: SOURCE, link: job.applyUrl || job.sourceUrl, scrapedAt,
+          requisitionId: String(detail.requisitionId),
+          employmentType: firstNonEmpty(detail.employmentType, job.employmentType),
+          jobDescription: description, sourceDescription: description, jobDescriptionHtml: detail.jobDescription,
+        }
+      })
+      jobs.push(...pageJobs)
+      if (Number.isFinite(maxJobs) && jobs.length >= maxJobs) break
+      if (fetched === total) { complete = true; break }
     }
 
-    return jobs
+    signal?.throwIfAborted()
+    for (const job of jobs) job.sourceListingComplete = complete
+    return attachInventoryEvidence(jobs, {
+      status: complete ? (total === 0 ? 'verified-empty' : 'complete-inventory') : 'discovery-only',
+      surface: buildApiUrl({limit:pageSize}), firstParty:true, listingComplete:complete,
+      pagesFetched, reportedTotal:total, indiaFacetCount:complete ? jobs.length : null,
+      verifiedAt:now(),
+      reason: complete
+        ? 'Employer-linked PeopleStrong listing reconciled with its reported total; each India detail matched the requisition, legal employer, open status and country hierarchy.'
+        : 'Caller limited the listing; positive India details were verified but complete inventory was not established.',
+    })
   },
 })
 

@@ -7,6 +7,7 @@ import ScraperStatus from '../models/ScraperStatus.js';
 import ScraperRun from '../models/ScraperRun.js';
 import JobDatasetSummary from '../models/JobDatasetSummary.js';
 import { decodeScraperRunSourceKey } from '../../scraper-support/utils/scraperPersistence.js';
+import { summarizeScraperHistory } from '../../scraper-support/utils/scraperOutcome.js';
 import { refreshJobDatasetSummary } from './jobDatasetSummaryService.js';
 
 // Keep the source configuration, but remove all recorded execution state.
@@ -87,11 +88,7 @@ export async function purgeScraperData(scraper, { assertActive = async () => {} 
     const results = remaining.map(([, result]) => result);
     await ScraperRun.collection.updateOne({ _id: run._id }, { $set: {
       sources: Object.fromEntries(remaining),
-      overall: {
-        totalJobs: results.reduce((sum, result) => sum + (result.success ? Number(result.jobsFound || 0) : 0), 0),
-        sourcesSucceeded: results.filter(result => result.success === true).length,
-        sourcesFailed: results.filter(result => result.success === false).length,
-      },
+      overall: summarizeScraperHistory(results),
     } });
   }
 

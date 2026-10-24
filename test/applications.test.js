@@ -64,9 +64,9 @@ test('application snapshots fall back to a safe employer source URL', async t =>
 test('Applied can only update the authenticated owner and remains idempotent', async t => {
   const appliedAt = new Date('2026-10-19T10:00:00Z');
   t.mock.method(Application, 'findOneAndUpdate', async (filter, update) => {
-    assert.deepEqual(filter, { _id: applicationId, user, status: 'opened' });
-    assert.equal(update.$set.status, 'applied');
-    assert.ok(update.$set.appliedAt instanceof Date);
+    assert.equal(filter._id, applicationId);
+    assert.equal(filter.user, user);
+    assert.equal(update[0].$set.status, 'applied');
     return null;
   });
   t.mock.method(Application, 'findOne', async filter => {

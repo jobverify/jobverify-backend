@@ -1886,6 +1886,7 @@ export const getJobMeta = async (req, res) => {
           // The jobs page already has a dedicated autocomplete endpoint for companies.
           // Keep the base metadata payload compact and let the async loader fetch suggestions.
           companies: [],
+          companyCount: Number(summary.totalCompanies ?? 0),
           cities: normalizePublicCityOptions(summary?.cities ?? []),
           jobTypes: [...new Set(
             (summary?.jobTypes ?? [])
@@ -1908,6 +1909,7 @@ export const getJobMeta = async (req, res) => {
 
     const [
       companies,
+      companyNames,
       cities,
       jobTypes,
       experienceYears,
@@ -1925,6 +1927,9 @@ export const getJobMeta = async (req, res) => {
           },
         )
         : Promise.resolve([]),
+      Job.distinct('company', buildJobMetaFilter(
+        queryParams, ['company'], { company: { $ne: null } }, req.siteSettings,
+      )),
       hasScopedFilters
         ? resolveScopedDistinctValues(queryParams, "city", ["city", "location"], { city: { $ne: null } }, req.siteSettings)
         : Job.distinct("city", applyPublicJobVisibility({ status: "active", city: { $ne: null } }, req.siteSettings)),
@@ -1965,6 +1970,7 @@ export const getJobMeta = async (req, res) => {
       message: "Job metadata retrieved successfully",
       data: {
         companies,
+        companyCount: mergeCompanyOptions(companyNames).length,
         cities: normalizePublicCityOptions(cities),
         jobTypes: [...new Set(
         jobTypes

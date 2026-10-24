@@ -15,7 +15,7 @@ test('materializeWorkbookProvider writes dedicated live and generated empty fold
   mkdirSync(providerBaseDir, { recursive: true })
 
   writeFileSync(
-    path.join(scraperDir, 'workbookbatch02', 'betterplace.js'),
+    path.join(scraperDir, 'workbookbatch02', 'sampleemployer.js'),
     "import { helper } from './helper.js'\nexport const run = async () => [{ title: helper() }]\n",
     'utf8',
   )
@@ -32,10 +32,10 @@ test('materializeWorkbookProvider writes dedicated live and generated empty fold
 
   const liveResult = materializeWorkbookProvider(
     {
-      source: 'betterplace',
-      modulePath: '../betterplace/script.js',
-      originalModulePath: '../workbookbatch02/betterplace.js',
-      dryRunFile: 'workbookbatch02/betterplace.jobs.json',
+      source: 'sampleemployer',
+      modulePath: '../sampleemployer/script.js',
+      originalModulePath: '../workbookbatch02/sampleemployer.js',
+      dryRunFile: 'workbookbatch02/sampleemployer.jobs.json',
       atsPlatform: 'verified-public-careers-cards',
     },
     { scraperDir, repoDir },
@@ -65,7 +65,7 @@ test('materializeWorkbookProvider writes dedicated live and generated empty fold
 test('materializeWorkbookProvider can refresh already-dedicated folders after legacy batch files are removed', () => {
   const repoDir = mkdtempSync(path.join(os.tmpdir(), 'workbook-materializer-local-'))
   const scraperDir = path.join(repoDir, 'scraper')
-  const liveDir = path.join(scraperDir, 'betterplace')
+  const liveDir = path.join(scraperDir, 'sampleemployer')
   const generatedDir = path.join(scraperDir, 'adpushup')
 
   mkdirSync(liveDir, { recursive: true })
@@ -85,9 +85,9 @@ test('materializeWorkbookProvider can refresh already-dedicated folders after le
 
   materializeWorkbookProvider(
     {
-      source: 'betterplace',
-      modulePath: '../betterplace/script.js',
-      originalModulePath: '../workbookbatch02/betterplace.js',
+      source: 'sampleemployer',
+      modulePath: '../sampleemployer/script.js',
+      originalModulePath: '../workbookbatch02/sampleemployer.js',
       atsPlatform: 'verified-public-careers-cards',
     },
     { scraperDir, repoDir },

@@ -240,33 +240,6 @@
     "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
   },
   {
-    "source": "abbott",
-    "companyName": "Abbott",
-    "catalogOverride": true,
-    "companyCareerPage": "https://www.abbott.in/careers.html",
-    "officialHomepageUrl": "https://www.abbott.in/",
-    "companyDomain": "www.abbott.in",
-    "remediationStatus": "official-surface-discovered",
-    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
-    "verifiedOn": null,
-    "verifiedAt": null,
-    "verifiedPublicJobCount": null,
-    "verifiedIndiaJobCount": null,
-    "verifiedInventoryStatus": "unverified",
-    "bindingEvidence": {
-      "verified": false,
-      "checkedAt": "2026-10-20T16:53:11.504Z",
-      "officialURL": "https://www.abbott.in/careers.html",
-      "httpStatus": null,
-      "matchedLinks": [
-        "https://www.jobs.abbott/us/en/search-results?qcountry=India"
-      ],
-      "bindingMethod": "official-company-careers-link",
-      "evidenceOrigin": "public-web-extraction"
-    },
-    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
-  },
-  {
     "source": "abbvie",
     "companyName": "AbbVie",
     "catalogOverride": true,
@@ -405,92 +378,6 @@
       "httpStatus": null,
       "matchedLinks": [
         "https://careers.adani.com/"
-      ],
-      "bindingMethod": "official-company-careers-link",
-      "evidenceOrigin": "public-web-extraction"
-    },
-    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
-  },
-  {
-    "source": "accor",
-    "companyName": "Accor",
-    "catalogOverride": true,
-    "companyCareerPage": "https://careers.accor.com/global/en/",
-    "officialHomepageUrl": "https://group.accor.com/en",
-    "companyDomain": "group.accor.com",
-    "remediationStatus": "official-surface-discovered",
-    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
-    "verifiedOn": null,
-    "verifiedAt": null,
-    "verifiedPublicJobCount": null,
-    "verifiedIndiaJobCount": null,
-    "verifiedInventoryStatus": "unverified",
-    "bindingEvidence": {
-      "verified": false,
-      "checkedAt": "2026-10-20T16:53:11.504Z",
-      "officialURL": "https://careers.accor.com/global/en/",
-      "httpStatus": null,
-      "matchedLinks": [
-        "https://careers.accor.com/global/en/",
-        "https://careers.accor.com/global/en/jobs?options=502&page=1"
-      ],
-      "bindingMethod": "official-company-careers-link",
-      "evidenceOrigin": "public-web-extraction"
-    },
-    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
-  },
-  {
-    "source": "accorindia",
-    "companyName": "Accor India",
-    "catalogOverride": true,
-    "companyCareerPage": "https://careers.accor.com/global/en/",
-    "officialHomepageUrl": "https://group.accor.com/en",
-    "companyDomain": "group.accor.com",
-    "remediationStatus": "alias-review-required",
-    "aliasOfSource": "accor",
-    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
-    "verifiedOn": null,
-    "verifiedAt": null,
-    "verifiedPublicJobCount": null,
-    "verifiedIndiaJobCount": null,
-    "verifiedInventoryStatus": "unverified",
-    "bindingEvidence": {
-      "verified": false,
-      "checkedAt": "2026-10-20T16:53:11.504Z",
-      "officialURL": "https://careers.accor.com/global/en/",
-      "httpStatus": null,
-      "matchedLinks": [
-        "https://careers.accor.com/global/en/",
-        "https://careers.accor.com/global/en/jobs?options=502&page=1"
-      ],
-      "bindingMethod": "official-company-careers-link",
-      "evidenceOrigin": "public-web-extraction"
-    },
-    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
-  },
-  {
-    "source": "accorsa",
-    "companyName": "Accor SA",
-    "catalogOverride": true,
-    "companyCareerPage": "https://careers.accor.com/global/en/",
-    "officialHomepageUrl": "https://group.accor.com/en",
-    "companyDomain": "group.accor.com",
-    "remediationStatus": "alias-review-required",
-    "aliasOfSource": "accor",
-    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
-    "verifiedOn": null,
-    "verifiedAt": null,
-    "verifiedPublicJobCount": null,
-    "verifiedIndiaJobCount": null,
-    "verifiedInventoryStatus": "unverified",
-    "bindingEvidence": {
-      "verified": false,
-      "checkedAt": "2026-10-20T16:53:11.504Z",
-      "officialURL": "https://careers.accor.com/global/en/",
-      "httpStatus": null,
-      "matchedLinks": [
-        "https://careers.accor.com/global/en/",
-        "https://careers.accor.com/global/en/jobs?options=502&page=1"
       ],
       "bindingMethod": "official-company-careers-link",
       "evidenceOrigin": "public-web-extraction"
@@ -4586,52 +4473,6 @@
       ]
     },
     "verifiedSurfaceSummary": "Current official identity/recruitment discovery is recorded in batch-007. Native inventory completeness, India opening count, persistence and public visibility remain unverified. Official indexed pages are on ashland.com and origin-www.ashland.com. The legacy catalog label Ashland Global is preserved. A current indexed ashland.wd12.myworkdayjobs.com/ashlandcareers1 role is only an unpromoted ATS candidate; no company-owned careers handoff was observed. An official document's generic Workday HR use is not recruiting-board proof."
-  },
-  {
-    "source": "asianpaints",
-    "companyName": "Asian Paints",
-    "catalogOverride": true,
-    "companyCareerPage": "https://careers.asianpaints.com/search/",
-    "officialHomepageUrl": "https://www.asianpaints.com/",
-    "companyDomain": "www.asianpaints.com",
-    "remediationStatus": "official-surface-discovered",
-    "officialBindingVerifiedAt": "2026-10-20T19:05:33.582Z",
-    "verifiedOn": null,
-    "verifiedAt": null,
-    "verifiedPublicJobCount": null,
-    "verifiedIndiaJobCount": null,
-    "verifiedInventoryStatus": "unverified",
-    "bindingEvidence": {
-      "verified": false,
-      "checkedAt": "2026-10-20T19:05:33.582Z",
-      "officialURL": "https://careers.asianpaints.com/search/",
-      "httpStatus": null,
-      "matchedLinks": [
-        "https://careers.asianpaints.com/job/Bangalore-EXECUTIVE-N-WOOD-FINISHES-TECHNOLOGIST-KA/1401928000/",
-        "https://careers.asianpaints.com/talentcommunity/apply/1401928000/?locale=en_GB"
-      ],
-      "bindingMethod": "official-company-careers-link",
-      "evidenceOrigin": "public-web-extraction",
-      "proofFiles": [
-        "proof/batch-007-search-04.json",
-        "proof/batch-007-search-10.json",
-        "proof/batch-007-open-09.json",
-        "proof/batch-007-open-20.json",
-        "proof/batch-007-click-13.json",
-        "proof/batch-007-click-16.json",
-        "proof/batch-007-click-17.json"
-      ]
-    },
-    "recruitmentCandidate": {
-      "kind": "sap-career-site",
-      "token": null,
-      "host": "careers.asianpaints.com",
-      "boardURL": "https://careers.asianpaints.com/search/",
-      "handoffScope": "SAP vendor explicitly named in official career-site cookie disclosure; exact product/company token not exposed. Official role Apply stays on branded talentcommunity route.",
-      "vendor": "SAP",
-      "product": null
-    },
-    "verifiedSurfaceSummary": "Current official identity/recruitment discovery is recorded in batch-007. Native inventory completeness, India opening count, persistence and public visibility remain unverified. The current search page exposes many India cards and pagination; no displayed total was promoted to a runtime count. Workday-like source directory suffix is historical catalog metadata and does not override actual SAP-branded career-site evidence. SAP vendor is verified; the exact native product/opaque company token remains unknown rather than assumed."
   },
   {
     "source": "asics",
@@ -10227,50 +10068,6 @@
       "batchSha256": "d5d11b9813fedf0c2d6a625609ac17baf6f205a6393238ebda27e407e3a06a44"
     },
     "verifiedSurfaceSummary": "Current official identity/recruitment discovery is recorded in batch-014. Native inventory completeness, India opening count, persistence and public visibility remain unverified. Current Bungalow rental-company careers pages identify Bungalow Living Inc and display See Open Roles plus an empty table header. The HTML declares Webflow live.bungalow.com domain configuration, which is not promoted as an active careers handoff. No explicit current no-openings statement, native job payload or public ATS handoff was verified. A rendered empty shell is unknown inventory, not zero. Rental-company identity is retained separately from similarly named businesses."
-  },
-  {
-    "source": "bunge",
-    "companyName": "Bunge",
-    "catalogOverride": true,
-    "companyCareerPage": "https://www.bunge.com/en/careers",
-    "officialHomepageUrl": "https://www.bunge.com/",
-    "companyDomain": "www.bunge.com",
-    "remediationStatus": "official-surface-verified-discovery-only",
-    "officialBindingVerifiedAt": "2026-10-21T01:14:54.673Z",
-    "verifiedOn": null,
-    "verifiedAt": null,
-    "verifiedPublicJobCount": null,
-    "verifiedIndiaJobCount": null,
-    "verifiedInventoryStatus": "unverified",
-    "bindingEvidence": {
-      "verified": false,
-      "checkedAt": "2026-10-21T01:14:54.673Z",
-      "officialURL": "https://www.bunge.com/en/careers",
-      "matchedLinks": [
-        "https://www.bunge.com/find-jobs",
-        "https://jobs.bunge.com/"
-      ],
-      "evidenceOrigin": "public-official-web-discovery-not-extraction",
-      "proofFiles": [
-        "proof/batch-014-extracted-evidence-001.json",
-        "proof/batch-014-http-bunge-current-india-role-003.json",
-        "proof/batch-014-http-bunge-find-jobs-003.json",
-        "proof/batch-014-http-bunge-native-jobs-003.json",
-        "proof/batch-014-http-bunge.json",
-        "proof/batch-014-web-open-001.json",
-        "proof/batch-014-web-open-002.json",
-        "proof/batch-014-web-open-003.json",
-        "proof/batch-014-web-search-004.json"
-      ],
-      "batchArtifact": "artifacts/full-catalog/official-discovery/batch-014.json",
-      "batchSha256": "d5d11b9813fedf0c2d6a625609ac17baf6f205a6393238ebda27e407e3a06a44"
-    },
-    "recruitmentCandidate": {
-      "kind": "sap-successfactors",
-      "token": "Bunge",
-      "boardURL": "https://jobs.bunge.com/"
-    },
-    "verifiedSurfaceSummary": "Current official identity/recruitment discovery is recorded in batch-014. Native inventory completeness, India opening count, persistence and public visibility remain unverified. Current primary web careers and Find Jobs pages explicitly hand off to jobs.bunge.com. Direct corporate GETs are Cloudflare403 and remain distinct from current web-access evidence; native board and actual requisition47463 are HTTP200. Native client j2w.init ssoCompanyId is exactly Bunge. Current primary corporate page instructs applicants to check both Bunge and Viterra sites while combining their opportunities; other regional boards are also listed. Thus this SAP board is not complete whole-company coverage. Preserve req47463 structured locality Bhurai In versus full-description Mohali, Punjab; explicit country IN/India agrees."
   },
   {
     "source": "bunzl",
@@ -17937,54 +17734,6 @@
       "token": null
     },
     "verifiedSurfaceSummary": "Current official identity/recruitment discovery is recorded in batch-024. Native inventory completeness, India opening count, persistence and public visibility remain unverified. Current dbt Labs primary career banner declares a Fivetran merger and the body describes the combined organization. Its active India role links now reach Fivetran first-party gh_jid pages. Sample dbt-core role7818352003 returns only Job Title/Job Location placeholders in web transport; the later browser GET failed. No exact current upstream tenant, full JD, legal employer or combined-parent inventory is qualified. Historical dbtlabsinc indexed jobs cannot supply missing current fields. No ordinary Node request or source runtime was attempted in this batch. Research web/browser evidence and failures do not become executable runtime counts or newly inferred source failures."
-  },
-  {
-    "source": "decathlon",
-    "companyName": "Decathlon",
-    "catalogOverride": true,
-    "companyCareerPage": "https://joinus.decathlon.in/en",
-    "officialHomepageUrl": "https://www.decathlon.in/",
-    "companyDomain": "www.decathlon.in",
-    "remediationStatus": "official-identity-investigated-discovery-only",
-    "officialBindingVerifiedAt": "2026-10-21T14:50:41.312Z",
-    "verifiedOn": null,
-    "verifiedAt": null,
-    "verifiedPublicJobCount": null,
-    "verifiedIndiaJobCount": null,
-    "verifiedInventoryStatus": "unverified",
-    "bindingEvidence": {
-      "verified": false,
-      "checkedAt": "2026-10-21T14:50:41.312Z",
-      "officialURL": "https://joinus.decathlon.in/en",
-      "matchedLinks": [
-        "https://www.decathlon.in/support/245/where-do-i-send-my-resume",
-        "https://joinus.decathlon.in/en",
-        "https://joinus.decathlon.in/en/annonces"
-      ],
-      "evidenceOrigin": "public-official-web-discovery-not-extraction",
-      "proofFiles": [
-        "proof/batch-024-browser-013-decathlon.json",
-        "proof/batch-024-browser-integrity-025.json",
-        "proof/batch-024-handoff-validation-027.json",
-        "proof/batch-024-registered-identity-context-024.json",
-        "proof/batch-024-web-follow-010.json",
-        "proof/batch-024-web-follow-find-014.json",
-        "proof/batch-024-web-open-009.json",
-        "proof/batch-024-web-open-follow-012.json",
-        "proof/batch-024-web-open-search-019.json",
-        "proof/batch-024-web-role-find-021.json",
-        "proof/batch-024-web-search-003.json"
-      ],
-      "batchArtifact": "artifacts/full-catalog/official-discovery/batch-024.json",
-      "batchSha256": "ad1016748e682a8db3236b0c2e30752d7a8e39bc31e37f42163aa4933356fe6b",
-      "independentReviewArtifact": "artifacts/full-catalog/official-discovery/batch-024-independent-review-001.json",
-      "independentReviewSha256": "e23d361a879142680a3ac2271a9ba4ffa1285e84f422fb3e250d914a9d47d8d0"
-    },
-    "recruitmentCandidate": {
-      "kind": "official-India-career-portal-upstream-unresolved",
-      "token": null
-    },
-    "verifiedSurfaceSummary": "Current official identity/recruitment discovery is recorded in batch-024. Native inventory completeness, India opening count, persistence and public visibility remain unverified. Current India corporate support explicitly links joinus.decathlon.in, whose primary portal identifies Decathlon Sports India Pvt Ltd. Sample current Bengaluru role4642037 has a full JD and visible Apply action, original date12/10/2026, but no exact public application route was resolved. Its summary Permanent contract and profile Third-Party Payroll are retained as a contract/employer attribution caveat. Search UI counts are unenumerated and the ordinary source was not run; a failed browser list read is not zero. The older Trakstar candidate is not promoted without current handoff. No ordinary Node request or source runtime was attempted in this batch. Research web/browser evidence and failures do not become executable runtime counts or newly inferred source failures."
   },
   {
     "source": "decimalai",

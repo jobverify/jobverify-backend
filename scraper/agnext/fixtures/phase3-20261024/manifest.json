@@ -1,0 +1,32 @@
+{
+  "source": "agnext",
+  "captureMethod": "Fresh headless Chromium, normal anonymous public navigation; bounded source reads, no forms or applications submitted.",
+  "sanitized": true,
+  "rawHttpBytesClaimed": false,
+  "fullSourceScrape": false,
+  "productionWrites": false,
+  "receipts": [
+    {
+      "file": "probe-0.json.gz",
+      "requestedUrl": "https://www.agnext.com/",
+      "finalUrl": "https://www.agnext.com/",
+      "responseUrl": "https://www.agnext.com/",
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:19:30.850Z",
+      "sanitizedBodySha256": "8b408f4ca5dbfe90898f1fd483492705ba76dfac13bcbc8c9f9cc7d0aa4a4313",
+      "compressedSha256": "b04590692cc62d2a0aa44c66c91873c522d35b3818ce2586175d6a1a6362a91b",
+      "bodyBytes": 155354
+    },
+    {
+      "file": "probe-1.json.gz",
+      "requestedUrl": "https://agnext.keka.com/careers",
+      "finalUrl": "https://agnext.keka.com/careers/Content/403.html",
+      "responseUrl": "https://agnext.keka.com/careers/Content/403.html",
+      "httpStatus": 200,
+      "capturedAt": "2026-10-24T16:19:30.284Z",
+      "sanitizedBodySha256": "ca76a3797cc419ee02ac1fcc656fd3a07dc83e698d0f51366b61514c8a721a6c",
+      "compressedSha256": "a043c6526462f48dd74cab282eb7fa87026b4e111e0ec29c94bd2a869a0004a4",
+      "bodyBytes": 1866
+    }
+  ]
+}

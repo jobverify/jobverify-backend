@@ -38,3 +38,24 @@ test("managed index planning includes the user suggestion quota indexes", () => 
   assert.match(source, /models\/UserSuggestion\.js/);
   assert.match(source, /\["UserSuggestion", UserSuggestion\]/);
 });
+
+test('index planning discovers application mailbox, receipt, OAuth expiry and submission queue indexes without mutating data', async t => {
+  const { default: dotenv } = await import('dotenv');
+  t.mock.method(dotenv, 'config', () => ({ parsed: {} }));
+  const { runIndexManagement } = await import('../scripts/indexes.js');
+  const { default: mongoose } = await import('mongoose');
+  for (const model of Object.values(mongoose.models)) {
+    t.mock.method(model, 'diffIndexes', async () => ({ toCreate: model.schema.indexes().map(([key]) => key), toDrop: [] }));
+    t.mock.method(model.collection, 'indexes', async () => []);
+    t.mock.method(model, 'createIndexes', async () => assert.fail('Planning must not create indexes.'));
+  }
+  const result = await runIndexManagement({ mode: 'plan', shouldConnect: false, shouldDisconnect: false,
+    log: () => {}, errorLog: (...args) => assert.fail(args.join(' ')) });
+  const plans = new Map(result.results.map(item => [item.name, item.diff.toCreate]));
+  for (const [name, key] of [
+    ['ApplicationMailbox', { user: 1 }],
+    ['ApplicationMailboxAuth', { expiresAt: 1 }],
+    ['ApplicationMail', { user: 1, mailboxEmail: 1, messageId: 1 }],
+    ['AutoApplyAttempt', { status: 1, leaseUntil: 1, createdAt: 1 }],
+  ]) assert.ok(plans.get(name)?.some(index => JSON.stringify(index) === JSON.stringify(key)), `${name} index missing from managed plan`);
+});

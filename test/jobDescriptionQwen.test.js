@@ -48,13 +48,13 @@ const localServer = async (t, { promptTokens = 1000, complete } = {}) => {
   return { endpoint: 'http://127.0.0.1:' + server.address().port, requests, metadata };
 };
 
-test('Qwen defaults generate evidence-backed sections with thinking disabled', async t => {
+test('the explicit prose protocol generates evidence-backed sections with thinking disabled', async t => {
   const server = await localServer(t);
   const job = candidate({ sourceDescription: source.replace('Responsibilities:', '<h2>Responsibilities</h2>') });
   const response = await createRewriteClient(server).generate(buildRewriteInput(job));
   assert.equal(response.format, 'sections');
   assert.equal(validateRewrite(response.value, buildRewriteInput(job), response.finishReason).ok, true);
-  assert.equal(REWRITE_MODEL.file, 'Qwen3.5-9B-Q5_K_M.gguf');
+  assert.equal(REWRITE_MODEL.file, 'LFM2.5-1.2B-Instruct-QAD-Q4_0.gguf');
   assert.equal(server.requests[0].max_tokens, 2048);
   assert.deepEqual(server.requests[0].response_format.json_schema.schema, REWRITE_SCHEMA);
   assert.deepEqual(server.requests[0].chat_template_kwargs, { enable_thinking: false });

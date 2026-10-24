@@ -3,7 +3,6 @@
  * @module scraper/utils/saveToDB
  */
 
-import crypto from 'crypto'
 import mongoose from 'mongoose'
 import fs from 'fs'
 import path from 'path'
@@ -26,6 +25,8 @@ import {
   resolveJobPostedAt,
 } from '../../src/utils/jobLifecycle.js'
 import { normalizeScrapedJob, resolveJobType } from './normalizeScrapedJob.js'
+import { applicationIdentityLookup, applicationPersistenceFilter, coalesceApplicationIdentities, generateFingerprint, resolveApplicationIdentities } from './applicationIdentity.js'
+export { generateFingerprint } from './applicationIdentity.js'
 import { enrichJobsWithPublicExperience } from './publicExperienceEnrichment.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
 import { saveLocalJobOutbox } from './localJobOutbox.js'
@@ -174,34 +175,6 @@ export const purgeExpiredJobsForQuotaRecovery = async ({
 }
 
 /**
- * Generates a stable identity from company, application URL and canonical city.
- * Generic application forms additionally require a stable role identity so
- * distinct vacancies in one city do not overwrite each other. Role-specific
- * application URLs keep their existing fingerprint across title changes.
- */
-export const generateFingerprint = (job) => {
-  // Kissht previously keyed identities by its compliance address. Keep that
-  // anchor while displaying a separately verified work-branch address.
-  const primaryLocation = job.source==='kissht' && String(job.company||'').trim().toLowerCase()==='kissht' && typeof job.fingerprintLocation==='string' && job.fingerprintLocation.trim()
-    ? job.fingerprintLocation : getPrimaryStoredLocation(job)
-  const canonicalCity = normalizeCity(primaryLocation || job.city || job.location || '') || ''
-  const rawApplicationUrl = job.applyUrl || job.sourceUrl || job.link
-  const hasEmailApplication = /^mailto:/i.test(String(job.applyUrl || job.link || rawApplicationUrl || '').trim())
-  const applicationUrl = normalizeHttpUrl(rawApplicationUrl)
-    || (hasEmailApplication ? normalizeHttpUrl(job.sourceUrl) : null)
-  const roleIdentity = job.requisitionId || job.jobId || job.title
-  const identity = (job.applicationUrlIsGeneric === true || hasEmailApplication) && applicationUrl
-    ? [applicationUrl, roleIdentity].join('|')
-    : applicationUrl || roleIdentity
-  const raw = [
-    (job.company || '').toLowerCase().trim(),
-    String(identity || '').toLowerCase().trim(),
-    canonicalCity.toLowerCase(),
-  ].join('|')
-  return crypto.createHash('sha256').update(raw).digest('hex')
-}
-
-/**
  * Saves an array of scraped jobs to MongoDB.
  *
  * - Upserts the latest scraped set for the scraper source first.
@@ -320,17 +293,17 @@ export const saveToDB = async (jobs, source, options = {}) => {
       )
   throwIfAborted(signal)
 
-  const keyForJob = (job) => job.fingerprint || generateFingerprint(normalizeScrapedJob(job, { source }))
+  const normalizedJobs = enrichedJobs.map(job => normalizeScrapedJob(job, { source }))
   const rewriteMode = options.descriptionRewriteMode || process.env.JOB_DESCRIPTION_REWRITE_MODE || 'off'
   if (!['off', 'publish'].includes(rewriteMode)) throw new Error('JOB_DESCRIPTION_REWRITE_MODE must be off or publish')
   const existingJobs = enrichedJobs.length === 0 || (rewriteMode === 'off' && !hasLiveDatabaseHandle())
     ? []
-    : await JobModel.find({ fingerprint: { $in: enrichedJobs.map(keyForJob) } })
-      .select('fingerprint classification postClassification scrapedAt scrapedTimestamp title originalTitle company location salary description sourceDescription sourceContentHash sourceContentHashVersion descriptionFormat descriptionRewrite minimumQualification preferredQualification sourceEmploymentType sourceExperienceRequired postedAt eligibleBatches eligibleBatchesProvenance jobType employmentType experienceRequired experienceLevel seniority experienceYears experienceBucket experienceProfile')
+    : await JobModel.find(applicationIdentityLookup(normalizedJobs))
+      .select('fingerprint jobId requisitionId applicationUrlIsGeneric applyUrl sourceUrl city classification postClassification scrapedAt scrapedTimestamp title originalTitle company location salary description sourceDescription sourceContentHash sourceContentHashVersion descriptionFormat descriptionRewrite minimumQualification preferredQualification sourceEmploymentType sourceExperienceRequired postedAt eligibleBatches eligibleBatchesProvenance jobType employmentType experienceRequired experienceLevel seniority experienceYears experienceBucket experienceProfile')
       .lean().exec()
-  const existingByKey = new Map(existingJobs.map(job => [job.fingerprint, job]))
-  const sourceJobs = enrichedJobs.map(job => {
-    const previous = existingByKey.get(keyForJob(job))
+  const identities = coalesceApplicationIdentities(resolveApplicationIdentities(normalizedJobs, existingJobs))
+  const existingByKey = new Map(identities.filter(identity => identity.previous).map(identity => [identity.fingerprint, identity.previous]))
+  const sourceJobs = identities.map(({ job, previous }) => {
     return job.preserveExistingSourceContent === true && previous
       ? { ...previous, ...job, sourceDescription: getSourceDescription(previous), jobDescription: getSourceDescription(previous) }
       : job
@@ -339,7 +312,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
   emitStage(source, onStage, { stage: 'classification', status: 'deferred', jobs: sourceJobs.length })
   throwIfAborted(signal)
 
-  const operations = jobsForPersistence.map((job) => {
+  const operations = jobsForPersistence.map((job, index) => {
     const normalizedJob = normalizeScrapedJob({ ...job, classification: undefined }, { source })
     const fingerprint = generateFingerprint(normalizedJob)
     const sourceUrl = normalizeHttpUrl(normalizedJob.sourceUrl)
@@ -408,7 +381,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
 
     return {
       updateOne: {
-        filter: { fingerprint },
+        filter: applicationPersistenceFilter(identities[index]),
         update: {
           $set: {
             title: normalizedJob.title,
@@ -433,6 +406,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
             source: normalizedJob.source || source,
             sourceUrl,
             applyUrl,
+            applicationUrlIsGeneric: normalizedJob.applicationUrlIsGeneric === true,
             companyCareerPage: normalizedJob.companyCareerPage,
             companyDomain: normalizedJob.companyDomain,
             atsPlatform: normalizedJob.atsPlatform,
@@ -443,7 +417,6 @@ export const saveToDB = async (jobs, source, options = {}) => {
             ...(normalizedJob.sourceExperienceRequired !== null && normalizedJob.sourceExperienceRequired !== undefined && normalizedJob.sourceExperienceRequired !== '' && { sourceExperienceRequired: normalizedJob.sourceExperienceRequired }),
             ...(normalizedJob.eligibleBatchesProvenance === 'source' && { eligibleBatches: normalizedJob.eligibleBatches || [], eligibleBatchesProvenance: 'source' }),
             fingerprint,
-            ...(normalizedJob.source==='kissht' && typeof normalizedJob.fingerprintLocation==='string' && normalizedJob.fingerprintLocation.trim() && {fingerprintLocation:normalizedJob.fingerprintLocation.trim()}),
             scrapedAt: now,
             scrapedTimestamp: normalizedJob.scrapedTimestamp || now,
             lastSeenAt: now,
@@ -480,7 +453,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
     staleCheckReason: null,
   }
 
-  const currentFingerprints = operations.map((operation) => operation.updateOne.filter.fingerprint)
+  const currentFingerprints = operations.map((operation) => operation.updateOne.update.$set.fingerprint)
 
   if (operations.length > 0) {
     const bulkResult = await runStage(
@@ -499,7 +472,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
       .map((key) => Number.parseInt(key, 10))
       .filter(Number.isInteger)
     const insertedFingerprints = upsertedIndexes
-      .map((index) => operations[index]?.updateOne?.filter?.fingerprint)
+      .map((index) => operations[index]?.updateOne?.update?.$set?.fingerprint)
       .filter(Boolean)
 
     if (insertedFingerprints.length > 0 && options.enqueueAlerts !== false) {

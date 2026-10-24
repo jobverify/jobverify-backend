@@ -74,18 +74,6 @@ test('location-only Workday tenants declare all verified India location leaves',
       '9b10db154fdd105cf1ec795200e5ec5f',
       '2e473c9ce0941001603bdcd7043c0000',
     ],
-    roche: [
-      '763fba0474e70100f99cc4b76b650000',
-      '54c59631019f01c1589e94d7e67743a3',
-      'e2c616a13c590100f97934cb30d60000',
-      '4ae5b8b977ee0100f9037784a2ce0000',
-      '54c59631019f01c479dfb787a377c235',
-      '8c10cf5604420100f9b96ead92af0000',
-      '9d46ecfbea920100f9a45074c42e0000',
-      '54c59631019f011278ea85d7e67739a3',
-      '54c59631019f01ba6efd80d7e67734a3',
-      '54c59631019f017ed6337bd7e6772fa3',
-    ],
   }
 
   for (const [source, ids] of Object.entries(expected)) {

@@ -373,15 +373,6 @@
     "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e"
   },
   {
-    "name": "roche",
-    "company": "Roche",
-    "officialBrandName": "Roche",
-    "baseUrl": "https://roche.wd3.myworkdayjobs.com/en-US/roche-ext?locations=763fba0474e70100f99cc4b76b650000&locations=54c59631019f01c1589e94d7e67743a3&locations=e2c616a13c590100f97934cb30d60000&locations=4ae5b8b977ee0100f9037784a2ce0000&locations=54c59631019f01c479dfb787a377c235&locations=8c10cf5604420100f9b96ead92af0000&locations=9d46ecfbea920100f9a45074c42e0000&locations=54c59631019f011278ea85d7e67739a3&locations=54c59631019f01ba6efd80d7e67734a3&locations=54c59631019f017ed6337bd7e6772fa3",
-    "companyCareerPage": "https://careers.roche.com/global/en",
-    "verifiedOn": "2026-07-25",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://careers.roche.com/global/en was the live first-party Roche careers home, that Roche's official India pages at https://careers.roche.com/global/en/india and https://careers.roche.com/global/en/india-hyderabad were live, and that the Hyderabad page's Discover Open Roles handoff directed applicants to the public Workday board at https://roche.wd3.myworkdayjobs.com/en-US/roche-ext. Verified on the same date that public Roche Workday job pages included Technical Team Lead - Applied & Agentic AI Systems in Hyderabad, Head of Engineering Applied AI in Hyderabad, Head of Forward-Deployed Data Engineer in Hyderabad, ERP Solution Consultant - Asset Management in Pune, and Data Specialist - Payer Intelligence in Hyderabad / Chennai."
-  },
-  {
     "name": "salesforce",
     "company": "Salesforce",
     "baseUrl": "https://salesforce.wd12.myworkdayjobs.com/external_career_site",

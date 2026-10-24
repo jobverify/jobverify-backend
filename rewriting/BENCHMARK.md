@@ -1,6 +1,14 @@
-# Qwen description rewriting on CPU
+# Description rewriting on CPU
 
-The configured model remains **Qwen3.5-9B Q5_K_M**, with immutable checksums in [model.json](model.json). Policy v14 limits responses to two 160-character edits selected from six job-focused source statements, while retaining the complete source separately. It uses four CPU threads, one active request, an 8,192-token context, 1,024 initial output tokens, at most one retry up to 2,048 tokens, a shared 600-second deadline and a 128 MiB prompt cache. Its performance is unmeasured; no local tests or inference were run for these fixes.
+## Current LFM rollback, policy v15
+
+Production is pinned to **LFM2.5-1.2B-Instruct QAD Q4_0** in [model.json](model.json). It restores the compact fact-plan protocol, four CPU threads, four concurrent requests, an 8,192-token context per slot, 768 initial output tokens, one truncation retry up to 1,536 tokens and a shared 180-second request deadline. The five-hour processing budget remains unchanged. Queue paging, guarded publication and rejection diagnostics remain in place.
+
+The user reports that the earlier LFM deployment processed its queue within five hours. That exact successful run has not been independently verified from the supplied archive. No native inference benchmark completed for this rollback; further local tests and downloads were stopped at the user's request. Validate acceptance and throughput in the GitHub pipeline. A completed workflow can still have failed, skipped or pending jobs.
+
+## Supplied Qwen run, policy v14
+
+Run 40082012050 on 24 October 2026 recorded 23,318 initially queued jobs and 626 completed result rows: 47 published, 532 failed and 47 skipped. It stopped after approximately five hours with 22,692 pending. The attempted counter was 580, consistent with one additional in-flight attempt. The dominant failure was source_words_changed (388). It used four CPU threads but one request slot; median job duration was 34.0 seconds. These are Qwen measurements, not LFM capacity estimates.
 
 ## Previous GitHub run, policy v13
 
@@ -39,6 +47,6 @@ Run a database-free benchmark with 20 representative source descriptions:
 npm run descriptions:benchmark -- --input /path/to/20-source-jobs.json --output /path/to/report.json
 ```
 
-Resume requires unchanged input, model, runtime, platform and policy. A model switch invalidates old cache signatures and benchmark checkpoints. The full dry-run benchmark defaults to the configured Qwen checkpoint (`--model 9000`); the 350M LFM variant remains an explicitly selected historical comparison option. The command above was not executed for this migration.
+Resume requires unchanged input, model, runtime, platform and policy. A model switch invalidates old cache signatures and benchmark checkpoints. The full dry-run benchmark defaults to the configured production checkpoint (legacy selector `--model 9000`); the 350M LFM variant remains an explicitly selected historical comparison option. Native inference was not completed for the LFM rollback.
 
 See [runtime and publishing details](README.md) and [admin setup and pipeline checks](CONTROLS.md).

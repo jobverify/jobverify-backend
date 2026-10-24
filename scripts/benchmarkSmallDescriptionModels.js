@@ -10,7 +10,7 @@ import { buildScrapers } from '../scraper-support/providers/index.js';
 import { normalizeScrapedJob } from '../scraper-support/utils/normalizeScrapedJob.js';
 import { REWRITE_MODEL, buildRewriteInput, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
 import { buildSourceEdits } from '../rewriting/editProtocol.js';
-import { createRewriteClient, assessDescriptionRewrite, RewriteGenerationError } from '../rewriting/runner.js';
+import { createRewriteClient, assessDescriptionRewrite, validateDescriptionRewrite, RewriteGenerationError } from '../rewriting/runner.js';
 import { factPlanMessages, factPlanSchema, buildSourceFacts, assessRewriteInput, expandModelPlan, validateFactPlan } from '../rewriting/factPlan.js';
 import { ensureArtifact, workerMemoryBytes } from '../rewriting/worker.js';
 import { writeFileAtomically } from '../rewriting/atomicFile.js';
@@ -121,7 +121,7 @@ if (phase === 'prepare') {
   try { await fs.access(summaryFile); throw new Error('Benchmark output already exists; preserve it and choose another configuration/run directory'); } catch (e) { if (e.code !== 'ENOENT') throw e; }
   const report = { status: 'starting', startedAt: new Date().toISOString(), model: config, runtimeTag,
     environment: { platform: process.platform, node: process.version, cpu: os.cpus()[0]?.model, hostLogicalCpus: os.cpus().length, totalMemoryBytes: os.totalmem(), threads, slots, workers, totalModelThreads: threads * workers, totalConcurrency, contextTokensPerSlot: 8192 },
-    policy: (grounded ? REWRITE_MODEL.policyVersion + '; generated sections with source evidence' : 'historical fact-plan-v11; quoted source preserved') + '; prompt cache ' + (promptCache ? 'enabled with bounded RAM' : 'disabled') + '; compact JSON grammar ' + (!grounded && compactPlan), mongoWrites: 0, seenBatches: [], results: [] };
+    policy: (grounded ? REWRITE_MODEL.policyVersion + '; production ' + REWRITE_MODEL.outputFormat : 'historical fact-plan-v11; quoted source preserved') + '; prompt cache ' + (promptCache ? 'enabled with bounded RAM' : 'disabled') + '; compact JSON grammar ' + (!grounded && compactPlan), mongoWrites: 0, seenBatches: [], results: [] };
   report.policy += '; preserveSourceContext='+preserveSourceContext+'; allDescriptions='+allDescriptions+'; minimalNumericTransport='+minimalPlan;
   // Keep large-run checkpoints small. Detailed results and source/draft pairs
   // are durably appended per job; repeatedly rewriting every row is quadratic.
@@ -217,7 +217,8 @@ if (phase === 'prepare') {
   };
   const request = async (item, workerIndex = 0) => {
     const { input } = item, assessment = grounded ? assessDescriptionRewrite(input) : assessRewriteInput(input,factOptions), facts = buildSourceFacts(input,factOptions);
-    const protocol = grounded ? buildSourceEdits(input) : null;
+    const protocol = grounded ? REWRITE_MODEL.outputFormat === 'fact-plan'
+      ? { schema: factPlanSchema(input), messages: factPlanMessages(input) } : buildSourceEdits(input) : null;
     const schema = grounded ? protocol.schema : factPlanSchema(input,factOptions), originalMessages = grounded ? protocol.messages : factPlanMessages(input,factOptions);
     const transport=!grounded&&minimalPlan?minimalPlanTransport(schema,originalMessages):null,messages=transport?.messages||originalMessages;
     const formatted = allDescriptions ? formatEmployerSource(input.sourceDescription) : null;
@@ -238,7 +239,7 @@ if (phase === 'prepare') {
         if (grounded) {
           response = await clients[workerIndex].generate(input, { signal });
           rawPlan = response.value; completionContent = JSON.stringify(response.rawValue);
-          validation = validateRewrite(response.value, input, response.finishReason);
+          validation = validateDescriptionRewrite(response.value, input, response.finishReason, response.format);
           row.finishReason = response.finishReason; row.usage = response.usage; row.timings = response.timings;
           row.generationRequests = response.generationRequests; row.modelPlanCached = !!response.cachedModelPlan;
         } else {

@@ -1,0 +1,266 @@
+{
+  "capturedAt": "2026-10-24T16:20:23.421Z",
+  "requestedUrl": "https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true&expand=requisitionList.secondaryLocations&finder=findReqs;siteNumber=CX_1,limit=1,offset=0,location=India",
+  "url": "https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true&expand=requisitionList.secondaryLocations&finder=findReqs;siteNumber=CX_1,limit=1,offset=0,location=India",
+  "status": 200,
+  "bodySha256": "568bca54ab16f819396540bda5684111ba8dff0f43785f1c5959c674019ebd46",
+  "payload": {
+    "items": [
+      {
+        "SearchId": 1,
+        "Keyword": null,
+        "CorrectedKeyword": null,
+        "UseExactKeywordFlag": false,
+        "SuggestedKeyword": null,
+        "ExecuteSpellCheckFlag": true,
+        "Location": "India",
+        "LocationId": null,
+        "Radius": 0,
+        "RadiusUnit": "MI",
+        "SelectedTitlesFacet": null,
+        "SelectedCategoriesFacet": null,
+        "SelectedPostingDatesFacet": null,
+        "SelectedLocationsFacet": null,
+        "LastSelectedFacet": null,
+        "Facets": "TITLES;LOCATIONS;LOCATION_LEVEL1;LOCATION_LEVEL2;LOCATION_LEVEL3;CATEGORIES;POSTING_DATES;WORK_LOCATIONS;FLEX_FIELDS;ORGANIZATIONS;WORKPLACE_TYPES",
+        "Offset": 0,
+        "Limit": 1,
+        "SortBy": "RELEVANCY",
+        "TotalJobsCount": 195,
+        "Latitude": null,
+        "Longitude": null,
+        "SiteNumber": "CX_1",
+        "JobFamilyId": null,
+        "PostingStartDate": null,
+        "PostingEndDate": null,
+        "SelectedWorkLocationsFacet": null,
+        "RequisitionId": null,
+        "CandidateNumber": null,
+        "WorkLocationZipCode": null,
+        "WorkLocationCountryCode": null,
+        "SelectedFlexFieldsFacets": null,
+        "OrganizationId": null,
+        "SelectedOrganizationsFacet": null,
+        "UserTargetFacetName": null,
+        "UserTargetFacetInputTerm": null,
+        "HotJobFlag": null,
+        "WorkplaceType": null,
+        "SelectedWorkplaceTypesFacet": null,
+        "BotQRShortCode": null,
+        "requisitionList": [
+          {
+            "Id": "134637",
+            "Title": "Oracle Recruiting Cloud(ORC) Functional",
+            "PostedDate": "2026-10-23",
+            "PostingEndDate": null,
+            "Language": "US",
+            "PrimaryLocationCountry": "IN",
+            "GeographyId": 100000012265123,
+            "HotJobFlag": false,
+            "WorkplaceTypeCode": null,
+            "JobFamily": null,
+            "JobFunction": null,
+            "WorkerType": null,
+            "ContractType": null,
+            "ManagerLevel": null,
+            "JobSchedule": null,
+            "JobShift": null,
+            "JobType": null,
+            "StudyLevel": null,
+            "DomesticTravelRequired": null,
+            "InternationalTravelRequired": null,
+            "WorkDurationYears": null,
+            "WorkDurationMonths": null,
+            "WorkHours": null,
+            "WorkDays": null,
+            "LegalEmployer": null,
+            "BusinessUnit": null,
+            "Department": null,
+            "Organization": null,
+            "BusinessUnitId": 300000007812035,
+            "LegalEmployerId": 300000007701009,
+            "OrganizationId": 1,
+            "MediaThumbURL": null,
+            "ShortDescriptionStr": "We are seeking an experienced Oracle Recruiting Cloud Functional Consultant with hands-on expertise in Oracle HCM Cloud and Redwood UI. The ideal candidate will lead the implementation, customization, and optimization of Oracle Recruiting Cloud (ORC) solutions, leveraging Redwood UX and Visual Builder Cloud Service (VBCS) to enhance user experience and streamline recruitment processes.",
+            "PrimaryLocation": "Telangana, India",
+            "Distance": 10,
+            "TrendingFlag": true,
+            "BeFirstToApplyFlag": false,
+            "Relevancy": 10,
+            "WorkplaceType": "",
+            "ExternalQualificationsStr": null,
+            "ExternalResponsibilitiesStr": null,
+            "secondaryLocations": []
+          }
+        ],
+        "categoriesFacet": [],
+        "locationsFacet": [
+          {
+            "Id": 300000000435151,
+            "Name": "India",
+            "TotalCount": 195
+          },
+          {
+            "Id": 100000012265112,
+            "Name": "Maharashtra, India",
+            "TotalCount": 49
+          },
+          {
+            "Id": 100000012279676,
+            "Name": "Pune, Maharashtra, India",
+            "TotalCount": 43
+          },
+          {
+            "Id": 100000012265123,
+            "Name": "Telangana, India",
+            "TotalCount": 16
+          },
+          {
+            "Id": 100000012265108,
+            "Name": "Karnataka, India",
+            "TotalCount": 14
+          },
+          {
+            "Id": 100000012280621,
+            "Name": "Bangalore, Karnataka, India",
+            "TotalCount": 12
+          },
+          {
+            "Id": 100000012284781,
+            "Name": "Hyderabad, Telangana, India",
+            "TotalCount": 11
+          },
+          {
+            "Id": 100000012265122,
+            "Name": "Tamil Nadu, India",
+            "TotalCount": 5
+          },
+          {
+            "Id": 100000012278220,
+            "Name": "Chennai, Tamil Nadu, India",
+            "TotalCount": 5
+          },
+          {
+            "Id": 100000012279591,
+            "Name": "Mumbai, Maharashtra, India",
+            "TotalCount": 5
+          }
+        ],
+        "postingDatesFacet": [
+          {
+            "Id": 7,
+            "Name": "Less than 7 days",
+            "TotalCount": 104
+          },
+          {
+            "Id": 30,
+            "Name": "Less than 30 days",
+            "TotalCount": 165
+          },
+          {
+            "Id": 31,
+            "Name": "Greater than 30 days",
+            "TotalCount": 30
+          }
+        ],
+        "titlesFacet": [],
+        "workLocationsFacet": [
+          {
+            "Id": 300000007701886,
+            "Name": "PUNE CAMPUS",
+            "TotalCount": 126
+          },
+          {
+            "Id": 300000007701993,
+            "Name": "HYDERABAD DLF SEZ",
+            "TotalCount": 15
+          },
+          {
+            "Id": 300000389251736,
+            "Name": "Bengaluru-Electronic City",
+            "TotalCount": 15
+          },
+          {
+            "Id": 300000007701945,
+            "Name": "Mumbai",
+            "TotalCount": 5
+          },
+          {
+            "Id": 300000164201897,
+            "Name": "Chennai",
+            "TotalCount": 5
+          },
+          {
+            "Id": 300000007701893,
+            "Name": "BENGALURU CLIENT",
+            "TotalCount": 3
+          },
+          {
+            "Id": 300000007811156,
+            "Name": "Kharadi STPI Unit - IV",
+            "TotalCount": 3
+          },
+          {
+            "Id": 300000007701958,
+            "Name": "HYDERABAD CLIENT",
+            "TotalCount": 1
+          },
+          {
+            "Id": 300000007885293,
+            "Name": "Hyderabad DLF 1st Floor SEZ",
+            "TotalCount": 1
+          },
+          {
+            "Id": 300000008159018,
+            "Name": "MUMBAI CLIENT",
+            "TotalCount": 1
+          }
+        ],
+        "flexFieldsFacet": [
+          {
+            "Name": "AttributeChar14",
+            "Label": "Work from Anywhere"
+          }
+        ],
+        "organizationsFacet": [
+          {
+            "Id": 1,
+            "Name": "Zensar Technologies Ltd",
+            "TotalCount": 195
+          }
+        ],
+        "workplaceTypesFacet": [
+          {
+            "Id": "ORA_ON_SITE",
+            "Name": "On-site",
+            "TotalCount": 195
+          }
+        ]
+      }
+    ],
+    "count": 1,
+    "hasMore": false,
+    "limit": 200,
+    "offset": 0,
+    "links": [
+      {
+        "rel": "self",
+        "href": "https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com:443/hcmRestApi/resources/11.13.18.05/recruitingCEJobRequisitions",
+        "name": "recruitingCEJobRequisitions",
+        "kind": "collection"
+      },
+      {
+        "rel": "action",
+        "href": "https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com:443/hcmRestApi/resources/11.13.18.05/recruitingCEJobRequisitions/action/getRequisitionsLocationCoordinates",
+        "name": "getRequisitionsLocationCoordinates",
+        "kind": "other"
+      },
+      {
+        "rel": "action",
+        "href": "https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com:443/hcmRestApi/resources/11.13.18.05/recruitingCEJobRequisitions/action/getRequisitionDetailsForMap",
+        "name": "getRequisitionDetailsForMap",
+        "kind": "other"
+      }
+    ]
+  }
+}

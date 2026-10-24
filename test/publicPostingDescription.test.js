@@ -18,3 +18,17 @@ test('rejects malformed or ambiguous role schemas',()=>{
   assert.equal(publicPostingDescription(job,'<script type="application/ld+json">{broken</script>',job.sourceUrl),null);
   assert.equal(publicPostingDescription(job,html([posting,posting]),job.sourceUrl),null);
 });
+
+test('rejects schemas inside inactive HTML and placeholder descriptions',()=>{
+  for(const content of [`<!--${html(posting)}-->`, `<template>${html(posting)}</template>`,
+    `<textarea>${html(posting)}</textarea>`, `<div hidden>${html(posting)}</div>`,
+    html({...posting,description:'Description coming soon'}),
+    html({...posting,description:'<template>Responsibilities: lead finance projects.</template>'})])
+    assert.equal(publicPostingDescription(job,content,job.sourceUrl),null);
+});
+
+test('hash-routed role URLs must match even when the schema omits its native identifier',()=>{
+  const routed={...job,sourceUrl:'https://careers.synopsys.com/#/job/R100'};
+  const schema={...posting,identifier:undefined,url:'https://careers.synopsys.com/#/job/R101'};
+  assert.equal(publicPostingDescription(routed,html(schema),routed.sourceUrl),null);
+});

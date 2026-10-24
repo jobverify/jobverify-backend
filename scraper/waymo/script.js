@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { buildHttpError } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -70,7 +70,6 @@ const extractSummary = (html) => stripTags(
 const extractDisplayedCount = (html) => {
   const candidates = [
     String(html ?? '').match(/Displaying\s*<b>\s*all(?:&nbsp;|\s)+(\d+)\s*<\/b>\s*entries/i)?.[1],
-    String(html ?? '').match(/\bid=["']country_code_count_[^"']*["'][^>]*>\s*(\d+)\s*</i)?.[1],
     String(html ?? '').match(/\bdata-filter=["']country_code["'][^>]*\bdata-value=["']india["'][^>]*\bdata-count=["'](\d+)["']/i)?.[1],
   ]
 
@@ -137,14 +136,24 @@ export const extractJobsFromSearchHtml = (html, {
   })
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 20000,
-})
+const defaultFetchText = async (url, { signal } = {}) => {
+  const timeout = AbortSignal.timeout(20000)
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+  })
+  if (response.status !== 200 || response.url !== url) {
+    const error = buildHttpError(response, url)
+    error.message = `Waymo HTTP ${response.status} for ${url}; final URL ${response.url}`
+    Object.assign(error, { requestUrl: url, finalUrl: response.url })
+    void Promise.resolve().then(() => response.body?.cancel?.(error)).catch(() => {})
+    throw error
+  }
+  return response.text()
+}
 
 export const createWaymoScraper = ({
   now: defaultNow = () => new Date().toISOString(),
@@ -152,15 +161,21 @@ export const createWaymoScraper = ({
   async run({
     fetchText = defaultFetchText,
     now = defaultNow,
+    signal,
   } = {}) {
+    signal?.throwIfAborted()
     const searchUrl = buildIndiaSearchUrl()
-    const searchHtml = await fetchText(searchUrl)
+    const searchHtml = await fetchText(searchUrl, { signal })
+    signal?.throwIfAborted()
     const scrapedAt = now()
     const jobs = extractJobsFromSearchHtml(searchHtml, { scrapedAt })
     const reportedTotal = extractDisplayedCount(searchHtml)
 
     if (jobs.length === 0 && reportedTotal !== 0) {
       throw new Error('Waymo first-party India search page returned no parseable job cards')
+    }
+    if (reportedTotal === null || reportedTotal !== jobs.length || new Set(jobs.map(job => job.jobId)).size !== jobs.length) {
+      throw new Error('Waymo incomplete India inventory: displayed count or unique job-card count mismatch')
     }
 
     return attachInventoryEvidence(jobs, {
@@ -183,7 +198,7 @@ const isDirectExecution = process.argv[1]
   ?.replaceAll('\\', '/')
   .endsWith('/scraper/waymo/script.js')
 
-if (isDirectExecution || process.argv.includes('--dry-run')) {
+if (isDirectExecution) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

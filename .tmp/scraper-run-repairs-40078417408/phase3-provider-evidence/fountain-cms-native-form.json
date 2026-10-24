@@ -1,0 +1,110 @@
+{
+  "capturedAt": "2026-10-24T16:20:22.492Z",
+  "requestedUrl": "https://ap-1.fountain.com/internal_api/portal/cms/application_forms/new?funnel_id=b775b39d-2a57-4954-b232-0d460503938b&try_new_ui=true&brand_id=a9218256-8fbf-40ab-936b-49ff5ff7c900",
+  "url": "https://hire.rekrutek.ai/internal_api/portal/cms/application_forms/new?funnel_id=b775b39d-2a57-4954-b232-0d460503938b&try_new_ui=true&brand_id=a9218256-8fbf-40ab-936b-49ff5ff7c900",
+  "status": 200,
+  "bodySha256": "3aecd9bd9326b94c791d9da1c68f41f417178105178d93126d51c64827b6e41c",
+  "payload": {
+    "account": {
+      "directory_path": "https://careers.hire.rekrutek.ai/cms/a9218256-8fbf-40ab-936b-49ff5ff7c900",
+      "is_amazon_account": false,
+      "is_ups_account": false,
+      "external_id": "3291bef4-3bf7-4a36-ac47-463d538699d2",
+      "name": "CMS",
+      "account_type": "active",
+      "privacy_policy_url": null,
+      "terms_of_service_url": null
+    },
+    "brand": {
+      "logos": {
+        "square_image_url": "https://rekrutek-production-uploads-560576350398.s3.ap-south-1.amazonaws.com/uploads/accounts/brand/square_logo/330/images__2_.png?X-Amz-Expires=604800&X-Amz-Date=20261024T162024Z&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEN%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCmFwLXNvdXRoLTEiRzBFAiBzs4ARDcTUs10Sd%2BUyCnwq0eP8YFyKxt57sqFVRgCLRAIhAPwGSOimkHnsW1tfjrZvSaOHcEYaBAF6CHQ4A7VQFeRQKpwFCKj%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQABoMNTYwNTc2MzUwMzk4IgyNBHM1B0YjsWZZGJwq8ATzyO0a8GtgfPpIDx6h2Xr%2BsqbsCy3EolNlqlhNP3PRen%2B3OC7Yia3i0aEIfKwfiJG4ktcY12yGdK97c5sNGoGjR2Q7zAPCYwU9fm3hsD1j4FSoEbTtzVL%2BJJmm8jeD%2BVcRXS4JFSQD6FkSg3DcLcKJ20rvfXHfsu2HbQT7jBtpk3CDL1SOl4pWrr6XIKzdDFOZ%2BJanPY1s7e01ucodyJ5fUcGmhYXcvn0y%2FvG0riJkQ6tiowl%2BjJcenTPs%2FQTMPz%2FYQMARsve5cJCsfeXVxFvHezkKWwTGer3JFIlz9gamZW1nDr3me4Or0eVnPuvFyuAXAOI6xmcoIUM%2BYaMBpw%2B%2BuubEXmgzdgM3k7zW3UUNfuMBXXEk%2FoBb2DtfPNEbCnKTwM%2BRB4n0bCagmkA6B7q0pfaDH31iy2sSll%2BFo6RBhJ2YpoGiwrWCFDodFBfap7TSeijTAFDxlF%2FIfwVIIJcrdQ2KbaQjUzk2zAnBGRB26voPsbZjDBvZwglBo110S8othEhADjZL8nDwQWy3naCwla%2FaFUFLqjlmWA6Piwuu9jYz7nkWd9YrhTbKYWGSX%2BMiKRLaXu0ruh6zqw59Uxyg%2BoiQbhRClj3JYY3qS3i0hhBBMjZDBm2sMTM456xtNWkyhYd5CbUXJNDmJWV1v9JSt5sLJF2oriwHAWOqZdWjA9ltYmDLo2RaBrvdulc0Fs7oZPm%2BaeaISFMCfuhBE%2FDYyTd%2FEBjLyhvOftYDeeO2nETMLnqBqydeEwdG%2FJ3RuZwuFO3Fb7aL0TqTUpMp5kYoy4%2FVQF37BHjycfMD7DwIiSkwtXrXAZAPqNJoZA82i%2Fww1Jrz1gY6mAG78GleHbJDpIQZM84uPUrnj19nW3on5H%2BiKqKLHzMXys%2FwC9GNQ26WNfzrhPGGkpFN3wv94AkxI9GfmabXGy%2BCtKMSevjJOmOdZFJVfn2jEMPaFGevP%2BbJG%2BstlvLGUawZC4tSuJtLQpFYna64dqXfS8C6%2BCyHPbY%2F1yv1ncuteP5YR31jTG19ygwvLTlWynW58JQouyrUGQ%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAYFBHUJC7IVUNE4YN%2F20261024%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-SignedHeaders=host&X-Amz-Signature=e0ad26f5aa1a0242d746992625d98df91320e3b529289ade3e84adb1909c4f24",
+        "image_url": "https://rekrutek-production-uploads-560576350398.s3.ap-south-1.amazonaws.com/uploads/accounts/brand/logo/330/cms_new-removebg-preview__1_.png?X-Amz-Expires=604800&X-Amz-Date=20261024T162024Z&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEN%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCmFwLXNvdXRoLTEiRzBFAiBzs4ARDcTUs10Sd%2BUyCnwq0eP8YFyKxt57sqFVRgCLRAIhAPwGSOimkHnsW1tfjrZvSaOHcEYaBAF6CHQ4A7VQFeRQKpwFCKj%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEQABoMNTYwNTc2MzUwMzk4IgyNBHM1B0YjsWZZGJwq8ATzyO0a8GtgfPpIDx6h2Xr%2BsqbsCy3EolNlqlhNP3PRen%2B3OC7Yia3i0aEIfKwfiJG4ktcY12yGdK97c5sNGoGjR2Q7zAPCYwU9fm3hsD1j4FSoEbTtzVL%2BJJmm8jeD%2BVcRXS4JFSQD6FkSg3DcLcKJ20rvfXHfsu2HbQT7jBtpk3CDL1SOl4pWrr6XIKzdDFOZ%2BJanPY1s7e01ucodyJ5fUcGmhYXcvn0y%2FvG0riJkQ6tiowl%2BjJcenTPs%2FQTMPz%2FYQMARsve5cJCsfeXVxFvHezkKWwTGer3JFIlz9gamZW1nDr3me4Or0eVnPuvFyuAXAOI6xmcoIUM%2BYaMBpw%2B%2BuubEXmgzdgM3k7zW3UUNfuMBXXEk%2FoBb2DtfPNEbCnKTwM%2BRB4n0bCagmkA6B7q0pfaDH31iy2sSll%2BFo6RBhJ2YpoGiwrWCFDodFBfap7TSeijTAFDxlF%2FIfwVIIJcrdQ2KbaQjUzk2zAnBGRB26voPsbZjDBvZwglBo110S8othEhADjZL8nDwQWy3naCwla%2FaFUFLqjlmWA6Piwuu9jYz7nkWd9YrhTbKYWGSX%2BMiKRLaXu0ruh6zqw59Uxyg%2BoiQbhRClj3JYY3qS3i0hhBBMjZDBm2sMTM456xtNWkyhYd5CbUXJNDmJWV1v9JSt5sLJF2oriwHAWOqZdWjA9ltYmDLo2RaBrvdulc0Fs7oZPm%2BaeaISFMCfuhBE%2FDYyTd%2FEBjLyhvOftYDeeO2nETMLnqBqydeEwdG%2FJ3RuZwuFO3Fb7aL0TqTUpMp5kYoy4%2FVQF37BHjycfMD7DwIiSkwtXrXAZAPqNJoZA82i%2Fww1Jrz1gY6mAG78GleHbJDpIQZM84uPUrnj19nW3on5H%2BiKqKLHzMXys%2FwC9GNQ26WNfzrhPGGkpFN3wv94AkxI9GfmabXGy%2BCtKMSevjJOmOdZFJVfn2jEMPaFGevP%2BbJG%2BstlvLGUawZC4tSuJtLQpFYna64dqXfS8C6%2BCyHPbY%2F1yv1ncuteP5YR31jTG19ygwvLTlWynW58JQouyrUGQ%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAYFBHUJC7IVUNE4YN%2F20261024%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-SignedHeaders=host&X-Amz-Signature=95c5e6766a65d52f5de4862bf9d11bb1ad12d0760f3e690c68dcd91d723c51f9"
+      },
+      "navbar_text_color": "#ffffff",
+      "name": "CMS",
+      "is_amazon_dsp": false,
+      "external_id": "a9218256-8fbf-40ab-936b-49ff5ff7c900",
+      "slug": "cms",
+      "colors": {
+        "primary": "#43004D",
+        "primary_dark": "hsl(292, 46%, 48%)",
+        "secondary": "#43004d",
+        "grey_1": "hsl(292, 8%, 17%)",
+        "grey_2": "hsl(292, 2%, 47%)",
+        "grey_3": "hsl(292, 3%, 71%)",
+        "grey_4": "hsl(292, 6%, 87%)",
+        "grey_5": "hsl(292, 33%, 97%)",
+        "grey_6": "hsl(220, 7%, 17%)",
+        "box_shadow_1": "hsla(292, 2%, 47%, 0.24)",
+        "box_shadow_2": "hsla(292, 2%, 47%, 0.08)",
+        "input_inset": "inset 0 1px 3px 0 hsla(292, 6%, 87%, 0.7)",
+        "dropdown_inset": "inset 0 -1px 3px 0 hsla(292, 6%, 87%, 0.7)",
+        "input_outline": "0 0 0 3px hsla(292, 3%, 71%, 0.12)",
+        "gray600": "#666f89",
+        "white": "#ffffff"
+      }
+    },
+    "config": {
+      "record_applicant": false,
+      "cookie_consent_enabled": true,
+      "itc_demo_enabled": false,
+      "reach_application_form_enabled": true,
+      "experiments": [
+        {
+          "test_bucket_name": "applicant-ui-v2-text-cookie-consent-opt-in-experiment",
+          "test_bucket_value": "CONTROL"
+        },
+        {
+          "test_bucket_name": "applicant-ui-v2-login-experiment",
+          "test_bucket_value": "Control"
+        },
+        {
+          "test_bucket_name": "granular-consent-form",
+          "test_bucket_value": false
+        },
+        {
+          "test_bucket_name": "sms-consent-updates-v-2",
+          "test_bucket_value": false
+        }
+      ],
+      "conversion_trackers": [],
+      "turnstile_enabled": false,
+      "validate_email": false,
+      "hide_email_field": false,
+      "show_full_name_field": false,
+      "show_compensation": true,
+      "location_request_enabled": false,
+      "show_cpra_notice": false,
+      "iframe_consent_enabled": false,
+      "marketing_consent_collection_enabled": true
+    },
+    "funnel": {
+      "application_form_title": "Chennai - Project Manager-chennai",
+      "country_code": "IN",
+      "custom_fields": [],
+      "hide_back_to_positions_link": false,
+      "jobs_directory_disabled": false,
+      "hide_job_wording": true,
+      "locale": "en-GB",
+      "name_input_min_length": 2,
+      "position_description_html": "",
+      "position_custom_success_message": "",
+      "alternative_locales": {},
+      "title": "Chennai - Project Manager-chennai",
+      "address": "26RW+VGG, Drivers Colony, T. Nagar, Chennai, Tamil Nadu 600017, India",
+      "exotel_whats_app_number": "+918657040040",
+      "external_id": "b775b39d-2a57-4954-b232-0d460503938b",
+      "slug": "chennai-project-manager-chennai",
+      "location": {
+        "name": "Karnataka",
+        "external_id": "3be8ace7-17f7-4530-9df7-819c45e3b7a0"
+      },
+      "sms_consent_variant": "Standard",
+      "active": true,
+      "job_at_a_glance": [],
+      "position_name": "Project Manager-chennai",
+      "expand_job_description": false
+    },
+    "applicant": {}
+  }
+}

@@ -20,7 +20,7 @@ const isDirectExecution = process.argv[1]
   ?.replaceAll('\\', '/')
   .endsWith('/scraper/graphcore/script.js')
 
-if (isDirectExecution || process.argv.includes('--dry-run')) {
+if (isDirectExecution) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()

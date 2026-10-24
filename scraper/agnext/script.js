@@ -13,10 +13,27 @@ export const JOB_OPENINGS_URL = 'https://agnext.keka.com/careers'
 export const createAgNextScraper = ({ fetchImpl = fetch, timeoutMs = 15000 } = {}) => ({
   async run({ signal } = {}) {
     signal?.throwIfAborted()
-    const request = (url) => fetchTextWithRetry(url, {
-      fetchImpl, signal, timeoutMs, attempts: 1,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify)', Accept: 'text/html' },
-    })
+    let lastResponse
+    const request = async (url) => {
+      try {
+        return await fetchTextWithRetry(url, {
+          fetchImpl: async (requestedUrl, init) => {
+            const response = await fetchImpl(requestedUrl, init)
+            lastResponse = { status: response.status, requestUrl: requestedUrl, finalUrl: response.url || requestedUrl }
+            return response
+          }, signal, timeoutMs, attempts: 1,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify)', Accept: 'text/html' },
+        })
+      } catch (error) {
+        if (lastResponse?.requestUrl === url) {
+          Object.assign(error, lastResponse, { stage: url === OFFICIAL_CAREERS_URL ? 'home' : 'board' })
+          if ([202, 401, 403, 429, 451].includes(lastResponse.status)) Object.assign(error, {
+            softFailure: true, upstreamOutage: false, failureKind: 'blocked_or_access_denied', abortRetries: true,
+          })
+        }
+        throw error
+      }
+    }
     const homepage = await request(OFFICIAL_CAREERS_URL)
     const hasHandoff = [...homepage.matchAll(/<a\b[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi)]
       .some((match) => {
@@ -28,7 +45,10 @@ export const createAgNextScraper = ({ fetchImpl = fetch, timeoutMs = 15000 } = {
     const board = await request(JOB_OPENINGS_URL)
     signal?.throwIfAborted()
     if (!board.trim() || /<title[^>]*>[^<]*(?:access denied|forbidden|just a moment)/i.test(board)) {
-      throw new Error('AgNext careers board is blocked or empty')
+      throw Object.assign(new Error('AgNext careers board is blocked or empty'), lastResponse, {
+        stage: 'board', softFailure: true, upstreamOutage: false,
+        failureKind: 'blocked_or_access_denied', abortRetries: true,
+      })
     }
     return attachInventoryEvidence([], {
       status: 'discovery-only', surface: JOB_OPENINGS_URL, firstParty: true,

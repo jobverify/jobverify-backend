@@ -13,6 +13,59 @@ const readBundle=async bundle=>{
   return JSZip.loadAsync(Buffer.concat(chunks));
 };
 
+for(const kind of ['logs','artifacts']){
+  test(`${kind} download includes only the requested local resources`,async t=>{
+    const {createPipelineBundle}=await import('../src/pipeline/download.js');
+    const root=await fs.mkdtemp(path.join(os.tmpdir(),'pipeline-selective-test-'));
+    t.after(()=>fs.rm(root,{recursive:true,force:true}));
+    await fs.mkdir(path.join(root,'.cache/pipeline/logs'),{recursive:true});
+    for(const key of keys){
+      await fs.writeFile(path.join(root,'.cache/pipeline/logs',`${id}-${key}.log`),'saved log');
+      await fs.writeFile(path.join(root,'.cache/pipeline',`${id}-${key}.json`),'{}');
+    }
+    const bundle=await createPipelineBundle({_id:id,target:'local',status:'completed',stages:keys.map(key=>({key,status:'completed',summary:{completed:7}}))},{root,kind});
+    t.after(bundle.cleanup);
+    const zip=await readBundle(bundle);
+    for(const key of keys){
+      assert.equal(Boolean(zip.file(`${key}/logs.txt`)),kind==='logs');
+      assert.equal(Boolean(zip.file(`${key}/artifacts/summary.json`)),kind==='artifacts');
+      assert.equal(Boolean(zip.file(`${key}/stage-summary.json`)),kind==='artifacts');
+    }
+    assert.equal(bundle.filename,`pipeline-${id}-${kind}.zip`);
+    const manifest=JSON.parse(await zip.file('manifest.json').async('string'));
+    assert.equal(manifest.kind,kind);
+    assert.ok(manifest.stages.every(stage=>stage.unavailable.length===0));
+  });
+
+  test(`${kind} GitHub download skips requests for the other resource type`,async t=>{
+    const {createPipelineBundle}=await import('../src/pipeline/download.js');
+    const inner=await new JSZip().file('output.txt','workflow output').generateAsync({type:'nodebuffer'});
+    t.mock.method(globalThis,'fetch',async url=>{
+      const parsed=new URL(url);
+      if(parsed.pathname.endsWith('/logs')){
+        assert.equal(kind,'logs','artifacts download must not request logs');
+        return new Response(inner);
+      }
+      assert.equal(kind,'artifacts','logs download must not request artifacts');
+      if(parsed.pathname.endsWith('/artifacts'))return Response.json({artifacts:[{id:901,name:'result',expired:false}]});
+      assert.ok(parsed.pathname.endsWith('/artifacts/901/zip'));
+      return new Response(inner);
+    });
+    const bundle=await createPipelineBundle({_id:id,target:'github',repo:'owner/repo',status:'completed',stages:[{key:'scraper',status:'completed',githubRunId:71}]},{kind,token:'test-pat'});
+    t.after(bundle.cleanup);
+    const zip=await readBundle(bundle);
+    assert.equal(Boolean(zip.file('scraper/logs.zip')),kind==='logs');
+    assert.equal(Boolean(zip.file('scraper/artifacts/901-result.zip')),kind==='artifacts');
+    const manifest=JSON.parse(await zip.file('manifest.json').async('string'));
+    assert.deepEqual(manifest.stages[0].unavailable,[]);
+  });
+}
+
+test('unsupported archive kinds are rejected',async()=>{
+  const {createPipelineBundle}=await import('../src/pipeline/download.js');
+  await assert.rejects(createPipelineBundle({_id:id,target:'local',stages:[]},{kind:'invalid'}),{status:400});
+});
+
 test('local download contains complete redacted logs and only this run’s summaries',async t=>{
   const {createPipelineBundle}=await import('../src/pipeline/download.js');
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'pipeline-download-test-'));

@@ -35,18 +35,32 @@ test('generation client rejects non-local endpoints', () => {
   assert.throws(() => createRewriteClient({ endpoint: 'https://example.com' }), /127\.0\.0\.1/);
 });
 
-test('the rewrite client selects the configured Qwen model alias', async t => {
+test('the production LFM client uses compact decisions and preserves source facts when publishing', async t => {
   let requestedModel;
+  let request;
   const server = http.createServer(async (req, res) => {
     let body = ''; for await (const part of req) body += part;
-    requestedModel = JSON.parse(body).model;
+    request = JSON.parse(body);
+    requestedModel = request.model;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ categories: [], overviewFactId: 0 }) } }] }));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
-  await createRewriteClient({ endpoint: 'http://127.0.0.1:' + server.address().port }).generate(buildRewriteInput(job));
-  assert.equal(requestedModel, 'job-description-qwen');
+  let saved;
+  const client = createProductionRewriteClient({ endpoint: 'http://127.0.0.1:' + server.address().port });
+  const stats = await rewriteCandidates([{ ...job, sourceContentHash: job.descriptionRewrite.inputHash }], {
+    client, deadline: Date.now() + 10000,
+    update: async (_filter, values) => { saved = values; return { matchedCount: 1 }; },
+  });
+  assert.equal(requestedModel, 'job-description-lfm');
+  assert.equal(client.format, 'fact-plan');
+  assert.equal(request.max_tokens, 768);
+  assert.equal(request.response_format.json_schema.schema.properties.categories.maxItems, 0);
+  assert.equal(stats.published, 1);
+  assert.match(saved.$set.description, /At least 2 years of software development experience is required/);
+  assert.match(saved.$set.description, /AWS experience is nice to have/);
+  assert.equal(saved.$set.sourceDescription, undefined);
 });
 
 test('run budget respects the workflow deadline and cleanup reserve', () => {

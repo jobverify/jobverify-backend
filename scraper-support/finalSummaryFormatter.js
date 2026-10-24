@@ -1,10 +1,14 @@
+import { isCompleteScraperAttempt } from './utils/inventoryEvidence.js'
+import { isUnavailableZeroOutcome } from './utils/scraperOutcome.js'
+import { summarizeScraperRun } from './utils/scraperRunSummary.js'
+
 const RANKED_SOURCE_LIMIT = 5
 const FAILURE_EXAMPLE_LIMIT = 3
 
 const formatStatus = (result = {}) => {
-  if (result.failureKind === 'coverage_gap') return 'Coverage'
-  if (result.success) return 'OK'
   if (result.skipped) return 'Skip'
+  if (result.failureKind === 'coverage_gap' || isUnavailableZeroOutcome(result.zeroJobEvidence)) return 'Coverage'
+  if (result.success) return isCompleteScraperAttempt(result) ? 'OK' : 'Partial'
   return result.softFailure ? 'Upstream' : 'Warn'
 }
 
@@ -111,14 +115,15 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
   const counts = rows.reduce((total, { result }) => {
     total[formatStatus(result)] += 1
     return total
-  }, { OK: 0, Skip: 0, Coverage: 0, Upstream: 0, Warn: 0 })
-  const successfulRows = rows.filter(({ result }) => formatStatus(result) === 'OK')
+  }, { OK: 0, Partial: 0, Skip: 0, Coverage: 0, Upstream: 0, Warn: 0 })
+  const runSummary = summarizeScraperRun(rows.map(({ result }) => result))
+  const succeeded = runSummary.taskOutcomes.succeeded
   const totalJobs = rows.reduce((total, { result }) => total + toFiniteNonNegative(result.jobs), 0)
   const jobsPerSource = rows.map(({ result }) => toFiniteNonNegative(result.jobs))
   const sourcesWithJobs = rows.filter(({ result }) => toFiniteNonNegative(result.jobs) > 0).length
   const zeroJobRows = rows.filter(({ result }) => (
     toFiniteNonNegative(result.jobs) === 0
-    && (formatStatus(result) === 'OK' || Boolean(result.zeroJobEvidence))
+    && !result.skipped && (result.success === true || Boolean(result.zeroJobEvidence))
   ))
   const zeroJobEvidenceCount = (evidence) => zeroJobRows.filter(({ result }) => (
     (result.zeroJobEvidence || 'unverified-zero') === evidence
@@ -208,13 +213,17 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
     'RUN HEALTH',
     formatAsciiTable(['Metric', 'Value'], [
       ['Sources processed', processed],
-      ['Successful', counts.OK],
+      ['Tasks succeeded', succeeded],
       ['Skipped', counts.Skip],
       ['Coverage gaps', counts.Coverage],
       ['Upstream issues', counts.Upstream],
       ['Source warnings', counts.Warn],
-      ['Success rate', formatPercent(counts.OK, processed)],
-      ['Successful-source rate', formatPercent(counts.OK, processed)],
+      ['Task success rate', formatPercent(succeeded, processed)],
+      ['Complete inventory evidence', runSummary.inventoryChecks.complete],
+      ['Complete extractions', runSummary.extractionChecks.complete],
+      ['Incomplete extractions', runSummary.extractionChecks.incomplete],
+      ['Partial successful tasks', counts.Partial],
+      ['Complete-extraction rate', formatPercent(runSummary.extractionChecks.complete, processed)],
       ['Zero India-job results', zeroJobRows.length],
     ]),
     'JOB YIELD',
@@ -276,7 +285,7 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
     'RUN-OVER-RUN CHANGE',
     formatAsciiTable(['Metric', 'Current', 'Previous', 'Change'], [
       ['India jobs', totalJobs, previousJobs ?? 'unavailable', delta(totalJobs, previousJobs)],
-      ['Successful sources', counts.OK, previousSucceeded ?? 'unavailable', delta(counts.OK, previousSucceeded)],
+      ['Successful tasks', succeeded, previousSucceeded ?? 'unavailable', delta(succeeded, previousSucceeded)],
       ['Timed-out sources', timedOutSources, 'unavailable', 'unavailable'],
     ]),
     'SOURCE-CHANGE ANOMALIES',
