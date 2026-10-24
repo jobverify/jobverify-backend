@@ -109,10 +109,16 @@ export async function runVerifiedWorkdayBoardUnion({source,company,boards,employ
       proof(info.canApply===true && info.posted===true,'native application status unavailable')
       proof(canonical(info.externalUrl,board)===canonical(job.link,board)
         && info.jobPostingId===new URL(info.externalUrl).pathname.split('/').at(-1),'native canonical identity mismatch')
-      proof(info.country?.descriptor==='India' && info.country.id===INDIA
+      const primaryCountry=info.jobRequisitionLocation?.country
+      const foreignPrimaryWithIndia=primaryCountry && primaryCountry.descriptor!=='India' && primaryCountry.id!==INDIA
+        && FOREIGN_COUNTRY_CODES.has(primaryCountry.alpha2Code)
+        && info.country?.descriptor===primaryCountry.descriptor && info.country.id===primaryCountry.id
+        && Array.isArray(info.additionalLocations) && info.additionalLocations.some(location=>typeof location==='string'
+          && isJobInPublicLocationScope({location}))
+      proof(foreignPrimaryWithIndia || info.country?.descriptor==='India' && info.country.id===INDIA
         && info.jobRequisitionLocation?.country?.descriptor==='India'
         && info.jobRequisitionLocation.country.id===INDIA && info.jobRequisitionLocation.country.alpha2Code==='IN','native India country unavailable or conflicting')
-      proof([info.location,info.jobRequisitionLocation.descriptor].every(label=>typeof label==='string' && label.trim() && !explicitForeignCode(label)
+      proof(foreignPrimaryWithIndia || [info.location,info.jobRequisitionLocation.descriptor].every(label=>typeof label==='string' && label.trim() && !explicitForeignCode(label)
         && isJobInPublicLocationScope({country:'India',location:label.replace(/\b(?:India|IND|IN)\b/gi,' ')})),
         'explicit foreign native primary location contradicts India country')
       proof(typeof employer==='string' && (employer.trim() ? employerPattern.test(employer) : !requireEmployer),'native employer unavailable or mismatched')
@@ -121,7 +127,8 @@ export async function runVerifiedWorkdayBoardUnion({source,company,boards,employ
       const activeDescription=extractActiveDescription(info.jobDescription)
       proof(activeDescription && normalizeSpace(activeDescription)===normalizeSpace(decodeNativeEntities(toPlainText(info.jobDescription))),
         'native description is hidden, inert or placeholder content')
-      const detailLocations=extractWorkdayStructuredDetail(payload)?.locations
+      const allDetailLocations=extractWorkdayStructuredDetail(payload)?.locations
+      const detailLocations=foreignPrimaryWithIndia ? allDetailLocations?.filter(location=>isJobInPublicLocationScope({location})) : allDetailLocations
       proof(Array.isArray(detailLocations) && detailLocations.length>0
         && detailLocations.every(label=>job.locations?.some(existing=>locationKey(existing)===locationKey(label))),
         'native detail locations changed or were not represented in extraction')

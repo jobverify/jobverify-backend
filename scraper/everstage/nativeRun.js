@@ -38,6 +38,10 @@ function next(html,page,id){
  return{d,n,p,a}
 }
 function location(l){
+ // Country-scoped remote listings intentionally have no city or state.
+ // Require the exact native country tuple rather than inferring India from remote work.
+ if(l?.name==='Remote, India'&&l.country==='India'&&l.countryCode==='IN'
+   &&l.workplaceType==='REMOTE'&&l.city===null&&l.state===null&&l.stateCode===null)return true
  need(l&&plain(l.name)&&plain(l.country)&&/^[A-Z]{2}$/.test(l.countryCode)&&plain(l.city)&&plain(l.state)&&plain(l.stateCode)&&['ON_SITE','HYBRID','REMOTE'].includes(l.workplaceType),'Native typed geography missing')
  const india=l.country==='India'||l.countryCode==='IN',indianCity=Object.hasOwn(CANONICAL_CITIES,l.city.toLowerCase())&&!/^remote|india$/i.test(l.city)
  if(india){

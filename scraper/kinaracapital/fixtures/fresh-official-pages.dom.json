@@ -1,0 +1,24 @@
+{
+  "url": "https://kinaracapital.com/careers/",
+  "title": "Attention Required! | Cloudflare",
+  "text": "Sorry, you have been blocked\nYou are unable to access kinaracapital.com\nWhy have I been blocked?\n\nThis website is using a security service to protect itself from online attacks. The action you just performed triggered the security solution. There are several actions that could trigger this block including submitting a certain word or phrase, a SQL command or malformed data.\n\nWhat can I do to resolve this?\n\nYou can email the site owner to let them know you were blocked. Please include what you were doing when this page came up and the Cloudflare Ray ID found at the bottom of this page.\n\nCloudflare Ray ID: a4f0f7c46df93ae6 • Your IP: Click to reveal • Performance & security by Cloudflare",
+  "links": [
+    {
+      "text": "Cloudflare",
+      "url": "https://www.cloudflare.com/5xx-error-landing"
+    }
+  ],
+  "scripts": [
+    "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+  ],
+  "network": [
+    {
+      "url": "https://kinaracapital.com/careers/",
+      "status": 403
+    },
+    {
+      "url": "https://kinaracapital.com/careers/",
+      "status": 200
+    }
+  ]
+}

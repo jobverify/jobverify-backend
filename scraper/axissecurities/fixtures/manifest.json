@@ -1309,6 +1309,637 @@
           "bodyBytes": 3329
         }
       ]
+    },
+    {
+      "file": "fresh-runtime-responses.json.gz",
+      "fileSHA256": "aa8a345518d9778a388bef959276fbcc1e38d3e7e5aad50b598a20bad45c4763",
+      "decodedFileSHA256": "ea9b2f9357f290ac32a74a9bbf5dc16f98c87967f49871a45ec42e896fce59f5",
+      "responses": [
+        {
+          "url": "https://simplehai.axisdirect.in/portal/careers",
+          "finalUrl": "https://simplehai.axisdirect.in/portal/careers",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:56.582Z",
+          "bodySHA256": "5f9e3ab80ac339dcc32e6b652edaa71acccf20c76b2dff984ac0b191361b1fbe"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/?token=aA6ANFk4CHLUkuOVBmxq&source=CAREERSITE",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/?token=aA6ANFk4CHLUkuOVBmxq&source=CAREERSITE",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:57.038Z",
+          "bodySHA256": "4c5e66a86c4add5178056fb423a667a9a1fbc7b3f718af044704dde471bca002"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/getcandidatecompanydetails?token=aA6ANFk4CHLUkuOVBmxq&source=CAREERSITE&page=%23list&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/getcandidatecompanydetails?token=aA6ANFk4CHLUkuOVBmxq&source=CAREERSITE&page=%23list&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:57.299Z",
+          "bodySHA256": "6d2994ed5112ae2e4313710f0a09eab67055d3c6e2bb38cfa2410d2ff9d4192b"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:57.488Z",
+          "requestBody": "careerSiteUrlParams=%7B%22page%22%3A0%2C%22search%22%3A%22*%3A*%22%2C%22token%22%3A%22aA6ANFk4CHLUkuOVBmxq%22%2C%22source%22%3A%22CAREERSITE%22%2C%22pagesize%22%3A10%7D&lang=en",
+          "bodySHA256": "ce0e5bcf49af90ce24d8f324922a218fdb71bc239f7050860865708dffb3c3c1"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:57.667Z",
+          "requestBody": "careerSiteUrlParams=%7B%22page%22%3A1%2C%22search%22%3A%22*%3A*%22%2C%22token%22%3A%22aA6ANFk4CHLUkuOVBmxq%22%2C%22source%22%3A%22CAREERSITE%22%2C%22pagesize%22%3A10%7D&lang=en",
+          "bodySHA256": "3ebe5d4e09366749305b1da180026a3495809f14e692fd24cc37be38b7f0b217"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:57.859Z",
+          "requestBody": "careerSiteUrlParams=%7B%22page%22%3A2%2C%22search%22%3A%22*%3A*%22%2C%22token%22%3A%22aA6ANFk4CHLUkuOVBmxq%22%2C%22source%22%3A%22CAREERSITE%22%2C%22pagesize%22%3A10%7D&lang=en",
+          "bodySHA256": "a46affc50402bd612f4d2887babd86a836b6dd55f1a6fd7caa6db472df1689d0"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:58.033Z",
+          "requestBody": "careerSiteUrlParams=%7B%22page%22%3A3%2C%22search%22%3A%22*%3A*%22%2C%22token%22%3A%22aA6ANFk4CHLUkuOVBmxq%22%2C%22source%22%3A%22CAREERSITE%22%2C%22pagesize%22%3A10%7D&lang=en",
+          "bodySHA256": "bba5278cbebe1fef20c3f62590abf7f1f3bfc9f51b94834b66c7bb361700fe72"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:58.218Z",
+          "requestBody": "careerSiteUrlParams=%7B%22page%22%3A4%2C%22search%22%3A%22*%3A*%22%2C%22token%22%3A%22aA6ANFk4CHLUkuOVBmxq%22%2C%22source%22%3A%22CAREERSITE%22%2C%22pagesize%22%3A10%7D&lang=en",
+          "bodySHA256": "99c8da62794b678e411ed02a42dc94258a430a402ca053cb9b62ae0866041cf1"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:58.397Z",
+          "requestBody": "careerSiteUrlParams=%7B%22page%22%3A5%2C%22search%22%3A%22*%3A*%22%2C%22token%22%3A%22aA6ANFk4CHLUkuOVBmxq%22%2C%22source%22%3A%22CAREERSITE%22%2C%22pagesize%22%3A10%7D&lang=en",
+          "bodySHA256": "c6da8b9658da2b3577f907909d3b80a44e08a10f74fa7a943e9efaeb18044241"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:58.586Z",
+          "requestBody": "careerSiteUrlParams=%7B%22page%22%3A6%2C%22search%22%3A%22*%3A*%22%2C%22token%22%3A%22aA6ANFk4CHLUkuOVBmxq%22%2C%22source%22%3A%22CAREERSITE%22%2C%22pagesize%22%3A10%7D&lang=en",
+          "bodySHA256": "aefc9bbd03665216a50448f5b641160a617327e04e5d7c756e640c1bd32674f9"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobsearch",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:58.754Z",
+          "requestBody": "careerSiteUrlParams=%7B%22page%22%3A7%2C%22search%22%3A%22*%3A*%22%2C%22token%22%3A%22aA6ANFk4CHLUkuOVBmxq%22%2C%22source%22%3A%22CAREERSITE%22%2C%22pagesize%22%3A10%7D&lang=en",
+          "bodySHA256": "51dd439475e321ed93b3cc8c96d64d839288911904cedfe815e7ae1447e3481f"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=645595&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=645595&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:58.948Z",
+          "bodySHA256": "fcf778e5fcf74bc0fe753746d1c8b8622b49467b4ee5bb8c3ea53958af35e7be"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=427104&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=427104&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.088Z",
+          "bodySHA256": "f485603bbd5fa109c7d694215a0ad9e15bc48eccb3cfaf3f9cdd9a11df8b64fc"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=372318&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=372318&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.093Z",
+          "bodySHA256": "49fd28fd78df287bb90a9730a01579b4ea5d6e699dae5c15099d752a32401a29"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=405597&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=405597&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.110Z",
+          "bodySHA256": "f5f32a6520fd7c9053d9e43f81c223049f0ca1e0844237cb2bf2e48687df6bc3"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=371293&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=371293&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.157Z",
+          "bodySHA256": "853860c1b30a8d001ca1755fd5007cc95148d522cd61bbb2490c6a67c548e96d"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=371139&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=371139&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.285Z",
+          "bodySHA256": "113f0f79bbb95dfb4c3ce377bdbd94bf19116c6089c8cb9af9b2f82371cf7909"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=371226&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=371226&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.296Z",
+          "bodySHA256": "b22f3125139b7e12c74b7c6c90bae2093656c279feb305a0c9b9c13097d6dfbd"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=370834&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=370834&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.306Z",
+          "bodySHA256": "8ad2e4570d836ed641103b8449b4092bcde257a34730f4ada7ee826a84e4816e"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=366545&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=366545&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.346Z",
+          "bodySHA256": "b53cbc82f1ae7b9e17843800ae484d66e4c581592e056ee7aa48266ae0468a84"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=366186&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=366186&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.478Z",
+          "bodySHA256": "5dca79503656cd1cfdcf8893f4dbf196879fc84e68aac85ee03099c8708be1d0"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=366540&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=366540&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.490Z",
+          "bodySHA256": "37ccb909a7bb2ef53e06d6618f4d998a4cc714f26435d6bf9581e974365a8aff"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=365876&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=365876&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.498Z",
+          "bodySHA256": "bfda941c7495049b5a1a59753f9ee8924a49f1a87819814f3b6944940352620e"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=365538&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=365538&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.518Z",
+          "bodySHA256": "1b6b9130f34b6b1e510066aeba42158642cf41266f212a662cef5c7e3d5cc945"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=364469&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=364469&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.662Z",
+          "bodySHA256": "fad07c31ec4e5781b320825701e8eac0154d105009e7ed14ab38e7d6a4802e2b"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=365257&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=365257&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.673Z",
+          "bodySHA256": "e9a7c1951d2cf1aba4a6b717c9606ebeece547d68c4378bd43e9a0be78c02a8e"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=364073&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=364073&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.679Z",
+          "bodySHA256": "655f5230ae94827e65275966491cc6e580f1552e90e48111935e32d1b5c46120"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=363268&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=363268&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.719Z",
+          "bodySHA256": "8e4b87697923567cd5b3204f032b375f2b7a8f47dfb734b28d44e47bfb716a5b"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=363228&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=363228&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.847Z",
+          "bodySHA256": "04f8c53b418465e3df2574dc534b8588ab27caed26625c5e3c78ea4140e12b35"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=363088&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=363088&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.860Z",
+          "bodySHA256": "5ad75ab2ac7509a70abf63e5c91b93b7ab8e26f9ecb51d93cee9a646c7efb86b"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=363051&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=363051&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.874Z",
+          "bodySHA256": "4adafb43af2de70cad3f24ce23de1e827ff33c958104696d1c55aee27e1129a2"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=363034&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=363034&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:18:59.902Z",
+          "bodySHA256": "b8c1b346a13a677f36a05796dec45068b2433cff3934d70e3611b1ef0788a74a"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=362113&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=362113&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.046Z",
+          "bodySHA256": "61d4f5c5f3058c861ffb23969c5f175ef6f7340f2cf7afafea89f837d1ee4127"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=362192&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=362192&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.057Z",
+          "bodySHA256": "1775f681241da7b33390a020daaeea64e4cce9cfe068f4b1b945f46afb1560bb"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=362111&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=362111&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.065Z",
+          "bodySHA256": "51d4617be2a0aaf4f0592642f199cc7a45f63ec847d1a55e242ab27446937efb"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=361735&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=361735&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.095Z",
+          "bodySHA256": "a6eefec79d76e8a0a3848bd4e6fb53d044091d7ad0a9fbb1e41445fa1ea56b38"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=361439&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=361439&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.244Z",
+          "bodySHA256": "8868cb04ddcbe02bb673a734ed98f2da1959e1cc0939e049101c4ad81738ea8a"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=361619&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=361619&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.259Z",
+          "bodySHA256": "5ad871481d6d98b5907ae78c05a6461106535cde1a1e91d759a69fe1b9746b09"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=360027&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=360027&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.304Z",
+          "bodySHA256": "ae555e290cc22f120f00e1a402578ce86a2d30011e5e0ec3846fe72a67451cb7"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=361429&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=361429&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.394Z",
+          "bodySHA256": "83b713607180124bfead549efc2958442dee4e3ae0f70f534e665f6137a41e10"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=360025&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=360025&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.428Z",
+          "bodySHA256": "7210667eba1f6028b4fc648d9ff57d2f0f08efe3de313e248526339e001d3bd5"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=358787&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=358787&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.446Z",
+          "bodySHA256": "09555517545864b626101232b69fbdf94189030aa9d2480a0b6f3c46a0ebaa58"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=358339&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=358339&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.487Z",
+          "bodySHA256": "4f90bb45e584769bfc6daefba06fdbbfc806403b25e5f632cdfd497ccde6acf8"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=357428&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=357428&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.602Z",
+          "bodySHA256": "d65f27c4f903dd204a2e160b42a9e3dae166ea38b9516e95fab07a4bbc3a02a5"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=357112&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=357112&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.612Z",
+          "bodySHA256": "da2ecee2c7e9d37c6665053b329335a1727a4d4a4ddf54a40bce2973ae2789b8"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=357154&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=357154&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.618Z",
+          "bodySHA256": "e8150e0fbaa0f3b0c69ad59327a9ecbf4ef253b1cd7f02935af47855e035494c"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=357011&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=357011&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.684Z",
+          "bodySHA256": "434656a67755bd79d5b32d68f289aeec1d4a992cb3fdbb90e0225939c67ce131"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=356392&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=356392&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.788Z",
+          "bodySHA256": "bcb694538af9976eb8ac46014bc0e026446a238fceb28529aea1be43b90bd5c8"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=355898&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=355898&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.795Z",
+          "bodySHA256": "578a2c0c8a9777fbc62ea3b993794353b0c3a39713b24488052430a6b9565f2b"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=356391&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=356391&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.819Z",
+          "bodySHA256": "3fcfa9b37fcdc33f435e9a0e000eb1b2c038c76018984f13e4427012531b71cd"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=355809&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=355809&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.904Z",
+          "bodySHA256": "b7e1ca017d9356a0a14ffc915143e56043a9ab9bff2be290eda40cf71ccc1b09"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=355808&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=355808&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.965Z",
+          "bodySHA256": "f898771bb849d98d53e6abbc32e7bf301d4f52c462bfdbe15ba89fdcaeb07218"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=354471&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=354471&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.976Z",
+          "bodySHA256": "acf102e1c51be26411b05e23559882b3f4836dbc905acc7eee9357518918b676"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=354469&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=354469&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:00.996Z",
+          "bodySHA256": "964ea986e1211f136fca28d29d8adbdafea0fed0980c012f97d975707af2dde9"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=354297&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=354297&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.086Z",
+          "bodySHA256": "af6875e2988f8aeb64bc36695228a9c45a4c142741124c97a85c25bafccce3ea"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=353746&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=353746&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.138Z",
+          "bodySHA256": "3c5a594b1a2fce56e814a416bd375c01dc53a292df0b420000db7b305b987538"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=352649&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=352649&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.158Z",
+          "bodySHA256": "ad72d2e27b29eec5f0430136f41997391865b53bc1f5edeb3e2370d720bdddfc"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=351552&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=351552&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.212Z",
+          "bodySHA256": "cf5d695c0347adef350bc9aa9e681fbca0adc7fed95e5c0ea83257d30bb79a42"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=351021&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=351021&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.338Z",
+          "bodySHA256": "bcb48b5c80bc1e94b31fc308fb1f8c861ed4d4ce85e9d9d1216c7851d2ecb659"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350284&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350284&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.345Z",
+          "bodySHA256": "2088d936dcd430a534c2e4dc318bc97ab8e9b29b85902352b957b6d491ca0e2f"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350304&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350304&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.362Z",
+          "bodySHA256": "6f078511b6d75cebdd9aed463e95e1aff5a28832fffd924566820b41479ffd7d"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350283&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350283&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.414Z",
+          "bodySHA256": "7b698b6f5acbe50ad72753090ebce855cfa181b1062dcbab9130880135dc8b24"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350282&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350282&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.530Z",
+          "bodySHA256": "7e47acf9c9bdb695fe920484f94d9c64fd89e5859dad016ef597fa35f66096f3"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350280&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350280&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.542Z",
+          "bodySHA256": "22e4e9666cf55c9d340601df81da327186085ab732cf3cee79cc12bbe4f113ac"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350281&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350281&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.556Z",
+          "bodySHA256": "3af26d24c6493d087250bb64d0d37cb15ff0ad2a933ed3b4e5d65d898a7a6952"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350164&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=350164&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.606Z",
+          "bodySHA256": "aa4c3052ab5c483d9c297741f2efc68a85430bfc9169440351667c5ddf24cf55"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=348521&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=348521&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.724Z",
+          "bodySHA256": "41a1c2cb08e9f3b4b2499c8e991d26d8288a3da1c5a73dd229562b7ac81a8e98"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=347966&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=347966&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.730Z",
+          "bodySHA256": "20a09d3434ea735ca98f119bc71f659480eb5985cb1362b1f4d26095ba6edc22"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=348629&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=348629&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.737Z",
+          "bodySHA256": "e46796728fc5a2c6aa7deacf2b48926835b7190cbd12ed7a7344f8d4d59b9380"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=343874&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=343874&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.794Z",
+          "bodySHA256": "d74bd464fb7acd6077361f1d944f767de3912a5c9c5636b6f5a2155a3ce84ec4"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=340039&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=340039&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.934Z",
+          "bodySHA256": "4b8026dfcba31a68a344fc81e0f80cf29de828e85ce83277fa9130f53484fed5"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=341307&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=341307&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.944Z",
+          "bodySHA256": "33abe7e03d3dce384cfe8a748778873306c14e833efc835c6e05a02e0d2952cd"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=338372&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=338372&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.951Z",
+          "bodySHA256": "92bc6b8196cccef023fdcf44193052984f907a029870031c3af304f0125a2b30"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=333396&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=333396&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:01.988Z",
+          "bodySHA256": "33bcf1f6023b6707a47f7ed165f9aa64558c67933ef5caed9fd08880c99a66d2"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=330062&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=330062&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.116Z",
+          "bodySHA256": "c7c9ed4dc8dadf6fd80616e3e737e3698cdcdeddde11fe28667919e63883ea2d"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=326770&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=326770&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.132Z",
+          "bodySHA256": "97f484372c7705cecbd37ea8b31026f1d6a5787dad5c8afa6f3d196cb644b57e"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=322341&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=322341&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.152Z",
+          "bodySHA256": "d07cc8ebe115f887de76c0e578134d2d44d377b7bc3a16566f231a43da9918d5"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=320837&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=320837&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.159Z",
+          "bodySHA256": "7c06a3618cd9fa39656943de3cad37194aa433ad06ded65f3795affe13622e0b"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=319963&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=319963&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.300Z",
+          "bodySHA256": "a05b456c951c4285194cedc8ab38190cb288f7bf9d77fdf6b974bb6421087ca4"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=318940&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=318940&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.329Z",
+          "bodySHA256": "2f2224cefc7a2aade8c63ad5dc00bdf37997a708efbb6707943ec8683510c0d8"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=316647&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=316647&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.344Z",
+          "bodySHA256": "b98f770f47f66c747949ce85eba2a0dc1517612520ae22868a229789986884ce"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=315571&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=315571&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.360Z",
+          "bodySHA256": "8903889f22634c0a86579f45018fff7c7a0832ae8118cd59df786e3320a677dc"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=287537&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=287537&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.479Z",
+          "bodySHA256": "ef824d2a66adb83d19bb70f466bab92ab5ab90709ce238b0cac8a4763481bdb2"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=284061&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=284061&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.520Z",
+          "bodySHA256": "eab7319dd87c10461796fb030cde850d801a7015a2c895e5cc27835314bd35b6"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=284603&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=284603&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.530Z",
+          "bodySHA256": "6feaaedfae8802e63bb373afeb922b3c8220229710c7db4ffa08560959ed2cd7"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=267315&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=267315&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.538Z",
+          "bodySHA256": "f1c0a32b4ece70aedc535c1183bccdcddf6cc2b83ddf7476ac0996178d9fb4cd"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=267094&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=267094&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.686Z",
+          "bodySHA256": "bf78c6b9fdb28d58dd186bf98c8f13567598660ba2156428ab1f442ebf168a0f"
+        },
+        {
+          "url": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=266125&source=CAREERSITE&lang=en",
+          "finalUrl": "https://axissecurities.ripplehire.com/candidate/candidatejobdetail?token=aA6ANFk4CHLUkuOVBmxq&jobSeq=266125&source=CAREERSITE&lang=en",
+          "status": 200,
+          "capturedAt": "2026-10-23T18:19:02.706Z",
+          "bodySHA256": "7717014c8821773e12fa7103b06714a2f931eed84a87ad5d3815d15488bef405"
+        }
+      ]
     }
   ]
 }

@@ -49,10 +49,10 @@ test('Policybazaar local catalog captures the verified first-party inline career
     'Hyderabad',
   ])
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-inline-careers-page')
+  assert.equal(provider.paginationStrategy, 'bounded-native-exact-employer-india-list-and-detail-reading;incomplete')
   assert.equal(
     provider.extractionStrategy,
-    'first-party-inline-role-observations+explicit-role-location-and-vacancy-coverage-gap',
+    'official-employer-identity+native-enabled-application+explicit-India+original-public-dates',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -112,4 +112,10 @@ test('Policybazaar hydrated local catalog stays script-runner compatible for cen
   assert.match(provider.modulePath, /policybazaar[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /policybazaar[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')
+})
+
+
+test('Policybazaar native metadata preserves incomplete scope and old original publications',async()=>{
+ const {POLICYBAZAAR_CATALOG:provider}=await loadCatalogModule()
+ assert.equal(provider.nativeEmployerOrganizationId,'303524');assert.equal(provider.nativeValidatedIndiaDetailCount,2);assert.equal(provider.observedEligibleCount,0);assert.equal(provider.firstParty,false);assert.equal(provider.sourceListingComplete,false);assert.equal(provider.lifecycleCleanupAllowed,false)
 })

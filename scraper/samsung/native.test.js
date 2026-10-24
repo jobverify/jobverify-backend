@@ -1,29 +1,23 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {run} from './script.js'
+import {freshFetch,freshResponses} from './freshReplay.js'
 import {readFileSync} from 'node:fs'
 import {gunzipSync} from 'node:zlib'
 import {spawnSync} from 'node:child_process'
 import {createHash} from 'node:crypto'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
-const fixture=name=>JSON.parse(gunzipSync(readFileSync(new URL('./fixtures/'+name+'.gz',import.meta.url))).toString('utf8'))
-const initial=fixture('native-initial.json'),india=fixture('native-india-responses.json'),official=fixture('official-careers.json'),overlap=fixture('research-overlap.json'),researchOfficial=fixture('research-official-careers.json')
-const response=record=>({status:record.status,url:record.finalUrl,headers:new Headers({'content-type':record.url.includes('/wday/cxs/')?'application/json':'text/html'}),text:async()=>record.body})
-const replay=({change=record=>record,...options}={})=>run({now:()=>new Date('2026-10-23T06:00:00Z'),fetchImpl:async(url,init)=>{
- const body=init.body?JSON.parse(init.body):null
- const record=[official,researchOfficial,...initial,...india,overlap].find(r=>r.url===url&&JSON.stringify(r.requestBody??null)===JSON.stringify(body))
- if(!record)throw Error('Uncaptured Samsung request '+url+' '+JSON.stringify(body))
- return response(change(structuredClone(record)))
-},...options})
+const official=freshResponses.find(r=>r.url==='https://www.samsung.com/in/about-us/careers/'),researchOfficial=freshResponses.find(r=>r.url==='https://research.samsung.com/careers')
+const replay=({change=record=>record,...options}={})=>run({now:()=>new Date('2026-10-23T06:00:00Z'),fetchImpl:freshFetch(change),...options})
 
 test('the official board enumerates every India page and retains employer identity evidence',async()=>{
  const jobs=await replay()
  const evidence=jobs[Symbol.for('jobverify.samsung-native-evidence')]
- assert.equal(evidence.globalReportedTotal,651)
+ assert.equal(evidence.globalReportedTotal,653)
  assert.equal(evidence.indiaReportedTotal,30)
  assert.equal(evidence.indiaRows.length,30)
- assert.equal(evidence.details.length,30)
- assert.equal(jobs.length,28)
+ assert.equal(evidence.details.length,40)
+ assert.equal(jobs.length,29)
  assert.equal(jobs.some(j=>['R119924','R114583'].includes(j.id)),false)
  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
  assert.equal(evidence.cleanupAllowed,false)
@@ -99,7 +93,7 @@ test('short pagination never becomes an empty or complete inventory',async()=>{
 })
 test('duplicate pagination rejects the batch',async()=>{
  await assert.rejects(replay({change:record=>{
-  if(record.requestBody?.offset===20){const p=JSON.parse(record.body);p.jobPostings[0]=JSON.parse(initial[1].body).jobPostings[0];record.body=JSON.stringify(p)}return record
+  if(record.requestBody?.offset===20){const p=JSON.parse(record.body);p.jobPostings[0]=JSON.parse(freshResponses.find(r=>r.requestBody?.offset===0&&Object.keys(r.requestBody.appliedFacets).length===0).body).jobPostings[0];record.body=JSON.stringify(p)}return record
  }}),/duplicate native page/)
 })
 test('an inert corporate handoff cannot establish first party delegation',async()=>{

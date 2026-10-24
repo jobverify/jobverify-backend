@@ -44,15 +44,16 @@ function rows(body,now,maxRecords){
  const seenIds=new Set(),seenURLs=new Set()
  for(const r of value.data){
   envelope(r)
-  requireNative(/^\d+$/.test(r.id)&&plain(r.title)&&r.job&&/^\d+$/.test(r.job.id)&&/^PIN-\d+$/.test(r.job.requisition_id),'Native record IDs/title missing')
+  requireNative(/^\d+$/.test(r.id)&&typeof r.title==='string'&&plain(r.title.trim())&&r.job&&/^\d+$/.test(r.job.id)&&/^PIN-\d+$/.test(r.job.requisition_id),'Native record IDs/title missing')
   requireNative(!seenIds.has(r.id)&&!seenURLs.has(r.url),'Duplicate native posting identity');seenIds.add(r.id);seenURLs.add(r.url)
   const u=new URL(r.url),id=u.pathname.split('/').at(-1)
   requireNative(u.origin===BOARD.slice(0,-1)&&uuid.test(id)&&u.pathname==='/en/postings/'+id&&!u.search&&!u.hash&&!u.username&&!u.password&&r.path===u.pathname,'Native role URL identity mismatch')
   const l=r.location;requireNative(l&&plain(l.city)&&plain(l.name)&&plain(l.province),'Native geography unavailable')
-  if(l.name==='India'||l.province==='India'){
-   requireNative(l.name==='India'&&l.province==='India'&&indiaCity(l.city)&&!foreign.test(l.city),'Native India city/geography contradiction')
+  const cityLocation=indiaCity(l.city)&&l.name===l.city&&!foreign.test(l.name+' '+l.province)
+  if(l.name==='India'||l.province==='India'||cityLocation){
+   requireNative((l.name==='India'&&l.province==='India'||cityLocation)&&indiaCity(l.city)&&!foreign.test(l.city),'Native India city/geography contradiction')
   }else requireNative(!indiaCity(l.city)&&!(/\bIndia\b/i.test(l.name+' '+l.province)),'Native foreign city/geography contradiction')
-  for(const k of ['country','country_code','countryCode'])if(l[k]!=null)requireNative(l[k]===(l.name==='India'?(k==='country'?'India':'IN'):(k==='country'?'United Kingdom':'GB')),'Native country/geography contradiction')
+  for(const k of ['country','country_code','countryCode'])if(l[k]!=null)requireNative(l[k]===((l.name==='India'||cityLocation)?(k==='country'?'India':'IN'):(k==='country'?'United Kingdom':'GB')),'Native country/geography contradiction')
   for(const k of ['company','company_name','employer','organization'])if(r[k]!=null)requireNative(r[k]===COMPANY,'Native employer identity mismatch')
   for(const k of ['closed','is_closed','archived','is_archived','is_internal'])if(r[k]!=null)requireNative(r[k]===false,'Native role status is closed/internal')
   if(r.deadline_at!=null)requireNative(Date.parse(timestamp(r.deadline_at,now,'deadline'))>Date.parse(now),'Native role deadline closed')
@@ -98,7 +99,7 @@ function role(html,row,now){
  requireNative(s.hiringOrganization?.name===COMPANY&&s.hiringOrganization?.url==='https://eptura.com'&&s.hiringOrganization?.sameAs==='https://eptura.com','Native organization/employer identity mismatch')
  requireNative(address?.addressCountry==='IN'&&address.addressLocality===row.location.city&&address.addressRegion===row.location.province&&s.jobLocation.name===row.location.name&&address.streetAddress===row.location.street_address&&address.postalCode===row.location.postal_code,'Native detail geography contradiction')
  requireNative(s.applicantLocationRequirements?.name==='India','Native applicant country contradiction')
- requireNative(head.titles.length===1&&head.titles[0]===row.title+' - India | Eptura Careers'&&doc.nodes(n=>n.tag==='h1').some(n=>doc.text(n)===row.title),'Native active role title mismatch')
+ requireNative(head.titles.length===1&&head.titles[0]===(row.title+' - '+row.location.name+' | Eptura Careers').replace(/\s+/g,' ').trim()&&doc.nodes(n=>n.tag==='h1').some(n=>doc.text(n)===row.title.replace(/\s+/g,' ').trim()),'Native active role title mismatch')
  requireNative(!closed.test(doc.text({tag:'root',children:doc.nodes(n=>n.tag==='body'),attrs:{}})),'Native active role is closed')
  const description=core(row.description),schemaDescription=core(s.description)
  requireNative(description===detailCore(doc,s.description),'Native full core description changed/truncated between listing/detail')
@@ -125,7 +126,7 @@ function role(html,row,now){
 }
 function application(html,job){
  const doc=document(html),head=activeHead(html),forms=doc.nodes(n=>n.tag==='form'&&n.attrs.id==='application-form'),urls=head.metas.filter(m=>m.property==='og:url')
- requireNative(head.titles.length===1&&head.titles[0]==='New Application | '+job.title+' | Eptura Careers'&&urls.length===1&&urls[0].content===job.applyUrl,'Native application identity mismatch')
+ requireNative(head.titles.length===1&&head.titles[0]===('New Application | '+job.title+' | Eptura Careers').replace(/\s+/g,' ').trim()&&urls.length===1&&urls[0].content===job.applyUrl,'Native application identity mismatch')
  requireNative(forms.length===1&&forms[0].attrs.method==='post'&&new URL(forms[0].attrs.action,job.applyUrl).href===job.sourceUrl+'/applications','Native application entry unavailable/identity changed')
  const component=nativeComponent(doc.nodes(n=>n.tag==='script'&&n.attrs['data-component-name']==='External::Jobs::Applications::New'),'application executable client')
  requireNative(component.jobPostingUuid===job.nativePostingUUID&&component.locale===new URL(job.sourceUrl).pathname.split('/')[1],'Native application client UUID/locale identity mismatch')
@@ -144,7 +145,7 @@ export async function runNativeEptura(options={}){
  }
  const official=document(await get(CAREERS)),delegations=official.nodes(n=>n.tag==='a'&&n.attrs.href===BOARD&&/Open positions/i.test(official.text(n)))
  requireNative(delegations.length>=1,'Current official Pinpoint delegation unavailable')
- const config=board(await get(BOARD)),native=rows(await get(LISTING),now,maxRecords),selected=native.filter(r=>r.location.name==='India')
+ const config=board(await get(BOARD)),native=rows(await get(LISTING),now,maxRecords),selected=native.filter(r=>indiaCity(r.location.city))
  requireNative(selected.length>0,'No qualified native India roles; company zero is unknown')
  const jobs=[]
  for(let i=0;i<selected.length;i+=concurrency)jobs.push(...await Promise.all(selected.slice(i,i+concurrency).map(async row=>{const job=role(await get(row.url),row,now);application(await get(job.applyUrl),job);return job})))

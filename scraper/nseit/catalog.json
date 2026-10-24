@@ -10,8 +10,10 @@
   "inventoryStatus": "coverage-gap",
   "listingComplete": false,
   "indiaFacetCount": null,
-  "reason": "Native DEXIT JobPosting address is bare Mumbai; explicit country absent. data-listings=20 is page size, not total. REST type enumeration requires authentication (401), page/2 repeats first page, so whole inventory and India scope are uncertified. Original NSEIT origin fails SSL navigation; DEXIT first-party about/footer explicitly says formerly NSEIT Limited.",
+  "reason": "Live public DEXIT Global Limited (formerly NSEIT Limited) native listing and detail agree on Mumbai. Existing public city policy returns one Helpdesk Executive with country null, full native description and original September 2, 2025 posting date; the age gate excludes it. Unknown-country fallback requires all native addresses to agree with the whole listing city; foreign, unsupported-country, unexplained-region and composite labels cannot use it. Company inventory remains uncertified: historical page-size20 is not total, page2 repeated first page, REST types401. Unknown India total and cleanup disabled.",
   "verificationDate": "2026-10-23",
   "firstKnownPublicPosting": "2025-09-02T20:32:29+05:30",
-  "lifecycleCleanupAllowed": false
+  "lifecycleCleanupAllowed": false,
+  "observedPublicCityScopeJobCount": 1,
+  "observedEligibleCityScopeJobCount": 0
 }

@@ -12,13 +12,16 @@
   "atsCareerPageUrl": "https://app1596.workline.hr/Cportal/GeneralOpening.aspx",
   "countryFilter": "India",
   "paginationStrategy": "complete-GetCurrentopening-obj1-array+client-scroll-slices-of-ten",
-  "extractionStrategy": "exact-first-party-handoff+native-Kissht-brand-facet+explicit-Country_Name+inline-active-role-description",
+  "extractionStrategy": "exact-first-party-Workline-handoff+exact-legal-employer-branch+explicit-postal-country+native-publication-and-application",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
   "verifiedOn": "2026-10-23",
-  "verifiedPublicJobCount": 266,
-  "verifiedIndiaJobCount": 266,
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
   "officialCareersPageUrl": "https://www.kissht.com/career",
   "sourceListingComplete": false,
-  "verifiedSurfaceSummary": "Captured first-party Kissht careers handoff, Kissht Workline board, native client, full GetCurrentopening response and all 266 HTTP-200 native HTML details on 2026-10-23. The client receives all 266 rows once and displays them in scroll slices of ten. All rows explicitly label Company_Name and Company_Name1 as Kissht and Country_Name as India. Native legal employers are Si Creva Capital Services Private Limited (257) and OnEMI Technology Solutions Limited (9); these labels are retained without broadening the exact Kissht brand facet. All title, requisition, location, date and application identities reconcile. Active inline descriptions exist for 202 roles; 64 JD placeholders stay null and partial. PublishDate alone supplies posting dates. Secondary branch CustomName1 country scope and lifecycle eligibility remain unverified, so results carry incomplete discovery evidence and never authorize stale deletion."
+  "verifiedSurfaceSummary": "Observed 266 native Kissht listings. Compliance Location is distinct from work branch CustomName1. Current official financing-partner page links SiCreva; its 108 branch cards (107 unique labels) publish explicit postal-country prefixes. Exact branch and legal-employer matching admits 199 India roles; 67 unresolved roles remain withheld, including all nine OnEMI roles. Of admitted roles, 160 retain native description text and 39 stay null; 26 pass existing age and publishing filters at 2026-10-23T13:00Z. Displayed workplaces use branch addresses; compliance addresses anchor existing fingerprints. Whole inventory scope remains incomplete and cleanup is disabled.",
+  "observedNativeJobCount": 266,
+  "observedVerifiedIndiaJobCount": 199,
+  "observedUnresolvedWorkLocationCount": 67
 }

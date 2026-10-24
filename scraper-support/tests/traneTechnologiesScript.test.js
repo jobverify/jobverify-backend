@@ -29,6 +29,7 @@ const TRANE_SEARCH_HTML = `
                 reqId: 'JR-12345',
                 jobId: 'JR-12345',
                 title: 'Senior Software Engineer',
+                applyUrl: 'https://tranetechnologies.wd12.myworkdayjobs.com/Trane_Technologies_Careers/job/Bengaluru-Karnataka-India/Senior-Software-Engineer_JR-12345/apply',
                 cityStateCountry: 'Bengaluru, Karnataka, India',
                 country: 'India',
                 category: 'Engineering',

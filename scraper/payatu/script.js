@@ -283,6 +283,8 @@ const hasCurrentPayatuSignal = html => /<title>\s*Career - Payatu\s*<\/title>/i.
   && /href=["']https:\/\/bandit\.fit\/[a-z0-9-]+#apply["']/i.test(html)
 const currentLocation = value => {
   const raw = normalizeWhitespace(value)
+  if (/^Delhi$/i.test(raw || '')) return { location: 'Delhi, India', city: 'Delhi', country: 'India', remoteStatus: 'On-site' }
+  if (/^Delhi\/BLR$/i.test(raw || '')) return { location: 'Delhi / Bangalore, India', city: 'Delhi', country: 'India', remoteStatus: 'On-site' }
   if (/^Pune$/i.test(raw || '')) return { location: 'Pune, India', city: 'Pune', country: 'India', remoteStatus: 'On-site' }
   if (/^(Bengaluru|Bangalore)$/i.test(raw || '')) return { location: 'Bangalore, India', city: 'Bangalore', country: 'India', remoteStatus: 'On-site' }
   if (/^Pune\/BLR\/Remote$/i.test(raw || '')) return { location: 'Pune / Bangalore / Remote, India', city: 'Pune', country: 'India', remoteStatus: 'Remote' }

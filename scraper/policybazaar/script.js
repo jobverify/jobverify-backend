@@ -1,9 +1,11 @@
+import {createHash} from 'node:crypto'
+import {collectPolicybazaarNative} from './employer.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { POLICYBAZAAR_CATALOG } from './catalog.js'
 import { document, norm } from '../../scraper-support/shared/rmkNativePairHtml.js'
 import { activeHead } from '../../scraper-support/utils/activeNativeHtml.js'
-import { normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachInventoryEvidence, normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const PROVIDER_METADATA = POLICYBAZAAR_CATALOG
@@ -80,58 +82,64 @@ export const extractSearchResults = html => {
   return jobs
 }
 
-export const createPolicybazaarScraper = (defaults = {}) => ({
-  async run(runtime = {}) {
-    const { fetchImpl = globalThis.fetch, fetchText, timeoutMs = 20000, signal } = { ...defaults, ...runtime }
-    let pagesFetched = 0, nativeRoleCards = [], retainedResponse = null
-    const gap = (reason, cause) => Object.assign(new Error(`Policybazaar coverage gap: ${reason}`, { cause }), {
-      code: 'POLICYBAZAAR_COVERAGE_GAP', sourceListingComplete: false, nativeRoleCards, retainedResponse,
-      inventoryEvidence: normalizeInventoryEvidence({ status: 'coverage-gap', surface: CAREERS_URL,
-        firstParty: pagesFetched > 0, listingComplete: false, pagesFetched,
-        reportedTotal: null, indiaFacetCount: null, verifiedAt: new Date().toISOString(), reason }),
-    })
-    if (signal?.aborted) throw signal.reason
-    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 300000) throw gap('Invalid aggregate deadline')
-    const controller = new AbortController()
-    let timer, onAbort
-    const cancellation = new Promise((_, reject) => {
-      timer = setTimeout(() => { const error = gap('Aggregate deadline exceeded fetching native page or reading response body'); controller.abort(error); reject(error) }, timeoutMs)
-      onAbort = () => { controller.abort(signal.reason); reject(signal.reason) }
-      signal?.addEventListener('abort', onAbort, { once: true })
-    })
-    const check = () => { if (controller.signal.aborted) throw controller.signal.reason }
-    try {
-      return await Promise.race([cancellation, (async () => {
-        check()
-        const capturedAt = new Date().toISOString()
-        const response = fetchText ? { status: 200, url: CAREERS_URL, text: () => fetchText(CAREERS_URL, { signal: controller.signal }) }
-          : await fetchImpl(CAREERS_URL, { signal: controller.signal, redirect: 'manual', headers: { accept: 'text/html' } })
-        check()
-        if (response?.status !== 200) throw gap(`Official careers HTTP ${response?.status ?? 'unknown'}`)
-        if (response.url !== CAREERS_URL) throw gap('Unreviewed careers redirect or employer identity')
-        const body = await response.text()
-        check()
-        if (typeof body !== 'string' || !body.trim()) throw gap('Native careers body unavailable')
-        pagesFetched++
-        retainedResponse = { url: CAREERS_URL, finalUrl: response.url, status: response.status, capturedAt, body }
-        if (!hasOfficialCareersPageSignal(body)) throw gap('Native careers employer/listing shape changed')
-        nativeRoleCards = extractSearchResults(body)
-        if (!hasSharedApplicationFormSignal(body)) throw gap('Native position-select application form unavailable')
-        if (!nativeRoleCards.length) throw gap('No current role-card inventory; no explicit native zero-opening signal')
-        // Current cards are broad hiring categories. The shared office section
-        // and resume pool do not bind a country/location to an individual role,
-        // establish a requisition, or prove a finite current vacancy inventory.
-        throw gap('Observed native role cards lack role-specific location/country and finite current vacancy inventory evidence')
-      })()])
-    } catch (error) {
-      controller.abort(error)
-      if (signal?.aborted) throw signal.reason
-      if (error?.code === 'POLICYBAZAAR_COVERAGE_GAP') throw error
-      throw gap('Native careers transport, body, or parsing unavailable', error)
-    } finally { clearTimeout(timer); signal?.removeEventListener('abort', onAbort) }
-  },
-})
-export const run = async (options = {}) => createPolicybazaarScraper(options).run(options)
+export const createPolicybazaarScraper=(defaults={})=>({async run(options={}) {
+ const {fetchImpl=globalThis.fetch,fetchText,signal,timeoutMs=45000,now=new Date()}={...defaults,...options}
+ signal?.throwIfAborted()
+ const controller=new AbortController(),retainedResponses=[]
+ let surface=CAREERS_URL,timer,onAbort,nativeRoleCards=[]
+ const gap=(reason,cause)=>Object.assign(new Error('Policybazaar coverage gap: '+reason,{cause}),{
+  code:'POLICYBAZAAR_COVERAGE_GAP',source:SOURCE,partial:true,abortRetries:true,
+  sourceListingComplete:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,retainedResponses,nativeRoleCards,retainedResponse:retainedResponses.find(r=>r.url===CAREERS_URL)??null,
+  inventoryEvidence:normalizeInventoryEvidence({status:'coverage-gap',surface,firstParty:false,listingComplete:false,pagesFetched:retainedResponses.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason}),
+ })
+ if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>60000)throw gap('Invalid aggregate request budget')
+ const deadline=performance.now()+timeoutMs
+ const checkBudget=()=>{
+  if(!controller.signal.aborted&&performance.now()>=deadline)controller.abort(gap('Aggregate source fetch/body/parsing deadline exceeded'))
+  controller.signal.throwIfAborted()
+ }
+ const aborted=new Promise((_,reject)=>{
+  onAbort=()=>{controller.abort(signal.reason);reject(signal.reason)}
+  signal?.addEventListener('abort',onAbort,{once:true})
+  timer=setTimeout(()=>{const error=gap('Aggregate source fetch/body deadline exceeded');controller.abort(error);reject(error)},timeoutMs)
+ })
+ const collect=async()=>{
+  const read=async url=>{
+   surface=url;checkBudget()
+   let response
+   if(fetchText){
+    const text=await fetchText(url,{signal:controller.signal});checkBudget()
+    if(typeof text!=='string'||Buffer.byteLength(text)>4194304)throw gap('Caller-owned text response absent or oversized')
+    response=new Response(text);Object.defineProperty(response,'url',{value:url})
+   }else response=await fetchImpl(url,{signal:controller.signal,redirect:'error',headers:{Accept:'text/html,application/json'}})
+   const cancelBody=reason=>{void Promise.resolve().then(()=>response.body?.cancel?.(reason)).catch(()=>{})}
+   try{checkBudget()}catch(error){cancelBody(error);throw error}
+   if(response.url!==url){const error=gap('Source final URL changed');cancelBody(error);throw error}
+   if(response.status!==200){const error=Object.assign(gap('Source HTTP failure'),{status:response.status});cancelBody(error);throw error}
+   let body
+   if(response.body?.getReader){
+    const reader=response.body.getReader(),chunks=[];let bytes=0
+    const cancel=()=>{void reader.cancel(controller.signal.reason).catch(()=>{})}
+    controller.signal.addEventListener('abort',cancel,{once:true})
+    try{while(true){checkBudget();const {done,value}=await reader.read();checkBudget();if(done)break;bytes+=value.byteLength;if(bytes>4194304){void reader.cancel().catch(()=>{});throw gap('Source streamed body exceeds byte limit')}chunks.push(Buffer.from(value))}body=Buffer.concat(chunks).toString('utf8')}
+    finally{controller.signal.removeEventListener('abort',cancel);reader.releaseLock?.()}
+   }else {const error=gap('Bounded source stream unavailable');cancelBody(error);throw error}
+   checkBudget()
+   if(typeof body!=='string'||!body.trim()||Buffer.byteLength(body)>4194304)throw gap('Source body missing or exceeds bound')
+   retainedResponses.push({url,finalUrl:response.url,status:response.status,body,capturedAt:new Date().toISOString(),bodySHA256:createHash('sha256').update(body).digest('hex')})
+   return body
+  }
+  const {jobs,facts,firstParty,reason,inventoryStatus}=await collectPolicybazaarNative({read,now:typeof now==='function'?now():now,onCorporate:html=>{nativeRoleCards=extractSearchResults(html);if(!hasOfficialCareersPageSignal(html)||!hasSharedApplicationFormSignal(html))throw gap('Native careers employer/listing/form shape changed')}})
+  checkBudget()
+  const result=attachInventoryEvidence(jobs,{status:inventoryStatus,surface,firstParty,listingComplete:false,pagesFetched:retainedResponses.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason})
+  Object.defineProperty(result,'nativeCollectionEvidence',{value:{retainedResponses,...facts,lifecycleCleanupAllowed:false}})
+  return result
+ }
+ try{return await Promise.race([collect(),aborted])}
+ catch(error){if(signal?.aborted)throw signal.reason;if(error?.code==='POLICYBAZAAR_COVERAGE_GAP')throw error;throw gap('Native source transport, body or inventory unavailable: '+error.message,error)}
+ finally{clearTimeout(timer);signal?.removeEventListener('abort',onAbort);controller.abort()}
+}})
+export const run=async(options={})=>createPolicybazaarScraper(options).run(options)
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const jobs = await run()
   if (process.argv.includes('--dry-run')) {

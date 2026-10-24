@@ -466,13 +466,14 @@ const createAuthorizedFetchJson = (provider) => {
   const authConfig = provider.config?.auth || {}
   let cachedToken = null
 
-  const fetchToken = async ({ forceRefresh = false } = {}) => {
+  const fetchToken = async ({ forceRefresh = false, signal } = {}) => {
     if (!forceRefresh && cachedToken) return cachedToken
 
     const response = await fetch(authConfig.tokenUrl, {
       method: authConfig.tokenMethod || 'GET',
       headers: authConfig.tokenHeaders,
       body: authConfig.tokenBody,
+      signal,
     })
 
     if (!response.ok) {
@@ -494,7 +495,7 @@ const createAuthorizedFetchJson = (provider) => {
       const headers = { ...(options.headers || {}) }
 
       if (shouldAuthorizeRequest(provider, url)) {
-        const token = await fetchToken({ forceRefresh })
+        const token = await fetchToken({ forceRefresh, signal: options.signal })
         headers.Authorization = `Bearer ${token}`
       }
 
@@ -502,6 +503,7 @@ const createAuthorizedFetchJson = (provider) => {
         method: options.method || 'GET',
         headers,
         body: options.body,
+        signal: options.signal,
       })
     }
 
@@ -604,6 +606,7 @@ const fetchJson = async (url, options = {}) => {
     method: options.method || 'GET',
     headers: options.headers,
     body: options.body,
+    signal: options.signal,
   })
 
   if (!response.ok) {
@@ -617,10 +620,11 @@ const createApiPortalScraper = (provider) => ({
   name: provider.source,
   dryRunFile: provider.dryRunFile,
   provider,
-  run: async () => {
+  run: async ({ signal } = {}) => {
     const { runApiPortalScraper } = await import('../apiPortal/engine.js')
     const jobs = await runApiPortalScraper({
       provider,
+      signal,
       fetchJson: provider.config?.auth?.strategy
         ? createAuthorizedFetchJson(provider)
         : fetchJson,

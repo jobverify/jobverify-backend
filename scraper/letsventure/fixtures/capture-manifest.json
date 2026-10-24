@@ -85,6 +85,25 @@
       "sha256": "937f0a9fd6d74ec157c15f4fc167f25b429c864b7c6e2e553b770d8e429ea22d",
       "uncompressedSHA256": "8af521244e4c7b17e4b4ac0149c972a351ff89399c8f983859125144dd84eb6e",
       "bytes": 1763366
+    },
+    {
+      "file": "public-posting-date-observations.json.gz",
+      "sha256": "54ffa4bbce7e5ef3849156bb8d3bf8f517bf8e9537de41b3aec7b097e88702b2",
+      "uncompressedSHA256": "d5790c52c34c1a31019a4ce1d926bc18e6a11dbd6218e2550ba3e40f87d76fd7",
+      "bytes": 12786,
+      "evidenceType": "rendered-DOM-observation-not-HTTP-response"
+    },
+    {
+      "file": "initial-independent-search-failure.json.gz",
+      "sha256": "266e2fdaee125a48644b4dca854306b831360183c49dd306c55d07fd6011674b",
+      "uncompressedSHA256": "15b8aa0b5d8ec4a57f12c0e8b212f5ce7fa3d28224832c34ecb575d45c869539",
+      "bytes": 542788
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "sha256": "14cb51a06cfd94e8dcb45e6d3786f9a651e36198b1984ee40998ae9e668f02c0",
+      "uncompressedSHA256": "73a76db09d5a3a8fbdfb96e40fa96341ea04ad9f05c760a61d6d0897cb7dbb18",
+      "bytes": 7648774
     }
   ],
   "responses": [
@@ -195,6 +214,110 @@
       "file": "zoho-pages.json.gz",
       "bodySHA256": "aefd6eeb11827d9cdd085e3c1bf9a92d414a517effc80a8ea57cf948e597312b",
       "bodyBytes": 1722494
+    },
+    {
+      "file": "initial-independent-search-failure.json.gz",
+      "url": "https://lvxventures.com/",
+      "finalUrl": "https://lvxventures.com/",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:07:43.145Z",
+      "bodySHA256": "f96030a118429687f988d0246bf939475880a897cf7fe787b704796fb2f3243e"
+    },
+    {
+      "file": "initial-independent-search-failure.json.gz",
+      "url": "https://lvxventures.com/lvx-in-news/letsventure-rebrands-as-lvx-and-expands-into-growth-stage-investment",
+      "finalUrl": "https://lvxventures.com/lvx-in-news/letsventure-rebrands-as-lvx-and-expands-into-growth-stage-investment",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:07:43.296Z",
+      "bodySHA256": "f7ef0c7f72f5f9ed07b83aecb98778123e8f58cc459ef8d7cc93a35a0acee173"
+    },
+    {
+      "file": "initial-independent-search-failure.json.gz",
+      "url": "https://www.linkedin.com/company/lvxventures",
+      "finalUrl": "https://www.linkedin.com/company/lvxventures",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:07:44.395Z",
+      "bodySHA256": "5aeb5f62311174036ea64da77973c7a2b7336e1daf63f91964d5adeb8bcbcf36"
+    },
+    {
+      "file": "initial-independent-search-failure.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=3325282&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=3325282&location=India",
+      "status": 429,
+      "capturedAt": "2026-10-23T19:07:44.738Z",
+      "bodySHA256": "7f21baf22d7ae7f8481decf0db0d6768cf061515e5b489d179cb22bcdc8739ff"
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "url": "https://lvxventures.com/",
+      "finalUrl": "https://lvxventures.com/",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:10:38.153Z",
+      "bodySHA256": "c29eb5bcac91316ce03c6c6f3505126cd4a10c052177fc568fc784d631e5cfae"
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "url": "https://lvxventures.com/lvx-in-news/letsventure-rebrands-as-lvx-and-expands-into-growth-stage-investment",
+      "finalUrl": "https://lvxventures.com/lvx-in-news/letsventure-rebrands-as-lvx-and-expands-into-growth-stage-investment",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:10:38.315Z",
+      "bodySHA256": "2665074d5282fcc8defb244ad66f788de9d68365b46b689d304fcee4ac3d8e1c"
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "url": "https://www.linkedin.com/company/lvxventures",
+      "finalUrl": "https://www.linkedin.com/company/lvxventures",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:10:39.519Z",
+      "bodySHA256": "ec4e6513bceec75b70b927cb8cf9c8660e62239f399e69403ad9438b628a82df"
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "url": "https://letsventure.zohorecruit.in/jobs/Careers",
+      "finalUrl": "https://letsventure.zohorecruit.in/jobs/Careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:10:40.693Z",
+      "bodySHA256": "111b8ac0ede7f4b638abce15d7fe341754535da9f16d8b4026be3e605b27d54b"
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "url": "https://letsventure.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite",
+      "finalUrl": "https://letsventure.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:10:40.932Z",
+      "bodySHA256": "8139b3bca4bc640562fdacdea0326759bca5952d4b9c69a240ec130af981f38d"
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "url": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000323017/Senior-Frontend-Engineer?source=CareerSite",
+      "finalUrl": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000323017/Senior-Frontend-Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:10:41.536Z",
+      "bodySHA256": "73f7d7e2bc590544571040112d210957e4f0ce20bd37130dd8d2e168635d7e02"
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "url": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000323001/Senior-Backend-Software-Engineer?source=CareerSite",
+      "finalUrl": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000323001/Senior-Backend-Software-Engineer?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:10:42.714Z",
+      "bodySHA256": "97ba98de6db084c5eea6fb7186bd8cee00d87ee9d50598a178d889f9426ec87b"
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "url": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000278015/Product-Manager?source=CareerSite",
+      "finalUrl": "https://letsventure.zohorecruit.in/jobs/Careers/57569000000278015/Product-Manager?source=CareerSite",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:10:43.820Z",
+      "bodySHA256": "c9d973508cfcd24314abc31052be638950e53abee639ecbed6b9a27e8ddb45d8"
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=3325282&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=3325282&location=India",
+      "status": 429,
+      "capturedAt": "2026-10-23T19:07:44.738Z",
+      "bodySHA256": "7f21baf22d7ae7f8481decf0db0d6768cf061515e5b489d179cb22bcdc8739ff"
     }
   ],
   "transportFailures": [

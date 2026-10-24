@@ -1,50 +1,30 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
-
-test('Okta catalog resolves Okta India through the shared first-party Okta provider', () => {
-  const okta = getScraperCatalog().find((provider) => provider.source === 'okta')
-
-  assert.ok(okta)
-  assert.equal(okta.companyName, 'Okta')
-  assert.equal(okta.adapter, 'script')
-  assert.equal(okta.atsPlatform, 'official-first-party-drupal-job-board')
-  assert.equal(okta.companyCareerPage, 'https://www.okta.com/en-in/company/careers/')
-  assert.equal(okta.publicBoardUrl, 'https://www.okta.com/company/careers/job-listing/')
-  assert.equal(okta.verifiedOn, '2026-08-07')
-  assert.equal(okta.verifiedPublicOpeningCount, 337)
-  assert.equal(okta.verifiedIndiaOpeningCount, 98)
-  assert.match(okta.verifiedSurfaceSummary, /Verified on Friday, August 7, 2026/i)
-  assert.match(okta.verifiedSurfaceSummary, /View open roles CTA/i)
-  assert.equal(companyAliases['Okta India'], 'okta')
-
-  const report = generateCompanyCoverageReport({
-    csvText: 'row,company_name,url_in_text,note\n1,Okta,,\n2,Okta India,,\n',
-    catalog: getScraperCatalog(),
-    aliasMap: companyAliases,
-  })
-
-  assert.equal(report.matchedCount, 2)
-  assert.equal(report.unmatchedCount, 0)
-  assert.deepEqual(
-    report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
-    [
-      ['Okta', 'okta', 'Okta'],
-      ['Okta India', 'okta', 'Okta'],
-    ],
-  )
+import companyAliases from '../providers/companyAliases.json' with {type:'json'}
+import {generateCompanyCoverageReport} from '../providers/companyCoverage.js'
+import {buildScrapers,getScraperCatalog} from '../providers/index.js'
+import {classifyProviderImplementation} from '../../scripts/reportScriptCatalogTopology.js'
+import {buildPublishingGapReport} from '../../scripts/publishingGapReport.js'
+test('Okta India remains a catalog alias of the one native Okta source',()=>{
+ const catalog=getScraperCatalog(),provider=catalog.find(p=>p.source==='okta')
+ assert.equal(provider.companyName,'Okta');assert.equal(provider.adapter,'script');assert.equal(provider.atsPlatform,'official-first-party-drupal-job-board')
+ assert.equal(provider.companyCareerPage,'https://www.okta.com/company/careers/');assert.equal(provider.publicBoardUrl,'https://www.okta.com/company/careers/job-listing/')
+ assert.equal(provider.verifiedIndiaOpeningCount,null);assert.equal(provider.verifiedPublicOpeningCount,null)
+ assert.equal(provider.historicalVerification.verifiedOn,'2026-08-07');assert.equal(provider.historicalVerification.indiaOpeningCount,98)
+ assert.equal(companyAliases['Okta India'],'okta');assert.equal(catalog.some(p=>p.source==='oktaindia'),false)
+ assert.equal(buildScrapers().filter(s=>s.name==='okta').length,1)
+ const report=generateCompanyCoverageReport({csvText:'company_name\nOkta\nOkta India\n',catalog,aliasMap:companyAliases})
+ assert.equal(report.matchedCount,2);assert.equal(report.unmatchedCount,0)
+ assert.deepEqual(report.matched.map(r=>r.source),['okta','okta'])
 })
-
-test('Okta catalog keeps one runnable Okta scraper without a duplicate Okta India runner', () => {
-  const oktaIndia = getScraperCatalog().find((provider) => provider.source === 'oktaindia')
-  const scraper = buildScrapers().find((candidate) => candidate.name === 'okta')
-
-  assert.equal(oktaIndia, undefined)
-  assert.ok(scraper)
-  assert.equal(typeof scraper.run, 'function')
-  assert.equal(scraper.provider.source, 'okta')
-  assert.match(scraper.dryRunFile, /okta[\\/]jobs\.json$/i)
+test('Auth0 official careers delegation preserves Okta job ownership and does not assert a repaired Auth0 scraper',()=>{
+ const catalog=getScraperCatalog(),auth0=catalog.find(p=>p.source==='auth0'),okta=catalog.find(p=>p.source==='okta')
+ assert.equal(auth0.inventoryDelegation.verified,true);assert.deepEqual(auth0.inventoryDelegation.sources,['okta'])
+ assert.equal(auth0.inventoryDelegation.preservesChildSourceAndCompany,true);assert.equal(classifyProviderImplementation(auth0).type,'sentinel')
+ const now=new Date(),report=buildPublishingGapReport({catalog:[auth0,okta],now,runtime:{databaseAvailable:true,generatedAt:now.toISOString(),publicCompanyNames:['Okta'],
+  inventory:[{source:'auth0',savedJobs:0,visibleJobs:0,visibleCompanies:[]},{source:'okta',savedJobs:3,visibleJobs:3,visibleCompanies:['Okta']}],statuses:[]}})
+ assert.equal(report.summary.distinctVisibleCompanies,1)
+ const wrapper=report.rows.find(r=>r.source==='auth0');assert.equal(wrapper.implementationType,'sentinel')
+ assert.deepEqual(wrapper.inventoryDelegation.publicChildSources,['okta']);assert.equal(wrapper.visibleJobs,0)
+ assert.equal(report.rows.find(r=>r.source==='okta').visibleJobs,3)
 })

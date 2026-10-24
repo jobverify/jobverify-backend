@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { INFORMATION_EVOLUTION_CATALOG } from './catalog.js'
+import { runCurrentInformationEvolution } from './current.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -107,13 +108,13 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    signal: createTimeoutSignal(15000),
+    signal: AbortSignal.any([...(signal ? [signal] : []), createTimeoutSignal(15000)]),
   })
 
   if (!response.ok) {
@@ -211,8 +212,12 @@ export const extractJobDetail = (html, listing) => {
 }
 
 export const createInformationEvolutionScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date() } = {}) {
-    const jobsPageHtml = await fetchText(JOBS_URL)
+  async run({ fetchText = defaultFetchText, now = () => new Date(), signal } = {}) {
+    signal?.throwIfAborted()
+    const jobsPageHtml = await fetchText(JOBS_URL, { signal })
+    if (/<section[^>]*id="careers"/.test(jobsPageHtml)) {
+      return runCurrentInformationEvolution({ fetchText, now, signal, aboutHtml: jobsPageHtml })
+    }
     if (!hasOfficialJobsSignal(jobsPageHtml)) {
       throw new Error('Information Evolution verified jobs page no longer matches the trusted first-party surface')
     }

@@ -53,16 +53,17 @@ test('xto10x deadline and caller abort cancel a stalled actual Response stream',
  }
 })
 test('xto10x current generic corporate invitation and independent native scoped searches leave company inventory unknown',async()=>{
- const jobs=await run({fetchImpl:replay()});assert.deepEqual(jobs,[])
+ const jobs=await run({fetchImpl:replay()});assert.equal(jobs.length,2)
  const e=readInventoryEvidence(jobs)
- assert.equal(e.status,'discovery-only');assert.equal(e.firstParty,false);assert.equal(e.listingComplete,false)
+ assert.equal(e.status,'coverage-gap');assert.equal(e.firstParty,false);assert.equal(e.listingComplete,false)
  assert.equal(e.reportedTotal,null);assert.equal(e.indiaFacetCount,null)
  assert.equal(jobs.nativeCollectionEvidence.observations.nativeEmployer.organizationID,'14628973')
  assert.equal(jobs.nativeCollectionEvidence.observations.about.specificJob,false)
  assert.equal(jobs.nativeCollectionEvidence.lifecycleCleanupAllowed,false)
  assert.equal(jobs.nativeCollectionEvidence.retainedResponses.length,7)
- assert.deepEqual(jobs.nativeCollectionEvidence.exclusions.map(r=>r.id),['1728041','1728042'])
- assert.ok(jobs.nativeCollectionEvidence.exclusions.every(r=>r.exclusionReason==='no-explicit-native-job-country'&&r.nativeEarliestDate.parsed.iso==='2026-08-28T18:30:00.000Z'))
+ assert.equal(jobs.nativeCollectionEvidence.exclusions.length,0)
+ assert.deepEqual(jobs.nativeCollectionEvidence.nativeCandidates.map(r=>r.id),['1728041','1728042'])
+ assert.ok(jobs.nativeCollectionEvidence.nativeCandidates.every(r=>!r.excluded&&r.nativeEarliestDate.parsed.iso==='2026-08-28T18:30:00.000Z'))
 })
 test('xto10x factory defaults and per-run injection remain compatible',async()=>{
  const scraper=createXto10xScraper({fetchImpl:async()=>{throw Error('must override')}})
@@ -76,11 +77,18 @@ test('xto10x active generic career handoff, identity and scoped-search changes f
   r=>r.url.endsWith('/about')?{...r,body:'<template>'+r.body+'</template>'}:r,
   r=>r.url.endsWith('/about')?{...r,body:'<div style="content-visibility:hidden"><div>'+r.body+'</div></div>'}:r,
   r=>r.url.includes('/company/')?{...r,body:r.body.replaceAll('urn:li:organization:14628973','urn:li:organization:123')}:r,
-  r=>r.url.includes('location=India')?{...r,body:r.body.replace('name="f_C"','name="other_company"')}:r,
-  r=>r.url.includes('location=Worldwide')?{...r,body:r.body.replace('</body>','<div class="job-search-card">new role</div></body>')}:r,
   r=>({...r,status:403}),
  ]
  for(const change of changes)await assert.rejects(run({fetchImpl:replay(change)}),gap)
+})
+
+test('xto10x independent scoped-search drift preserves native jobs with explicit discovery gaps',async()=>{
+ for(const change of [r=>r.url.includes('location=India')?{...r,body:r.body.replace('name="f_C"','name="other_company"')}:r,r=>r.url.includes('location=Worldwide')?{...r,body:r.body.replace('</body>','<div class="job-search-card">new role</div></body>')}:r]){
+  const jobs=await run({fetchImpl:replay(change)})
+  assert.equal(jobs.length,2)
+  assert.equal(jobs.nativeCollectionEvidence.independentDiscoveryGaps.length,1)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+ }
 })
 test('xto10x captured gzip and exact raw response hashes match manifest',()=>{
  const manifest=JSON.parse(readFileSync(new URL('../scraper/xto10x/fixtures/capture-manifest.json',import.meta.url)))

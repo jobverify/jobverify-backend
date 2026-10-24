@@ -250,3 +250,17 @@ test('Invenger fails closed when the verified jobs page drifts materially', asyn
     /verified Invenger jobs page/i,
   )
 })
+
+test('Invenger accepts current vacancies after previously observed roles are replaced', async () => {
+  const invenger = await loadInvengerModule()
+  const html = JOBS_HTML.replaceAll('business-development-executive-26', 'sr-business-development-executive-27')
+    .replaceAll('it-admin-23', 'accountant-35')
+  const cards = invenger.extractJobCards(html)
+  assert.ok(cards.length >= 2)
+  assert.equal(cards[0].detailUrl, 'https://www.invenger.com/jobs/sr-business-development-executive-27')
+})
+
+test('Invenger role links cannot substitute for its branded jobs page', async () => {
+  const invenger = await loadInvengerModule()
+  assert.throws(() => invenger.extractJobCards(JOBS_HTML.replace('Jobs | Invenger', 'Jobs | Other Employer')), /verified Invenger jobs page/)
+})

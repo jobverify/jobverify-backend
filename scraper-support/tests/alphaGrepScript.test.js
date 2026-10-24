@@ -445,6 +445,31 @@ test('AlphaGrep accepts the current relative canonical tags and li-first careers
   assert.equal(alphaGrep.hasOfficialJobDetailSignal(clientRenderedDetailHtml.replace('Devops Engineer', 'unrelated role').replace('production engineering', 'office operations'), currentListing), false)
 })
 
+test('AlphaGrep reads current paragraph job headings and explicit Delhi locations', async () => {
+  const alphaGrep = await loadModule()
+  const current = currentCareersHtml
+    .replaceAll('<h5 role="heading" aria-level="3">', '<p class="eut-job-title">')
+    .replaceAll('</h5>', '</p>')
+    .replace("jobLocation'>Bangalore", "jobLocation'>Delhi")
+  const listings = alphaGrep.extractListingJobs(current)
+  assert.equal(alphaGrep.hasOfficialCareersPageSignal(current), true)
+  assert.equal(listings.length, 3)
+  assert.equal(listings[0].title, 'Accountant')
+  assert.equal(listings[0].location, 'Delhi, India')
+  assert.equal(alphaGrep.extractListingJobs(current.replaceAll('class="eut-job-title"', 'class="unrelated"')).length, 0)
+})
+
+test('AlphaGrep reads the current paragraph department and location on an active detail', async () => {
+  const alphaGrep = await loadModule()
+  const detail = devopsDetailHtml.replace('<h6>', '<p class="eut-h6">')
+    .replace('</h6>', '</p>').replace('<h6 class="location">', '<p class="location">')
+    .replace('</h6>', '</p>')
+  const listing = alphaGrep.extractListingJobs(careersHtml)[0]
+  assert.equal(alphaGrep.hasOfficialJobDetailSignal(detail, listing), true)
+  assert.equal(alphaGrep.extractJobDetail(detail, listing).department, 'Core Engineering')
+  assert.equal(alphaGrep.hasOfficialJobDetailSignal(detail.replace('class="location"', 'class="unrelated"'), listing), false)
+})
+
 test('run validates the verified homepage handoff, keeps only India jobs, and decorates runner fields', async () => {
   const alphaGrep = await loadModule()
   const requestedUrls = []

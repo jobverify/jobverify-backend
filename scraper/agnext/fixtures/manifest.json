@@ -8,14 +8,14 @@
   "evidence": [
     {
       "file": "home-response.json",
-      "sha256": "0f8b4ef51e6f337b410d942e7028b1c33f87d38cd384bd0ffd280b84f4c1fb8d",
+      "sha256": "ad251113c48a629529039b921d637476838c0783c1319d51aed9cfc763879650",
       "observations": [
         {
           "url": "https://www.agnext.com/",
           "finalUrl": "https://www.agnext.com/",
           "status": 200,
-          "capturedAt": "2026-10-23T02:42:31.891Z",
-          "bodySha256": "869eece370a6af1930a8b252f0e179c0c0938a0caf72acf4f216ffeda62eb4c1"
+          "capturedAt": "2026-10-23T12:59:52.569Z",
+          "bodySha256": "879ee3b6af9baea329db5cc6e01e7ece4c64562b1ec315a21b8b861cee59b6b4"
         }
       ]
     },
@@ -72,5 +72,77 @@
         }
       ]
     }
-  ]
+  ],
+  "files": [
+    {
+      "file": "native-employer-jobs.json.gz",
+      "sha256": "66393897e6fb818e5f72831dd13b58683945b869eb9ed5a7d9f324acbf57d20b",
+      "uncompressedSHA256": "1000a6b7abaa4b4da992ac25146806e31583f590365b320e2f351da750f008ab"
+    },
+    {
+      "file": "fresh-official-pages.json.gz",
+      "sha256": "038593d3e70e0695fa1fa25e1f909408e9681812f8db82adf64bdcfaec2e044a",
+      "uncompressedSHA256": "7918ec29c87d7851570ddf30be0d584acc154c9bbeb07a5b4b63cc690ffe2912"
+    }
+  ],
+  "responses": [
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/company/agnextworld/",
+      "finalUrl": "https://www.linkedin.com/company/agnextworld/",
+      "status": 200,
+      "capturedAt": "2026-10-23T12:59:57.349Z",
+      "bodySHA256": "05cabcb66f960f5cc46aed5069205596a017b48208c8b68886318307af37e272"
+    },
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=13612364&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13612364&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T12:59:58.362Z",
+      "bodySHA256": "df1772746a63de8dc82d041fccac8a9b54d91b240edaf25ac2b9b5e145f0f42d"
+    },
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=13612364&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13612364&location=Worldwide",
+      "status": 200,
+      "capturedAt": "2026-10-23T12:59:59.204Z",
+      "bodySHA256": "90dd5c07aaded88a2728c360e47ddc898288772736119aad811dce498b269ceb"
+    },
+    {
+      "file": "fresh-official-pages.json.gz",
+      "url": "https://www.agnext.com/",
+      "finalUrl": "https://www.agnext.com/",
+      "status": 200,
+      "capturedAt": "2026-10-23T12:59:52.569Z",
+      "bodySHA256": "879ee3b6af9baea329db5cc6e01e7ece4c64562b1ec315a21b8b861cee59b6b4"
+    }
+  ],
+  "additionalNativeObservation": {
+    "employerOrganizationId": "13612364",
+    "queries": [
+      "India",
+      "Worldwide"
+    ],
+    "checkedExactEmployerFilter": true,
+    "observedJobCards": 0,
+    "scopeComplete": false,
+    "reportedTotal": null,
+    "disposition": "No matches in exact filtered searches; does not establish empty employer inventory. Primary channel remains blocked/unavailable. No recovered jobs or lifecycle cleanup."
+  },
+  "quarantinedLegacyEvidence": {
+    "file": "historical-home-response-unverified.json",
+    "actualFileSHA256": "6ff5ec9bd6bc380a550fb7ac3ed0fb96c1bb60c38b4ed1138ef81ed246f0ffd1",
+    "previousRecordedFileSHA256": "0f8b4ef51e6f337b410d942e7028b1c33f87d38cd384bd0ffd280b84f4c1fb8d",
+    "previousRecordedBodySHA256": "869eece370a6af1930a8b252f0e179c0c0938a0caf72acf4f216ffeda62eb4c1",
+    "disposition": "Does not match original receipt hashes; excluded from verified receipts and runtime evidence. Original bytes retained unchanged, no claim as unmodified HTTP capture."
+  },
+  "sanitization": {
+    "files": [
+      "home-response.json",
+      "fresh-official-pages.json.gz"
+    ],
+    "description": "Mapbox access tokens replaced with MAPBOX_ACCESS_TOKEN_REDACTED. Receipt hashes describe sanitized fixture bytes and bodies, not unmodified HTTP captures."
+  }
 }

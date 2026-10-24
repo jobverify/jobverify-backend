@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { runApiPortalScraper } from '../apiPortal/engine.js'
 import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { createCatalogScraper } from '../providers/index.js'
 
 const record = (id, location = 'Bengaluru, India') => ({ id, title: 'Software Engineer', location,
   applyUrl: `https://careers.acme.test/jobs/${id}`, description: 'Build reliable production software.' })
@@ -11,6 +12,32 @@ const provider = pagination => ({ source: 'acme', companyName: 'Acme', companyCa
     mapping: { title: 'title', location: 'location', jobId: 'id', applyUrl: 'applyUrl', jobDescription: 'description' },
     resultFilter: { include: [{ field: 'location', pattern: 'India' }] },
   } })
+
+test('API portal cancellation prevents the first request', async () => {
+ const reason = Error('stop this run')
+ await assert.rejects(runApiPortalScraper({ provider: provider(), signal: AbortSignal.abort(reason),
+  fetchJson: async () => assert.fail('unexpected request') }), error => error === reason)
+})
+
+test('cancellation during optional detail cannot become a successful listing fallback', async () => {
+ const controller = new AbortController(), reason = Error('stop detail work'), configured = provider()
+ configured.config.detail = { enabled: true, required: false, urlTemplate: 'https://careers.acme.test/detail/{{jobId}}', mapping: { jobDescription: 'description' } }
+ await assert.rejects(runApiPortalScraper({ provider: configured, signal: controller.signal, fetchJson: async url => {
+  if (!url.includes('/detail/')) return { jobs: [record('1')], total: 1 }
+  controller.abort(reason)
+  return { description: 'Build reliable production software.' }
+ } }), error => error === reason)
+})
+
+test('registered API portal passes cancellation through to native fetch', async t => {
+ const controller = new AbortController(), reason = Error('stop native request')
+ t.mock.method(globalThis, 'fetch', async (url, options) => {
+  assert.ok(options.signal instanceof AbortSignal)
+  controller.abort(reason)
+  return Response.json({ jobs: [], total: 0 })
+ })
+ await assert.rejects(createCatalogScraper({ ...provider(), adapter: 'apiPortal' }).run({ signal: controller.signal }), error => error === reason)
+})
 
 test('missing or non-array listing contracts fail instead of certifying an empty successful extraction', async () => {
   for (const payload of [{}, { error: 'unauthorized' }, { jobs: {} }, { jobs: [null] }]) {

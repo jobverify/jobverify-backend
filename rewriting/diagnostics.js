@@ -21,7 +21,8 @@ export const createRewriteDiagnostics = ({ maxSamples = 10, maxBytes = 65536 } =
       sourceContext: clip(diagnostic?.evidence || input?.sourceDescription, 1800),
       completionPreview: typeof response?.rawText === 'string' && response.rawText
         ? clip(response.rawText, 2400) : raw === undefined || raw === null ? undefined : clip(JSON.stringify(raw), 2400),
-      validation: diagnostic ? { section: clip(diagnostic.section, 64), itemIndex: Number.isInteger(diagnostic.itemIndex) ? diagnostic.itemIndex : undefined,
+      validation: diagnostic ? { code: clip(diagnostic.code, 64), sourceId: Number.isInteger(diagnostic.sourceId) ? diagnostic.sourceId : undefined,
+        section: clip(diagnostic.section, 64), itemIndex: Number.isInteger(diagnostic.itemIndex) ? diagnostic.itemIndex : undefined,
         text: clip(diagnostic.text, 1200), evidence: clip(diagnostic.evidence, 1800), scope: clip(diagnostic.scope, 32) } : undefined,
       generationRequests: response?.generationRequests, finishReason: response?.finishReason, retrySkipped: response?.retrySkipped };
     state.samples.push(sample);

@@ -78,5 +78,62 @@
       "uncompressedSha256": "9ca9cbd0b23422547986b4a8f4a8b828df96f37fa9fda76f0d392fb2cc37991f",
       "responses": []
     }
-  ]
+  ],
+  "captures": [
+    {
+      "file": "fresh-about-page.json.gz",
+      "sha256": "e3f344bc756b06df83d30de1940d2eb03108f005d96134b1deca50531ab501e7",
+      "uncompressedSha256": "782245298c0801ea65b73b5bd008f9decd9bd20dd549df66feb4c30a563a4ae1",
+      "responses": [
+        {
+          "url": "https://www.appsecure.security/about",
+          "finalUrl": "https://www.appsecure.security/about",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:51:58.563Z",
+          "bodySha256": "b007bdad1dabe6eeda8654f548e4676f2e7f589013cb18d3c8516cfc536a2380"
+        }
+      ]
+    },
+    {
+      "file": "fresh-native-employer.json.gz",
+      "sha256": "76b122577a188e086764a4257fdb9ed58992e05bbbb85b7811cb5740bde9dea9",
+      "uncompressedSha256": "68dfe23ad288f3961c752ca358a23e4e1483a2a95e2e729efbeb11d18099cd37",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/appsecure-security/",
+          "finalUrl": "https://www.linkedin.com/company/appsecure-security/",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:52:11.321Z",
+          "bodySha256": "5e1034c40f4f7e4769469d4d6024b4815f19de693c5f2a0375dbf0c5e4c99fd9"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=13392021&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13392021&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:52:11.806Z",
+          "bodySha256": "e8b189284a5550a8c97d8ac3dd7de93cada5e28031a21cfc8c05fcad638a5605"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=13392021&location=Worldwide",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13392021&location=Worldwide",
+          "status": 429,
+          "capturedAt": "2026-10-23T13:52:12.139Z",
+          "bodySha256": "7f21baf22d7ae7f8481decf0db0d6768cf061515e5b489d179cb22bcdc8739ff"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "file": "fresh-about-page.dom.json",
+      "sha256": "7b849f4f57e5814a622fdf80fa0b87137610a5dc8241aeaa87678012cb6b2378",
+      "evidenceType": "DOM observation, not HTTP response receipt"
+    },
+    {
+      "file": "fresh-native-employer.dom.json",
+      "sha256": "222985de3636d0467ab270adb062ae49da71e11a03503d3d30569b508a1bcdd8",
+      "evidenceType": "DOM observation, not HTTP response receipt"
+    }
+  ],
+  "latestInvestigation": "Fresh 2026-10-23 employer recruiting observations: AppSecure active about-careers remains generic email. Exact employer13392021 India selected no-match; Worldwide429 stops collection, not retried. No emptycompany assertion."
 }

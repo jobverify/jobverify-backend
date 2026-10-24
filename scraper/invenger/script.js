@@ -105,10 +105,9 @@ export const hasOfficialCareersSignal = (html) => {
 export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /jobs\s*\|\s*invenger/i.test(page)
+  return /<title[^>]*>\s*Jobs\s*\|\s*Invenger\s*<\/title>/i.test(page)
     && /open position/i.test(page)
-    && /\/jobs\/it-admin-23/i.test(page)
-    && /\/jobs\/business-development-executive-26/i.test(page)
+    && /href=["']\/jobs\/[a-z0-9-]+-\d+["']/i.test(page)
 }
 
 export const extractJobCards = (html) => {

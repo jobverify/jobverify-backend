@@ -268,18 +268,24 @@ export const extractCurrentOpeningSummaries = (html) => {
   const page = String(html)
   const data = readNextData(page)
   const props = data.props?.pageProps
+  const positions = props?.careerPage?.sections?.filter(section => section.__component === 'career.open-positions') || []
+  const visible = stripTags(page)
   if (!/<title[^>]*>\s*Career \| Olectra-Greentech\s*<\/title>/i.test(page)
     || !hasOlectraCanonical(page, '/career')
     || data.page !== '/career'
     || props?.careerPage?.slug !== 'career'
-    || !props.careerPage.sections?.some(section => section.__component === 'career.open-positions')
-    || !stripTags(page).includes('Explore Open Positions')
-    || !Array.isArray(props.openings) || props.openings.length === 0) {
+    || positions.length !== 1 || !normalizeWhitespace(positions[0].title)
+    || !visible.includes(normalizeWhitespace(positions[0].title))
+    || !Array.isArray(props.openings)) {
     throw new Error('Olectra current public career listing changed materially')
   }
   const visibleLinks = [...page.matchAll(/href=["'](\/openings\/[a-z0-9-]+)["']/g)].map(match => match[1])
   if (visibleLinks.length !== props.openings.length || new Set(visibleLinks).size !== props.openings.length) {
     throw new Error('Olectra current public career listing count does not match its visible links')
+  }
+  if (props.openings.length === 0 && (!normalizeWhitespace(positions[0].noOpeningsText)
+    || !visible.includes(normalizeWhitespace(positions[0].noOpeningsText)))) {
+    throw new Error('Olectra empty career listing lacks rendered no-openings evidence')
   }
   const ids = new Set()
   return props.openings.map(opening => {
@@ -309,7 +315,13 @@ const runCurrentCareers = async (fetchText, now) => {
     const description = stripTags(props?.descriptionHtml)
     if (data.page !== '/openings/[slug]' || !hasOlectraCanonical(html, '/openings/' + summary.slug)
       || !detail || ['id', 'documentId', 'slug', 'title', 'location', 'experience', 'qualification'].some(key => detail[key] !== summary[key])
-      || detail.jobStatus !== 'Open' || !visible.includes(normalizeWhitespace(detail.title))
+    ) {
+      throw new Error('Olectra current opening detail identity is incomplete or mismatched: ' + sourceUrl)
+    }
+    // The careers page can retain links after an opening is explicitly closed.
+    // A matched closed detail excludes that role without losing other openings.
+    if (detail.jobStatus === 'Closed') continue
+    if (detail.jobStatus !== 'Open' || !visible.includes(normalizeWhitespace(detail.title))
       || !visible.includes(normalizeWhitespace(detail.location)) || !visible.includes('Submit Application')
       || !/<form\s+class=["']enq-card["']/i.test(html)
       || !/id=["']op-apply-name["']/i.test(html)

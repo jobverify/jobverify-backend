@@ -70,6 +70,26 @@
           "bodySHA256": "786587e33d1f03cbacbc8f0f619fa8e90c99e58ee03eac2771d8ef04b2383b0d"
         }
       ]
+    },
+    {
+      "file": "fresh-official-pages.dom.json",
+      "sha256": "faa65de6f7f04f01b305d13b547c46ed446138ff1815f232a187ed2410def800",
+      "evidenceType": "DOM observation, not HTTP receipt"
+    },
+    {
+      "file": "native-employer-pages.dom.json",
+      "sha256": "8a36de00c120d1864834d6ab18fcb3e09dcc10713194268682abf43188ab87b1",
+      "evidenceType": "DOM observation, not HTTP receipt"
+    },
+    {
+      "file": "native-hirezapp-page.dom.json",
+      "sha256": "a567837364b04d857d10c1913e92f26b2b8daac220040fa54fae695e5d702bb0",
+      "evidenceType": "DOM observation, not HTTP receipt"
+    },
+    {
+      "file": "fresh-india-detail-pages.dom.json",
+      "sha256": "1ab2087a450e7d7955c1b84ea857c2c8764c7e0a91fe62ecdf074d9d9af45610",
+      "evidenceType": "DOM observation, not HTTP receipt"
     }
   ],
   "review": {
@@ -78,5 +98,126 @@
     "verifiedPublicOpeningCount": null,
     "currentInventoryStatus": "coverage-gap",
     "reason": "Native roles have no role-specific explicit country/location or finite vacancy count. Seven hiring-city offices are separate from every role. Native clients only open resume forms and POST candidate multipart data; no listing API, pagination or role-location binding. #career-loc appears in obsolete JSON assignment but no corresponding native input/select exists and the actual POST is form-data. Unbound search-discovered Policybazaar Trakstar board excluded."
-  }
+  },
+  "captures": [
+    {
+      "file": "fresh-official-pages.json.gz",
+      "sha256": "7e4aeda5329f8b2c677ae52777e92eb60ccfd6867dcb0eb6f2267074f627faea",
+      "uncompressedSha256": "c23c206e9a0213a6e1e5751f16e4863584d26a6e9c14426c0fcd4f87f34d212c",
+      "responses": []
+    },
+    {
+      "file": "native-employer-pages.json.gz",
+      "sha256": "0f52a534ccbafa5e6c4b6be95a0df94e6e74a38c83e3d674a21f7cbb491cbd1f",
+      "uncompressedSha256": "d61c9df985505873e873c2c25bb168c4ed1013f64e6349d48f3cee0cdbd62c31",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/policybazaar/",
+          "finalUrl": "https://www.linkedin.com/company/policybazaar/",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:59:08.203Z",
+          "bodySha256": "60b1d65764b9db76092e6c20d74d5c39b89d1e88d9107ab56dc74d71bdeb2ca1"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=303524&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=303524&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:59:11.502Z",
+          "bodySha256": "907b577ad6f647fc784ab438638b10adb4388db10a9d9e2941f6448278dd0ab4"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=303524&location=Worldwide",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=303524&location=Worldwide",
+          "status": 429,
+          "capturedAt": "2026-10-23T13:59:12.179Z",
+          "bodySha256": "7f21baf22d7ae7f8481decf0db0d6768cf061515e5b489d179cb22bcdc8739ff"
+        }
+      ]
+    },
+    {
+      "file": "native-hirezapp-page.json.gz",
+      "sha256": "6a040eddf0b05e687f957ceda22a2f56657261aee4d61878fa5caf4ff00a988b",
+      "uncompressedSha256": "f359d54327a9d7be4b0fd206ecf9f4bffe9006a31b4ebb8929afc3fe170c8695",
+      "responses": [
+        {
+          "url": "https://www.hirezapp.com/careers/policy_bazaar",
+          "finalUrl": "https://www.hirezapp.com/careers/policy_bazaar",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:59:18.061Z",
+          "bodySha256": "6129e41a78f7557215e2235a178aec7dfa76beb46b2212b15059f19b2bd9129c"
+        }
+      ]
+    },
+    {
+      "file": "fresh-official-node.json.gz",
+      "sha256": "a327a16c130a246827d6803c83f90bf97e50b5514d70ba80033b721c68515bc3",
+      "uncompressedSha256": "f251e6da1f6d92e19685f644c351c77597b280035cb47c9f96b51d61a14f73fb",
+      "responses": [
+        {
+          "url": "https://www.policybazaar.com/careers/",
+          "finalUrl": "https://www.policybazaar.com/careers/",
+          "status": 200,
+          "capturedAt": "2026-10-23T14:00:34.651Z",
+          "bodySha256": "d5b6c28ba9d46dde85d7852572745679e855996194b712a927e229564f69759f"
+        }
+      ]
+    },
+    {
+      "file": "fresh-corporate-confirmation.json.gz",
+      "sha256": "487b414c35ddd38abd89093576f677df85c6ed1933666678cf3ab9a1454fc49a",
+      "uncompressedSha256": "558953754135264d4a5ad54a99ad4ae90ce5fb5ad31705e1a2106f2c28715df5",
+      "responses": [
+        {
+          "url": "https://www.policybazaar.com/careers/",
+          "finalUrl": "https://www.policybazaar.com/careers/",
+          "status": 200,
+          "capturedAt": "2026-10-23T17:03:43.730Z",
+          "bodySha256": "2b3a1275db28a60b3d98fb72241b2b18f0af6727c9947d3b0377db3dba11c35c"
+        }
+      ]
+    },
+    {
+      "file": "fresh-india-detail-pages.json.gz",
+      "sha256": "6b440d1003ac6dc7e42bbb5f6d4b41c2ce4b8f16515639392d0ab73000acb25b",
+      "uncompressedSha256": "79b77297d61e0a97990d27d0d1839a3a9aeba688d848907ebe0f0dcf643a7372",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/policybazaar/",
+          "finalUrl": "https://www.linkedin.com/company/policybazaar/",
+          "status": 200,
+          "capturedAt": "2026-10-23T17:00:50.833Z",
+          "bodySha256": "a72c083d620f8b2a2a02ef1c5911e8863eb7a3c09ae2ecc01ee04d8c9fb2e12b"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=303524&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=303524&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T17:00:51.733Z",
+          "bodySha256": "7356a2a69e451c959b793fa603fadda153ab107ffa9efb455c0c0fc4f9c46c10"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/area-sales-manager-at-policybazaar-com-4430667875?position=1&pageNum=0&refId=9MhwkLzlrYQpwVpdoLFdWA%3D%3D&trackingId=bI48vQH5KKTXvaY1Os7%2Fkg%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/area-sales-manager-at-policybazaar-com-4430667875?position=1&pageNum=0&refId=9MhwkLzlrYQpwVpdoLFdWA%3D%3D&trackingId=bI48vQH5KKTXvaY1Os7%2Fkg%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T17:00:52.738Z",
+          "bodySha256": "c0def4c91f93f5e5cd901fb44a3ae936770c1a1e7aa38b9ab68384d8b5083a96"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/international-sales-executive-at-policybazaar-com-4451237087?position=2&pageNum=0&refId=9MhwkLzlrYQpwVpdoLFdWA%3D%3D&trackingId=1ZYbx2QeUxyOfajj0RlJdw%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/international-sales-executive-at-policybazaar-com-4451237087?position=2&pageNum=0&refId=9MhwkLzlrYQpwVpdoLFdWA%3D%3D&trackingId=1ZYbx2QeUxyOfajj0RlJdw%3D%3D",
+          "status": 200,
+          "capturedAt": "2026-10-23T17:00:53.517Z",
+          "bodySha256": "d3a42cbcb6e6403f66aa9d88c67ea311fa16d5171a91989a1015e389f0562ce2"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/view/relationship-manager-at-policybazaar-com-4480014358?position=3&pageNum=0&refId=9MhwkLzlrYQpwVpdoLFdWA%3D%3D&trackingId=JcFxTjDj96tqdrYcHZM8GA%3D%3D",
+          "finalUrl": "https://www.linkedin.com/jobs/view/relationship-manager-at-policybazaar-com-4480014358?position=3&pageNum=0&refId=9MhwkLzlrYQpwVpdoLFdWA%3D%3D&trackingId=JcFxTjDj96tqdrYcHZM8GA%3D%3D",
+          "status": 429,
+          "capturedAt": "2026-10-23T17:00:53.896Z",
+          "bodySha256": "7f21baf22d7ae7f8481decf0db0d6768cf061515e5b489d179cb22bcdc8739ff"
+        }
+      ]
+    }
+  ],
+  "latestInvestigation": "Resumed after ~3h: current corporate Node200, exact employer303524 profile200, India listing60/156, two active explicitIndia details200 followed by third429stop/no retry. Recovered4430667875Jul13 and4451237087Sep15 retain original publicdates; bothold/0eligible. Nativeemployer identity corroborated bycorporatefooter+reciprocaldomain, not explicitATSdelegation; firstPartyfalse, unknownwholecounts/no cleanup. UnboundHireZapp still excluded."
 }

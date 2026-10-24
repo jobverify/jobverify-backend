@@ -14,7 +14,7 @@ const capture=name=>{
 const captures=[capture('careers-response'),capture('application-response'),...capture('native-and-client-responses')]
 const replay=(mutate=row=>row)=>async url=>{
   const saved=captures.find(r=>r.url===url);assert.ok(saved,'Uncaptured URL '+url)
-  const row=mutate(structuredClone(saved));return {status:row.status,url:row.finalUrl,text:async()=>row.body}
+  const row=mutate(structuredClone(saved)),response=new Response(row.body,{status:row.status});Object.defineProperty(response,'url',{value:row.finalUrl});return response
 }
 
 test('Greyamp inspects all three native roles and matches the employer application form',async()=>{
@@ -28,7 +28,8 @@ test('Greyamp inspects all three native roles and matches the employer applicati
 })
 test('Greyamp reports observed roles with unknown country separately from verified empty',async()=>{
   const jobs=await run({fetchImpl:replay()})
-  assert.equal(jobs.length,0)
+  assert.equal(jobs.length,3)
+  assert.ok(jobs.every(job=>job.country===null))
   assert.equal(readInventoryEvidence(jobs).status,'coverage-gap')
   assert.equal(readInventoryEvidence(jobs).reportedTotal,3)
   assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null)
@@ -54,7 +55,7 @@ test('Greyamp preserves caller cancellation before transport',async()=>{
   await assert.rejects(run({signal:controller.signal,fetchImpl:()=>assert.fail('must not fetch')}),error=>error===reason)
 })
 test('Greyamp bounds transports and bodies that ignore cancellation',async()=>{
-  for(const fetchImpl of [()=>new Promise(()=>{}),async url=>({status:200,url,text:()=>new Promise(()=>{})})])
+  for(const fetchImpl of [()=>new Promise(()=>{}),async url=>{const r=new Response(new ReadableStream({pull(){return new Promise(()=>{})}}));Object.defineProperty(r,'url',{value:url});return r}])
     await assert.rejects(run({fetchImpl,timeoutMs:15}),/deadline|timeout/i)
 })
 for(const [name,mutate,pattern] of [
@@ -93,4 +94,16 @@ test('Greyamp in-flight caller abort preserves its reason',async()=>{
 test('Greyamp --dry-run imports have no scraping or persistence side effects',()=>{
   const result=spawnSync(process.execPath,['--input-type=module','-e',"globalThis.fetch=()=>{throw Error('import fetched')}; await import('./scraper/greyamp/script.js'); console.log('import-only')",'--','--dry-run'],{encoding:'utf8'})
   assert.equal(result.status,0,result.stderr);assert.equal(result.stdout.trim(),'import-only')
+})
+
+
+test('Greyamp checks the monotonic budget after synchronous final processing',async()=>{
+ await assert.rejects(scraper.inspectInventory({fetchImpl:replay(),timeoutMs:100,now:()=>{const until=performance.now()+120;while(performance.now()<until){};return '2026-10-23T13:00:00Z'}}),/deadline/)
+})
+
+test('Greyamp fresh native captures still report country gaps without certifying an empty inventory',async()=>{
+ const fresh=[...capture('fresh-native-pages'),...capture('fresh-client-application'),...capture('fresh-application-page')].filter(r=>r.status===200)
+ const fetchImpl=async url=>{const row=fresh.find(r=>r.url===url);assert.ok(row,'Uncaptured fresh URL '+url);const r=new Response(row.body,{status:row.status});Object.defineProperty(r,'url',{value:row.finalUrl});return r}
+ const inventory=await scraper.inspectInventory({fetchImpl});assert.equal(inventory.jobs.length,3);assert.equal(inventory.unknownCountryCount,3)
+ const jobs=await run({fetchImpl});assert.equal(jobs.length,3);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })

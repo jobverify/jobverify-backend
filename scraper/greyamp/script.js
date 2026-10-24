@@ -5,6 +5,8 @@ import {document,norm} from '../../scraper-support/shared/rmkNativePairHtml.js'
 import {activeHead,extractActiveDescription} from '../../scraper-support/utils/activeNativeHtml.js'
 import {nativeCountryName,nativeLocationCountryName} from '../../scraper-support/shared/nativeJobPosting.js'
 import {attachInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {isNativeBareCityInPublicScope} from '../../scraper-support/shared/nativeCityScope.js'
+import {getValidIndiaCityForJob,isJobInPublicLocationScope} from '../../src/utils/publicJobLocationScope.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -35,8 +37,13 @@ const prose=(html,title)=>{
 }
 export const inspectInventory=async({fetchImpl=fetch,signal,timeoutMs=45000,now=()=>new Date().toISOString()}={})=>{
   signal?.throwIfAborted()
-  check(Number.isFinite(timeoutMs)&&timeoutMs>0&&timeoutMs<=120000,'invalid aggregate timeout')
+  check(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=120000,'invalid aggregate timeout')
   const controller=new AbortController(),combined=signal?AbortSignal.any([signal,controller.signal]):controller.signal
+  const deadline=performance.now()+timeoutMs
+  const checkBudget=()=>{
+    if(!combined.aborted&&performance.now()>=deadline)controller.abort(Error('Greyamp aggregate fetch/body/parsing deadline exceeded'))
+    combined.throwIfAborted()
+  }
   let listener,timer,pagesFetched=0
   const stopped=new Promise((_,reject)=>{
     listener=()=>reject(combined.reason);combined.addEventListener('abort',listener,{once:true})
@@ -44,10 +51,27 @@ export const inspectInventory=async({fetchImpl=fetch,signal,timeoutMs=45000,now=
   })
   const collect=async()=>{
     const read=async url=>{
-      combined.throwIfAborted()
+      checkBudget()
       const response=await fetchImpl(url,{signal:combined,redirect:'error',headers:{Accept:'text/html,application/json','User-Agent':'Mozilla/5.0'}})
-      combined.throwIfAborted();check(response?.status===200&&response.url===url,'native HTTP status or identity redirect changed')
-      const body=await response.text();combined.throwIfAborted()
+      const cancelBody=reason=>{void Promise.resolve().then(()=>response?.body?.cancel?.(reason)).catch(()=>{})}
+      try{checkBudget()}catch(error){cancelBody(error);throw error}
+      if(response?.status!==200||response.url!==url){const error=Error('Greyamp: native HTTP status or identity redirect changed');cancelBody(error);throw error}
+      if(!response.body?.getReader){const error=Error('Greyamp: bounded native source stream unavailable');cancelBody(error);throw error}
+      const reader=response.body.getReader(),chunks=[];let bytes=0
+      const cancel=()=>{void reader.cancel(combined.reason).catch(()=>{})}
+      combined.addEventListener('abort',cancel,{once:true})
+      let body
+      try{
+        while(true){
+          checkBudget();const {done,value}=await reader.read();checkBudget()
+          if(done)break
+          bytes+=value.byteLength
+          if(bytes>5000000){void reader.cancel().catch(()=>{});throw Error('Greyamp: native streamed body exceeds byte limit')}
+          chunks.push(Buffer.from(value))
+        }
+        body=Buffer.concat(chunks).toString('utf8')
+      }finally{combined.removeEventListener('abort',cancel);reader.releaseLock()}
+      checkBudget()
       check(typeof body==='string'&&body.trim()&&Buffer.byteLength(body)<=5000000,'native body missing or oversized')
       pagesFetched++;return body
     }
@@ -66,7 +90,11 @@ export const inspectInventory=async({fetchImpl=fetch,signal,timeoutMs=45000,now=
       ids.add(row._id);check(norm(row.title)&&typeof row.location==='string'&&norm(row.location),'missing native title or primary location')
       const knownCountries=row.location.split(',').map(part=>nativeCountryName(part.trim())).filter(Boolean)
       check(new Set(knownCountries).size<=1,'contradictory native geographic countries')
-      const country=nativeLocationCountryName(row.location)
+      // This exact reviewed suffix describes travel, not another base office.
+      // Retain the full note for users while inspecting the advertised base.
+      const travelMatch=/^(.+), travel to client locations based on requirement$/.exec(row.location)
+      const nativeBaseLocation=travelMatch?travelMatch[1]:row.location
+      const country=nativeLocationCountryName(nativeBaseLocation)
       check(!country||knownCountries.every(value=>value===country),'contradictory native country scope')
       check(country!=='India'||!foreignState.test(row.location),'contradictory native geographic state')
       const apply=new URL(row.applyLink)
@@ -76,9 +104,10 @@ export const inspectInventory=async({fetchImpl=fetch,signal,timeoutMs=45000,now=
         return row[key]||[]
       })].map(value=>prose(value,row.title)).filter(Boolean)
       const description=fields.length?fields.join('\n\n'):null
+      const city=country?null:isNativeBareCityInPublicScope(nativeBaseLocation)?getValidIndiaCityForJob({country:null,location:nativeBaseLocation}):null
       jobs.push({source:SOURCE,company:COMPANY,jobId:row._id,title:norm(row.title),sourceUrl:FIRST_PARTY_CAREERS_URL,
-        applyUrl:apply.href,link:apply.href,country:country||null,city:null,state:null,location:norm(row.location),
-        nativePrimaryLocation:row.location,nativeCountry:null,sourceGeographyComplete:Boolean(country),
+        applyUrl:apply.href,link:apply.href,applicationUrlIsGeneric:true,country:country||null,city,state:null,location:norm(row.location),
+        nativePrimaryLocation:row.location,nativeBaseLocation,nativeTravelRequirement:travelMatch?'travel to client locations based on requirement':null,nativeCountry:country||null,sourceGeographyComplete:Boolean(country),
         employmentType:norm(row.type)||null,experienceRequired:norm(row.experience)||null,level:norm(row.level)||null,
         skills:row.skills,jobDescription:description,sourceDescription:description,postingDate:null,postedAt:null,
         sourceDetailComplete:Boolean(description),sourceDetailFailureKind:description?null:'missing-content',sourceListingComplete:false,scrapedAt:now()})
@@ -89,18 +118,23 @@ export const inspectInventory=async({fetchImpl=fetch,signal,timeoutMs=45000,now=
       const visible=form.text(form.root)
       check(jobs.filter(job=>job.applyUrl===url).every(job=>visible.includes(job.title)),'native role absent from employer application choices')
     }
-    return {jobs,reportedTotal:rows.length,unknownCountryCount:jobs.filter(job=>!job.country).length,pagesFetched,verifiedAt:now()}
+    const result={jobs,reportedTotal:rows.length,unknownCountryCount:jobs.filter(job=>!job.country).length,pagesFetched,verifiedAt:now()}
+    checkBudget()
+    return result
   }
   try{return await Promise.race([collect(),stopped])}
   finally{clearTimeout(timer);combined.removeEventListener('abort',listener);controller.abort(Error('Greyamp inspection ended'))}
 }
 export const run=async options=>{
-  const inventory=await inspectInventory(options),jobs=inventory.jobs.filter(job=>job.country==='India')
+  const inventory=await inspectInventory(options),jobs=inventory.jobs.filter(job=>{
+    if(job.country)return job.country==='India'&&isJobInPublicLocationScope({country:job.country,location:job.nativeBaseLocation})
+    return isNativeBareCityInPublicScope(job.nativeBaseLocation)
+  })
   const complete=inventory.unknownCountryCount===0&&inventory.jobs.every(job=>job.sourceDetailComplete)
   jobs.forEach(job=>{job.sourceListingComplete=complete})
   return attachInventoryEvidence(jobs,{status:complete?inventory.reportedTotal===0?'verified-empty':'complete-inventory':'coverage-gap',
     firstParty:true,surface:NATIVE_API_URL,listingComplete:complete,pagesFetched:inventory.pagesFetched,reportedTotal:inventory.reportedTotal,
-    indiaFacetCount:null,verifiedAt:inventory.verifiedAt,reason:complete?'Current official client, whole native array and employer application reconciled.':`${inventory.reportedTotal} native roles observed; ${inventory.unknownCountryCount} lack explicit country. No zero-India claim.`})
+    indiaFacetCount:null,verifiedAt:inventory.verifiedAt,reason:complete?'Current official client, whole native array and employer application reconciled.':`${inventory.reportedTotal} native roles observed; ${inventory.unknownCountryCount} lack explicit country. ${jobs.length} satisfy the existing public location policy with unknown countries preserved; native travel notes retained. No zero-India claim.`})
 }
 export const createGreyampScraper=()=>({run})
 

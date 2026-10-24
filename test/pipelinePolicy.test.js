@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultConfiguration, validateConfiguration, createStages, directConfiguration, stageOutcome } from '../src/pipeline/policy.js';
+import { defaultConfiguration, validateConfiguration, createStages, directConfiguration, stageOutcome, describeStageCompletion } from '../src/pipeline/policy.js';
 import { selectClassificationDescription } from '../src/services/classificationDescription.js';
 import { buildRewriteInput } from '../src/services/jobDescriptionPolicy.js';
 
@@ -16,6 +16,19 @@ test('all permutations and enabled subsets preserve configured order', () => {
 test('direct GitHub starts use the fixed suffix and ignore admin configuration', () => {
   assert.deepEqual(directConfiguration('rewrite').stages.filter(s=>s.enabled).map(s=>s.key),['rewrite','classification']);
   assert.equal(createStages(defaultConfiguration()).filter(s=>s.status==='waiting').length,3);
+});
+
+test('a rewrite budget handoff is explicitly reported as unfinished processing', () => {
+  const summary = describeStageCompletion('rewrite', { queued: 24877, attempted: 451, published: 19,
+    failed: 431, skipped: 30, pendingEstimate: 24397, interrupted: true, budgetExhausted: true,
+    stopReason: 'budget_exhausted' }, 'completed');
+  assert.equal(summary.handoffReady, true);
+  assert.equal(summary.processingComplete, false);
+  assert.equal(summary.unpublishedEstimate, 24858);
+  assert.equal(summary.pendingEstimate, 24397);
+  for (const stop of [{ stopReason: 'budget_exhausted' }, { reason: 'workflow_budget_exhausted' }]) {
+    assert.equal(describeStageCompletion('rewrite', stop, stageOutcome('rewrite', stop, 0)).processingComplete, false);
+  }
 });
 test('outcomes stop execution errors or unfinished work and accept individual rewrite failures', () => {
   assert.equal(stageOutcome('rewrite',{queued:0,reason:'empty_queue'},0),'completed');

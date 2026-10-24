@@ -1,4 +1,6 @@
 import os from 'node:os';
+import { pipeline } from 'node:stream/promises';
+import { createPipelineBundle } from '../pipeline/download.js';
 import PipelineRun from '../models/PipelineRun.js';
 import PipelineConfiguration from '../models/PipelineConfiguration.js';
 import AdminAudit from '../models/AdminAudit.js';
@@ -64,5 +66,27 @@ export const getPipelineLog=endpoint(async(req,res)=>{
   const run=await PipelineRun.findById(req.params.id).lean();
   if(!run||run.target!=='local'||!run.stages.some(s=>s.key===req.params.stage))throw pipelineError('Local stage log not found.',404);
   res.json({success:true,data:{text:await readLocalLog(run._id,req.params.stage)}});
+});
+export const downloadPipeline=endpoint(async(req,res)=>{
+  const run=await PipelineRun.findById(req.params.id).lean();
+  if(!run)throw pipelineError('Pipeline not found.',404);
+  const controller=new AbortController();
+  const disconnect=()=>{if(!res.writableFinished)controller.abort();};
+  res.once('close',disconnect);
+  let bundle;
+  try{
+    bundle=await createPipelineBundle(run,{signal:controller.signal});
+    controller.signal.throwIfAborted();
+    res.attachment(bundle.filename);
+    res.type('application/zip');
+    await pipeline(bundle.stream,res,{signal:controller.signal});
+  }catch(error){
+    if(res.headersSent||res.destroyed){res.destroy();return;}
+    throw error;
+  }finally{
+    res.off('close',disconnect);
+    bundle?.stream.destroy();
+    await bundle?.cleanup();
+  }
 });
 export const retiredPipelineControl=(_req,res)=>res.status(410).json({success:false,message:'Use /api/admin/pipeline/configuration and /api/admin/pipeline/trigger to configure and execute stages.'});

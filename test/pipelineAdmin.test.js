@@ -13,6 +13,7 @@ import PipelineRun from '../src/models/PipelineRun.js';
 import { defaultConfiguration } from '../src/pipeline/policy.js';
 import { failPipeline } from '../src/pipeline/execution.js';
 import { redactLog, localLogPath } from '../src/pipeline/local.js';
+import JSZip from 'jszip';
 
 test('pipeline API authorizes configuration, exact dispatch, tracking and conflicts',{timeout:300000},async t=>{
  const mongo=await MongoMemoryServer.create({binary:{version:'8.2.6',downloadDir:fileURLToPath(new URL('../.cache/mongodb-binaries/',import.meta.url))}});
@@ -42,6 +43,9 @@ test('pipeline API authorizes configuration, exact dispatch, tracking and confli
  };
  assert.equal((await request('pipeline/status',{id:null})).status,401);
  assert.equal((await request('pipeline/status',{id:'member'})).status,403);
+ assert.equal((await request('pipeline/runs/missing/download',{id:null})).status,401);
+ assert.equal((await request('pipeline/runs/missing/download',{id:'member'})).status,403);
+ assert.equal((await request('pipeline/runs/missing/download')).status,404);
  const first=await request('pipeline/status');assert.deepEqual(first.body.data.configuration,defaultConfiguration());
  assert.equal(first.body.data.capabilities.local,false);
  const bad=await request('pipeline/configuration',{method:'PUT',body:{stages:[]}});assert.equal(bad.status,400);
@@ -60,6 +64,12 @@ test('pipeline API authorizes configuration, exact dispatch, tracking and confli
  assert.equal((await request(`pipeline/runs/${run._id}/logs/classification`)).status,404);
  assert.equal((await request('pipeline/trigger',{method:'POST',body:{target:'local'}})).status,403);
  assert.equal((await request('scrape/trigger',{method:'POST'})).status,410);
+ const downloaded=await nativeFetch(`http://127.0.0.1:${server.address().port}/api/admin/pipeline/runs/${run._id}/download`,{headers:{Authorization:'Bearer '+jwt.sign({id:'admin'},process.env.JWT_SECRET)}});
+ assert.equal(downloaded.status,200);assert.match(downloaded.headers.get('content-type'),/application\/zip/);
+ assert.match(downloaded.headers.get('content-disposition'),new RegExp(`pipeline-${run._id}\\.zip`));
+ assert.equal(downloaded.headers.get('cache-control'),'no-store');
+ const archive=await JSZip.loadAsync(await downloaded.arrayBuffer());
+ assert.equal(JSON.parse(await archive.file('manifest.json').async('string')).pipelineId,run._id);
  await failPipeline(run._id,'cancelled','Test cleanup');
 });
 

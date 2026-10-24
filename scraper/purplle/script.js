@@ -1,107 +1,69 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
-import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
-import { collectPurplleNative, LISTING_URL } from './native.js'
+import {createHash} from 'node:crypto'
+import {fileURLToPath} from 'node:url'
+import {attachInventoryEvidence,normalizeInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {collectPurplleNative} from './native.js'
+import candidate from './catalog-candidate.json' with {type:'json'}
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export const SOURCE = 'purplle'
-export const COMPANY = 'Purplle'
-export const CAREERS_URL = 'https://www.purplle.com/careers'
-export const ORGANIZATION_ID = '2706205'
-
-const gap = (message, cause) => Object.assign(new Error(message, { cause }), {
-  code: 'PURPLLE_COVERAGE_GAP', source: SOURCE, partial: true, abortRetries: true,
-})
-
-export const createPurplleScraper = ({ fetchImpl = fetch, timeoutMs = 45000, now = () => new Date().toISOString() } = {}) => ({
-  async run({ signal } = {}) {
-    signal?.throwIfAborted()
-    const controller = new AbortController()
-    const onCallerAbort = () => controller.abort(signal.reason)
-    signal?.addEventListener('abort', onCallerAbort, { once: true })
-    const timer = setTimeout(() => controller.abort(gap('Purplle aggregate fetch/body deadline exceeded')), timeoutMs)
-    let onAbort
-    const aborted = new Promise((_, reject) => {
-      onAbort = () => reject(controller.signal.reason)
-      controller.signal.addEventListener('abort', onAbort, { once: true })
-    })
-    let pagesFetched = 0
-    const read = async url => {
-      controller.signal.throwIfAborted()
-      const response = await fetchImpl(url, { signal: controller.signal, redirect: 'manual',
-        headers: { Accept: 'text/html', 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify)' } })
-      controller.signal.throwIfAborted()
-      if (!response.ok || response.status !== 200) throw Object.assign(gap(`Purplle native HTTP ${response.status}`), { status: response.status })
-      if (response.url !== url) throw gap('Purplle native final URL changed')
-      let html
-      if (response.body?.getReader) {
-        const reader = response.body.getReader(), chunks = []
-        let bytes = 0
-        const cancel = () => { Promise.resolve(reader.cancel(controller.signal.reason)).catch(() => {}) }
-        controller.signal.addEventListener('abort', cancel, { once: true })
-        try {
-          while (true) {
-            const part = await reader.read()
-            controller.signal.throwIfAborted()
-            if (part.done) break
-            bytes += part.value.byteLength
-            if (bytes > 3000000) { await reader.cancel(); throw gap('Purplle native streamed body exceeds byte limit') }
-            chunks.push(Buffer.from(part.value))
-          }
-          html = Buffer.concat(chunks).toString('utf8')
-        } finally {
-          controller.signal.removeEventListener('abort', cancel)
-          reader.releaseLock?.()
-        }
-      } else {
-        html = await response.text()
-      }
-      controller.signal.throwIfAborted()
-      if (typeof html !== 'string' || !html.trim() || Buffer.byteLength(html) > 3000000) throw gap('Purplle native body is unavailable or oversized')
-      pagesFetched++
-      return html
-    }
-    try {
-      return await Promise.race([aborted, (async () => {
-        const html = await read(CAREERS_URL)
-        const doc = readNativeDocument(html)
-        const links = doc.nodes(node => node.tag === 'a')
-        const employerLink = links.some(node => {
-          try {
-            const url = new URL(node.attrs.href)
-            return url.protocol === 'https:' && url.hostname === 'www.linkedin.com' && url.pathname.replace(/\/$/, '') === `/company/${ORGANIZATION_ID}`
-          } catch { return false }
-        })
-        if (!employerLink || !links.some(node => node.attrs.href === 'mailto:career@purplle.com')) {
-          throw gap('Purplle active careers contact or exact employer handoff changed')
-        }
-        if (doc.nodes(node => doc.hasClass(node, 'panel-title')).length > 0) {
-          throw gap('Purplle now exposes active role panels; renewed country, description and apply validation required')
-        }
-        const { jobs, reason } = await collectPurplleNative({ read, now })
-        return attachInventoryEvidence(jobs, {
-          status: 'coverage-gap', surface: LISTING_URL, firstParty: true, listingComplete: false,
-          pagesFetched, reportedTotal: null, indiaFacetCount: null, verifiedAt: now(),
-          reason,
-        })
-      })()])
-    } catch (error) {
-      if (signal?.aborted) throw signal.reason
-      if (error?.code === 'PURPLLE_COVERAGE_GAP') throw error
-      throw gap('Purplle live discovery failed; inventory is unknown', error)
-    } finally {
-      clearTimeout(timer)
-      signal?.removeEventListener('abort', onCallerAbort)
-      controller.signal.removeEventListener('abort', onAbort)
-      controller.abort(gap('Purplle inspection ended'))
-    }
-  },
-})
-
-export const run = async (options = {}) => createPurplleScraper(options).run(options)
-
+export const SOURCE='purplle', COMPANY='Purplle'
+export const CAREERS_URL='https://www.purplle.com/careers'
+export const ORGANIZATION_ID='2706205'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+export const FIRST_PARTY_ROOT_URL='https://www.purplle.com/careers'
+export const PROVIDER_METADATA={...candidate,modulePath:fileURLToPath(import.meta.url)}
+export const createPurplleScraper=(defaults={})=>({async run(options={}) {
+ const {fetchImpl=globalThis.fetch,signal,timeoutMs=45000,now=new Date()}={...defaults,...options}
+ signal?.throwIfAborted()
+ const controller=new AbortController(),retainedResponses=[]
+ let surface=FIRST_PARTY_ROOT_URL,timer,onAbort
+ const gap=(reason,cause)=>Object.assign(new Error('Purplle coverage gap: '+reason,{cause}),{
+  code:'PURPLLE_COVERAGE_GAP',source:SOURCE,partial:true,abortRetries:true,
+  sourceListingComplete:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,retainedResponses,
+  inventoryEvidence:normalizeInventoryEvidence({status:'coverage-gap',surface,firstParty:false,listingComplete:false,pagesFetched:retainedResponses.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason}),
+ })
+ if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>60000)throw gap('Invalid aggregate request budget')
+ const deadline=performance.now()+timeoutMs
+ const checkBudget=()=>{
+  if(!controller.signal.aborted&&performance.now()>=deadline)controller.abort(gap('Aggregate source fetch/body/parsing deadline exceeded'))
+  controller.signal.throwIfAborted()
+ }
+ const aborted=new Promise((_,reject)=>{
+  onAbort=()=>{controller.abort(signal.reason);reject(signal.reason)}
+  signal?.addEventListener('abort',onAbort,{once:true})
+  timer=setTimeout(()=>{const error=gap('Aggregate source fetch/body deadline exceeded');controller.abort(error);reject(error)},timeoutMs)
+ })
+ const collect=async()=>{
+  const read=async url=>{
+   surface=url;checkBudget()
+   const response=await fetchImpl(url,{signal:controller.signal,redirect:'error',headers:{Accept:'text/html,application/json'}})
+   const cancelBody=reason=>{void Promise.resolve().then(()=>response.body?.cancel?.(reason)).catch(()=>{})}
+   try{checkBudget()}catch(error){cancelBody(error);throw error}
+   if(response.url!==url){const error=gap('Source final URL changed');cancelBody(error);throw error}
+   if(response.status!==200){const error=Object.assign(gap('Source HTTP failure'),{status:response.status});cancelBody(error);throw error}
+   let body
+   if(response.body?.getReader){
+    const reader=response.body.getReader(),chunks=[];let bytes=0
+    const cancel=()=>{void reader.cancel(controller.signal.reason).catch(()=>{})}
+    controller.signal.addEventListener('abort',cancel,{once:true})
+    try{while(true){checkBudget();const {done,value}=await reader.read();checkBudget();if(done)break;bytes+=value.byteLength;if(bytes>3000000){void reader.cancel().catch(()=>{});throw gap('Source streamed body exceeds byte limit')}chunks.push(Buffer.from(value))}body=Buffer.concat(chunks).toString('utf8')}
+    finally{controller.signal.removeEventListener('abort',cancel);reader.releaseLock?.()}
+   }else {const error=gap('Bounded source stream unavailable');cancelBody(error);throw error}
+   checkBudget()
+   if(typeof body!=='string'||!body.trim()||Buffer.byteLength(body)>3000000)throw gap('Source body missing or exceeds bound')
+   retainedResponses.push({url,finalUrl:response.url,status:response.status,body,capturedAt:new Date().toISOString(),bodySHA256:createHash('sha256').update(body).digest('hex')})
+   return body
+  }
+  const {jobs,facts,firstParty,reason,inventoryStatus}=await collectPurplleNative({read,now:typeof now==='function'?now():now})
+  checkBudget()
+  const result=attachInventoryEvidence(jobs,{status:inventoryStatus,surface,firstParty,listingComplete:false,pagesFetched:retainedResponses.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason})
+  Object.defineProperty(result,'nativeCollectionEvidence',{value:{retainedResponses,...facts,lifecycleCleanupAllowed:false}})
+  return result
+ }
+ try{return await Promise.race([collect(),aborted])}
+ catch(error){if(signal?.aborted)throw signal.reason;if(error?.code==='PURPLLE_COVERAGE_GAP')throw error;throw gap('Native source transport, body or inventory unavailable: '+error.message,error)}
+ finally{clearTimeout(timer);signal?.removeEventListener('abort',onAbort);controller.abort()}
+}})
+export const run=async(options={})=>createPurplleScraper(options).run(options)
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const jobs = await run()
 

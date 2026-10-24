@@ -11,6 +11,8 @@ const scraper = createPhenomScraper({
   baseUrl: 'https://careers.hpe.com',
   searchPath: '/us/en/search-results',
   scraperDir: currentDir,
+  defaultDetailConcurrency: 4,
+  defaultDetailEnrichmentBudgetMs: 150000,
 })
 
 export const {

@@ -43,14 +43,14 @@ const canonical = choose([
   [eq('$$type', 'full-time'), 'Full-time'],
 ], null);
 const employment = choose([
-  [and(ne('$$employment', ''), not(match('$$employment', partTime))), choose([
+  [and(ne('$$employment', ''), not(match('$$employment', partTime)), match('$$employment', /\b(contract|contractual|contractor|freelance|temporary|fixed[\s_-]+term|intern|internship|trainee|apprentice|full[\s_-]*time|permanent|regular|unlimited|staff|employee|professional|white[\s_-]+collar|on[\s_-]*roll|on[\s_-]+site[\s_-]+with[\s_-]+flexibility|fte)\b/)), choose([
     [match('$$employment', /\b(contract|contractual|contractor|freelance|temporary|fixed[\s_-]+term)\b/), 'Contract'],
     [match('$$employment', /\b(intern|internship|trainee|apprentice)\b/), 'Intern'],
     [match('$$employment', /\b(full[\s_-]*time|permanent|regular|unlimited|staff|employee|professional|white[\s_-]+collar|on[\s_-]*roll|on[\s_-]+site[\s_-]+with[\s_-]+flexibility|fte)\b/), 'Full-time'],
   ], 'Others')],
   [match('$$title', /intern|internship|trainee|apprentice/), 'Intern'],
   [or(eq('$jobType', 'Full-time Fresher'), eq('$jobType', 'Full-time Experienced')), 'Full-time'],
-  [eq('$jobType', 'Internship'), 'Intern'], [eq('$jobType', 'Contract'), 'Contract'],
+  [{ $in: ['$jobType', ['Intern', 'Internship']] }, 'Intern'], [eq('$jobType', 'Contract'), 'Contract'],
   [match('$$type', partTime), null],
   [match('$$title', /contract|contractor|freelance/), 'Contract'],
   [match('$$title', /part.?time/), null],
@@ -60,6 +60,11 @@ const derivedLevel = choose([
   [eq('$$derivedYears', 0), 'Entry Level'], [lte('$$derivedYears', 2), 'Junior Level'],
   [{ $gte: ['$$derivedYears', 8] }, 'Senior Level'],
 ], 'Mid Level');
+const textExperienceYears = choose([
+  [match('$$experience', /\b(no prior experience required|no experience required|freshers? can apply|freshers?|entry[- ]level applicants are encouraged)\b/), 0],
+  [present('$$responseRange'), choose([[lte(clamp(ceil(value('$$responseRange'))), clamp(floor(value('$$responseRange', 1)))), clamp(ceil(value('$$responseRange')))]], null)],
+  [present('$$responsePlus'), clamp(ceil(value('$$responsePlus')))],
+], clamp(floor({ $add: [value('$$responseSingle'), 0.5] })));
 const effectiveLevel = choose([
   [or(eq('$$storedLevel', ''), and(
     { $in: ['$$storedLevel', ['Entry Level', 'Junior Level']] },
@@ -67,6 +72,7 @@ const effectiveLevel = choose([
   )), '$$derivedLevel'],
 ], '$$storedLevel');
 const isEntry = choose([
+  [and(eq('$$minimum', 0), present('$$maximum'), lte('$$maximum', 1)), true],
   [and(ne('$$level', ''), not(and(eq('$$level', 'Entry Level'), '$$positiveExperience'))), eq('$$level', 'Entry Level')],
   [and(eq('$jobType', 'Full-time Fresher'), not('$$positiveExperience')), true],
   [eq('$jobType', 'Full-time Experienced'), false],
@@ -87,8 +93,8 @@ const LEGACY_PUBLIC_JOB_TYPE_EXPRESSION = bind({
     ...['minimumQualification', 'preferredQualification', 'experienceRequired'].flatMap(field => [text(field), ' '])] },
 }, bind({
   canonical, employmentType: employment,
-  range: find('$$experience', /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s+years?/),
-  single: find('$$experience', /(\d+(?:\.\d+)?)\s*(\+|plus)?\s+years?/),
+  range: find('$$experience', /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/),
+  single: find('$$experience', /(\d+(?:\.\d+)?)\s*(\+|plus)?\s*(?:years?|yrs?)\b/),
   responseRange: find('$$responseExperience', /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/),
   responsePlus: { $ifNull: [find('$$responseExperience', /(\d+(?:\.\d+)?)\s*(?:\+|plus)\s*(?:years?|yrs?)\b/),
     find('$$responseExperience', /(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\s*(?:and above|or above)\b/),
@@ -104,20 +110,16 @@ const LEGACY_PUBLIC_JOB_TYPE_EXPRESSION = bind({
     [present('$$range'), ceil(value('$$range', 1))],
     [present(capture('$$single', 1)), null],
   ], floor(value('$$single'))),
+  textYears: textExperienceYears,
   derivedYears: choose([
     [and(present('$$responseMin'), { $gte: ['$$responseMin', 0] }, lte('$$responseMin', 40)), '$$responseMin'],
-    [match('$$experience', /\b(no prior experience required|no experience required|freshers? can apply|freshers?|entry[- ]level applicants are encouraged)\b/), 0],
-    [present('$$responseRange'), choose([[lte(clamp(ceil(value('$$responseRange'))), clamp(floor(value('$$responseRange', 1)))), clamp(ceil(value('$$responseRange')))]], null)],
-    [present('$$responsePlus'), clamp(ceil(value('$$responsePlus')))],
-  ], clamp(floor({ $add: [value('$$responseSingle'), 0.5] }))),
+  ], textExperienceYears),
 }, bind({ derivedLevel, positiveExperience: or(
   gt('$$minimum', 0),
   and(not(present('$$minimum')), gt('$$maximum', 0)),
-  gt('$$derivedYears', 0),
-  present('$$responsePlus'),
-  gt(value('$$responseRange'), 0),
-  gt(value('$$responseSingle'), 0),
-) },
+), responsePositiveExperience: or(gt('$$responseMin', 0),
+  and(not(present('$$responseMin')), gt('$$profileMax', 0)), gt('$$textYears', 0),
+  and(not(present('$$textYears')), match('$$responseExperience', /\b(?:[1-9]\d*(?:\.\d+)?|0?\.\d*[1-9]\d*)\s*(?:\+|plus)?\s*(?:years?|yrs?)\b/))) },
   bind({ level: collapse(effectiveLevel) }, bind({
     resolved: choose([
       [and(eq('$$employmentType', 'Intern'), '$$positiveExperience'), 'Full-time Experienced'],
@@ -126,8 +128,9 @@ const LEGACY_PUBLIC_JOB_TYPE_EXPRESSION = bind({
       [isEntry, 'Full-time Fresher'],
     ], 'Full-time Experienced'),
   }, choose([
+    [and('$$responsePositiveExperience', not({ $in: ['$$canonical', ['Contract', 'Others']] }),
+      or({ $in: ['$$canonical', ['Full-time Fresher', 'Full-time Experienced', 'Full-time', 'Intern']] }, eq('$$resolved', 'Full-time Fresher'))), 'Full-time Experienced'],
     [and({ $in: ['$$canonical', ['Full-time Fresher', 'Full-time Experienced']] }, present('$$resolved')), '$$resolved'],
-    [and(eq('$$canonical', 'Intern'), '$$positiveExperience'), '$$resolved'],
     [and(present('$$canonical'), ne('$$canonical', 'Full-time')), '$$canonical'],
     [present('$$resolved'), '$$resolved'],
     [match('$$type', partTime), null],

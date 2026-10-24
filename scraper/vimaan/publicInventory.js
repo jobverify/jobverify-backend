@@ -17,7 +17,7 @@ export const verifyPublicInventory=async(fetchListings=defaultFetchListings)=>{
     const cards=[...data.html.matchAll(/<li\b[^>]*class=["'][^"']*\bjob_listing\b[^"']*["'][^>]*>([\s\S]*?)<\/li>/gi)]
     if(data.found_jobs!==Boolean(cards.length)) throw new Error('Vimaan public jobs listing count could not be verified')
     if(cards.length && data.max_num_pages===0 || !cards.length && (pages!==1 || page!==1 || total!==0)) throw new Error('Vimaan public jobs pagination is incomplete or contradicts the empty inventory')
-    if(!cards.length&&!/no_jobs_found|no jobs found/i.test(data.html)) throw new Error('Vimaan empty jobs response lacks an explicit no-jobs marker')
+    if(!cards.length&&!/no_jobs_found|no jobs found|class=["'][^"']*\bno_job_listings_found\b[^"']*["']/i.test(data.html)) throw new Error('Vimaan empty jobs response lacks an explicit no-jobs marker')
     for(const card of cards){
       const id=card[0].match(/\bpost-(\d+)\b/)?.[1]
       const href=card[1].match(/<a\b[^>]*href=["']([^"']+)["']/i)?.[1]
@@ -32,7 +32,7 @@ export const verifyPublicInventory=async(fetchListings=defaultFetchListings)=>{
         const error=new Error('Vimaan public listing country scope requires validation: '+location);error.failureKind='incomplete_location_scope';error.abortRetries=true;throw error
       }
     }
-    if(page===pages) return attachInventoryEvidence([],{status:total?'complete-inventory':'verified-empty',surface:LISTINGS_URL,firstParty:true,listingComplete:true,pagesFetched:page,reportedTotal:total,indiaFacetCount:0,verifiedAt:new Date().toISOString(),reason:'Unfiltered WordPress Job Manager inventory; all current roles have verified US locations'})
+    if(page===pages) return attachInventoryEvidence([],{status:total?'complete-inventory':'verified-empty',surface:LISTINGS_URL,firstParty:true,listingComplete:true,pagesFetched:page,reportedTotal:total,indiaFacetCount:0,verifiedAt:new Date().toISOString(),reason:total?'Unfiltered WordPress Job Manager inventory; all current roles have verified US locations':'Unfiltered WordPress Job Manager inventory returned an explicit no-listings marker'})
   }
   throw new Error('Vimaan public jobs pagination exceeded its limit')
 }

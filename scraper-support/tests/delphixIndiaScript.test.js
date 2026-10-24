@@ -17,6 +17,13 @@ const officialHomepageHtml = `
 </html>
 `
 
+test('Delphix recognizes its current canonical product page headline', async () => {
+ const source = await import('../../scraper/delphixindia/script.js')
+ const current = '<title>Perforce Delphix | Intelligent Data Automation Platform</title><link rel="canonical" href="https://www.perforce.com/products/delphix"><h1>Perforce Delphix: Trusted Test Data for AI-Driven Software Delivery</h1><h2>The Intelligent Data Automation Platform</h2>'
+ assert.equal(source.hasOfficialHomepageSignal(current), true)
+ assert.equal(source.hasOfficialHomepageSignal(current.replace('/products/delphix', '/products/other')), false)
+})
+
 const officialCareersHtml = `
 <!doctype html>
 <html lang="en">

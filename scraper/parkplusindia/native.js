@@ -1,5 +1,8 @@
 import {nativeDate,nativeCountryName} from '../../scraper-support/shared/nativeJobPosting.js'
-import { document } from '../../scraper-support/shared/rmkNativePairHtml.js'
+import { document,norm } from '../../scraper-support/shared/rmkNativePairHtml.js'
+import {isNativeBareCityInPublicScope} from '../../scraper-support/shared/nativeCityScope.js'
+import {getValidIndiaCityForJob} from '../../src/utils/publicJobLocationScope.js'
+import {extractActiveDescription} from '../../scraper-support/utils/activeNativeHtml.js'
 
 export const CAREERS_URL = 'https://parkplus.io/careers'
 export const EMPLOYER_URL = 'https://www.linkedin.com/company/parkplus'
@@ -15,9 +18,11 @@ const activeDocument = html => {
   return doc
 }
 const reviewNativeFields=doc=>{
+ const all=node=>[node,...node.children.filter(child=>typeof child!=='string').flatMap(all)],nodes=all(doc.root)
+ for(const n of nodes)check(!Object.keys(n.attrs||{}).some(k=>/^data-.*(?:country|job-location|expiry|expiration|date-posted|date-published)/i.test(k))&&!(n.tag==='meta'&&/(?:country|joblocation|dateposted|datepublished|published_time|validThrough|closingDate|expiryDate)/i.test(n.attrs.name||n.attrs.property||'')),'New native country/date/expiry carrier requires reconciliation')
  const containsPosting=v=>v&&typeof v==='object'&&([v['@type']].flat().includes('JobPosting')||Object.values(v).some(containsPosting))
- for(const n of doc.nodes(n=>n.tag==='script'&&n.attrs.type==='application/ld+json'))check(!containsPosting(JSON.parse(n.raw)),'New structured vacancy requires date, country, expiry and application reconciliation')
- check(!doc.nodes(n=> /JobPosting/i.test(n.attrs.itemtype||'') || /(?:^|\s)(?:addressCountry|jobLocation|hiringOrganization|datePosted|datePublished|dateModified|validThrough|closingDate|expiryDate)(?:\s|$)/i.test(n.attrs.itemprop||'') || n.tag==='meta'&&/^(?:addressCountry|jobLocation|datePosted|datePublished|dateModified|validThrough|closingDate|expiryDate)$/i.test(n.attrs.name||n.attrs.property||'')).length,'New native role country, public date or expiry metadata requires reconciliation')
+ for(const n of nodes.filter(n=>n.tag==='script'&&n.attrs.type==='application/ld+json'))check(!containsPosting(JSON.parse(n.raw)),'New structured vacancy requires date, country, expiry and application reconciliation')
+ check(!nodes.some(n=> /JobPosting/i.test(n.attrs.itemtype||'') || /(?:^|\s)(?:addressCountry|jobLocation|hiringOrganization|datePosted|datePublished|dateModified|validThrough|closingDate|expiryDate)(?:\s|$)/i.test(n.attrs.itemprop||'') || n.tag==='meta'&&/^(?:addressCountry|jobLocation|datePosted|datePublished|dateModified|validThrough|closingDate|expiryDate)$/i.test(n.attrs.name||n.attrs.property||'')),'New native role country, public date or expiry metadata requires reconciliation')
  return doc
 }
 const companyMatches = value => {
@@ -41,12 +46,45 @@ export const collectParkPlusIndiaNative = async ({ read, now }) => {
   const corporateSchema=corporate.nodes(n=>n.tag==='script'&&n.attrs.type==='application/ld+json').map(n=>JSON.parse(n.raw))
   check(corporateSchema.some(v=>v['@type']==='Organization'&&v.name==='Park+'&&v.url==='https://parkplus.io/'&&v.address?.addressCountry==='IN'),'Corporate exact employer identity changed')
   const firstParty=false
-  const sales=activeDocument(await read('https://parkplus.io/careers/jobs/sales-manager'))
+  const salesUrl='https://parkplus.io/careers/jobs/sales-manager'
+  const sales=reviewNativeFields(activeDocument(await read(salesUrl)))
   const next=sales.nodes(n=>n.tag==='script'&&n.attrs.id==='__NEXT_DATA__')
   check(next.length===1,'Corporate sales role payload changed')
   const salesRole=JSON.parse(next[0].raw)?.props?.pageProps?.job
   check(salesRole?.title==='Sales Manager'&&salesRole.slug==='sales-manager'&&salesRole.location==='Gurugram | Chennai | Hyderabad | Kolkata | Pune | Mumbai','Corporate sales identity or city-only location changed')
   check(Object.keys(salesRole).every(k=>['title','department','location','experience','whatYouWillDo','whoYouAre','hiringManager','isClosed','slug','createdAt','updatedAt','publishedAt'].includes(k)),'New corporate country/date/expiry/application field requires reconciliation')
+  const publication=nativeDate(salesRole.publishedAt,{required:true}),created=nativeDate(salesRole.createdAt,{required:true}),updated=nativeDate(salesRole.updatedAt,{required:true})
+  check(created.iso<=publication.iso&&publication.iso<=updated.iso&&publication.iso<=clock(),'Corporate native publication dates conflict or are future')
+  check(salesRole.isClosed===null||typeof salesRole.isClosed==='boolean','Corporate closure flag changed')
+  const salesLocations=salesRole.location.split('|').map(norm)
+  const targets=sales.nodes(n=>n.attrs.id==='apply-job'),forms=targets.length===1?sales.nodes(n=>n.tag==='form',targets[0]):[]
+  const form=forms.length===1?forms[0]:null
+  const applicationMatches=form&&sales.nodes(n=>n.tag==='input'&&n.attrs.name==='job-profile'&&n.attrs.placeholder===salesRole.slug&&norm(n.attrs.value).toLowerCase()===salesRole.title.toLowerCase(),form).length===1
+    &&sales.nodes(n=>n.tag==='button'&&n.attrs.type==='submit'&&sales.text(n)==='Submit'&&!Object.hasOwn(n.attrs,'disabled')&&n.attrs['aria-disabled']!=='true',form).length===1
+  const salesScope=salesLocations.every(label=>isNativeBareCityInPublicScope(label))
+  const salesVisible=sales.nodes(n=>n.tag==='h4'&&sales.text(n)===salesRole.title).length===1&&sales.text(sales.root).includes('Location : '+salesRole.location)
+    &&sales.nodes(n=>n.tag==='a'&&n.attrs.href==='#apply-job'&&sales.text(n)==='Apply Now').length===1
+  const salesExclusion=salesRole.isClosed===true?'native-closed-role':!salesScope?'outside-existing-public-city-scope':!applicationMatches||!salesVisible?'native-application-or-visible-role-unverified':null
+  const sourceFields=[salesRole.whatYouWillDo,salesRole.whoYouAre]
+  check(sourceFields.every(v=>v==null||typeof v==='string'),'Corporate native description shape changed')
+  const key=v=>String(v||'').replace(/[^\p{L}\p{N}]/gu,'').toLowerCase()
+  const labels=new Set(['responsibilities','requirements','whatyoulldo','whoyouare',key(salesRole.title)])
+  const labelOnly=new RegExp('^(?:'+[...labels].join('|')+')+$','i')
+  const nativeProse=node=>node.inactive||/^(?:h[1-6]|strong|b|script|style)$/.test(node.tag)?'':node.children.map(child=>typeof child==='string'?child:nativeProse(child)).join(' ')
+  const substantive=sourceFields.some(value=>{
+    if(typeof value!=='string'||!value.trim())return false
+    const doc=activeDocument(value),core=extractActiveDescription(nativeProse(doc.root))
+    return core&&!labelOnly.test(key(core))
+  })
+  const salesDescription=substantive?sourceFields.filter(v=>typeof v==='string').join('\n\n'):null
+  const corporateSalesJob=salesExclusion?null:{firstParty:true,source:'parkplusindia',company:'Park+ India',title:salesRole.title,jobId:salesRole.slug,requisitionId:null,
+    sourceUrl:salesUrl,applyUrl:salesUrl,link:salesUrl,activeApplyVerified:true,country:null,locations:salesLocations,location:salesRole.location,
+    city:getValidIndiaCityForJob({country:null,location:salesLocations[0]}),region:null,department:salesRole.department,
+    experienceRequired:norm(salesRole.experience),sourceExperienceRequired:norm(salesRole.experience),postingDate:publication.iso,
+    nativePublicationDate:salesRole.publishedAt,nativeCreatedAt:salesRole.createdAt,nativeUpdatedAt:salesRole.updatedAt,closingDate:null,
+    sourceDescription:salesDescription,jobDescription:salesDescription,sourceDetailComplete:salesDescription!==null,sourceDetailStatus:salesDescription===null?'partial':'complete',
+    sourceListingComplete:false,sourceScopeComplete:false,sourceGeographyComplete:false,lifecycleCleanupAllowed:false}
+  try{
   const employer=reviewNativeFields(activeDocument(await read(EMPLOYER_URL)))
   check(employer.nodes(n=>n.tag==='h1'&&employer.text(n)==='Park+').length===1&&employer.nodes(n=>n.attrs['data-semaphore-content-urn']==='urn:li:organization:31193090').length===1,'Native exact employer identity changed')
   check(employer.nodes(n=>n.tag==='a'&&n.attrs['data-tracking-control-name']==='about_website').some(n=>{
@@ -80,7 +118,7 @@ export const collectParkPlusIndiaNative = async ({ read, now }) => {
     check(title && location, 'Native listing title or location missing')
     facts.push({ id, path, rawUrl, title, location, postingDate })
   }
-  const jobs = []
+  const jobs = corporateSalesJob?[corporateSalesJob]:[]
   let stopReason = 'bounded-native-observation', visited = 0
   for (const fact of facts.slice(0, 20)) {
     let body
@@ -148,5 +186,11 @@ export const collectParkPlusIndiaNative = async ({ read, now }) => {
       sourceScopeComplete: false, lifecycleCleanupAllowed: false, scrapedAt: clock() })
   }
   check(jobs.length > 0, 'No active exact employer explicit-country detail validated; inventory remains unknown')
-  return { jobs, firstParty, facts:{nativeRecordCount:cards.length,visitedDetailCount:visited,excludedCorporateSalesRole:{title:salesRole.title,location:salesRole.location,country:null,createdAt:salesRole.createdAt,publishedAt:salesRole.publishedAt,exclusionReason:'city-only-country-unverified;old-publication'}}, reason: `${stopReason}; observed ${cards.length} of reported ${total} India-filtered cards, visited ${visited} details. Only active exact-employer explicit-India details emitted. Unvisited cards and country-ambiguous metro roles excluded. Employer-authored native jobs independently corroborate official employer name and registered address. Corporate outgoing handoff is unproven unless actively linked; firstParty reflects that. Corporate Sales Manager city-only country unknown and historical publication excluded. Worldwide inventory, secondary scope, precise detail publication and expiry remain unknown.` }
+  const corporateSalesFact={title:salesRole.title,location:salesRole.location,country:null,createdAt:salesRole.createdAt,publishedAt:salesRole.publishedAt,exclusionReason:salesExclusion}
+  return { jobs, firstParty, facts:{nativeRecordCount:cards.length,visitedDetailCount:visited,corporateSalesRole:corporateSalesFact,excludedCorporateSalesRole:salesExclusion?corporateSalesFact:null}, reason: `${stopReason}; observed ${cards.length} of reported ${total} India-filtered cards, visited ${visited} details. Native LinkedIn details retain explicit India. Corporate Sales Manager follows existing all-city policy with country null and original publication date; enabled matching role form required. Unvisited cards remain unverified. Employer identity remains corroborated; corporate outgoing ATS handoff and worldwide company scope remain unproven. Cleanup disabled.` }
+  }catch(error){
+    if(!corporateSalesJob||![403,429].includes(error.status))throw error
+    return {jobs:[corporateSalesJob],firstParty:true,facts:{nativeRecordCount:null,visitedDetailCount:0,corporateSalesRole:{title:salesRole.title,location:salesRole.location,country:null,createdAt:salesRole.createdAt,publishedAt:salesRole.publishedAt,exclusionReason:null},excludedCorporateSalesRole:null,independentDiscoveryGaps:[{status:error.status,reason:error.message}]},
+      reason:`Independent employer search HTTP${error.status}; verified first-party Sales Manager retained with original publication and unknown country. Native external inventory and whole-company totals unknown; cleanup disabled.`}
+  }
 }

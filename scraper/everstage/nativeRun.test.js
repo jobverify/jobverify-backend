@@ -10,6 +10,19 @@ const C='https://www.everstage.com/careers',E='https://ats.rippling.com/embed/ev
 const id='b27b64c9-467c-4fbc-8581-55d76888ae0d',R='https://ats.rippling.com/en-US/everstage/jobs/'+id,A=R+'/apply'
 const next=(pages,url,fn)=>{pages[url]=pages[url].replace(/(<script[^>]*id="__NEXT_DATA__"[^>]*>)([\s\S]*?)(<\/script>)/,(_,a,b,c)=>{const n=JSON.parse(b);fn(n,n.props.pageProps.apiData);return a+JSON.stringify(n)+c})}
 const attempt=(change=()=>{},extra={})=>{const pages=fixture();change(pages);const seen={};return run({now:'2026-10-21T19:38:20.000Z',fetchImpl:async(url,o)=>{assert.equal(o.method,'GET');assert.ok(Object.hasOwn(pages,url),'Unadvertised URL: '+url);seen[url]=(seen[url]||0)+1;const body=typeof pages[url]==='function'?pages[url](seen[url]):pages[url];return{status:200,url,text:async()=>body}},...extra})}
+test('typed Remote India roles keep unknown city and state without blocking the board', async () => {
+ const jobs = await attempt(p => {
+  next(p, E, n => { n.props.pageProps.dehydratedState.queries[0].state.data.items[0].locations = [
+   { name: 'Remote, India', country: 'India', countryCode: 'IN', state: null, stateCode: null, city: null, workplaceType: 'REMOTE' },
+  ] })
+  for (const url of [R, A]) next(p, url, (n, a) => { a.jobPost.workLocations = ['Remote, India']; if (a.workLocations != null) a.workLocations = ['Remote, India'] })
+ })
+ const job = jobs.find(j => j.jobId === id)
+ assert.equal(job.country, 'India')
+ assert.equal(job.city, null)
+ assert.equal(job.state, null)
+ assert.equal(job.location, 'Remote, India')
+})
 test('four unique full India roles aggregate native duplicate locations and keep unknown dates and scope',async()=>{const jobs=await attempt();assert.equal(jobs.length,4);const j=jobs.find(j=>j.jobId.startsWith('81087'));assert.deepEqual(j.locations,['Hyderabad, India','Chennai, India']);assert.equal(j.postedAt,null);assert.equal(j.nativePublicationDate,null);assert.equal(j.nativeClosingDate,null);assert.ok(j.nativeCreatedOn);assert.equal(j.sourceIndiaJobCount,null);assert.equal(j.sourceListingComplete,false);assert.equal(j.sourceScopeComplete,false);assert.equal(j.applyUrl,j.sourceUrl+'/apply');assert.ok(j.sourceDescription.includes('Engage with Customers'));assert.ok(j.nativeDescriptionHtml.role);assert.equal(readInventoryEvidence(jobs).listingComplete,false)})
 const rejects=(name,change,pattern=/Everstage native/i)=>test(name,()=>assert.rejects(attempt(change),pattern))
 rejects('official stale or inert widget is rejected',p=>{p[C]=p[C].replace('id="rr-job-board"','hidden id="rr-job-board"')})

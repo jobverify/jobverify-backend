@@ -12,7 +12,8 @@ export const buildSemanticExperienceConstraint = value => value === 'unspecified
   : Number(value) === 0 ? { ...AUTHORITATIVE_CLASSIFICATION_CONSTRAINT, $or: [
     { 'classification.resolved.experienceYears': 0 },
     { 'classification.resolved.jobType': 'Full-time Fresher', 'classification.resolved.experiencePolicy': { $in: ['fresher_eligible', 'mixed'] } },
-  ] } : null;
+  ] } : Number.isFinite(Number(value)) && Number(value) > 0
+    ? { ...AUTHORITATIVE_CLASSIFICATION_CONSTRAINT, 'classification.resolved.experienceYears': Number(value) } : null;
 
 export const withSemanticExperienceConstraint = (value, legacy) => {
   const semantic = buildSemanticExperienceConstraint(value);
@@ -28,5 +29,6 @@ export const matchesExperienceFilter = (job, value, legacyUnspecified) => {
   const year = Number(value);
   if (resolved && year === 0) return (resolved.experienceYears || []).includes(0)
     || (resolved.jobType === 'Full-time Fresher' && ['fresher_eligible', 'mixed'].includes(resolved.experiencePolicy));
+  if (resolved) return (resolved.experienceYears || []).includes(year);
   return (job.experienceYears || []).includes(year) && (year !== 0 || job.jobType === 'Full-time Fresher');
 };

@@ -104,6 +104,8 @@ export const JobSchema = new Schema(
     sourceExperienceRequired: { type: String, trim: true, default: null },
     location: { type: String, trim: true },
     city: { type: String, trim: true },
+    // Stable source identity address, separate from corrected work locations.
+    fingerprintLocation: { type: String, trim: true },
     cityKey: { type: String, trim: true, default: null },
     publicCityKey: { type: String, trim: true, default: null },
     state: { type: String, trim: true, default: null },

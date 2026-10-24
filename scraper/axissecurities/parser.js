@@ -9,6 +9,8 @@ export const validateListing = row => {
   requireProof(row && typeof row.jobSeq === 'string' && /^\d+$/.test(row.jobSeq) && row.jobId === row.jobSeq
     && norm(row.jobTitle) && norm(row.locations) && row.allowCareerSite === 'Y', 'invalid native listing identity or status')
   validateGeographicFields(row)
+  for (const [key,value] of Object.entries(row)) if (value != null && /expir|validThrough|closingDate|endDate/i.test(key))
+    requireProof(false, 'unreviewed native expiry/temporal field')
 }
 const validateGeographicFields = row => {
   const known = new Set(['jobLocation','locations','jobLocationList','locationCount','countryMstNewSeq'])

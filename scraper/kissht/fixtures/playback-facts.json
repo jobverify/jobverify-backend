@@ -81,5 +81,6 @@
   },
   "sourceListingComplete": false,
   "reason": "Secondary branch CustomName1 country scope remains unverified;64 placeholder descriptions remain null/partial.",
-  "lifecycleCleanupAllowed": false
+  "lifecycleCleanupAllowed": false,
+  "evidenceScope": "Historical full native detail replay; compliance Country_Name does not establish workplace. Current branch-validated replay is artifacts/static-empty-remediation/twentyseventh-batch-india-replay.json."
 }

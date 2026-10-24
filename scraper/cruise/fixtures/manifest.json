@@ -1,12 +1,67 @@
-﻿{
-    "fixtures":  [
-                     {
-                         "file":  "transport-failure-20261023.json",
-                         "kind":  "browser-tool-transport-failure",
-                         "bytes":  786,
-                         "sha256":  "f0c8755977b6e7da23fb72994f88c0bd80d5f893594daf0f8b6c4ff57c77f118",
-                         "httpResponseCaptured":  false,
-                         "bodySha256":  null
-                     }
-                 ]
+{
+  "fixtures": [
+    {
+      "file": "transport-failure-20261023.json",
+      "kind": "browser-tool-transport-failure",
+      "bytes": 786,
+      "sha256": "f0c8755977b6e7da23fb72994f88c0bd80d5f893594daf0f8b6c4ff57c77f118",
+      "httpResponseCaptured": false,
+      "bodySha256": null
+    }
+  ],
+  "files": [
+    {
+      "file": "native-employer-jobs.json.gz",
+      "sha256": "74cb631f178f8061b339cab8032c8a02245313cb1a0a40a56435de8ff217015d",
+      "uncompressedSHA256": "609ea2947a0c69b853419e3f7df14e8967ab1439d925e003e88b0e64f7cf49f1"
+    },
+    {
+      "file": "native-website-navigation.json.gz",
+      "sha256": "858ce9c035384bc4f31d7895b470bc72809b733274d960eabeca130df6c3bb1a",
+      "uncompressedSHA256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "file": "native-website-navigation.dom.json",
+      "fileSHA256": "b03c8c872957a3d3e4a69e296b38d5015dfa2a459b7dbe3e30dcb875f3b71107"
+    }
+  ],
+  "responses": [
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/company/getcruise/",
+      "finalUrl": "https://www.linkedin.com/company/getcruise/",
+      "status": 200,
+      "capturedAt": "2026-10-23T13:08:00.850Z",
+      "bodySHA256": "448a658a739a315c6e0713c0de0222757195f79d6359a9c281432ed2af48edf7"
+    },
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=6577635&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=6577635&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T13:08:01.389Z",
+      "bodySHA256": "baab079d7231f8726c3ffd8e6cabb7076e245395a8f037c590ff21056ec82d76"
+    },
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=6577635&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=6577635&location=Worldwide",
+      "status": 200,
+      "capturedAt": "2026-10-23T13:08:01.892Z",
+      "bodySHA256": "9fb1050fc84402d98848d70d3abc0436f2481b2a3a9f2a3d92009a18394b9d7a"
+    }
+  ],
+  "freshDiscoveryObservation": {
+    "nativeEmployerOrganizationId": "6577635",
+    "checkedEmployerQueries": [
+      "India",
+      "Worldwide"
+    ],
+    "observedJobCards": 0,
+    "companyJobCount": null,
+    "nativePublishedWebsiteURL": "http://getcruise.com/",
+    "normalNavigationError": "ERR_CERT_DATE_INVALID",
+    "httpResponseCapturedForFailure": false,
+    "disposition": "Exact native employer reciprocates getcruise.com; selected India/Worldwide queries no-match only. Normal published website navigation fails certificate date validation; no successor handoff or company-empty proof."
+  }
 }

@@ -21,6 +21,7 @@ const transport = (payload = listing) => async (url, options = {}) => {
     assert.deepEqual(JSON.parse(options.body),{ JDFileName:'', OrgCode:'', KeyName:'' })
     return {status:200,url,body:JSON.stringify(payload)}
   }
+  for(const file of ['financing-partners-pages.json','legal-employer-branches.json']){const found=fixture(file).find(r=>r.url===url);if(found)return found}
   const row = rows.find(row => url.includes(row.TrackToken))
   assert.ok(row,'Unexpected native URL '+url)
   const body=fixture('detail-first-response.json').body
@@ -37,14 +38,14 @@ const fetcher = payload => async (url, options) => {
   return { ...response, url:response.finalUrl || response.url, text:async()=>response.body }
 }
 
-test('Kissht collects all266 client-paginated native roles with explicit India and brand identity',async()=>{
+test('Kissht observes266 native roles and admits199 verified legal-employer work branches',async()=>{
   const jobs = await run({fetchImpl:fetcher()})
-  assert.equal(jobs.length,266)
-  assert.equal(new Set(jobs.map(j=>j.id)).size,266)
-  assert.equal(jobs.filter(j=>j.nativeLegalEmployer === 'OnEMI Technology Solutions Limited').length,9)
-  assert.equal(jobs[0].title,'Sales Manager - Ibrahipatnam')
+  assert.equal(jobs.length,199)
+  assert.equal(new Set(jobs.map(j=>j.id)).size,199)
+  assert.equal(jobs.filter(j=>j.nativeLegalEmployer === 'OnEMI Technology Solutions Limited').length,0)
+  assert.equal(jobs[0].title,'Branch Sales Manager - Mirzapur')
   assert.equal(jobs[0].country,'India')
-  assert.equal(jobs[0].postedAt,'2026-10-22')
+  assert.equal(jobs[0].postedAt,'2026-10-19')
   assert.equal(jobs[0].sourceDescription,null)
   assert.equal(jobs[0].sourceDetailComplete,false)
   assert.equal(readInventoryEvidence(jobs).reportedTotal,266)
@@ -93,17 +94,17 @@ test('Kissht rejects detail location or public posting-date contradictions',()=>
 })
 
 test('Kissht replays every actual captured role detail with a live-sized aggregate budget',async()=>{
-  const captures=[fixture('official-response.json'),fixture('board-response.json'),fixture('listing-response.json'),...fixture('detail-responses.json')]
+  const captures=[fixture('official-response.json'),fixture('board-response.json'),fixture('listing-response.json'),...fixture('detail-responses.json'),...fixture('financing-partners-pages.json'),...fixture('legal-employer-branches.json')]
   const byUrl=new Map(captures.map(c=>[c.url,c]))
   const jobs=await run({timeoutMs:240000,fetchImpl:async url=>{
     const c=byUrl.get(url);assert.ok(c,'Uncaptured request '+url)
     return {...c,url:c.finalUrl||c.url,text:async()=>c.body}
   }})
-  assert.equal(jobs.length,266)
+  assert.equal(jobs.length,199)
   assert.equal(jobs[0].sourceDetailComplete,true)
-  assert.match(jobs[0].sourceDescription,/Achieve targets for the Mortgages/)
-  assert.equal(jobs.filter(job=>job.sourceDetailComplete).length,202)
-  assert.equal(jobs.filter(job=>job.sourceDescription===null).length,64)
+  assert.ok(jobs[0].sourceDescription.trim())
+  assert.equal(jobs.filter(job=>job.sourceDetailComplete).length,160)
+  assert.equal(jobs.filter(job=>job.sourceDescription===null).length,39)
 })
 
 test('Kissht stops detail queues after a fatal native HTTP failure',async()=>{

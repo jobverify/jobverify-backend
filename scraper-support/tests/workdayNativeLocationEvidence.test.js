@@ -44,6 +44,56 @@ const exercise = async (t, roles) => {
   return { jobs, details }
 }
 
+test('Workday binds an additional requisition office country without poisoning the primary office', async t => {
+  const mixed = role('R014324', 'Bangalore, India', 'India', 'IN', ['Kuala Lumpur, Malaysia'], '2 Locations')
+  mixed.detail.jobPostingInfo.jobRequisitionLocation = {
+    descriptor: 'Kuala Lumpur', country: { descriptor: 'Malaysia', alpha2Code: 'MY' },
+  }
+  const { jobs } = await exercise(t, [
+    mixed,
+    role('R014188', 'Hyderabad, India', 'India', 'IN', ['Bangalore, India'], '2 Locations'),
+  ])
+  assert.deepEqual(jobs.map(job => job.title), ['Engineer R014324', 'Engineer R014188'])
+  assert.equal(jobs[0].location, 'Bangalore, India')
+  assert.deepEqual(jobs[1].locations, ['Hyderabad, India', 'Bangalore, India'])
+})
+
+test('Workday retains a typed India requisition office listed as an opaque secondary location', async t => {
+  const mixed = role('R1', 'Kuala Lumpur, Malaysia', 'Malaysia', 'MY', ['Campus_42'], '2 Locations')
+  mixed.detail.jobPostingInfo.jobRequisitionLocation = {
+    descriptor: 'Campus_42', country: { descriptor: 'India', alpha2Code: 'IN' },
+  }
+  const { jobs } = await exercise(t, [mixed])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].location, 'Campus_42, India')
+  assert.deepEqual(jobs[0].locations, ['Campus_42, India'])
+})
+
+test('Workday keeps country contradictions when the requisition office is unspecified or repeats the primary city', async t => {
+  for (const [descriptor, additional] of [[undefined, 'OtherOffice'], ['Bangalore', 'Bangalore, USA']]) {
+    const mixed = role('R1', 'Bangalore, India', 'India', 'IN', [additional], '2 Locations')
+    mixed.detail.jobPostingInfo.jobRequisitionLocation = {
+      descriptor, country: { descriptor: 'USA', alpha2Code: 'US' },
+    }
+    await assert.rejects(exercise(t, [mixed]), error => error.name === 'WorkdayIncompleteScopeError')
+    t.mock.restoreAll()
+  }
+})
+
+test('Workday does not conflate an unlisted internal requisition office with public posting locations', async t => {
+  const mixed = role('R0120985', 'THA-Bangkok-One Bangkok', 'Thailand', 'TH', ['IND-Hyderabad-CapitaLand'], '2 Locations')
+  mixed.detail.jobPostingInfo.jobRequisitionLocation = {
+    descriptor: 'IND-BLR-Divyasree Technopolis', country: { descriptor: 'India', alpha2Code: 'IN' },
+  }
+  const foreign = role('R2', 'Tokyo, Japan', 'Japan', 'JP', ['Singapore, Singapore'], '2 Locations')
+  foreign.detail.jobPostingInfo.jobRequisitionLocation = mixed.detail.jobPostingInfo.jobRequisitionLocation
+  const { jobs } = await exercise(t, [mixed, foreign])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Engineer R0120985')
+  assert.deepEqual(jobs[0].locations, ['IND-Hyderabad-CapitaLand'])
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 2)
+})
+
 test('Workday resolves Advantech opaque secondary labels from current same-board primary countries before validating scope', async t => {
   const roles = [
     role('JR202610028', 'Taipei_Neihu', 'Taiwan', 'TW', ['Linkou'], '2 Locations'),
@@ -89,6 +139,15 @@ test('Workday cannot infer an unknown secondary country from the primary country
   await assert.rejects(exercise(t, [
     role('R1', 'Taipei_Neihu', 'Taiwan', 'TW', ['UnresolvedCampus'], '2 Locations'),
   ]), error => error.name === 'WorkdayIncompleteScopeError')
+})
+
+test('Workday excludes known Australian city-only secondary locations without borrowing the primary country', async t => {
+ const { jobs } = await exercise(t, [
+  role('AU1', 'Sydney', 'Australia', 'AU', ['Launceston', 'Brisbane', 'Perth', 'Townsville', 'Adelaide', 'Melbourne'], '7 Locations'),
+  role('IN1', 'Bengaluru, Karnataka', 'India', 'IN', ['Pune, Maharashtra'], '2 Locations'),
+ ])
+ assert.deepEqual(jobs.map(job => job.title), ['Engineer IN1'])
+ assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 1)
 })
 
 test('Workday rejects conflicting same-label countries, including two different foreign countries', async t => {

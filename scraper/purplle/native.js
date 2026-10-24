@@ -1,16 +1,29 @@
+import {nativeDate} from '../../scraper-support/shared/nativeJobPosting.js'
 import { document } from '../../scraper-support/shared/rmkNativePairHtml.js'
+import {isNativeBareCityInPublicScope} from '../../scraper-support/shared/nativeCityScope.js'
+import {getValidIndiaCityForJob} from '../../src/utils/publicJobLocationScope.js'
 
+export const CAREERS_URL='https://www.purplle.com/careers'
 export const EMPLOYER_URL = 'https://www.linkedin.com/company/purplle-com/'
 export const LISTING_URL = 'https://www.linkedin.com/jobs/search/?f_C=2706205&location=India'
 const check = (ok, reason) => { if (!ok) throw new Error(reason) }
 const activeDocument = html => {
   const doc = document(html)
   const prune = (node, inherited = false) => {
-    node.inactive ||= inherited || /(?:^|;)\s*content-visibility\s*:\s*hidden\s*(?:!important\s*)?(?:;|$)/i.test(node.attrs?.style || '')
+    node.inactive ||= inherited || /(?:^|;)\s*content-visibility\s*:\s*hidden\s*(?:!important\s*)?(?:;|$)/i.test((node.attrs?.style || '').replace(/\/\*[\s\S]*?\*\//g,''))
     for (const child of node.children.filter(value => typeof value !== 'string')) prune(child, node.inactive)
   }
   prune(doc.root)
   return doc
+}
+const allNodes=node=>[node,...node.children.filter(n=>typeof n!=='string').flatMap(allNodes)]
+const reviewNativeFields=doc=>{
+ const nodes=allNodes(doc.root)
+ for(const n of nodes)check(!Object.keys(n.attrs||{}).some(k=>/^data-.*(?:country|job-location|expiry|expiration|date-posted|date-published)/i.test(k))&&!(n.tag==='meta'&&/(?:country|joblocation|dateposted|datepublished|published_time|validThrough|closingDate|expiryDate)/i.test(n.attrs.name||n.attrs.property||'')),'New native country/date/expiry carrier requires reconciliation')
+ const containsPosting=v=>v&&typeof v==='object'&&([v['@type']].flat().includes('JobPosting')||Object.values(v).some(containsPosting))
+ for(const n of nodes.filter(n=>n.tag==='script'&&n.attrs.type==='application/ld+json'))check(!containsPosting(JSON.parse(n.raw)),'New native JobPosting requires country, date, expiry and application reconciliation')
+ check(!nodes.some(n=>/JobPosting/i.test(n.attrs?.itemtype||'')||/(?:^|\s)(?:addressCountry|jobLocation|hiringOrganization|datePosted|datePublished|dateModified|validThrough|closingDate|expiryDate)(?:\s|$)/i.test(n.attrs?.itemprop||'')||n.tag==='meta'&&/^(?:addressCountry|jobLocation|datePosted|datePublished|dateModified|validThrough|closingDate|expiryDate)$/i.test(n.attrs.name||n.attrs.property||'')),'New native country, publication or expiry metadata requires reconciliation')
+ return doc
 }
 const companyMatches = value => {
   try {
@@ -27,7 +40,11 @@ const roleKey = value => {
 }
 
 export const collectPurplleNative = async ({ read, now }) => {
-  const employer = activeDocument(await read(EMPLOYER_URL))
+  const clock=()=>new Date(typeof now==='function'?now():now).toISOString()
+  const corporate=reviewNativeFields(activeDocument(await read(CAREERS_URL))),links=corporate.nodes(n=>n.tag==='a')
+  check(links.some(n=>{try{const u=new URL(n.attrs.href);return u.protocol==='https:'&&u.hostname==='www.linkedin.com'&&u.pathname.replace(/\/$/,'')==='/company/2706205'}catch{return false}})&&links.some(n=>n.attrs.href==='mailto:career@purplle.com'),'Purplle active careers contact or exact employer handoff changed')
+  check(!corporate.nodes(n=>corporate.hasClass(n,'panel-title')).length,'Purplle now exposes active role panels; country, description and apply review required')
+  const employer = reviewNativeFields(activeDocument(await read(EMPLOYER_URL)))
   check(employer.nodes(node => node.tag === 'h1' && employer.text(node) === 'Purplle.com').length === 1
     && employer.nodes(node => node.attrs['data-semaphore-content-urn'] === 'urn:li:organization:2706205').length === 1,
   'Native Purplle employer identity changed')
@@ -39,7 +56,7 @@ export const collectPurplleNative = async ({ read, now }) => {
         && target.hostname === 'www.purplle.com'
     } catch { return false }
   }), 'Native employer reciprocal website changed')
-  const listing = activeDocument(await read(LISTING_URL))
+  const listing = reviewNativeFields(activeDocument(await read(LISTING_URL)))
   check(listing.nodes(node => node.tag === 'input' && node.attrs.name === 'f_C' && node.attrs.value === '2706205'
     && Object.hasOwn(node.attrs, 'checked')).length === 1, 'Native exact employer filter changed')
   const cards = listing.nodes(node => listing.hasClass(node, 'job-search-card'))
@@ -61,8 +78,8 @@ export const collectPurplleNative = async ({ read, now }) => {
     const path = roleKey(rawUrl)
     check(path.endsWith(`-${id}`), 'Native role ID differs from its URL')
     const postingDate = within(node => node.tag === 'time')[0]?.attrs.datetime || null
-    check(!postingDate || /^\d{4}-\d{2}-\d{2}$/.test(postingDate) && Number.isFinite(Date.parse(postingDate))
-      && Date.parse(postingDate) <= Date.parse(now()), 'Native listing public date invalid or future')
+    const date=nativeDate(postingDate)
+    check(!date.iso||Date.parse(date.iso)<=Date.parse(clock()), 'Native listing public date invalid or future')
     const title = field('base-search-card__title'), location = field('job-search-card__location')
     check(title && location, 'Native listing title or location missing')
     facts.push({ id, path, rawUrl, title, location, postingDate })
@@ -79,15 +96,9 @@ export const collectPurplleNative = async ({ read, now }) => {
       throw error
     }
     visited++
-    const detail = activeDocument(body)
-    const containsPosting = value => Array.isArray(value) ? value.some(containsPosting)
-      : value && typeof value === 'object' && ([value['@type']].flat().includes('JobPosting')
-        || Object.values(value).some(containsPosting))
-    for (const node of detail.nodes(node => node.tag === 'script' && node.attrs.type === 'application/ld+json')) {
-      let value
-      try { value = JSON.parse(node.raw) } catch { throw new Error('Native structured data changed or malformed') }
-      check(!containsPosting(value), 'New native JobPosting geography, dates and expiry require reconciliation')
-    }
+    const detail = reviewNativeFields(activeDocument(body))
+    const primary=detail.nodes(n=>detail.hasClass(n,'top-card-layout__entity-info'))
+    check(primary.length===1&&!allNodes(primary[0]).some(n=>n.tag==='time'),'New primary role public time requires earliest publication and expiry reconciliation')
     check(detail.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical' && roleKey(node.attrs.href) === fact.path).length === 1,
       'Native detail canonical role changed')
     check(detail.nodes(node => node.tag === 'h1' && detail.text(node) === fact.title).length === 1
@@ -98,7 +109,9 @@ export const collectPurplleNative = async ({ read, now }) => {
       && detail.text(node) === fact.location).length === 1, 'Native detail and listing geography differ')
     if (/No longer accepting applications/i.test(detail.text(detail.root))) continue
     const parts = fact.location.split(',').map(value => value.trim())
-    if (parts.at(-1) !== 'India') continue
+    const explicitIndia=parts.at(-1)==='India'
+    const cityOnlyScope=!explicitIndia&&isNativeBareCityInPublicScope(fact.location,{extraLabels:['mumbai metropolitan region']})
+    if(!explicitIndia&&!cityOnlyScope)continue
     const apply = detail.nodes(node => node.tag === 'button' && detail.text(node) === 'Apply'
       && ['job-details-subnav-apply-modal', 'job-details-topcard-apply-modal'].includes(node.attrs['data-modal'])
       && !Object.hasOwn(node.attrs, 'disabled') && node.attrs['aria-disabled'] !== 'true')
@@ -119,15 +132,16 @@ export const collectPurplleNative = async ({ read, now }) => {
       .find(node => /^Employment type\s/.test(detail.text(node)))
     const sourceUrl = `https://in.linkedin.com${fact.path}`
     jobs.push({ source: 'purplle', company: 'Purplle', title: fact.title, jobId: fact.id, requisitionId: fact.id,
-      location: fact.location, country: 'India', city: parts.length >= 3 ? parts[0] : null,
+      location: fact.location, country: explicitIndia?'India':null, city: cityOnlyScope?getValidIndiaCityForJob({country:null,location:fact.location}):parts.length>=3?parts[0]:null,
       region: parts.length >= 3 ? parts[1] : null, postingDate: fact.postingDate,
       nativeListingPublicationDate: fact.postingDate, nativeDetailPublicationDate: null, closingDate: null,
       employmentType: employment ? detail.text(employment).replace(/^Employment type\s+/, '') : null,
       sourceUrl, applyUrl: sourceUrl, link: sourceUrl, activeApplyVerified: true,
       jobDescription: description, sourceDescription: description, sourceDetailComplete: Boolean(description),
       sourceDetailFailureKind: description ? null : 'missing-content', sourceListingComplete: false,
-      sourceScopeComplete: false, lifecycleCleanupAllowed: false, scrapedAt: now() })
+      sourceScopeComplete: false, lifecycleCleanupAllowed: false, scrapedAt: clock() })
   }
-  check(jobs.length > 0, 'No active exact employer explicit-country detail validated; inventory remains unknown')
-  return { jobs, reason: `${stopReason}; observed ${cards.length} of reported ${total} India-filtered cards, visited ${visited} details. Only active exact-employer explicit-India details emitted. Unvisited cards and country-ambiguous metro roles excluded. Worldwide inventory, secondary scope, precise detail publication and expiry remain unknown.` }
+  check(jobs.length > 0, 'No active exact employer public-location detail validated; inventory remains unknown')
+  const countryUnknownRecoveredCount=jobs.filter(job=>job.country===null).length
+  return { jobs, firstParty:true,inventoryStatus:'coverage-gap',facts:{nativeRecordCount:cards.length,nativeReportedIndiaFilteredCount:total,visitedDetailCount:visited,stopReason,countryUnknownRecoveredCount}, reason: `${stopReason}; observed ${cards.length} of reported ${total} India-filtered cards, visited ${visited} details. Only active exact-employer details satisfying existing public location policy emitted; ${countryUnknownRecoveredCount} retain unknown country. Unvisited cards remain unverified. Worldwide inventory, secondary scope, precise detail publication and expiry remain unknown.` }
 }

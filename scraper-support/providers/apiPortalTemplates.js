@@ -215,6 +215,7 @@ const API_PORTAL_TEMPLATES = {
         domain: templateOptions.domain,
         query: templateOptions.query || '',
         location: templateOptions.location || 'India',
+        sort_by: templateOptions.sortBy || 'timestamp',
       },
     },
     pagination: {

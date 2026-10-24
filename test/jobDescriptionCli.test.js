@@ -40,5 +40,7 @@ test('disabled or exhausted CLI runs do not connect to MongoDB or start a model'
     const summary = JSON.parse(result.stdout.trim().split('\n').at(-1));
     assert.equal(summary.reason, reason);
     assert.equal(summary.outcome, mode === 'off' ? 'failed' : 'completed');
+    assert.equal(summary.processingComplete, false);
+    assert.equal(summary.handoffReady, mode !== 'off');
   }
 });

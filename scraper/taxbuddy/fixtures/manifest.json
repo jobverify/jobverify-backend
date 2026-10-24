@@ -39,7 +39,62 @@
           "bodySHA256": "1ded7d0e09ebb32884543864c74726f830dd3335bc787d1f9ce2c7fe3184b15e"
         }
       ]
+    },
+    {
+      "file": "fresh-native-employer.dom.json",
+      "sha256": "2ea3e89c2141f22e74db4c8cdf4416bebcf25b890868028c8a431f603d1cf063",
+      "evidenceType": "DOM observation, not HTTP response receipt"
+    },
+    {
+      "file": "fresh-official-page.dom.json",
+      "sha256": "f84c69feeb73d9969425573d1cf4580e252811d4afa5805f9018a430a532872f",
+      "evidenceType": "DOM observation, not HTTP response receipt"
     }
   ],
-  "productionWrites": false
+  "productionWrites": false,
+  "captures": [
+    {
+      "file": "fresh-native-employer.json.gz",
+      "sha256": "72683fa656169dd029650e7fa9b3a883b580efaec66995ace8e634dfcf65f51d",
+      "uncompressedSha256": "3090ec3d02c1c8788db66a6b7167c24fd134e1bb53a4a1388b15d66cb80af90b",
+      "responses": [
+        {
+          "url": "https://www.linkedin.com/company/tax-buddy-india/",
+          "finalUrl": "https://www.linkedin.com/company/tax-buddy-india/",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:52:15.110Z",
+          "bodySha256": "f3c329d0857cadd734969892afbcaa763cea1147b944a6e4d5b74e4c4a487ff3"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=14564264&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=14564264&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:52:15.623Z",
+          "bodySha256": "9b219391a6b131d6686e4854cc2fd9d0171cc06c72d7c14b4fc7830be1c21780"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=14564264&location=Worldwide",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=14564264&location=Worldwide",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:52:16.300Z",
+          "bodySha256": "fd89b7a0510ee7e38f57c038baf94e47371b4b4c60ec3906e0657658a600ca70"
+        }
+      ]
+    },
+    {
+      "file": "fresh-official-page.json.gz",
+      "sha256": "16ac748a211d80ea053d0e3c85d284a3186f84cd0646f55d206357010da8014f",
+      "uncompressedSha256": "6eb28f693b2006635429aedc294c25c39524e915016ef67d16dd09339b9eb6ec",
+      "responses": [
+        {
+          "url": "https://www.taxbuddy.com/",
+          "finalUrl": "https://www.taxbuddy.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:54:11.180Z",
+          "bodySha256": "eca6ee1b53abed3f17c7a980d8f942d35889cba9a65de6f40ce513c2f90fafb9"
+        }
+      ]
+    }
+  ],
+  "latestInvestigation": "Fresh 2026-10-23 employer recruiting observations: TaxBuddy official homepage links exact employer14564264. Both checked India/Worldwide employer queries no-match; no complete companyinventory claim."
 }

@@ -96,8 +96,9 @@ try {
     rewriteStopDetails({ cancelled: controller.signal.aborted, budgetExpired: budgetSignal.aborted || Date.now() >= deadline || summary.reason === 'workflow_budget_exhausted' }));
   summary.finishedAt = new Date().toISOString();
   if (apply) {
-    const { stageOutcome } = await import('../src/pipeline/policy.js');
+    const { stageOutcome, describeStageCompletion } = await import('../src/pipeline/policy.js');
     summary.outcome = stageOutcome('rewrite', summary, process.exitCode || 0);
+    Object.assign(summary, describeStageCompletion('rewrite', summary, summary.outcome));
     if (summary.outcome !== 'completed') process.exitCode = 1;
   }
   await fs.mkdir(path.dirname(summaryFile), { recursive: true });
