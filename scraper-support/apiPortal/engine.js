@@ -1,5 +1,6 @@
 import { createPaginationState, getNextPageRequest, updatePaginationState, hasPaginationContinuation } from './pagination.js'
 import { createHash } from 'node:crypto'
+import { setTimeout as sleep } from 'node:timers/promises'
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { isIndiaJob } from '../utils/indiaLocationFilter.js'
 import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
@@ -17,6 +18,10 @@ const normalizeRequiredSkills = (value) => (
     ? value.map((item) => String(item).trim()).filter(Boolean)
     : []
 )
+
+const isEmptyEightfoldError = (payload, provider) => provider.atsPlatform === 'eightfold' && payload?.status === 200
+  && payload.error && !Array.isArray(payload.error) && Object.keys(payload.error).length === 2
+  && payload.error.message === '' && payload.error.body === ''
 
 const hasValueAtPath = (value, selector) => {
   for (const key of String(selector || '').split('.')) {
@@ -305,7 +310,8 @@ const validateInventory = (payload, records, rules) => {
   }
 }
 
-export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJson }) => {
+export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJson, signal }) => {
+  signal?.throwIfAborted()
   const config = normalizeApiPortalConfig(provider.config || {})
   const maxPages = Number(config.pagination.maxPages ?? 1000)
   if (!Number.isSafeInteger(maxPages) || maxPages < 1) throw new Error('API portal inventory requires a positive page limit')
@@ -318,18 +324,35 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
     config.pagination.pageSize = 50
   }
   let lastRequestStartedAt = 0
+  const requestJson = async (url, options = {}) => {
+    signal?.throwIfAborted()
+    const requestSignal = AbortSignal.any([...(signal ? [signal] : []), ...(options.signal ? [options.signal] : []), AbortSignal.timeout(20000)])
+    try {
+      const result = await fetchJson(url, { ...options, signal: requestSignal })
+      requestSignal.throwIfAborted()
+      return result
+    } catch (error) {
+      signal?.throwIfAborted()
+      throw error
+    }
+  }
+  const wait = async ms => {
+    try { await sleep(ms, undefined, { signal }) }
+    catch (error) { signal?.throwIfAborted(); throw error }
+  }
   const fetchPortalJson = async (url, options) => {
     const policy = config.rateLimit
-    if (!policy) return fetchJson(url, options)
+    if (!policy) return requestJson(url, options)
 
     const maxRetries = Math.max(0, Number(policy.maxRetries) || 0)
     for (let attempt = 0; ; attempt += 1) {
       const waitMs = Math.max(0, (Number(policy.minimumIntervalMs) || 0) - (Date.now() - lastRequestStartedAt))
-      if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs))
+      if (waitMs > 0) await wait(waitMs)
       lastRequestStartedAt = Date.now()
       try {
-        return await fetchJson(url, options)
+        return await requestJson(url, options)
       } catch (error) {
+        signal?.throwIfAborted()
         if (attempt >= maxRetries || !(/HTTP 429\b/i.test(String(error?.message)) || error?.status === 429)) {
           throw error
         }
@@ -337,7 +360,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
           Number(policy.maxDelayMs) || 30000,
           (Number(policy.baseDelayMs) || 2000) * (2 ** attempt),
         )
-        await new Promise((resolve) => setTimeout(resolve, backoffMs))
+        await wait(backoffMs)
       }
     }
   }
@@ -377,7 +400,10 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         ),
       })
       const records = getValueAtPath(listingPayload, config.pagination.resultsPath)
-      if (listingPayload?.success === false || listingPayload?.error
+      // Eightfold includes this exact blank error object in successful search
+      // responses. Populated, unknown and non-success envelopes still fail.
+      const emptyEightfoldError = isEmptyEightfoldError(listingPayload, provider)
+      if (listingPayload?.success === false || (listingPayload?.error && !emptyEightfoldError)
         || (Array.isArray(listingPayload?.errors) && listingPayload.errors.length > 0)) {
         throw new Error('API portal inventory validation failed: upstream error response')
       }
@@ -435,7 +461,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
                 body: serializeRequestBody(config.detail.body, config.detail.headers),
               })
               if (!detailPayload || typeof detailPayload !== 'object' || detailPayload.success === false
-                || detailPayload.error || (Array.isArray(detailPayload.errors) && detailPayload.errors.length)) {
+                || (detailPayload.error && !isEmptyEightfoldError(detailPayload, provider)) || (Array.isArray(detailPayload.errors) && detailPayload.errors.length)) {
                 throw new Error('API portal detail contract failed: upstream error response')
               }
               if (config.detail.mapping.jobDescription && !hasSourceDescription({
@@ -443,6 +469,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
               })) throw new Error('API portal detail contract incomplete: missing employer description')
               detailObservation = 'observed'
             } catch (error) {
+              signal?.throwIfAborted()
               if (config.detail.required || error.incompleteScope === true) throw error
               markIncomplete('optional-role-details-unavailable')
               detailObservation = 'failed'
@@ -491,10 +518,14 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         hasMore,
         totalCount,
         resultCount: Array.isArray(listingRecords) ? listingRecords.length : 0,
-        pageSize: config.pagination.pageSize,
+        // Some Eightfold hosts cap search responses below the requested limit.
+        // Advance over fetched rows so the next request cannot skip vacancies.
+        pageSize: provider.atsPlatform === 'eightfold' && config.pagination.strategy === 'offset-limit' && listingRecords.length > 0
+          ? listingRecords.length : config.pagination.pageSize,
       })
     }
 
+    signal?.throwIfAborted()
     const complete = inventoryComplete && state.done && !continuation
       && (reportedTotal == null || reportedTotal === recordsFetched)
     if (!complete) for (const job of jobs) job.sourceListingComplete = false

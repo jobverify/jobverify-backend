@@ -27,6 +27,35 @@ export const IDENTIFIER='209582f5-2061-48a9-8889-d5d389ef7194'
 export const EMPLOYER='MyClassboard Educational Solutions Pvt Ltd'
 export const APPLICATION_CLIENT='https://cdn.keka.com/careers/v/2026/scripts/app/app.min.js'
 
+// Keka's active array contains both hydrated locations and older references to
+// those same tenant locations. Resolve only exact native IDs AND exact labels;
+// a city name, employer address or a location from another collection is not a key.
+const locationSignature=location=>typeof location.name==='string'&&location.name.trim()&&typeof location.city==='string'&&location.city.trim()?JSON.stringify([location.name,location.city]):null
+const absent=value=>value==null||value===''
+export function buildLocationCountryReferences(rows) {
+ const groups=new Map(),references=new Map()
+ for(const row of rows){
+  if(!Array.isArray(row.jobLocations))throw Error('Native job locations malformed')
+  for(const location of row.jobLocations){
+   if(!Number.isSafeInteger(location?.id)||location.id<=0)continue
+   const group=groups.get(location.id)??{signatures:new Set(),states:new Set(),countries:new Set(),referenceJobIds:[]}
+   group.signatures.add(locationSignature(location))
+   if(!absent(location.state))group.states.add(location.state)
+   if(!absent(location.countryCode)||!absent(location.countryName)){
+    const code=nativeCountryName(location.countryCode),name=nativeCountryName(location.countryName)
+    group.countries.add(code&&code===name?code:null)
+    if(code&&code===name)group.referenceJobIds.push(String(row.id))
+   }
+   groups.set(location.id,group)
+  }
+ }
+ for(const [id,group] of groups){
+  if(group.signatures.size!==1||group.signatures.has(null)||group.states.size>1||group.countries.size!==1||!group.countries.has('India'))continue
+  references.set(id,{locationId:id,signature:[...group.signatures][0],countryCode:'IN',countryName:'India',referenceJobIds:[...new Set(group.referenceJobIds)],sourceUrl:ATS_ROOT+'api/embedjobs/default/active/'+IDENTIFIER,field:'jobLocations[].countryCode+countryName'})
+ }
+ return references
+}
+
 export function parseCorporate(home,careers) {
  const h=activeDocument(home), c=activeDocument(careers)
  if(!h.nodes(n=>n.tag==='meta'&&n.attrs.property==='og:title'&&/MyClassboard/i.test(n.attrs.content)).length
@@ -51,12 +80,21 @@ export function verifyDetail(html,row) {
  return substantive?d.text(block):null
 }
 
-export function mapNative(row,description,{now=new Date()}={}) {
+export function mapNative(row,description,{now=new Date(),locationCountryReferences=new Map()}={}) {
  if(!Number.isSafeInteger(row?.id)||row.id<=0||typeof row.title!=='string'||!row.title.trim()||!Array.isArray(row.jobLocations))throw Error('Native job record malformed')
  const reviewedKeys=new Set(['id','title','description','departmentIdentifier','departmentName','excerpt','jobLocations','jobType','experience','salaryRange','salaryRangeFormat','publishedOn','publishedSinceDays','skillNames'])
  if(Object.keys(row).some(key=>!reviewedKeys.has(key)))throw Error('Unreviewed native job fields; publication, expiry or scope requires renewed verification')
  const locationKeys=new Set(['id','name','city','state','countryCode','countryName','locationIdentifier'])
- for(const location of row.jobLocations){
+ const countryEvidence=[]
+ const resolvedLocations=row.jobLocations.map(location=>{
+  if(!location||!absent(location.countryCode)||!absent(location.countryName))return location
+  const reference=locationCountryReferences.get(location.id)
+  if(!reference||reference.signature!==locationSignature(location))return location
+  const {signature,...evidence}=reference
+  countryEvidence.push(evidence)
+  return {...location,countryCode:reference.countryCode,countryName:reference.countryName}
+ })
+ for(const location of resolvedLocations){
   if(!location||typeof location!=='object'||Object.keys(location).some(key=>!locationKeys.has(key)))throw Error('Unreviewed native location shape')
   const declared=[location.countryCode,location.countryName].filter(Boolean).map(nativeCountryName).filter(Boolean)
   // Two-letter state abbreviations such as TG must not be read as countries.
@@ -65,7 +103,7 @@ export function mapNative(row,description,{now=new Date()}={}) {
  }
  const publication=nativeDate(row.publishedOn,{required:true}),clock=new Date(now)
  if(!Number.isFinite(clock.getTime())||Date.parse(publication.iso)>clock.getTime())throw Error('Native publication date is future or clock invalid')
- const india=row.jobLocations.filter(l=>l.countryCode==='IN'&&l.countryName==='India')
+ const india=resolvedLocations.filter(l=>l.countryCode==='IN'&&l.countryName==='India')
  if(!india.length)return null
  const id=String(row.id),sourceUrl=ATS_ROOT+'jobdetails/'+id,applyUrl=ATS_ROOT+'applyjob/'+id
  const location=india[0]
@@ -73,6 +111,7 @@ export function mapNative(row,description,{now=new Date()}={}) {
   country:'India',city:location.city||null,state:location.state||null,location:[location.city||location.name,location.state,'India'].filter(Boolean).join(', '),
   locations:india.map(l=>[l.city||l.name,l.state,'India'].filter(Boolean).join(', ')),department:row.departmentName||null,experienceRequired:row.experience||null,
   employmentType:row.jobType===2?'Full Time':null,requiredSkills:row.skillNames||[],postingDate:row.publishedOn,closingDate:null,jobDescription:description,
+  ...(countryEvidence.length?{nativeLocationCountryEvidence:countryEvidence}:{}),
   sourceListingComplete:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,sourceDetailComplete:description!==null,sourceDetailStatus:description===null?'partial':'complete',publicExperienceChecked:true,scrapedAt:clock.toISOString()}
 }
 

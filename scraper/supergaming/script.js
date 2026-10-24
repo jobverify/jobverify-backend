@@ -1,53 +1,67 @@
-import { document } from '../../scraper-support/shared/rmkNativePairHtml.js'
-import { activeHead } from '../../scraper-support/utils/activeNativeHtml.js'
-import { normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import {createHash} from 'node:crypto'
+import {fileURLToPath} from 'node:url'
+import {attachInventoryEvidence,normalizeInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {collectSuperGamingNative} from './native.js'
+import {SUPERGAMING_CATALOG as candidate} from './catalog.js'
 
-export const CAREERS_URL = 'https://www.supergaming.com/careers'
-export const CONTACT_EMAIL = 'careers@supergaming.com'
-
-const gap = (reason, now, {message,firstParty=false,contactEmail=null,cause,pagesFetched=0}={}) => Object.assign(
-  new Error(message || `SuperGaming current inventory is not enumerable: ${reason}`, {cause}),
-  {code:'SUPERGAMING_COVERAGE_GAP',reason,contactEmail,inventoryEvidence:normalizeInventoryEvidence({
-    status:'coverage-gap',surface:CAREERS_URL,firstParty,listingComplete:false,
-    reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason,pagesFetched,
-  })})
-
-export const run = async ({fetchImpl=fetch,signal,timeoutMs=20000,now=()=>new Date().toISOString()}={}) => {
-  signal?.throwIfAborted()
-  if(!Number.isFinite(timeoutMs)||timeoutMs<1||timeoutMs>60000)throw Error('SuperGaming invalid aggregate deadline')
-  const controller=new AbortController(),combined=signal?AbortSignal.any([signal,controller.signal]):controller.signal
-  let timer,listener
-  const interrupted=new Promise((_,reject)=>{
-    listener=()=>reject(combined.reason)
-    combined.addEventListener('abort',listener,{once:true})
-    timer=setTimeout(()=>controller.abort(Error('SuperGaming aggregate deadline exceeded')),timeoutMs)
-  })
-  const inspect=async()=>{
-    let response,html
-    try{
-      combined.throwIfAborted()
-      response=await fetchImpl(CAREERS_URL,{signal:combined,redirect:'error',headers:{Accept:'text/html','User-Agent':'Mozilla/5.0'}})
-      combined.throwIfAborted()
-      if(response.status!==200||response.url!==CAREERS_URL)throw Error('SuperGaming native HTTP status or final identity changed')
-      html=await response.text()
-      combined.throwIfAborted()
-    }catch(error){
-      combined.throwIfAborted()
-      throw gap('upstream-unavailable',now,{message:error.message,cause:error})
-    }
-    if(typeof html!=='string'||html.length>5000000)throw gap('unrecognized-careers-response',now,{pagesFetched:1})
-    const head=activeHead(html)
-    if(head.titles.length!==1||head.titles[0]!=='Careers \u2014 SuperGaming')throw gap('unrecognized-careers-response',now,{pagesFetched:1})
-    const doc=document(html)
-    const prune=(node,inherited=false)=>{
-      node.inactive ||= inherited||/(?:^|;)\s*content-visibility\s*:\s*hidden\s*(?:!important\s*)?(?:;|$)/i.test(node.attrs?.style||'')
-      node.children.filter(child=>typeof child!=='string').forEach(child=>prune(child,node.inactive))
-    }
-    prune(doc.root)
-    const email=doc.nodes(n=>n.tag==='a'&&n.attrs.href?.startsWith('mailto:')).map(n=>n.attrs.href.split('?')[0].slice(7))
-      .find(address=>address===CONTACT_EMAIL)
-    throw gap(email?'unstructured-email-recruiting':'unreviewed-hiring-surface',now,{firstParty:true,contactEmail:email||null,pagesFetched:1})
+export const SOURCE='supergaming', COMPANY='SuperGaming'
+export const CAREERS_URL='https://www.supergaming.com/careers',CONTACT_EMAIL='careers@supergaming.com'
+export const FIRST_PARTY_ROOT_URL='https://www.supergaming.com/careers'
+export const PROVIDER_METADATA={...candidate,modulePath:fileURLToPath(import.meta.url)}
+export const createSuperGamingScraper=(defaults={})=>({async run(options={}) {
+ const {fetchImpl=globalThis.fetch,signal,timeoutMs=30000,now=new Date()}={...defaults,...options}
+ signal?.throwIfAborted()
+ const controller=new AbortController(),retainedResponses=[]
+ let surface=FIRST_PARTY_ROOT_URL,timer,onAbort
+ const gap=(reason,cause)=>Object.assign(new Error('SuperGaming coverage gap: '+reason,{cause}),{
+  code:'SUPERGAMING_COVERAGE_GAP',source:SOURCE,partial:true,abortRetries:true,
+  sourceListingComplete:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,retainedResponses,
+  inventoryEvidence:normalizeInventoryEvidence({status:'coverage-gap',surface,firstParty:false,listingComplete:false,pagesFetched:retainedResponses.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason}),
+ })
+ if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>60000)throw gap('Invalid aggregate request budget')
+ const deadline=performance.now()+timeoutMs
+ const checkBudget=()=>{
+  if(!controller.signal.aborted&&performance.now()>=deadline)controller.abort(gap('Aggregate source fetch/body/parsing deadline exceeded'))
+  controller.signal.throwIfAborted()
+ }
+ const aborted=new Promise((_,reject)=>{
+  onAbort=()=>{controller.abort(signal.reason);reject(signal.reason)}
+  signal?.addEventListener('abort',onAbort,{once:true})
+  timer=setTimeout(()=>{const error=gap('Aggregate source fetch/body deadline exceeded');controller.abort(error);reject(error)},timeoutMs)
+ })
+ const collect=async()=>{
+  const read=async url=>{
+   surface=url;checkBudget()
+   const response=await fetchImpl(url,{signal:controller.signal,redirect:'error',headers:{Accept:'text/html,application/json'}})
+   const cancelBody=reason=>{void Promise.resolve().then(()=>response.body?.cancel?.(reason)).catch(()=>{})}
+   try{checkBudget()}catch(error){cancelBody(error);throw error}
+   if(response.url!==url){const error=gap('Source final URL changed');cancelBody(error);throw error}
+   if(response.status!==200){const error=Object.assign(gap('Source HTTP failure'),{status:response.status});cancelBody(error);throw error}
+   let body
+   if(response.body?.getReader){
+    const reader=response.body.getReader(),chunks=[];let bytes=0
+    const cancel=()=>{void reader.cancel(controller.signal.reason).catch(()=>{})}
+    controller.signal.addEventListener('abort',cancel,{once:true})
+    try{while(true){checkBudget();const {done,value}=await reader.read();checkBudget();if(done)break;bytes+=value.byteLength;if(bytes>4000000){void reader.cancel().catch(()=>{});throw gap('Source streamed body exceeds byte limit')}chunks.push(Buffer.from(value))}body=Buffer.concat(chunks).toString('utf8')}
+    finally{controller.signal.removeEventListener('abort',cancel);reader.releaseLock()}
+   }else {const error=gap('Bounded source stream unavailable');cancelBody(error);throw error}
+   checkBudget()
+   if(typeof body!=='string'||!body.trim()||Buffer.byteLength(body)>4000000)throw gap('Source body missing or exceeds bound')
+   retainedResponses.push({url,finalUrl:response.url,status:response.status,body,capturedAt:new Date().toISOString(),bodySHA256:createHash('sha256').update(body).digest('hex')})
+   return body
   }
-  try{return await Promise.race([inspect(),interrupted])}
-  finally{clearTimeout(timer);combined.removeEventListener('abort',listener);controller.abort(Error('SuperGaming inspection ended'))}
+  const {jobs,facts,firstParty,reason,inventoryStatus}=await collectSuperGamingNative({read,now:typeof now==='function'?now():now})
+  checkBudget()
+  const result=attachInventoryEvidence(jobs,{status:inventoryStatus,surface,firstParty,listingComplete:false,pagesFetched:retainedResponses.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason})
+  Object.defineProperty(result,'nativeCollectionEvidence',{value:{retainedResponses,...facts,lifecycleCleanupAllowed:false}})
+  return result
+ }
+ try{return await Promise.race([collect(),aborted])}
+ catch(error){if(signal?.aborted)throw signal.reason;if(error?.code==='SUPERGAMING_COVERAGE_GAP')throw error;throw gap('Native source transport, body or inventory unavailable: '+error.message,error)}
+ finally{clearTimeout(timer);signal?.removeEventListener('abort',onAbort);controller.abort()}
+}})
+export const run=async(options={})=>createSuperGamingScraper(options).run(options)
+if(process.argv[1]?.replaceAll('\\','/').endsWith('/scraper/supergaming/script.js')){
+ const jobs=await run()
+ if(readInventoryEvidence(jobs)?.listingComplete!==true){console.error(readInventoryEvidence(jobs)?.reason);process.exitCode=1}
 }

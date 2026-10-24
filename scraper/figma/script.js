@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import FIGMA_CATALOG from './catalog.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -289,11 +290,27 @@ export const createFigmaScraper = ({
 
     const visibleJobUrlSet = new Set(visibleJobUrls)
     const apiIndiaJobUrlSet = new Set(extractIndiaApiJobUrls(jobs))
-    const indiaJobLinkSetsDiffer =
-      [...apiIndiaJobUrlSet].some((url) => !visibleJobUrlSet.has(url))
-
-    if (indiaJobLinkSetsDiffer) {
-      throw new Error('Figma verified public Greenhouse job links for India no longer match the verified Greenhouse jobs API surface')
+    for (const url of apiIndiaJobUrlSet) {
+      if (visibleJobUrlSet.has(url)) continue
+      const job = jobs.find(job => job.sourceUrl === url)
+      const doc = readNativeDocument(await fetchText(url))
+      const expected = new URL(url)
+      const titles = doc.nodes(node => node.tag === 'title')
+      const canonical = doc.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical')
+      const sameRole = value => {
+        try {
+          const candidate = new URL(value, url)
+          return ['http:', 'https:'].includes(candidate.protocol)
+            && ['boards.greenhouse.io', 'job-boards.greenhouse.io'].includes(candidate.hostname)
+            && candidate.pathname === expected.pathname && candidate.searchParams.get('gh_jid') === expected.searchParams.get('gh_jid')
+        } catch { return false }
+      }
+      if (titles.length !== 1 || normalizeWhitespace(decodeRepeatedHtmlEntities(titles[0].raw)) !== `Job Application for ${job.title} at Figma`
+        || canonical.length !== 1 || !sameRole(canonical[0].attrs.href)
+        || !doc.nodes(node => node.tag === 'h1').some(node => doc.text(node) === job.title)
+        || !doc.nodes(node => node.tag === 'form' && node.attrs.id === 'application-form' && sameRole(node.attrs.action)).length) {
+        throw new Error('Figma verified public Greenhouse job links for India no longer match the verified Greenhouse jobs API surface')
+      }
     }
 
     return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs

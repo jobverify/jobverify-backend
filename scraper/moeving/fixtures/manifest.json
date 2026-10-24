@@ -29,5 +29,50 @@
     "Freshteam returns HTTP 200 but an invalid-domain/no-ats claimable tenant shell, not employer listings.",
     "Official Join Us serves generic rental content; no current enumerable job contract or complete India facet is verified.",
     "No vacancy records, publication dates, detail schemas, pagination or current empty inventory can be inferred."
-  ]
+  ],
+  "files": [
+    {
+      "file": "native-employer-jobs.json.gz",
+      "sha256": "3068956ad05c2917ea44df75e47db564fb96ef7f48edd6847d054f027389c81c",
+      "uncompressedSHA256": "9f73341ef1f4291ad5f30efbbb03b4492eb8cbc0f8a753fffbf92a7f660b94a2"
+    }
+  ],
+  "responses": [
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/company/moeving-urban-freight/",
+      "finalUrl": "https://www.linkedin.com/company/moeving-urban-freight/",
+      "status": 200,
+      "capturedAt": "2026-10-23T13:00:55.183Z",
+      "bodySHA256": "924383e763767860123cc18f731b77cdafc97bb5aa5a885e082fb36eefa329b9"
+    },
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=69516277&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=69516277&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T13:01:02.414Z",
+      "bodySHA256": "972505e3de7d5d6323bfe666ae4901e3091397d48f1cbf92cec6184ddd4a7b27"
+    },
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=69516277&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=69516277&location=Worldwide",
+      "status": 200,
+      "capturedAt": "2026-10-23T13:01:03.249Z",
+      "bodySHA256": "192f4c5638b9954f0cf43f5fc11c1573df1d43daa3a83f00e539f18d2e0f8c22"
+    }
+  ],
+  "additionalNativeObservation": {
+    "employerOrganizationId": "69516277",
+    "queries": [
+      "India",
+      "Worldwide"
+    ],
+    "checkedExactEmployerFilter": true,
+    "observedJobCards": 0,
+    "scopeComplete": false,
+    "reportedTotal": null,
+    "disposition": "No matches in exact filtered searches; does not establish empty employer inventory. Primary channel remains blocked/unavailable. No recovered jobs or lifecycle cleanup."
+  }
 }

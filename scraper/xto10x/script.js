@@ -17,9 +17,9 @@ export const createXto10xScraper=(defaults={})=>({async run(options={}){
  const gap=(reason,cause)=>Object.assign(new Error('xto10x coverage gap: '+reason,{cause}),{code:'XTO10X_COVERAGE_GAP',source:SOURCE,partial:true,abortRetries:true,sourceListingComplete:false,lifecycleCleanupAllowed:false,retainedResponses,inventoryEvidence:{...evidence(reason),status:'coverage-gap'}})
  if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>180000)throw gap('Invalid aggregate request budget')
  const interrupted=new Promise((_,reject)=>{onAbort=()=>reject(combined.reason);combined.addEventListener('abort',onAbort,{once:true});timer=setTimeout(()=>controller.abort(gap('aggregate fetch/body deadline exceeded')),timeoutMs)})
- const read=async url=>{
+ const read=async (url,{json=false}={})=>{
   combined.throwIfAborted();surface=url
-  const response=await fetchImpl(url,{signal:combined,redirect:'manual',headers:{Accept:'text/html','User-Agent':'Mozilla/5.0'}})
+  const response=await fetchImpl(url,{signal:combined,redirect:'manual',headers:{Accept:json?'application/json':'text/html','User-Agent':'Mozilla/5.0'}})
   const cancelUnopened=()=>{try{void Promise.resolve(response.body?.cancel(combined.reason)).catch(()=>{})}catch{}}
   if(combined.aborted){cancelUnopened();combined.throwIfAborted()}
   if(response.url!==url||response.status!==200){cancelUnopened();throw gap('Native HTTP failure or final URL changed')}
@@ -37,8 +37,8 @@ export const createXto10xScraper=(defaults={})=>({async run(options={}){
   return body
  }
  try{return await Promise.race([interrupted,(async()=>{
-  const result=await collectNative({read,now,gap})
-  const jobs=attachInventoryEvidence(result.jobs,{...evidence(result.reason),firstParty:result.firstParty===true})
+  const result=await collectNative({read,now,gap,signal:combined})
+  const jobs=attachInventoryEvidence(result.jobs,{...evidence(result.reason),status:result.inventoryStatus??'discovery-only',firstParty:result.firstParty===true})
   Object.defineProperty(jobs,'nativeCollectionEvidence',{value:{...result,retainedResponses,lifecycleCleanupAllowed:false}})
   return jobs
  })()])}catch(error){if(signal?.aborted)throw signal.reason;if(error?.code==='XTO10X_COVERAGE_GAP')throw error;throw gap('Native recruiting transport or contract unavailable',error)}finally{clearTimeout(timer);combined.removeEventListener('abort',onAbort);controller.abort()}

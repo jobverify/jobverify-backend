@@ -101,7 +101,9 @@ export function parseIndiaPage(html,native,{now}){
  check(canonicalLinks.length===1&&canonicalLinks[0].attrs.href===htmlCanonical,'Native HTML canonical mismatch')
  const scripts=d.nodes(n=>n.tag==='script'&&n.attrs.type==='application/ld+json'),postings=scripts.map(n=>JSON.parse(n.raw)).filter(p=>p['@type']==='JobPosting')
  check(postings.length===1,'Missing or ambiguous native JobPosting')
- const ld=postings[0];check(ld.title===i.title&&ld.identifier?.value===i.jobReqId&&ld.identifier.name===i.title,'HTML posting identity mismatch')
+ const ld=postings[0];check(typeof ld.title==='string'&&decodeNativeEntities(ld.title)===i.title
+  &&ld.identifier?.value===i.jobReqId&&typeof ld.identifier.name==='string'&&decodeNativeEntities(ld.identifier.name)===i.title,
+  `HTML posting identity mismatch for ${i.jobReqId}: native title ${JSON.stringify(i.title)}, HTML title ${JSON.stringify(ld.title)}, identifier ${JSON.stringify(ld.identifier)}`)
  const places=Array.isArray(ld.jobLocation)?ld.jobLocation:[ld.jobLocation]
  check(places.length>0&&places.every(p=>p?.address?.addressCountry==='India'&&locations.some(l=>key(l)===key(p.address.addressLocality))),'Native HTML typed India geography mismatch')
  if(ld.applicantLocationRequirements)check(ld.applicantLocationRequirements.name==='India','Native applicant country contradiction')

@@ -81,7 +81,7 @@ const buildExperienceYearConstraint = (years) => {
     constraints.push(withSemanticExperienceConstraint(0, { $and: [{ experienceYears: { $in: [0] } }, { jobType: { $in: getPreferredJobTypeMatches("Full-time Fresher") } }] }));
   }
   const nonZeroYears = normalizedYears.filter((year) => year !== 0);
-  if (nonZeroYears.length) constraints.push({ experienceYears: { $in: nonZeroYears } });
+  for (const year of nonZeroYears) constraints.push(withSemanticExperienceConstraint(year, { experienceYears: { $in: [year] } }));
   return constraints.length === 1 ? constraints[0] : constraints.length > 1 ? { $or: constraints } : null;
 };
 

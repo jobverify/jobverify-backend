@@ -18,15 +18,17 @@
   "verifiedPublicJobCount": null,
   "verifiedIndiaJobCount": null,
   "officialCareersPageUrl": "https://www.mcbapp.com/careers/",
-  "verifiedSurfaceSummary": "Current corporate mcbapp.com home explicitly identifies MyClassboard and links careers. Sixteen corporate role cards hand off to mcb.keka.com; native tenant identifies MyClassboard Educational Solutions Pvt Ltd and companyWebsite myclassboard.com. Native active API recovers21 records;17 have explicit India country,4 lack country and are excluded. Native original public dates retained, including old records; no recency or expiry gate changed. Complete company inventory remains unproven because corporate and native scopes differ; counts null and lifecycle cleanup disabled.",
+  "verifiedSurfaceSummary": "Current corporate mcbapp.com home identifies MyClassboard and links careers. Sixteen corporate cards bind exact mcb.keka.com employer; native tenant reciprocates myclassboard.com. Fresh documented public and embed active endpoints return byte-identical21records. Seventeen locations carry direct typed India country; older vacancy59073 references positive native locationID1744 with exact Hyderabad name/city matching the same tenant hydrated India workplace objects. Country reference recovery requires consistent ID, exact labels, nonconflicting country and state across the current array; no city/HQ inference and no overwriting explicit country. The recovered role preserves2025-03-11 publication and remains age-excluded. Eighteen India roles now recovered, four eligible and14old. Three vacancies with empty locations remain withheld. Corporate/native scope difference and missing locations prevent whole-company completeness; null totals and cleanup disabled.",
   "sourceScopeComplete": false,
   "sourceListingComplete": false,
   "lifecycleCleanupAllowed": false,
   "firstParty": true,
   "nativeObservedRecordCount": 21,
   "fixtureManifest": "scraper/myclassboard/fixtures/capture-manifest.json",
-  "nativeIndiaRecoveredCount": 17,
-  "nativeCountryUnprovenCount": 4,
+  "nativeIndiaRecoveredCount": 18,
+  "nativeCountryUnprovenCount": 3,
   "observedEligibleCount": 4,
-  "eligibilityCheckedAt": "2026-10-23T07:30:00.000Z"
+  "eligibilityCheckedAt": "2026-10-23T18:00:00.000Z",
+  "nativeDirectCountryCount": 17,
+  "nativeLocationCountryReferenceRecoveryCount": 1
 }

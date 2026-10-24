@@ -98,6 +98,63 @@
       "sha256": "947444701fdc3cf3949e3c4c620f9b24da319285c66193c295a829cde0d8afdc",
       "uncompressedSha256": "7da252662f9155233acf516906e9094d012a431918e73c9047544f8869838647",
       "responses": []
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "sha256": "971ad1671c0fae1b8eb98a0fdd81d3a41530601da7817bec32107358ce6a0ae5",
+      "uncompressedSha256": "30f93c0919ac9544b49bcaf859140f6044b10d070d78551bac3b38e516316af9",
+      "captureMethod": "Actual ordinary Node public GET responses; native APIs negotiate JSON; no form submission",
+      "responses": [
+        {
+          "url": "https://www.xto10x.com/about",
+          "finalUrl": "https://www.xto10x.com/about",
+          "status": 200,
+          "capturedAt": "2026-10-23T19:36:31.399Z",
+          "bodySHA256": "20d727f83a5ee6239335f80522b9745934c06f040ca137bf6f829ebd9097de36"
+        },
+        {
+          "url": "https://www.xto10x.com/",
+          "finalUrl": "https://www.xto10x.com/",
+          "status": 200,
+          "capturedAt": "2026-10-23T19:36:33.101Z",
+          "bodySHA256": "a26f70d77b7dbd915f8753e9c8fb21b596dbfe6fd473a1f667a384d9c8fef25d"
+        },
+        {
+          "url": "https://www.linkedin.com/company/xto10x-tech",
+          "finalUrl": "https://www.linkedin.com/company/xto10x-tech",
+          "status": 200,
+          "capturedAt": "2026-10-23T19:36:34.278Z",
+          "bodySHA256": "3f0f993d510d7d829b52df5684cd425a8cf24f3d42acd03c9c5de2e9e9584456"
+        },
+        {
+          "url": "https://gladiator.iimjobs.com/job/detail?jobcode=1728041",
+          "finalUrl": "https://gladiator.iimjobs.com/job/detail?jobcode=1728041",
+          "status": 200,
+          "capturedAt": "2026-10-23T19:36:34.734Z",
+          "bodySHA256": "1a3199d77fe887727cc64f6f49bb8988d755dada48d2ce6a7b7b69f0b96d02ee"
+        },
+        {
+          "url": "https://gladiator.iimjobs.com/job/detail?jobcode=1728042",
+          "finalUrl": "https://gladiator.iimjobs.com/job/detail?jobcode=1728042",
+          "status": 200,
+          "capturedAt": "2026-10-23T19:36:34.932Z",
+          "bodySHA256": "2a4a164d8a1acd7e65ec7dd97faa1dc0c52abde61aa84a4cfa53722a6519c6d4"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=14628973&location=India",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=14628973&location=India",
+          "status": 200,
+          "capturedAt": "2026-10-23T19:36:35.849Z",
+          "bodySHA256": "29783155f2ae6f9e6491aae560f4adf3004d81d0dbaafc4df0bbfc7ea57c77f5"
+        },
+        {
+          "url": "https://www.linkedin.com/jobs/search/?f_C=14628973&location=Worldwide",
+          "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=14628973&location=Worldwide",
+          "status": 200,
+          "capturedAt": "2026-10-23T19:36:36.320Z",
+          "bodySHA256": "81d59651e088fa9bea2ff73e605a80e8639d65b61b284023c969e53968a57433"
+        }
+      ]
     }
   ]
 }

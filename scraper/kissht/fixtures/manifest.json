@@ -1,5 +1,5 @@
 {
-  "purpose": "Exact first-party handoff, Workline client contract, complete266 native listing array and all266 native HTML details; no binary images or PDFs.",
+  "purpose": "Native 266-row Workline inventory and captured details, plus official financing-partner handoff and exact legal-employer branch-country evidence. Compliance location is not workplace proof.",
   "captures": [
     {
       "file": "board-response.json",
@@ -1940,6 +1940,92 @@
           "bodySha256": "78273e0348a758cb932a11084bd0d04ccdc65c5d9a52892293bdbb7b8972200b"
         }
       ]
+    },
+    {
+      "file": "financing-partners-pages.json.gz",
+      "sha256": "f1fded9b35f7fe9f78e2d2d7044f19c27b68ae5e5ef53b0f3e098751b3a05ca9",
+      "uncompressedSha256": "2c36fc2f50f1a1e309eb8be9b7aca5e1d95b3c7176eba7e9a256f61a984f7328",
+      "responses": [
+        {
+          "url": "https://www.kissht.com/financing-partners",
+          "finalUrl": "https://www.kissht.com/financing-partners",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:19:45.674Z",
+          "bodySha256": "d5584f466a4504cf54c46278636f74a6eca97a5a21f5d67caa506d3d453a63fe"
+        }
+      ]
+    },
+    {
+      "file": "legal-employer-branches.json.gz",
+      "sha256": "1a2052c6596fb893b64cbe7ffdfe0b40c0b1c9e4a1343699747520d1ab60671f",
+      "uncompressedSha256": "24d7dcf856c1f2ed4ffb5a05f04b5269d225d5ac500dd1a5602203053871ebc4",
+      "responses": [
+        {
+          "url": "https://sicrevacapital.com/our-branches/",
+          "finalUrl": "https://sicrevacapital.com/our-branches/",
+          "status": 200,
+          "capturedAt": "2026-10-23T13:15:19.195Z",
+          "bodySha256": "b5168e4dd9d6588e24660b699cad19ec7ad11e1ba9bb0f1307aacf70bc244418"
+        }
+      ]
     }
-  ]
+  ],
+  "files": [
+    {
+      "file": "branch-discovery-pages.json.gz",
+      "sha256": "317c584cc979b9c887198ab07781b7d98838d028841b0a885bbd145bbe6d4b53",
+      "uncompressedSHA256": "3686ba31bb9f86e0f2b5f7a5a19d9429e9a6b1e0798c8fb5d7b67ca510fd0c53"
+    },
+    {
+      "file": "legal-employer-branches.json.gz",
+      "sha256": "1a2052c6596fb893b64cbe7ffdfe0b40c0b1c9e4a1343699747520d1ab60671f",
+      "uncompressedSHA256": "24d7dcf856c1f2ed4ffb5a05f04b5269d225d5ac500dd1a5602203053871ebc4"
+    },
+    {
+      "file": "branch-discovery-pages.dom.json",
+      "sha256": "036bd1ecde1d54ebd84aee7939b4403537a674afa9b6fa40d740cec76170c487",
+      "evidenceType": "DOM navigation observation; not HTTP response receipt"
+    },
+    {
+      "file": "financing-partners-pages.dom.json",
+      "sha256": "25c47917397ce6380b58317b5e678cb6750ed782f3ec57e346343182a20db8d5",
+      "evidenceType": "DOM navigation observation; not HTTP response receipt"
+    },
+    {
+      "file": "legal-employer-branches.dom.json",
+      "sha256": "38d0da0b3def6291a665a9aa81d96a78fff3932e80d752557f45b820b6460f37",
+      "evidenceType": "DOM navigation observation; not HTTP response receipt"
+    }
+  ],
+  "responses": [
+    {
+      "file": "branch-discovery-pages.json.gz",
+      "url": "https://www.kissht.com/about-us",
+      "finalUrl": "https://www.kissht.com/about-us",
+      "status": 200,
+      "capturedAt": "2026-10-23T13:13:52.998Z",
+      "bodySHA256": "d103d271b056d14691a9dbfca2786a0ed157fc4aeccf97a8ce276f62b05b56e0"
+    },
+    {
+      "file": "legal-employer-branches.json.gz",
+      "url": "https://sicrevacapital.com/our-branches/",
+      "finalUrl": "https://sicrevacapital.com/our-branches/",
+      "status": 200,
+      "capturedAt": "2026-10-23T13:15:19.195Z",
+      "bodySHA256": "b5168e4dd9d6588e24660b699cad19ec7ad11e1ba9bb0f1307aacf70bc244418"
+    }
+  ],
+  "branchMappingInvestigation": {
+    "nativePrimaryFacetLabel": "Compliance Location",
+    "nativeSecondaryField": "CustomName1",
+    "legalEmployerBranchDirectory": "https://sicrevacapital.com/our-branches/",
+    "directoryBranchesObserved": 108,
+    "exactBranchNameCandidateMatches": 200,
+    "nativeRows": 266,
+    "verificationStatus": "Branch validation implemented: exact official partner handoff and legal-employer branches authorize199 India workplaces;67 unresolved withheld. All199 legacy fingerprints preserved in replay. Review found a country-metadata gap, fixed with raw hidden/visible carrier rejection and regression.",
+    "exactLegalEmployerValidatedIndiaMatches": 199,
+    "unresolvedWorkLocations": 67,
+    "eligibleAfterExistingFilters": 26,
+    "eligibleWithoutDescriptions": 2
+  }
 }

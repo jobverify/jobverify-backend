@@ -64,5 +64,50 @@
         }
       ]
     }
-  ]
+  ],
+  "files": [
+    {
+      "file": "native-employer-jobs.json.gz",
+      "sha256": "8f5275f62420de1a217b9c1d977d3ad58a5e3f234e72d9e6b30da11c51476f07",
+      "uncompressedSHA256": "c8e8186a066de1b4ea16ed7a151a722a5abe45fa8463b4ea5d7f1e3c1669d2b7"
+    }
+  ],
+  "responses": [
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/company/waycoolfoods/",
+      "finalUrl": "https://www.linkedin.com/company/waycoolfoods/",
+      "status": 200,
+      "capturedAt": "2026-10-23T12:59:00.909Z",
+      "bodySHA256": "96d15113b59750e21d79d64de7ca2e589749d599ba24cf23e5276825a60ad25d"
+    },
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=13283172&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13283172&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T12:59:02.198Z",
+      "bodySHA256": "bb21a5d67fc07ba598838effd9d3f5270250d491619d47e936823bdd880535f8"
+    },
+    {
+      "file": "native-employer-jobs.json.gz",
+      "url": "https://www.linkedin.com/jobs/search/?f_C=13283172&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=13283172&location=Worldwide",
+      "status": 200,
+      "capturedAt": "2026-10-23T12:59:02.737Z",
+      "bodySHA256": "12f570650b4c99cd8636ef9d39f55990b653117e03dde3a569d8ae93f906289d"
+    }
+  ],
+  "additionalNativeObservation": {
+    "employerOrganizationId": "13283172",
+    "queries": [
+      "India",
+      "Worldwide"
+    ],
+    "checkedExactEmployerFilter": true,
+    "observedJobCards": 0,
+    "scopeComplete": false,
+    "reportedTotal": null,
+    "disposition": "No matches in exact filtered searches; does not establish empty employer inventory. Primary channel remains blocked/unavailable. No recovered jobs or lifecycle cleanup."
+  }
 }

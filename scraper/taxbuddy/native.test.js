@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import {spawnSync} from 'node:child_process'
 import {run} from './script.js'
+import {gunzipSync} from 'node:zlib'
 const read=name=>JSON.parse(fs.readFileSync(new URL('fixtures/'+name,import.meta.url),'utf8'))
 const captures=['official-home.json','native-company.json','native-jobs.json'].map(read)
 const replay=(mutate=r=>r)=>async url=>{const found=captures.find(r=>r.url===url);assert.ok(found,'Uncaptured '+url);const r=mutate({...found});return{status:r.status,url:r.finalUrl,text:async()=>r.body}}
@@ -36,4 +37,11 @@ test('TaxBuddy import with dry-run flag never collects or persists',()=>{
  const url=new URL('./script.js',import.meta.url).href
  const child=spawnSync(process.execPath,['--input-type=module','-e',`process.argv.push('--dry-run');globalThis.fetch=()=>{throw Error('unexpected network')};await import(${JSON.stringify(url)});console.log('safe')`],{encoding:'utf8',timeout:5000})
  assert.equal(child.status,0,child.stderr);assert.equal(child.stdout.trim(),'safe')
+})
+
+
+test('TaxBuddy fresh homepage and employer receipts preserve scoped observations with unknown company totals',async()=>{
+ const rows=['fresh-official-page','fresh-native-employer'].flatMap(name=>JSON.parse(gunzipSync(fs.readFileSync(new URL(`fixtures/${name}.json.gz`,import.meta.url)))))
+ const fetchImpl=async url=>{const row=rows.find(r=>r.url===url);assert.ok(row,'Uncaptured fresh URL '+url);const response=new Response(row.body,{status:row.status});Object.defineProperty(response,'url',{value:row.finalUrl});return response}
+ await assert.rejects(run({fetchImpl}),e=>{assert.equal(e.code,'TAXBUDDY_COVERAGE_GAP');assert.equal(e.linkedEmployerEvidence.organizationId,'14564264');assert.equal(e.linkedEmployerEvidence.observedIndiaSearchEmpty,true);assert.equal(e.inventoryEvidence.listingComplete,false);assert.equal(e.inventoryEvidence.reportedTotal,null);return true})
 })

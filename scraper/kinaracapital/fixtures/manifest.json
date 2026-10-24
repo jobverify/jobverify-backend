@@ -105,5 +105,37 @@
         }
       ]
     }
-  ]
+  ],
+  "files": [
+    {
+      "file": "fresh-official-pages.json.gz",
+      "sha256": "1daa2a08954efcafa1073053c7412eac927a4e90cf15562494c60ff4a1433491",
+      "uncompressedSHA256": "58a1a8391bfeec1810c7546ee528994e50efa50db7e9d9ceadba95755bf39650"
+    },
+    {
+      "file": "fresh-native-navigation.json.gz",
+      "sha256": "858ce9c035384bc4f31d7895b470bc72809b733274d960eabeca130df6c3bb1a",
+      "uncompressedSHA256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "file": "fresh-native-navigation.dom.json",
+      "fileSHA256": "0e412a74f3d593a2800174809ac6d38ab1cdd5b5f81b8317ded7d65761a72902"
+    }
+  ],
+  "responses": [
+    {
+      "file": "fresh-official-pages.json.gz",
+      "url": "https://kinaracapital.com/careers/",
+      "finalUrl": "https://kinaracapital.com/careers/",
+      "status": 200,
+      "capturedAt": "2026-10-23T13:07:55.938Z",
+      "bodySHA256": "da9759451143f75c185448f15f0cc04297b0bc5318bb12c8e5f3c77bbab0e26f"
+    }
+  ],
+  "freshDiscoveryObservation": {
+    "publishedCareersURL": "https://careers.kinaracapital.com/",
+    "normalNavigationError": "ERR_SSL_PROTOCOL_ERROR",
+    "httpResponseCapturedForFailure": false,
+    "disposition": "Published HTTPS URL matches scraper. Independent direct Chrome normal navigation fails SSL protocol, not a parsed empty inventory."
+  }
 }

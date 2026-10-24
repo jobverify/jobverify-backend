@@ -180,7 +180,10 @@ export const purgeExpiredJobsForQuotaRecovery = async ({
  * application URLs keep their existing fingerprint across title changes.
  */
 export const generateFingerprint = (job) => {
-  const primaryLocation = getPrimaryStoredLocation(job)
+  // Kissht previously keyed identities by its compliance address. Keep that
+  // anchor while displaying a separately verified work-branch address.
+  const primaryLocation = job.source==='kissht' && String(job.company||'').trim().toLowerCase()==='kissht' && typeof job.fingerprintLocation==='string' && job.fingerprintLocation.trim()
+    ? job.fingerprintLocation : getPrimaryStoredLocation(job)
   const canonicalCity = normalizeCity(primaryLocation || job.city || job.location || '') || ''
   const rawApplicationUrl = job.applyUrl || job.sourceUrl || job.link
   const hasEmailApplication = /^mailto:/i.test(String(job.applyUrl || job.link || rawApplicationUrl || '').trim())
@@ -440,6 +443,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
             ...(normalizedJob.sourceExperienceRequired !== null && normalizedJob.sourceExperienceRequired !== undefined && normalizedJob.sourceExperienceRequired !== '' && { sourceExperienceRequired: normalizedJob.sourceExperienceRequired }),
             ...(normalizedJob.eligibleBatchesProvenance === 'source' && { eligibleBatches: normalizedJob.eligibleBatches || [], eligibleBatchesProvenance: 'source' }),
             fingerprint,
+            ...(normalizedJob.source==='kissht' && typeof normalizedJob.fingerprintLocation==='string' && normalizedJob.fingerprintLocation.trim() && {fingerprintLocation:normalizedJob.fingerprintLocation.trim()}),
             scrapedAt: now,
             scrapedTimestamp: normalizedJob.scrapedTimestamp || now,
             lastSeenAt: now,

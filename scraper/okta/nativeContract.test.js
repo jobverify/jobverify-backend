@@ -2,11 +2,12 @@ import fs from 'node:fs'
 import {gunzipSync} from 'node:zlib'
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import {run} from './script.js'
+import {run as sourceRun} from './script.js'
 import {document} from '../../scraper-support/shared/rmkNativePairHtml.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {analyzePublishableJobs} from '../../scraper-support/utils/publishableJobMetrics.js'
 globalThis.fetch=async()=>{throw Object.assign(Error('Public network prohibited in native fixture tests'),{code:'FIXTURE_NETWORK_BLOCKED'})}
+const run=options=>sourceRun({...options,fetchText:async()=>{throw Object.assign(Error('Legacy public network path prohibited in fixtures'),{code:'FIXTURE_NETWORK_BLOCKED'})}})
 const HOME='https://www.okta.com/company/careers/',BOARD=HOME+'job-listing/'
 const FRESH=HOME+'rd/senior-software-engineer-core-frontier-8305423/',OLD=HOME+'rd/senior-data-engineer-7572029/'
 const now=()=> '2026-10-23T12:00:00.000Z'
@@ -50,7 +51,7 @@ test('Okta preserves full native role HTML and real dates instead of null dates 
  assert.equal(fresh.sourceUrl,FRESH);assert.equal(fresh.applyUrl,null);assert.equal(fresh.link,FRESH)
  assert.equal(fresh.applicationVisited,false);assert.equal(fresh.lifecycleCleanupAllowed,false);assert.equal(fresh.sourceScopeComplete,false)
  const analysis=analyzePublishableJobs(jobs,{now:new Date(now())});assert.equal(analysis.eligibleJobs.length,3);assert.equal(analysis.filterCounts.old,1)
- const c=fresh.nativeCollectionEvidence;assert.equal(c.observedListingCount,5);assert.equal(c.candidateDetails,4)
+ const c=jobs[0].nativeCollectionEvidence;assert.equal(c.observedListingCount,5);assert.equal(c.candidateDetails,4)
  assert.equal(c.nativeReportedTotal,null);assert.equal(c.failures.length,0);assert.equal(c.closingInventoryMatches,true)
  assert.equal(c.retainedResponses.length,7);assert.equal(c.nonIndiaListingCount,1)
  assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(readInventoryEvidence(jobs).reportedTotal,null)

@@ -80,7 +80,7 @@ test('workbook batch 05 replaces the generic sentinel only for explicitly verifi
     ['starhealthdigital', 'verified-non-enumerable-careers-cta'],
     ['sukoon', 'verified-exact-name-company-surface-no-public-listings'],
     ['sumupindia', 'verified-public-positions-page'],
-    ['supergaming', 'first-party-email-recruiting-unverified-inventory'],
+    ['supergaming', 'gohire-native-public-incomplete'],
     ['suprdaily', 'verified-exact-name-public-company-surface'],
     ['synup', 'first-party-careers-page-linkedin-handoff'],
     ['techjockey', 'verified-first-party-careers-empty-result'],

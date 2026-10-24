@@ -72,6 +72,9 @@ const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
+      // The careers server can send a malformed gzip body. Its identity
+      // response serves the same official page without decompression errors.
+      'Accept-Encoding': 'identity',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })

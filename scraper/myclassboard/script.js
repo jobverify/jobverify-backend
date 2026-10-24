@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto'
 import {fileURLToPath} from 'node:url'
 import {attachInventoryEvidence,normalizeInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
-import {CORPORATE_HOME,CORPORATE_CAREERS,ATS_ROOT,IDENTIFIER,EMPLOYER,APPLICATION_CLIENT,parseCorporate,verifyDetail,mapNative,verifyApplication} from './native.js'
+import {CORPORATE_HOME,CORPORATE_CAREERS,ATS_ROOT,IDENTIFIER,EMPLOYER,APPLICATION_CLIENT,parseCorporate,verifyDetail,mapNative,verifyApplication,buildLocationCountryReferences} from './native.js'
 import {document} from '../../scraper-support/shared/rmkNativePairHtml.js'
 import candidate from './catalog-candidate.json' with {type:'json'}
 
@@ -60,11 +60,11 @@ export const createMyClassboardScraper=(defaults={})=>({async run(options={}) {
   if(!Array.isArray(rows)||rows.some(r=>!Number.isSafeInteger(r?.id)||r.id<=0||typeof r.title!=='string'||!r.title.trim())||new Set(rows.map(r=>r.id)).size!==rows.length||rows.length>200)throw gap('Native active inventory malformed or outside request bound')
   const client=await read(APPLICATION_CLIENT)
   if(!client.includes('applyjob/${e[t-1]}')||!client.includes('$("#apply-job").on("click"')||!client.includes('window.location.href=applyJobUrl'))throw gap('Native application button route changed')
-  const jobs=[],exclusions=[]
+  const locationCountryReferences=buildLocationCountryReferences(rows),jobs=[],exclusions=[]
   for(const row of rows){
    const description=verifyDetail(await read(ATS_ROOT+'jobdetails/'+row.id),row)
    verifyApplication(await read(ATS_ROOT+'applyjob/'+row.id),row)
-   const job=mapNative(row,description,{now:sourceNow})
+   const job=mapNative(row,description,{now:sourceNow,locationCountryReferences})
    if(job)jobs.push(job);else exclusions.push({id:String(row.id),title:row.title,reason:'explicit-India-country-unproven',nativePostingDate:row.publishedOn})
   }
   const reason='Current corporate careers cards bind exact MyClassboard Keka employer; native active array, individual details, application client and individual application forms recovered. Corporate cards differ from native inventory and some observed records lack explicit country; whole-company scope remains incomplete, cleanup disabled.'

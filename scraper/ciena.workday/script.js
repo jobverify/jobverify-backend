@@ -22,7 +22,7 @@ export const run = async (options={}) => {
   const deadline=AbortSignal.timeout(timeoutMs),signal=options.signal?AbortSignal.any([options.signal,deadline]):deadline
   signal.throwIfAborted()
   const jobs=await runVerifiedWorkdayBoardUnion({source:SOURCE,company:COMPANY,
-    requireEmployer:true,employerPattern:/^(?:Ciena India Private Ltd\.|Ciena India Private Limited|Ciena Communications India Private Limited)$/,
+    requireEmployer:true,employerPattern:/^(?:Ciena India Private Ltd\.|Ciena India Private Limited|Ciena Communications India Private Limited|Ciena \(Asia\) Limited, Philippine Branch|Ciena Communications, Inc\.)$/,
     completeSourceScope:false,scopeReason:'verified-current-Ciena-native-India-facet-whole-company-recruitment-scope-unproven',
     boards:[{tenant:'ciena',site:'Careers',scraperDir:currentDir,baseUrl:'https://ciena.wd5.myworkdayjobs.com/Careers'}]},
     {...options,now,signal})

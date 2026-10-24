@@ -76,19 +76,19 @@ test('Information Evolution local catalog captures the verified first-party jobs
   assert.equal(provider.source, 'informationevolution')
   assert.equal(provider.companyName, 'Information Evolution')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://dev.informationevolution.com/jobs/')
-  assert.equal(provider.companyDomain, 'dev.informationevolution.com')
+  assert.equal(provider.companyCareerPage, 'https://informationevolution.com/about#careers')
+  assert.equal(provider.companyDomain, 'informationevolution.com')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-jobs-page-plus-detail-pages')
+  assert.equal(provider.paginationStrategy, 'single-first-party-role-api-plus-detail-pages')
   assert.equal(
     provider.extractionStrategy,
-    'verified-jobs-page+coimbatore-section+first-party-detail-pages',
+    'current-careers-handoff+public-role-api+native-role-and-application-validation',
   )
-  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.equal(provider.verifiedOn, '2026-10-23')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /informationevolution[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Team Leader/i)
+  assert.match(provider.verifiedSurfaceSummary, /Software Developer/i)
   assert.match(provider.verifiedSurfaceSummary, /Coimbatore/i)
 })
 

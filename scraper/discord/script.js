@@ -1,10 +1,23 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import DISCORD_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+const extractCareersScriptUrl = html => {
+  const document = readNativeDocument(html)
+  const urls = document.nodes(node => node.tag === 'script' && node.attrs.src).flatMap(node => {
+    try {
+      const url = new URL(node.attrs.src, CAREERS_URL)
+      return url.origin === 'https://discord.com' && /^\/webflow-scripts\/careers(?:New2025|\d{6})\.js$/.test(url.pathname)
+        && !url.search && !url.hash ? [url.href] : []
+    } catch { return [] }
+  })
+  return new Set(urls).size === 1 ? urls[0] : null
+}
 
 export const PROVIDER_METADATA = DISCORD_CATALOG
 export const SOURCE = DISCORD_CATALOG.source
@@ -210,7 +223,7 @@ export const hasOfficialCareersPageSignal = (html) => {
   return /<title>\s*Jobs and Career Opportunities at Discord\s*<\/title>/i.test(page)
     && /Work at Discord/i.test(page)
     && /See All Jobs/i.test(page)
-    && /https:\/\/discord\.com\/webflow-scripts\/careersNew2025\.js/i.test(page)
+    && Boolean(extractCareersScriptUrl(page))
 }
 
 export const hasVerifiedCareersScriptSignal = (scriptContent) => {
@@ -304,7 +317,7 @@ export const createDiscordScraper = ({
       throw new Error('Discord verified Discord careers page no longer matches the official first-party surface')
     }
 
-    const careersScript = await fetchText(CAREERS_SCRIPT_URL)
+    const careersScript = await fetchText(extractCareersScriptUrl(careersHtml))
     if (!hasVerifiedCareersScriptSignal(careersScript)) {
       throw new Error('Discord verified Discord careers script no longer matches the official first-party surface')
     }

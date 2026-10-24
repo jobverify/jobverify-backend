@@ -226,6 +226,33 @@ test('run validates the official NeST Digital careers page and returns API-backe
   assert.equal(jobs[1].source, 'nestdigital')
 })
 
+test('NeST Digital respects cancellation before requesting any source page', async () => {
+ const scraper = await loadNestDigitalModule(), reason = new Error('cancelled by caller')
+ await assert.rejects(scraper.run({ signal: AbortSignal.abort(reason), fetchText: async () => { throw new Error('unexpected request') } }), error => error === reason)
+})
+
+test('NeST Digital bounds parallel detail work and preserves listing order', async () => {
+ const scraper = await loadNestDigitalModule()
+ let active = 0, peak = 0
+ const jobs = await scraper.run({
+  fetchText: async () => careersPageHtml,
+  fetchJson: async (url, options) => {
+   assert.ok(options.signal instanceof AbortSignal)
+   if (url === scraper.CONFIG_URL) return careersConfigPayload
+   if (url === scraper.FILTER_PARAMS_URL) return filterParamsPayload
+   if (url === scraper.buildJobsApiUrl()) return jobsPayload
+   const id = [2601, 2581].find(id => url === scraper.buildJobDetailUrl(id))
+   assert.ok(id)
+   active++; peak = Math.max(peak, active)
+   await new Promise(resolve => setTimeout(resolve, id === 2601 ? 15 : 1))
+   active--
+   return detailPayloadById[id]
+  },
+ })
+ assert.equal(peak, 2)
+ assert.deepEqual(jobs.map(job => job.jobId), ['nestdigital-2601', 'nestdigital-2581'])
+})
+
 test('run fails closed when the careers page or Zappyhire payloads drift', async () => {
   const nestDigital = await loadNestDigitalModule()
 

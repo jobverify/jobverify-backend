@@ -21,7 +21,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
-const KNOWN_INDIA_LISTING_LOCATIONS = new Set(['india', 'mumbai', 'bangalore', 'chennai', 'hyderabad'])
+const KNOWN_INDIA_LISTING_LOCATIONS = new Set(['india', 'mumbai', 'bangalore', 'chennai', 'hyderabad', 'delhi'])
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -114,14 +114,16 @@ const extractDetailTitle = (html) => {
 const extractDepartment = (html) => {
   const block = extractJobDetailBlock(html)
   return normalizeWhitespace(
-    block?.match(/<h6(?![^>]*class=["'][^"']*location[^"']*["'])[^>]*>([\s\S]*?)<\/h6>/i)?.[1],
+    block?.match(/<h6(?![^>]*class=["'][^"']*location[^"']*["'])[^>]*>([\s\S]*?)<\/h6>/i)?.[1]
+      || block?.match(/<p\b[^>]*class=["'][^"']*\beut-h6\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1],
   )
 }
 
 const extractRawDetailLocation = (html) => {
   const block = extractJobDetailBlock(html)
   return normalizeWhitespace(
-    block?.match(/<h6[^>]*class=["'][^"']*location[^"']*["'][^>]*>([\s\S]*?)<\/h6>/i)?.[1],
+    block?.match(/<h6[^>]*class=["'][^"']*location[^"']*["'][^>]*>([\s\S]*?)<\/h6>/i)?.[1]
+      || block?.match(/<p\b[^>]*class=["'][^"']*\blocation\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1],
   )
 }
 
@@ -162,6 +164,7 @@ export const hasOfficialHomepageSignal = (html) => {
 
 const extractListingCandidates = (html) => {
   const patterns = [
+    /<li>\s*<a\b[^>]+href=['"]([^'"]*career-opportunity\/?\?jid=\d+)['"][^>]*>\s*<div>\s*<p\b[^>]*class=['"][^'"]*\beut-job-title\b[^'"]*['"][^>]*>([\s\S]*?)<\/p>\s*<\/div>\s*<span[^>]+class=['"]jobLocation['"]>([\s\S]*?)<strong\b/gi,
     /<a\b[^>]+href=['"]([^'"]*career-opportunity\/?\?jid=\d+)['"][^>]*>\s*<li>\s*<div>\s*<h5[^>]*>([\s\S]*?)<\/h5>\s*<\/div>\s*<span[^>]+class=['"]jobLocation['"]>([\s\S]*?)<strong\b/gi,
     /<li>\s*<a\b[^>]+href=['"]([^'"]*career-opportunity\/?\?jid=\d+)['"][^>]*>\s*<div>\s*<h5[^>]*>([\s\S]*?)<\/h5>\s*<\/div>\s*<span[^>]+class=['"]jobLocation['"]>([\s\S]*?)<strong\b/gi,
   ]
@@ -229,7 +232,7 @@ export const hasOfficialJobDetailSignal = (html, expectedListing = null) => {
   const description = normalizeWhitespace(extractContentBlock(page)) || ''
   const titleTokens = normalizeWhitespace(expectedListing?.title)?.match(/[A-Za-z]{5,}/g) || []
   const hasClientRenderedDetail = !detailTitle
-    && !rawLocation
+    && (!rawLocation || rawLocation === 'AlphaGrep')
     && Boolean(expectedListing?.jobId)
     && /<p>\s*Loading…\s*<\/p>/i.test(detailBlock)
     && /<p[^>]*class=["']location["'][^>]*>\s*AlphaGrep\s*<\/p>/i.test(detailBlock)

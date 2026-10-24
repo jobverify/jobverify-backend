@@ -18,7 +18,8 @@
   "verifiedPublicJobCount": 3,
   "verifiedIndiaJobCount": null,
   "officialCareersPageUrl": "https://www.greyamp.com/careers",
-  "verifiedSurfaceSummary": "October 23, 2026: the current first-party careers page links a reviewed client that reads the complete /api/job-openings array. It publishes three identified roles with descriptions and role-specific choices on the linked Greyamp Consulting Google application form. All three locations say Bangalore with travel to client locations based on requirement, without explicit country or secondary-country fields. Native facts are inspectable, but eligible output withholds unverified country scope and reports coverage-gap with observed total3 and unknown India count. This is not verified empty. Publication dates are absent and remain null.",
+  "verifiedSurfaceSummary": "October 23, 2026: all three native roles qualify under the existing public city policy. Only the exact published travel suffix is separated from their Bangalore base; full locations and travel notes remain intact. Countries and publication dates remain null. The linked employer application form exposes matching role choices. The shared form URL is generic, so native role IDs preserve three distinct fingerprints. Country coverage remains incomplete: coverage-gap, listingComplete=false, unknown India total, no lifecycle cleanup.",
   "nativeJobsApiUrl": "https://www.greyamp.com/api/job-openings",
-  "sourceListingComplete": false
+  "sourceListingComplete": false,
+  "verifiedPublicLocationScopeJobCount": 3
 }

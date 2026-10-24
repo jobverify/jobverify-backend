@@ -1,0 +1,13 @@
+{
+  "url": "chrome-error://chromewebdata/",
+  "title": "careers.kinaracapital.com",
+  "text": "This site can’t provide a secure connection\n\ncareers.kinaracapital.com sent an invalid response.\n\nTry running Windows Network Diagnostics.\nERR_SSL_PROTOCOL_ERROR\nReload",
+  "links": [
+    {
+      "text": "Try running Windows Network Diagnostics",
+      "url": "javascript:diagnoseErrors()"
+    }
+  ],
+  "scripts": [],
+  "network": []
+}

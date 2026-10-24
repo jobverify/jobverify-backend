@@ -201,9 +201,12 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
     assertAlive();
     const choice = result?.choices?.[0];
     if (!choice || typeof choice.message?.content !== 'string') throw Object.assign(new RewriteGenerationError('Malformed generator response'), { generationRequests });
-    let value;
-    try { value = JSON.parse(choice.message.content); } catch { value = null; }
-    const completion={value:expand(value,input),rawValue:value,rawText:choice.message.content.slice(0,2400),finishReason:choice.finish_reason,timings:result.timings,usage:result.usage,generationRequests,format,...(retrySkipped&&{retrySkipped})};
+    let value, expansionDiagnostic;
+    try { value = JSON.parse(choice.message.content); }
+    catch { value = null; if (boundedEdits) expansionDiagnostic = { code: 'invalid_json' }; }
+    const expanded = boundedEdits ? expandSourceEdits(value, input, detail => { expansionDiagnostic ||= detail; }) : expand(value, input);
+    const completion={value:expanded,rawValue:value,rawText:choice.message.content.slice(0,2400),finishReason:choice.finish_reason,timings:result.timings,usage:result.usage,generationRequests,format,...(retrySkipped&&{retrySkipped}),
+      ...(expansionDiagnostic && { validationFailure: { ok: false, reason: expansionDiagnostic.code, diagnostic: expansionDiagnostic } })};
     Object.assign(completion, sourceMetrics(completion.value));
     if(completion.finishReason==='stop'&&completion.value&&validate(completion.value,input,'stop').ok){
       remember(requestHash,completion);
@@ -224,7 +227,8 @@ export const probeRewriteClient = async (client, { concurrency = 1, deadline = D
     const response = await client.generate(input, { signal, remainingMs: Math.max(1, deadline - Date.now()) });
     signal?.throwIfAborted();
     if (response.cachedModelPlan) throw new RewriteWorkerError('generation_probe');
-    const checked = validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
+    const checked = response.finishReason === 'stop' && response.validationFailure
+      ? response.validationFailure : validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
     if (!checked.ok) {
       await onRejection({ id: 'worker-probe-' + slot, input, response, reason: checked.reason, diagnostic: checked.diagnostic });
       throw new RewriteGenerationError('Model readiness output was rejected');
@@ -317,7 +321,8 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       else {
       response = await client.generate(input, { signal, remainingMs: deadline - started });
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
-      result = validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
+      result = response.finishReason === 'stop' && response.validationFailure
+        ? response.validationFailure : validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
       if (result.ok && Number.isInteger(response.modelEditedItems)) result.quality = { ...result.quality,
         method: 'source_referenced_sections', modelEditedItems: response.modelEditedItems, sourceCopiedItems: response.sourceCopiedItems };
       }

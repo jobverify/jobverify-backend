@@ -37,9 +37,10 @@ const setup = (change = value => value) => {
  }
  return { fetchImpl, calls, now: () => '2026-10-23T05:00:00.000Z' }
 }
-test('native DEXIT successor role without country is an explicit gap with no invented India count', async () => {
+test('native DEXIT successor city-only role preserves country gap with no invented India count', async () => {
  const options = setup(), jobs = await run(options)
- assert.equal(jobs.length, 0)
+ assert.equal(jobs.length, 1)
+ assert.equal(jobs[0].country, null)
  assert.equal(readInventoryEvidence(jobs).status, 'coverage-gap')
  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
@@ -65,7 +66,7 @@ test('native explicit India addresses can publish full JD and retain public post
 test('hidden and inert detail descriptions never become eligible source content', async () => {
  for (const attrs of ['hidden', 'inert', 'style="content-visibility:hidden"']) {
   const jobs = await run(setup((body, url) => url.includes('/currentopenings/') ? body.replace('<div class="awsm-job-entry-content entry-content">', '<div ' + attrs + ' class="awsm-job-entry-content entry-content">') : body))
-  assert.equal(jobs.length, 0)
+  assert.equal(jobs.length, 1)
   assert.equal(jobs.nativeCollectionEvidence.details[0].sourceDescription, null)
   assert.equal(jobs.nativeCollectionEvidence.details[0].sourceDetailComplete, false)
   assert.match(readInventoryEvidence(jobs).reason, /native-description-missing/)
@@ -94,7 +95,7 @@ test('NSEIT contradictory explicit country and state never publish', async () =>
 })
 test('heading-only native description retains an incomplete discovery fact', async () => {
  const jobs = await run(setup((body,url)=>url.includes('/currentopenings/') ? body.replace(/<div class="awsm-job-entry-content entry-content">[\s\S]*?<\/div><!-- \.awsm-job-entry-content -->/, '<div class="awsm-job-entry-content entry-content"><h2>Helpdesk Executive</h2><p><strong>Job Profile: '+ 'Responsibilities '.repeat(10) +'</strong></p></div>') : body))
- assert.equal(jobs.length,0)
+ assert.equal(jobs.length,1)
  assert.equal(jobs.nativeCollectionEvidence.details[0].sourceDescription,null)
 })
 test('NSEIT visible location drift stops publication rather than trusting unrelated schema', async () => {

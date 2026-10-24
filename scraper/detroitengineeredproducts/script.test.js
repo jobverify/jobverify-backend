@@ -162,6 +162,16 @@ const emptyCareerPortalPage = {
   results: [],
 }
 
+test('DEP keeps the full requisition description when the public preview is blank or truncated', async () => {
+  const dep = await loadModule();
+  const full = 'Design automotive components and maintain engineering drawings. Work with the vehicle integration team.';
+  for (const preview of ['', '   ', '&nbsp;', 'Design automotive components....']) {
+    const payload = { ...careerPortalPage1, results: [{ ...careerPortalPage1.results[0],
+      public_job_desc: preview, requistion_description: full }] };
+    assert.equal(dep.extractIndiaJobs(payload)[0].jobDescription, full);
+  }
+});
+
 test('Detroit Engineered Products constants stay pinned to the live DEP pages and CEIPAL career portal contract', async () => {
   const dep = await loadModule()
   assert.ok(dep, 'Detroit Engineered Products scraper module should load')

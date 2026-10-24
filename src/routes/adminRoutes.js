@@ -5,7 +5,7 @@
 
 import express from "express";
 import { updateSiteSettings } from "../controllers/siteSettingsController.js";
-import { getPipelineStatus, savePipelineConfiguration, getPipelineCapabilities, triggerPipeline, getPipelineRuns, getPipelineRun, getPipelineLog, retiredPipelineControl } from '../controllers/pipelineController.js';
+import { getPipelineStatus, savePipelineConfiguration, getPipelineCapabilities, triggerPipeline, getPipelineRuns, getPipelineRun, getPipelineLog, downloadPipeline, retiredPipelineControl } from '../controllers/pipelineController.js';
 import { getUserSuggestions } from "../controllers/userSuggestionController.js";
 import { purgeScraperJobs } from "../controllers/scraperMaintenanceController.js";
 import {
@@ -130,6 +130,7 @@ router.post('/pipeline/trigger', scrapeTriggerLimiter, triggerPipeline);
 router.get('/pipeline/runs', getPipelineRuns);
 router.get('/pipeline/runs/:id', getPipelineRun);
 router.get('/pipeline/runs/:id/logs/:stage', getPipelineLog);
+router.get('/pipeline/runs/:id/download', downloadPipeline);
 router.get('/description-rewrite/status', retiredPipelineControl);
 router.put('/description-rewrite/automation', retiredPipelineControl);
 router.post('/description-rewrite/trigger', retiredPipelineControl);

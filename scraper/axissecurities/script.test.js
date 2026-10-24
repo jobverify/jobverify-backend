@@ -31,7 +31,8 @@ const replay = (mutate = value => value, requests = []) => async (url, options =
 test('Axis Securities enumerates all77 native details and reports unresolved geography without certifying zero', async () => {
   const requests = []
   const jobs = await run({ fetchImpl: replay(undefined, requests), now: () => '2026-10-23T04:45:00.000Z' })
-  assert.equal(jobs.length, 0)
+  assert.equal(jobs.length, 66)
+  assert.ok(jobs.every(job => job.country === null))
   const evidence = readInventoryEvidence(jobs)
   assert.equal(evidence?.reportedTotal, 77)
   assert.equal(evidence.indiaFacetCount, null)
@@ -83,7 +84,7 @@ for (const [name, kind, change, pattern] of [
   await assert.rejects(run({ fetchImpl: replay(mutatePayload(kind,change)) }), pattern)
 })
 
-test('Axis Securities only admits native explicit India labels and retains missing JD as partial', async () => {
+test('Axis Securities retains explicit native countries and city-only missing JD as partial', async () => {
   const jobs = await run({ fetchImpl: replay((capture,kind,url) => {
     if (kind === 'listing' || kind === 'detail') {
       const payload = JSON.parse(capture.body)
@@ -93,7 +94,7 @@ test('Axis Securities only admits native explicit India labels and retains missi
     }
     return capture
   }) })
-  assert.equal(jobs.length,1)
+  assert.equal(jobs.length,66)
   assert.equal(jobs[0].country,'India')
   assert.equal(jobs[0].jobId,'645595')
   assert.equal(jobs[0].jobDescription,null)

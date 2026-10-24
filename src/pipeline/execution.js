@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import PipelineRun from '../models/PipelineRun.js';
-import { createStages, validateConfiguration, isTerminal } from './policy.js';
+import { createStages, validateConfiguration, isTerminal, describeStageCompletion } from './policy.js';
 
 export const pipelineError=(message,status=409,extra={})=>Object.assign(new Error(message),{status,...extra});
 export async function createPipeline({configuration,target,origin,repo,ref,sha,requestedBy,localOwner,initialRunId}) {
@@ -80,7 +80,7 @@ export async function updateStage(id,key,values) {
     Object.assign(stage,values);
   });
 }
-export const recordStageResult=(id,key,{outcome,summary})=>updateStage(id,key,{processingOutcome:outcome,summary});
+export const recordStageResult=(id,key,{outcome,summary})=>updateStage(id,key,{processingOutcome:outcome,summary:describeStageCompletion(key,summary,outcome)});
 export async function completeWorkflow(runId,conclusion,dispatch) {
   const existing=await PipelineRun.findOne({'stages.githubRunId':Number(runId)}).lean();
   if(!existing)return null;
@@ -98,7 +98,7 @@ export async function completeWorkflow(runId,conclusion,dispatch) {
 export async function completeLocalStage(id,key,outcome,summary) {
   return changeRun(id,row=>{
     if(isTerminal(row.status))return false;
-    const stage=row.stages.find(s=>s.key===key);stage.status=outcome;stage.summary=summary;stage.completedAt=new Date();
+    const stage=row.stages.find(s=>s.key===key);stage.status=outcome;stage.summary=describeStageCompletion(key,summary,outcome);stage.completedAt=new Date();
     if(outcome!=='completed')stop(row,outcome,`Stage ${key} ${outcome}.`);
   });
 }

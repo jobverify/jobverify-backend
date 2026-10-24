@@ -6,6 +6,7 @@ import {
   fetchJsonWithRetry,
   fetchTextWithRetry,
 } from '../../scraper-support/utils/fetch.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -63,6 +64,14 @@ const normalizeEmploymentType = (value) => {
   if (/intern/.test(normalized)) return 'Internship'
   if (/full.?time/.test(normalized)) return 'Full-time'
   return normalizeWhitespace(value)
+}
+
+const fullPortalDescription = job => {
+  const publicText = normalizeWhitespace(job?.public_job_desc)
+  const fullText = normalizeWhitespace(job?.requistion_description)
+  const usable = text => Boolean(text && hasSourceDescription({ jobDescription: text }))
+  if (usable(fullText) && (!usable(publicText) || /(?:\.{3,}|\u2026)$/.test(publicText))) return fullText
+  return usable(publicText) ? publicText : usable(fullText) ? fullText : null
 }
 
 const withDefaultHeaders = (headers, options = {}) => ({
@@ -275,7 +284,7 @@ export const extractIndiaJobs = (payload) => {
         requiredSkills: [],
         postingDate: parsePortalDate(job?.created ?? job?.modified ?? null),
         closingDate: parsePortalDate(job?.closing_date ?? null),
-        jobDescription: normalizeWhitespace(job?.public_job_desc ?? job?.requistion_description ?? null),
+        jobDescription: fullPortalDescription(job),
         publicExperienceChecked: true,
         remoteStatus: normalizeRemoteStatus(job?.remote_opportunities),
       }

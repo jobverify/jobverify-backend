@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { buildRewriteInput, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
 import { buildSourceEdits, expandSourceEdits } from '../rewriting/editProtocol.js';
-import { createRewriteClient, rewriteCandidates, rewriteStopDetails } from '../rewriting/runner.js';
+import { createRewriteClient, rewriteCandidates, rewriteStopDetails, probeRewriteClient } from '../rewriting/runner.js';
 
 const overview = 'Build Python services for customer applications.';
 const duty = 'Design reliable APIs and maintain Python services.';
@@ -67,6 +67,32 @@ test('formatting edits retain source wording and pass the existing evidence vali
   assert.equal(validateRewrite(expanded, input, 'stop').ok, true);
 });
 
+test('rejected valid JSON identifies the exact source preservation failure', () => {
+  const input = inputFor(), candidate = buildSourceEdits(input).candidates.find(unit => unit.text === duty);
+  let diagnostic;
+  const value = expandSourceEdits({ edits: [{ source: candidate.id, text: 'Design reliable APIs.' }] }, input,
+    detail => { diagnostic = detail; });
+  assert.equal(value, null);
+  assert.equal(diagnostic?.code, 'source_words_changed');
+  assert.equal(diagnostic.sourceId, candidate.id);
+  assert.equal(diagnostic.itemIndex, 0);
+  assert.equal(diagnostic.evidence, duty);
+});
+
+test('edit protocol distinguishes invalid IDs, duplicate IDs, length and character failures', () => {
+  const input = inputFor(), candidate = buildSourceEdits(input).candidates.find(unit => unit.text === duty);
+  for (const [edits, expected] of [
+    [[{ source: 999999, text: duty }], 'invalid_source_id'],
+    [[{ source: candidate.id, text: duty }, { source: candidate.id, text: duty }], 'duplicate_source_id'],
+    [[{ source: candidate.id, text: 'a'.repeat(161) }], 'edit_too_long'],
+    [[{ source: candidate.id, text: duty + '\u00a0' }], 'invalid_edit_characters'],
+  ]) {
+    let diagnostic;
+    assert.equal(expandSourceEdits({ edits }, input, detail => { diagnostic = detail; }), null);
+    assert.equal(diagnostic?.code, expected);
+  }
+});
+
 test('raw partial JSON is retained on token truncation without becoming a completion', async t => {
   const partial = '{"edits":[{"source":0,"text":"Build Python';
   const server = http.createServer(async (req, res) => {
@@ -91,11 +117,62 @@ test('normal budget metadata differs from external cancellation', () => {
     cancelled: true, stopReason: 'cancelled', reason: 'interrupted' });
 });
 
+test('worker probe retains the same precise edit rejection as queue processing', async () => {
+  let rejection;
+  const probe = await probeRewriteClient({ format: 'source-edits', generate: async () => ({
+    value: null, finishReason: 'stop', validationFailure: { ok: false, reason: 'source_words_changed',
+      diagnostic: { code: 'source_words_changed', sourceId: 1, evidence: duty, text: 'Design reliable APIs.' } },
+  }) }, { onRejection: value => { rejection = value; } });
+  assert.equal(probe.warnings, 1);
+  assert.equal(rejection.reason, 'source_words_changed');
+  assert.equal(rejection.diagnostic.evidence, duty);
+  assert.equal(rejection.diagnostic.sourceId, 1);
+});
+
+test('valid JSON with unsafe wording retains its cause through generation and rejection artifacts', async t => {
+  const input = inputFor(), candidate = buildSourceEdits(input).candidates.find(unit => unit.text === duty);
+  const server = http.createServer((req, res) => {
+    req.resume(); res.setHeader('Content-Type', 'application/json');
+    if (req.url === '/apply-template') return res.end(JSON.stringify({ prompt: 'template' }));
+    if (req.url === '/tokenize') return res.end(JSON.stringify({ tokens: [1, 2, 3] }));
+    res.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: {
+      content: JSON.stringify({ edits: [{ source: candidate.id, text: 'Design reliable APIs.' }] }),
+    } }] }));
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => { server.closeAllConnections(); return new Promise(resolve => server.close(resolve)); });
+  const job = { _id: 'replay-word-loss', title: input.facts.title, company: input.facts.company,
+    sourceDescription: input.sourceDescription, status: 'active', sourceContentHash: input.inputHash,
+    descriptionRewrite: { status: 'pending', attempts: 0, inputHash: input.inputHash } };
+  let rejection, update;
+  const stats = await rewriteCandidates([job], { deadline: Date.now() + 10000,
+    client: createRewriteClient({ endpoint: 'http://127.0.0.1:' + server.address().port }),
+    update: async (_filter, values) => { update = values; return { matchedCount: 1 }; },
+    onRejection: value => { rejection = value; } });
+  assert.equal(stats.failed, 1);
+  assert.equal(stats.published, 0);
+  assert.equal(rejection.reason, 'source_words_changed');
+  assert.equal(rejection.diagnostic.evidence, duty);
+  assert.equal(rejection.diagnostic.sourceId, candidate.id);
+  assert.equal(update.$set.description, undefined);
+});
+
 test('protected-only descriptions render without a model request and report zero generated edits', async () => {
   const input = inputFor('Required qualifications: At least 2 years of Python development experience is required for applicants working on our customer software services and production applications. Preferred qualifications: AWS experience is nice to have for this role.');
   const result = await createRewriteClient({ endpoint: 'http://127.0.0.1:1' }).generate(input);
   assert.equal(result.renderedWithoutInference, true); assert.equal(result.generationRequests, 0);
   assert.equal(result.modelEditedItems, 0); assert.equal(validateRewrite(result.value, input, result.finishReason).ok, true);
+});
+
+test('source statements longer than the edit cap render intact without an impossible shortening request', async () => {
+  const source = 'Design and maintain distributed customer software services with Python and PostgreSQL, collaborate with engineering teams on production deployments, and document operational procedures for the customer support team.';
+  const input = inputFor('Responsibilities: ' + source);
+  assert.equal(buildSourceEdits(input).candidates.length, 0);
+  const result = await createRewriteClient({ endpoint: 'http://127.0.0.1:1' }).generate(input);
+  assert.equal(result.generationRequests, 0);
+  const checked = validateRewrite(result.value, input, 'stop');
+  assert.equal(checked.ok, true);
+  assert.ok(checked.description.includes(source));
 });
 
 test('a programming failure remains fatal when it coincides with cancellation', async () => {

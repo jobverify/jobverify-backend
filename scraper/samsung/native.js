@@ -71,10 +71,16 @@ function parseDetail(payload,row,now){
  check(info&&info.jobReqId===id&&info.title===row.title&&info.jobPostingSiteId==='Samsung_Careers'&&info.externalUrl===sourceUrl&&info.jobPostingId===row.externalPath.split('/').at(-1),'detail identity mismatch')
  const employer=payload.hiringOrganization?.name
  check(typeof employer==='string'&&/^Samsung\b/i.test(employer),'native employer unavailable/mismatch')
- const country=locationCountry(info.country),primary=info.jobRequisitionLocation
+ const primary=info.jobRequisitionLocation
+ // Some global postings omit both posting country and display location but
+ // retain vacancy-specific typed requisition evidence. Never use employer HQ.
+ const absentLocation=value=>value==null||value===''
+ const requisitionFallback=info.country==null&&absentLocation(info.location)&&absentLocation(row.locationsText)
+ const country=locationCountry(requisitionFallback?primary?.country:info.country)
  check(primary&&locationCountry(primary.country)===country,'primary country disagreement')
- check(typeof info.location==='string'&&info.location===primary.descriptor&&info.location===row.locationsText,'primary location mismatch')
- const foreignState=label=>/\b(?:Texas|California|New York|Ontario|British Columbia|New South Wales)\b|,\s*(?:TX|CA|NY|WA|MA|FL|NJ|VA|BC|ON|NSW)\s*(?:,|$)/i.test(label)
+ const primaryLabel=requisitionFallback?primary.descriptor:info.location
+ check(typeof primaryLabel==='string'&&primaryLabel.trim()&&(requisitionFallback||primaryLabel===primary.descriptor&&primaryLabel===row.locationsText),'primary location mismatch')
+ const foreignState=label=>/\b(?:Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming|Ontario|British Columbia|New South Wales)\b|,\s*(?:TX|CA|NY|WA|MA|FL|NJ|VA|BC|ON|NSW)\s*(?:,|$)/i.test(label)
  const validIndia=label=>typeof label==='string'&&!foreignState(label)&&isJobInPublicLocationScope({country:'India',location:label})
  if(info.additionalLocations!=null)check(Array.isArray(info.additionalLocations),'invalid secondary locations')
  const secondary=(info.additionalLocations??[]).map(location=>{
@@ -84,12 +90,14 @@ function parseDetail(payload,row,now){
   check(location&&typeof location.descriptor==='string','invalid secondary location')
   return {label:location.descriptor,country:locationCountry(location.country)}
  })
- for(const location of [{label:info.location,country},...secondary]){
+ for(const location of [{label:primaryLabel,country},...secondary]){
   const explicit=nativeLocationCountryName(location.label)
   check(!explicit||!location.country||explicit===location.country,'typed/label location country conflict')
+  const explicitParts=location.label.split(/[,/()]/).map(part=>nativeCountryName(part.trim())).filter(Boolean)
+  check(!location.country||explicitParts.every(value=>value===location.country),'embedded location country conflict')
  }
- const indiaLocations=[{label:info.location,country},...secondary].filter(l=>l.country==='India'&&validIndia(l.label)).map(l=>l.label)
- const geography=indiaLocations.length>0&&secondary.every(l=>l.country!==null&&(l.country!=='India'||validIndia(l.label)))&&(country!=='India'||validIndia(info.location))
+ const indiaLocations=[{label:primaryLabel,country},...secondary].filter(l=>l.country==='India'&&validIndia(l.label)).map(l=>l.label)
+ const geography=indiaLocations.length>0&&secondary.every(l=>l.country!==null&&(l.country!=='India'||validIndia(l.label)))&&(country!=='India'||validIndia(primaryLabel))
  const publication=info.startDate==null?{raw:null,iso:null,precision:null}:nativeDate(info.startDate)
  check(!publication.iso||+new Date(publication.iso)<=+now,'future publication')
  const closing=nativeDate(info.endDate)
@@ -100,7 +108,7 @@ function parseDetail(payload,row,now){
  const nativeText=typeof info.jobDescription==='string'?document(info.jobDescription).text(document(info.jobDescription).root):''
  const legalLabel=nativeText.match(/a division of (Samsung R&D India - Bangalore Pvt\. Ltd)/i)?.[1]??null
  return {id,title:row.title,sourceUrl,employer,legalEmployer:legalLabel,businessUnit:/Samsung Semiconductor India Research \(SSIR\)/.test(nativeText)?'Samsung Semiconductor India Research (SSIR)':null,
-  info,payload,publication,closing,content,country,secondary,indiaLocations,geography,closed}
+  info,payload,publication,closing,content,country,countryEvidenceField:requisitionFallback?'jobPostingInfo.jobRequisitionLocation.country':'jobPostingInfo.country',secondary,indiaLocations,geography,closed}
 }
 
 export async function runNative(options={}) {
@@ -118,13 +126,17 @@ export async function runNative(options={}) {
   check(researchLinks.length===1,'Research delegation changed; overlap cannot be assumed')
   const global=await requestPage(transport,{},0),indiaFacet=facet(global,'Location_Country')?.filter(f=>f.id===INDIA&&f.descriptor==='India')
   check(indiaFacet?.length===1&&Number.isSafeInteger(indiaFacet[0].count),'India native facet unavailable')
+  const globalInventory=await enumerate(transport,{},global)
   const india=await enumerate(transport,{Location_Country:[INDIA]})
   check(india.page.total===indiaFacet[0].count,'global/India count conflict')
+  const globalByID=new Map(globalInventory.rows.map(row=>[rowID(row),row]))
+  check(india.rows.every(row=>{const globalRow=globalByID.get(rowID(row));return globalRow&&globalRow.externalPath===row.externalPath&&globalRow.title===row.title&&globalRow.locationsText===row.locationsText}),'global/India identity conflict')
   const research=await enumerate(transport,RESEARCH_FACETS),researchIDs=new Set(research.rows.map(rowID)),indiaIDs=new Set(india.rows.map(rowID))
   check(research.rows.every(r=>indiaIDs.has(rowID(r))&&india.rows.some(i=>i.externalPath===r.externalPath&&i.title===r.title)),'Research overlap inconsistent')
-  const evidence={globalReportedTotal:global.total,globalEnumerated:false,indiaReportedTotal:india.page.total,indiaRows:india.rows,researchOverlapIDs:[...researchIDs],details:[],failures:[],cleanupAllowed:false,wholeCompanyScope:false,sourceScope:'official Samsung_Careers India minus registered Research Phoenix subset',retainedResponses:transport.retainedResponses}
+  const unlocatedGlobalRows=globalInventory.rows.filter(row=>(row.locationsText==null||row.locationsText==='')&&!indiaIDs.has(rowID(row)))
+  const evidence={globalReportedTotal:global.total,globalEnumerated:true,globalRows:globalInventory.rows,unlocatedGlobalRows,indiaReportedTotal:india.page.total,indiaRows:india.rows,researchOverlapIDs:[...researchIDs],details:[],failures:[],cleanupAllowed:false,wholeCompanyScope:false,sourceScope:'official Samsung_Careers India facet and unlocated global requisitions with typed India country, minus registered Research Phoenix subset',retainedResponses:transport.retainedResponses}
   const jobs=[]
-  for(const row of india.rows){
+  for(const row of [...india.rows,...unlocatedGlobalRows]){
    transport.signal.throwIfAborted()
    const payload=await transport.read(API+row.externalPath)
    let fact
@@ -140,10 +152,12 @@ export async function runNative(options={}) {
   }
   const closing=await requestPage(transport,{Location_Country:[INDIA]},0)
   check(closing.total===india.page.total&&JSON.stringify(closing.jobPostings)===JSON.stringify(india.page.jobPostings),'inventory changed during details')
+  const globalClosing=await requestPage(transport,{},0)
+  check(globalClosing.total===global.total&&JSON.stringify(globalClosing.jobPostings)===JSON.stringify(global.jobPostings),'global inventory changed during details')
   if(!jobs.length&&evidence.failures.length)throw Object.assign(Error('Samsung all native candidates unresolved'),{nativeEvidence:evidence})
-  const compact={globalReportedTotal:evidence.globalReportedTotal,indiaReportedTotal:evidence.indiaReportedTotal,researchOverlapIDs:evidence.researchOverlapIDs,detailCount:evidence.details.length,failures:evidence.failures,cleanupAllowed:false,wholeCompanyScope:false}
+  const compact={globalReportedTotal:evidence.globalReportedTotal,globalEnumerated:true,unlocatedGlobalCount:unlocatedGlobalRows.length,indiaReportedTotal:evidence.indiaReportedTotal,researchOverlapIDs:evidence.researchOverlapIDs,detailCount:evidence.details.length,failures:evidence.failures,cleanupAllowed:false,wholeCompanyScope:false}
   jobs.forEach((job,index)=>job.nativeCollectionEvidence=index===0?evidence:compact)
   Object.defineProperty(jobs,Symbol.for('jobverify.samsung-native-evidence'),{value:evidence})
-  return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:BOARD,firstParty:true,listingComplete:false,pagesFetched:transport.retainedResponses.length,reportedTotal:global.total,indiaFacetCount:india.page.total,verifiedAt:now.toISOString(),reason:'India board fully paginated; exact registered Research Phoenix scope excluded; global count only; whole-company scope unproven; cleanup forbidden'})
+  return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:BOARD,firstParty:true,listingComplete:false,pagesFetched:transport.retainedResponses.length,reportedTotal:global.total,indiaFacetCount:india.page.total,verifiedAt:now.toISOString(),reason:'Global listing and India facet fully paginated; unlocated global requisitions inspected using vacancy-specific typed country; exact registered Research Phoenix scope excluded; unresolved work locations and whole-company scope remain unproven; cleanup forbidden'})
  } finally {transport.close()}
 }

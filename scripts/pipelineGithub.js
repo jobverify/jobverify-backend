@@ -4,7 +4,7 @@ import '../loadEnv.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
 import PipelineRun from '../src/models/PipelineRun.js';
 import { claimStage, recordStageResult, completeWorkflow, updateStage, changeRun } from '../src/pipeline/execution.js';
-import { directConfiguration, stageOutcome, WORKFLOWS, WORKFLOW_NAMES, isTerminal } from '../src/pipeline/policy.js';
+import { directConfiguration, stageOutcome, describeStageCompletion, WORKFLOWS, WORKFLOW_NAMES, isTerminal } from '../src/pipeline/policy.js';
 import { createDirectGithubPipeline, dispatchGithubStage, githubRequest, matchesGithubStage } from '../src/pipeline/github.js';
 import { redactLog } from '../src/pipeline/local.js';
 import { aggregateClassificationSummaries } from '../classification/reporting.js';
@@ -46,6 +46,7 @@ try {
       summary=aggregateClassificationSummaries(parts);
     }
     const outcome=stageOutcome(key,summary,code);
+    summary=describeStageCompletion(key,summary,outcome);
     await recordStageResult(run._id,key,{outcome,summary});
     console.log(`Pipeline stage ${key} outcome: ${outcome}; summary: ${redactLog(JSON.stringify(summary))}`);
     if(outcome!=='completed')process.exitCode=1;

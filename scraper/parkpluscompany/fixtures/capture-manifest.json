@@ -1,12 +1,37 @@
 {
   "source": "parkpluscompany",
-  "captureMethod": "Root-owned isolated public Chrome fetch; unmodified HTTP body/status/finalURL/time retained, DOM companions are observation only.",
+  "captureMethod": "Unmodified public Chrome receipts; native employer captures shared verbatim with parkplusindia. DOM companions are observations only. Terms shell is retained as an observation, not alias proof.",
   "files": [
     {
       "file": "official-pages.json.gz",
       "sha256": "a5a6a5aebcf32cbee8c3f24fa3ebcd566867b2436097b1f689ca3c765b7d25de",
       "uncompressedSHA256": "6fa46b1973e87cee585435b0c8da9f82f7c9f7ee5fb37e300b9d0303fc8daef5",
-      "bytes": 167917
+      "bytes": 26118
+    },
+    {
+      "file": "native-official-pages.json.gz",
+      "sha256": "058d63a7f3da79853364a4d0e274b15739dfb341dc2bf05c1e7ee401c7418d2f",
+      "uncompressedSHA256": "4bf3579b943f9e1e932a29e3136d9b1c3065d2e6018b0a57f0d6df7c2ddf406e",
+      "bytes": 101755
+    },
+    {
+      "file": "native-linkedin-pages.json.gz",
+      "sha256": "aa980239542ba8ad7d201d375960fded0b2c01d873ca64458aff3e56fdda6b5c",
+      "uncompressedSHA256": "b6655acc60523d22fed352ae7b7b54aac0724d4970ee11c3fc0068e4b8c2fcea",
+      "bytes": 259090
+    },
+    {
+      "file": "identity-pages.json.gz",
+      "sha256": "8a8f3aa60207013738a2a5eda93a22f8d4999e876e9d5ebca1b87ca4ce72e221",
+      "uncompressedSHA256": "155a4b396a2559f97a9a61972ab40683d3a3f43ce1907ecf1bb23e99749cd5ec",
+      "bytes": 41210
+    },
+    {
+      "file": "fresh-city-scope-runtime.json.gz",
+      "sha256": "b8a3f77e4bd64194af059b4cef90df1a292f290a9162db8ad325f68faacd2a3d",
+      "uncompressedSHA256": "73db896c7294b48581e246d1f4a1fa40d586be8c8d76714246ca259ad74da4c9",
+      "bytes": 224528,
+      "provenance": "Same nine actual October 23 public GET receipts shared across both reviewed aliases; no additional requests."
     }
   ],
   "responses": [
@@ -18,6 +43,222 @@
       "file": "official-pages.json.gz",
       "bodySHA256": "09f75439ae8bc79d38f4966657bb97a19c2589d35b5a50749db9b0c0eafa0ff6",
       "bodyBytes": 162516
+    },
+    {
+      "url": "https://parkplus.io/careers",
+      "finalUrl": "https://parkplus.io/careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:26.952Z",
+      "file": "native-official-pages.json.gz",
+      "bodySHA256": "09f75439ae8bc79d38f4966657bb97a19c2589d35b5a50749db9b0c0eafa0ff6",
+      "bodyBytes": 162516
+    },
+    {
+      "url": "https://parkplus.io/careers/jobs/sales-manager",
+      "finalUrl": "https://parkplus.io/careers/jobs/sales-manager",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:27.372Z",
+      "file": "native-official-pages.json.gz",
+      "bodySHA256": "3f72a3328cf4ebb9f640ffea23894f096593e01844a5962915b7bf5835132724",
+      "bodyBytes": 77349
+    },
+    {
+      "url": "https://parkplus.io/about-us",
+      "finalUrl": "https://parkplus.io/about-us",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:27.972Z",
+      "file": "native-official-pages.json.gz",
+      "bodySHA256": "dd2f5d4acf90a63c8cf7b7dad1c419a23e09bf6019b3cc0c640f60e57130982b",
+      "bodyBytes": 428376
+    },
+    {
+      "url": "https://www.linkedin.com/company/parkplus",
+      "finalUrl": "https://www.linkedin.com/company/parkplus",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:36.087Z",
+      "file": "native-linkedin-pages.json.gz",
+      "bodySHA256": "be827a3b7766c4ec9563e2cba92c45ccad93070ee84c8a26c27a23434a216b9b",
+      "bodyBytes": 415645
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=31193090&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=31193090&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:37.089Z",
+      "file": "native-linkedin-pages.json.gz",
+      "bodySHA256": "11492b0e953237e2ecd30affc96e79e67abcf26b23d79b060a532f57bbe507fd",
+      "bodyBytes": 111299
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=31193090&location=Worldwide",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=31193090&location=Worldwide",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:37.805Z",
+      "file": "native-linkedin-pages.json.gz",
+      "bodySHA256": "d79c3ed5f55f0e38d18f9c3a9fc8dd016f439d8eefd41609eaeb792424c2b444",
+      "bodyBytes": 111376
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/program-manager-at-park%2B-4477179645?position=1&pageNum=0&refId=dTBk6D%2FwKAQuXWEgNq5A8w%3D%3D&trackingId=6AxM25IZ05poF9Z0ZbpFtQ%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/program-manager-at-park%2B-4477179645?position=1&pageNum=0&refId=dTBk6D%2FwKAQuXWEgNq5A8w%3D%3D&trackingId=6AxM25IZ05poF9Z0ZbpFtQ%3D%3D",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:38.924Z",
+      "file": "native-linkedin-pages.json.gz",
+      "bodySHA256": "116966ebd8fbc5cf3c9e40e4cc5cd8099d38a7e8346d3a31c5a9d885e100e371",
+      "bodyBytes": 305348
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/product-manager-at-park%2B-4473723466?position=2&pageNum=0&refId=dTBk6D%2FwKAQuXWEgNq5A8w%3D%3D&trackingId=5FGm6RhNmZFAs4NGOycJTw%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/product-manager-at-park%2B-4473723466?position=2&pageNum=0&refId=dTBk6D%2FwKAQuXWEgNq5A8w%3D%3D&trackingId=5FGm6RhNmZFAs4NGOycJTw%3D%3D",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:40.069Z",
+      "file": "native-linkedin-pages.json.gz",
+      "bodySHA256": "573aa5a363fd98e5009dd11f74d1da0a9b6401e815e8302a5fe6fbac8e7bc4b5",
+      "bodyBytes": 307207
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/ai-product-intern-at-park%2B-4478381909?position=3&pageNum=0&refId=dTBk6D%2FwKAQuXWEgNq5A8w%3D%3D&trackingId=gJJHf6Ucc3CQQO8J3D1ZMw%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/ai-product-intern-at-park%2B-4478381909?position=3&pageNum=0&refId=dTBk6D%2FwKAQuXWEgNq5A8w%3D%3D&trackingId=gJJHf6Ucc3CQQO8J3D1ZMw%3D%3D",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:41.127Z",
+      "file": "native-linkedin-pages.json.gz",
+      "bodySHA256": "7ecd9998a158aac2a20d5b107e4258ab739f3f3745d4b08ec691978af307e27a",
+      "bodyBytes": 304242
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/program-manager-at-park%2B-4477179645?position=1&pageNum=0&refId=WWACT%2B%2BUc%2BK88bj6vRnqww%3D%3D&trackingId=tEFd0CmS8gwUfFrfQ5zkhw%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/program-manager-at-park%2B-4477179645?position=1&pageNum=0&refId=WWACT%2B%2BUc%2BK88bj6vRnqww%3D%3D&trackingId=tEFd0CmS8gwUfFrfQ5zkhw%3D%3D",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:42.064Z",
+      "file": "native-linkedin-pages.json.gz",
+      "bodySHA256": "5d1824afaf11b5fa222fda39b10813c520cd3bd427ef96195764d500d2b556cd",
+      "bodyBytes": 305488
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/product-manager-at-park%2B-4473723466?position=2&pageNum=0&refId=WWACT%2B%2BUc%2BK88bj6vRnqww%3D%3D&trackingId=4fGOloyEJcijis8EPxfdTQ%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/product-manager-at-park%2B-4473723466?position=2&pageNum=0&refId=WWACT%2B%2BUc%2BK88bj6vRnqww%3D%3D&trackingId=4fGOloyEJcijis8EPxfdTQ%3D%3D",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:43.255Z",
+      "file": "native-linkedin-pages.json.gz",
+      "bodySHA256": "93ce045f12e692ff2ff83166973d427b5805eb100948c54e3bfd26965f8f6fef",
+      "bodyBytes": 307333
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/ai-product-intern-at-park%2B-4478381909?position=3&pageNum=0&refId=WWACT%2B%2BUc%2BK88bj6vRnqww%3D%3D&trackingId=BVQSvNvK%2B8D4IbdZEDHkHw%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/ai-product-intern-at-park%2B-4478381909?position=3&pageNum=0&refId=WWACT%2B%2BUc%2BK88bj6vRnqww%3D%3D&trackingId=BVQSvNvK%2B8D4IbdZEDHkHw%3D%3D",
+      "status": 200,
+      "capturedAt": "2026-10-23T08:23:44.434Z",
+      "file": "native-linkedin-pages.json.gz",
+      "bodySHA256": "8c4081a50e00c418f07768698bd34c1c217add1f2d0c2cb0677e9abe283a3a10",
+      "bodyBytes": 304281
+    },
+    {
+      "url": "https://parkplus.io/car-news/parkplus-smart-parking-solution-for-corporate?amp=1",
+      "finalUrl": "https://parkplus.io/car-news/parkplus-smart-parking-solution-for-corporate?amp=1",
+      "status": 200,
+      "capturedAt": "2026-10-23T12:25:07.474Z",
+      "file": "identity-pages.json.gz",
+      "bodySHA256": "d800e9fc53a8dd0fd54e0ba41fe6c1acde40c9143f6ff0185453531494514951",
+      "bodyBytes": 49589
+    },
+    {
+      "url": "https://parkplus.io/contact-us",
+      "finalUrl": "https://parkplus.io/contact-us",
+      "status": 200,
+      "capturedAt": "2026-10-23T12:25:07.826Z",
+      "file": "identity-pages.json.gz",
+      "bodySHA256": "8777dc51fb3481aff888f6b8358901f2135c51662d453fd1ea11a3dc31759235",
+      "bodyBytes": 86453
+    },
+    {
+      "url": "https://parkplus.io/terms-conditions",
+      "finalUrl": "https://parkplus.io/terms-conditions",
+      "status": 200,
+      "capturedAt": "2026-10-23T12:25:08.002Z",
+      "file": "identity-pages.json.gz",
+      "bodySHA256": "9426f8c7e3e77f173bb8fb94bb959ac6ddd2d0ba6c3298feb779b0f42a16e9a1",
+      "bodyBytes": 24559
+    },
+    {
+      "url": "https://parkplus.io/careers",
+      "finalUrl": "https://parkplus.io/careers",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:52:27.731Z",
+      "file": "fresh-city-scope-runtime.json.gz",
+      "bodySHA256": "c709e2e4eb62ce209d5e03489302cfefa269d2bf36f5ebcbcf75fbe62ab5bba8",
+      "bodyBytes": 162516
+    },
+    {
+      "url": "https://parkplus.io/car-news/parkplus-smart-parking-solution-for-corporate?amp=1",
+      "finalUrl": "https://parkplus.io/car-news/parkplus-smart-parking-solution-for-corporate?amp=1",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:52:28.096Z",
+      "file": "fresh-city-scope-runtime.json.gz",
+      "bodySHA256": "d800e9fc53a8dd0fd54e0ba41fe6c1acde40c9143f6ff0185453531494514951",
+      "bodyBytes": 49589
+    },
+    {
+      "url": "https://parkplus.io/contact-us",
+      "finalUrl": "https://parkplus.io/contact-us",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:52:28.447Z",
+      "file": "fresh-city-scope-runtime.json.gz",
+      "bodySHA256": "c6681187f4d5aeb972675e0963b2f9b6793c4386681139dfb550d5496ff262eb",
+      "bodyBytes": 86452
+    },
+    {
+      "url": "https://parkplus.io/careers/jobs/sales-manager",
+      "finalUrl": "https://parkplus.io/careers/jobs/sales-manager",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:52:28.786Z",
+      "file": "fresh-city-scope-runtime.json.gz",
+      "bodySHA256": "d9786b84e0c13f0f21c7a96959d74470724ecde541764cb432787c71cccadbe9",
+      "bodyBytes": 77349
+    },
+    {
+      "url": "https://www.linkedin.com/company/parkplus",
+      "finalUrl": "https://www.linkedin.com/company/parkplus",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:52:30.505Z",
+      "file": "fresh-city-scope-runtime.json.gz",
+      "bodySHA256": "64c7f9ed4ae5f0eaca6e00d3165cdc77b67b074949f06358946bb7f8a5a2b0a9",
+      "bodyBytes": 412471
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/search/?f_C=31193090&location=India",
+      "finalUrl": "https://www.linkedin.com/jobs/search/?f_C=31193090&location=India",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:52:31.434Z",
+      "file": "fresh-city-scope-runtime.json.gz",
+      "bodySHA256": "683c8febe2348f0daad4e388f249133e79b51babd252b6acd812a2facb40baf2",
+      "bodyBytes": 96546
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/program-manager-at-park%2B-4477179645?position=1&pageNum=0&refId=DHJxjnFj7G6REKG%2FwMMJfg%3D%3D&trackingId=kR0wtpILs%2BEpD832P06nYg%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/program-manager-at-park%2B-4477179645?position=1&pageNum=0&refId=DHJxjnFj7G6REKG%2FwMMJfg%3D%3D&trackingId=kR0wtpILs%2BEpD832P06nYg%3D%3D",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:52:32.465Z",
+      "file": "fresh-city-scope-runtime.json.gz",
+      "bodySHA256": "94360a4ef7d83576e5b990a9384ed004e486df4b70b74521a8ccf9e2c2a49611",
+      "bodyBytes": 301188
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/product-manager-at-park%2B-4473723466?position=2&pageNum=0&refId=DHJxjnFj7G6REKG%2FwMMJfg%3D%3D&trackingId=9797k4jhBKVaQKs%2BqTYYDA%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/product-manager-at-park%2B-4473723466?position=2&pageNum=0&refId=DHJxjnFj7G6REKG%2FwMMJfg%3D%3D&trackingId=9797k4jhBKVaQKs%2BqTYYDA%3D%3D",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:52:33.378Z",
+      "file": "fresh-city-scope-runtime.json.gz",
+      "bodySHA256": "2aae3a0cf977c8b08e46fe2bb28de006fcecfc714a0e90b23e93c32fb34b27c7",
+      "bodyBytes": 326389
+    },
+    {
+      "url": "https://www.linkedin.com/jobs/view/ai-product-intern-at-park%2B-4478381909?position=3&pageNum=0&refId=DHJxjnFj7G6REKG%2FwMMJfg%3D%3D&trackingId=PP8ya7jZjZ0XVdQk2N0aTQ%3D%3D",
+      "finalUrl": "https://www.linkedin.com/jobs/view/ai-product-intern-at-park%2B-4478381909?position=3&pageNum=0&refId=DHJxjnFj7G6REKG%2FwMMJfg%3D%3D&trackingId=PP8ya7jZjZ0XVdQk2N0aTQ%3D%3D",
+      "status": 200,
+      "capturedAt": "2026-10-23T19:52:34.247Z",
+      "file": "fresh-city-scope-runtime.json.gz",
+      "bodySHA256": "b5e9f8c0fecd245fa1657e97e57f22fd56437bae9dd58357f5e4bb7179987dee",
+      "bodyBytes": 294807
     }
   ]
 }

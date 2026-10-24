@@ -411,7 +411,17 @@ test('Atree recognizes the current first-party ERP jobs portal with no rendered 
   assert.equal(atree.erpJobsPageHasPublicListings(erpJobsHtml), false)
 })
 
-test('Atree run returns the three verified first-party jobs and preserves their mixed public apply handoffs', async () => {
+test('Atree accepts only the exact first-party ERP job application route', async () => {
+  const atree = await loadAtreeModule()
+  const url = 'https://erp.atree.org/job_application/new?job_title=HR-OPN-2026-0051'
+  assert.equal(atree.extractApplyUrl(`<a href="${url}">Apply Now</a>`), url)
+  for (const invalid of [url.replace('erp.atree.org', 'erp.atree.org.example.com'), url.replace('https:', 'http:'),
+    url.replace('job_title=', 'other='), url.replace('0051', 'oops'), url + '&redirect=https://example.com']) {
+    assert.equal(atree.extractApplyUrl(`<a href="${invalid}">Apply Now</a>`), null)
+  }
+})
+
+test('Atree run matches entity-encoded detail titles and preserves the verified public apply handoffs', async () => {
   const atree = await loadAtreeModule()
   const requestedUrls = []
 
@@ -447,7 +457,8 @@ test('Atree run returns the three verified first-party jobs and preserves their 
 
       const matchedJob = VERIFIED_LISTINGS.find((job) => job.detailUrl === url)
       if (matchedJob) {
-        return { status: 200, url, html: buildDetailHtml(matchedJob) }
+        const encodedTitle = [...matchedJob.title].map(character => `&#${character.codePointAt(0)};`).join('')
+        return { status: 200, url, html: buildDetailHtml(matchedJob).replace(/<title[^>]*>[\s\S]*?<\/title>/, `<title>${encodedTitle}</title>`) }
       }
 
       throw new Error(`Unexpected Atree URL: ${url}`)

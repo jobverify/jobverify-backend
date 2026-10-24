@@ -169,7 +169,7 @@ test('Conviva run validates the first-party careers page before fetching the pub
   assert.equal(jobs[0].source, 'conviva')
 })
 
-test('Conviva fails closed when the verified careers page or first-party gh_jid job handoff changes', async () => {
+test('Conviva rejects unverified careers pages, embed bindings and mismatched job identities', async () => {
   const conviva = await loadConvivaModule()
 
   await assert.rejects(
@@ -199,7 +199,7 @@ test('Conviva fails closed when the verified careers page or first-party gh_jid 
         jobs: [
           {
             ...greenhousePayload.jobs[0],
-            absolute_url: 'https://job-boards.greenhouse.io/conviva/jobs/7771001003',
+            absolute_url: 'https://job-boards.greenhouse.io/conviva/jobs/7771001004',
           },
         ],
       }),

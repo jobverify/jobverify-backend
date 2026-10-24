@@ -18,7 +18,7 @@ test('captured current first-party HTTP page retains four observations without i
   assert.ok(cards.every(card => card.jobDescription && card.sourceDetailComplete === false))
   await assert.rejects(createPolicybazaarScraper().run({ fetchImpl: async url => {
     assert.equal(url, 'https://www.policybazaar.com/careers/')
-    return { status: page.status, url: page.finalUrl, text: async () => page.body }
+    const response=new Response(page.body,{status:page.status});Object.defineProperty(response,'url',{value:page.finalUrl});return response
   } }), error => {
     assert.equal(error.code, 'POLICYBAZAAR_COVERAGE_GAP')
     assert.equal(error.inventoryEvidence.status, 'coverage-gap')

@@ -58,6 +58,20 @@ test('experienced job visibility is reversible and consistent across public surf
   t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
   await mongoose.connect(mongo.getUri());
   const { default: jobRoutes } = await import('../src/routes/jobRoutes.js');
+  await t.test('explicit zero ranges and compact year units have literal public categories', async () => {
+    const cases = [
+      { title: 'Engineer', jobType: 'Full-time Experienced', experienceRequired: '0-1years', expected: 'Full-time Fresher' },
+      { title: 'Engineer', jobType: 'Full-time Experienced', experienceRequired: '0-2 years', expected: 'Full-time Fresher' },
+      { title: 'Intern', experienceRequired: '2yrs', expected: 'Full-time Experienced' },
+      { title: 'Intern', jobType: 'Intern', experienceRequired: 'Freshers, 5 years', expected: 'Intern' },
+      { title: 'Engineer', jobType: 'Full-time Fresher', employmentType: 'Hybrid', expected: 'Full-time Fresher' },
+    ];
+    const collection = mongoose.connection.collection('literal_category_cases');
+    await collection.insertMany(cases);
+    const actual = await collection.aggregate([{ $project: { category: PUBLIC_JOB_TYPE_EXPRESSION } }]).toArray();
+    assert.deepEqual(actual.map(row => row.category), ['Full-time Fresher', 'Full-time Fresher', 'Full-time Experienced', 'Intern', 'Full-time Fresher']);
+    for (const job of cases) assert.equal(normalizeJobListResponseJob(job).jobType, job.expected);
+  });
   await t.test('Mongo category decisions match response normalization for legacy and experience variants', async () => {
     const types = ['Full-time Experienced', 'Full-time Fresher', 'Full-time', 'Intern', 'Internship', 'Contract', 'Others', 'part-time', '', 'Permanent'];
     const variants = [
@@ -84,7 +98,7 @@ test('experienced job visibility is reversible and consistent across public surf
     fingerprint: String(ids[index]), _id: ids[index], title: `Opportunity ${index}`, company: `Company ${index}`, companyKey: `company ${index}`,
     jobType, status: 'active', isPublicIndia: true, city: 'Bangalore', country: 'India', description: 'Deliver software features and support the engineering team.',
     sourceUrl: `https://example.com/jobs/${index}`, applyUrl: `https://example.com/jobs/${index}`,
-    postedAt: new Date('2026-01-01'), sortDate: new Date('2026-01-01'),
+    postedAt: new Date(), sortDate: new Date(),
   })));
   const userId = new mongoose.Types.ObjectId();
   await User.collection.insertOne({ _id: userId, email: 'visibility@example.com', savedJobs: ids });
@@ -159,7 +173,7 @@ test('experienced job visibility is reversible and consistent across public surf
     await Job.collection.insertMany(variants.map((variant, index) => ({
       ...variant, fingerprint: String(variantIds[index]), _id: variantIds[index], company: 'Legacy ' + index, companyKey: 'legacy ' + index,
       status: 'active', isPublicIndia: true, city: 'Bangalore', sourceUrl: 'https://example.com/legacy/' + index, description: 'Deliver software features and support the engineering team.',
-      postedAt: new Date('2026-01-01'), sortDate: new Date('2026-01-01'),
+      postedAt: new Date(), sortDate: new Date(),
     })));
     try {
       const result = await read('/api/jobs');
