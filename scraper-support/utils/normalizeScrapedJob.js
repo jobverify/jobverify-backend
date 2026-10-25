@@ -2,7 +2,7 @@ import { withSourceDescription } from '../../src/utils/jobSourceContent.js';
 import { normalizePublicJobType } from '../../src/utils/publicJobTypeLabel.js';
 import { extractJobFilterSignals, hasEntryLevelCue } from '../../src/utils/jobFilterSignals.js'
 import { applyClassification, getAuthoritativeClassification } from '../../src/services/jobClassificationPolicy.js'
-import { resolveJobPostedAt } from '../../src/utils/jobLifecycle.js'
+import { resolveJobPublicationDate } from '../../src/utils/jobPublicationDate.js'
 
 const normalizeString = (value) => {
   if (value == null) return null
@@ -1474,11 +1474,8 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
       sourceUrl,
     }, provider)
   )
-  const resolvedPostedAt = resolveJobPostedAt({
-    ...job,
-    scrapedTimestamp,
-    scrapedAt: scrapedTimestamp,
-  }) || scrapedTimestamp
+  const publicationDate = resolveJobPublicationDate(job, { observationDate: scrapedTimestamp })
+  const resolvedPostedAt = publicationDate.date || scrapedTimestamp
   const requiredSkills = filterSkillNamesTagsForSource(
     normalizeStringArray(job.requiredSkills),
     job.source || provider.source,
@@ -1517,6 +1514,8 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
     requisitionId: normalizeString(job.requisitionId || job.reqId),
     postedAt: resolvedPostedAt,
     postingDate: resolvedPostedAt,
+    postedAtProvenance: publicationDate.provenance,
+    postedAtProvenanceValue: resolvedPostedAt.toISOString(),
     closingDate: normalizeDate(job.closingDate),
     applyUrl,
     ...(hasEmailApplication && sourceUrl ? { applicationUrlIsGeneric: true } : {}),

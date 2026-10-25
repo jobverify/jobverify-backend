@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const ABOUT_PAGE_URL = 'https://www.ironmountain.com/about-us'
 const CAREERS_URL = 'https://ironmountain.jobs/'
@@ -206,220 +208,72 @@ test('mapSitemapEntryToJob converts public India sitemap URLs into normalized jo
   )
 })
 
-test('Iron Mountain India run validates the official handoff, filters to India URLs, and decorates jobs', async () => {
-  const ironMountainIndia = await loadIronMountainIndiaModule()
-  const requestedUrls = []
+const nativeSamples = [
+  '3E5B9F4951D04C2B88CB21B5658F3CC1',
+  '60603B3B91B24C10B1A347BF7944B439',
+].map(id => JSON.parse(readFileSync(new URL('./fixtures/ironmountainindia/native-' + id + '-20261024.json', import.meta.url))))
+const nativeSitemap = '<urlset>' + nativeSamples.map(sample => '<url><loc>' + sample.entry.url + '</loc><lastmod>' + sample.entry.lastmod + '</lastmod></url>').join('') + '</urlset>'
+const nativeReceipt = url => {
+  if (url === ABOUT_PAGE_URL) return { status: 200, url, html: aboutPageHtml }
+  if (url === CAREERS_URL) return { status: 200, url, html: jobsBoardHtml }
+  if (url === JOBS_SITEMAP_URL) return { status: 200, url, html: nativeSitemap }
+  for (const sample of nativeSamples) {
+    if (url === sample.nativeDataUrl) return { status: 200, url, html: JSON.stringify(sample.nlx) }
+    if (url === sample.nlx.link) return sample.applyReceipt
+    if (url === sample.cxsUrl) return { status: sample.cxsStatus, url, html: JSON.stringify(sample.cxs) }
+  }
+  throw new Error('Unexpected Iron Mountain native fixture URL: ' + url)
+}
 
-  const jobs = await ironMountainIndia.createIronMountainIndiaScraper({
-    now: () => '2026-07-16T09:30:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === ABOUT_PAGE_URL) return aboutPageHtml
-      if (url === CAREERS_URL) return jobsBoardHtml
-      if (url === JOBS_SITEMAP_URL) return sitemapXml
-      if (/^https:\/\/ironmountain\.jobs\/.+\/job\/$/i.test(url)) return jobDetailShellHtml
-      throw new Error(`Unexpected Iron Mountain India fixture URL: ${url}`)
-    },
+test('Iron Mountain India run binds each native detail and decorates original employer content', async () => {
+  const source = await loadIronMountainIndiaModule(), requested = []
+  const jobs = await source.createIronMountainIndiaScraper({ now: () => '2026-10-24T18:32:19.000Z' }).run({
+    requestIntervalMs: 0, fetchPage: async url => { requested.push(url); return nativeReceipt(url) },
   })
-
-  assert.deepEqual(requestedUrls, [
-    ABOUT_PAGE_URL,
-    CAREERS_URL,
-    JOBS_SITEMAP_URL,
-    'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
-    'https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/',
-  ])
-  assert.deepEqual(jobs, [
-    {
-      title: 'Business Development Manager PSU',
-      company: 'Iron Mountain India',
-      department: null,
-      location: 'Mumbai, India',
-      city: 'Mumbai',
-      country: 'India',
-      jobId: 'CA3B2FE418DD4D93BA414E6E9A0A9EE8',
-      requisitionId: 'CA3B2FE418DD4D93BA414E6E9A0A9EE8',
-      sourceUrl: 'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
-      applyUrl: 'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '2026-07-12',
-      closingDate: null,
-      jobDescription: null,
-      publicExperienceChecked: true,
-      link: 'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
-      source: 'ironmountainindia',
-      scrapedAt: '2026-07-16T09:30:00.000Z',
-    },
-    {
-      title: 'Information Security Lead',
-      company: 'Iron Mountain India',
-      department: null,
-      location: 'Bangalore, India',
-      city: 'Bangalore',
-      country: 'India',
-      jobId: '20AC18A6C9E94DC496CD2CF69B073684',
-      requisitionId: '20AC18A6C9E94DC496CD2CF69B073684',
-      sourceUrl: 'https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/',
-      applyUrl: 'https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '2026-07-12',
-      closingDate: null,
-      jobDescription: null,
-      publicExperienceChecked: true,
-      link: 'https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/',
-      source: 'ironmountainindia',
-      scrapedAt: '2026-07-16T09:30:00.000Z',
-    },
-  ])
-})
-
-test('Iron Mountain India fails closed when the about page or jobs board drifts away from the verified surface', async () => {
-  const ironMountainIndia = await loadIronMountainIndiaModule()
-
-  await assert.rejects(
-    ironMountainIndia.createIronMountainIndiaScraper().run({
-      fetchText: async (url) => {
-        if (url === ABOUT_PAGE_URL) return '<html><title>About Another Company</title></html>'
-        if (url === CAREERS_URL) return jobsBoardHtml
-        if (url === JOBS_SITEMAP_URL) return sitemapXml
-        throw new Error(`Unexpected Iron Mountain India fixture URL: ${url}`)
-      },
-    }),
-    /about page/i,
-  )
-
-  await assert.rejects(
-    ironMountainIndia.createIronMountainIndiaScraper().run({
-      fetchText: async (url) => {
-        if (url === ABOUT_PAGE_URL) return aboutPageHtml
-        if (url === CAREERS_URL) return '<html><title>Jobs</title></html>'
-        if (url === JOBS_SITEMAP_URL) return sitemapXml
-        throw new Error(`Unexpected Iron Mountain India fixture URL: ${url}`)
-      },
-    }),
-    /jobs board/i,
-  )
-})
-
-test('Iron Mountain India can recover with browser-backed first-party HTML when direct requests are rate-limited', async () => {
-  const ironMountainIndia = await loadIronMountainIndiaModule()
-  const attempts = []
-
-  const jobs = await ironMountainIndia.createIronMountainIndiaScraper({
-    now: () => '2026-07-16T09:30:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      attempts.push(`http:${url}`)
-      if (url === JOBS_SITEMAP_URL) return sitemapXml
-      throw new Error(`HTTP 429 for ${url}`)
-    },
-    fetchBrowserText: async (url) => {
-      attempts.push(`browser:${url}`)
-      if (url === ABOUT_PAGE_URL) return aboutPageHtml
-      if (url === CAREERS_URL) return jobsBoardHtml
-      if (/^https:\/\/ironmountain\.jobs\/.+\/job\/$/i.test(url)) return jobDetailShellHtml
-      throw new Error(`Unexpected Iron Mountain India browser URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(attempts, [
-    `http:${ABOUT_PAGE_URL}`,
-    `browser:${ABOUT_PAGE_URL}`,
-    `http:${CAREERS_URL}`,
-    `browser:${CAREERS_URL}`,
-    `http:${JOBS_SITEMAP_URL}`,
-    `http:https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/`,
-    `browser:https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/`,
-    `http:https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/`,
-    `browser:https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/`,
-  ])
   assert.equal(jobs.length, 2)
+  assert.deepEqual(requested, [ABOUT_PAGE_URL, CAREERS_URL, JOBS_SITEMAP_URL,
+    ...nativeSamples.flatMap(sample => [sample.nativeDataUrl, sample.nlx.link, sample.cxsUrl])])
+  assert.equal(jobs[0].jobDescription, nativeSamples[0].cxs.jobPostingInfo.jobDescription)
   assert.equal(jobs[0].source, 'ironmountainindia')
+  assert.equal(jobs[0].scrapedAt, '2026-10-24T18:32:19.000Z')
+  assert.equal(jobs[0].postingDate, '2026-09-30')
+  assert.equal(jobs[0].link, nativeSamples[0].applyReceipt.url)
+  assert.equal(jobs[0].sourceNativeEmployerEvidence.primaryLegalEmployer, '45101 Web Werks India Pvt Ltd')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
 })
 
-test('Iron Mountain India also runs when the first-party about page is Vercel-checkpointed but the NLX board stays public', async () => {
-  const ironMountainIndia = await loadIronMountainIndiaModule()
-  const requestedUrls = []
-
-  const jobs = await ironMountainIndia.createIronMountainIndiaScraper({
-    now: () => '2026-08-13T18:30:00.000Z',
-  }).run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === ABOUT_PAGE_URL) {
-        return { status: 429, url, html: vercelSecurityCheckpointHtml }
-      }
-
-      if (url === CAREERS_URL) {
-        return { status: 200, url, html: jobsBoardHtml }
-      }
-
-      if (url === JOBS_SITEMAP_URL) {
-        return { status: 200, url, html: sitemapXml }
-      }
-
-      if (/^https:\/\/ironmountain\.jobs\/.+\/job\/$/i.test(url)) {
-        return { status: 200, url, html: currentJobDetailShellHtml }
-      }
-
-      throw new Error(`Unexpected Iron Mountain India fixture URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    ABOUT_PAGE_URL,
-    CAREERS_URL,
-    JOBS_SITEMAP_URL,
-    'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
-    'https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/',
-  ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].scrapedAt, '2026-08-13T18:30:00.000Z')
+test('Iron Mountain India fails closed when the about page or jobs board changes', async () => {
+  const source = await loadIronMountainIndiaModule()
+  for (const [target, pattern] of [[ABOUT_PAGE_URL, /about page/i], [CAREERS_URL, /jobs board/i]]) {
+    await assert.rejects(source.run({ requestIntervalMs: 0, fetchPage: async url => url === target
+      ? { status: 200, url, html: '<title>Another company</title>' } : nativeReceipt(url) }), pattern)
+  }
 })
 
-test('Iron Mountain India also falls back to browser-backed HTML when direct requests time out', async () => {
-  const ironMountainIndia = await loadIronMountainIndiaModule()
-  const attempts = []
+test('Iron Mountain India rejects text-only browser fallback hooks before making requests', async () => {
+  const source = await loadIronMountainIndiaModule()
+  let attempts = 0
+  await assert.rejects(source.run({
+    fetchText: async () => { attempts++; throw new Error('HTTP429') },
+    fetchBrowserText: async () => { attempts++; return jobDetailShellHtml },
+  }), /response receipts/)
+  assert.equal(attempts, 0)
+})
 
-  const jobs = await ironMountainIndia.createIronMountainIndiaScraper({
-    now: () => '2026-08-02T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      attempts.push(`http:${url}`)
-      throw new TypeError(`fetch failed | Connect Timeout Error for ${url}`)
-    },
-    fetchBrowserText: async (url) => {
-      attempts.push(`browser:${url}`)
-      if (url === ABOUT_PAGE_URL) return aboutPageHtml
-      if (url === CAREERS_URL) return jobsBoardHtml
-      if (url === JOBS_SITEMAP_URL) return sitemapXml
-      if (/^https:\/\/ironmountain\.jobs\/.+\/job\/$/i.test(url)) return jobDetailShellHtml
-      throw new Error(`Unexpected Iron Mountain India browser URL: ${url}`)
-    },
+test('Iron Mountain retains native employer evidence when the corporate page is checkpointed and keeps scope incomplete', async () => {
+  const source = await loadIronMountainIndiaModule()
+  const jobs = await source.run({ now: () => '2026-10-24T18:32:19.000Z', requestIntervalMs: 0,
+    fetchPage: async url => url === ABOUT_PAGE_URL
+      ? { status: 429, url, html: vercelSecurityCheckpointHtml } : nativeReceipt(url),
   })
-
-  assert.deepEqual(attempts, [
-    `http:${ABOUT_PAGE_URL}`,
-    `browser:${ABOUT_PAGE_URL}`,
-    `http:${CAREERS_URL}`,
-    `browser:${CAREERS_URL}`,
-    `http:${JOBS_SITEMAP_URL}`,
-    `browser:${JOBS_SITEMAP_URL}`,
-    `http:https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/`,
-    `browser:https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/`,
-    `http:https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/`,
-    `browser:https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/`,
-  ])
   assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'ironmountainindia')
+  assert.equal(jobs[0].sourceDescription, nativeSamples[0].cxs.jobPostingInfo.jobDescription)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.match(readInventoryEvidence(jobs).reason, /publisher-about-checkpointed=true/)
+})
+
+test('Iron Mountain propagates a receipt-aware native transport timeout without fabricating current jobs', async () => {
+  const source = await loadIronMountainIndiaModule(), reason = Error('native connection timed out')
+  await assert.rejects(source.run({ fetchPage: async () => { throw reason } }), error => error === reason)
 })

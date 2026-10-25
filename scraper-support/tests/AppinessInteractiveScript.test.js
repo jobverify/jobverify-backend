@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 const careersHtml = `
@@ -178,19 +179,23 @@ test('Appiness Interactive helpers stay pinned to the verified first-party caree
 test('Appiness Interactive run validates the verified careers page before decorating extracted jobs', async () => {
   const appiness = await loadModule()
   const requestedUrls = []
+  const native = JSON.parse(readFileSync(new URL('./fixtures/appinessinteractive/native-4-20261024.json', import.meta.url)))
 
   const jobs = await appiness.createAppinessInteractiveScraper({ maxJobs: 2 }).run({
-    fetchText: async (url) => {
+    requestIntervalMs: 0,
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === appiness.CAREERS_URL) return careersHtml
+      if (url === appiness.CAREERS_URL) return { status: 200, url, html: native.listingHtml }
+      if (url === native.detailUrl) return { status: 200, url, html: native.detailHtml }
       throw new Error(`Unexpected Appiness Interactive URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [appiness.CAREERS_URL])
-  assert.equal(jobs.length, 2)
+  assert.deepEqual(requestedUrls, [appiness.CAREERS_URL, native.detailUrl])
+  assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'appinessinteractive')
-  assert.equal(jobs[0].link, 'https://www.appinessworld.com/careers/job-details/')
+  assert.equal(jobs[0].link, native.detailUrl)
+  assert.match(jobs[0].sourceDescription, /Improve organic search results/)
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
 
@@ -199,8 +204,8 @@ test('Appiness Interactive run fails closed when the verified careers surface dr
 
   await assert.rejects(
     appiness.createAppinessInteractiveScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
+      fetchPage: async url => ({ status: 200, url, html: '<html><body><h1>Unexpected</h1></body></html>' }),
     }),
-    /verified appiness interactive careers surface/i,
+    /Appiness native official listing employer identity changed/i,
   )
 })

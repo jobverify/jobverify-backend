@@ -6,15 +6,26 @@ import * as systech from '../../scraper/systechsolutions/script.js'
 import * as threePillar from '../../scraper/3pillarglobal/script.js'
 import { buildScrapers } from '../providers/index.js'
 import { isIndiaJob } from '../utils/indiaLocationFilter.js'
+import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const capitalHtml = readFileSync(new URL('./fixtures/capitalnumbersinfotech/current-openings.html', import.meta.url), 'utf8')
 const systechHtml = `<title>Careers at Systech \u2013 Data, AI &amp; Analytics Roles \u2013 Systech Solutions</title>
 <p>Open positions &amp; life at Systech</p><p>See open roles</p><p>US Job Openings</p><p>Chennai, India</p>
 <script>fetch("${systech.JOBS_LIST_API_URL}");fetch("${systech.JOBS_DETAIL_API_URL}")</script>`
 const systechJob = { cr21b_jobid: 'c2afe061-06a6-f111-b8de-70a8a59bac0b', cr21b_jobname: 'Platform Administrator (Alteryx)', cr21b_minyearsofexperience: 3 }
-const runThreePillar = (payload) => threePillar.run({
-  fetchText: async (url) => url === threePillar.CAREERS_URL ? '<h1>3Pillar Career Opportunities</h1>' : '<h1>Job openings at 3Pillar</h1>',
-  fetchJson: async () => payload,
+const threePillarCareers = `<title>3Pillar Career Opportunities</title><a href="${threePillar.DARWINBOX_BOARD_URL}">View Opportunities</a>`
+const threePillarJob = id => ({
+  id, title: 'Software Engineer ' + id, locations: 'Chennai, India', country: 'India',
+  jd: '<p>Build and test reliable software services with the engineering team.</p>',
+})
+const runThreePillar = (payload, options = {}) => threePillar.run({
+  fetchImpl: async () => assert.fail('Injected native fixtures must not use real transport'),
+  fetchText: async url => {
+    assert.equal(url, threePillar.CAREERS_URL)
+    return threePillarCareers
+  },
+  fetchListingPage: async () => payload,
+  ...options,
 })
 
 test('Capital Numbers publishes all four verified current public role cards', async () => {
@@ -54,14 +65,26 @@ test('Systech rejects a partially malformed jobs payload', async () => {
   await assert.rejects(systech.run({ fetchText: async () => systechHtml, fetchJson: async () => [systechJob, { unknown: true }] }), /incomplete/i)
 })
 
-test('3Pillar accepts a verified empty Lever array', async () => {
-  assert.deepEqual(await runThreePillar([]), [])
+test('3Pillar accepts only an explicit native zero as a verified empty inventory', async () => {
+  const jobs = await runThreePillar({ status: 'success', job_counts: 0, data: [] })
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'verified-empty')
+  assert.equal(evidence.firstParty, true)
+  assert.equal(evidence.listingComplete, true)
+  assert.equal(evidence.reportedTotal, 0)
+  const unknown = await runThreePillar({ status: 'success', data: [] })
+  assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(unknown)), false)
 })
 
-test('3Pillar rejects malformed nonempty Lever payloads', async () => {
-  for (const payload of [{ error: 'unavailable' }, [{ text: 'Engineer', categories: { location: 'Chennai, India' }, hostedUrl: 'https://jobs.lever.co/3pillarglobal/example' }]]) {
-    await assert.rejects(runThreePillar(payload), /incomplete|array/i)
-  }
+test('3Pillar rejects malformed native inventories and propagates denied listings', async () => {
+  for (const payload of [[], { error: 'unavailable' },
+    { status: 'error', job_counts: 0, data: [] },
+    { status: 'success', job_counts: 1, data: [{ title: 'Engineer', locations: 'Chennai, India' }] },
+  ]) await assert.rejects(runThreePillar(payload), /malformed or incomplete/i)
+  const denied = Object.assign(new Error('HTTP 403'), { status: 403 })
+  await assert.rejects(runThreePillar(null, { fetchListingPage: async () => { throw denied } }),
+    error => error.failureKind === 'blocked_or_access_denied')
 })
 
 test('Script adapter preserves explicitly unknown country before the India filter', async () => {
@@ -72,14 +95,15 @@ test('Script adapter preserves explicitly unknown country before the India filte
   assert.equal(isIndiaJob(jobs[0]), false)
 })
 
-test('3Pillar caller limits cannot mark a truncated listing complete', async () => {
-  const payload = ['one', 'two'].map(id => ({ id, text: 'Engineer', categories: { location: 'Chennai, India' }, hostedUrl: 'https://jobs.lever.co/3pillarglobal/' + id }))
-  const jobs = await threePillar.createThreePillarGlobalScraper({ maxJobs: 1 }).run({
-    fetchText: async (url) => url === threePillar.CAREERS_URL ? '<h1>3Pillar Career Opportunities</h1>' : '<h1>Job openings at 3Pillar</h1>',
-    fetchJson: async () => payload,
-  })
+test('3Pillar caller limits cannot mark a truncated native listing complete', async () => {
+  const jobs = await runThreePillar({ status: 'success', job_counts: 2,
+    data: [threePillarJob('one'), threePillarJob('two')],
+  }, { maxJobs: 1 })
   assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'one')
   assert.equal(jobs[0].sourceListingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 2)
+  assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(jobs)), false)
 })
 
 test('3Pillar invalid caller caps never become successful empty snapshots', async () => {
@@ -88,15 +112,29 @@ test('3Pillar invalid caller caps never become successful empty snapshots', asyn
   }
 })
 
-test('3Pillar rejects an empty or short API inventory that contradicts its current board roles', async () => {
-  const board = '<h1>Job openings at 3Pillar</h1><a href="https://jobs.lever.co/3pillarglobal/one">Engineer</a><a href="https://jobs.lever.co/3pillarglobal/two">Designer</a>'
-  const one = { id: 'one', text: 'Engineer', categories: { location: 'Chennai, India' }, hostedUrl: 'https://jobs.lever.co/3pillarglobal/one' }
-  for (const payload of [[], [one]]) await assert.rejects(threePillar.run({
-    fetchText: async url => url === threePillar.CAREERS_URL ? '<h1>3Pillar Career Opportunities</h1>' : board, fetchJson: async () => payload,
-  }), /incomplete|board.*inventory/i)
-  const jobs = await threePillar.run({
-    fetchText: async url => url === threePillar.CAREERS_URL ? '<h1>3Pillar Career Opportunities</h1>' : board + '<a href="https://jobs.lever.co/3pillarglobal/one/apply">Apply</a>',
-    fetchJson: async () => [one, { ...one, id: 'two', hostedUrl: 'https://jobs.lever.co/3pillarglobal/two' }],
+test('3Pillar short and repeated native inventories stay partial while complete roles retain identity', async () => {
+  await assert.rejects(runThreePillar({ status: 'success', job_counts: 2, data: [] }), /malformed or incomplete/i)
+  const short = await runThreePillar({ status: 'success', job_counts: 2, data: [threePillarJob('one')] })
+  assert.equal(short.length, 1)
+  assert.equal(short[0].sourceListingComplete, false)
+  assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(short)), false)
+  const repeated = await runThreePillar(null, { pageSize: 1,
+    fetchListingPage: async () => ({ status: 'success', job_counts: 2, data: [threePillarJob('one')] }),
   })
-  assert.equal(jobs.length, 2)
+  assert.equal(readInventoryEvidence(repeated).pagesFetched, 2)
+  assert.ok(repeated.every(job => job.sourceListingComplete === false))
+  assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(repeated)), false)
+  const complete = await runThreePillar({ status: 'success', job_counts: 2,
+    data: [threePillarJob('one'), threePillarJob('two')],
+  })
+  assert.deepEqual(complete.map(job => job.jobId), ['one', 'two'])
+  assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(complete)), true)
+  for (const job of complete) {
+    assert.equal(job.source, '3pillarglobal')
+    assert.equal(job.company, '3Pillar Global')
+    assert.equal(job.country, 'India')
+    assert.equal(job.atsPlatform, 'darwinbox')
+    assert.equal(job.sourceUrl, `https://3pillar.darwinbox.com/ms/candidatev2/main/careers/jobDetails/${job.jobId}`)
+    assert.match(job.jobDescription, /Build and test reliable software services/)
+  }
 })

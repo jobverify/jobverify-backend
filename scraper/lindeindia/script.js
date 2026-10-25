@@ -4,6 +4,7 @@ import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
 import { extractActiveDescription, readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { loadCsodContext, loadCsodBranch } from './csod.js'
 
 export const PORTAL_ORIGIN = 'https://leindiacareers.peoplestrong.com'
 export const SOURCE = 'lindeindia'
@@ -112,7 +113,7 @@ const assertDetail = (listing, payload) => {
   const detail = payload?.response
   if (payload?.messageCode?.code !== 200 || !detail || detail.requisitionCode !== listing.jobCode
     || String(detail.requisitionId) !== listing.jobCode.split('/').at(-1) || String(detail.entityID) !== '1475'
-    || detail.jobTitle !== listing.jobTitle || detail.organizationUnitComplete !== listing.organizationUnitComplete
+    || detail.jobTitle !== listing.jobTitle || (detail.organizationUnitComplete != null && detail.organizationUnitComplete !== listing.organizationUnitComplete)
     || detail.locationHierarchyComplete !== listing.locationHierarchyComplete || detail.requisitionStatus !== 'OPEN') fail('detail identity, employer, open status or location conflicts with the listing')
   for (const [detailKey, listingKey] of [['CandidatePortalStartDate','jobPostedDate'],['CandidatePortalEndDate','jobClosureDate']]) {
     if (detail[detailKey] && listing[listingKey] && String(detail[detailKey]).slice(0,10) !== listing[listingKey]) fail('detail lifecycle dates conflict with the listing')
@@ -282,6 +283,7 @@ export const createLindeIndiaScraper = () => ({
       throw new Error('Linde India verified official job locations page no longer matches the known public surface')
     }
 
+    const loadEngineering = async () => {
     const engineeringPortal = await fetchPage(ENGINEERING_PORTAL_URL, {signal})
     signal?.throwIfAborted()
 
@@ -328,22 +330,52 @@ export const createLindeIndiaScraper = () => ({
         signal?.throwIfAborted()
         const description = extractActiveDescription(detail.jobDescription)
         return {...job,source:SOURCE,link:job.applyUrl,scrapedAt,requisitionId:String(detail.requisitionId),
+          sourceClosingDateIsExact:false,
+          ...(detail.organizationUnitComplete == null ? {sourceNativeOrganizationEvidence:{
+            listingPath:record.organizationUnitComplete,detailPath:detail.organizationUnitComplete??null,
+            legalEmployer:LEGAL_EMPLOYER,entityID:String(detail.entityID),
+          }} : {}),
           employmentType:firstNonEmpty(detail.employmentType,job.employmentType),
           jobDescription:description,sourceDescription:description,jobDescriptionHtml:detail.jobDescription}
       }))
+      if (seen.size === total && selected.length === pageJobs.length) { complete = true; break }
       if (Number.isFinite(maxJobs) && jobs.length >= maxJobs) break
-      if (seen.size === total) { complete = true; break }
+    }
+    return {jobs,total,pagesFetched,complete}
     }
 
+    const branches = [], errors = []
+    const collect = async (name, action) => {
+      try { const result = await action(); signal?.throwIfAborted(); branches.push({name,...result}) }
+      catch (error) { signal?.throwIfAborted(); errors.push({name,error}) }
+    }
+    await collect('Engineering',loadEngineering)
+    let jobs = branches.flatMap(branch=>branch.jobs)
+    let context
+    if (!Number.isFinite(maxJobs) || jobs.length < maxJobs) {
+      try { context = await loadCsodContext({fetchPage,fetchJson,boardUrl:INDIA_GASES_URL,signal}) }
+      catch (error) { signal?.throwIfAborted(); errors.push({name:'Gases and ITSC',error}) }
+      if (context) for (const [name,ids] of [['Gases',[1375,1131,1132]],['ITSC',[2266]]]) {
+        if (Number.isFinite(maxJobs) && jobs.length >= maxJobs) break
+        await collect(name,()=>loadCsodBranch({context,ids,fetchJson,pageSize,maxPages,
+          maxJobs:Number.isFinite(maxJobs)?maxJobs-jobs.length:null,detailConcurrency,now,signal}))
+        jobs = branches.flatMap(branch=>branch.jobs)
+      }
+    }
     signal?.throwIfAborted()
-    // The umbrella source also names Gases and ITSC CSOD boards. Engineering
-    // enumeration cannot authorize whole-company cleanup or verified emptiness.
-    for (const job of jobs) job.sourceListingComplete = false
+    if (!branches.length && errors.length) throw errors[0].error
+    const identities = new Set(jobs.map(job=>job.applyUrl))
+    if (identities.size !== jobs.length) fail('umbrella scopes returned duplicate application identities')
+    const complete = branches.length === 3 && branches.every(branch=>branch.complete)
+    const limited = branches.some(branch=>!branch.complete) || (Number.isFinite(maxJobs) && branches.length < 3)
+    for (const job of jobs) job.sourceListingComplete = complete
+    const summary = branches.map(branch=>`${branch.name}: ${branch.complete?'reconciled':'limited read'}, native listing reports ${branch.total} roles`).join('; ')
     return attachInventoryEvidence(jobs, {
-      status:complete?'coverage-gap':'discovery-only',
-      surface:buildApiUrl({limit:pageSize}),firstParty:true,listingComplete:false,pagesFetched,
-      reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),
-      reason:`Verified Engineering ${complete?'enumeration':'limited read'}; native Engineering listing reports ${total} roles. India Gases and ITSC CSOD inventories are not reconciled; whole-company India scope remains open.`,
+      status:complete?(jobs.length?'complete-inventory':'verified-empty'):limited?'discovery-only':'coverage-gap',
+      surface:JOB_LOCATIONS_URL,firstParty:true,listingComplete:complete,pagesFetched:branches.reduce((sum,b)=>sum+b.pagesFetched,0),
+      reportedTotal:complete?jobs.length:null,indiaFacetCount:complete?jobs.length:null,verifiedAt:now(),
+      reason:complete?`All official India scopes reconciled. ${summary}`:
+        `${summary}. Whole-company India scope remains open; Gases and ITSC require independent reconciliation. ${errors.map(({name,error})=>`${name}: ${error.message}`).join('; ')}`,
     })
   },
 })

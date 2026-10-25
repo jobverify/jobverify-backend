@@ -17,8 +17,8 @@ const withPublicCategoryFilters = filters => {
   return result;
 };
 
-export function applyPublicJobVisibility(filters = {}, siteSettings = {}) {
-  const scoped = applyPublicJobLocationScope(filters);
+export function applyPublicJobVisibility(filters = {}, siteSettings = {}, now = new Date()) {
+  const scoped = applyPublicJobLocationScope(filters, now);
   if (siteSettings.experiencedJobsEnabled !== false) return scoped;
   const visible = withPublicCategoryFilters(scoped);
   return { ...visible, $expr: { $and: [visible.$expr, {

@@ -23,20 +23,24 @@ const createResponseDouble = () => {
   return result;
 };
 
+const PUBLIC_SCOPE_NOW = new Date('2026-10-25T12:34:56.000Z');
+
 const assertHasPublicSavedJobScope = (scope) => {
-  const [postedUpperBound, closingLowerBound] =
+  const [postedUpperBound, closingAvailability, postedLowerBound] =
     scope?.$expr?.$and ?? [];
-  const now = postedUpperBound?.$lte?.[1];
-  const today = closingLowerBound?.$gte?.[1];
 
   assert.equal(scope?.isPublicIndia, true);
   assert.equal(scope?.status, "active");
-  assert.ok(now instanceof Date);
-  assert.ok(today instanceof Date);
-  assert.equal(scope.$expr.$and.length, 2);
+  assert.equal(scope.$expr.$and.length, 3);
+  assert.deepEqual(postedUpperBound, { $lte: [{ $ifNull: ['$postedAt', PUBLIC_SCOPE_NOW] }, PUBLIC_SCOPE_NOW] });
+  assert.deepEqual(closingAvailability, { $or: [
+    { $eq: [{ $ifNull: ['$closingDate', null] }, null] },
+    { $gt: ['$closingDate', PUBLIC_SCOPE_NOW] },
+  ] });
+  assert.deepEqual(postedLowerBound, { $gte: [
+    { $ifNull: ['$postedAt', PUBLIC_SCOPE_NOW] }, new Date('2026-09-25T00:00:00.000Z'),
+  ] });
   assert.deepEqual(scope.$nor, [buildAggregateHiringSignalFilter(), buildMissingSourceDescriptionFilter()]);
-  assert.equal(today.getUTCHours(), 0);
-  assert.equal(today.getUTCMinutes(), 0);
 };
 
 test("user schema stores saved job references", () => {
@@ -153,6 +157,7 @@ test("getSavedJobs drops unavailable saved jobs and returns a consistent count",
 });
 
 test("getSavedJobs applies the public job visibility scope", async (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: +PUBLIC_SCOPE_NOW });
   t.mock.method(User, 'updateOne', async () => ({ modifiedCount: 1 }));
   const { getSavedJobs } = await import("../src/controllers/userController.js");
   const originalFindById = User.findById;
@@ -291,7 +296,8 @@ test("saveJob adds a job only once and returns the updated overview count", asyn
   }
 });
 
-test("saveJob only accepts jobs that are still publicly visible", async () => {
+test("saveJob only accepts jobs that are still publicly visible", async (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: +PUBLIC_SCOPE_NOW });
   const { saveJob } = await import("../src/controllers/userController.js");
   const originalUserFindById = User.findById;
   const originalJobFindById = Job.findById;

@@ -22,8 +22,8 @@ import { buildJobDerivedFields } from '../../src/utils/jobDerivedFields.js'
 import {
   normalizeLifecycleDate,
   resolveJobMissesBeforeExpiry,
-  resolveJobPostedAt,
 } from '../../src/utils/jobLifecycle.js'
+import { resolveJobPublicationDate } from '../../src/utils/jobPublicationDate.js'
 import { normalizeScrapedJob, resolveJobType } from './normalizeScrapedJob.js'
 import { applicationIdentityLookup, applicationPersistenceFilter, coalesceApplicationIdentities, generateFingerprint, resolveApplicationIdentities } from './applicationIdentity.js'
 export { generateFingerprint } from './applicationIdentity.js'
@@ -33,6 +33,9 @@ import { saveLocalJobOutbox } from './localJobOutbox.js'
 import { buildDescriptionSourceUpdate } from '../../src/services/jobDescriptionPolicy.js'
 import { getSourceDescription, hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { postScrapePersistencePatch } from '../../src/services/postScrapeClassification.js'
+import { correctExistingSourceLifecycleDates } from './sourceLifecycleCorrection.js'
+import { correctExistingNativeAvailability, nativeAvailabilityTransition } from './sourceAvailabilityPersistence.js'
+import { supportsNativeRoleAvailability } from './sourceAvailability.js'
 import { refreshJobDatasetSummary } from '../../src/services/jobDatasetSummaryService.js'
 import {
   analyzePublishableJobs,
@@ -299,7 +302,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
   const existingJobs = enrichedJobs.length === 0 || (rewriteMode === 'off' && !hasLiveDatabaseHandle())
     ? []
     : await JobModel.find(applicationIdentityLookup(normalizedJobs))
-      .select('fingerprint jobId requisitionId applicationUrlIsGeneric applyUrl sourceUrl city classification postClassification scrapedAt scrapedTimestamp title originalTitle company location salary description sourceDescription sourceContentHash sourceContentHashVersion descriptionFormat descriptionRewrite minimumQualification preferredQualification sourceEmploymentType sourceExperienceRequired postedAt eligibleBatches eligibleBatchesProvenance jobType employmentType experienceRequired experienceLevel seniority experienceYears experienceBucket experienceProfile')
+      .select('fingerprint jobId requisitionId applicationUrlIsGeneric applyUrl sourceUrl city classification postClassification scrapedAt scrapedTimestamp title originalTitle company location salary description sourceDescription sourceContentHash sourceContentHashVersion descriptionFormat descriptionRewrite minimumQualification preferredQualification sourceEmploymentType sourceExperienceRequired postedAt sortDate postedAtProvenance postedAtProvenanceValue eligibleBatches eligibleBatchesProvenance jobType employmentType experienceRequired experienceLevel seniority experienceYears experienceBucket experienceProfile')
       .lean().exec()
   const identities = coalesceApplicationIdentities(resolveApplicationIdentities(normalizedJobs, existingJobs))
   const existingByKey = new Map(identities.filter(identity => identity.previous).map(identity => [identity.fingerprint, identity.previous]))
@@ -312,12 +315,42 @@ export const saveToDB = async (jobs, source, options = {}) => {
   emitStage(source, onStage, { stage: 'classification', status: 'deferred', jobs: sourceJobs.length })
   throwIfAborted(signal)
 
+  const observationInitializations = []
+  const availabilityTransitions = []
   const operations = jobsForPersistence.map((job, index) => {
     const normalizedJob = normalizeScrapedJob({ ...job, classification: undefined }, { source })
     const fingerprint = generateFingerprint(normalizedJob)
     const sourceUrl = normalizeHttpUrl(normalizedJob.sourceUrl)
     const applyUrl = normalizeHttpUrl(normalizedJob.applyUrl) || sourceUrl
-    const postedAt = resolveJobPostedAt(normalizedJob)
+    const publicationDate = resolveJobPublicationDate(normalizedJob)
+    const observationOnly = publicationDate.provenance === 'observation'
+    const previous = existingByKey.get(fingerprint)
+    const postedAt = observationOnly
+      ? normalizeLifecycleDate(previous?.postedAt) || publicationDate.date
+      : publicationDate.date
+    const sortDate = observationOnly
+      ? normalizeLifecycleDate(previous?.sortDate) || postedAt : postedAt
+    const jobSource = normalizedJob.source || source
+    if (observationOnly && jobSource === source
+      && (previous?.postedAt == null || previous?.sortDate == null)) {
+      const missingPostingDate = { $eq: [{ $ifNull: ['$postedAt', null] }, null] }
+      const roleField = normalizedJob.requisitionId ? 'requisitionId'
+        : normalizedJob.jobId ? 'jobId' : 'title'
+      observationInitializations.push({ updateOne: {
+        filter: { source, fingerprint, [roleField]: normalizedJob[roleField],
+          $or: [{ postedAt: null }, { sortDate: null }] },
+        // Expressions read the document at write time. A concurrent source
+        // date or earlier observer wins, and each existing date is preserved.
+        update: [{ $set: {
+          postedAt: { $ifNull: ['$postedAt', { $literal: now }] },
+          sortDate: { $ifNull: ['$sortDate', { $ifNull: ['$postedAt', { $literal: now }] }] },
+          postedAtProvenance: { $cond: [missingPostingDate, 'observation', '$postedAtProvenance'] },
+          postedAtProvenanceValue: { $cond: [missingPostingDate,
+            { $literal: now.toISOString() }, '$postedAtProvenanceValue'] },
+        } }],
+        upsert: false, timestamps: false,
+      } })
+    }
     const closingDate = normalizeLifecycleDate(normalizedJob.closingDate)
     // Calendar-only source dates include the entire UTC day. Public queries use
     // an exclusive instant cutoff; preserve exact and legacy dates unchanged.
@@ -334,8 +367,21 @@ export const saveToDB = async (jobs, source, options = {}) => {
       locations,
       city: finalCity,
       postedAt,
+      postingDate: postedAt,
+      sortDate,
+      // Deferred classification must see the provenance of the preserved
+      // stored date, including an absent legacy marker, rather than the new
+      // observation anchor that was normalized for this scrape.
+      ...(observationOnly && normalizeLifecycleDate(previous?.postedAt) && {
+        postedAtProvenance: previous.postedAtProvenance,
+        postedAtProvenanceValue: previous.postedAtProvenanceValue,
+      }),
       scrapedAt: normalizedJob.scrapedTimestamp || now,
     }
+    const availabilityTransition = nativeAvailabilityTransition({
+      job: normalizedJob, source, fingerprint, sourceUrl, now,
+    })
+    if (availabilityTransition) availabilityTransitions.push(availabilityTransition)
     const searchKeys = buildJobSearchKeys(persistedJob)
     const derivedFields = buildJobDerivedFields(persistedJob)
     const preserveExistingSourceContent = normalizedJob.preserveExistingSourceContent === true
@@ -397,7 +443,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
             city: finalCity,
             cityKey: searchKeys.cityKey,
             locationKeys: searchKeys.locationKeys,
-            sortDate: derivedFields.sortDate,
+            ...(!observationOnly && { sortDate: derivedFields.sortDate }),
             isPublicIndia: derivedFields.isPublicIndia,
             publicCityKey: derivedFields.publicCityKey,
             state: normalizedJob.state,
@@ -421,14 +467,24 @@ export const saveToDB = async (jobs, source, options = {}) => {
             scrapedTimestamp: normalizedJob.scrapedTimestamp || now,
             lastSeenAt: now,
             missedScrapeCount: 0,
-            status: 'active',
+            ...(!supportsNativeRoleAvailability(jobSource) && { status: 'active' }),
             jobType: resolveJobType(normalizedJob) || inferJobType(normalizedJob.title),
-            // Only persist date fields when the scraper could parse them —
-            // never overwrite a known date with null on a subsequent re-scrape.
-            ...(postedAt && { postedAt }),
+            ...(!observationOnly && postedAt && {
+              postedAt,
+              postedAtProvenance: 'source',
+              postedAtProvenanceValue: postedAt.toISOString(),
+            }),
             ...(closingDate && { closingDate }),
             ...(deferred?.set || {}),
           },
+          // Insert-only fallback protects the first stored observation even if
+          // another writer inserts or recovers a source date after our lookup.
+          ...(observationOnly && publicationDate.date ? { $setOnInsert: {
+            postedAt: publicationDate.date,
+            sortDate: publicationDate.date,
+            postedAtProvenance: 'observation',
+            postedAtProvenanceValue: publicationDate.provenanceValue,
+          } } : {}),
           ...(deferred && Object.keys(deferred.unset).length ? { $unset: deferred.unset } : {}),
         },
         upsert: true,
@@ -445,12 +501,26 @@ export const saveToDB = async (jobs, source, options = {}) => {
     filteredClosed: filterCounts.closed,
     filteredInvalidUrl: filterCounts.invalidUrl,
     filteredEmptyDescription: filterCounts.emptyDescription,
+    ...(filterCounts.unavailable && { filteredUnavailable: filterCounts.unavailable }),
     missed: 0,
     expired: 0,
     eligibleJobs: eligibleJobs.length,
     missesBeforeExpiry,
     staleCheckSkipped: false,
     staleCheckReason: null,
+  }
+
+  if (hasLiveDatabaseHandle()) {
+    const corrected = await correctExistingSourceLifecycleDates({ jobs, source, now, JobModel, signal })
+    if (corrected) {
+      result.correctedSourceDates = corrected
+      result.updated += corrected
+    }
+    const correctedAvailability = await correctExistingNativeAvailability({ jobs, source, now, JobModel, signal })
+    if (correctedAvailability) {
+      result.correctedNativeAvailability = correctedAvailability
+      result.updated += correctedAvailability
+    }
   }
 
   const currentFingerprints = operations.map((operation) => operation.updateOne.update.$set.fingerprint)
@@ -466,7 +536,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
     )
     throwIfAborted(signal)
     result.inserted = bulkResult.upsertedCount ?? 0
-    result.updated = bulkResult.modifiedCount ?? 0
+    result.updated += bulkResult.modifiedCount ?? 0
 
     const upsertedIndexes = Object.keys(bulkResult.upsertedIds ?? {})
       .map((key) => Number.parseInt(key, 10))
@@ -487,7 +557,23 @@ export const saveToDB = async (jobs, source, options = {}) => {
     }
   }
 
-  let shouldRefreshDatasetSummary = operations.length > 0
+  if (hasLiveDatabaseHandle() && availabilityTransitions.length > 0) {
+    await runStage(source, onStage, 'nativeAvailabilityTransitions',
+      () => JobModel.bulkWrite(availabilityTransitions, { ordered: false, timestamps: false }),
+      { operations: availabilityTransitions.length }, { signal })
+  }
+
+  if (hasLiveDatabaseHandle() && observationInitializations.length > 0) {
+    const initialized = await runStage(source, onStage, 'initializeObservationDates',
+      () => JobModel.bulkWrite(observationInitializations, { ordered: false, timestamps: false }),
+      { operations: observationInitializations.length }, { signal })
+    // This can overlap an ordinary updated row. Report its own count rather
+    // than counting the same vacancy twice in result.updated.
+    if (initialized.modifiedCount > 0) result.initializedObservationDates = initialized.modifiedCount
+  }
+
+  let shouldRefreshDatasetSummary = operations.length > 0 || result.correctedSourceDates > 0
+    || result.correctedNativeAvailability > 0
   const incompleteListing = jobs.some((job) => job?.sourceListingComplete === false)
   // Missing descriptions no longer reject otherwise eligible jobs. Incomplete
   // detail collection still cannot authorize cleanup of previous vacancies.
@@ -622,7 +708,8 @@ const stripVolatileDryRunSnapshotFields = (value) => {
 
   return Object.fromEntries(
     Object.entries(value)
-      .filter(([key]) => !VOLATILE_DRY_RUN_SNAPSHOT_FIELDS.has(key))
+      .filter(([key]) => !VOLATILE_DRY_RUN_SNAPSHOT_FIELDS.has(key)
+        && !(key === 'postedAtProvenanceValue' && value.postedAtProvenance === 'observation'))
       .map(([key, entryValue]) => [key, stripVolatileDryRunSnapshotFields(entryValue)]),
   )
 }

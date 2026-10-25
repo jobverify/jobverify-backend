@@ -204,6 +204,7 @@ test('Linde India scraper returns only India jobs from the verified official eng
   const apiRequests = []
 
   const jobs = await lindeIndia.createLindeIndiaScraper().run({
+    maxJobs: 2,
     fetchPage: async (url) => {
       requestedPages.push(url)
 

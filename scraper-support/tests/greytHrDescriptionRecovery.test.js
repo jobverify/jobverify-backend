@@ -2,6 +2,9 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { createGreytHrScraper, extractGreytHrJobs, CAREERS_URL, JOBS_API_URL } from '../../scraper/greythr/script.js'
+import { normalizeScrapedJob } from '../utils/normalizeScrapedJob.js'
+import { analyzePublishableJobs } from '../utils/publishableJobMetrics.js'
+import { buildJobPostedAtCutoff } from '../../src/utils/jobLifecycle.js'
 
 const fixture = name => JSON.parse(readFileSync(new URL(`./fixtures/greythr/${name}.json`, import.meta.url)))
 const careersHtml = '<title>Career and Job Opportunities - Greytip Software</title><h1>Begin the journey of your success here</h1><h2>Come, grow with us</h2><a href="https://greytip.greythr.com/hire/jobs/">Careers</a>'
@@ -89,4 +92,39 @@ test('GreytHR cannot verify an empty source with an unavailable location diction
     fetchText: async () => careersHtml,
     fetchJson: async url => url === JOBS_API_URL ? {data:[]} : {error:'upstream unavailable'},
   }), /location|dictionary/i)
+})
+
+test('GreytHR retains the current native publication timestamp through job normalization', () => {
+  const listing = fixture('publication-dates-20261024')
+  const [job] = extractGreytHrJobs(listing, fixture('categories'))
+  const normalized = normalizeScrapedJob(job, { source: 'greythr' })
+  assert.equal(job.postedDate, '2026-10-07T09:28:03.179412Z', 'Preserve the original native timestamp')
+  assert.equal(job.postingDate, '2026-10-07T09:28:03.179412Z')
+  assert.equal(normalized.postedAt.toISOString(), '2026-10-07T09:28:03.179Z')
+  assert.equal(normalized.postingDate.toISOString(), '2026-10-07T09:28:03.179Z')
+  assert.equal(normalized.sourceDescription, job.sourceDescription)
+})
+
+test('actual GreytHR old roles remain outside insertion and public date scope after description recovery', () => {
+  const now = new Date('2026-10-24T17:01:37.964Z')
+  const jobs = extractGreytHrJobs(fixture('publication-dates-20261024'), fixture('categories'))
+  const rawMetrics = analyzePublishableJobs(jobs, { now })
+  assert.equal(rawMetrics.filterCounts.old, 2)
+  assert.equal(rawMetrics.eligibleJobs.length, 1)
+  const normalized = jobs.map(job => normalizeScrapedJob(job, { source: 'greythr' }))
+  const metrics = analyzePublishableJobs(normalized, { now })
+  assert.equal(metrics.filterCounts.old, 2)
+  assert.equal(metrics.eligibleJobs.length, 1)
+  assert.equal(metrics.eligibleJobs[0].jobId, '7d208252-08e6-485f-aeb8-8dc149cce3be')
+  assert.equal(normalized.filter(job => job.postedAt >= buildJobPostedAtCutoff(now, 60)).length, 2,
+    'The sixty-day storage retention window does not replace the calendar-month insertion/public cutoff')
+  assert.ok(jobs.every(job => job.jobDescription && job.sourceDescription))
+})
+
+test('GreytHR uses native creation time only when native publication time is absent', () => {
+  const listing = fixture('publication-dates-20261024')
+  listing.data[0].published_on_career_page = null
+  const [job] = extractGreytHrJobs(listing, fixture('categories'))
+  assert.equal(job.postingDate, '2026-10-06T07:36:48.332873Z')
+  assert.equal(normalizeScrapedJob(job, { source: 'greythr' }).postedAt.toISOString(), '2026-10-06T07:36:48.332Z')
 })

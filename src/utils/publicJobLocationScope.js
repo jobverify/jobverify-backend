@@ -10,7 +10,6 @@ import { CANONICAL_CITIES } from "../../scraper-support/utils/cities.js";
 import {
   buildPublishableJobPostedAtCutoff,
   normalizeLifecycleDate,
-  startOfUtcDay,
 } from "./jobLifecycle.js";
 
 export const PUBLIC_JOB_ALLOWED_CITIES = Object.freeze([
@@ -269,7 +268,6 @@ export const buildPublicJobLifecycleDateScope = (
   now = new Date(),
 ) => {
   const resolvedNow = normalizeLifecycleDate(now) || new Date();
-  const today = startOfUtcDay(resolvedNow);
 
   return {
     // Unknown dates are not proof that a role has closed, so they remain visible.
@@ -283,9 +281,9 @@ export const buildPublicJobLifecycleDateScope = (
           ],
         },
         {
-          $gte: [
-            { $ifNull: ["$closingDate", today] },
-            today,
+          $or: [
+            { $eq: [{ $ifNull: ["$closingDate", null] }, null] },
+            { $gt: ["$closingDate", resolvedNow] },
           ],
         },
         {

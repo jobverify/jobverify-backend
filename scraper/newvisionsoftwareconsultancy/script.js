@@ -28,7 +28,13 @@ const PAGE_REQUEST_TIMEOUT_MS = 30000
 const API_REQUEST_TIMEOUT_MS = 30000
 const DETAIL_PARTS = 'basic,organisational,descriprion,workflow,skill,qualification,certification,language,applied'
 const LEGAL_EMPLOYER = 'New Vision Softcom & Consultancy Pvt. Ltd'
+const TENANT_ORGANIZATION_ROOTS = new Set(['NewVison', 'NewVision'])
 const fail = message => { throw new Error(`NewVision ${message}`) }
+const hasExpectedEmployerPrefix = value => {
+  if (typeof value !== 'string') return false
+  const parts = value.split('>')
+  return parts.every(part => part.trim()) && TENANT_ORGANIZATION_ROOTS.has(parts[0]) && parts[1] === LEGAL_EMPLOYER
+}
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -140,7 +146,7 @@ export const buildJobDetailsApiUrl = jobCode => `${PORTAL_ORIGIN}/api/cp/rest/al
 
 const assertListingRecord = record => {
   if (!record || !firstNonEmpty(record.jobTitle) || !/^NVS\/[^/]+\/\d+$/.test(record.jobCode || '')
-    || !String(record.organizationUnitComplete ?? '').split('>').includes(LEGAL_EMPLOYER)
+    || !hasExpectedEmployerPrefix(record.organizationUnitComplete)
     || typeof record.locationHierarchyComplete !== 'string' || !record.locationHierarchyComplete.trim()
     || (record.jobDetailUrl && record.jobDetailUrl !== buildJobDetailUrl(record.jobCode))) fail('listing employer, location or application identity is malformed')
   const parts = record.locationHierarchyComplete.split('>').map(normalizeWhitespace)
@@ -153,7 +159,8 @@ const assertDetail = (listing, payload) => {
   const detail = payload?.response
   if (payload?.messageCode?.code !== 200 || !detail || detail.requisitionCode !== listing.jobCode
     || String(detail.requisitionId) !== listing.jobCode.split('/').at(-1) || String(detail.entityID) !== '1397'
-    || detail.jobTitle !== listing.jobTitle || detail.organizationUnitComplete !== listing.organizationUnitComplete
+    || detail.jobTitle !== listing.jobTitle
+    || (detail.organizationUnitComplete != null && !hasExpectedEmployerPrefix(detail.organizationUnitComplete))
     || detail.locationHierarchyComplete !== listing.locationHierarchyComplete || detail.requisitionStatus !== 'OPEN') {
     fail('detail identity, employer, open status or location conflicts with the listing')
   }
@@ -395,6 +402,10 @@ export const createNewVisionSoftwareConsultancyScraper = () => ({
           requisitionId: String(detail.requisitionId),
           employmentType: firstNonEmpty(detail.employmentType, job.employmentType),
           jobDescription: description, sourceDescription: description, jobDescriptionHtml: detail.jobDescription,
+          ...(detail.organizationUnitComplete !== record.organizationUnitComplete ? { sourceNativeOrganizationEvidence: {
+            listingPath: record.organizationUnitComplete, detailPath: detail.organizationUnitComplete ?? null,
+            legalEmployer: LEGAL_EMPLOYER, entityID: String(detail.entityID),
+          } } : {}),
         }
       })
       jobs.push(...pageJobs)

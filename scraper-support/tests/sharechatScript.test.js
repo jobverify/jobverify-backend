@@ -57,7 +57,7 @@ test('extractSearchResults flattens ShareChat careers groups into normalized job
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '2026-05-28T03:57:55.444Z',
+    postingDate: null,
     closingDate: null,
     jobDescription: null
   })
@@ -76,7 +76,7 @@ test('extractSearchResults flattens ShareChat careers groups into normalized job
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '2026-05-25T06:48:19.090Z',
+    postingDate: null,
     closingDate: null,
     jobDescription: null
   })

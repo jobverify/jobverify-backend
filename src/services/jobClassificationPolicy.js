@@ -5,6 +5,7 @@ import { selectClassificationDescription } from './classificationDescription.js'
 import { JOB_CLASSIFICATION_POLICY_VERSION } from '../utils/jobClassificationVersion.js';
 import { resolveRecruitmentPolicy } from './jobRecruitmentPolicy.js';
 import { normalizePublicJobType } from '../utils/publicJobTypeLabel.js';
+import { resolveJobPublicationDate } from '../utils/jobPublicationDate.js';
 
 const normalizedBytes = relative => readFileSync(new URL(`../../${relative}`, import.meta.url)).toString('utf8').replace(/\r\n/g, '\n');
 const policyBytes = normalizedBytes('classification/policy.json');
@@ -14,7 +15,7 @@ export const CLASSIFICATION_MODEL = JSON.parse(readFileSync(new URL('../../class
 export const POLICY_HASH = createHash('sha256').update(policyBytes).digest('hex');
 export const RUNTIME_HASH = createHash('sha256').update(JSON.stringify([
   'classification/gliclass/model.json', 'classification/gliclass/requirements.txt', 'classification/gliclass/worker.py', 'classification/gliclass/runtime.py',
-  'src/services/jobClassificationPolicy.js', 'src/services/classificationDescription.js', 'src/services/jobRecruitmentPolicy.js', 'src/utils/jobClassificationVersion.js', 'src/utils/jobFilterSignals.js', 'src/utils/jobSourceContent.js',
+  'src/services/jobClassificationPolicy.js', 'src/services/classificationDescription.js', 'src/services/jobRecruitmentPolicy.js', 'src/utils/jobClassificationVersion.js', 'src/utils/jobFilterSignals.js', 'src/utils/jobSourceContent.js', 'src/utils/jobPublicationDate.js',
 ].map(relative => [relative, createHash('sha256').update(normalizedBytes(relative)).digest('hex')]))).digest('hex');
 const PUBLIC_TYPES = ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract', 'Others', 'Unspecified'];
 export const CLASSIFICATION_FIELDS = ['jobType', 'employmentType', 'experienceLevel', 'seniority', 'experienceYears', 'experienceBucket', 'experienceProfile', 'experienceRequired', 'experienceBasis'];
@@ -67,10 +68,9 @@ export const buildClassificationInput = (job = {}, { now = new Date(), identity 
       responsibilities: 'Responsibilities', requirements: 'Requirements', experienceRequired: 'Required professional experience',
     }[key]}:\n${value}`),
   ].filter(Boolean))].join('\n');
-  const postedDate = job.postedAt || job.postingDate;
-  const scrapeDate = job.scrapedTimestamp || job.scrapedAt;
-  const inferredPosted = scrapeDate && new Date(postedDate).getTime() === new Date(scrapeDate).getTime();
-  const validPosted = postedDate && !inferredPosted && !Number.isNaN(new Date(postedDate).getTime()) ? new Date(postedDate).toISOString().slice(0, 10) : null;
+  const publicationDate = resolveJobPublicationDate(job);
+  const validPosted = publicationDate.provenance === 'source' && publicationDate.date
+    ? publicationDate.date.toISOString().slice(0, 10) : null;
   const input = {
     title: cleanSourceText(job.originalTitle || job.title), body, sourceFields, sourceEmploymentType,
     descriptionOrigin: selectedDescription.origin, descriptionIdentity: selectedDescription.identity,
@@ -119,13 +119,15 @@ const sourceNumericFields = input => {
     .replace(new RegExp('\\b' + breakWords + '\\s+(?:(?:of|for|up to|at most|maximum|minimum|between)\\s+)*' + NUMERIC_SOURCE_PATTERN.source, 'gi'), 'career break')
     .replace(new RegExp('^[\\t ]*(?:in|within|after|by|at)\\s+(?:the\\s+)?(?:(?:first|next|initial)\\s+)?' + NUMERIC_SOURCE_PATTERN.source + '[\\t ]*[:=-]?[\\t ]*$', 'gim'), 'performance milestone')
     .replace(new RegExp(NUMERIC_SOURCE_PATTERN.source + '\\s+(?:(?:of\\s+)?(?:service|employment|training)\\s+bond\\b|(?:of\\s+)?bond\\b(?=[\\t ]*(?:[,;.]|$)))', 'gim'), 'service bond');
-  const requiredPhrase = separated.required.match(/\b(?:requir(?:ing|ed|es)|must have|at least|minimum(?: of)?)\s+(\d+(?:\.\d+)?(?:\s*(?:-|to)\s*\d+(?:\.\d+)?)?\s*(?:years?|yrs?|months?)\s+(?:of\s+)?[a-z -]{0,45}\bexperience)\b/i)?.[0];
   // The legacy bare-label parser reads only the first value of "Experience:
   // 0-2 years". Pass the whole source-backed quantity, including its unit.
   const labeledPhrase = separated.required.match(new RegExp('\\bexperience\\s*:\\s*(' + NUMERIC_SOURCE_PATTERN.source
     + '(?:\\s*(?:-|to|~)\\s*' + NUMERIC_SOURCE_PATTERN.source + ')?)', 'i'))?.[1];
+  const requiredPhrase = separated.required.match(/\b(?:requir(?:ing|ed|es)|must have|at least|minimum(?: of)?)\s+(\d+(?:\.\d+)?(?:\s*(?:-|to)\s*\d+(?:\.\d+)?)?\s*(?:years?|yrs?|months?)\s+(?:of\s+)?[a-z -]{0,45}\bexperience)\b/i)?.[0]
+    || (!labeledPhrase && separated.required.match(new RegExp(NUMERIC_SOURCE_PATTERN.source
+      + '\\s+(?:of\\s+)?[a-z -]{0,45}\\b(?:experience|background)\\s+(?:is\\s+)?(?:required|mandatory)\\b', 'i'))?.[0]);
   const isolatedLabel = labeledPhrase && !input.sourceFields.experienceRequired && !requiredPhrase;
-  const signals = extractJobFilterSignals({ title: input.title, jobDescription: isolatedLabel ? '' : separated.required,
+  const signals = extractJobFilterSignals({ title: input.title, jobDescription: isolatedLabel || requiredPhrase ? '' : separated.required,
     experienceRequired: input.sourceFields.experienceRequired || requiredPhrase || (labeledPhrase ? `${labeledPhrase} of experience` : null) });
   const profile = signals.experienceProfile || {};
   const preferredProfile = NUMERIC_SOURCE_PATTERN.test(separated.preferred)

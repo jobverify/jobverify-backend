@@ -17,6 +17,7 @@ test('current26 explicit foreign primary and secondary scopes reconcile zero Ind
 test('selects secondary India while retaining original foreign primary evidence and full native body',async()=>{
   const rows=structuredClone(actual)
   rows[2].categories.allLocations.push('Bengaluru, India')
+  const before=structuredClone(rows)
   const jobs=await run(options(rows))
   assert.equal(jobs.length,1)
   const job=jobs[0]
@@ -29,6 +30,8 @@ test('selects secondary India while retaining original foreign primary evidence 
   assert.ok(job.jobDescription.length>rows[2].descriptionPlain.length)
   assert.equal(job.sourceDetailComplete,true)
   assert.equal(readInventoryEvidence(jobs).reportedTotal,26)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+  assert.deepEqual(rows,before,'Normalized selected-country projection must not change native primary-country or office evidence')
 })
 test('explicit native IN country selects a city beyond the shared primary city allowlist',async()=>{
   const rows=structuredClone(actual)

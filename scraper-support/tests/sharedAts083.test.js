@@ -4,17 +4,19 @@ import fs from 'node:fs'
 import { pathToFileURL, fileURLToPath } from 'node:url'
 import { gunzipSync } from 'node:zlib'
 import { getScraperCatalog, createCatalogScraper } from '../providers/index.js'
-import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { identifyPublicAtsBoard, hasMatchingPublicAtsBinding } from '../utils/publicAtsIdentity.js'
 import { analyzePublishableJobs } from '../utils/publishableJobMetrics.js'
 import { createPublicAtsAuditCapture } from '../../scripts/catalogExtractionPublicAtsCapture.js'
 import os from 'node:os'
 import path from 'node:path'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 
 const fixtures = JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/sharedAts083.json.gz', import.meta.url))))
 const catalog = getScraperCatalog()
 const ids = Object.keys(fixtures).sort()
 assert.equal(ids.length, 22)
+const unresolvedScopes = new Set(['characterai', 'checkoutcom', 'clearco', 'cohere', 'datafold', 'doximity', 'dutchie', 'ebury', 'elationhealth', 'eqtab', 'eqtcorporation', 'financialtimes'])
 
 for (const source of ids) test(`${source}: exact registered board and direct wrapper retain current zero-match evidence`, async () => {
   const provider = catalog.find(row => row.source === source)
@@ -33,9 +35,11 @@ for (const source of ids) test(`${source}: exact registered board and direct wra
   assert.equal(jobs.length, 0)
   const evidence = readInventoryEvidence(jobs)
   assert.equal(evidence.reportedTotal, fixtures[source].jobs.length)
-  assert.equal(evidence.indiaFacetCount, 0)
+  assert.equal(evidence.indiaFacetCount, unresolvedScopes.has(source) ? null : 0)
+  if (unresolvedScopes.has(source)) assert.match(evidence.reason, /native-location-scope-unresolved/)
   assert.equal(evidence.listingComplete, false)
   assert.equal(evidence.status, 'discovery-only')
+  assert.equal(isFreshCompleteInventoryEvidence(evidence), false)
   assert.match(evidence.reason, /provider-source-scope-unresolved/)
   const directPath = path.resolve(fileURLToPath(new URL('../../scraper/providers/', import.meta.url)), provider.modulePath)
   const direct = await import(pathToFileURL(directPath).href)
@@ -81,7 +85,15 @@ test('synthetic future India roles, missing descriptions, truncation and upstrea
     assert.equal(positive[0].applyUrl, record.applyUrl || record.absolute_url)
     const missing = structuredClone(payload)
     Object.assign(missing.jobs[0], { descriptionHtml: '', descriptionPlain: '', content: '' })
-    assert.equal(analyzePublishableJobs(await run(missing)).eligibleJobs.length, 0, source)
+    const missingJobs = await run(missing)
+    assert.equal(missingJobs.length, 1, source)
+    assert.equal(analyzePublishableJobs(missingJobs).eligibleJobs.length, 1, source)
+    assert.ok(missingJobs.every(job => !hasSourceDescription(job) && !job.jobDescription && !job.sourceDescription), source)
+    assert.ok(missingJobs.every(job => job.sourceListingComplete === false && job.lifecycleCleanupAllowed === false), source)
+    const missingEvidence = readInventoryEvidence(missingJobs)
+    assert.equal(missingEvidence.listingComplete, false, source)
+    assert.match(missingEvidence.reason, /selected-role-description-unavailable/, source)
+    assert.equal(isFreshCompleteInventoryEvidence(missingEvidence), false, source)
     await assert.rejects(run({ ...payload, total: 2, meta: { total: 2 } }), /Incomplete/, source)
     await assert.rejects(createCatalogScraper(provider).run({ fetchJson: async () => { throw new Error('HTTP503') } }), /503/, source)
   }

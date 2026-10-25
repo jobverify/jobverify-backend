@@ -6,14 +6,18 @@
     "requestedUrl": "https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%22134637%22,siteNumber=CX_1",
     "url": "https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%22134637%22,siteNumber=CX_1",
     "status": 200,
-    "bodySha256": "4021cfeafdf4dc3230966e5e1bc4a02c4d18d967d408599fef6f330b4b5065d4"
+    "bodySha256": "4021cfeafdf4dc3230966e5e1bc4a02c4d18d967d408599fef6f330b4b5065d4",
+    "capturedNativeId": "134637",
+    "capturedDescriptionCharacters": 1068
   },
   "fountain": {
     "capturedAt": "2026-10-24T16:20:22.492Z",
     "requestedUrl": "https://ap-1.fountain.com/internal_api/portal/cms/application_forms/new?funnel_id=b775b39d-2a57-4954-b232-0d460503938b&try_new_ui=true&brand_id=a9218256-8fbf-40ab-936b-49ff5ff7c900",
     "url": "https://hire.rekrutek.ai/internal_api/portal/cms/application_forms/new?funnel_id=b775b39d-2a57-4954-b232-0d460503938b&try_new_ui=true&brand_id=a9218256-8fbf-40ab-936b-49ff5ff7c900",
     "status": 200,
-    "bodySha256": "3aecd9bd9326b94c791d9da1c68f41f417178105178d93126d51c64827b6e41c"
+    "bodySha256": "3aecd9bd9326b94c791d9da1c68f41f417178105178d93126d51c64827b6e41c",
+    "observedDescriptionCharacters": 0,
+    "contentRecoveryClaim": false
   },
   "fountainBindings": {
     "cms-careers-binding": {
@@ -43,5 +47,6 @@
       "links": []
     }
   },
-  "limits": "Oracle listing limited to one role and one matching detail; Fountain one known role form and three binding documents; no production writes, no full inventory or publication claim."
+  "limits": "Oracle listing limited to one role and one matching detail; Fountain one known role form and three binding documents; no production writes, no full inventory or publication claim.",
+  "contractTests": "Positive Fountain content tests use explicitly synthetic nonempty content on the observed account/brand/role contract. Actual captured CMS empty JD stays missing."
 }

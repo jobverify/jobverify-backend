@@ -8,19 +8,23 @@ import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../scra
 import { classifyProviderImplementation } from './reportScriptCatalogTopology.js'
 import { classifyScraperError } from '../scraper-support/utils/failureClassification.js'
 import { identifyPublicAtsBoard } from '../scraper-support/utils/publicAtsIdentity.js'
+import { readNativeDocument, activeIframeSources, activeScripts } from '../scraper-support/utils/activeNativeHtml.js'
 export { identifyPublicAtsBoard }
 
 const HTTP = value => {
   try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url : null } catch { return null }
 }
 const ATS_HOST = /(?:^|\.)(?:greenhouse\.io|ashbyhq\.com|lever\.co|myworkdayjobs\.com|myworkdaysite\.com|smartrecruiters\.com|successfactors\.com|oraclecloud\.com|darwinbox\.in|darwinbox\.com|keka\.com|workable\.com|recruitee\.com|breezy\.hr|jobvite\.com|icims\.com)$/i
-const CAREERS = /careers?|jobs?|join[-_/ ]?(?:us|the[-_ ]?team)|vacanc|opportunit|work[-_ ]?with[-_ ]?us|we[-_ ]?are[-_ ]?hiring/i
+const CAREERS = /careers?|jobs?|(?:open|view|available)[-_ /]?(?:roles?|positions?)|join[-_/ ]?(?:us|the[-_ ]?team)|vacanc|opportunit|work[-_ ]?with[-_ ]?us|we[-_ ]?are[-_ ]?hiring/i
+const THIRD_PARTY_HOST = /(?:^|\.)(?:linkedin\.com|facebook\.com|instagram\.com|twitter\.com|x\.com|youtube\.com|glassdoor\.com|indeed\.com)$/i
 const decode = text => String(text || '').replace(/\\u002[fF]/g, '/').replace(/\\\//g, '/').replace(/&amp;/gi, '&')
 
 const defaultFetchPage = async url => {
   const response = await fetch(url, { signal: AbortSignal.timeout(10000), headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify careers inventory check)' } })
   if (Number(response.headers.get('content-length')) > 3000000) throw new Error('official_response_too_large')
-  return { status: response.status, url: response.url, html: (await response.text()).slice(0, 3000000) }
+  const html = await response.text()
+  if (Buffer.byteLength(html, 'utf8') > 3000000) throw new Error('official_response_too_large')
+  return { status: response.status, url: response.url, html }
 }
 
 const defaultFetchJson = async url => {
@@ -30,18 +34,28 @@ const defaultFetchJson = async url => {
 }
 
 export const discoverOfficialAtsBoards = async (provider, { fetchPage = defaultFetchPage } = {}) => {
-  const roots = [provider.companyCareerPage, provider.officialHomepageUrl, provider.officialCareersPageUrl,
+  const suppliedRoots = [provider.companyCareerPage, provider.officialHomepageUrl, provider.officialCareersPageUrl,
     provider.companyDomain ? `https://${provider.companyDomain.replace(/^https?:\/\//, '').replace(/\/$/, '')}/` : null]
-    .filter(value => { const url = HTTP(value); return url && !ATS_HOST.test(url.hostname) })
+    .filter(value => { const url = HTTP(value); return url && !url.username && !url.password && !ATS_HOST.test(url.hostname) && !THIRD_PARTY_HOST.test(url.hostname) })
+  const declaredDomain = provider.companyDomain && HTTP(/^https?:\/\//i.test(provider.companyDomain) ? provider.companyDomain : `https://${provider.companyDomain}`)
+  const trustedBase = (declaredDomain && !ATS_HOST.test(declaredDomain.hostname) && !THIRD_PARTY_HOST.test(declaredDomain.hostname)
+    ? declaredDomain.hostname : HTTP(suppliedRoots[0])?.hostname)?.replace(/^www\./i, '')
+  const trusted = url => Boolean(url && !url.username && !url.password && trustedBase
+    && (url.hostname === trustedBase || url.hostname.endsWith(`.${trustedBase}`)))
+  const roots = suppliedRoots.filter(value => trusted(HTTP(value)))
   const queue = [...new Set(roots)]
   const seen = new Set()
   const boards = new Map()
+  const candidateBoards = new Map()
   const checks = []
-  const addBoard = (url, officialURL, evidenceURL, method, status) => {
+  const addBoard = (url, officialURL, evidenceURL, method, status, verified = true) => {
+    const target = HTTP(url)
+    if (!target || target.protocol !== 'https:' || target.username || target.password) return
     const board = identifyPublicAtsBoard(url)
     if (!board) return
-    boards.set(`${board.atsPlatform}:${board.boardToken}`, { ...board, bindingEvidence: {
-      verified: true, checkedAt: new Date().toISOString(), officialURL, evidenceURL,
+    const key = `${board.atsPlatform}:${board.boardToken}`
+    ;(verified ? boards : candidateBoards).set(key, { ...board, bindingEvidence: {
+      verified, checkedAt: new Date().toISOString(), officialURL, evidenceURL,
       httpStatus: status, matchedLinks: [url], bindingMethod: method,
     } })
   }
@@ -51,39 +65,54 @@ export const discoverOfficialAtsBoards = async (provider, { fetchPage = defaultF
     seen.add(requestedURL)
     try {
       const response = await fetchPage(requestedURL)
-      const finalURL = response.url || requestedURL
+      const finalURL = typeof response.url === 'string' ? response.url : null
       checks.push({ requestedURL, finalURL, httpStatus: response.status, checkedAt: new Date().toISOString() })
+      const pageURL = HTTP(finalURL)
+      if (!pageURL) continue
       // A successful redirect from the official company site binds the ATS.
-      if (response.status >= 200 && response.status < 400 && identifyPublicAtsBoard(finalURL)) {
+      if (response.status >= 200 && response.status < 300 && identifyPublicAtsBoard(finalURL)) {
         addBoard(finalURL, requestedURL, finalURL, 'official-redirect', response.status)
         continue
       }
       if (response.status < 200 || response.status >= 300) continue
+      if (!trusted(pageURL) || ATS_HOST.test(pageURL.hostname)) continue
+      if (typeof response.html !== 'string' || Buffer.byteLength(response.html, 'utf8') > 3000000) continue
       const html = decode(response.html)
-      const pageURL = HTTP(finalURL)
-      if (!pageURL || ATS_HOST.test(pageURL.hostname)) continue
+      const documentOptions = { excludeObjectFallback: true }
+      const document = readNativeDocument(html, documentOptions)
       const careersPage = CAREERS.test(pageURL.pathname + ' ' + pageURL.hostname)
-      const anchors = [...html.matchAll(/<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
-      for (const [, href, body] of anchors) {
-        const target = HTTP(new URL(href, pageURL).href)
+        || [provider.companyCareerPage, provider.officialCareersPageUrl].includes(requestedURL)
+      const resolve = value => { try { return HTTP(new URL(value, pageURL).href) } catch { return null } }
+      for (const anchor of document.nodes(node => node.tag === 'a' && node.attrs.href)) {
+        const target = resolve(anchor.attrs.href)
         if (!target) continue
-        const hiringLink = CAREERS.test(body.replace(/<[^>]*>/g, ' ') + ' ' + target.pathname)
-        if (careersPage || hiringLink) addBoard(target.href, finalURL, finalURL, 'official-careers-link', response.status)
-        if (hiringLink && target.hostname === pageURL.hostname && !seen.has(target.href) && !queue.includes(target.href)) queue.push(target.href)
+        const hiringLink = CAREERS.test(document.text(anchor) + ' ' + target.pathname)
+        if (hiringLink) addBoard(target.href, finalURL, finalURL, 'official-careers-link', response.status)
+        if (hiringLink && trusted(target) && !seen.has(target.href) && !queue.includes(target.href)) queue.push(target.href)
       }
       if (careersPage) {
-        for (const value of html.match(/https?:\/\/[^\s<>"'\\`]+/g) || []) addBoard(value, finalURL, finalURL, 'official-careers-embedded-board', response.status)
-        const scripts = [...html.matchAll(/<script\b[^>]*src\s*=\s*["']([^"']+)["']/gi)]
-          .map(([, src]) => { try { return new URL(src, pageURL) } catch { return null } })
-          .filter(url => url && url.hostname === pageURL.hostname && !/analytics|tracking|pixel|gtag/i.test(url.pathname))
+        for (const value of activeIframeSources(html, documentOptions)) {
+          const target = resolve(value)
+          if (target) addBoard(target.href, finalURL, finalURL, 'official-careers-active-iframe', response.status)
+        }
+        const collectCandidates = (body, evidenceURL, status) => {
+          for (const value of decode(body).match(/https?:\/\/[^\s<>"'\\`]+/g) || []) {
+            addBoard(value, finalURL, evidenceURL, 'unverified-script-candidate', status, false)
+          }
+        }
+        for (const body of activeScripts(html, documentOptions)) collectCandidates(body, finalURL, response.status)
+        const scripts = document.nodes(node => node.tag === 'script' && node.attrs.src)
+          .map(node => resolve(node.attrs.src))
+          .filter(url => trusted(url) && !/analytics|tracking|pixel|gtag/i.test(url.pathname))
           .sort((a, b) => Number(/career|job|greenhouse|ashby|lever/i.test(b.pathname)) - Number(/career|job|greenhouse|ashby|lever/i.test(a.pathname)))
         // Bounded source inspection, never executing third-party page code.
         if (boards.size === 0) for (const url of scripts.slice(0, 2)) {
           try {
             const script = await fetchPage(url.href)
-            if (script.status !== 200) continue
-            checks.push({ requestedURL: url.href, finalURL: script.url || url.href, httpStatus: script.status, checkedAt: new Date().toISOString() })
-            for (const value of decode(script.html).match(/https?:\/\/[^\s<>"'\\`]+/g) || []) addBoard(value, finalURL, url.href, 'official-careers-linked-script', script.status)
+            checks.push({ requestedURL: url.href, finalURL: script.url || null, httpStatus: script.status, checkedAt: new Date().toISOString() })
+            if (script.status !== 200 || !trusted(HTTP(script.url)) || typeof script.html !== 'string'
+              || Buffer.byteLength(script.html, 'utf8') > 3000000) continue
+            collectCandidates(script.html, script.url, script.status)
           } catch { /* Retain the page check without inventing a board. */ }
         }
       }
@@ -92,7 +121,8 @@ export const discoverOfficialAtsBoards = async (provider, { fetchPage = defaultF
       checks.push({ requestedURL, httpStatus: null, checkedAt: new Date().toISOString(), failureKind: error?.name === 'TimeoutError' ? 'timeout' : 'network_or_response_error' })
     }
   }
-  return { boards: [...boards.values()], checks, reason: boards.size ? null : roots.length ? 'no-verified-supported-ats-binding' : 'missing-official-company-surface' }
+  return { boards: [...boards.values()], candidateBoards: [...candidateBoards].filter(([key]) => !boards.has(key)).map(([, board]) => board),
+    checks, reason: boards.size ? null : roots.length ? 'no-verified-supported-ats-binding' : 'missing-official-company-surface' }
 }
 
 export const auditCatalogProvider = async (provider, options = {}) => {

@@ -1,0 +1,166 @@
+{
+  "source": "dassaultaviationindia",
+  "company": "Dassault Aviation India",
+  "updatedAt": "2026-10-24T18:08:14.494Z",
+  "investigation": "Original archive hard failure reproduced; narrowly classified the exact observed Incapsula corporate shell as a soft blocked diagnostic. No recruiting inventory recovery or current corporate binding established.",
+  "archive": {
+    "completedAt": "2026-10-24T09:13:14.894Z",
+    "error": "Corporate employer identity missing"
+  },
+  "corporatePublisher": {
+    "url": "https://www.dassault-aviation.com/en/group/careers/",
+    "finalUrl": "https://www.dassault-aviation.com/en/group/careers/",
+    "status": 200,
+    "capturedAt": "2026-10-24T18:00:03.542Z",
+    "bodyBytes": 958,
+    "bodySha256": "ddcd4f9d0158126df5726e23b2dacadbca4776bb52ec5e4b677c1ed721d014a8",
+    "activeEmployerText": false,
+    "activeHandoff": false,
+    "titleCount": 0,
+    "headingCount": 0,
+    "observedResourcePath": "/_Incapsula_Resource",
+    "robots": "NOINDEX, NOFOLLOW",
+    "interpretation": "Successful HTTP status with unavailable corporate content; not employer proof or a verified empty inventory."
+  },
+  "nativeBoundedObservation": {
+    "capturedAt": "2026-10-24T18:01:59.639Z",
+    "entry": {
+      "url": "https://carriere.dassault-aviation.com/accueil.aspx?LCID=1036",
+      "status": 200,
+      "finalUrl": "https://dassault-aviation-cand.talent-soft.com//accueil.aspx?LCID=1036",
+      "capturedAt": "2026-10-24T18:01:58.328Z",
+      "bytes": 104635,
+      "sha256": "ff954023441e8d0eb5c781d777f745a8896e4537e809cfed3571e619c1e6bf0b",
+      "h1": [
+        "Bienvenue sur le site d'emploi Dassault Aviation"
+      ]
+    },
+    "listing": {
+      "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=list",
+      "status": 200,
+      "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=list",
+      "capturedAt": "2026-10-24T18:01:59.630Z",
+      "bytes": 140020,
+      "sha256": "1fa424aea55481840d8a7333294866121fcadf6c22411a5f5272bcd0062d2f74",
+      "totals": [
+        "Nombre de résultats : 104 offre(s)",
+        "Nombre de résultats : 104 offre(s)"
+      ],
+      "cardCount": 10,
+      "sampledRoleCount": 1
+    },
+    "redirectReceipts": [
+      {
+        "url": "https://carriere.dassault-aviation.com/accueil.aspx?LCID=1036",
+        "status": 301,
+        "location": "https://dassault-aviation-cand.talent-soft.com//accueil.aspx?LCID=1036"
+      },
+      {
+        "url": "https://dassault-aviation-cand.talent-soft.com//accueil.aspx?LCID=1036",
+        "status": 200,
+        "location": null
+      },
+      {
+        "url": "https://www.dassault-aviation.tv/embed/Clip_RH_Bourget_HD_H264w7FiR",
+        "status": 200,
+        "location": null
+      },
+      {
+        "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=list",
+        "status": 200,
+        "location": null
+      },
+      {
+        "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-specialiste-support-technique-specialiste-vecteur-atl2-f-h_15754.aspx",
+        "status": 200,
+        "location": null
+      }
+    ],
+    "corporatePublisherAvailable": false,
+    "currentOfficialBindingVerified": false,
+    "wholeIndiaScopeComplete": false,
+    "indiaCount": null,
+    "productionWrites": false,
+    "sample": {
+      "url": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-specialiste-support-technique-specialiste-vecteur-atl2-f-h_15754.aspx",
+      "status": 200,
+      "finalUrl": "https://dassault-aviation-cand.talent-soft.com/offre-de-emploi/emploi-specialiste-support-technique-specialiste-vecteur-atl2-f-h_15754.aspx",
+      "capturedAt": "2026-10-24T18:02:01.510Z",
+      "bytes": 118907,
+      "sha256": "4c6b51582e831a9fff882fe1a05747146a88e50dadab35e0d976d510eba920c7",
+      "expectedTitle": "Spécialiste Support Technique – Spécialiste vecteur ATL2 F/H",
+      "h1": [
+        "Spécialiste Support Technique – Spécialiste vecteur ATL2 F/H"
+      ],
+      "nativeLocations": [
+        "France, Nouvelle Aquitaine, 33 - Mérignac"
+      ],
+      "scope": "One native parent-board role only, not an India subsidiary role or empty proof."
+    },
+    "completedAt": "2026-10-24T18:02:01.510Z"
+  },
+  "reviewedContract": {
+    "vanityRedirect": "Current raw301 Location leads to the same exact pinned Talentsoft entry URL.",
+    "nativeEmployerHeading": [
+      "Bienvenue sur le site d'emploi Dassault Aviation"
+    ],
+    "listing": "Observed one current listing page with10 cards and two matching advertised totals104; not full enumeration.",
+    "sample": "Exactly one parent-board role15754 with matching native title and authoritative primary location France, Nouvelle Aquitaine,33-Merignac; not an India subsidiary job."
+  },
+  "existingSourceRegression": {
+    "command": "node --test scraper/dassaultaviationindia/native.test.js",
+    "passed": 8,
+    "failed": 0,
+    "note": "Includes historical103-role complete packet replay. It does not renew historical observations or establish current104-role/India completeness."
+  },
+  "fixAssessment": {
+    "concreteParserFixEstablished": false,
+    "reason": "Current publisher response is an Incapsula resource shell rather than corporate careers content. Native handoff/entry and sampled Talentsoft listing/detail contracts remain compatible. Skipping employer identity or reusing historical handoff as current publisher authority would weaken provenance.",
+    "implementedDiagnosticOnlyChange": "Exact observed resource shell now carries structured blocked access classification and actual response metadata; source scope/counts/cleanup safeguards remain unchanged."
+  },
+  "scope": {
+    "currentCorporateBindingVerified": false,
+    "currentNativeInventoryComplete": false,
+    "currentAdvertisedParentTotal": 104,
+    "currentNativeDetailsSampled": 1,
+    "indiaJobCount": null,
+    "exactIndiaSubsidiaryScopeComplete": false,
+    "lifecycleCleanupAllowed": false,
+    "productionWrites": false
+  },
+  "artifacts": {
+    "corporateProbe": "C:/Users/mohv/AppData/Local/Temp/codex-scraper-repair-verification-20261024/dassaultaviationindia/corporate-probe.json",
+    "nativeProbe": "C:/Users/mohv/AppData/Local/Temp/codex-scraper-repair-verification-20261024/dassaultaviationindia/native-bounded-probe.json"
+  },
+  "limitations": "Browser research only after MCP shared-profile-in-use error; fresh isolated anonymous local headless context, no challenge bypass or runtime browser fallback. No full current source scrape, production DB, proof approval changes, commits or deployment.",
+  "diagnosticChange": {
+    "implemented": true,
+    "changedFiles": [
+      "scraper/dassaultaviationindia/script.js",
+      "scraper/dassaultaviationindia/native.test.js",
+      "scraper/dassaultaviationindia/fixtures/incapsula-corporate-shell.json",
+      "scraper/dassaultaviationindia/fixtures/phase4-publisher-native-evidence.json"
+    ],
+    "softFailure": true,
+    "upstreamOutage": true,
+    "failureKind": "blocked_or_access_denied",
+    "status": 200,
+    "stage": "corporate",
+    "requestUrl": "https://www.dassault-aviation.com/en/group/careers/",
+    "finalUrl": "https://www.dassault-aviation.com/en/group/careers/",
+    "inventoryCounts": null,
+    "matcher": "Active NOINDEX+NOFOLLOW robots meta, one same-origin resource script and resource iframe with no srcdoc, no active visible text/title. Inactive/foreign/missing resource lookalikes and ordinary successful employer mismatch do not match.",
+    "sourceTestCommand": "node --test scraper/dassaultaviationindia/native.test.js scraper-support/tests/runnerFailurePolicy.test.js",
+    "testsPassed": 30,
+    "testsFailed": 0,
+    "redEvidence": {
+      "command": "node --test --test-name-pattern='Incapsula|ordinary successful' scraper/dassaultaviationindia/native.test.js",
+      "passed": 2,
+      "failed": 1,
+      "failure": "Observed shell error.softFailure was undefined before the narrow diagnostic."
+    },
+    "actualRawReceiptReplay": true,
+    "verificationArtifact": "C:/Users/mohv/AppData/Local/Temp/codex-scraper-repair-verification-20261024/dassaultaviationindia/diagnostic-verification.json",
+    "currentSourceRecoveryClaim": false
+  }
+}

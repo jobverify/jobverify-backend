@@ -25,7 +25,7 @@ export async function readHiringSnapshot(settings = {}, now = new Date()) {
   const dayMs = 86400000;
   const firstDay = new Date(`${indiaDay(now)}T00:00:00+05:30`).getTime() - 89 * dayMs;
   const [result] = await Job.aggregate([
-    { $match: applyPublicJobVisibility({ status: 'active', $or: [{ closingDate: null }, { closingDate: { $gt: now } }] }, settings) },
+    { $match: applyPublicJobVisibility({ status: 'active', $or: [{ closingDate: null }, { closingDate: { $gt: now } }] }, settings, now) },
     { $facet: {
       totals: [{ $count: 'count' }],
       companyTotals: [{ $group: { _id: { $toLower: label('company') } } }, { $match: { _id: { $ne: '' } } }, { $count: 'count' }],

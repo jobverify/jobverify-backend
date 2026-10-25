@@ -13,6 +13,7 @@ import { parseRetryAfterHeader } from '../utils/fetch.js'
 import { isGroupedLocationLabel } from '../../src/utils/jobLocations.js'
 import { isJobInPublicLocationScope } from '../../src/utils/publicJobLocationScope.js'
 import { extractWorkdayDetailLocations } from './locationDetails.js'
+import { parseWorkdayNativeLifecycleDate } from './nativeLifecycleDates.js'
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 import {
   nativeDetailReceiptKey, readNativeDetailReceipt, rememberNativeDetailReceipt,
@@ -661,9 +662,22 @@ const parsePostedOn = (raw) => {
   if (/\byesterday\b/.test(text)) return daysAgo(1)
   const relativeMatch = text.match(/(\d+)\s+days?\s+ago/)
   if (relativeMatch) return daysAgo(parseInt(relativeMatch[1], 10))
-  if (/30\+/.test(text)) return daysAgo(30)
+  if (/\d+\s*\+/.test(text)) return null
   const cleaned = raw.replace(/^posted\s+/i, '').trim()
   return toUTCMidnight(cleaned)
+}
+
+const resolveWorkdayPostingDate = (detailPostingDate, listingPostedOn) => {
+  const raw = detailPostingDate || listingPostedOn
+  if (!raw) return { raw: null, date: null, precision: null, exact: false }
+  try {
+    return parseWorkdayNativeLifecycleDate(raw)
+  } catch {
+    // Only native CXS fields are mandatory strict dates. Existing page/listing
+    // labels can express relative days or a lower bound instead of a clock.
+    return { raw: null, date: parsePostedOn(raw), exact: false,
+      precision: /\d+\s*\+/.test(raw) ? 'relative-lower-bound' : 'relative-day' }
+  }
 }
 
 // Parses absolute closing date strings into Date objects.
@@ -801,6 +815,20 @@ const getSafeWorkdayUrl = (value, baseUrl) => {
   } catch {
     return null
   }
+}
+
+// Workday's native external URL can omit the listing's leading locale. Only
+// that segment is optional; the exact origin, board and role path still bind it.
+const matchesWorkdayNativeRoleUrl = (value, canonicalLink) => {
+  if (typeof value !== 'string') return false
+  try {
+    const native = new URL(value), listing = new URL(canonicalLink)
+    if (native.protocol !== 'https:' || listing.protocol !== 'https:'
+      || native.origin !== listing.origin || native.username || native.password
+      || native.search || native.hash || listing.search || listing.hash) return false
+    const rolePath = url => url.pathname.replace(/^\/[a-z]{2}-[a-z]{2}(?=\/)/i, '')
+    return rolePath(native) === rolePath(listing)
+  } catch { return false }
 }
 
 const emptyDetailPayload = () => ({
@@ -1319,8 +1347,23 @@ export const buildWorkdayDetailApiUrl = (jobUrl, jobsApiUrl) => {
   } catch { return null }
 }
 
+const extractWorkdayNativeDateMetadata = posting => {
+  const startDate = parseWorkdayNativeLifecycleDate(posting?.startDate, { field: 'startDate' })
+  const endDate = parseWorkdayNativeLifecycleDate(posting?.endDate, { field: 'endDate' })
+  if (!startDate.date && !endDate.date) return {}
+  return {
+    ...(startDate.raw && { postingDate: startDate.raw }),
+    closingDate: endDate.raw,
+    sourceDateProvenance: 'workday-cxs-jobPostingInfo',
+    sourceRawDates: { startDate: startDate.raw, endDate: endDate.raw },
+    postingDatePrecision: startDate.precision, closingDatePrecision: endDate.precision,
+    sourcePostingDateIsExact: startDate.exact, sourceClosingDateIsExact: endDate.exact,
+  }
+}
+
 export const extractWorkdayStructuredDetail = payload => {
   const posting = payload?.jobPostingInfo
+  const nativeDates = extractWorkdayNativeDateMetadata(posting)
   if (typeof posting?.jobDescription !== 'string') return null
   const sourceDescription = toPlainText(posting.jobDescription)
   if (!sourceDescription) return null
@@ -1345,6 +1388,7 @@ export const extractWorkdayStructuredDetail = payload => {
   }))] : null
   return { ...detail, sourceDescription, jobDescription: sourceDescription,
     locations, indiaScopeLocations, requisitionId: posting.jobReqId || detail.requisitionId,
+    ...nativeDates,
     publicExperienceChecked: true }
 }
 
@@ -1360,8 +1404,10 @@ const fetchDetailedJobPayload = async (
     jobsApiUrl = null,
     nativePayload = undefined,
     onNativePayload = null,
+    validateNativePayload = null,
   } = {},
 ) => {
+  let nativeDates = {}
   try {
     throwIfAborted(signal)
     circuitBreaker.assertRequestAllowed(jobUrl, source)
@@ -1371,6 +1417,8 @@ const fetchDetailedJobPayload = async (
     if (structuredUrl) {
       try {
         if (nativePayload !== undefined) {
+          validateNativePayload?.(nativePayload)
+          nativeDates = extractWorkdayNativeDateMetadata(nativePayload?.jobPostingInfo)
           const structured = extractWorkdayStructuredDetail(nativePayload)
           if (structured) return structured
         } else {
@@ -1382,12 +1430,15 @@ const fetchDetailedJobPayload = async (
           async response => ({ response, bodyText: await response.text() }))
           if (response.status === 429 || response.status >= 500) throw buildWorkdayHttpFailureError(source, structuredUrl, response.status, response.headers)
           const payload = response.ok ? JSON.parse(bodyText) : null
+          validateNativePayload?.(payload)
+          nativeDates = extractWorkdayNativeDateMetadata(payload?.jobPostingInfo)
           const structured = extractWorkdayStructuredDetail(payload)
-          if (structured) onNativePayload?.(payload)
+          if (structured || nativeDates.sourceDateProvenance) onNativePayload?.(payload)
           if (structured) { circuitBreaker.recordSuccess(jobUrl); return structured }
         }
       } catch (error) {
         throwIfAborted(signal)
+        if (['WORKDAY_NATIVE_DATE_INVALID', 'WORKDAY_NATIVE_ROLE_MISMATCH'].includes(error?.code)) throw error
         const status = Number(error?.jobsApiHttpStatus ?? error?.httpStatus)
         if (status === 429 || status >= 500) throw error
         // Missing, blocked, or malformed API descriptions use the existing page path.
@@ -1425,13 +1476,15 @@ const fetchDetailedJobPayload = async (
     return {
       locations: extractWorkdayDetailLocations(html),
       ...(await extractJobDetail({ provider: 'workday', html })),
+      ...nativeDates,
     }
   } catch (error) {
     throwIfAborted(signal)
+    if (['WORKDAY_NATIVE_DATE_INVALID', 'WORKDAY_NATIVE_ROLE_MISMATCH'].includes(error?.code)) throw error
     circuitBreaker.recordFailure(jobUrl, error)
     if (shouldFallbackToListingDataAfterDetailFailure(error)) {
       logRecoverableWorkdayNotice(`  [${source}] Failed to enrich details for ${jobUrl}; keeping listing data when summary location remains safely in scope: ${error.message}`)
-      return createFallbackDetailPayload(error)
+      return Object.assign(createFallbackDetailPayload(error), nativeDates)
     }
 
     if (error?.abortRetries === true) {
@@ -1439,7 +1492,7 @@ const fetchDetailedJobPayload = async (
     }
 
     logRecoverableWorkdayNotice(`  [${source}] Failed to enrich details for ${jobUrl}: ${error.message}`)
-    return emptyDetailPayload()
+    return { ...emptyDetailPayload(), ...nativeDates }
   }
 }
 
@@ -1896,7 +1949,7 @@ const runWorkdayJobsApiScraper = async ({
       }
 
       console.log(`  [${source}] Scraping page ${pageNum} - ${jobsApiUrl} (offset ${offset})`)
-      console.log(`  [${source}] Page ${pageNum}: ${jobs.length} India jobs`)
+      console.log(`  [${source}] Page ${pageNum}: ${jobs.length} job records`)
 
       for (const job of jobs) {
         const canonicalLink = buildWorkdayJobDetailUrl(job.externalPath, detailUrlBase, baseUrl)
@@ -1946,7 +1999,7 @@ const runWorkdayJobsApiScraper = async ({
       const nativeId = postingPath.match(/_([^/]+)$/)?.[1]
       const reqId = typeof info?.jobReqId === 'string' ? info.jobReqId.trim() : null
       const canonicalMatches = typeof info?.externalUrl === 'string'
-        && getSafeWorkdayUrl(info.externalUrl, candidate.canonicalLink) === candidate.canonicalLink
+        && matchesWorkdayNativeRoleUrl(info.externalUrl, candidate.canonicalLink)
       const nativePostingMatches = info?.jobPostingId === postingPath.split('/').at(-1)
       const repeatedPosting = reqId && nativeId?.startsWith(reqId + '-')
         && /^\d+$/.test(nativeId.slice(reqId.length + 1)) && (canonicalMatches || nativePostingMatches)
@@ -1954,6 +2007,22 @@ const runWorkdayJobsApiScraper = async ({
         && (info.externalUrl == null || canonicalMatches)
         && typeof info.title === 'string' && typeof candidate.job.title === 'string'
         && info.title.trim() === candidate.job.title.trim())
+    }
+    const validateNativeRole = (payload, candidate) => {
+      const info = payload?.jobPostingInfo
+      if (!info) return
+      const nativeId = new URL(candidate.canonicalLink).pathname.match(/_([^/]+)$/)?.[1]
+      const reqId = typeof info.jobReqId === 'string' ? info.jobReqId.trim() : null
+      const reqMatches = reqId && (reqId === nativeId || nativeId?.startsWith(reqId + '-')
+        && /^\d+$/.test(nativeId.slice(reqId.length + 1)))
+      if (info.jobReqId != null && !reqMatches
+        || info.title != null && (typeof info.title !== 'string' || info.title.trim() !== candidate.job.title?.trim())
+        || info.externalUrl != null && !matchesWorkdayNativeRoleUrl(info.externalUrl, candidate.canonicalLink)) {
+        throw Object.assign(new Error(`[${source}] Native Workday detail identity conflicts with ${candidate.canonicalLink}`), {
+          name: 'WorkdayNativeRoleMismatchError', code: 'WORKDAY_NATIVE_ROLE_MISMATCH',
+          abortRetries: true, failureKind: 'parser_or_contract_error',
+        })
+      }
     }
     const scopeController = new AbortController()
     const scopeSignal = nativeDetailRecovery
@@ -1997,6 +2066,7 @@ const runWorkdayJobsApiScraper = async ({
     }
     const countryEvidence = buildWorkdayLocationCountryEvidence(scopeCandidates)
     for (const candidate of scopeCandidates) {
+      validateNativeRole(candidate.scopePayload, candidate)
       const scope = resolveWorkdayScopeLocations(candidate, countryEvidence, source)
       candidate.scopeLocations = scope.locations
       candidate.scopeIndiaLocations = scope.indiaLocations
@@ -2040,6 +2110,7 @@ const runWorkdayJobsApiScraper = async ({
           if (scopeLocations && !isWorkdayJobInPublicIndiaScope({ location, locations: scopeLocations })) return null
           const cached = scopePayload ? null : readNativeDetailReceipt(nativeDetailRecovery, candidate.receiptKey)
           const cachedPayload = cached && matchesNativeRole(cached.payload, candidate) ? cached.payload : null
+          let verifiedNativePayload = scopePayload && matchesNativeRole(scopePayload, candidate) ? scopePayload : cachedPayload
           let verifiedAt = candidate.scopeFetchedAt || (cachedPayload ? cached.fetchedAt : null)
           let fromRecovery = candidate.fromRecovery || Boolean(cachedPayload)
           let detailPayload = extractWorkdayStructuredDetail(scopePayload || cachedPayload)
@@ -2064,8 +2135,10 @@ const runWorkdayJobsApiScraper = async ({
                   requestScheduler,
                   jobsApiUrl,
                   nativePayload: scopePayload,
+                  validateNativePayload: payload => validateNativeRole(payload, candidate),
                   onNativePayload: payload => {
                     if (matchesNativeRole(payload, candidate)) {
+                      verifiedNativePayload = payload
                       verifiedAt = Date.now()
                       rememberNativeDetailReceipt(nativeDetailRecovery, candidate.receiptKey, payload, verifiedAt)
                     }
@@ -2077,6 +2150,15 @@ const runWorkdayJobsApiScraper = async ({
               if (error !== budgetError) throw error
               detailPayload = createFallbackDetailPayload(error)
             }
+          }
+          // Required scope receipts can carry clocks even when optional
+          // description hydration is disabled or has exhausted its budget.
+          const nativeClockPayload = scopePayload || cachedPayload || verifiedNativePayload
+          if (nativeClockPayload) Object.assign(detailPayload,
+            extractWorkdayNativeDateMetadata(nativeClockPayload.jobPostingInfo))
+          if (!verifiedNativePayload && detailPayload.sourceDateProvenance) {
+            for (const field of ['postingDate', 'closingDate', 'sourceRawDates', 'sourceDateProvenance',
+              'postingDatePrecision', 'closingDatePrecision', 'sourcePostingDateIsExact', 'sourceClosingDateIsExact']) delete detailPayload[field]
           }
           maybeDisableWorkdayDetailEnrichment(detailPayload, detailEnrichmentState, source)
           const structuredIndiaLocations = scopeIndiaLocations || detailPayload.indiaScopeLocations
@@ -2096,8 +2178,10 @@ const runWorkdayJobsApiScraper = async ({
             if (detailFailureReason?.name === 'WorkdayDetailBudgetExceededError' && detailEnrichmentBudgetMs !== 0) nativeDetailRecovery.pending++
             else if (detailFailureReason) nativeDetailRecovery.unrecoverable = true
           }
+          const postingDate = resolveWorkdayPostingDate(detailPayload.postingDate, job.postedOn)
+          const closingDate = parseWorkdayNativeLifecycleDate(detailPayload.sourceRawDates?.endDate, { field: 'endDate' })
           const workdayJob = {
-            jobId: extractJobId(canonicalLink),
+            jobId: extractJobId(canonicalLink) || verifiedNativePayload?.jobPostingInfo.jobReqId.trim() || null,
             title: job.title,
             company,
             department: detailPayload.department,
@@ -2106,8 +2190,18 @@ const runWorkdayJobsApiScraper = async ({
             locations: detailedLocations,
             link: canonicalLink,
             source,
-            postedAt: parsePostedOn(job.postedOn || detailPayload.postingDate),
-            closingDate: null,
+            postedAt: postingDate.date,
+            ...(postingDate.raw && { postingDate: postingDate.raw }),
+            postingDatePrecision: postingDate.precision,
+            sourcePostingDateIsExact: postingDate.exact,
+            sourceListingPostedOn: job.postedOn || null,
+            closingDate: closingDate.date,
+            closingDatePrecision: closingDate.precision,
+            sourceClosingDateIsExact: closingDate.exact,
+            ...(verifiedNativePayload && detailPayload.sourceDateProvenance && {
+              sourceDateProvenance: detailPayload.sourceDateProvenance,
+              sourceRawDates: detailPayload.sourceRawDates,
+            }),
             jobDescription: detailPayload.jobDescription,
             sourceDetailComplete,
             ...(sourceDetailComplete && nativeDetailRecovery && { sourceDetailVerifiedAt: new Date(verifiedAt || Date.now()).toISOString(),

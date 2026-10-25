@@ -1,4 +1,5 @@
 import {readNativeDocument,nativeDescendants,nativeEvidenceDescendants,nativeTextBlocks} from './nativeHtml.js'
+import {createNativeRoleAvailability,findExplicitNativeClosure} from '../../scraper-support/utils/sourceAvailability.js'
 export const SEARCH_URL='https://www.disneycareers.com/en/search-jobs'
 export const ORIGIN='https://www.disneycareers.com'
 const check=(ok,message)=>{if(!ok)throw Error('Disney native contract: '+message)}
@@ -75,8 +76,8 @@ export function parsePage(body,{scope,page,now}){
 function qualifiedDescription(text,blocks){
  if(!text||!/[a-z]{3}/i.test(text))return{description:null,reason:'native-full-description-unavailable-or-unqualified'}
  const statements=blocks.flatMap(block=>block.replace(/^Job Summary:\s*/i,'').split(/(?<=[.!?])\s+/))
- const closed=/^(?:(?:this|the)\s+(?:job|role|position|vacancy)\s+(?:(?:is|has been|has)\s+)?(?:closed|filled|expired|no longer (?:available|open|active)|not available)(?=[.!?]|\s*(?:$|for applications\b))|no longer accepting applications\b)/i
- if(statements.some(statement=>closed.test(statement)))return{description:null,reason:'native-role-explicitly-closed'}
+ const notice=findExplicitNativeClosure(statements)
+ if(notice)return{description:null,reason:'native-role-explicitly-closed',notice}
  let removedInstructions=false
  const roleContent=statements.filter(sentence=>{
   const instruction=/^(?:please\b|click\b|apply(?:\s+now)?\b|to (?:view|read|learn)\b)/i.test(sentence.trim())
@@ -114,7 +115,10 @@ check(norm(a['data-tm-job-name'])===row.title&&d.text(one(subtree(d,head,n=>n.ta
  const sections=d.nodes(n=>n.attrs.id==='job-details-3');check(sections.length===1,'Missing role description section')
  const s=sections[0];for(const key of ['data-org-id','data-job-id','data-tm-job-name','data-tm-job-location','data-tm-job-id','data-tm-job-business','data-tm-job-date-posted','data-tm-job-posting-brand'])check(s.attrs[key]===a[key],'Description identity mismatch '+key)
  const nativeJd=nativeEvidenceDescendants(s,n=>d.hasClass(n,'ats-description'));check(nativeJd.length<=1,'Ambiguous full description')
- const nativeText=nativeJd.length?d.text(nativeJd[0]):'',qualified=qualifiedDescription(nativeText,nativeJd.length?nativeTextBlocks(nativeJd[0]):[]),{description}=qualified
+ const nativeText=nativeJd.length?d.text(nativeJd[0]):'',qualified=qualifiedDescription(nativeText,nativeJd.length?nativeTextBlocks(nativeJd[0]):[])
+ const notice=findExplicitNativeClosure(nativeTextBlocks(head))||qualified.notice,description=notice?null:qualified.description
  const rejected=description?{}:{nativeRejectedDescription:nativeText||null,nativeRejectedDescriptionRawHTML:nativeJd.length?body.slice(nativeJd[0].start,nativeJd[0].end):null}
- return{jobId:row.req,title:row.title,company:'Disney',source:'disney',location:row.location,locations:[row.location],city:row.city,country:'India',sourceUrl:row.url,sourceURL:row.url,url:row.url,applyUrl,postedAt,datePosted:postedAt,sourceDescription:description,jobDescription:description,sourceDetailComplete:Boolean(description),sourceDetailFailureReason:qualified.reason,...rejected,sourceListingComplete:false,sourceScopeComplete:false,nativeJobId:row.id,nativeRequisitionId:row.req,nativeLegalEmployer:employer,nativePostingBrand:row.brand,nativePublicationDate:a['data-tm-job-date-posted'],nativePublicationSource:row.url,nativeListingLocation:a['data-tm-job-location'],scrapedAt:new Date(now).toISOString()}
+ const job={jobId:row.req,title:row.title,company:'Disney',source:'disney',location:row.location,locations:[row.location],city:row.city,country:'India',sourceUrl:row.url,sourceURL:row.url,url:row.url,applyUrl,postedAt,datePosted:postedAt,sourceDescription:description,jobDescription:description,sourceDetailComplete:Boolean(description),sourceDetailFailureReason:notice?'native-role-explicitly-closed':qualified.reason,...rejected,sourceListingComplete:false,sourceScopeComplete:false,nativeJobId:row.id,nativeRequisitionId:row.req,nativeLegalEmployer:employer,nativePostingBrand:row.brand,nativePublicationDate:a['data-tm-job-date-posted'],nativePublicationSource:row.url,nativeListingLocation:a['data-tm-job-location'],scrapedAt:new Date(now).toISOString()}
+ if(description||notice)job.sourceAvailabilityEvidence=createNativeRoleAvailability(job,{state:notice?'closed':'open',observedAt:now,evidenceHtml:body})
+ return job
 }

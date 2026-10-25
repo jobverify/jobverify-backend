@@ -5,6 +5,7 @@ import {run} from './script.js'
 import {readNativePage} from './native.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {analyzePublishableJobs} from '../../scraper-support/utils/publishableJobMetrics.js'
+import {hasSourceDescription} from '../../src/utils/jobSourceContent.js'
 const original=JSON.parse(readFileSync(new URL('./fixtures/native-india-001.json',import.meta.url)))
 const base='https://careers.fisglobal.com',json=x=>JSON.stringify(x).replaceAll('<','\\u003c')
 const fullRaw='&lt;h2&gt;Responsibilities&lt;/h2&gt;&lt;p&gt;Design services and obtain client sign-off for requirements.&lt;/p&gt;&lt;h2&gt;Qualifications&lt;/h2&gt;&lt;p&gt;Five years of C&#43;&#43; development experience is required.&lt;/p&gt;&lt;h2&gt;Benefits&lt;/h2&gt;&lt;p&gt;Competitive salary &amp; professional development.&lt;/p&gt;'
@@ -27,7 +28,10 @@ const blocked=async(change,wrap)=>{
  assert.equal(jobs[0].jobDescription,null)
  assert.equal(jobs[0].sourceListingComplete,false)
  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
- assert.equal(analyzePublishableJobs(jobs,{now:new Date('2026-10-21T20:00:00Z')}).eligibleJobs.length,0)
+ // Keep the trusted listing for detail recovery. New rows without a prior
+ // source description stay private; incomplete rescrapes preserve prior content.
+ assert.equal(analyzePublishableJobs(jobs,{now:new Date('2026-10-21T20:00:00Z')}).eligibleJobs.length,1)
+ assert.equal(hasSourceDescription(jobs[0]),false)
  return jobs
 }
 

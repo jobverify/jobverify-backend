@@ -8,6 +8,18 @@ const native = (overrides = {}) => ({ ...structuredClone(fixture[0]), ...overrid
 const india = (overrides={}) => native({ id:'00000000-0000-4000-8000-000000000001',hostedUrl:'https://jobs.lever.co/finix/00000000-0000-4000-8000-000000000001',applyUrl:'https://jobs.lever.co/finix/00000000-0000-4000-8000-000000000001/apply',country:'IN', categories:{commitment:'Full-time',department:'Engineering',location:'Bengaluru, India',team:'Platform',allLocations:['Bengaluru, India']}, descriptionPlain:'Build payment systems.', descriptionBodyPlain:'Build payment systems and operate reliable services.', openingPlain:'Join our engineering team.', lists:[{text:'Responsibilities',content:'<li>Build and maintain payment systems.</li>'}], additionalPlain:'Collaborate with the team.', ...overrides })
 const replay = payload => run({ fetchJson:async url=>{assert.equal(url,'https://api.lever.co/v0/postings/finix?mode=json');return structuredClone(payload)} })
 
+test('Finix caller cancellation prevents transport and wins over a returned malformed envelope',async()=>{
+ for(const beforeFetch of [true,false]){
+  const controller=new AbortController(),reason=Error('Stop Finix native source')
+  let calls=0
+  if(beforeFetch)controller.abort(reason)
+  await assert.rejects(run({signal:controller.signal,fetchJson:async()=>{
+   calls++;controller.abort(reason);return{error:'unavailable'}
+  }}),error=>error===reason)
+  assert.equal(calls,beforeFetch?0:1)
+ }
+})
+
 test('Finix live wrapper preserves24 board rows as partial evidence when4 secondary Remote scopes remain unresolved',async()=>{
  const jobs=await replay(fixture)
  assert.equal(jobs.length,0)
@@ -34,10 +46,14 @@ test('future explicit India retains full native sections and exact application i
  assert.equal(readInventoryEvidence(jobs).listingComplete,true)
 })
 test('typed secondary India selection does not disappear behind a foreign primary label',async()=>{
- const jobs=await replay([india({country:'US',categories:{location:'San Francisco',allLocations:['San Francisco','Bengaluru, India'],commitment:'Full-time'}})])
+ const row=india({country:'US',categories:{location:'San Francisco',allLocations:['San Francisco','Bengaluru, India'],commitment:'Full-time'}})
+ const jobs=await replay([row])
  assert.equal(jobs.length,1)
  assert.match(jobs[0].location,/Bengaluru/)
  assert.equal(readInventoryEvidence(jobs).indiaFacetCount,1)
+ assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+ assert.equal(jobs[0].nativeRecord.country,'US')
+ assert.deepEqual(jobs[0].nativeRecord.categories,row.categories)
 })
 test('generic Remote does not become India eligibility and partial scope marks retained India jobs incomplete',async()=>{
  const jobs=await replay([india(),native()])

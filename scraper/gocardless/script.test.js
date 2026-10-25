@@ -7,7 +7,7 @@ import { getScraperCatalog } from '../../scraper-support/providers/index.js'
 const fetchPage = async () => ({ status: 200, url: 'https://gocardless.com/about/careers', html: '<a href="https://boards.greenhouse.io/gocardless">Search Jobs</a>' })
 const role = { id: 101, title: 'Software Engineer', location: { name: 'Bengaluru, India' }, absolute_url: 'https://job-boards.greenhouse.io/gocardless/jobs/101', content: '<p>Develop payment systems and maintain reliable services.</p>', updated_at: '2026-10-23T00:00:00Z' }
 
-test('GoCardless replaces the sentinel with bound shared Greenhouse extraction and India scope', async () => {
+test('GoCardless retains proven India jobs without certifying unresolved remote scope', async () => {
   const jobs = await run({ fetchPage, fetchJson: async url => {
     assert.equal(url, 'https://boards-api.greenhouse.io/v1/boards/gocardless/jobs?content=true')
     return { jobs: [role, { ...role, id: 102, absolute_url: role.absolute_url.replace('101', '102'), location: { name: 'Remote' } }, { ...role, id: 103, absolute_url: role.absolute_url.replace('101', '103'), location: { name: 'London, UK' } }], meta: { total: 3 } }
@@ -19,7 +19,18 @@ test('GoCardless replaces the sentinel with bound shared Greenhouse extraction a
   assert.equal(jobs[0].link, role.absolute_url)
   assert.equal(jobs[0].postingDate, null)
   assert.equal(readInventoryEvidence(jobs).reportedTotal, 3)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  assert.match(readInventoryEvidence(jobs).reason, /native-location-scope-unresolved/)
+  assert.equal(jobs[0].sourceListingComplete, false)
+})
+
+test('GoCardless can reconcile a fully explicit native country inventory', async () => {
+  const jobs = await run({ fetchPage, fetchJson: async () => ({ jobs: [role, { ...role, id: 103,
+    absolute_url: role.absolute_url.replace('101', '103'), location: { name: 'London, UK' } }], meta: { total: 2 } }) })
+  assert.equal(jobs.length, 1)
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 1)
 })
 
 test('GoCardless never queries the ATS when the official link disappears', async () => {

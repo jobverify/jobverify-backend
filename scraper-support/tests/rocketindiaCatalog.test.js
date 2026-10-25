@@ -15,7 +15,7 @@ test('getScraperCatalog includes Rocket India as a Phenom provider', () => {
   assert.equal(provider.atsPlatform, 'phenom')
   assert.equal(provider.companyCareerPage, 'https://careers.rocket.com/in/en/search-results')
   assert.equal(provider.companyDomain, 'rocket.com')
-  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.parser, 'validated-phenom-full-native-details')
   assert.match(provider.modulePath, /rocketindia[\\/]script\.js$/i)
 })
 
@@ -26,6 +26,6 @@ test('buildScrapers exposes a runnable Rocket India scraper without changing the
   assert.ok(provider)
   assert.equal(typeof provider.run, 'function')
   assert.equal(provider.provider.adapter, 'script')
-  assert.equal(provider.provider.parser, 'custom-script')
+  assert.equal(provider.provider.parser, 'validated-phenom-full-native-details')
   assert.equal(provider.provider.companyCareerPage, 'https://careers.rocket.com/in/en/search-results')
 })

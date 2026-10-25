@@ -50,11 +50,22 @@ const createAggregateExecStub = (handler) => (pipeline) => ({
 })
 
 const createSummaryFindOneStub = (summary) => () => ({
+  sort() { return this },
   lean() {
     return this
   },
   exec: async () => summary,
 })
+
+const createSummaryAggregateStub = (summary, inspect = () => {}) => createAggregateExecStub(async pipeline => {
+  inspect(pipeline)
+  return [{ visible: [summary], futurePublications: [] }]
+})
+
+const summaryFromUpdate = update => Array.isArray(update)
+  ? Object.fromEntries(Object.entries(update[0].$set)
+    .map(([key, expression]) => [key, expression.$cond[2].$literal]))
+  : { _id: new mongoose.Types.ObjectId('000000000000000000000001'), refreshSequence: 1 }
 
 const stripPublishedDateScope = (scope = {}) => {
   const { $expr, ...remainingScope } = scope
@@ -64,19 +75,16 @@ const stripPublishedDateScope = (scope = {}) => {
 const assertHasPublishedDateScope = (scope) => {
   const [
     postedUpperBound,
-    closingLowerBound,
+    closingAvailability,
   ] = scope?.$expr?.$and ?? []
   const now = postedUpperBound?.$lte?.[1]
   const nowFallback = postedUpperBound?.$lte?.[0]?.$ifNull?.[1]
-  const today = closingLowerBound?.$gte?.[1]
-  const todayFallback = closingLowerBound?.$gte?.[0]?.$ifNull?.[1]
+  const closingNow = closingAvailability?.$or?.[1]?.$gt?.[1]
 
   assert.ok(now instanceof Date)
-  assert.ok(today instanceof Date)
+  assert.ok(closingNow instanceof Date)
   assert.equal(nowFallback?.getTime(), now.getTime())
-  assert.equal(todayFallback?.getTime(), today.getTime())
-  assert.equal(today.getUTCHours(), 0)
-  assert.equal(today.getUTCMinutes(), 0)
+  assert.equal(closingNow.getTime(), now.getTime())
   assert.equal(JSON.stringify(scope).includes('$$NOW'), false)
   assert.deepEqual(scope.$expr, {
     $and: [
@@ -87,9 +95,9 @@ const assertHasPublishedDateScope = (scope) => {
         ],
       },
       {
-        $gte: [
-          { $ifNull: ['$closingDate', today] },
-          today,
+        $or: [
+          { $eq: [{ $ifNull: ['$closingDate', null] }, null] },
+          { $gt: ['$closingDate', now] },
         ],
       },
       {
@@ -182,8 +190,8 @@ test('buildPublicJobLocationScope excludes jobs older than one month, future and
     '2026-07-25T12:00:00.000Z',
   )
   assert.equal(
-    scope.$expr.$and[1].$gte[1].toISOString(),
-    '2026-07-25T00:00:00.000Z',
+    scope.$expr.$and[1].$or[1].$gt[1].toISOString(),
+    '2026-07-25T12:00:00.000Z',
   )
   assert.equal(
     scope.$expr.$and[2].$gte[1].toISOString(),
@@ -952,6 +960,7 @@ test('getJobStats returns the persisted dataset summary without re-counting jobs
   const originalFindOne = JobDatasetSummary.findOne
 
   JobDatasetSummary.findOne = () => ({
+    sort() { return this },
     lean() {
       return this
     },
@@ -983,6 +992,7 @@ test('getJobStats rebuilds a current-day summary from the previous lifecycle sco
   let aggregateCalled = false
 
   JobDatasetSummary.findOne = () => ({
+    sort() { return this },
     lean() {
       return this
     },
@@ -993,20 +1003,17 @@ test('getJobStats rebuilds a current-day summary from the previous lifecycle sco
       refreshedAt: new Date(),
     }),
   })
-  Job.aggregate = createAggregateExecStub(async () => {
-    aggregateCalled = true
-    return [{
+  Job.aggregate = createSummaryAggregateStub({
       totalJobs: 8,
       companies: ['Example Corp'],
       cities: ['Bangalore'],
       jobTypes: ['Full-time Fresher'],
-    }]
-  })
+    }, () => { aggregateCalled = true })
   JobDatasetSummary.findOneAndUpdate = (_filter, update) => ({
     lean() {
       return this
     },
-    exec: async () => update.$set,
+    exec: async () => summaryFromUpdate(update),
   })
 
   try {
@@ -1032,6 +1039,7 @@ test('getJobStats rebuilds a summary created before the current lifecycle day', 
   let aggregateCalled = false
 
   JobDatasetSummary.findOne = () => ({
+    sort() { return this },
     lean() {
       return this
     },
@@ -1042,20 +1050,17 @@ test('getJobStats rebuilds a summary created before the current lifecycle day', 
       refreshedAt: new Date(Date.now() - (36 * 60 * 60 * 1000)),
     }),
   })
-  Job.aggregate = createAggregateExecStub(async () => {
-    aggregateCalled = true
-    return [{
+  Job.aggregate = createSummaryAggregateStub({
       totalJobs: 7,
       companies: ['Example Corp'],
       cities: ['Bangalore'],
       jobTypes: ['Full-time Fresher'],
-    }]
-  })
+    }, () => { aggregateCalled = true })
   JobDatasetSummary.findOneAndUpdate = (_filter, update) => ({
     lean() {
       return this
     },
-    exec: async () => update.$set,
+    exec: async () => summaryFromUpdate(update),
   })
 
   try {
@@ -1087,26 +1092,27 @@ test('getJobStats rebuilds the persisted dataset summary before falling back to 
   let capturedSummaryUpdate = null
 
   JobDatasetSummary.findOne = () => ({
+    sort() { return this },
     lean() {
       return this
     },
     exec: async () => null,
   })
   JobDatasetSummary.findOneAndUpdate = (_filter, update) => {
-    capturedSummaryUpdate = update.$set
+    capturedSummaryUpdate = summaryFromUpdate(update)
     return {
       lean() {
         return this
       },
-      exec: async () => update.$set,
+      exec: async () => summaryFromUpdate(update),
     }
   }
-  Job.aggregate = createAggregateExecStub(async () => [{
+  Job.aggregate = createSummaryAggregateStub({
     totalJobs: 22,
     companies: ['Example Corp', 'Another Corp'],
     cities: ['Bangalore', 'Pune'],
     jobTypes: ['Intern', 'Full-time Experienced'],
-  }])
+  })
   Job.countDocuments = async () => {
     countCalled = true
     return 0
@@ -1147,6 +1153,7 @@ test('getJobStats rebuilds the dataset summary when the persisted snapshot is mi
   let findOneCalls = 0
 
   JobDatasetSummary.findOne = () => ({
+    sort() { return this },
     lean() {
       return this
     },
@@ -1155,20 +1162,19 @@ test('getJobStats rebuilds the dataset summary when the persisted snapshot is mi
       return null
     },
   })
-  Job.aggregate = createAggregateExecStub(async (pipeline) => {
-    capturedMatch = pipeline[0].$match
-    return [{
+  Job.aggregate = createSummaryAggregateStub({
       totalJobs: 5,
       companies: ['Acme Labs', 'CloudWorks'],
       cities: ['Bangalore'],
       jobTypes: ['Internship'],
-    }]
-  })
-  JobDatasetSummary.findOneAndUpdate = () => ({
+    }, pipeline => {
+      capturedMatch = { ...pipeline[0].$match, ...pipeline[1].$facet.visible[0].$match }
+    })
+  JobDatasetSummary.findOneAndUpdate = (_filter, update) => ({
     lean() {
       return this
     },
-    exec: async () => ({
+    exec: async () => !Array.isArray(update) ? summaryFromUpdate(update) : ({
       key: 'public-active',
       totalJobs: 5,
       totalCompanies: 2,
@@ -1183,7 +1189,7 @@ test('getJobStats rebuilds the dataset summary when the persisted snapshot is mi
 
     await getJobStats({}, res)
 
-    assert.equal(findOneCalls, 1)
+    assert.equal(findOneCalls, 2)
     assertMatchesPublicJobScope(capturedMatch, { status: 'active' })
     assert.equal(res.statusCode, 200)
     assert.equal(res.body.data.totalJobs, 5)

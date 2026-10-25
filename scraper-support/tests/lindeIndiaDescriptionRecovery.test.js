@@ -155,6 +155,31 @@ test('Linde starts no layout request after cancellation during native tenant loo
   assert.deepEqual(requests,[apiBase+'urlinfo'])
 })
 
+test('actual Engineering role1812584 can omit its optional detail organization while exact listing employer and native entity remain corroborated',async()=>{
+  const payload=fixture('null-detail-org-listing'),detail=fixture('null-detail-org-detail')
+  const execute=()=>source.run({fetchPage,maxJobs:1,fetchJson:async url=>{
+    if(url.endsWith('/urlinfo'))return fixture('urlinfo')
+    if(url.endsWith('/layout?isPreview=false'))return fixture('layout')
+    if(url.includes('/cp/jobs/v1?'))return payload
+    if(url===source.buildJobDetailsApiUrl('LEI/EE/1812584'))return detail
+    throw Error('Unexpected optional organization API '+url)
+  }})
+  const jobs=await execute()
+  assert.equal(jobs[0].jobId,'LEI/EE/1812584')
+  assert.equal(jobs[0].postingDate,'2026-09-07')
+  assert.equal(jobs[0].closingDate,'2026-10-31')
+  assert.equal(jobs[0].sourceClosingDateIsExact,false)
+  assert.deepEqual(jobs[0].sourceNativeOrganizationEvidence,{listingPath:payload.response[0].organizationUnitComplete,detailPath:null,legalEmployer:'Linde Engineering India Pvt. Ltd.',entityID:'1475'})
+  assert.match(jobs[0].sourceDescription,/managing sourcing activities/)
+  for(const change of [d=>{d.entityID='1397'},d=>{d.requisitionCode='LEI/EE/1'},d=>{d.requisitionId='1'},d=>{d.jobTitle='Other role'},d=>{d.locationHierarchyComplete='Germany>Bavaria>Munich'},d=>{d.requisitionStatus='CLOSED'},d=>{d.organizationUnitComplete='Other Employer>Procurement'},d=>{d.organizationUnitComplete=''}]){
+    const original=structuredClone(detail.response);change(detail.response)
+    await assert.rejects(execute(),/detail|identity|employer|location|open/i)
+    detail.response=original
+  }
+  payload.response[0].organizationUnitComplete='Other Employer>Procurement'
+  await assert.rejects(execute(),/employer|identity/i)
+})
+
 test('Linde stops queued details and waits for active requests after the first failure',async()=>{
   const rows=fixture('listing').response
   const failure=Error('first detail identity failure')

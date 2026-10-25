@@ -1,13 +1,16 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 import { createHash } from 'node:crypto'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { pathToFileURL } from 'node:url'
 import mongoose from 'mongoose'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import Job from '../src/models/Job.js'
 import { saveToDB } from '../scraper-support/utils/saveToDB.js'
 import { analyzePublishableJobs } from '../scraper-support/utils/publishableJobMetrics.js'
 import { isFreshCompleteInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
+import { extractionDetailHealth } from '../scraper-support/utils/extractionDetailHealth.js'
+import { buildMissingSourceDescriptionFilter } from '../src/utils/jobSourceContent.js'
 import { upsertScraperStatus } from '../scraper-support/utils/scraperPersistence.js'
 import { collectPublishingGapSnapshot } from './collectPublishingGapSnapshot.js'
 
@@ -27,8 +30,13 @@ export async function validatePublishingGapPersistence({ trials, now = new Date(
       throw new Error(`Fresh complete first-party evidence required for ${trial.source}`)
     }
   }
-  const mongo = new MongoMemoryServer({ binary: { version: '8.2.6',
-    downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)),
+  const downloadDir = process.env.MONGOMS_DOWNLOAD_DIR || path.join(os.tmpdir(), 'codex-scraper-test-mongo-8.2.6')
+  const localBinary = path.join(downloadDir, 'mongod-x64-win32-8.2.6.exe')
+  const systemBinary = process.env.MONGOMS_SYSTEM_BINARY
+    || (process.platform === 'win32' && fs.existsSync(localBinary) ? localBinary : undefined)
+  process.env.MONGOMS_RUNTIME_DOWNLOAD = 'false'
+  const mongo = new MongoMemoryServer({ instance: { ip: '127.0.0.1' }, binary: {
+    version: '8.2.6', downloadDir, ...(systemBinary ? { systemBinary } : {}),
   } })
   try {
     await mongo.start()
@@ -38,13 +46,14 @@ export async function validatePublishingGapPersistence({ trials, now = new Date(
     const rows = []
     for (const trial of trials) {
       const analysis = analyzePublishableJobs(trial.jobs, { now })
+      const detailHealth = extractionDetailHealth(analysis.indiaJobs)
       const options = { now, enrichPublicExperience: false, enqueueAlerts: false,
         descriptionRewriteMode: 'off', refreshDatasetSummary: false, replaceExisting: false }
       const result = await saveToDB(trial.jobs, trial.source, options)
       const before = await Job.countDocuments({ source: trial.source })
-      await saveToDB(trial.jobs, trial.source, options)
+      const repeatSave = await saveToDB(trial.jobs, trial.source, options)
       const after = await Job.countDocuments({ source: trial.source })
-      await upsertScraperStatus(trial.source, { success: true, ...result,
+      await upsertScraperStatus(trial.source, { success: true, ...result, detailHealth,
         rawRecords: trial.jobs.length, jobs: analysis.indiaJobs.length, eligibleJobs: analysis.eligibleJobs.length,
         filteredNonJob: analysis.filterCounts.nonJob,
         attemptedAt: trial.attemptedAt || trial.completedAt, completedAt: trial.completedAt,
@@ -53,6 +62,8 @@ export async function validatePublishingGapPersistence({ trials, now = new Date(
       rows.push({ source: trial.source, trialHash: createHash('sha256').update(JSON.stringify(trial)).digest('hex'),
         rawJobs: trial.jobs.length, indiaJobs: analysis.indiaJobs.length,
         eligibleJobs: analysis.eligibleJobs.length, savedJobs: after, idempotent: before === after,
+        privateJobsMissingSourceDescription: await Job.countDocuments({ source: trial.source, ...buildMissingSourceDescriptionFilter() }),
+        detailHealth, firstSave: result, repeatSave,
         rejections: analysis.filterCounts })
     }
     const snapshot = await collectPublishingGapSnapshot({ now })

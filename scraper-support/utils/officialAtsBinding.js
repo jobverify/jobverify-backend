@@ -1,5 +1,6 @@
 import { composeAbortSignals } from './fetch.js'
 import { identifyPublicAtsBoard } from './publicAtsIdentity.js'
+import { readNativeDocument } from './activeNativeHtml.js'
 
 const companyHost = url => url.hostname.toLowerCase().replace(/^www\./, '')
 const boardIdentity = value => {
@@ -19,22 +20,10 @@ const boardIdentity = value => {
   return null
 }
 
-// Read actual anchor attributes; quoted examples in scripts/comments/attributes
-// are not evidence that an employer links a recruitment board.
-const anchors = html => {
-  const content = String(html || '').replace(/<!--[\s\S]*?(?:-->|$)/g, '')
-    .replace(/<(script|style|template|textarea|title|noscript)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi, '')
-  const links = []
-  for (const [, attributes] of content.matchAll(/<a\b((?:"[^"]*"|'[^']*'|[^'">])*)>/gi)) {
-    for (const [, name, doubleQuoted, singleQuoted, bare] of attributes.matchAll(/([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g)) {
-      if (name.toLowerCase() === 'href') {
-        links.push(String(doubleQuoted ?? singleQuoted ?? bare ?? '').replace(/&amp;/gi, '&'))
-        break
-      }
-    }
-  }
-  return links
-}
+// Only active anchors can prove the employer's current delegation. Conditional
+// object/iframe fallback and hidden markup cannot establish that handoff.
+const anchors = html => readNativeDocument(html).nodes(node => node.tag === 'a' && node.attrs.href)
+  .map(node => node.attrs.href)
 
 const fetchOfficialPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {

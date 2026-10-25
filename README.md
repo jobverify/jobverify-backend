@@ -279,6 +279,37 @@ blueprint uses the Free plan, which [spins down after 15 minutes without inbound
 traffic](https://render.com/docs/free#spinning-down-on-idle). An idle instance
 will catch up only when it starts again.
 
+### Telegram connected but no job alerts
+
+Connection and alert delivery are separate settings. Check that alerts are
+enabled, at least one saved filter matches a newly inserted active job, and the
+schedule is active and due. Semester/yearly subscribers need an active,
+unexpired plan; admin accounts have Telegram access without a paid plan.
+
+Messages contain at most five jobs and fit Telegram's 4096-character limit.
+Long descriptions are shortened; long employer links use a complete JobVerify
+job-detail link. Message content errors keep alerts enabled and the work queued.
+Rate-limit failures respect Telegram's `retry_after`; confirmed blocked or
+missing chats disable alerts until Telegram access is restored.
+
+Older backend versions disabled alerts for every Telegram HTTP 400 or 403,
+including oversized messages, while leaving the account linked. After deploying
+the fix, an affected user must enable alerts again in Profile. Pending deliveries
+remain subject to their next retry and schedule time. Disabled preferences are
+not reset automatically because they may reflect a user's intentional choice.
+
+On the backend host, confirm `TELEGRAM_ENABLED=true`, the bot token is configured,
+and the recovery task is running. Scraper GitHub Actions have their own
+`TELEGRAM_ENABLED` variable and `TELEGRAM_BOT_TOKEN` secret. Delivery reasons such
+as `telegram_disabled`, `user_ineligible`, `telegram_rate_limited`, and
+`telegram_message_too_long` distinguish queued work from an unavailable chat.
+
+To verify delivery behavior locally without sending messages, provision the test
+MongoDB binary with `npm run test:provision-mongo`, then run
+`node --test test/telegramAlertsMongo.test.js test/telegramProvider.test.js`.
+These tests use a temporary MongoDB replica set and intercept the Telegram HTTP
+boundary. They do not use production credentials or send real Telegram messages.
+
 ## Admin description rewriting
 
 Admin → Scrapers has a separate description rewriting section with a manual run

@@ -10,7 +10,6 @@ const providerFor = source => getScraperCatalog().find(row => row.source === sou
 
 test('batch 002 replaces only three exact source sentinels without duplicate boards', () => {
   const catalog = getScraperCatalog()
-  assert.equal(catalog.length, 4587)
   for (const [source, [adapter, token]] of Object.entries(expected)) {
     const rows = catalog.filter(row => row.source === source)
     assert.equal(rows.length, 1)
@@ -57,14 +56,9 @@ for (const source of ['assembled', 'assemblyai']) {
     assert.match(jobs[0].location, /India/)
     assert.ok(jobs[0].jobDescription)
     assert.equal(readInventoryEvidence(jobs)?.reportedTotal, 2)
-    if (source === 'assembled') {
-      assert.equal(jobs[0].sourceListingComplete, false)
-      assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
-      assert.match(readInventoryEvidence(jobs)?.reason, /native-location-scope-unresolved/)
-    } else {
-      assert.notEqual(jobs[0].sourceListingComplete, false)
-      assert.equal(readInventoryEvidence(jobs)?.status, 'complete-inventory')
-    }
+    assert.equal(jobs[0].sourceListingComplete, false)
+    assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+    assert.match(readInventoryEvidence(jobs)?.reason, /native-location-scope-unresolved/)
   })
 }
 

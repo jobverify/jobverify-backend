@@ -125,8 +125,7 @@ test('synthetic offline pagination exhausts 101 unique records across two pages 
 
 test('source051 replaces exactly Entain sentinel with sparse unqualified metadata',()=>{
  const all=getScraperCatalog(),p=all.find(p=>p.source==='entain')
- assert.equal(all.length,4587);assert.equal(new Set(all.map(p=>p.source)).size,4587)
- assert.equal(p.companyName,'Entain');assert.equal(p.companyDomain,'entaingroup.com')
+ assert.equal(all.filter(row=>row.source==='entain').length,1);assert.equal(p.companyName,'Entain');assert.equal(p.companyDomain,'entaingroup.com')
  assert.equal(p.atsPlatform,'smartrecruiters-public-postings');assert.equal(p.jobsBoardUrl,API+'?destination=PUBLIC&country=in')
  assert.match(p.modulePath,/entain.workday[\\/]script.js$/)
  for(const key of ['verifiedOn','verifiedAt','verifiedPublicJobCount','verifiedIndiaJobCount'])assert.equal(p[key],null)

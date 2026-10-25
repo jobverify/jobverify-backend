@@ -72,6 +72,12 @@ test("extractJobFilterSignals expands arbitrary bounded ranges into experienceYe
   assert.deepEqual(signals.experienceYears, [4, 5, 6]);
 });
 
+test("SQL requires its own source token and is not inferred from PostgreSQL", () => {
+  assert.deepEqual(extractJobFilterSignals({ description: "Use PostgreSQL for application storage." }).skillIds, ["postgresql"]);
+  assert.deepEqual(extractJobFilterSignals({ description: "Use SQL for reporting queries." }).skillIds, ["sql"]);
+  assert.deepEqual(extractJobFilterSignals({ description: "Use PostgreSQL and SQL for reporting queries." }).skillIds, ["postgresql", "sql"]);
+});
+
 test("extractJobFilterSignals expands open-ended ranges into capped experienceYears", () => {
   const signals = extractJobFilterSignals({
     title: "Principal Engineer",

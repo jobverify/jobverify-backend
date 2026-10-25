@@ -2,10 +2,14 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import {gunzipSync} from 'node:zlib'
-import {run} from './script.js'
+import {run as runNative} from './script.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {analyzePublishableJobs} from '../../scraper-support/utils/publishableJobMetrics.js'
 const fixture=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/native-20261022.json.gz',import.meta.url))))
+// Replay immutable native packets at their recorded observation time. They are
+// historical evidence, rather than a claim of current source availability.
+const replayAt=fixture.packets.map(packet=>packet.completedAt).sort().at(-1)
+const run=options=>runNative({...options,now:()=>replayAt})
 const widget='https://apply.workable.com/api/v1/widget/accounts/337112',firstID='465FBC5BDA'
 function mock(mutate=r=>r){const requests=[],index=new Map(),calls=new Map();for(const p of fixture.packets)index.set(p.url,[...(index.get(p.url)||[]),p]);return{requests,transport:async url=>{requests.push(url);const list=index.get(url);assert.ok(list,'Unexpected fixture request: '+url);const i=calls.get(url)||0;calls.set(url,i+1);const p=list[Math.min(i,list.length-1)];return mutate({...p,body:Buffer.from(p.rawBodyBase64,'base64')},requests)}}}
 const alter=(r,fn)=>{const p=JSON.parse(r.body.toString('utf8'));fn(p);return{...r,body:Buffer.from(JSON.stringify(p))}}
@@ -49,7 +53,12 @@ test('counted native zero remains a whole-employer coverage gap',async()=>{
 })
 test('script and markdown MIME types are explicit opt-ins and advertised script text is never executed',async()=>{
  const {createSourceConfig}=await import('./parser.js'),{createFirstPartyHTMLScraper}=await import('../../scraper-support/shared/firstPartyHtmlJobs.js')
- const config=createSourceConfig();delete config.expectedContentType;const m=mock(),blocked=await createFirstPartyHTMLScraper(config).collect({transport:m.transport});assert.equal(blocked.jobs.length,0);assert.ok(blocked.failures.some(f=>/content type/.test(f.message)))
+ const config=createSourceConfig({now:()=>replayAt});delete config.expectedContentType;const m=mock(),blocked=await createFirstPartyHTMLScraper(config).collect({transport:m.transport});assert.equal(blocked.jobs.length,0);assert.ok(blocked.failures.some(f=>/content type/.test(f.message)))
  assert.equal(globalThis.__fortanixExecuted,undefined);const safe=mock(r=>r.url.includes('/_next/')?text(r,s=>s+';globalThis.__fortanixExecuted=true;'):r);assert.equal((await run({transport:safe.transport})).length,10);assert.equal(globalThis.__fortanixExecuted,undefined)
  for(const suffix of['/llms.txt','/_next/']){const bad=mock(r=>r.url.includes(suffix)?{...r,headers:{...r.headers,'content-type':'text/plain'}}:r);await assert.rejects(run({transport:bad.transport}),/incomplete|forbidden/i)}
+})
+
+test('historical native packets fail the live listing freshness guard after 48 hours',async()=>{
+ const m=mock()
+ await assert.rejects(runNative({transport:m.transport,now:()=>new Date(Date.parse(replayAt)+48*3600000).toISOString()}),/incomplete|forbidden/i)
 })
