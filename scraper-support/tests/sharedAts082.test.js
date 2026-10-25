@@ -7,9 +7,11 @@ import { createPublishingGapAtsScraper } from '../utils/publishingGapAts.js'
 import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { analyzePublishableJobs } from '../utils/publishableJobMetrics.js'
 import { classifyProviderImplementation } from '../../scripts/reportScriptCatalogTopology.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 
 const fixtures = JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/sharedAts082.json.gz', import.meta.url))))
 const ids = ['bugcrowd', 'degreed', 'cymulate', 'esw', 'extrahop', 'datagrail']
+const unresolvedScopes = new Set(['bugcrowd', 'degreed', 'cymulate', 'esw', 'extrahop'])
 
 for (const source of ids) test(`${source}: registered shared adapter consumes the complete native feed with guarded scope`, async () => {
   const provider = getScraperCatalog().find(row => row.source === source)
@@ -25,7 +27,8 @@ for (const source of ids) test(`${source}: registered shared adapter consumes th
   assert.equal(analyzePublishableJobs(jobs).eligibleJobs.length, expected)
   const evidence = readInventoryEvidence(jobs)
   assert.equal(evidence.reportedTotal, fixtures[source].meta.total)
-  assert.equal(evidence.indiaFacetCount, expected)
+  assert.equal(evidence.indiaFacetCount, unresolvedScopes.has(source) ? null : expected)
+  if (unresolvedScopes.has(source)) assert.match(evidence.reason, /native-location-scope-unresolved/)
   assert.equal(evidence.listingComplete, false)
   assert.equal(evidence.status, 'discovery-only')
   assert.equal(isFreshCompleteInventoryEvidence(evidence), false)
@@ -54,7 +57,14 @@ test('explicit unresolved scope cannot be promoted to complete, including a trul
     assert.equal(readInventoryEvidence(guarded).listingComplete, false)
     assert.equal(readInventoryEvidence(guarded).status, 'discovery-only')
     const unchangedDefault = await createPublishingGapAtsScraper({ ...provider, sourceScopeComplete: undefined }).run({ fetchJson: async () => payload })
-    assert.equal(readInventoryEvidence(unchangedDefault).listingComplete, true)
+    const defaultEvidence = readInventoryEvidence(unchangedDefault)
+    assert.equal(defaultEvidence.listingComplete, payload.jobs.length === 0)
+    assert.equal(defaultEvidence.indiaFacetCount, payload.jobs.length === 0 ? 0 : null)
+    if (payload.jobs.length) {
+      assert.match(defaultEvidence.reason, /native-location-scope-unresolved/)
+      assert.ok(unchangedDefault.every(job => job.sourceListingComplete === false))
+      assert.equal(isFreshCompleteInventoryEvidence(defaultEvidence), false)
+    }
   }
 })
 
@@ -66,7 +76,13 @@ test('batch feed failures, truncated totals and missing descriptions retain evid
   const payload = structuredClone(fixtures.bugcrowd)
   for (const row of payload.jobs) row.content = ''
   const jobs = await run(payload)
-  assert.equal(analyzePublishableJobs(jobs).eligibleJobs.length, 0)
-  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(jobs.length, 2)
+  assert.equal(analyzePublishableJobs(jobs).eligibleJobs.length, 2)
+  assert.ok(jobs.every(job => !hasSourceDescription(job) && !job.jobDescription && !job.sourceDescription))
+  assert.ok(jobs.every(job => job.sourceListingComplete === false && job.lifecycleCleanupAllowed === false))
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.listingComplete, false)
+  assert.match(evidence.reason, /selected-role-description-unavailable/)
+  assert.equal(isFreshCompleteInventoryEvidence(evidence), false)
   await assert.rejects(createPublishingGapAtsScraper(provider).run({ fetchJson: async () => { throw new Error('HTTP 503') } }), /503/)
 })

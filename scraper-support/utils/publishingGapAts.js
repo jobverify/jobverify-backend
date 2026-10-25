@@ -28,6 +28,57 @@ const nativeCountry = value => typeof value === 'string' ? countryNames.get(valu
 const escapePattern = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const foreignCountryPattern = new RegExp(`(?:^|[^\\p{L}])(?:${[...foreignCountryLabels].sort((a, b) => b.length - a.length).map(escapePattern).join('|')})(?=$|[^\\p{L}])`, 'iu')
 const nativeText = value => typeof value === 'string' && value.trim().length > 0
+const GLOBAL_LOCATION = /\b(?:worldwide|global|anywhere|any\s+location|all\s+locations|APAC|EMEA|AMER|LATAM|Asia[- ]Pacific)\b/i
+const unresolvedLocationSegment = (label, country) => {
+  const parts = String(label || '').split(/\s*(?:[;|/+&\n]|\s+(?:or|and)\s+)\s*/i).filter(Boolean)
+  return !parts.length ? !country : parts.some(part => GLOBAL_LOCATION.test(part)
+    || (!INDIA_LOCATION.test(part) && !foreignCountryPattern.test(part) && !(parts.length === 1 && country)))
+}
+const validatePublicPostingScope = (records, kind, provider) => {
+  const reasons = new Set()
+  const fail = reason => { throw new Error(`[${provider.source}] Invalid ${kind} inventory: ${reason}`) }
+  for (const record of records) {
+    if (record?.isListed === false || TALENT_POOL.test(record?.title || record?.text || '')) continue
+    const primary = kind === 'greenhouse' ? record?.location?.name : record?.categories?.location
+    const countryValue = kind === 'lever' ? record?.country : null
+    if (countryValue != null && typeof countryValue !== 'string') fail('invalid native country')
+    const country = nativeCountry(countryValue)
+    const primaryIndia = typeof primary === 'string' && INDIA_LOCATION.test(primary)
+    const candidates = [{ label: primary, country }]
+    if (kind === 'lever' && record?.categories?.allLocations != null) {
+      if (!Array.isArray(record.categories.allLocations)) fail('invalid native location inventory')
+      candidates.push(...record.categories.allLocations.filter(label => label !== primary).map(label => ({ label })))
+    }
+    if (kind === 'greenhouse' && record?.offices != null) {
+      if (!Array.isArray(record.offices)) fail('invalid native office inventory')
+      for (const office of record.offices) {
+        if (!office || typeof office !== 'object' || Array.isArray(office)
+          || (office.name != null && typeof office.name !== 'string')
+          || (office.location != null && typeof office.location !== 'string')) fail('invalid native office')
+        candidates.push({ label: office?.location || office?.name })
+        // A descriptive office name need not repeat its explicit address. But
+        // alternate India/global evidence in that name must remain visible.
+        if (office?.location && typeof office.name === 'string'
+          && (INDIA_LOCATION.test(office.name) || GLOBAL_LOCATION.test(office.name))) candidates.push({ label: office.name })
+      }
+    }
+    if (nativeText(countryValue) && !country) reasons.add('native-location-scope-unresolved')
+    for (const candidate of candidates) {
+      if (candidate.label != null && typeof candidate.label !== 'string') fail('invalid native location')
+      const india = INDIA_LOCATION.test(candidate.label || '')
+      const foreign = foreignCountryPattern.test(candidate.label || '')
+      if ((india && foreign) || (candidate.country && candidate.country !== 'IN' && india)
+        || (candidate.country === 'IN' && foreign)) fail('contradictory country/location')
+      if (unresolvedLocationSegment(candidate.label, candidate.country)) {
+        reasons.add('native-location-scope-unresolved')
+      }
+      // The current mapper selects the primary location. Native India metadata
+      // or additional offices must not disappear into an authoritative zero.
+      if (!primaryIndia && (india || candidate.country === 'IN')) reasons.add('native-india-location-unmapped')
+    }
+  }
+  return [...reasons]
+}
 const inventoryError = payload => payload && !Array.isArray(payload) && (payload.success === false || payload.ok === false
   || payload.hasError === true || payload.failed === true || Boolean(payload.error)
   || (Array.isArray(payload.errors) ? payload.errors.length > 0 : Boolean(payload.errors))
@@ -78,7 +129,7 @@ const validateAshbyInventory = (payload, records, provider) => {
         && !filterIndiaJobs([{ country: 'India', location: candidate.location }]).length) fail('contradictory country/location')
       // Missing countries are documented by Ashby. Retain unknown scope instead
       // of certifying a globally remote or unrecognized label as zero India.
-      if ((!country && !labelIndia && !labelForeign) || (nativeText(address.addressCountry) && !country)) unknownScope = true
+      if (unresolvedLocationSegment(candidate.location, country) || (nativeText(address.addressCountry) && !country)) unknownScope = true
     }
     if (unknownScope) reasons.push('native-location-scope-unresolved')
   }
@@ -87,6 +138,7 @@ const validateAshbyInventory = (payload, records, provider) => {
 
 export const createPublishingGapAtsScraper = (provider) => ({
   async run({ fetchJson = (url, options) => fetchJsonWithRetry(url, { ...options, timeoutMs: 20000, label: provider.source }), signal } = {}) {
+    signal?.throwIfAborted()
     const kind = provider.atsPlatform
     if (!['greenhouse', 'ashby', 'lever'].includes(kind)) throw new Error(`Unsupported ATS: ${kind}`)
     const token = encodeURIComponent(provider.boardToken)
@@ -96,6 +148,7 @@ export const createPublishingGapAtsScraper = (provider) => ({
         ? `https://api.ashbyhq.com/posting-api/job-board/${token}`
         : `https://api.lever.co/v0/postings/${token}?mode=json`
     const payload = await fetchJson(url, { signal })
+    signal?.throwIfAborted()
     if (inventoryError(payload)) throw new Error(`[${provider.source}] Failed ${kind} inventory envelope`)
     const records = kind === 'lever' ? payload : payload?.jobs
     if (!Array.isArray(records)) throw new Error(`[${provider.source}] Invalid ${kind} inventory`)
@@ -103,7 +156,8 @@ export const createPublishingGapAtsScraper = (provider) => ({
     if (payload?.hasMore === true || (reported != null && Number(reported) !== records.length)) {
       throw new Error(`[${provider.source}] Incomplete ${kind} inventory`)
     }
-    const nativeReasons = kind === 'ashby' ? validateAshbyInventory(payload, records, provider) : []
+    const nativeReasons = kind === 'ashby' ? validateAshbyInventory(payload, records, provider)
+      : validatePublicPostingScope(records, kind, provider)
     const active = records.filter((record) => record?.isListed !== false)
     if (active.some((record) => !record?.id || !(record.title || record.text))) {
       throw new Error(`[${provider.source}] Malformed ${kind} inventory record`)
@@ -123,6 +177,7 @@ export const createPublishingGapAtsScraper = (provider) => ({
         : payload
       mapped = await runApiPortalScraper({ provider: config, fetchJson: async () => prepared })
     }
+    signal?.throwIfAborted()
     const located = filterIndiaJobs(mapped).filter(job => indiaLocation(job)
       || (kind === 'ashby' && /^(?:india|in|ind)$/i.test(job.country || '')))
     const jobs = located.filter((job) => !TALENT_POOL.test(job.title)).map((job) => ({
@@ -157,7 +212,7 @@ export const createPublishingGapAtsScraper = (provider) => ({
       listingComplete,
       pagesFetched: innerEvidence?.pagesFetched ?? 1,
       reportedTotal: innerEvidence?.reportedTotal ?? (kind === 'greenhouse' ? null : records.length),
-      indiaFacetCount: located.length,
+      indiaFacetCount: nativeReasons.some(reason => /location-scope-unresolved|location-unmapped/.test(reason)) ? null : located.length,
       verifiedAt: new Date().toISOString(),
       reason: listingComplete ? `${kind}-public-posting-api-complete-single-response`
         : `${kind}-public-posting-api-incomplete:${incompleteReasons.join(';')}`,

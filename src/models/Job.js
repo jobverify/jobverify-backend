@@ -58,6 +58,23 @@ const isHttpUrl = (value) => {
   }
 };
 
+// Stores the observation of verified native availability, never a guessed
+// time at which a vacancy closed. The complete native snapshot stays raw.
+const SourceAvailabilitySchema = new Schema({
+  version: Number,
+  provenance: String,
+  state: { type: String, enum: ['open', 'closed'] },
+  source: String,
+  jobId: String,
+  canonicalRoleId: String,
+  title: String,
+  brand: String,
+  employer: String,
+  canonicalUrl: String,
+  observedAt: Date,
+  evidenceSha256: String,
+}, { _id: false });
+
 export const JobSchema = new Schema(
   {
     title: {
@@ -199,8 +216,11 @@ export const JobSchema = new Schema(
       unique: true,
     },
     postedAt: { type: Date },
+    postedAtProvenance: { type: String, enum: ['source', 'observation'], default: undefined },
+    postedAtProvenanceValue: { type: String, default: undefined },
     sortDate: { type: Date, default: null },
     closingDate: { type: Date },
+    sourceAvailability: { type: SourceAvailabilitySchema, default: undefined },
     scrapedAt: { type: Date, default: Date.now },
     scrapedTimestamp: { type: Date, default: Date.now },
     lastSeenAt: { type: Date, default: Date.now },

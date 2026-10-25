@@ -5,9 +5,10 @@ import {
 } from '../shared/pdfText.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { normalizeScrapedJob } from './normalizeScrapedJob.js'
+import { resolveJobPublicationDate, sourcePublicationDateFields } from '../../src/utils/jobPublicationDate.js'
 import { hasSourceDescription, getSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { publicPostingDescription, isExactPublicJobUrl } from '../../rewriting/publicPostingDescription.js'
-import { activeIframeSources, extractActiveDescription, readNativeDocument } from './activeNativeHtml.js'
+import { ActiveNativeContentError, activeIframeSources, extractActiveDescription, readNativeDocument } from './activeNativeHtml.js'
 import { normalizeLifecycleDate } from '../../src/utils/jobLifecycle.js'
 
 const USER_AGENT =
@@ -923,7 +924,15 @@ const isEmbeddedGreenhouseJobUrl = (jobUrl) => {
 }
 
 const extractEmbeddedPublicJobUrl = (html, baseUrl = null) => {
-  for (const src of activeIframeSources(html)) {
+  let iframeSources
+  try {
+    iframeSources = activeIframeSources(html)
+  } catch (error) {
+    if (!(error instanceof ActiveNativeContentError)) throw error
+    // Optional discovery cannot trust a malformed wrapper or cancel other jobs.
+    return null
+  }
+  for (const src of iframeSources) {
     const candidateUrl = toAbsoluteUrl(src, baseUrl)
     if (candidateUrl && isEmbeddedGreenhouseJobUrl(candidateUrl)) {
       return candidateUrl
@@ -1120,12 +1129,11 @@ const enrichJobWithOracleCandidateExperienceDetail = async (job = {}, {
     const start = nativeOracleDate(detail.ExternalPostedStartDate)
     const end = nativeOracleDate(detail.ExternalPostedEndDate)
     if (start === undefined || end === undefined) return job
-    const suppliedStart = normalizeLifecycleDate(job.postingDate || job.postedAt)
-    const scraped = normalizeLifecycleDate(job.scrapedTimestamp || job.scrapedAt)
-    const startWasScrapeFallback = suppliedStart && scraped && suppliedStart.getTime() === scraped.getTime()
-    if ((!startWasScrapeFallback && nativeDateConflicts(job.postingDate || job.postedAt, start, job.sourcePostingDateIsExact))
+    const suppliedPublication = resolveJobPublicationDate(job)
+    if ((suppliedPublication.provenance === 'source'
+      && nativeDateConflicts(suppliedPublication.date, start, job.sourcePostingDateIsExact))
       || nativeDateConflicts(job.closingDate, end, job.sourceClosingDateIsExact)) return job
-    if (start) lifecycle.postingDate = lifecycle.postedAt = start.toISOString()
+    if (start) Object.assign(lifecycle, sourcePublicationDateFields(start))
     if (end) {
       lifecycle.closingDate = end.toISOString()
       lifecycle.sourceClosingDateIsExact = /T/i.test(String(detail.ExternalPostedEndDate))
@@ -1715,6 +1723,7 @@ export const enrichJobWithPublicExperience = async (job = {}, {
     enriched = promotedJob
   }
 
+  throwIfAborted(signal)
   const hasVerifiedWrapperResponse = rawFetchedHtml && typeof rawFetchedHtml === 'object'
     && rawFetchedHtml.status >= 200 && rawFetchedHtml.status < 300
     && isExactPublicJobUrl(rawFetchedHtml.url, jobUrl)

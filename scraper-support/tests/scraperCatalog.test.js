@@ -362,7 +362,8 @@ test('getScraperCatalog merges workday and official portal providers into one re
 
   assert.ok(sharechat)
   assert.equal(sharechat.adapter, 'script')
-  assert.equal(sharechat.atsPlatform, 'official-company-careers')
+  assert.equal(sharechat.atsPlatform, 'mynexthire')
+  assert.equal(sharechat.parser, 'bound-native-mynexthire-details-and-publication')
   assert.match(sharechat.companyCareerPage, /sharechat\.com\/careers/i)
   assert.equal(sharechat.companyDomain, 'sharechat.com')
 
@@ -816,7 +817,8 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.equal(typeof sharechat.run, 'function')
   assert.match(sharechat.dryRunFile, /sharechat[\\/]jobs\.json$/)
   assert.equal(sharechat.provider.source, 'sharechat')
-  assert.equal(sharechat.provider.atsPlatform, 'official-company-careers')
+  assert.equal(sharechat.provider.atsPlatform, 'mynexthire')
+  assert.equal(sharechat.provider.parser, 'bound-native-mynexthire-details-and-publication')
 
   assert.ok(siemens)
   assert.equal(typeof siemens.run, 'function')

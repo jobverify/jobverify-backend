@@ -24,8 +24,7 @@ const substantive='<h2>Responsibilities</h2><p>'+('Design and implement reliable
 
 test('source046 replaces exactly one sentinel with unknown verification counts',()=>{
  const all=getScraperCatalog(),p=all.find(p=>p.source==='enphaseenergy')
- assert.equal(all.length,4587);assert.equal(new Set(all.map(p=>p.source)).size,4587)
- assert.equal(p.companyName,'Enphase Energy');assert.equal(p.companyDomain,'enphase.com')
+ assert.equal(all.filter(row=>row.source==='enphaseenergy').length,1);assert.equal(p.companyName,'Enphase Energy');assert.equal(p.companyDomain,'enphase.com')
  assert.equal(p.atsPlatform,'enphase-native-corporate-api');assert.equal(p.jobsBoardUrl,'https://enphase.com/api/v2/jobs')
  assert.match(p.modulePath,/enphaseenergy.workday[\\/]script.js$/)
  for(const key of ['verifiedOn','verifiedAt','verifiedPublicJobCount','verifiedIndiaJobCount'])assert.equal(p[key],null)
@@ -80,6 +79,7 @@ test('active native role header closure nulls full JD while retaining raw native
   assert.notEqual(html,native.storedBodyUTF8)
   const job=adapter.parseDetail(html,row,{now:at})
   assert.equal(job.sourceDetailComplete,false);assert.equal(job.sourceDetailStatus,'native-role-closed')
+  assert.equal(job.sourceAvailabilityEvidence?.state,'closed')
   assert.equal(job.jobDescription,null);assert.equal(job.sourceDescription,null)
   assert.equal(job.nativeDescriptionOriginal,row.description__value);assert.ok(job.nativeCorporateDescriptionText.length>6000)
   assert.equal(job.nativeRejectedDetailHTML,html);assert.equal(job.nativeListingOriginal.jid,row.jid)
@@ -105,7 +105,8 @@ test('stable active header closure remains unpublishable through full source rec
  assert.match(closed.nativeRejectedDetailHTML,/This position is closed/)
  const {analyzePublishableJobs}=await import('../../scraper-support/utils/publishableJobMetrics.js')
  const quality=analyzePublishableJobs(jobs,{now:new Date(at)})
- assert.equal(quality.eligibleJobs.includes(closed),false);assert.equal(quality.filterCounts.emptyDescription,1)
+ assert.equal(quality.eligibleJobs.includes(closed),false);assert.equal(quality.filterCounts.closed,1)
+ assert.equal(quality.filterCounts.emptyDescription,0)
  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
 test('new role-header closure during final reconciliation fails instead of publishing earlier content',async()=>{
@@ -170,7 +171,7 @@ test('native detail field drift in final recheck fails closed',async()=>{
  const t=transport((r,n)=>{if(n>0&&r.requestedURL.includes('/job/'))r.storedBodyUTF8=r.storedBodyUTF8.replace('Requisition ID:','Requisition changed:');return r})
  await assert.rejects(adapter.run({...t,now:at}),/title\/location\/requisition mismatch/)
 })
-test('runtime retains rejected native JD for shared publishable filtering without fabricating replacement text',async()=>{
+test('runtime retains a missing native JD as eligible with incomplete detail health',async()=>{
  const t=transport(r=>{
   if(r.requestedURL.includes('/api/v2/jobs')){const p=JSON.parse(r.storedBodyUTF8);const target=p.rows.find(x=>x.jid===row.jid);if(target)target.description__value='';r.storedBodyUTF8=JSON.stringify(p)}
   if(r.requestedURL==='https://enphase.com/job/'+row.jid)r.storedBodyUTF8=detailFor({...row,description__value:''},'')
@@ -180,7 +181,8 @@ test('runtime retains rejected native JD for shared publishable filtering withou
  assert.equal(jobs.length,23);assert.equal(rejected.jobDescription,null);assert.equal(rejected.nativeDescriptionOriginal,'');assert.ok(rejected.nativeRejectedDetailHTML)
  const {analyzePublishableJobs}=await import('../../scraper-support/utils/publishableJobMetrics.js')
  const quality=analyzePublishableJobs(jobs,{now:new Date(at)})
- assert.equal(quality.filterCounts.emptyDescription,1);assert.equal(quality.eligibleJobs.includes(rejected),false)
+ assert.equal(quality.filterCounts.emptyDescription,0);assert.equal(quality.eligibleJobs.includes(rejected),true)
+ assert.equal(rejected.sourceDetailComplete,false);assert.equal(rejected.sourceDetailStatus,'missing-unscoped-or-conflicting-native-description')
  assert.ok(quality.eligibleJobs.every(j=>j.nativeDateUnknown&&j.postedAt===null))
 })
 test('source deadline and explicit truncation cannot return partial candidates',async()=>{

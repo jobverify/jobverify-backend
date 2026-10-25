@@ -1,5 +1,6 @@
 import {readNativeDocument,extractActiveDescription,decodeNativeEntities} from '../../scraper-support/utils/activeNativeHtml.js'
 import {filterIndiaJobs} from '../../scraper-support/utils/indiaLocationFilter.js'
+import {createNativeRoleAvailability,nativeRoleClosureNotice} from '../../scraper-support/utils/sourceAvailability.js'
 export const ENTRY='https://datahub.com/datahub-careers/',CAREERS='https://datahub.com/company/careers/',EMBED='https://boards.greenhouse.io/embed/job_board/js?for=acryldata',BOARD='https://job-boards.greenhouse.io/acryldata',API='https://boards-api.greenhouse.io/v1/boards/acryldata/jobs?content=true'
 export const check=(value,message)=>{if(!value)throw Error('DataHub native contract: '+message)}
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)
@@ -139,7 +140,12 @@ export function detail(html,row,now){
   return n.tag==='input'&&n.attrs.id===id&&usableType&&!Object.hasOwn(n.attrs,'readonly')
  }).length===1),'Applicant controls unavailable')
  check(typeof p.content==='string','Native role content malformed')
- const description=fullDescription(p.content),apiDescription=extractActiveDescription(decodeNativeEntities(decodeNativeEntities(row.content)))
+ const identity={source:'datahub',company:'DataHub',jobId:String(row.id),title:row.title,sourceUrl:row.absolute_url}
+ const notice=nativeRoleClosureNotice(identity,html)
+ const description=notice?null:fullDescription(p.content),apiDescription=extractActiveDescription(decodeNativeEntities(decodeNativeEntities(row.content)))
  check(!description||apiDescription?.includes(description.replace(/ Please click Apply now to submit your application\.$/,'')),'API/full role content drift')
- return{description,postedAt:nativeDate(row.first_published,now),closingDate:nativeDate(row.application_deadline,now,false),nativeLocation:p.job_post_location,nativePublishedAt:p.published_at}
+ const availability=description||notice?createNativeRoleAvailability({...identity,sourceDescription:description,jobDescription:description,sourceDetailComplete:Boolean(description)},
+  {state:notice?'closed':'open',observedAt:now,evidenceHtml:html}):null
+ return{description,postedAt:nativeDate(row.first_published,now),closingDate:nativeDate(row.application_deadline,now,false),nativeLocation:p.job_post_location,nativePublishedAt:p.published_at,
+  availability,nativeRejectedDescription:description?null:p.content,sourceDetailFailureReason:notice?'native-role-explicitly-closed':description?null:'native-description-missing'}
 }

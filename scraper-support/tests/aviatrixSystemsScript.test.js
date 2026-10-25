@@ -11,6 +11,7 @@ const fetchNative = native => async url => url.includes('/offices?') ? offices :
 
 test('Aviatrix Systems extracts the five native India vacancies and preserves their identity and content', async () => {
   const native = payload()
+  const before = structuredClone(native)
   const calls = []
   const jobs = await createAviatrixSystemsScraper().run({ fetchJson: async (url, options) => {
     calls.push(url)
@@ -27,11 +28,57 @@ test('Aviatrix Systems extracts the five native India vacancies and preserves th
     assert.equal(job.applyUrl, original.absolute_url)
     assert.equal(job.postingDate, original.first_published)
     assert.equal(job.jobDescription, original.content)
+    assert.equal(job.sourceNativeLocationEvidence.primary,original.location.name)
+    assert.deepEqual(job.sourceNativeLocationEvidence.offices,original.offices)
   }
   const evidence = readInventoryEvidence(jobs)
   assert.equal(evidence.listingComplete, true)
   assert.equal(evidence.reportedTotal, 17)
   assert.equal(evidence.indiaFacetCount, 5)
+  assert.deepEqual(native,before,'Country-qualified projection must preserve native location and office evidence')
+})
+
+test('Aviatrix office-country corroboration cannot remove genuinely broader APAC scope',async()=>{
+  const native=payload()
+  native.jobs.find(job=>job.id===4741459005).location.name='Bengaluru, Karnataka, India / APAC'
+  const jobs=await createAviatrixSystemsScraper().run({fetchJson:fetchNative(native)})
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null)
+})
+
+test('Aviatrix embedded office identity must agree with its current native office tree',async()=>{
+  const native=payload()
+  native.jobs.find(job=>job.id===4741459005).offices[0].name='Unrelated office'
+  await assert.rejects(createAviatrixSystemsScraper().run({fetchJson:fetchNative(native)}),/office.*identity/i)
+})
+
+test('Aviatrix repeated city labels cannot override the country of the role-assigned native office',async()=>{
+  const tree=structuredClone(offices)
+  const find=(nodes,id)=>nodes.flatMap(node=>[node,...(node.children?.length?[find(node.children,id)].filter(Boolean):[])]).find(node=>node.id===id)
+  find(tree.offices,4000505005).children.push({id:9990000002,name:'Bengaluru',location:null,children:[]})
+  const native=payload(),target=native.jobs.find(job=>job.id===4741459005)
+  target.location.name='Bengaluru'
+  const indiaOffices=structuredClone(target.offices)
+  target.offices=[{id:9990000002,name:'Bengaluru',location:null,child_ids:[],parent_id:4000505005}]
+  const read=async url=>url.includes('/offices?')?tree:native
+  await assert.rejects(createAviatrixSystemsScraper().run({fetchJson:read}),/country|location|scope/i)
+  target.offices=indiaOffices
+  const jobs=await createAviatrixSystemsScraper().run({fetchJson:read})
+  assert.ok(jobs.some(job=>job.jobId===target.id&&job.country==='India'),'The exact assigned India office remains valid despite an unrelated duplicate label')
+})
+
+test('Aviatrix city-only India inference cannot override exclusively foreign assigned offices',async()=>{
+  const tree=structuredClone(offices)
+  tree.offices.push({id:9990000003,name:'United Kingdom',location:'United Kingdom',children:[]})
+  const usa={id:4000505005,name:'United States',location:'United States'}
+  const gb={id:9990000003,name:'United Kingdom',location:'United Kingdom'}
+  for(const assigned of [[usa],[usa,gb]]){
+    const native=payload(),target=native.jobs.find(job=>job.id===4741459005)
+    target.location.name='Bengaluru'
+    target.offices=assigned
+    await assert.rejects(createAviatrixSystemsScraper().run({fetchJson:async url=>url.includes('/offices?')?tree:native}),
+      /country|location|scope/i)
+  }
 })
 
 test('Aviatrix Systems records verified empty evidence only for a validated empty response', async () => {

@@ -7,23 +7,25 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes the Volopay Dover apiPortal provider with official metadata', () => {
+test('getScraperCatalog includes the Volopay native Dover script with official publisher binding', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'volopay')
 
   assert.ok(provider)
-  assert.equal(provider.adapter, 'apiPortal')
+  assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'dover')
   assert.equal(provider.companyName, 'Volopay')
   assert.equal(
     provider.companyCareerPage,
-    'https://app.dover.com/dover/careers/ebed3959-fa8a-4719-b143-0730e1223ec8',
+    'https://app.dover.io/dover/careers/ebed3959-fa8a-4719-b143-0730e1223ec8',
   )
   assert.equal(provider.companyDomain, 'volopay.com')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-page')
-  assert.equal(provider.extractionStrategy, 'api+detail')
-  assert.equal(provider.parser, 'api-portal')
+  assert.equal(provider.paginationStrategy, 'native-count-and-final-inventory-reconciliation')
+  assert.equal(provider.extractionStrategy, 'active-official-handoff+exact-native-client-role-country+employer-description-html')
+  assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
+  assert.match(provider.modulePath,/volopay[\\/]script\.js$/)
+  assert.equal(provider.officialHomepageUrl,'https://www.volopay.com/')
   assert.equal(
     provider.config.discovery.listingApiUrl,
     'https://app.dover.com/api/v1/careers-page/ebed3959-fa8a-4719-b143-0730e1223ec8/jobs',
@@ -52,13 +54,15 @@ test('getScraperCatalog includes the Volopay Dover apiPortal provider with offic
   assert.equal(provider.config.resultFilter.include[0].pattern, 'india|mumbai|bangalore|bengaluru')
 })
 
-test('buildScrapers and company coverage resolve Volopay to a runnable apiPortal source', () => {
+test('buildScrapers and company coverage resolve Volopay to one runnable native source', () => {
   const scraper = buildScrapers().find((item) => item.name === 'volopay')
 
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.match(scraper.dryRunFile, /volopay[\\/]jobs\.json$/i)
   assert.equal(scraper.provider.source, 'volopay')
+  assert.equal(scraper.provider.adapter,'script')
+  assert.equal(buildScrapers().filter(item=>item.name==='volopay').length,1)
 
   const report = generateCompanyCoverageReport({
     csvText: 'Volopay,\n',

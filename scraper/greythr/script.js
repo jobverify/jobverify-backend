@@ -116,6 +116,7 @@ export const extractGreytHrJobs = (payload = {}, categories = {}) => {
         maxExperience: experience(job.max_exp),
         experienceUnits: job.experience_units || null,
         postedDate: job.published_on_career_page || job.created_at || null,
+        postingDate: job.published_on_career_page || job.created_at || null,
         jobDescription: description,
         sourceDescription: description,
         jobDescriptionHtml: description ? job.description : null,

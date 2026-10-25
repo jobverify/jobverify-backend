@@ -64,6 +64,7 @@ test('GreytHR scraper identifies the verified first-party careers and JSON jobs 
       maxExperience: 10,
       experienceUnits: 'years',
       postedDate: '2026-07-22T07:09:14.699611Z',
+      postingDate: '2026-07-22T07:09:14.699611Z',
       jobDescription: 'Own customer onboarding and adoption of greytHR.',
       sourceDescription: 'Own customer onboarding and adoption of greytHR.',
       jobDescriptionHtml: '<p>Own customer onboarding and adoption of greytHR.</p>',

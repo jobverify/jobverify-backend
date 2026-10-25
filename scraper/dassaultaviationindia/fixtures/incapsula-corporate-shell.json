@@ -1,0 +1,11 @@
+{
+  "url": "https://www.dassault-aviation.com/en/group/careers/",
+  "finalUrl": "https://www.dassault-aviation.com/en/group/careers/",
+  "status": 200,
+  "capturedAt": "2026-10-24T18:00:03.542Z",
+  "originalBodyBytes": 958,
+  "originalBodySHA256": "ddcd4f9d0158126df5726e23b2dacadbca4776bb52ec5e4b677c1ed721d014a8",
+  "bodySHA256": "bb7d87e56b9e07280f0c5fa152a795d2af1ab7c72dd200b5115ab7a50b666777",
+  "fixtureMinimization": "Actual corporate HTTP200 response; incident/session/network query values and incident number redacted. Structure, active NOINDEX/NOFOLLOW meta, script and iframe resource paths retained.",
+  "body": "<html style=\"height:100%\"><head><META NAME=\"ROBOTS\" CONTENT=\"NOINDEX, NOFOLLOW\"><meta name=\"format-detection\" content=\"telephone=no\"><meta name=\"viewport\" content=\"initial-scale=1.0\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge,chrome=1\"><script type=\"text/javascript\" src=\"/_Incapsula_Resource?REDACTED\"></script></head><body style=\"margin:0px;height:100%\"><iframe id=\"main-iframe\" src=\"/_Incapsula_Resource?REDACTED\" frameborder=0 width=\"100%\" height=\"100%\" marginheight=\"0px\" marginwidth=\"0px\">Request unsuccessful. Incapsula incident ID: REDACTED</iframe></body></html>"
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "fixture": "current-native-20261024.json.gz",
+  "compressedSha256": "b978b64609fb911577f2ce1d7ba73f95c2d9a0b3201eb17fef8ce013c3dbffdf",
+  "uncompressedSha256": "0781cfc54c4b1790b1fb544e99e35d00a293eea5ebee1c09069f83818aad3cf9",
+  "captureMethod": "Bounded unauthenticated public HTTP reads through isolated headless Chromium contexts. MCP browser failed before code with an in-use shared profile; local Playwright used to retain raw response fixtures.",
+  "sanitization": "Public page/API content only; no cookies, browser storage, applicant submissions or credentials. CSP nonce attribute values redacted where present. Structured native selections omit applicant questions.",
+  "capturedAt": "2026-10-24T17:01:04.498Z",
+  "limitations": "Captured fixtures are evidence for offline parser replay, not current production transport or database publication. Static tests with modified records are contract regressions, not live India job evidence."
+}

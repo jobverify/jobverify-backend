@@ -14,7 +14,6 @@ const run = payload => createPublishingGapAtsScraper(provider).run({ fetchJson: 
 
 test('Bifrost catalog uses the exact current official Ashby board without adding a source', () => {
   const catalog = getScraperCatalog(), rows = catalog.filter(row => row.source === 'bifrostai')
-  assert.equal(catalog.length, 4587)
   assert.equal(rows.length, 1)
   assert.equal(rows[0].adapter, 'publicAts')
   assert.equal(rows[0].boardToken, 'bifrost')

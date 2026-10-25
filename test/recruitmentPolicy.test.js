@@ -99,6 +99,50 @@ test('an explicitly preferred experience section cannot become a required minimu
   assert.equal(job.experienceProfile.preferredMinimumYears, 3);
 });
 
+test('unconditional fresher eligibility survives a preceding preferred experience section', () => {
+  for (const eligibility of ['Freshers welcome.', 'Fresh graduates are eligible to apply.',
+    'This role welcomes recent graduates.', 'New graduates can apply.']) {
+    const result = resolveClassification({ title: 'Engineer',
+      description: `Preferred experience: 1 year. ${eligibility}` }, null, { now, mode: 'policy' });
+    assert.equal(result.resolved.jobType, 'Full-time Fresher', eligibility);
+    assert.deepEqual(result.resolved.experienceYears, [0]);
+    assert.equal(result.resolved.experienceProfile.minimumYears, 0);
+    assert.equal(result.resolved.experienceProfile.preferredMinimumYears, 1);
+    assert.equal(result.resolved.employerExperienceProfile.minimumYears, null);
+  }
+});
+
+test('required positive experience survives unconditional fresher wording beside preferred experience', () => {
+  for (const job of [
+    { description: 'Minimum 3 years of professional experience required. Preferred experience: 5 years. Freshers welcome.' },
+    { description: 'Freshers welcome. Minimum 3 years of professional experience required. Preferred experience: 5 years.' },
+    { description: 'Required: 3 years of professional experience. Fresh graduates are eligible to apply.', preferredQualification: '5 years of experience preferred.' },
+    { sourceExperienceRequired: '3', description: 'Preferred experience: 5 years. New graduates can apply.' },
+  ]) {
+    const result = resolveClassification({ title: 'Engineer', ...job }, null, { now, mode: 'policy' });
+    assert.equal(result.resolved.jobType, 'Full-time Experienced', job.description);
+    assert.equal(result.resolved.experienceProfile.minimumYears, 3);
+    assert.equal(result.resolved.employerExperienceProfile.minimumYears, 3);
+    assert.equal(result.resolved.experienceProfile.preferredMinimumYears, 5);
+    assert.equal(result.resolved.experienceBasis, 'employer_requirement');
+    assert.ok(result.resolved.experienceYears.every(year => year >= 3));
+  }
+});
+
+test('negated, conditional and preferred-only fresher wording cannot end an optional section', () => {
+  for (const eligibility of ['Freshers are not eligible to apply.',
+    'Freshers may apply only if they have 2 years of professional experience.',
+    'Freshers are preferred.', 'We mentor fresh graduates.']) {
+    const result = resolveClassification({ title: 'Engineer',
+      description: `Preferred experience: 1 year. ${eligibility}` }, null, { now, mode: 'policy' });
+    assert.notEqual(result.resolved.jobType, 'Full-time Fresher', eligibility);
+    assert.equal(result.resolved.experienceProfile.preferredMinimumYears, 1);
+  }
+  const student = resolveClassification({ title: 'Engineer', description:
+    "Full-time role. Preferred qualifications:\nCurrently pursuing a bachelor's degree." }, null, { now, mode: 'policy' });
+  assert.notEqual(student.resolved.jobType, 'Intern');
+});
+
 test('inline optional modifiers on numeric experience cannot become a required minimum', async t => {
   for (const modifier of ['desired', 'good to have', 'optional', 'a bonus', 'desirable', 'nice-to-have']) await t.test(modifier, () => {
     const job = classify({ title: 'Engineer', description:
@@ -337,6 +381,17 @@ test('direct fresher eligibility survives duties in the same qualification sente
   const director = classify({ title: 'Programme Director', description: 'Minimum 10 years of professional experience required. Responsibilities:\nRecent graduates on our team must receive mentoring from you.' });
   assert.equal(director.jobType, 'Full-time Experienced');
   assert.equal(director.experienceProfile.minimumYears, 10);
+});
+
+test('an alternative fresher path cannot erase a separate mandatory numeric requirement', () => {
+  for (const requirement of ['Minimum 3 years of professional experience required.',
+    '3 years of professional experience is mandatory.']) {
+    const job = classify({ title: 'Engineer', description:
+      `Freshers with post-graduation or 2 - 3 years of experience may apply. ${requirement}` });
+    assert.equal(job.jobType, 'Full-time Experienced');
+    assert.equal(job.experienceProfile.minimumYears, 3);
+    assert.equal(job.experienceBasis, 'employer_requirement');
+  }
 });
 
 test('intern vacancy titles retain zero years when a specialty, date or careers-site suffix follows intern', () => {

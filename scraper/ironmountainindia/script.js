@@ -1,8 +1,12 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { setTimeout as wait } from 'node:timers/promises'
 
-import { defaultShouldUseBrowserNetworkFallback } from '../../scraper-support/shared/browserNetworkFallback.js'
 import { IRON_MOUNTAIN_INDIA_CATALOG as PROVIDER_METADATA } from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { buildNativeDataUrl, extractNativeIronJob, resolveNativeWorkday, validateNativeNlx } from './nativeDetails.js'
+
+export { buildNativeDataUrl, extractNativeIronJob, resolveNativeWorkday, validateNativeNlx }
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const USER_AGENT =
@@ -46,27 +50,43 @@ const uppercaseShortWord = (word) => {
   return capitalizeWord(normalized)
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.any([signal, AbortSignal.timeout(15000)].filter(Boolean)),
   })
-
+  if (Number(response.headers.get('content-length')) > 2000000) throw new Error('Iron Mountain native response exceeds2MB body bound')
+  const html = await response.text()
+  signal?.throwIfAborted()
+  if (Buffer.byteLength(html) > 2000000) throw new Error('Iron Mountain native response exceeds2MB body bound')
   return {
     status: response.status,
-    url: response.url || url,
-    html: await response.text(),
+    url: response.url,
+    html,
   }
 }
 
-const shouldUseBrowserFallback = (error) =>
-  defaultShouldUseBrowserNetworkFallback(error)
-
 const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const receiveWithAbort = async (action, signal) => {
+  signal.throwIfAborted()
+  let onAbort, settlementTimer
+  const aborted = new Promise((resolve, reject) => {
+    onAbort = () => reject(signal.reason)
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+  const operation = Promise.resolve().then(action)
+  try { return await Promise.race([operation, aborted]) }
+  catch (error) {
+    if (!signal.aborted) throw error
+    await Promise.race([operation.catch(() => {}), new Promise(resolve => { settlementTimer = setTimeout(resolve, 100) })])
+    throw signal.reason
+  } finally { signal.removeEventListener('abort', onAbort); clearTimeout(settlementTimer) }
+}
 
 export const hasOfficialAboutPageCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -177,38 +197,42 @@ export const createIronMountainIndiaScraper = ({
   maxJobs = null,
 } = {}) => ({
   async run({
-    fetchPage,
-    fetchText,
-    fetchBrowserText,
+    fetchPage = defaultFetchPage, fetchText, fetchBrowserText, signal,
+    now: currentTime = now, maxJobs: runMaxJobs = maxJobs, requestIntervalMs = 500, sourceBudgetMs = 120000,
   } = {}) {
-    const loadPage = async (url) => {
-      if (typeof fetchPage === 'function') {
-        return fetchPage(url)
+    signal?.throwIfAborted()
+    if (fetchText || fetchBrowserText || typeof fetchPage !== 'function') throw new Error('Iron Mountain native runtime requires response receipts; text-only hooks are unsupported')
+    if ((runMaxJobs != null && (!Number.isSafeInteger(runMaxJobs) || runMaxJobs < 1 || runMaxJobs > 100))
+      || !Number.isSafeInteger(requestIntervalMs) || requestIntervalMs < 0 || requestIntervalMs > 5000
+      || !Number.isSafeInteger(sourceBudgetMs) || sourceBudgetMs < 1 || sourceBudgetMs > 120000) throw new Error('Iron Mountain native bounded run options are invalid')
+    const controller = new AbortController(), combined = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal
+    const timer = setTimeout(() => controller.abort(new Error(`Iron Mountain native ${sourceBudgetMs}ms source deadline exhausted`)), sourceBudgetMs)
+    let lastStart = 0
+    const loadPage = async (url, stage = 'publisher') => {
+      combined.throwIfAborted()
+      const remaining = requestIntervalMs - (Date.now() - lastStart)
+      if (remaining > 0) {
+        try { await wait(remaining, undefined, { signal: combined }) } catch (error) { combined.throwIfAborted(); throw error }
       }
-
-      if (typeof fetchText === 'function') {
-        try {
-          return {
-            status: 200,
-            url,
-            html: await fetchText(url),
-          }
-        } catch (error) {
-          if (typeof fetchBrowserText === 'function' && shouldUseBrowserFallback(error)) {
-            return {
-              status: 200,
-              url,
-              html: await fetchBrowserText(url),
-            }
-          }
-
-          throw error
-        }
+      combined.throwIfAborted(); lastStart = Date.now()
+      const response = await receiveWithAbort(() => fetchPage(url, { signal: combined }), combined)
+      combined.throwIfAborted()
+      if (!Number.isSafeInteger(response?.status) || typeof response.html !== 'string' || typeof response.url !== 'string'
+        || (stage !== 'apply' && response.url !== url)) throw new Error(`Iron Mountain native ${stage} response identity changed`)
+      if (Buffer.byteLength(response.html) > 2000000) throw new Error('Iron Mountain native response exceeds2MB body bound')
+      if (response.status !== 200 && !(stage === 'publisher' && url === ABOUT_PAGE_URL)) {
+        let upstreamErrorCode = null
+        try { upstreamErrorCode = JSON.parse(response.html).errorCode || null } catch {}
+        throw Object.assign(new Error(`Iron Mountain native ${stage} HTTP${response.status}${upstreamErrorCode ? ':' + upstreamErrorCode : ''}`),
+          { status: response.status, statusCode: response.status, stage, upstreamErrorCode })
       }
-
-      return defaultFetchPage(url)
+      return response
     }
-
+    const loadJson = async (url, stage) => {
+      const response = await loadPage(url, stage)
+      try { return JSON.parse(response.html) } catch { throw new Error(`Iron Mountain native ${stage} returned malformed JSON`) }
+    }
+    try {
     const aboutPage = await loadPage(ABOUT_PAGE_URL)
     const aboutPageHtml = getPageHtml(aboutPage)
     const aboutPageIsCheckpointed =
@@ -216,7 +240,7 @@ export const createIronMountainIndiaScraper = ({
       && String(aboutPage.url || ABOUT_PAGE_URL) === ABOUT_PAGE_URL
       && hasVercelSecurityCheckpointSignal(aboutPageHtml)
 
-    if (!aboutPageIsCheckpointed && !hasOfficialAboutPageCareersSignal(aboutPageHtml)) {
+    if (!aboutPageIsCheckpointed && (aboutPage.status !== 200 || !hasOfficialAboutPageCareersSignal(aboutPageHtml))) {
       throw new Error('Iron Mountain India verified about page changed materially')
     }
 
@@ -226,34 +250,41 @@ export const createIronMountainIndiaScraper = ({
     }
 
     const sitemapXml = getPageHtml(await loadPage(JOBS_SITEMAP_URL))
+    if (!/<urlset\b/i.test(sitemapXml) || !/<\/urlset>/i.test(sitemapXml)) throw new Error('Iron Mountain native sitemap is truncated or malformed')
     const indiaEntries = extractSitemapEntries(sitemapXml).filter((entry) => isIndiaJobUrl(entry.url))
-    const selectedEntries = Number.isInteger(maxJobs) ? indiaEntries.slice(0, maxJobs) : indiaEntries
-    const scrapedAt = now()
-    const jobs = []
+    if (indiaEntries.length > 100) throw new Error('Iron Mountain native India routes exceed100-role bounded limit')
+    const identities = new Set()
+    for (const entry of indiaEntries) {
+      const identity = buildNativeDataUrl(entry)
+      if (identities.has(identity)) throw new Error('Iron Mountain native sitemap repeats a role identity')
+      identities.add(identity)
+    }
+    const selectedEntries = runMaxJobs == null ? indiaEntries : indiaEntries.slice(0, runMaxJobs)
+    const jobs = [], errors = []
 
     for (const entry of selectedEntries) {
-      const detailHtml = getPageHtml(await loadPage(entry.url))
-      if (!hasOfficialJobDetailSignal(detailHtml)) {
-        throw new Error(`Iron Mountain India verified jobs board changed materially at ${entry.url}`)
-      }
-
-      const mappedJob = mapSitemapEntryToJob(entry)
-      if (!mappedJob) continue
-
-      jobs.push({
-        ...mappedJob,
+      try {
+      const nlx = validateNativeNlx(entry, await loadJson(buildNativeDataUrl(entry), 'nlx-detail'))
+      const applyReceipt = await loadPage(nlx.link, 'apply'), target = resolveNativeWorkday(applyReceipt)
+      const primary = await loadJson(target.cxsUrl, 'workday-detail')
+      const job = extractNativeIronJob(entry, nlx, applyReceipt, primary, { now: currentTime() })
+      jobs.push({ ...job,
         publicExperienceChecked: true,
-        link: mappedJob.applyUrl || mappedJob.sourceUrl,
-        source: SOURCE,
-        scrapedAt,
+        link: job.applyUrl, source: SOURCE, scrapedAt: currentTime(), sourceListingComplete: false, lifecycleCleanupAllowed: false,
+        companyDomain: PROVIDER_METADATA.companyDomain, companyCareerPage: CAREERS_URL, atsPlatform: 'nlx',
       })
+      } catch (error) { combined.throwIfAborted(); errors.push(error) }
     }
-
-    return jobs
+    combined.throwIfAborted()
+    return attachInventoryEvidence(jobs, { status: jobs.length ? 'discovery-only' : 'coverage-gap', surface: CAREERS_URL,
+      firstParty: true, listingComplete: false, pagesFetched: 1, reportedTotal: null, indiaFacetCount: null, verifiedAt: currentTime(),
+      reason: `full-company-scope-unverified;observed-india-routes=${indiaEntries.length};selected-details=${selectedEntries.length};verified-details=${jobs.length};detail-failures=${errors.length};publisher-about-checkpointed=${aboutPageIsCheckpointed}${errors.length ? ';' + errors.map(error => error.message).join(';') : ''}`,
+    })
+    } finally { clearTimeout(timer) }
   },
 })
 
-export const run = async (options = {}) => createIronMountainIndiaScraper().run(options)
+export const run = async (options = {}) => createIronMountainIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -79,8 +79,24 @@ for(const[name,html]of[
  ['unavailable description','<p>The full job description is currently unavailable. Please check back later for details about the qualifications and responsibilities of this position.</p>'],
  ['instruction-only','<p>Please click Apply now to view the full responsibilities, required skills and qualifications and submit your application to view more information about this position.</p>'],
  ['company-only','<p>About The Walt Disney Company: Disney is a global entertainment company that produces films, television, streaming and immersive experiences for families throughout the world.</p>'],
-])test(name+' retains the enumerated row with missing-detail health',async()=>{const jobs=await replay(p=>replaceDescription(p[5],html));assert.equal(jobs.length,32);assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(jobs[0].sourceDescription,null);const a=analyzePublishableJobs(jobs,{now});assert.equal(a.eligibleJobs.length,8);assert.equal(a.filterCounts.emptyDescription,1);assert.equal(readInventoryEvidence(jobs).listingComplete,false)})
+])test(name+' retains the enumerated row with missing-detail health',async()=>{const jobs=await replay(p=>replaceDescription(p[5],html));assert.equal(jobs.length,32);assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(jobs[0].sourceDescription,null);const a=analyzePublishableJobs(jobs,{now}),closed=['closed role','filled position'].includes(name);assert.equal(a.eligibleJobs.length,closed?8:9);assert.equal(a.filterCounts.closed,closed?1:0);assert.equal(a.filterCounts.emptyDescription,0);assert.equal(readInventoryEvidence(jobs).listingComplete,false)})
 test('genuine full JD followed by apply instructions stays full',async()=>{const jobs=await replay(p=>{p[5].body=p[5].body.replace('Education:','Please click Apply now to submit your application. Education:')});assert.equal(jobs[0].sourceDetailComplete,true)})
+
+test('native Disney role-header closure retains the unchanged raw JD and explicit availability proof',async()=>{
+ const jobs=await replay(p=>{const start=p[5].body.indexOf('id="job-details-1"');assert.ok(start>=0);const end=p[5].body.indexOf('>',start);p[5].body=p[5].body.slice(0,end+1)+'<p>This position is closed.</p>'+p[5].body.slice(end+1)})
+ const job=jobs[0],metrics=analyzePublishableJobs(jobs,{now})
+ assert.equal(job.sourceDescription,null);assert.equal(job.sourceDetailComplete,false);assert.equal(job.sourceAvailabilityEvidence.state,'closed')
+ assert.equal(job.sourceAvailabilityEvidence.notice,'This position is closed.');assert.ok(job.nativeRejectedDescription.length>100)
+ assert.equal(job.closingDate,undefined);assert.equal(metrics.filterCounts.closed,1);assert.equal(metrics.eligibleJobs.length,8)
+ assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+})
+
+for(const notice of['<p hidden>This position is closed.</p>','<p inert>This position is closed.</p>',
+ '<p>If this position is closed, please browse other vacancies.</p>'])test('inactive or conditional Disney header does not create closure: '+notice,async()=>{
+ const jobs=await replay(p=>{const start=p[5].body.indexOf('id="job-details-1"');assert.ok(start>=0);const end=p[5].body.indexOf('>',start);p[5].body=p[5].body.slice(0,end+1)+notice+p[5].body.slice(end+1)+'<footer>This position is closed.</footer>'})
+ assert.equal(jobs[0].sourceDetailComplete,true);assert.equal(jobs[0].sourceAvailabilityEvidence.state,'open')
+ assert.equal(analyzePublishableJobs(jobs,{now}).eligibleJobs.length,9)
+})
 for(const value of['2/30/2026','13/1/2026','10/21/2099'])test('invalid/future original date '+value,()=>assert.throws(()=>originalDate(value,now)))
 test('unknown original date never borrows migration date',()=>assert.throws(()=>originalDate(null,now)))
 for(const options of[{maxJobs:0},{maxJobs:1},{maxPages:1},{timeoutMs:0}])test('cap/deadline '+JSON.stringify(options),async()=>assert.rejects(replay(()=>{},options)))
@@ -97,7 +113,7 @@ for(const[name,html]of[
  ['conditional full-description access','<p>To view the job description, click Apply now.</p><p>Responsibilities and required skills are available only after completing the application process on our careers site and cannot be displayed on this page.</p>'],
  ['conditional details after submission','<p>Click Apply Now.</p><p>The responsibilities, qualifications and required experience for this position will be provided after you submit a completed application through our recruitment system.</p>'],
 ])test(name+' retains rejected native evidence without qualifying a JD',async()=>{const j=(await replay(p=>replaceDescription(p[5],html)))[0];assert.equal(j.sourceDetailComplete,false);assert.equal(j.sourceDescription,null);assert.match(j.nativeRejectedDescription,/responsibilities/i);assert.equal(j.nativeRejectedDescriptionRawHTML,'<div class="ats-description">'+html+'</div>');assert.equal(j.sourceDetailFailureReason,'native-description-instruction-or-unavailable-only')})
-for(const notice of['This role has expired.','This position is not available.'])test(notice+' cannot qualify a closed role',async()=>{const j=(await replay(p=>{p[5].body=p[5].body.replace('Job Summary:','Job Summary: '+notice+' ')}))[0];assert.equal(j.sourceDetailComplete,false);assert.equal(j.sourceDescription,null);assert.ok(j.nativeRejectedDescription.includes(notice));assert.equal(j.sourceDetailFailureReason,'native-role-explicitly-closed')})
+for(const notice of['This role has expired.','This position is not available.'])test(notice+' cannot qualify a closed role',async()=>{const jobs=await replay(p=>{p[5].body=p[5].body.replace('Job Summary:','Job Summary: '+notice+' ')}),j=jobs[0];assert.equal(j.sourceDetailComplete,false);assert.equal(j.sourceDescription,null);assert.ok(j.nativeRejectedDescription.includes(notice));assert.equal(j.sourceDetailFailureReason,'native-role-explicitly-closed');assert.equal(j.sourceAvailabilityEvidence?.state,'closed');assert.equal(analyzePublishableJobs(jobs,{now}).filterCounts.closed,1)})
 test('aria-disabled native application links reject instead of source-URL fallback',async()=>assert.rejects(replay(p=>{p[5].body=p[5].body.replaceAll('class="button job-apply','aria-disabled="true" class="button job-apply')})))
 test('rejected company-only native content is retained outside publishable fallback fields',async()=>{const html='<p>About The Walt Disney Company: Disney is a global entertainment company that produces films, television, streaming and immersive experiences for families throughout the world.</p>',j=(await replay(p=>replaceDescription(p[5],html)))[0];assert.equal(j.sourceDescription,null);assert.equal(j.jobDescription,null);assert.match(j.nativeRejectedDescription,/About The Walt Disney Company/);assert.equal(j.nativeRejectedDescriptionRawHTML,'<div class="ats-description">'+html+'</div>');assert.equal(j.sourceDetailFailureReason,'native-description-no-role-content')})
 for(const notice of['This role has expired','This position is not available'])test(notice+' in a complete unpunctuated paragraph cannot qualify the original JD',async()=>{
@@ -113,7 +129,7 @@ for(const[name,html]of[
  const jobs=await replay(p=>replaceDescription(p[5],html)),j=jobs[0]
  assert.equal(jobs.length,32);assert.equal(j.sourceDescription,null);assert.equal(j.jobDescription,null);assert.equal(j.sourceDetailComplete,false)
  assert.equal(j.sourceDetailFailureReason,'native-description-instruction-or-unavailable-only');assert.match(j.nativeRejectedDescription,/responsibilities/i);assert.equal(j.nativeRejectedDescriptionRawHTML,'<div class="ats-description">'+html+'</div>')
- assert.equal(analyzePublishableJobs(jobs,{now}).eligibleJobs.length,8)
+ assert.equal(analyzePublishableJobs(jobs,{now}).eligibleJobs.length,9)
 })
 function appendNativeParagraph(packet,html){
  const start=packet.body.indexOf('<div class="ats-description">'),scan=/<\/?div\b[^>]*>/gi;assert.ok(start>=0);scan.lastIndex=start

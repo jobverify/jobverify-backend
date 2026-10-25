@@ -1,6 +1,7 @@
 import {readNativeDocument,decodeNativeEntities} from '../../scraper-support/utils/activeNativeHtml.js'
 import {fetchTextWithRetry} from '../../scraper-support/utils/fetch.js'
 import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {createNativeRoleAvailability,nativeRoleClosureNotice} from '../../scraper-support/utils/sourceAvailability.js'
 
 export const CAREERS='https://enphase.com/careers'
 export const API='https://enphase.com/api/v2/jobs'
@@ -93,7 +94,7 @@ function decodedDescription(value){
 }
 const CLOSED=/\b(?:(?:this |the )?(?:job|position|role)\s+(?:is\s+|has been\s+)?(?:closed|filled|expired|removed|no longer available)|no longer (?:accepting applications|available)|applications (?:are |have been )?closed)\b/i
 function usable(text){
- if(!plain(text)||text.length<=300||CLOSED.test(text))return false
+ if(!plain(text)||text.length<=300)return false
  const substantive=text.split(/(?<=[.!?])\s+/).filter(s=>!/(?:job description.*(?:unavailable|not available|coming soon)|please (?:click|check back)|click (?:on )?(?:apply|here)|apply now)/i.test(s)).join(' ')
  return substantive.replace(/[^\p{L}\p{N}]/gu,'').length>200&&/\b(?:responsibilities|requirements|qualifications|what you|who you|about the role|experience|skills|duties|you will|education|the role)\b/i.test(substantive)
 }
@@ -118,10 +119,12 @@ export function parseDetail(html,row,{now=new Date().toISOString()}={}){
  // Closure is authoritative within the active role header as well as its JD.
  // The document reader excludes inherited hidden/inert and noncontent nodes;
  // unrelated footer/page text cannot close this role.
- const closed=CLOSED.test(d.text(intro))||CLOSED.test(selected||'')||CLOSED.test(nativeText)
+ let availabilityQualified=false,notice=null
+ try{notice=nativeRoleClosureNotice({source:'enphaseenergy',company:'Enphase Energy',jobId:row.jid,title,sourceUrl:roleURL(row)},html);availabilityQualified=true}catch{}
+ const closed=availabilityQualified?Boolean(notice):CLOSED.test(d.text(intro))||CLOSED.test(selected||'')||CLOSED.test(nativeText)
  const full=!closed&&same&&usable(selected)&&usable(nativeText)?selected:null
  const reason=full?'complete':closed?'native-role-closed':texts.length>1?'contradictory-native-description':!same?'missing-unscoped-or-conflicting-native-description':'closed-instruction-only-or-unusable-native-description'
- return {
+ const job={
   source:'enphaseenergy',company:'Enphase Energy',jobId:row.jid,requisitionId:row.requisitionid,title,
   country:'India',city:location.split(',')[0],state:null,location,locations:[location],department:norm(row.category),
   sourceUrl:roleURL(row),applyUrl:apply,link:apply,
@@ -135,6 +138,9 @@ export function parseDetail(html,row,{now=new Date().toISOString()}={}){
   sourceListingComplete:false,sourceScopeComplete:false,sourceGlobalJobCount:null,sourceIndiaJobCount:null,
   sourceOfficialHtmlFetchedAtRuntime:true,scrapedAt:now,
  }
+ if(availabilityQualified&&(full||closed))job.sourceAvailabilityEvidence=createNativeRoleAvailability(job,{state:closed?'closed':'open',observedAt:now,evidenceHtml:html})
+ else if(closed)job.sourceAvailabilityEvidence={state:'unavailable',reason:'native-closure-identity-unqualified'}
+ return job
 }
 
 export async function runNativeEnphase(options={}){
@@ -182,7 +188,7 @@ export async function runNativeEnphase(options={}){
   const final=await pool(india,async r=>parseDetail(await get(roleURL(r),'text/html,application/xhtml+xml'),r,{now}))
   // Public token/irrelevant page changes cannot renew authoritative role fields.
   for(let i=0;i<jobs.length;i++){
-   const fields=j=>{const {nativeRejectedDetailHTML,...stable}=j;return stable}
+   const fields=j=>{const {nativeRejectedDetailHTML,...stable}=j;if(stable.sourceAvailabilityEvidence){const{evidenceHtml,evidenceSha256,...proof}=stable.sourceAvailabilityEvidence;stable.sourceAvailabilityEvidence=proof}return stable}
    check(equal(fields(jobs[i]),fields(final[i])),'Authoritative native detail fields changed during extraction')
   }
   abort()

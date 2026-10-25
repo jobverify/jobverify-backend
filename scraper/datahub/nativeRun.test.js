@@ -56,11 +56,29 @@ for(const[name,content]of[
 ])test(name+' preserves native row with incomplete content',async()=>{
  const jobs=await replay(p=>{currentDate(p);mutateRole(p,r=>r.jobPost.content=content)})
  assert.equal(jobs.length,1);assert.equal(jobs[0].sourceDescription,null);assert.equal(jobs[0].sourceDetailComplete,false)
- const m=analyzePublishableJobs(jobs,{now:NOW});assert.equal(m.eligibleJobs.length,0);assert.equal(m.filterCounts.emptyDescription,1)
+ const m=analyzePublishableJobs(jobs,{now:NOW});assert.equal(m.eligibleJobs.length,name==='closed role'?0:1)
+ assert.equal(m.filterCounts.closed,name==='closed role'?1:0);assert.equal(m.filterCounts.emptyDescription,0)
+ if(name==='closed role')assert.equal(jobs[0].sourceAvailabilityEvidence?.state,'closed')
 })
 test('genuine role duties with application footer remain usable',async()=>{
  const jobs=await replay(p=>{currentDate(p);mutateRole(p,r=>r.jobPost.content+='<p>Please click Apply now to submit your application.</p>');mutateAPI(p,d=>d.jobs[0].content+='<p>Please click Apply now to submit your application.</p>')})
  assert.equal(jobs[0].sourceDetailComplete,true);assert.equal(analyzePublishableJobs(jobs,{now:NOW}).eligibleJobs.length,1)
+})
+
+test('a current role-scoped native header closure overrides an unchanged full JD without inventing a closing date',async()=>{
+ const jobs=await replay(p=>{currentDate(p);const start=p[4].body.indexOf('class="job__header"');assert.ok(start>=0);const end=p[4].body.indexOf('>',start);p[4].body=p[4].body.slice(0,end+1)+'<p>This position is closed.</p>'+p[4].body.slice(end+1)})
+ const job=jobs[0],metrics=analyzePublishableJobs(jobs,{now:NOW})
+ assert.equal(job.sourceDescription,null);assert.equal(job.sourceDetailComplete,false);assert.equal(job.sourceAvailabilityEvidence.state,'closed')
+ assert.equal(job.sourceAvailabilityEvidence.notice,'This position is closed.');assert.match(job.nativeRejectedDescription,/Key Responsibilities/)
+ assert.equal(job.closingDate,null);assert.equal(metrics.filterCounts.closed,1);assert.equal(metrics.eligibleJobs.length,0)
+ assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+})
+
+for(const notice of['<p hidden>This position is closed.</p>','<p inert>This position is closed.</p>',
+ '<p>If this position is closed, please browse other vacancies.</p>'])test('inactive or conditional DataHub header does not create closure: '+notice,async()=>{
+ const jobs=await replay(p=>{currentDate(p);const start=p[4].body.indexOf('class="job__header"');assert.ok(start>=0);const end=p[4].body.indexOf('>',start);p[4].body=p[4].body.slice(0,end+1)+notice+p[4].body.slice(end+1)+'<footer>This position is closed.</footer>'})
+ assert.equal(jobs[0].sourceDetailComplete,true);assert.equal(jobs[0].sourceAvailabilityEvidence.state,'open')
+ assert.equal(analyzePublishableJobs(jobs,{now:NOW}).eligibleJobs.length,1)
 })
 test('explicit stable scoped empty remains company coverage gap',async()=>{
  const jobs=await replay(p=>{mutateAPI(p,d=>{d.jobs=[];d.meta.total=0});p.splice(4,1)})
@@ -83,7 +101,7 @@ test('commented loader cannot bind deferred recruitment configuration',async()=>
 test('company introduction alone remains a missing role description',async()=>{
  const content='<p>DataHub is an enterprise data platform that supports teams around the world. Our software brings discovery, observability, governance and trusted context to data organizations and helps customers accelerate their data investments.</p>'
  const jobs=await replay(p=>{currentDate(p);mutateRole(p,r=>r.jobPost.content=content);mutateAPI(p,d=>d.jobs[0].content=content)})
- assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(analyzePublishableJobs(jobs,{now:NOW}).eligibleJobs.length,0)
+ assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(analyzePublishableJobs(jobs,{now:NOW}).eligibleJobs.length,1)
 })
 for(const[name,mutate]of[
  ['foreign role canonical',p=>p[4].body=p[4].body.replace('href="http://job-boards.greenhouse.io/acryldata/jobs/5180972007"','href="https://example.com/wrong"')],
@@ -102,11 +120,11 @@ for(const[name,mutate]of[
 test('instructions mentioning responsibilities and requirements cannot substitute for role sections',async()=>{
  const content='<p>Before you submit your resume, review the responsibilities and requirements that will be displayed during the application process. Use the application form below to provide your contact information and upload your documents. Follow the instructions on the next screen to learn more about this opportunity and complete the application.</p>'
  const jobs=await replay(p=>{currentDate(p);mutateRole(p,r=>r.jobPost.content=content);mutateAPI(p,d=>d.jobs[0].content=content)})
- assert.equal(jobs[0].sourceDescription,null);assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(analyzePublishableJobs(jobs,{now:NOW}).eligibleJobs.length,0)
+ assert.equal(jobs[0].sourceDescription,null);assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(analyzePublishableJobs(jobs,{now:NOW}).eligibleJobs.length,1)
 })
 test('instruction paragraphs under role headings still remain missing content',async()=>{
  const paragraph='Before you submit your resume, review the responsibilities and requirements that will be displayed during the application process. Use the application form below to provide your contact information and upload your documents. Follow the instructions on the next screen to learn more about this opportunity and complete the application.'
  const content='<h2>Key Responsibilities</h2><p>'+paragraph+'</p><h2>Requirements</h2><p>'+paragraph+'</p>'
  const jobs=await replay(p=>{currentDate(p);mutateRole(p,r=>r.jobPost.content=content);mutateAPI(p,d=>d.jobs[0].content=content)})
- assert.equal(jobs[0].sourceDescription,null);assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(analyzePublishableJobs(jobs,{now:NOW}).eligibleJobs.length,0)
+ assert.equal(jobs[0].sourceDescription,null);assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(analyzePublishableJobs(jobs,{now:NOW}).eligibleJobs.length,1)
 })

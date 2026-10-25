@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "fixture": "current-native-20261024.json.gz",
+  "compressedSha256": "f3472779a969ee2f385602a68a2956861190a7539cf1219a78181c58a2f62565",
+  "uncompressedSha256": "451bf48b0651126e97df2e40553ecd87eb971b40829f8a70110c5a743eaf0230",
+  "captureMethod": "Bounded unauthenticated public HTTP reads through isolated headless Chromium contexts. MCP browser failed before code with an in-use shared profile; local Playwright used to retain raw response fixtures.",
+  "sanitization": "Public page/API content only; no cookies, browser storage, applicant submissions or credentials. CSP nonce attribute values redacted where present. Structured native selections omit applicant questions.",
+  "capturedAt": "2026-10-24T17:01:04.322Z",
+  "limitations": "Captured fixtures are evidence for offline parser replay, not current production transport or database publication. Static tests with modified records are contract regressions, not live India job evidence.",
+  "bindingCapture": {
+    "capturedAt": "2026-10-24T17:37:45.463Z",
+    "actions": [
+      "Stay here"
+    ],
+    "native": {
+      "url": "https://boards-api.greenhouse.io/v1/boards/affirm/jobs/",
+      "status": 200,
+      "capturedAt": "2026-10-24T17:37:42.611Z",
+      "nativeRecords": 225,
+      "responseBodySha256": "16749fd37527b3c37ccc656816a494b7350daa07b58acca3ee972ad4d6bbea76"
+    },
+    "activeRenderedRoleLinks": 225,
+    "renderedDocumentSha256": "70b2a834a3545212d774294156ba8417ce15301d77ffb978e5f6100a02f7a9da"
+  }
+}

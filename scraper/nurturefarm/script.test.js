@@ -180,7 +180,7 @@ test('run fetches the Skillate jobs page and decorates the shared runner fields 
   assert.equal(jobs[0].verificationDate, '2026-08-04')
 })
 
-test('run falls back to the verified August 4, 2026 Skillate snapshot when the board times out', async () => {
+test('a live board timeout reports unknown coverage instead of replaying historical jobs', async () => {
   const nurturefarm = await loadNurtureFarmModule()
   assert.ok(nurturefarm, 'Expected nurturefarm/script.js to exist')
 
@@ -191,22 +191,37 @@ test('run falls back to the verified August 4, 2026 Skillate snapshot when the b
     message: 'Connect Timeout Error (attempted address: nurture.skillate.com:443, timeout: 10000ms)',
   }
 
-  const jobs = await nurturefarm.createNurtureFarmScraper().run({
+  await assert.rejects(nurturefarm.createNurtureFarmScraper().run({
     fetchText: async (url, options) => {
       requested.push({ url, options })
       if (url === nurturefarm.CAREERS_URL) return JOIN_US_HTML
       throw timeoutError
     },
+  }), error => {
+    assert.equal(error.cause, timeoutError)
+    assert.equal(error.softFailure, true)
+    assert.equal(error.failureKind, 'network_or_timeout')
+    assert.equal(error.sourceListingComplete, false)
+    assert.equal(error.lifecycleCleanupAllowed, false)
+    assert.equal(error.inventoryEvidence.status, 'coverage-gap')
+    assert.equal(error.inventoryEvidence.reportedTotal, null)
+    assert.equal(error.inventoryEvidence.indiaFacetCount, null)
+    return true
   })
 
   assert.deepEqual(requested, [
     { url: 'https://nurture.farm/join-us-2/', options: undefined },
     { url: 'https://nurture.skillate.com/', options: { attempts: 1 } },
   ])
-  assert.equal(jobs.length, 6)
-  assert.equal(jobs[0].title, 'Zonal Commercial Lead')
-  assert.equal(jobs[0].link, 'https://nurture.skillate.com/jobs/zonal-commercial-lead')
-  assert.equal(jobs[5].title, 'Technical lead-Backend Engineer')
-  assert.equal(jobs[5].link, 'https://nurture.skillate.com/jobs/technical-lead-backend-engineer')
-  assert.equal(jobs[0].verificationDate, '2026-08-04')
+})
+
+test('cancellation after a native response cannot return historical or newly scraped jobs', async () => {
+  const nurturefarm = await loadNurtureFarmModule()
+  const controller = new AbortController()
+  const reason = new Error('source cancelled')
+  await assert.rejects(nurturefarm.run({ signal: controller.signal, fetchText: async url => {
+    if (url === nurturefarm.CAREERS_URL) return JOIN_US_HTML
+    controller.abort(reason)
+    return CAREERS_HTML
+  } }), error => error === reason)
 })

@@ -25,6 +25,7 @@ export async function runNative(options={}){
    return{...job,jobId:String(row.id),source:'datahub',company:'DataHub',sourceUrl:row.absolute_url,applyUrl:row.absolute_url,link:row.absolute_url,jobDescription:full.description,sourceDescription:full.description,description:full.description,
     postedAt:full.postedAt,postingDate:full.postedAt,closingDate:full.closingDate,sourceClosingDateIsExact:full.closingDate!=null,nativePublishedAt:full.nativePublishedAt,nativeUpdatedAt:row.updated_at,nativeLocation:full.nativeLocation,
     nativeCountry:null,nativeLegalEmployer:null,nativeBrand:row.company_name,sourceCountryEvidence:'Exact native role and public API location label explicitly include India',sourceDetailComplete:!!full.description,sourceDetailStatus:full.description?'complete':'native-description-missing',
+    sourceAvailabilityEvidence:full.availability??undefined,sourceDetailFailureReason:full.sourceDetailFailureReason,nativeRejectedDescription:full.nativeRejectedDescription,
     sourceListingComplete:false,sourceScopeComplete:false,sourceCompanyCoverageComplete:false,sourceGlobalJobCount:null,sourceIndiaJobCount:null,nativeObservedBoardRecords:payload.jobs.length,scrapedAt:now}
   })
   return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:BOARD,firstParty:true,listingComplete:false,pagesFetched:1,reportedTotal:null,indiaFacetCount:null,verifiedAt:now,

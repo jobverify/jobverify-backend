@@ -35,7 +35,7 @@ export async function collectPublishingGapSnapshot({ database = mongoose.connect
         { $group: { _id: '$source', savedJobs: { $sum: 1 } } },
       ], { maxTimeMS: MAX_TIME_MS, allowDiskUse: true }).toArray(),
       database.collection('jobs').aggregate([
-        { $match: applyPublicJobVisibility({ status: 'active', $or: [{ closingDate: null }, { closingDate: { $gt: now } }] }, siteSettings) },
+        { $match: applyPublicJobVisibility({ status: 'active', $or: [{ closingDate: null }, { closingDate: { $gt: now } }] }, siteSettings, now) },
         { $facet: {
           sources: [{ $group: { _id: '$source', visibleJobs: { $sum: 1 }, visibleCompanies: { $addToSet: companyLabel } } }],
           companies: [

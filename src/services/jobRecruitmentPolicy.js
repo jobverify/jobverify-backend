@@ -9,6 +9,10 @@ const clauses = text => normalize(text).split(/\n|[.;](?=\s|$)/).map(value => va
 const negated = text => /\b(?:not|never|no longer|ineligible|cannot|can't|need not)\b/i.test(text);
 const applicantContext = text => /\b(?:applicants?|candidates?|you)\s+(?:(?:who|must|should)\s+)?(?:(?:have|has|are|be)\s+)?(?:(?:currently|recently|just)\s+)?(?:pursuing|studying|enrolled|completed|finished|graduated|freshers?|fresh graduates?|recent graduates?|new graduates?)\b|\b(?:can|may|must|should|eligible to|encouraged to)\s+apply\b/i.test(text);
 const startsQualification = text => /^(?:(?:required|minimum|basic)\s+(?:qualifications?|requirements?)\s*:\s*)?(?:(?:currently\s+)?(?:pursuing|studying|enrolled)|recently\s+completed|just\s+completed|freshers?|fresh graduates?|recent graduates?|new graduates?|no (?:prior |previous |professional |work )?experience (?:is )?(?:required|necessary))\b/i.test(text);
+const unconditionalFresherEligibility = text => !negated(text) && !excludedStudentSubject.test(text)
+  && !/\b(?:if|unless|provided|subject to)\b/i.test(text)
+  && (/\b(?:freshers?|(?:fresh|recent|new) graduates?)\s+(?:are\s+)?(?:welcome|eligible|(?:may|can)\s+apply)\b/i.test(text)
+    || /\b(?:welcomes?|open to|suitable for|seeking)\s+(?:freshers?|(?:fresh|recent|new) graduates?)\b/i.test(text));
 const bucket = years => years <= 1 ? '0-1' : years < 3 ? '1-3' : years <= 5 ? '3-5' : years <= 8 ? '5-8' : years <= 12 ? '8-12' : '12-plus';
 const inferred = (minimumYears, maximumYears, basis, evidence) => ({
   experienceYears: Array.from({ length: maximumYears - minimumYears + 1 }, (_, index) => minimumYears + index),
@@ -28,7 +32,8 @@ export const collectRecruitmentFacts = input => {
     .replace(/\b(About\s+(?:the\s+)?ideal\s+candidate)\s*:/gi, '\n$1:\n');
   const segments = clauses(sectionBody).filter(segment => {
     if (/^(?:preferred|nice[- ]to[- ]have|desirable|optional|desired|bonus|good[- ]to[- ]have)\b/i.test(segment)) preferredSection = true;
-    else if (/^(?:minimum|basic|required|qualifications|requirements|education\s+(?:and|&)\s+experience|responsibilities|duties|benefits|about|more about us)\b/i.test(segment)) preferredSection = false;
+    else if (unconditionalFresherEligibility(segment)
+      || /^(?:minimum|basic|required|qualifications|requirements|education\s+(?:and|&)\s+experience|responsibilities|duties|benefits|about|more about us)\b/i.test(segment)) preferredSection = false;
     return !preferredSection && !/\{\s*insert\b[^}]*\}/i.test(segment);
   });
   let inQualifications = false;
@@ -96,6 +101,12 @@ export const resolveRecruitmentPolicy = (input, { numeric, sourceEmployment, mod
   const facts = collectRecruitmentFacts(input);
   const min = numeric.experienceProfile.minimumYears;
   const explicitZero = min === 0 || /^freshers?$/i.test(input.sourceExperienceRequired);
+  // An employer can offer separate fresher and experienced paths. Numeric
+  // bounds on that alternative do not make experience mandatory for freshers.
+  const alternativeFresherPath = facts.recent && !input.sourceExperienceRequired
+    && /\bor\s+(?:\d+(?:\.\d+)?\s*(?:(?:-|to)\s*\d+(?:\.\d+)?\s*)?|one\s+|two\s+|three\s+)(?:years?|yrs?|months?)\b/i.test(facts.recent)
+    && !/\b(?:minimum(?: of)?|at least|requir(?:es|ed|ing)|must have)\s*:?\s*(?:\d|one\b|two\b|three\b)/i.test(input.body)
+    && !/\b(?:years?|yrs?|months?)\b[^.;\n]{0,70}\b(?:experience|background)\s+(?:is\s+)?(?:required|mandatory)\b/i.test(input.body);
   // User-approved category defaults override employer fields, which remain separately stored.
   const employment = facts.internship || facts.studying ? 'internship' : sourceEmployment || (facts.contract ? 'contract'
     : facts.fullTime ? 'full_time'
@@ -113,7 +124,8 @@ export const resolveRecruitmentPolicy = (input, { numeric, sourceEmployment, mod
       const minimum = Math.max(0, Math.min(15, input.referenceYear - newest));
       const maximum = minimum === 0 ? 0 : Math.max(minimum, Math.min(15, input.referenceYear - facts.cohorts[0]));
       fields = inferred(minimum, maximum, 'graduation_cohort', facts.graduationEvidence || `Eligible graduation batches: ${facts.cohorts.join(', ')}`);
-    } else if (facts.recent) fields = inferred(0, 0, 'graduate_eligibility', facts.recent);
+    } else if (min > 0 && !alternativeFresherPath) fields = { ...numeric, experienceBasis: 'employer_requirement', experienceRequired: input.sourceExperienceRequired || numeric.experienceProfile.evidence };
+    else if (facts.recent) fields = inferred(0, 0, 'graduate_eligibility', facts.recent);
     else if (explicitZero) fields = inferred(0, 0, 'fresher_eligibility', input.sourceExperienceRequired || numeric.experienceProfile.evidence);
     else if (min !== null) fields = { ...numeric, experienceBasis: 'employer_requirement', experienceRequired: input.sourceExperienceRequired || numeric.experienceProfile.evidence };
     else if (facts.experienced) fields = inferred(1, 15, 'experienced_role_default', facts.experienced);

@@ -103,9 +103,20 @@ export const run = async ({fetchJson,signal,now=()=>new Date().toISOString(),max
   signal?.throwIfAborted()
   const validated=validateInventory(payload,Date.parse(checkedAt))
   const byId=new Map(validated.map(item=>[item.row.id,item]))
-  const mapped=await createPublishingGapAtsScraper({source:SOURCE,companyName:COMPANY,atsPlatform:'lever',boardToken:'bluecatnetworks',countryFilter:'India'}).run({signal,fetchJson:async()=>validated.map(item=>({...item.row,
-    categories:{...item.row.categories,location:item.india.length?item.india.map(location=>labelCountries(location).includes('IN')?location:`${location}, India`).join('; '):item.row.categories.location},
-    descriptionPlain:item.description||'',description:item.description||'',lists:[],additional:'',additionalPlain:''}))})
+  const projected=validated.map(item=>{
+    const qualified=place=>labelCountries(place.location).includes(place.country)
+      ? place.location:`${place.location}, ${countryNames.of(place.country)}`
+    const primary=item.scope.find(place=>place.location===clean(item.row.categories.location))
+    requireProof(primary,'Validated primary office is missing from native location scope')
+    // This is the selected-location view consumed by the common mapper. Keep
+    // the original primary country and all office labels below as native proof.
+    return {...item.row,country:item.india.length?'IN':item.row.country,
+      categories:{...item.row.categories,
+        location:item.india.length?item.scope.filter(place=>place.country==='IN').map(qualified).join('; '):qualified(primary),
+        allLocations:item.scope.map(qualified)},
+      descriptionPlain:item.description||'',description:item.description||'',lists:[],additional:'',additionalPlain:''}
+  })
+  const mapped=await createPublishingGapAtsScraper({source:SOURCE,companyName:COMPANY,atsPlatform:'lever',boardToken:'bluecatnetworks',countryFilter:'India'}).run({signal,fetchJson:async()=>projected})
   const inner=readInventoryEvidence(mapped), selected=maxJobs===null?mapped:mapped.slice(0,maxJobs)
   const complete=isFreshCompleteInventoryEvidence(inner)&&selected.length===mapped.length
   const jobs=selected.map(job=>{

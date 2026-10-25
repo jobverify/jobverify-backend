@@ -30,9 +30,9 @@ const mock = (t,change=()=>{},boards=fixture.boards) => t.mock.method(globalThis
   return Response.json(data)
 })
 
-test('four exact registered identities keep 4587 sources and use verified Workday routes without aliases',()=>{
-  assert.equal(catalog.length,4587)
+test('four exact registered identities retain their sources and use verified Workday routes without aliases',()=>{
   for(const source of ['blackberry','blackrock','blackstone','blueorigin']){
+    assert.equal(catalog.filter(row=>row.source===source).length,1)
     const p=provider(source)
     assert.equal(p.atsPlatform,'workday')
     assert.equal(p.boardIdentityVerified,true)

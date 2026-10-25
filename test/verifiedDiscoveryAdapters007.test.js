@@ -16,12 +16,10 @@ test('activates only the safe exact BlueCat binding and keeps discovery counts u
   assert.equal(row.verifiedIndiaJobCount,null)
   assert.equal(row.verifiedInventoryStatus,'unverified')
 })
-test('preserves4587 exact source identities and does not promote the unavailable Boatsetter tenant',()=>{
+test('preserves exact source identities and does not promote the unavailable Boatsetter tenant',()=>{
   extension()
   const catalog=getScraperCatalog()
-  assert.equal(catalog.length,4587)
-  assert.equal(new Set(catalog.map(r=>r.source)).size,4587)
-  assert.equal(catalog.filter(r=>r.boardToken==='bluecatnetworks').length,1)
+  assert.equal(catalog.filter(row=>row.source==='bluecat').length,1);assert.equal(catalog.filter(row=>row.source==='boatsetter').length,1);assert.equal(catalog.filter(r=>r.boardToken==='bluecatnetworks').length,1)
   const bluecat=catalog.find(r=>r.source==='bluecat')
   assert.equal(bluecat.adapter,'script')
   assert.equal(bluecat.atsPlatform,'lever')

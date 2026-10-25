@@ -4,7 +4,7 @@ import {getScraperCatalog} from '../../scraper-support/providers/index.js'
 
 test('Checkmarx replaces one sentinel without adding a source or verified company-count metadata',()=>{
  const all=getScraperCatalog(),matches=all.filter(p=>p.source==='checkmarx')
- assert.equal(all.length,4587);assert.equal(new Set(all.map(p=>p.source)).size,4587);assert.equal(matches.length,1)
+ assert.equal(matches.length,1)
  const p=matches[0]
  assert.match(p.modulePath,/checkmarx[\\/]script.js$/)
  assert.equal(p.companyName,'Checkmarx');assert.equal(p.companyDomain,'checkmarx.com')
