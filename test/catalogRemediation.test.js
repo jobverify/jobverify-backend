@@ -43,11 +43,56 @@ test('homepage links are followed to careers, but unrelated ATS links are ignore
 
 test('conflicting official boards require review rather than choosing a successful unrelated feed', async () => {
   const result = await auditCatalogProvider({ source: 'acme', companyCareerPage: 'https://acme.test/careers' }, {
-    fetchPage: async url => ({ status: 200, url, html: '<a href="https://jobs.ashbyhq.com/acme">One</a><a href="https://jobs.lever.co/other">Two</a>' }),
+    fetchPage: async url => ({ status: 200, url, html: '<a href="https://jobs.ashbyhq.com/acme">Open roles</a><a href="https://jobs.lever.co/other">View jobs</a>' }),
     scrape: async () => { throw new Error('Ambiguous boards must not be extracted automatically') },
   })
   assert.equal(result.outcome, 'ambiguous-official-boards')
   assert.equal(result.rawJobs, null)
+})
+
+test('inactive markup and unrelated careers-page links cannot establish an employer binding', async () => {
+  const link = '<a href="https://jobs.ashbyhq.com/other">Open roles</a>'
+  for (const html of [`<!--${link}-->`, `<template>${link}</template>`, `<div hidden>${link}</div>`, `<textarea>${link}</textarea>`, `<xmp>${link}</xmp>`, `<object data="/existing.pdf" type="application/pdf">${link}</object>`, '<object data="/existing.pdf"><iframe src="https://jobs.ashbyhq.com/other"></iframe></object>', '<a href="https://jobs.lever.co/customer">Customer story</a>', '<iframe src="https://jobs.ashbyhq.com/other" srcdoc=""></iframe>']) {
+    const result = await discoverOfficialAtsBoards({ source: 'acme', companyDomain: 'acme.test', companyCareerPage: 'https://acme.test/careers' }, {
+      fetchPage: async url => ({ status: 200, url, html }),
+    })
+    assert.equal(result.boards.length, 0, html)
+  }
+})
+
+test('actual final response and trusted company host are mandatory for binding', async () => {
+  for (const response of [
+    { status: 200, html: '<a href="https://jobs.ashbyhq.com/acme">Open roles</a>' },
+    { status: 200, url: 'https://unrelated.test/careers', html: '<a href="https://jobs.ashbyhq.com/acme">Open roles</a>' },
+  ]) {
+    const result = await discoverOfficialAtsBoards({ source: 'acme', companyDomain: 'acme.test', companyCareerPage: 'https://acme.test/careers' }, { fetchPage: async () => response })
+    assert.equal(result.boards.length, 0)
+  }
+  let calls = 0
+  const result = await discoverOfficialAtsBoards({ source: 'acme', companyDomain: 'acme.test', companyCareerPage: 'https://linkedin.com/company/acme/jobs' }, {
+    fetchPage: async url => { calls++; return { status: 200, url, html: '' } },
+  })
+  assert.equal(calls, 1, 'only the declared first-party company root can be requested')
+  assert.equal(result.boards.length, 0)
+})
+
+test('script URL examples remain unverified candidates instead of binding evidence', async () => {
+  for (const external of [false, true]) {
+    const result = await discoverOfficialAtsBoards({ source: 'acme', companyDomain: 'acme.test', companyCareerPage: 'https://acme.test/careers' }, {
+      fetchPage: async url => ({ status: 200, url, html: url.endsWith('.js') ? 'const documentationExample="https://jobs.ashbyhq.com/example"' : external ? '<script src="/careers.js"></script>' : '<script>const example="https://jobs.ashbyhq.com/example"</script>' }),
+    })
+    assert.equal(result.boards.length, 0)
+    assert.equal(result.candidateBoards.length, 1)
+    assert.equal(result.candidateBoards[0].bindingEvidence.verified, false)
+  }
+})
+
+test('a successful current first-party redirect can establish an ATS binding', async () => {
+  const result = await discoverOfficialAtsBoards({ source: 'acme', companyDomain: 'acme.test', companyCareerPage: 'https://acme.test/careers' }, {
+    fetchPage: async () => ({ status: 200, url: 'https://jobs.ashbyhq.com/acme', html: '' }),
+  })
+  assert.equal(result.boards.length, 1)
+  assert.equal(result.boards[0].bindingEvidence.bindingMethod, 'official-redirect')
 })
 
 test('audit uses actual shared extraction, preserves first-party evidence, and separates zero India inventory', async () => {

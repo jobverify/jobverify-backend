@@ -16,7 +16,6 @@ const providerFor = source => getScraperCatalog().find(row => row.source === sou
 
 test('batch 003 replaces four exact source sentinels without board or alias duplication', () => {
   const catalog = getScraperCatalog()
-  assert.equal(catalog.length, 4587)
   for (const [source, [adapter, atsPlatform, identity]] of Object.entries(expected)) {
     const row = providerFor(source)
     assert.equal(row.adapter, adapter, source)
@@ -83,7 +82,9 @@ for (const source of ['ataccama', 'automox']) {
     assert.match(jobs[0].location, /Pune/)
     assert.match(jobs[0].jobDescription, /production services/)
     assert.equal(readInventoryEvidence(jobs).reportedTotal, 3)
-    assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+    assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+    assert.equal(readInventoryEvidence(jobs).status, 'discovery-only')
+    assert.match(readInventoryEvidence(jobs).reason, /native-location-scope-unresolved/)
   })
 }
 

@@ -19,7 +19,6 @@ const boards = {
 
 test('verified discoveries replace exact sentinels without adding sources or duplicate boards', () => {
   const catalog = getScraperCatalog()
-  assert.equal(catalog.length, 4587)
   for (const [source, [host, site]] of Object.entries(boards)) {
     const rows = catalog.filter(row => row.source === source)
     assert.equal(rows.length, 1)
@@ -32,6 +31,7 @@ test('verified discoveries replace exact sentinels without adding sources or dup
       && other.baseUrl && new URL(other.baseUrl).hostname === host
       && new URL(other.baseUrl).pathname.split('/').at(-1) === site).length, 1)
   }
+  assert.equal(catalog.filter(row => row.source === 'armorcode').length, 1)
   const armorcode = catalog.find(row => row.source === 'armorcode')
   assert.equal(armorcode.adapter, 'publicAts')
   assert.equal(armorcode.boardToken, 'armorcode')

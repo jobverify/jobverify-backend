@@ -9,16 +9,64 @@ const provider = { source: 'example', companyName: 'Example', companyCareerPage:
 const job = { id: 1, title: 'Engineer', location: { name: 'Bangalore, India' }, absolute_url: 'https://job-boards.greenhouse.io/example/jobs/1', content: '&lt;p&gt;Build software&lt;/p&gt;' }
 const run = (payload, overrides = {}) => createPublishingGapAtsScraper({ ...provider, ...overrides }).run({ fetchJson: async () => payload })
 
-test('Greenhouse maps complete inventory and excludes foreign and generic remote locations', async () => {
+test('Greenhouse retains proven India jobs while generic remote scope prevents completeness', async () => {
   const jobs = await run({ jobs: [job, { ...job, id: 2, location: { name: 'Remote' } }, { ...job, id: 3, location: { name: 'Boston, US' } }], meta: { total: 3 } })
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].company, 'Example')
   assert.equal(jobs[0].link, job.absolute_url)
   assert.match(jobs[0].jobDescription, /Build software/)
   assert.equal(readInventoryEvidence(jobs).reportedTotal, 3)
-  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 1)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.ok(jobs.every(row => row.sourceListingComplete === false))
+})
+
+test('unknown or worldwide Greenhouse locations never establish zero India inventory', async () => {
+  for (const name of ['Remote', 'Worldwide', 'Anywhere', 'London', 'Remote US / Worldwide', '']) {
+    const jobs = await run({ jobs: [{ ...job, location: { name } }], meta: { total: 1 } })
+    assert.equal(jobs.length, 0, name)
+    assert.equal(readInventoryEvidence(jobs).listingComplete, false, name)
+    assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null, name)
+    assert.match(readInventoryEvidence(jobs).reason, /native-location-scope-unresolved/, name)
+  }
+})
+
+test('Greenhouse native offices cannot hide India or unresolved alternate scope', async () => {
+  for (const office of [{ name: 'Bengaluru, India', location: null }, { name: 'Remote', location: null },
+    { name: 'Bengaluru, India', location: 'Boston, US' }, { name: 'Worldwide', location: 'Boston, US' }]) {
+    const jobs = await run({ jobs: [{ ...job, location: { name: 'Boston, US' }, offices: [office] }], meta: { total: 1 } })
+    assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+    assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  }
+  const jobs = await run({ jobs: [{ ...job, location: { name: 'Remote US' }, offices: [{ name: 'Remote US', location: null }] }], meta: { total: 1 } })
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)
-  assert.ok(jobs.every(row => row.sourceListingComplete !== false))
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
+})
+
+test('an explicit foreign country cannot resolve a different unknown location segment', async () => {
+  for (const name of ['Remote US or APAC', 'Boston, US / Kochi', 'Remote US (EMEA)', 'Boston, US; Remote', 'Boston, US + Kochi', 'Boston, US & Kochi']) {
+    const jobs = await run({ jobs: [{ ...job, location: { name } }], meta: { total: 1 } })
+    assert.equal(readInventoryEvidence(jobs).listingComplete, false, name)
+    assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null, name)
+  }
+})
+
+test('contradictory primary country labels cannot create an India vacancy', async () => {
+  await assert.rejects(run({ jobs: [{ ...job, location: { name: 'India / United States' } }], meta: { total: 1 } }), /contradictory country\/location/)
+})
+
+test('Lever country and allLocations preserve unresolved or unmapped India scope', async () => {
+  const record = { id: 'x', text: 'Engineer', categories: { location: 'Remote' }, hostedUrl: 'https://jobs.lever.co/example/x', applyUrl: 'https://jobs.lever.co/example/x/apply', descriptionPlain: 'Build software' }
+  for (const row of [record, { ...record, country: 'IN' }, { ...record, country: 'US', categories: { location: 'Boston, US', allLocations: ['Boston, US', 'Bengaluru, India'] } }, { ...record, country: 'US', categories: { location: 'Boston, US', allLocations: ['Boston, US', 'Worldwide'] } }]) {
+    const jobs = await run([row], { atsPlatform: 'lever' })
+    assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+    assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  }
+  const jobs = await run([{ ...record, country: 'US' }], { atsPlatform: 'lever' })
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
+  await assert.rejects(run([{ ...record, country: 'US', categories: { location: 'Bengaluru, India' } }], { atsPlatform: 'lever' }), /contradictory country\/location/)
 })
 
 test('malformed, truncated, or failed inventory never becomes authoritative empty', async () => {
@@ -104,4 +152,20 @@ test('selected roles without employer descriptions cannot authorize complete inv
     assert.equal(readInventoryEvidence(jobs).listingComplete, false)
     assert.equal(jobs[0].sourceListingComplete, false)
   }
+})
+
+test('Ashby country metadata cannot resolve an alternate worldwide scope', async () => {
+  const jobs = await run({ apiVersion: '1', jobs: [{ id: 'a', title: 'Engineer', location: 'Remote US or APAC', address: { postalAddress: { addressCountry: 'US' } }, isListed: true,
+    jobUrl: 'https://jobs.ashbyhq.com/example/a', applyUrl: 'https://jobs.ashbyhq.com/example/a/application', descriptionHtml: '<p>Build software.</p>' }] }, { atsPlatform: 'ashby' })
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+})
+
+test('cancellation at the native response boundary cannot return authoritative empty', async () => {
+  const controller = new AbortController()
+  await assert.rejects(createPublishingGapAtsScraper(provider).run({ signal: controller.signal, fetchJson: async () => {
+    controller.abort(new Error('inventory cancelled'))
+    return { jobs: [], meta: { total: 0 } }
+  } }), /inventory cancelled/)
 })

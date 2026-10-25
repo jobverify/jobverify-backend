@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {run} from './script.js'
+import {run,FIRST_PARTY_ROOT_URL} from './script.js'
 import {readFileSync,readdirSync} from 'node:fs'
 import {gunzipSync} from 'node:zlib'
 import {createHash} from 'node:crypto'
@@ -17,6 +17,66 @@ test('Dassault exact caller abort reason propagates',async()=>{
   for(const stage of ['before','fetch','body']){const c=new AbortController(),reason={stage};if(stage==='before')c.abort(reason);await assert.rejects(run({signal:c.signal,fetchImpl:async url=>{if(stage==='fetch'){c.abort(reason);return new Promise(()=>{})}return{url,status:200,text:()=>{c.abort(reason);return new Promise(()=>{})}}}}),e=>e===reason)}
 })
 const fixtureDir=new URL('./fixtures/',import.meta.url)
+const shell=JSON.parse(readFileSync(new URL('incapsula-corporate-shell.json',fixtureDir)))
+const shellRun=(body=shell.body,requests=[])=>run({now:()=>shell.capturedAt,fetchImpl:async url=>{
+  requests.push(url)
+  assert.equal(url,FIRST_PARTY_ROOT_URL,'The blocked publisher cannot delegate native inventory reads')
+  return{url:shell.finalUrl,status:shell.status,text:async()=>body}
+}})
+
+test('observed HTTP200 Incapsula corporate shell produces structured blocked diagnostics without a current binding or inventory count',async()=>{
+  const requests=[]
+  const error=await shellRun(shell.body,requests).catch(e=>e)
+  assert.ok(error instanceof Error)
+  gap(error)
+  assert.equal(error.softFailure,true)
+  assert.equal(error.upstreamOutage,true)
+  assert.equal(error.failureKind,'blocked_or_access_denied')
+  assert.equal(error.stage,'corporate')
+  assert.equal(error.status,200)
+  assert.equal(error.statusCode,200)
+  assert.equal(error.requestUrl,shell.url)
+  assert.equal(error.finalUrl,shell.finalUrl)
+  assert.equal(error.inventoryEvidence.firstParty,false)
+  assert.equal(error.inventoryEvidence.indiaFacetCount,null)
+  assert.equal(error.inventoryEvidence.listingComplete,false)
+  assert.deepEqual(requests,[FIRST_PARTY_ROOT_URL])
+  const {classifyScraperError,applyRetryPolicyToScraperError,isHardSourceFailure}=await import('../../scraper-support/runner.js')
+  assert.deepEqual(classifyScraperError(error),{softFailure:true,upstreamOutage:true,failureKind:'blocked_or_access_denied'})
+  assert.equal(applyRetryPolicyToScraperError(error),error)
+  assert.equal(error.abortRetries,true)
+  assert.equal(isHardSourceFailure({success:false,...classifyScraperError(error)}),false)
+})
+
+test('ordinary successful HTML missing Dassault employer identity remains a hard contract gap',async()=>{
+  const error=await shellRun('<title>Other careers</title><h1>Other employer</h1>').catch(e=>e)
+  gap(error)
+  assert.match(error.message,/Corporate employer identity missing/)
+  assert.notEqual(error.softFailure,true)
+  const {classifyScraperError,isHardSourceFailure}=await import('../../scraper-support/runner.js')
+  assert.deepEqual(classifyScraperError(error),{softFailure:false,upstreamOutage:false,failureKind:'hard_failure'})
+  assert.equal(isHardSourceFailure({success:false,...classifyScraperError(error)}),true)
+})
+
+test('Incapsula diagnostic requires the observed active compound shell rather than inert or unrelated resource lookalikes',async()=>{
+  for(const change of [
+    body=>body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i,m=>'<!--'+m+'-->'),
+    body=>body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/i,m=>'<template>'+m+'</template>'),
+    body=>body.replace('<META NAME="ROBOTS"','<META hidden NAME="ROBOTS"'),
+    body=>body.replace('NOINDEX, NOFOLLOW','NOINDEX'),
+    body=>body.replace('<iframe ','<iframe hidden '),
+    body=>body.replace('<iframe ','<iframe srcdoc="" '),
+    body=>body.replace('<iframe ','<template><iframe ').replace('</iframe>','</iframe></template>'),
+    body=>body.replaceAll('src="/_Incapsula_Resource','src="https://other.example/_Incapsula_Resource'),
+    body=>body.replace('</body>','<h1>Other employer careers</h1></body>'),
+  ]){
+    const error=await shellRun(change(shell.body)).catch(e=>e)
+    gap(error)
+    assert.match(error.message,/Corporate employer identity missing/)
+    assert.notEqual(error.softFailure,true)
+    assert.notEqual(error.failureKind,'blocked_or_access_denied')
+  }
+})
 const rows=readdirSync(fixtureDir).filter(f=>/^(official-careers|native-careers|native-listing-pages|native-job-details-\d+)\.json\.gz$/.test(f)).flatMap(f=>{const p=JSON.parse(gunzipSync(readFileSync(new URL(f,fixtureDir))));return Array.isArray(p)?p:[p]})
 const replay=(mutate=r=>r)=>async url=>{
   // Redirect branch here is an injected HTTP contract test; original redirect

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "fixture": "current-native-20261024.json.gz",
+  "compressedSha256": "46adfc791a495d8578cbbcee6d998e5e21e1d48cabfd12a894df9ef49ada1312",
+  "uncompressedSha256": "f99e9033654e24755eeb16ad27fc0d6c3ced5d20797073341e7e842f5c27ac1c",
+  "captureMethod": "Bounded unauthenticated public HTTP reads through isolated headless Chromium contexts. MCP browser failed before code with an in-use shared profile; local Playwright used to retain raw response fixtures.",
+  "sanitization": "Public page/API content only; no cookies, browser storage, applicant submissions or credentials. CSP nonce attribute values redacted where present. Structured native selections omit applicant questions.",
+  "capturedAt": null,
+  "captures": [
+    {
+      "name": "2u-official",
+      "url": "https://2u.com/careers/",
+      "finalUrl": "https://2u.com/careers/",
+      "status": 200,
+      "capturedAt": "2026-10-24T16:57:55.911Z",
+      "htmlSha256": "eb6f4571b437b5ec266dd7e6d0c40bd9a0b2959990a54e30ff3f556f6f56b1aa"
+    },
+    {
+      "name": "2u-native",
+      "url": "https://2u.com/careers/jobs/",
+      "finalUrl": "https://2u.com/careers/jobs/",
+      "status": 200,
+      "capturedAt": "2026-10-24T16:59:31.541Z",
+      "htmlSha256": "2dea2c9095a2e70303f539c1271e382a6e34c00d291fbd6abd65f72f8d30adcb"
+    },
+    {
+      "name": "2u-role-payload",
+      "url": "https://2u.com/careers/jobs/8871017002/",
+      "finalUrl": "https://2u.com/careers/jobs/8871017002/",
+      "status": 200,
+      "capturedAt": "2026-10-24T17:01:04.605Z",
+      "htmlSha256": "bfc7b3d52d729dc4899bb3aeab87bd4f13ffa0e1d48582edcf112d5d72bd9cd7"
+    },
+    {
+      "name": "2u-static-1843004117",
+      "url": "https://2u.com/page-data/sq/d/1843004117.json",
+      "finalUrl": "https://2u.com/page-data/sq/d/1843004117.json",
+      "status": 200,
+      "capturedAt": "2026-10-24T17:07:20.787Z",
+      "htmlSha256": "4a264ed1ee90d1c96d90e5408402d3ae19a03979026d45a928e84009b7a16f29"
+    },
+    {
+      "name": "2u-static-3494932948",
+      "url": "https://2u.com/page-data/sq/d/3494932948.json",
+      "finalUrl": "https://2u.com/page-data/sq/d/3494932948.json",
+      "status": 200,
+      "capturedAt": "2026-10-24T17:07:20.732Z",
+      "htmlSha256": "392aa8219bb8e227e2e56fb31c4dedb02e72b472e066ab4ffbc3f534cd4a072e"
+    }
+  ],
+  "limitations": "Captured fixtures are evidence for offline parser replay, not current production transport or database publication. Static tests with modified records are contract regressions, not live India job evidence."
+}

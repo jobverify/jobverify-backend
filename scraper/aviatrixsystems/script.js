@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 import { createPublishingGapAtsScraper } from '../../scraper-support/utils/publishingGapAts.js'
 import { fetchJsonWithRetry, composeAbortSignals } from '../../scraper-support/utils/fetch.js'
 import { nativeLocationCountryName, nativeCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { isIndiaJob } from '../../scraper-support/utils/indiaLocationFilter.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -19,19 +21,30 @@ const requireInventory = (condition, reason) => {
 const officeCountries = payload => {
   requireInventory(payload && !payload.error && payload.success !== false && !payload.errors?.length
     && Array.isArray(payload.offices), 'invalid office response')
-  const countries = new Map()
+  const countries = new Map(), identities = new Map(), labels = new Map()
+  const labelKey = value => typeof value === 'string' ? value.replace(/\s+/g,' ').trim() : null
+  const rememberLabel = (value,country) => {
+    const key=labelKey(value)
+    if(!key || !country)return
+    labels.set(key,labels.has(key) && labels.get(key)!==country ? null:country)
+  }
   const walk = (office, parentCountry = null) => {
     requireInventory(office && Number.isSafeInteger(office.id) && !countries.has(office.id)
       && typeof office.name === 'string' && Array.isArray(office.children), 'invalid office tree')
-    const country = nativeLocationCountryName(office.location) || nativeCountryName(office.name) || parentCountry
+    const physicalLocation=office.location==='Bengaluru, Karnataka, India (APAC)'
+      ? 'Bengaluru, Karnataka, India':office.location
+    const country = nativeLocationCountryName(physicalLocation) || nativeCountryName(office.name) || parentCountry
     countries.set(office.id, country)
+    identities.set(office.id,{name:office.name,location:office.location})
+    rememberLabel(office.name,country)
+    rememberLabel(office.location,country)
     office.children.forEach(child => walk(child, country))
   }
   payload.offices.forEach(office => walk(office))
-  return countries
+  return {countries,identities,labels}
 }
 
-const validateInventory = (payload, countries) => {
+const validateInventory = (payload, {countries,identities}) => {
   requireInventory(payload && !payload.error && payload.success !== false && Array.isArray(payload.jobs), 'invalid response')
   requireInventory(Number.isSafeInteger(payload.meta?.total) && payload.meta.total === payload.jobs.length
     && payload.hasMore !== true, 'incomplete native total')
@@ -51,6 +64,12 @@ const validateInventory = (payload, countries) => {
     // The native office tree supplies country scope for labels such as Santa
     // Clara, CA. Unknown office bindings cannot prove a zero India inventory.
     const locations = job.location.name.split(';').map(value => value.trim().replace(/\s*\([^)]*\)\s*$/, ''))
+    for(const office of Array.isArray(job.offices)?job.offices:[]){
+      const native=identities.get(office?.id)
+      if(native)for(const field of ['name','location']){
+        if(office[field]!=null)requireInventory(office[field]===native[field],'embedded office identity conflicts with current office tree')
+      }
+    }
     const scopedOffices = Array.isArray(job.offices) && job.offices.length > 0
       && job.offices.every(office => countries.get(office?.id))
     if (!scopedOffices && locations.some(value => !nativeLocationCountryName(value))) scopeComplete = false
@@ -60,6 +79,43 @@ const validateInventory = (payload, countries) => {
       && !job.offices.some(office => countries.get(office.id) === 'India')) scopeComplete = false
   }
   return scopeComplete
+}
+
+const projectOfficeScope = (payload,scope) => {
+  const broad=/\b(?:remote|worldwide|global|anywhere|APAC|EMEA|AMER|LATAM)\b/i
+  const qualified=(value,assignedCountry=null)=>{
+    const label=typeof value==='string'?value.replace(/\s+/g,' ').trim():value
+    const country=assignedCountry||scope.labels.get(label)
+    requireInventory(country || !scope.labels.has(label) || scope.labels.get(label)!==null,
+      'ambiguous native office country scope')
+    // This exact captured label identifies a physical India office in the
+    // native office tree. Its APAC suffix is retained in the raw evidence.
+    if(label==='Bengaluru, Karnataka, India (APAC)' && country==='India')return'Bengaluru, Karnataka, India'
+    if(!country || broad.test(label) || nativeLocationCountryName(label))return label
+    return`${label}, ${country}`
+  }
+  return {...payload,jobs:payload.jobs.map(job=>{
+    const assigned=Array.isArray(job.offices)?job.offices:[]
+    const primaryCountry=label=>{
+      const values=[...new Set(assigned.filter(office=>[office.name,office.location].includes(label))
+        .map(office=>scope.countries.get(office.id)).filter(Boolean))]
+      if(values.length===1)return values[0]
+      const assignedCountries=[...new Set(assigned.map(office=>scope.countries.get(office.id)).filter(Boolean))]
+      if(assignedCountries.length===1)return assignedCountries[0]
+      requireInventory(!(assignedCountries.length>1 && !assignedCountries.includes('India')
+        && !/\bindia\b/i.test(label) && !broad.test(label) && isIndiaJob({location:label})),
+      'assigned foreign office countries conflict with inferred India location scope')
+      return null
+    }
+    return {...job,
+      location:{...job.location,name:job.location.name.split(';').map(label=>{
+        const trimmed=label.trim()
+        return qualified(trimmed,primaryCountry(trimmed))
+      }).join('; ')},
+      ...(Array.isArray(job.offices)?{offices:job.offices.map(office=>({...office,
+        location:qualified(office.location||office.name,scope.countries.get(office.id))}))}:{}),
+    }
+  })}
 }
 
 export const createAviatrixSystemsScraper = () => ({
@@ -80,11 +136,19 @@ export const createAviatrixSystemsScraper = () => ({
         combinedSignal.throwIfAborted()
         const offices = await fetchJson(OFFICES_API_URL, { signal: combinedSignal, timeoutMs: Math.min(timeoutMs, 20000), attempts: 1 })
         combinedSignal.throwIfAborted()
-        const sourceScopeComplete = validateInventory(payload, officeCountries(offices))
-        return createPublishingGapAtsScraper({ source: SOURCE, companyName: COMPANY,
+        const scope=officeCountries(offices)
+        const sourceScopeComplete = validateInventory(payload,scope)
+        const projected=projectOfficeScope(payload,scope)
+        const jobs=await createPublishingGapAtsScraper({ source: SOURCE, companyName: COMPANY,
           atsPlatform: 'greenhouse', boardToken: 'aviatrix', companyDomain: 'aviatrix.ai',
           companyCareerPage: FIRST_PARTY_CAREERS_URL, sourceScopeComplete,
-        }).run({ fetchJson: async () => payload, signal: combinedSignal })
+        }).run({ fetchJson: async () => projected, signal: combinedSignal })
+        const byId=new Map(payload.jobs.map(job=>[String(job.id),job]))
+        return attachInventoryEvidence(jobs.map(job=>{
+          const native=byId.get(String(job.jobId))
+          return {...job,sourceNativeLocationEvidence:{primary:native.location.name,
+            offices:native.offices==null?null:structuredClone(native.offices)}}
+        }),readInventoryEvidence(jobs))
       }
       return await Promise.race([collect(), aborted])
     } finally {

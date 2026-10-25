@@ -1,7 +1,12 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { setTimeout as wait } from 'node:timers/promises'
 
 import { APPINESS_INTERACTIVE_CATALOG } from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { extractNativeDetail, extractNativeListings } from './nativeDetails.js'
+
+export { extractNativeDetail, extractNativeListings }
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -25,20 +30,46 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
-const defaultFetchText = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: AbortSignal.any([signal, AbortSignal.timeout(15000)].filter(Boolean)),
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+    throw Object.assign(new Error(`HTTP ${response.status} for ${url}`), { status: response.status })
   }
 
-  return response.text()
+  if (Number(response.headers.get('content-length')) > 1500000) throw new Error('Appiness native response exceeds the bounded size limit')
+  const html = await response.text()
+  signal?.throwIfAborted()
+  if (Buffer.byteLength(html) > 1500000) throw new Error('Appiness native response exceeds the bounded size limit')
+  return { status: response.status, url: response.url, html }
+}
+
+const receiveWithAbort = async (action, signal) => {
+  signal.throwIfAborted()
+  let onAbort, settlementTimer
+  const aborted = new Promise((resolve, reject) => {
+    onAbort = () => reject(signal.reason)
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+  const operation = Promise.resolve().then(action)
+  try { return await Promise.race([operation, aborted]) }
+  catch (error) {
+    if (!signal.aborted) throw error
+    // Give cooperative request/body cleanup100ms. An uncooperative injected
+    // transport may outlive this grace; its late result can never resume parsing.
+    await Promise.race([operation.catch(() => {}), new Promise(resolve => { settlementTimer = setTimeout(resolve, 100) })])
+    throw signal.reason
+  } finally {
+    signal.removeEventListener('abort', onAbort)
+    clearTimeout(settlementTimer)
+  }
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
@@ -105,21 +136,54 @@ export const extractJobs = (html = '') => {
   )].map((match) => buildJob(match[1], match[2], match[3]))
 }
 
-export const createAppinessInteractiveScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Verified Appiness Interactive careers surface changed')
+export const createAppinessInteractiveScraper = ({ maxJobs = null, now = () => new Date().toISOString() } = {}) => ({
+  async run({ fetchPage, fetchText, signal, maxJobs: runMaxJobs = maxJobs, now: currentTime = now,
+    requestIntervalMs = 500, sourceBudgetMs = 120000,
+  } = {}) {
+    signal?.throwIfAborted()
+    if ((typeof fetchText === 'function' && typeof fetchPage !== 'function')
+      || (fetchPage != null && typeof fetchPage !== 'function')) throw new Error('Appiness native runtime requires response receipts; text-only hooks are unsupported')
+    if ((runMaxJobs != null && (!Number.isSafeInteger(runMaxJobs) || runMaxJobs < 1))
+      || !Number.isSafeInteger(requestIntervalMs) || requestIntervalMs < 0 || requestIntervalMs > 5000
+      || !Number.isSafeInteger(sourceBudgetMs) || sourceBudgetMs < 1 || sourceBudgetMs > 120000) throw new Error('Appiness native bounded run options are invalid')
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(new Error(`Appiness native ${sourceBudgetMs}ms source deadline exhausted`)), sourceBudgetMs)
+    const combined = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal
+    let lastStart = 0
+    const loadPage = async url => {
+      combined.throwIfAborted()
+      const remaining = requestIntervalMs - (Date.now() - lastStart)
+      if (remaining > 0) {
+        try { await wait(remaining, undefined, { signal: combined }) } catch (error) { combined.throwIfAborted(); throw error }
+      }
+      combined.throwIfAborted()
+      lastStart = Date.now()
+      const response = await receiveWithAbort(() => (fetchPage || defaultFetchPage)(url, { signal: combined }), combined)
+      combined.throwIfAborted()
+      if (response?.status !== 200 || response.url !== url || typeof response.html !== 'string') throw new Error(`Appiness native response identity changed at ${url}`)
+      return response.html
     }
-
-    const jobs = extractJobs(careersHtml).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    try {
+      const listings = extractNativeListings(await loadPage(CAREERS_URL))
+      const selected = runMaxJobs == null ? listings : listings.slice(0, runMaxJobs)
+      const jobs = [], errors = []
+      for (const listing of selected) {
+        try {
+          const job = extractNativeDetail(await loadPage(listing.sourceUrl), listing, { url: listing.sourceUrl })
+          jobs.push({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt: currentTime(),
+            companyDomain: PROVIDER_METADATA.companyDomain, companyCareerPage: CAREERS_URL, sourceListingComplete: false,
+          })
+        } catch (error) { combined.throwIfAborted(); errors.push(error) }
+      }
+      combined.throwIfAborted()
+      // The observed single page advertises no total. Even all28 successful
+      // details cannot authorize lifecycle cleanup of unseen/retired roles.
+      return attachInventoryEvidence(jobs, { status: jobs.length ? 'discovery-only' : 'coverage-gap',
+        surface: CAREERS_URL, firstParty: true, listingComplete: false, pagesFetched: 1,
+        reportedTotal: null, indiaFacetCount: null, verifiedAt: currentTime(),
+        reason: `native-listing-total-unreported;observed-roles=${listings.length};selected-details=${selected.length};verified-details=${jobs.length};detail-failures=${errors.length}${errors.length ? ';' + errors.map(error => String(error.message).slice(0, 180)).join(';') : ''}`,
+      })
+    } finally { clearTimeout(timer) }
   },
 })
 

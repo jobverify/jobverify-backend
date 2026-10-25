@@ -75,6 +75,33 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     assert.equal((await Job.findById(original._id).lean()).jobType, 'Full-time Fresher')
   })
 
+  await t.test('publication origin and anchor changes during inference reject the old source context', async t => {
+    for (const [name, changed] of [
+      ['source origin at the same instant', { postedAtProvenance: 'source' }],
+      ['changed observation anchor', { postedAtProvenanceValue: '2026-10-09T12:00:00.000Z' }],
+    ]) await t.test(name, async () => {
+      await Job.deleteMany({})
+      const original = await seed('publication-origin-' + name)
+      await Job.updateOne({ _id: original._id }, { $set: {
+        postedAt: now, scrapedAt: now, postedAtProvenance: 'observation', postedAtProvenanceValue: now.toISOString(),
+      } })
+      const before = await Job.findById(original._id).lean()
+      const beforeInput = postScrapeInput(before, { now })
+      const result = await classifySavedJobs({ mode: 'policy', now: () => now, worker: { classify: async () => {
+        await Job.updateOne({ _id: original._id }, { $set: changed })
+        return prediction('Full-time Experienced')
+      } } })
+      const after = await Job.findById(original._id).lean()
+      assert.notEqual(postScrapeInput(after, { now }).inputHash, beforeInput.inputHash)
+      assert.equal(result.stale, 1)
+      assert.equal(result.completed, 0)
+      assert.equal(after.jobType, 'Unspecified')
+      assert.equal(after.classification, undefined)
+      assert.equal(after.postClassification.reason, 'source_changed')
+      assert.equal(after.postedAt.toISOString(), now.toISOString())
+    })
+  })
+
   await t.test('unchanged native input is reused when publishing shadow results or refreshing the reference year', async () => {
     await Job.deleteMany({})
     const seeded = await seed('native-reuse')
@@ -284,12 +311,20 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     let saved = await Job.findOne({}).lean()
     assert.equal(saved.postClassification.status, 'pending')
     assert.equal(saved.postClassification.inputHash, postScrapeInput(saved, { now }).inputHash)
+    const firstObservation = {
+      postedAt: saved.postedAt, sortDate: saved.sortDate,
+      postedAtProvenance: saved.postedAtProvenance, postedAtProvenanceValue: saved.postedAtProvenanceValue,
+    }
+    assert.equal(firstObservation.postedAtProvenance, 'observation')
     let calls = 0
     const worker = { classify: async () => { calls++; return prediction('Full-time Experienced') } }
     assert.equal((await classifySavedJobs({ worker, mode: 'policy', now: () => now })).completed, 1)
     await saveToDB([job], 'deferred-trial', { ...options, now: new Date(now.getTime()+60000) })
     saved = await Job.findOne({}).lean()
     assert.equal(saved.postClassification.status, 'completed')
+    assert.deepEqual(Object.fromEntries(Object.keys(firstObservation).map(field => [field, saved[field]])), firstObservation)
+    assert.equal(saved.sourceDescription, job.jobDescription)
+    assert.equal(postScrapeInput(saved, { now }).postedDate, null)
     assert.equal(getAuthoritativeClassification(saved).jobType, 'Full-time Experienced')
     assert.equal((await classifySavedJobs({ worker, mode: 'policy', now: () => now })).cached, 1)
     assert.equal(calls, 1)
@@ -298,6 +333,50 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     assert.equal(saved.postClassification.status, 'pending')
     assert.equal(saved.classification, undefined)
     assert.equal(saved.postClassification.inputHash, postScrapeInput(saved, { now }).inputHash)
+  })
+
+  await t.test('a scrape without a date preserves known source input while a real source date change invalidates it', async t => {
+    const oldMode = process.env.POST_SCRAPE_CLASSIFICATION_MODE
+    process.env.POST_SCRAPE_CLASSIFICATION_MODE = 'policy'
+    t.after(() => {
+      if (oldMode === undefined) delete process.env.POST_SCRAPE_CLASSIFICATION_MODE
+      else process.env.POST_SCRAPE_CLASSIFICATION_MODE = oldMode
+    })
+    for (const legacy of [false, true]) await t.test(legacy ? 'legacy unmarked source date' : 'marked source date', async () => {
+      await Job.deleteMany({})
+      const postedAt = new Date('2026-10-07T08:00:00.000Z')
+      const job = { title: 'Software Engineer', company: 'Trial Company', location: 'Bengaluru, India',
+        country: 'India', sourceEmploymentType: 'Full time',
+        jobDescription: 'Full-time engineering role requiring at least 3 years of professional experience.',
+        sourceUrl: 'https://example.com/jobs/source-date-engineer', applyUrl: 'https://example.com/jobs/source-date-engineer' }
+      const options = { now, enrichPublicExperience: false, replaceExisting: false, enqueueAlerts: false, refreshDatasetSummary: false }
+      await saveToDB([{ ...job, postedAt }], 'source-date-trial', options)
+      if (legacy) await Job.updateOne({}, { $unset: { postedAtProvenance: 1, postedAtProvenanceValue: 1 } })
+      const worker = { classify: async () => prediction('Full-time Experienced') }
+      assert.equal((await classifySavedJobs({ worker, mode: 'policy', now: () => now })).completed, 1)
+      const before = await Job.findOne({}).lean()
+      const inputHash = postScrapeInput(before, { now }).inputHash
+      await saveToDB([job], 'source-date-trial', { ...options, now: new Date(now.getTime() + 60000) })
+      let saved = await Job.findOne({}).lean()
+      assert.equal(saved.postClassification.status, 'completed')
+      assert.equal(postScrapeInput(saved, { now }).inputHash, inputHash)
+      assert.equal(saved.postedAt.toISOString(), postedAt.toISOString())
+      assert.equal(saved.postedAtProvenance, before.postedAtProvenance)
+      assert.equal(saved.postedAtProvenanceValue, before.postedAtProvenanceValue)
+      assert.equal(saved.sourceDescription, job.jobDescription)
+      assert.equal((await classifySavedJobs({ worker, mode: 'policy', now: () => now })).cached, 1)
+      const nextDate = new Date('2026-10-08T09:00:00.000Z')
+      await saveToDB([{ ...job, postedAt: nextDate }], 'source-date-trial', options)
+      saved = await Job.findOne({}).lean()
+      assert.equal(saved.postedAt.toISOString(), nextDate.toISOString())
+      assert.equal(saved.postedAtProvenance, 'source')
+      assert.equal(saved.postedAtProvenanceValue, nextDate.toISOString())
+      assert.equal(saved.sourceDescription, job.jobDescription)
+      assert.equal(saved.postClassification.status, 'pending')
+      assert.equal(saved.classification, undefined)
+      assert.notEqual(postScrapeInput(saved, { now }).inputHash, inputHash)
+      assert.equal(saved.postClassification.inputHash, postScrapeInput(saved, { now }).inputHash)
+    })
   })
 })
 
@@ -344,12 +423,16 @@ test('development review formats preserve contract occupations and explicit elig
 })
 
 test('explicit fresher recruitment is eligible without overriding mandatory experience', () => {
-  for (const [sourceDescription, withRequiredExperience] of [
-    ['We are currently hiring fresh graduates for our customer support team. Excellent communication skills.', 'Full-time Experienced'],
-    ['Requirements: Excellent communication skills. Freshers can also apply.', 'Unspecified'],
+  for (const sourceDescription of [
+    'We are currently hiring fresh graduates for our customer support team. Excellent communication skills.',
+    'Requirements: Excellent communication skills. Freshers can also apply.',
   ]) {
     assert.equal(sourceGuardedClassification({ title: 'Customer Support', sourceDescription }, { now }).resolved.jobType, 'Full-time Fresher')
-    assert.equal(sourceGuardedClassification({ title: 'Customer Support', sourceDescription: `${sourceDescription} Minimum 3 years of professional experience required.` }, { now }).resolved.jobType, withRequiredExperience)
+    const required = sourceGuardedClassification({ title: 'Customer Support', sourceDescription: `${sourceDescription} Minimum 3 years of professional experience required.` }, { now }).resolved
+    assert.equal(required.jobType, 'Full-time Experienced')
+    assert.equal(required.experienceProfile.minimumYears, 3)
+    assert.equal(required.employerExperienceProfile.minimumYears, 3)
+    assert.equal(required.experienceBasis, 'employer_requirement')
   }
 })
 

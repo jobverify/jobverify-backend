@@ -106,3 +106,34 @@ test("Telegram provider rejects successful HTTP responses without a Telegram mes
     global.fetch = originalFetch;
   }
 });
+
+test('Telegram provider distinguishes payload failures, unavailable chats and rate limits without exposing provider text', async t => {
+  const originalEnabled = process.env.TELEGRAM_ENABLED;
+  const originalToken = process.env.TELEGRAM_BOT_TOKEN;
+  process.env.TELEGRAM_ENABLED = 'true';
+  process.env.TELEGRAM_BOT_TOKEN = 'private-fixture-token';
+  t.after(() => {
+    if (originalEnabled === undefined) delete process.env.TELEGRAM_ENABLED; else process.env.TELEGRAM_ENABLED = originalEnabled;
+    if (originalToken === undefined) delete process.env.TELEGRAM_BOT_TOKEN; else process.env.TELEGRAM_BOT_TOKEN = originalToken;
+  });
+  let payload;
+  t.mock.method(globalThis, 'fetch', async () => ({ ok: false, status: payload.error_code, json: async () => payload }));
+  for (const [status, description, unavailable, delay] of [
+    [400, 'Bad Request: message is too long', false, null],
+    [400, 'Bad Request: chat not found', true, null],
+    [403, 'Forbidden: bot was blocked by the user', true, null],
+    [403, 'Forbidden: user is deactivated', true, null],
+    [403, 'Forbidden: operation is temporarily unavailable', false, null],
+    [429, 'Too Many Requests: retry after 180', false, 180],
+    [401, 'Unauthorized: private-fixture-token', false, null],
+  ]) {
+    payload = { ok: false, error_code: status, description, ...(delay ? { parameters: { retry_after: delay } } : {}) };
+    await assert.rejects(getTelegramProvider().sendTextMessage({ chatId: '99', body: 'Job alert' }), error => {
+      assert.equal(error.chatUnavailable, unavailable, description);
+      assert.equal(error.retryAfterSeconds, delay);
+      assert.equal(error.statusCode, status);
+      assert.doesNotMatch(error.message, /private-fixture-token|Unauthorized:/);
+      return true;
+    });
+  }
+});

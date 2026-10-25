@@ -1,5 +1,7 @@
 import { filterIndiaJobs } from './indiaLocationFilter.js'
 import { isAggregateHiringSignalJob } from '../../src/utils/jobListingEvidence.js'
+import { resolveJobPublicationDate } from '../../src/utils/jobPublicationDate.js'
+import { readNativeRoleAvailability } from './sourceAvailability.js'
 import {
   buildPublishableJobPostedAtCutoff,
   normalizeLifecycleDate,
@@ -33,6 +35,15 @@ export const analyzePublishableJobs = (jobs = [], { now = new Date() } = {}) => 
   filterCounts.nonIndia = Math.max(0, jobs.length - indiaJobs.length)
 
   const eligibleJobs = indiaJobs.filter((job) => {
+    const availability = readNativeRoleAvailability(job)
+    if (availability?.state === 'closed') {
+      filterCounts.closed += 1
+      return false
+    }
+    if (availability?.state === 'unavailable') {
+      filterCounts.unavailable = (filterCounts.unavailable || 0) + 1
+      return false
+    }
     if (isAggregateHiringSignalJob(job)) {
       filterCounts.nonJob += 1
       return false
@@ -47,7 +58,11 @@ export const analyzePublishableJobs = (jobs = [], { now = new Date() } = {}) => 
       return false
     }
 
-    const postedAt = normalizeLifecycleDate(job?.postingDate) || normalizeLifecycleDate(job?.postedAt)
+    const publicationDate = resolveJobPublicationDate(job)
+    // Observation fallback is not evidence of an old source publication. Keep
+    // current observations eligible to refresh lastSeenAt without renewing the
+    // first stored observation date used by the public visibility policy.
+    const postedAt = publicationDate.provenance === 'source' ? publicationDate.date : null
     if (postedAt && postedAt < postedAtCutoff) {
       filterCounts.old += 1
       return false

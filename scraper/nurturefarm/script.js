@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -13,39 +14,6 @@ const SOURCE = 'nurturefarm'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 const VERIFIED_LIVE_BOARD_DATE = '2026-08-04'
-const VERIFIED_LIVE_JOB_SNAPSHOT = [
-  {
-    title: 'Zonal Commercial Lead',
-    location: 'Bangalore',
-    department: 'Retail',
-  },
-  {
-    title: 'Data Analyst',
-    location: 'Bangalore',
-    department: 'Retail',
-  },
-  {
-    title: 'Product Manager',
-    location: 'Bangalore',
-    department: 'Product Management',
-  },
-  {
-    title: 'Senior Product Manager',
-    location: 'Bangalore',
-    department: 'Product Management',
-  },
-  {
-    title: 'Category Manager',
-    location: 'Bangalore',
-    department: 'Retail',
-  },
-  {
-    title: 'Technical lead-Backend Engineer',
-    location: 'Bangalore',
-    department: 'Engineering',
-  },
-]
-
 const normalizeWhitespace = (value) => {
   if (value == null) return null
   const normalized = String(value)
@@ -123,31 +91,6 @@ const resolveJobUrl = (href) => {
 }
 
 const buildApplyUrlFromTitle = (title) => `${JOBS_URL}jobs/${slugify(title)}`
-
-const buildSnapshotJobs = () => VERIFIED_LIVE_JOB_SNAPSHOT.map((job) => {
-  const location = normalizeLocation(job.location)
-  const jobId = slugify(job.title)
-  return {
-    title: job.title,
-    location: location.location,
-    city: location.city,
-    country: location.country,
-    jobId,
-    requisitionId: jobId,
-    sourceUrl: JOBS_URL,
-    applyUrl: buildApplyUrlFromTitle(job.title),
-    department: job.department,
-    employmentType: null,
-    experienceRequired: null,
-    postingDate: null,
-    closingDate: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    jobDescription: null,
-    remoteStatus: 'On-site',
-  }
-})
 
 const isExpectedJobsBoardTimeout = (error) => {
   const message = String(error?.message ?? error ?? '')
@@ -239,15 +182,18 @@ const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
 })
 
 export const createNurtureFarmScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, signal } = {}) {
+    signal?.throwIfAborted()
     let jobsUrl = JOBS_URL
     try {
-      const joinUsHtml = await fetchText(CAREERS_URL)
+      const joinUsHtml = await fetchText(CAREERS_URL, signal ? { signal } : undefined)
+      signal?.throwIfAborted()
       if (!hasOfficialJoinUsSignal(joinUsHtml)) {
         throw new Error('Nurture.Farm join-us page no longer matches the verified first-party careers handoff')
       }
       jobsUrl = extractJobsUrl(joinUsHtml)
     } catch (error) {
+      signal?.throwIfAborted()
       if (!/HTTP 404 for https:\/\/nurture\.farm\/join-us-2\/?/i.test(String(error?.message ?? error ?? ''))) {
         throw error
       }
@@ -255,21 +201,24 @@ export const createNurtureFarmScraper = () => ({
 
     let html
     try {
-      html = await fetchText(jobsUrl, { attempts: 1 })
+      html = await fetchText(jobsUrl, { attempts: 1, ...(signal ? { signal } : {}) })
+      signal?.throwIfAborted()
     } catch (error) {
+      signal?.throwIfAborted()
       if (!isExpectedJobsBoardTimeout(error)) {
         throw error
       }
 
-      return buildSnapshotJobs().map((job) => ({
-        ...job,
-        company: COMPANY,
-        link: job.applyUrl || job.sourceUrl,
-        source: SOURCE,
-        companyCareerPage: CAREERS_URL,
-        scrapedAt: new Date().toISOString(),
-        verificationDate: VERIFIED_LIVE_BOARD_DATE,
-      }))
+      throw Object.assign(new Error('Nurture.Farm live board unavailable; historical snapshots cannot establish current inventory', { cause: error }), {
+        code: 'NURTUREFARM_COVERAGE_GAP', softFailure: true, upstreamOutage: true,
+        failureKind: 'network_or_timeout', abortRetries: true,
+        sourceListingComplete: false, lifecycleCleanupAllowed: false,
+        inventoryEvidence: normalizeInventoryEvidence({
+          status: 'coverage-gap', surface: jobsUrl, firstParty: false, listingComplete: false,
+          pagesFetched: 0, reportedTotal: null, indiaFacetCount: null,
+          verifiedAt: new Date().toISOString(), reason: 'live-board-unavailable;historical-snapshot-not-current-inventory',
+        }),
+      })
     }
 
     if (!hasOfficialCareersSignal(html)) {

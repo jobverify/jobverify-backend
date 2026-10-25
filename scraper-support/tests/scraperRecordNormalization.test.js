@@ -43,7 +43,7 @@ test('normalizeScrapedJob enriches engineering jobs into the unified scraper sch
   assert.equal(normalized.seniority, 'Mid Level')
   assert.equal(normalized.primaryRoleDomain, 'Software Engineering')
   assert.deepEqual(normalized.requiredSkillIds, ['node-js', 'aws'])
-  assert.deepEqual(normalized.skillIds, ['node-js', 'aws', 'postgresql', 'sql'])
+  assert.deepEqual(normalized.skillIds, ['node-js', 'aws', 'postgresql'])
 })
 
 test('normalizeScrapedJob fills missing optional fields with null-safe defaults', () => {

@@ -1,5 +1,8 @@
 import {hasSourceDescription} from '../../src/utils/jobSourceContent.js'
-const requireContent=(ok,message)=>{if(!ok)throw new Error('Active native content: '+message)}
+export class ActiveNativeContentError extends Error {
+ constructor(message){super('Active native content: '+message);this.name='ActiveNativeContentError'}
+}
+const requireContent=(ok,message)=>{if(!ok)throw new ActiveNativeContentError(message)}
 const decode = value => String(value ?? '').replace(/&#x([\da-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
   .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
   .replace(/&(amp|quot|apos|nbsp|lt|gt|ndash|mdash|hellip);/g, (_, n) => ({amp:'&',quot:'"',apos:"'",nbsp:' ',lt:'<',gt:'>',ndash:'–',mdash:'—',hellip:'…'})[n])
@@ -8,7 +11,7 @@ export const decodeNativeEntities = decode
 
 // Small source-local tree reader: exact attributes, active elements only, and raw
 // script bodies kept separately. Inert markup cannot supply a title or full JD.
-const dom = input => {
+const dom = (input, {excludeObjectFallback = true} = {}) => {
   const html = String(input), root = {tag:'root', attrs:{}, children:[]}, stack = [root]
   const raw = new Set(['script','style','textarea','title','xmp','iframe','noembed','noframes','plaintext','noscript'])
   const voids = new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr'])
@@ -36,8 +39,8 @@ const dom = input => {
       if(!Object.hasOwn(attrs,key))attrs[key]=decode(a[2]??a[3]??a[4]??'')
     }
     const style=(attrs.style||'').replace(/\/\*[\s\S]*?\*\//g,'')
-    const hidden=Object.hasOwn(attrs,'hidden')||attrs['aria-hidden']?.toLowerCase()==='true'||/(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|content-visibility\s*:\s*hidden)\s*(?:!important\s*)?(?:;|$)/i.test(style)
-    const node = {tag,attrs,children:[],activeFrame:tag==='iframe'&&!parent.inert&&!hidden,inert:parent.inert || hidden || tag === 'template' || (raw.has(tag) && !['script','title'].includes(tag))}
+    const hidden=Object.hasOwn(attrs,'hidden')||Object.hasOwn(attrs,'inert')||attrs['aria-hidden']?.toLowerCase()==='true'||/(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|content-visibility\s*:\s*hidden)\s*(?:!important\s*)?(?:;|$)/i.test(style)
+    const node = {tag,attrs,children:[],activeFrame:tag==='iframe'&&!parent.inert&&!hidden,inert:parent.inert || hidden || tag === 'template' || (excludeObjectFallback && tag === 'object') || (raw.has(tag) && !['script','title'].includes(tag))}
     parent.children.push(node)
     if (raw.has(tag)) {
       const end = tag === 'plaintext' ? null : new RegExp(`</${tag}\\s*>`, 'ig')
@@ -63,13 +66,13 @@ export const extractActiveDescription = value => {
 }
 
 export const activeHead = html => {const tree=dom(html);return {titles:all(tree,n=>n.tag==='title').map(n=>norm(n.raw)),metas:all(tree,n=>n.tag==='meta').map(n=>n.attrs)}}
-export const activeScripts = html => all(dom(html),n=>n.tag==='script'&&!n.attrs.src).map(n=>n.raw||'')
+export const activeScripts = (html, options) => all(dom(html, options),n=>n.tag==='script'&&!n.attrs.src).map(n=>n.raw||'')
 
 // An active iframe can delegate navigation, while its raw fallback body cannot
 // supply visible description text or activate nested frames.
-export const activeIframeSources = html => {
+export const activeIframeSources = (html, options) => {
  const frames=node=>node.activeFrame?(Object.hasOwn(node.attrs,'srcdoc')?[]:[node.attrs.src]):node.inert?[]:node.children.filter(child=>typeof child!=='string').flatMap(frames)
- return frames(dom(html)).filter(value=>typeof value==='string'&&value.trim())
+ return frames(dom(html, options)).filter(value=>typeof value==='string'&&value.trim())
 }
 
-export const readNativeDocument=html=>{const root=dom(html);return{nodes:predicate=>all(root,predicate),text,hasClass:cls}}
+export const readNativeDocument=(html,options)=>{const root=dom(html,options);return{nodes:predicate=>all(root,predicate),text,hasClass:cls}}

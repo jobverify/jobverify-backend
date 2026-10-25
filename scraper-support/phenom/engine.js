@@ -215,7 +215,7 @@ for (let first = 65; first <= 90; first += 1) for (let second = 65; second <= 90
 }
 for (const [name, code] of Object.entries({ 'united states of america': 'US', usa: 'US',
   uk: 'GB', 'great britain': 'GB', 'czech republic': 'CZ', 'south korea': 'KR',
-  'republic of korea': 'KR', 'russian federation': 'RU', 'viet nam': 'VN', 'taiwan, china': 'TW', turkey: 'TR' })) {
+  'republic of korea': 'KR', 'korea, republic of': 'KR', 'hong kong': 'HK', 'russian federation': 'RU', 'viet nam': 'VN', 'taiwan, china': 'TW', turkey: 'TR' })) {
   knownCountries.set(name, code)
 }
 
@@ -420,8 +420,8 @@ export const createPhenomScraper = ({
   const countryParts = value => (normalizeWhitespace(value) || '').split(/\s*\/\s*/).filter(Boolean)
   const countryMatchesTarget = value => {
     if (typeof value !== 'string') return false
-    const parts = countryParts(value)
-    return parts.length > 0 && parts.every(part => part.toLowerCase() === targetCountry.toLowerCase())
+    const targetCode = countryCode(targetCountry)
+    return Boolean(targetCode && countryCode(value) === targetCode)
   }
   const countryIsUnknown = value => {
     if (typeof value !== 'string') return true
@@ -470,11 +470,11 @@ export const createPhenomScraper = ({
     if (!short.length) return {consistent:true,target:fullCountry===countryCode(targetCountry)}
     const shortCountry = countryCode(short.at(-1))
     if (shortCountry && shortCountry!==fullCountry) return {consistent:false,target:false}
-    // A postal suffix is not a country. Bind it to the same office's explicit
-    // postal code and fully matching city/state, retaining the full country.
-    const postalCode = typeof value.postalCode === 'string' ? value.postalCode.trim() : null
-    const postalLabel = !shortCountry && fullCountry === 'IN' && countryCode(country) === fullCountry
-      && /^\d{6}$/.test(postalCode || '') && short.at(-1) === postalCode
+    // A postal suffix (including a native N/A marker) supplies no country.
+    // Bind the exact label to this office's explicit country and full region.
+    const postalCode = typeof value.postalCode === 'string' ? value.postalCode.trim().normalize('NFC').toLowerCase() : null
+    const postalLabel = !shortCountry && countryCode(country) === fullCountry
+      && postalCode && postalCode.length <= 32 && short.at(-1) === postalCode
       && short.length - 1 === fullPrefix.length && prefixAgrees(short.slice(0, -1), fullPrefix)
       && (value.cityStateZipCode == null || typeof value.cityStateZipCode === 'string'
         && normalizeWhitespace(value.cityStateZipCode) === normalizeWhitespace(value.location))

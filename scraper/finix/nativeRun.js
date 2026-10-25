@@ -24,6 +24,8 @@ for (let first = 65; first <= 90; first++) for (let second = 65; second <= 90; s
 const escapePattern = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const foreignGeography = new RegExp(`(?:^|[^\\p{L}])(?:${[...foreignCountries, ...foreignLabels]
   .sort((a, b) => b.length - a.length).map(escapePattern).join('|')})(?=$|[^\\p{L}])`, 'iu')
+const explicitForeignCountry = new RegExp(`(?:^|[^\\p{L}])(?:${[...foreignCountries]
+  .sort((a, b) => b.length - a.length).map(escapePattern).join('|')})(?=$|[^\\p{L}])`, 'iu')
 const unboundedLocation = /^(?:remote|worldwide|anywhere|global)$/i
 // The common public scope helper accepts plain Remote. It is not native India evidence.
 const indiaLabel = value => text(value) && !unboundedLocation.test(normalizeLabel(value))
@@ -82,7 +84,9 @@ export async function runNativeFinix({
     ...options, attempts: 1, timeoutMs: 20000, label: 'finix',
   }), signal,
 } = {}) {
+  signal?.throwIfAborted()
   const records = await fetchJson(FINIX_API, { signal })
+  signal?.throwIfAborted()
   if (!Array.isArray(records)) throw new Error('[finix] Invalid or failed Lever inventory envelope/pagination')
   const identities = new Set(), originals = new Map(), unknownReasons = new Set()
   const publication = new Map(), missingRoleDescriptions = new Set()
@@ -141,12 +145,18 @@ export async function runNativeFinix({
     }
     const location = india.length
       ? india.map(label => /\bindia\b/i.test(label) ? label : `${label}, India`).join(' / ') : primary
+    const primaryCountryName=countryIndia?'India':/^[A-Z]{2}$/i.test(record.country||'')
+      ? regionNames.of(record.country.toUpperCase()):null
+    const qualifiedPrimary=primaryCountryName && primaryCountryName!==record.country
+      && text(primary) && !unboundedLocation.test(primary) && !indiaLabel(primary) && !explicitForeignCountry.test(primary)
+      ? `${primary}, ${primaryCountryName}`:primary
     originals.set(record.id, record)
     return {
-      ...record, createdAt: null, descriptionPlain: nativeBody(record), description: null,
+      ...record, ...(india.length?{country:'IN'}:{}), createdAt: null, descriptionPlain: nativeBody(record), description: null,
       additionalPlain: [record.additionalPlain || record.additional,
         record.salaryDescriptionPlain || record.salaryDescription].filter(text).join('\n\n') || null,
-      additional: null, categories: { ...record.categories, location },
+      additional: null, categories: { ...record.categories, location,
+        ...(secondary?{allLocations:secondary.map(label=>label===primary?qualifiedPrimary:label)}:{}) },
     }
   })
   const mapped = await createPublicAtsCatalogScraper(provider).run({ signal, fetchJson: async () => prepared })

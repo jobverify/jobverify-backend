@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs'
 import {run} from './script.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {analyzePublishableJobs} from '../../scraper-support/utils/publishableJobMetrics.js'
+import {hasSourceDescription} from '../../src/utils/jobSourceContent.js'
 const original=JSON.parse(readFileSync(new URL('./fixtures/native-india-001.json',import.meta.url)))
 const base='https://jobs.ecolab.com',json=x=>JSON.stringify(x).replaceAll('<','\\u003c'),fresh=()=>structuredClone(original)
 const bootstrap=(total=1,india=total,change=x=>x)=>'<script>var phApp=phApp||'+json(change({...original.app,pageName:'search-results'}))+';phApp.ddo='+json({eagerLoadRefineSearch:{status:200,totalHits:total,hits:0,data:{jobs:[],aggregations:[{field:'country',value:{India:india}}]}},siteConfig:{data:{siteSettings:{refineSearch:{enabledFacets:['country','city','state']}}}}})+';</script>'
@@ -18,7 +19,10 @@ const blocked=async change=>{
  const jobs=await run(options({fixture}));assert.equal(jobs.length,1)
  assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(jobs[0].jobDescription,null)
  assert.equal(jobs[0].sourceListingComplete,false);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
- assert.equal(analyzePublishableJobs(jobs,{now:new Date('2026-10-21T21:00:00Z')}).eligibleJobs.length,0)
+ // Keep the trusted listing for detail recovery. New rows without a prior
+ // source description stay private; incomplete rescrapes preserve prior content.
+ assert.equal(analyzePublishableJobs(jobs,{now:new Date('2026-10-21T21:00:00Z')}).eligibleJobs.length,1)
+ assert.equal(hasSourceDescription(jobs[0]),false)
  return jobs
 }
 test('real native India detail retains complete authoritative JD, exact dates, offices and employer assertions',async()=>{

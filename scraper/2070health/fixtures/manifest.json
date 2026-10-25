@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "fixture": "current-native-20261024.json.gz",
+  "compressedSha256": "b1ca861e579d0e0a6952a70e7f401ba3221eea70879915155c7c8080aa35c8a5",
+  "uncompressedSha256": "28749472dee09d03ae96247399be941ad3daa4baa6ce9382304d86b7b5209eba",
+  "captureMethod": "Bounded unauthenticated public HTTP reads through isolated headless Chromium contexts. MCP browser failed before code with an in-use shared profile; local Playwright used to retain raw response fixtures.",
+  "sanitization": "Public page/API content only; no cookies, browser storage, applicant submissions or credentials. CSP nonce attribute values redacted where present. Structured native selections omit applicant questions.",
+  "capturedAt": null,
+  "captures": [
+    {
+      "name": "2070health-official",
+      "url": "https://2070health.com/careers/",
+      "finalUrl": "https://2070health.com/careers/",
+      "status": 200,
+      "capturedAt": "2026-10-24T16:57:54.325Z",
+      "htmlSha256": "828202e8da16f3f5322a4dc19a50173520d2906232215cec076ae1b1e465ad3a"
+    },
+    {
+      "name": "2070health-native",
+      "url": "https://2070health.com/career/career-detail/?id=0A8CBEBB96",
+      "finalUrl": "https://2070health.com/careers/career-detail/?id=0A8CBEBB96",
+      "status": 200,
+      "capturedAt": "2026-10-24T16:59:33.651Z",
+      "htmlSha256": "37200156cfa6506d44c77d3749b4135369eaca4f7f0e506cb38e2051707c0f66"
+    },
+    {
+      "name": "2070health-second",
+      "url": "https://2070health.com/careers/career-detail/?id=2BB49DD351",
+      "finalUrl": "https://2070health.com/careers/career-detail/?id=2BB49DD351",
+      "status": 200,
+      "capturedAt": "2026-10-24T17:04:49.452Z",
+      "htmlSha256": "618ab588359639298c2d2252e734d2e8d3f62db933e0defc9a000a2a98b704b7"
+    }
+  ],
+  "limitations": "Captured fixtures are evidence for offline parser replay, not current production transport or database publication. Static tests with modified records are contract regressions, not live India job evidence."
+}

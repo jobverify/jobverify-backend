@@ -193,14 +193,25 @@ const resolvePublicJobDatasetSummary = async (siteSettings = {}) => {
   // Stored summaries include all categories. Filtered views query their own scope.
   if (siteSettings.experiencedJobsEnabled === false) return null;
   const summary = await readJobDatasetSummary();
+  const now = new Date();
   const refreshedAt = normalizeLifecycleDate(summary?.refreshedAt);
-  const isCurrentLifecycleDay = !refreshedAt
-    || refreshedAt >= startOfUtcDay(new Date());
-  const isCurrentLifecycleScope = !refreshedAt
-    || summary?.lifecycleVersion === JOB_DATASET_LIFECYCLE_VERSION;
+  const nextClosingAt = normalizeLifecycleDate(summary?.nextClosingAt);
+  const nextPublicationAt = normalizeLifecycleDate(summary?.nextPublicationAt);
+  const isCurrentLifecycleDay = refreshedAt != null
+    && refreshedAt <= now && refreshedAt >= startOfUtcDay(now);
+  const isCurrentLifecycleScope = summary?.lifecycleVersion === JOB_DATASET_LIFECYCLE_VERSION;
+  const hasPublishedRefresh = Number.isSafeInteger(summary?.publishedSequence)
+    && summary.publishedSequence > 0
+    && Number.isSafeInteger(summary?.refreshSequence)
+    && summary.refreshSequence >= summary.publishedSequence;
+  const hasNoElapsedClosingInstant = summary?.nextClosingAt == null
+    || (nextClosingAt != null && nextClosingAt > now);
+  const hasNoElapsedPublicationInstant = summary?.nextPublicationAt == null
+    || (nextPublicationAt != null && nextPublicationAt > now);
 
   if (
-    (summary != null && isCurrentLifecycleDay && isCurrentLifecycleScope)
+    (summary != null && isCurrentLifecycleDay && isCurrentLifecycleScope && hasPublishedRefresh
+      && hasNoElapsedClosingInstant && hasNoElapsedPublicationInstant)
     || mongoose.connection.readyState !== 1
   ) {
     return summary;

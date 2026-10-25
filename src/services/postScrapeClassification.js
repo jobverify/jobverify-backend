@@ -37,7 +37,7 @@ export const SOURCE_INPUT_FIELDS = ['title', 'originalTitle', 'sourceDescription
   'sourceEmploymentType', 'atsEmploymentType', 'rawEmploymentType', 'employmentTypeProvenance', 'employmentType',
   'minimumQualification', 'preferredQualification', 'qualifications', 'responsibilities', 'requirements',
   'sourceExperienceRequired', 'experienceRequired', 'experienceRequiredProvenance',
-  'postedAt', 'postingDate', 'scrapedAt', 'scrapedTimestamp', 'eligibleBatches', 'eligibleBatchesProvenance', 'status']
+  'postedAt', 'postingDate', 'postedAtProvenance', 'postedAtProvenanceValue', 'scrapedAt', 'scrapedTimestamp', 'eligibleBatches', 'eligibleBatchesProvenance', 'status']
 export const sourceSnapshotFilter = job => ({ _id: job._id, $and: SOURCE_INPUT_FIELDS.map(field => {
   // Mongoose casts whole embedded documents into schema order, while MongoDB's
   // object equality depends on stored order. Guard the relevant leaf values.

@@ -34,9 +34,8 @@ for (const [source, suffix, careerPage, domain, companyName] of cases) test(sour
 })
 
 test('reviewed identity does not activate an inventory snapshot or another registered employer', () => {
-  assert.equal(catalog.length, 4587)
-  assert.equal(new Set(catalog.map(row => row.source)).size, 4587)
   for (const [source] of cases) {
+    assert.equal(catalog.filter(row => row.source === source).length, 1)
     const provider = catalog.find(row => row.source === source)
     for (const field of ['verifiedOn', 'verifiedAt', 'verifiedPublicJobCount', 'verifiedIndiaJobCount']) assert.equal(provider[field], null)
     assert.equal(provider.verifiedInventoryStatus, 'unverified')

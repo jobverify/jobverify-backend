@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {createHash} from 'node:crypto'
 import {attachInventoryEvidence,normalizeInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {activeIframeSources,readNativeDocument} from '../../scraper-support/utils/activeNativeHtml.js'
 import {activeDocument,collectNative,ATS_ORIGIN,HANDOFF_URL,ENTRY_URL,LISTING_URL} from './native.js'
 import candidate from './catalog-candidate.json' with {type:'json'}
 
@@ -11,6 +12,20 @@ export const SOURCE = 'dassaultaviationindia'
 export const COMPANY = 'Dassault Aviation India'
 export const FIRST_PARTY_ROOT_URL = 'https://www.dassault-aviation.com/en/group/careers/'
 export const PROVIDER_METADATA={...candidate,modulePath:fileURLToPath(import.meta.url)}
+
+const isObservedIncapsulaShell=body=>{
+  const document=readNativeDocument(body)
+  const resource=value=>{
+    try{const url=new URL(value,FIRST_PARTY_ROOT_URL);return url.protocol==='https:'&&!url.username&&!url.password
+      &&url.origin===new URL(FIRST_PARTY_ROOT_URL).origin&&url.pathname==='/_Incapsula_Resource'&&!url.hash}catch{return false}
+  }
+  const robots=document.nodes(n=>n.tag==='meta'&&n.attrs.name?.toLowerCase()==='robots')
+  const directives=robots[0]?.attrs.content?.toLowerCase().split(/[\s,]+/).filter(Boolean)||[]
+  const scripts=document.nodes(n=>n.tag==='script'),frames=activeIframeSources(body)
+  return robots.length===1&&directives.length===2&&directives.includes('noindex')&&directives.includes('nofollow')
+    &&scripts.length===1&&resource(scripts[0].attrs.src)&&frames.length===1&&resource(frames[0])
+    &&document.nodes(n=>n.tag==='title').length===0&&!document.text(document.nodes(n=>n.tag==='root')[0])
+}
 
 export const createDassaultAviationIndiaScraper = (defaults={}) => ({
   async run(options={}) {
@@ -60,6 +75,10 @@ export const createDassaultAviationIndiaScraper = (defaults={}) => ({
         controller.signal.throwIfAborted()
         if(typeof body!=='string'||!body.trim()||Buffer.byteLength(body)>3000000)throw gap('Native body missing or oversized')
         retainedResponses.push({url:requestUrl,finalUrl:response.url,status:response.status,body,capturedAt:now(),bodySHA256:createHash('sha256').update(body).digest('hex')})
+        if(url===FIRST_PARTY_ROOT_URL&&isObservedIncapsulaShell(body))throw Object.assign(gap('Corporate publisher returned an Incapsula challenge shell'),{
+          softFailure:true,upstreamOutage:true,failureKind:'blocked_or_access_denied',stage:'corporate',
+          status:response.status,statusCode:response.status,requestUrl,finalUrl:response.url,
+        })
         return activeDocument(body)
       }
       const official=await read(FIRST_PARTY_ROOT_URL)

@@ -1,0 +1,378 @@
+{
+  "source": "volopay",
+  "updatedAt": "2026-10-24T18:42:25.255Z",
+  "company": "Volopay",
+  "sourceAdapter": "source-local script override of original generic Dover apiPortal",
+  "productionWrites": false,
+  "officialBinding": {
+    "publisher": "https://www.volopay.com/",
+    "activeCareersHref": "https://app.dover.io/dover/careers/ebed3959-fa8a-4719-b143-0730e1223ec8",
+    "observedRedirect": {
+      "status": 301,
+      "from": "https://app.dover.io/dover/careers/ebed3959-fa8a-4719-b143-0730e1223ec8",
+      "to": "https://app.dover.com/dover/careers/ebed3959-fa8a-4719-b143-0730e1223ec8",
+      "actualResponseLocationObserved": true
+    },
+    "clientIdentity": {
+      "id": "ebed3959-fa8a-4719-b143-0730e1223ec8",
+      "name": "Volopay",
+      "slug": "volopay",
+      "primary_domain": "volopay.co"
+    },
+    "note": "Official company domain remains volopay.com; exact native legacy client_domain volopay.co is corroborated by that publisher-bound client UUID, not inferred from a similar name."
+  },
+  "captureWindow": {
+    "start": "2026-10-24T18:11:16.788Z",
+    "end": "2026-10-24T18:16:46.087Z"
+  },
+  "nativeScope": {
+    "advertisedGlobal": 8,
+    "explicitIndia": 7,
+    "explicitForeign": 1,
+    "foreignCountry": "PH",
+    "indiaDetailsVerified": 7,
+    "initialFinalListingSame": true,
+    "next": null,
+    "previous": null,
+    "wholeIndiaInventoryValidatedByReceiptReplay": true
+  },
+  "nativeRequests": [
+    {
+      "url": "https://www.volopay.com/",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.io/dover/careers/ebed3959-fa8a-4719-b143-0730e1223ec8",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/dover/careers/ebed3959-fa8a-4719-b143-0730e1223ec8",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/api/v1/careers-page/ebed3959-fa8a-4719-b143-0730e1223ec8?format=json",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/api/v1/careers-page/ebed3959-fa8a-4719-b143-0730e1223ec8/jobs?format=json",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/api/v1/inbound/application-portal-job/ad404f91-9265-4809-96f4-c1c6b3cab34f?format=json",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/api/v1/inbound/application-portal-job/a97b4b39-8f5e-44c3-a926-f198fafa1a4e?format=json",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/api/v1/inbound/application-portal-job/b3aec74a-ab9f-401b-afe5-f62482e1d30a?format=json",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/api/v1/inbound/application-portal-job/4a39b0ab-28a6-4728-8cb5-561e186a61f5?format=json",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/api/v1/inbound/application-portal-job/0a16d306-c7fd-4c67-889d-0ef776498197?format=json",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/api/v1/inbound/application-portal-job/a501ce82-6593-4e9f-afd7-f83a0b0c433c?format=json",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/api/v1/inbound/application-portal-job/150f6147-680a-4670-9e4e-2de71388ee88?format=json",
+      "method": "GET",
+      "redirect": "manual"
+    },
+    {
+      "url": "https://app.dover.com/api/v1/careers-page/ebed3959-fa8a-4719-b143-0730e1223ec8/jobs?format=json",
+      "method": "GET",
+      "redirect": "manual"
+    }
+  ],
+  "responseReceiptRules": "Every native JSON GET uses the actual advertised format=json representation, successful HTTP200, exact requested final URL and application/json content type. DRF HTML200 cannot supply native JSON. Only the independently observed exact IO301-to-COM board redirect is supported.",
+  "contentContract": {
+    "field": "user_provided_description",
+    "preservation": "Full original user_provided_description HTML retained byte-for-byte, including surrounding whitespace, as sourceDescription/jobDescriptionHtml. Trim/parsing is used for validation only; no generated fallback.",
+    "clientSchemaMapping": "description:e.userProvidedDescription",
+    "roleChecks": [
+      "exact native client UUID/name/domain",
+      "listing/detail UUID and normalized title",
+      "matching complete supplied location IDs/names/cities/states/countries/modes",
+      "listing is_published=true,is_sample=false",
+      "detail active=true,is_private=false",
+      "positive active employer content"
+    ],
+    "fixtureMinimization": "Actual listing envelopes retained; detail fixtures retain only required public role/client/location/date/description fields. Application question definitions, interview preview, logos and unrelated fields omitted. Bootstrap fixture omits analytics keys and tracking/session data; official fixture retains actual title and active Careers anchor."
+  },
+  "publicationContract": {
+    "clientModule": "https://app.dover.com/static/search-builder2/static/js/types-j5GWHPOq.js",
+    "moduleSha256": "dbbfae330cf04b84e803f3d81a7383fdcfb9d1f9234544d82f38fd4f2a4a0cd4",
+    "dateMapping": "datePosted:e.created?.toISOString().split(\"T\")[0]",
+    "renderedCorroboration": {
+      "role": "ad404f91-9265-4809-96f4-c1c6b3cab34f",
+      "nativeCreated": "2026-08-21T10:00:24.243168Z",
+      "publicJobPostingDate": "2026-08-21"
+    },
+    "canonicalPrecision": "UTC calendar day, matching the public JobPosting declaration; not an asserted exact publication time.",
+    "nativeClockRetention": "Original microsecond created timestamp retained in each source job sourceDateEvidence and raw source capture. Persistence uses the declared publication day, with no scrapedAt fallback.",
+    "closingDate": "No API end date is supplied. Native client SEO validThrough is an epoch/default-or-created-plus720hours formula, so it is not promoted to a requisition closing date. Source closingDate remains null.",
+    "nativeDates": [
+      {
+        "id": "ad404f91-9265-4809-96f4-c1c6b3cab34f",
+        "created": "2026-08-21T10:00:24.243168Z",
+        "datePosted": "2026-08-21"
+      },
+      {
+        "id": "a97b4b39-8f5e-44c3-a926-f198fafa1a4e",
+        "created": "2026-05-26T11:47:29.215840Z",
+        "datePosted": "2026-05-26"
+      },
+      {
+        "id": "b3aec74a-ab9f-401b-afe5-f62482e1d30a",
+        "created": "2026-09-29T10:52:08.810001Z",
+        "datePosted": "2026-09-29"
+      },
+      {
+        "id": "4a39b0ab-28a6-4728-8cb5-561e186a61f5",
+        "created": "2026-10-15T11:02:05.506790Z",
+        "datePosted": "2026-10-15"
+      },
+      {
+        "id": "0a16d306-c7fd-4c67-889d-0ef776498197",
+        "created": "2026-09-11T06:14:11.478785Z",
+        "datePosted": "2026-09-11"
+      },
+      {
+        "id": "a501ce82-6593-4e9f-afd7-f83a0b0c433c",
+        "created": "2026-07-16T05:48:08.169699Z",
+        "datePosted": "2026-07-16"
+      },
+      {
+        "id": "150f6147-680a-4670-9e4e-2de71388ee88",
+        "created": "2026-10-07T11:24:00.340604Z",
+        "datePosted": "2026-10-07"
+      }
+    ]
+  },
+  "paginationAndLifecycle": "Current observed public inventory is a complete single page with matching count/rows and null next/previous. Native client lists with limit300; source bounds inventory at300 and refuses any unreviewed pagination. A final complete listing must match all native role identities/titles/locations/publication flags. Caller detail limits retain incomplete evidence; unavailable listings cannot establish empty inventory.",
+  "sourceReceiptReplay": {
+    "completedAt": "2026-10-24T18:40:53.941Z",
+    "logicalRequests": 13,
+    "firstParty": true,
+    "status": "complete-inventory",
+    "reportedTotal": 8,
+    "indiaFacetCount": 7,
+    "pagesFetched": 2,
+    "artifact": "C:/Users/mohv/AppData/Local/Temp/codex-scraper-repair-verification-20261024/volopay-source-repair/result.json",
+    "jobsArtifact": "C:/Users/mohv/AppData/Local/Temp/codex-scraper-repair-verification-20261024/volopay-source-repair/jobs.json",
+    "note": "Source-level replay of bounded successful public native receipts; official publisher, actual IO301-to-COM200, native client,8-row listing,all7 India details,and unchanged final listing. No default Node transport or one-shot live-source claim."
+  },
+  "targetedVerification": {
+    "command": "node --test scraper/volopay/native.test.js scraper-support/tests/volopayCatalog.test.js scraper-support/tests/volopayApiPortal.test.js",
+    "passed": 24,
+    "failed": 0,
+    "sourceNativeTests": 21,
+    "catalogTests": 2,
+    "unchangedGenericApiTemplateTests": 1,
+    "redEvidence": "Original registered generic mapping dropped actual native employer HTML and retained the generic adapter (2/2 targeted failures). Additional native malformed text and streamed-byte-bound cases each reproduced red before their narrow fixes. Independent review4 issues reproduced5 targeted reds, then passed: foreign-only known-total labeling, explicit country-label contradiction, exact whitespace retention, cooperative sibling abort/settlement and aggregate-deadline first-cause preservation. Falsy first rejection and city-only ambiguous country-name label guards each also reproduced red before fixing.",
+    "checks": [
+      "actual all7 full native HTML/date/country preservation",
+      "client/role/active/private/location substitution",
+      "empty/inert descriptions and invalid dates",
+      "unavailable/truncated/duplicate/unpublished/sample/next inventories",
+      "inactive publisher and redirect/client drift",
+      "HTTP status/final URL/content type",
+      "final inventory changes",
+      "verified-empty versus caller-limited evidence",
+      "exact cancellation and aggregate fetch/body deadlines",
+      "first-failure active-call settlement and queue stop",
+      "stream byte bound/cancellation",
+      "registered source override and unchanged generic engine behavior"
+    ],
+    "scope": "Full repository suite not rerun; earlier broad run had 481 failures, not all attributed."
+  },
+  "localPersistence": {
+    "artifact": "C:/Users/mohv/AppData/Local/Temp/codex-scraper-repair-verification-20261024/volopay-local-persistence-2026-10-24T18-41-29-723Z/verification.json",
+    "success": true,
+    "localMongoOnly": true,
+    "externalNetworkForbidden": true,
+    "productionWrites": false,
+    "sourceJobs": 7,
+    "eligible": 3,
+    "stored": 3,
+    "publicQueryMatched": 3,
+    "firstSave": {
+      "inserted": 3,
+      "updated": 0,
+      "deleted": 0,
+      "filteredNonIndia": 0,
+      "filteredOld": 4,
+      "filteredClosed": 0,
+      "filteredInvalidUrl": 0,
+      "filteredEmptyDescription": 0,
+      "missed": 0,
+      "expired": 0,
+      "eligibleJobs": 3,
+      "missesBeforeExpiry": 2,
+      "staleCheckSkipped": false,
+      "staleCheckReason": null
+    },
+    "secondSave": {
+      "inserted": 0,
+      "updated": 3,
+      "deleted": 0,
+      "filteredNonIndia": 0,
+      "filteredOld": 4,
+      "filteredClosed": 0,
+      "filteredInvalidUrl": 0,
+      "filteredEmptyDescription": 0,
+      "missed": 0,
+      "expired": 0,
+      "eligibleJobs": 3,
+      "missesBeforeExpiry": 2,
+      "staleCheckSkipped": false,
+      "staleCheckReason": null
+    },
+    "sourcePayloadUnchanged": true,
+    "exactNativeHtmlAndDeclaredDayChecks": 3,
+    "settings": {
+      "experiencedJobsEnabled": true
+    }
+  },
+  "limitations": "Bounded current public browser reads and explicitly timed source receipt replay only. No full live default-Node source run, production DB/pipeline, permanent proof approval, commit, push or deployment claim. Runtime uses supported ordinary HTTP/static bootstrap/native APIs only; no browser fallback.",
+  "hashes": {
+    "source": "eb2539cb9ad3ca1feb8583b5436435a67fcab4ebe49472509e8eefd7ba72b562",
+    "sourceTests": "c5c2de2305a0d7072a8ec88c34c3dfc72b0bb77c0a4d0cf0c53a981140ddd397",
+    "sourceResult": "716fb47796f82500de5de21675b1a5ad59e63e9e1533559c6a7fcd78704cfc7e",
+    "sourceJobs": "6d71567ba79aa877268b169a9ff788aca1fe038f87051f6c199cd19e94b17947",
+    "localPersistence": "b850b718455a5aa8d47a853c8ac26cb1b522265fa2d05026ba8db667d3613903",
+    "nativeReceipts": [
+      {
+        "url": "https://app.dover.com/api/v1/careers-page/ebed3959-fa8a-4719-b143-0730e1223ec8?format=json",
+        "sha256": "d9245e7e6d428a9a1fda8d6a10734f986ace971bbe17bcdeef7e8f95ee357810",
+        "capturedAt": "2026-10-24T18:16:41.388Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/api/v1/careers-page/ebed3959-fa8a-4719-b143-0730e1223ec8?format=json",
+        "contentType": "application/json"
+      },
+      {
+        "url": "https://app.dover.com/api/v1/careers-page/ebed3959-fa8a-4719-b143-0730e1223ec8/jobs?format=json",
+        "sha256": "b34e2d716c7cda688a25ecbe2975d88afba1d3526e2c66fbf43e7d23e249c84b",
+        "capturedAt": "2026-10-24T18:16:41.829Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/api/v1/careers-page/ebed3959-fa8a-4719-b143-0730e1223ec8/jobs?format=json",
+        "contentType": "application/json"
+      },
+      {
+        "url": "https://app.dover.com/api/v1/inbound/application-portal-job/ad404f91-9265-4809-96f4-c1c6b3cab34f?format=json",
+        "sha256": "64142833628d877be25c22a1b56dc92a1f55d5a3e34ab3acd47f14abf4f97284",
+        "capturedAt": "2026-10-24T18:16:42.355Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/api/v1/inbound/application-portal-job/ad404f91-9265-4809-96f4-c1c6b3cab34f?format=json",
+        "contentType": "application/json"
+      },
+      {
+        "url": "https://app.dover.com/api/v1/inbound/application-portal-job/a97b4b39-8f5e-44c3-a926-f198fafa1a4e?format=json",
+        "sha256": "e4e42f3e1ce712b56730834eff02b1f19e770c0340f5013b48dc61a51814b758",
+        "capturedAt": "2026-10-24T18:16:42.889Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/api/v1/inbound/application-portal-job/a97b4b39-8f5e-44c3-a926-f198fafa1a4e?format=json",
+        "contentType": "application/json"
+      },
+      {
+        "url": "https://app.dover.com/api/v1/inbound/application-portal-job/b3aec74a-ab9f-401b-afe5-f62482e1d30a?format=json",
+        "sha256": "4773f909cfe939e1d650217e7d4625babf891ebbe513e406d8df08c2931058a8",
+        "capturedAt": "2026-10-24T18:16:43.440Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/api/v1/inbound/application-portal-job/b3aec74a-ab9f-401b-afe5-f62482e1d30a?format=json",
+        "contentType": "application/json"
+      },
+      {
+        "url": "https://app.dover.com/api/v1/inbound/application-portal-job/4a39b0ab-28a6-4728-8cb5-561e186a61f5?format=json",
+        "sha256": "15d55a8a585947d9dee90144f810ba0a60d9e4a0d58c49a13877731b40d5dce1",
+        "capturedAt": "2026-10-24T18:16:43.971Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/api/v1/inbound/application-portal-job/4a39b0ab-28a6-4728-8cb5-561e186a61f5?format=json",
+        "contentType": "application/json"
+      },
+      {
+        "url": "https://app.dover.com/api/v1/inbound/application-portal-job/0a16d306-c7fd-4c67-889d-0ef776498197?format=json",
+        "sha256": "f0b4d794e9b228bbdc565a5b4e685ff103b8a606240d15add359c0eb7c8de581",
+        "capturedAt": "2026-10-24T18:16:44.553Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/api/v1/inbound/application-portal-job/0a16d306-c7fd-4c67-889d-0ef776498197?format=json",
+        "contentType": "application/json"
+      },
+      {
+        "url": "https://app.dover.com/api/v1/inbound/application-portal-job/a501ce82-6593-4e9f-afd7-f83a0b0c433c?format=json",
+        "sha256": "1b776e385232e75ab893f9474ad9f463a602b81683166aec1a4db3ab97d8f735",
+        "capturedAt": "2026-10-24T18:16:45.047Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/api/v1/inbound/application-portal-job/a501ce82-6593-4e9f-afd7-f83a0b0c433c?format=json",
+        "contentType": "application/json"
+      },
+      {
+        "url": "https://app.dover.com/api/v1/inbound/application-portal-job/150f6147-680a-4670-9e4e-2de71388ee88?format=json",
+        "sha256": "c4b1b6664c8abe389143348570cfd080d81fb5225cf614c69585eda24e4af8b4",
+        "capturedAt": "2026-10-24T18:16:45.558Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/api/v1/inbound/application-portal-job/150f6147-680a-4670-9e4e-2de71388ee88?format=json",
+        "contentType": "application/json"
+      },
+      {
+        "url": "https://app.dover.com/api/v1/careers-page/ebed3959-fa8a-4719-b143-0730e1223ec8/jobs?format=json",
+        "sha256": "b34e2d716c7cda688a25ecbe2975d88afba1d3526e2c66fbf43e7d23e249c84b",
+        "capturedAt": "2026-10-24T18:16:45.985Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/api/v1/careers-page/ebed3959-fa8a-4719-b143-0730e1223ec8/jobs?format=json",
+        "contentType": "application/json"
+      },
+      {
+        "url": "https://app.dover.com/static/search-builder2/static/js/index-EDVigPys.js",
+        "sha256": "b54c23737923ef01c0133d97b4747c9101454ae1eb148fce5a2a106345016a60",
+        "capturedAt": "2026-10-24T18:16:46.080Z",
+        "status": 200,
+        "finalUrl": "https://app.dover.com/static/search-builder2/static/js/index-EDVigPys.js",
+        "contentType": "text/javascript; charset=\"utf-8\""
+      }
+    ]
+  },
+  "changedFiles": [
+    "scraper/volopay/script.js",
+    "scraper/volopay/native.test.js",
+    "scraper-support/providers/providerExtensions/zzzzzz-volopay-native.json",
+    "scraper-support/tests/volopayCatalog.test.js",
+    "scraper/volopay/fixtures/board.html",
+    "scraper/volopay/fixtures/client.json",
+    "scraper/volopay/fixtures/details.json",
+    "scraper/volopay/fixtures/listing-final.json",
+    "scraper/volopay/fixtures/listing-initial.json",
+    "scraper/volopay/fixtures/official-binding.html",
+    "scraper/volopay/fixtures/manifest.json"
+  ],
+  "reviewCorrections": {
+    "foreignInventory": "Nonempty global native inventory with India0 remains complete-inventory and preserves its advertised total; verified-empty is reserved for total0.",
+    "countryLabels": "Known country names in a COUNTRY-typed label or native comma-suffixed country position must agree with ISO country. A city-only label is not inferred to be a country.",
+    "html": "Original native HTML is no longer trimmed.",
+    "failureSettlement": "Separate detail cancellation signal aborts siblings on first failure. Queued requests stop; active workers get a bounded1000ms cooperative drain. First cause is preserved even if aggregate deadline wins. detailRequestsSettled/unsettledDetailRequests disclose uncooperative transports; no cleanup is claimed. Falsy rejection values retain their first-cause identity."
+  },
+  "independentReview": {
+    "status": "requested-final-rereview",
+    "originalFindings": 4,
+    "productionCorrectionsComplete": true
+  }
+}

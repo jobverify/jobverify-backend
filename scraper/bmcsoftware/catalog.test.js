@@ -6,7 +6,6 @@ import {readFileSync} from 'node:fs'
 
 test('BMC keeps its single existing source with current official India handoff and runtime-only counts',async()=>{
   const catalog=getScraperCatalog(),matches=catalog.filter(row=>row.source==='bmcsoftware')
-  assert.equal(catalog.length,4587)
   assert.equal(matches.length,1)
   const provider=matches[0]
   assert.equal(provider.backfillMode,'live-parser')

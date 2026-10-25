@@ -11,21 +11,45 @@ import { hasSavedFilters, jobMatchesSavedFilters } from "./jobFilterMatcher.js";
 import { normalizeProfilePreferenceFilters } from "../utils/profilePreferenceFilters.js";
 import { alertScheduleService } from "./alertScheduleService.js";
 import { getTelegramProvider, isTelegramDeliveryEnabled } from "./telegramProvider.js";
+import { resolveFrontendOrigin } from "../utils/runtimeConfig.js";
 
 const MAX_JOBS_PER_MESSAGE = 5;
 const CLAIM_TTL_MS = 5 * 60 * 1000;
 const SEND_TIMEOUT_MS = 60 * 1000;
 const RECOVERY_LIMIT = 500;
+const TELEGRAM_TEXT_LIMIT = 4096;
 
-export const buildTelegramMessageBody = (jobs) => jobs
-  .slice(0, MAX_JOBS_PER_MESSAGE)
-  .map((job, index) => [
-    `${index + 1}. ${job.title}`,
-    `${job.company} - ${job.city || job.location || "India"}`,
-    job.summary || job.description,
-    job.jobUrl || job.applyUrl || job.sourceUrl || job.link,
-  ].filter(Boolean).join("\n"))
-  .join("\n\n");
+const compactText = (value, limit) => {
+  const text = String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (text.length <= limit) return text;
+  return text.slice(0, Math.max(0, limit - 1)).replace(/[\uD800-\uDBFF]$/u, '') + '\u2026';
+};
+
+function telegramJobLink(job) {
+  for (const value of [job.jobUrl, job.applicationUrl, job.applyUrl, job.sourceUrl, job.link]) {
+    try {
+      const url = new URL(value);
+      if (['https:', 'http:'].includes(url.protocol) && !url.username && !url.password && url.href.length <= 400) return url.href;
+    } catch { /* Try the next stored link. */ }
+  }
+  // Keep the URL intact when an ATS tracking link cannot fit in the digest.
+  let origin;
+  try { origin = resolveFrontendOrigin(); } catch { origin = 'https://www.jobverify.in'; }
+  return new URL(job._id ? `/jobs/${encodeURIComponent(String(job._id))}` : '/jobs', origin).href;
+}
+
+export const buildTelegramMessageBody = (jobs) => {
+  const batch = jobs.slice(0, MAX_JOBS_PER_MESSAGE);
+  if (!batch.length) return '';
+  const budget = Math.floor((TELEGRAM_TEXT_LIMIT - 2 * (batch.length - 1)) / batch.length);
+  return batch.map((job, index) => {
+    const heading = `${index + 1}. ${compactText(job.title, 160)}\n${compactText(job.company, 100)} - ${compactText(job.city || job.location || 'India', 100)}`;
+    const link = telegramJobLink(job);
+    const available = budget - heading.length - link.length - 2;
+    const summary = available > 0 ? compactText(job.summary || job.description, available) : '';
+    return [heading, summary, link].filter(Boolean).join('\n');
+  }).join('\n\n');
+};
 
 const claimFilter = (now = new Date()) => ({
   channel: "telegram",
@@ -97,7 +121,7 @@ const processRecords = async (user, records) => {
       await JobAlertDelivery.updateMany(owned, { $set: { status: "skipped", reason: "missing_delivery_context", claimToken: null, claimExpiresAt: null } });
       continue;
     }
-    if (!canUseTelegramAlerts(currentUser)) {
+    if (currentUser.deactivated || !canUseTelegramAlerts(currentUser)) {
       await JobAlertDelivery.updateMany(owned, { $set: retryUpdate("user_ineligible", 60 * 60_000) });
       continue;
     }
@@ -129,11 +153,12 @@ const processRecords = async (user, records) => {
     try {
       result = await sendWithTimeout(getTelegramProvider(), { chatId: currentUser.telegram.chatId, body });
     } catch (error) {
-      const unavailable = [400, 403].includes(error?.statusCode);
+      const unavailable = error?.chatUnavailable === true;
       if (unavailable) await User.updateOne({ _id: user._id }, { $set: { "premium.telegramAlertsEnabled": false } });
-      const delayMs = unavailable ? 60 * 60_000 : Math.min(60 * 60_000, 60_000 * (2 ** Math.min(attemptCount - 1, 6)));
+      const backoffMs = unavailable ? 60 * 60_000 : Math.min(60 * 60_000, 60_000 * (2 ** Math.min(attemptCount - 1, 6)));
+      const delayMs = Math.max(backoffMs, (error?.retryAfterSeconds || 0) * 1000);
       await JobAlertDelivery.updateMany(owned, { $set: {
-        ...retryUpdate(unavailable ? "telegram_chat_unavailable" : error.message, delayMs),
+        ...retryUpdate(error?.code || "telegram_send_failed", delayMs),
         attemptCount, providerName: "telegram", payloadPreview: body.slice(0, 500),
       } });
       continue;
@@ -156,7 +181,11 @@ const processRecords = async (user, records) => {
 
 export const queueJobAlertsForJobs = async (jobs = []) => {
   if (!Array.isArray(jobs) || !jobs.length) return;
-  const users = await User.find({ deactivated: false, "premium.status": "active", "premium.telegramAlertsEnabled": true }).lean().exec();
+  const users = await User.find({
+    deactivated: false,
+    "premium.telegramAlertsEnabled": true,
+    $or: [{ role: "admin" }, { "premium.status": "active" }],
+  }).lean().exec();
   await Promise.all(users.map(async (user) => {
     if (!canUseTelegramAlerts(user)) return;
     const filters = normalizeProfilePreferenceFilters(user.profile?.telegramAlertFilters);

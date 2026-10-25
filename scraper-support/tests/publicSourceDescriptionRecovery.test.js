@@ -64,6 +64,8 @@ test('inactive schemas and empty or placeholder native descriptions never supply
   for (const html of [
     `<template>${page(posting)}</template>`, `<!-- ${page(posting)} -->`,
     `<div hidden>${page(posting)}</div>`, `<textarea>${page(posting)}</textarea>`,
+    `<object data="/existing.pdf" type="application/pdf">${page(posting)}</object>`,
+    `<div inert>${page(posting)}</div>`,
     page({ ...posting, description: 'Description coming soon' }),
     page({ ...posting, description: '<template>Responsibilities: Build reliable services.</template>' }),
     page({ ...posting, description: '<p>Apply now</p>' }),
@@ -118,6 +120,7 @@ test('embedded role recovery requires an active iframe and verified successful w
   for (const wrapper of [
     response(frame), response(`<!-- ${frame} -->`), response(`<template>${frame}</template>`),
     response(`<div hidden>${frame}</div>`), { ...response(frame), status: 403 },
+    response(`<object data="/existing.pdf">${frame}</object>`),
     response(`<iframe src="${childUrl}" srcdoc="<p>Job unavailable</p>"></iframe>`),
     response(`<iframe src="${childUrl}" srcdoc></iframe>`),
     { ...response(frame), url: 'https://unrelated.example/search-jobs' }, frame,
