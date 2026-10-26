@@ -71,15 +71,18 @@ const employmentRestriction = text => /^This (?:job|role|position) requires? (?:
  || /\b(?:must|need to|required to) (?:be|have) .{0,40}(?:work authorization|authorized to work|right to work)\b/i.test(text)
  || /\b(?:visa|immigration) sponsorship\b.{0,40}\b(?:not available|not offered|not provided|unavailable)\b/i.test(text));
 const words = text => text.trim().split(/\s+/).filter(Boolean).length;
+// Protect comparison operators from the generic HTML cleaner: "< 100 ... >"
+// is employer content, not a tag. Restore them only after markup removal.
+const cleanFactText = text => cleanRewriteSource(text.replace(/<(?!\/?[a-z])/gi,'&lt;')).replace(/&lt;/gi,'<');
 
 /** Keep exact employer sentences. Labels and numbers remain attached to their facts. */
 export const buildSourceFacts = (input,{preserveContext=false}={}) => {
   const activeHeadings=preserveContext?contextualHeadings:headings;
   const activePatterns=preserveContext?contextualPatterns:headingPatterns;
   const preferenceCue=preserveContext?contextPreferred:preferred,requirementCue=preserveContext?contextRequired:required;
-  let source = decodeEntities(input.sourceDescription).replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,'')
+  let source = decodeEntities(input.sourceDescription).replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi,'')
     .replace(/<\/?(?:p|br|div|li|h[1-6]|section|ul|ol|tr)\b[^>]*>/gi,'\n');
-  if(preserveContext)source=source.replace(/<[^>]+>/g,' ').replace(/[^\S\r\n]+/g,' ');
+  if(preserveContext)source=source.replace(/<\/?[a-z][^>]*>/gi,' ').replace(/[^\S\r\n]+/g,' ');
   source=source.replace(/(^|\s)(Education(?:\s*&\s*Experience(?:\s*\(in lieu\))?)?|Experience|Supervisory Responsibilities)\s*(?=[•●◦▪·])/g,(whole,before,label,offset,original)=>{const prior=original.slice(0,offset);if(/(?:\d+\s+(?:years?|months?)|in|of)\s*$/i.test(prior))return whole;return before+'\n'+label+': ';}).replace(/[•●◦▪·]/g,'\n');
   const companyNames=[input.facts.company];
   if(preserveContext&&/\s+India$/i.test(input.facts.company))companyNames.push(input.facts.company.replace(/\s+India$/i,''));
@@ -102,7 +105,7 @@ export const buildSourceFacts = (input,{preserveContext=false}={}) => {
   source=source.replace(/(^|\s)(Job Description:|Batch Required|Eligible Degree\s*&\s*Branches|Eligibility Criteria|Other Skills Required(?:\s*\(If any\))?|Job Profile\s*\/\s*Title|Job Type\s*\/\s*Shift|Job Location|Joining Date|Probation Period|Recruitment Process|Compensation(?=\s*(?:[-–:]\s*)?(?:INR|USD|₹|Rs)))/g,'$1\n$2');
   const facts=[]; let section=null,pendingField=null;
   const add=(text, hint=section) => {
-    text=decodeEntities(cleanRewriteSource(text)).replace(/^[-•*]\s*/,'').trim();
+    text=cleanFactText(decodeEntities(cleanFactText(text))).replace(/^[-•*]\s*/,'').trim();
     for(const {re,section:hintSection} of activePatterns){const match=text.match(re);if(match){section=hintSection;hint=section;const rest=text.slice(match[0].length).trim();if(section!==5||!rest)text=rest;break;}}
     if (!text || /^(?:key|job description\s*:|joining date\s*[-:]?\s*[-–]?)$/i.test(text)) return;
     if(preserveContext&&/^For positions requiring access to technical data\b/i.test(text))section=hint=5;
@@ -157,7 +160,18 @@ const normalized = text => text.toLowerCase().replace(/[^\p{L}\p{M}\p{N}+#]+/gu,
 // Source order and complete wording prevent vocabulary-only checks from changing relationships.
 const overviewSupported = (text,fact) => text.length>=15 && text.length<=450 && normalized(text)===normalized(fact.text);
 
-const modelChoices = (input,options) => {const facts=buildSourceFacts(input,options).map(f=>{if(f.section===null){const allowed=allowedCategories(f.text,input.facts.company,options);if(allowed.length===1)return {...f,section:allowed[0]};}return f;});return {facts,unknown:facts.filter(f=>f.section===null),overview:overviewCandidates(facts).slice(0,4)};};
+const modelChoices = (input,options) => {const facts=buildSourceFacts(input,options).map(f=>{if(f.section===null){const allowed=allowedCategories(f.text,input.facts.company,options);if(allowed.length===1)return {...f,section:allowed[0]};}return f;});const unknown=facts.filter(f=>f.section===null);return {facts,unknown:options?.factRange?unknown.slice(options.factRange.start,options.factRange.end):unknown,overview:options?.factRange?.start>0?[]:overviewCandidates(facts).slice(0,4)};};
+
+// The source body is already bounded to 20 KB. Bound extraction separately from
+// inference: only unlabelled facts consume model decisions, in batches of 16.
+const MAX_SOURCE_FACTS = 1024;
+export const factPlanRanges = input => {
+  const count=modelChoices(input).unknown.length;
+  if(count<=64&&Buffer.byteLength(JSON.stringify(factPlanMessages(input)))<=12000)return null;
+  return Array.from({length:Math.max(1,Math.ceil(count/16))},(_,i)=>({start:i*16,end:Math.min(count,(i+1)*16)}));
+};
+const improvesSingleSection = (input,facts) => facts.length>=2
+  && !/(?:^|\n)\s*(?:[-*•]\s|\d+[.)]\s|#{1,6}\s)|<(?:h[1-6]|ul|ol)\b/i.test(input.sourceDescription);
 export const factPlanSchema = (input,options) => {
  const choices=modelChoices(input,options);
  return {type:'object',additionalProperties:false,required:['categories','overviewFactId'],properties:{categories:{type:'array',minItems:choices.unknown.length,maxItems:choices.unknown.length,items:choices.unknown.length?choices.unknown.map(f=>({type:'integer',enum:allowedCategories(f.text,input.facts.company,options)})):{type:'integer',enum:[9]}},overviewFactId:choices.overview.length?{type:'integer',enum:choices.overview.map((_,id)=>id)}:{type:'null'}}};
@@ -177,12 +191,12 @@ export const assessRewriteInput = (input,options) => {
   if(!input.eligible)return {ok:false,reason:'insufficient_source'};
   const facts=buildSourceFacts(input,options);
   if(facts.some(f=>f.mixedRequirementScope))return {ok:false,reason:'mixed_requirement_scope'};
-  if(!facts.length||facts.length>128)return {ok:false,reason:'too_many_source_facts'};
-  if(Buffer.byteLength(JSON.stringify(factPlanMessages(input,options)))>12000)return {ok:false,reason:'model_context_budget'};
+  if(!facts.length)return {ok:false,reason:'insufficient_source'};
+  if(facts.length>MAX_SOURCE_FACTS)return {ok:false,reason:'too_many_source_facts'};
   if((input.sourceDescription.match(/<h[1-6]\b/gi)||[]).length>=2 && /<(?:ul|ol)\b/i.test(input.sourceDescription))return {ok:false,reason:'already_structured'};
   if(facts.some(f=>/<\/?[a-z]/i.test(f.text)))return {ok:false,reason:'unsafe_source'};
   if(facts.some(f=>words(f.text)>160))return {ok:false,reason:'dense_source'};
-  if(facts.every(f=>f.section!==null)&&new Set(facts.map(f=>f.section)).size<2)return {ok:false,reason:'not_improved'};
+  if(facts.every(f=>f.section!==null)&&new Set(facts.map(f=>f.section)).size<2&&!improvesSingleSection(input,facts))return {ok:false,reason:'not_improved'};
   return {ok:true,facts};
 };
 
@@ -192,7 +206,7 @@ export const validateFactPlan = (value,input,finishReason,options) => {
   if(finishReason!=='stop')return fail('truncated');
   if(!input.eligible)return fail('insufficient_source');
   const facts=buildSourceFacts(input,options);
-  if(!value || Object.keys(value).some(k=>!['categories','overview'].includes(k)) || !Array.isArray(value.categories) || value.categories.length!==facts.length || facts.length>128)return fail('malformed');
+  if(!value || Object.keys(value).some(k=>!['categories','overview'].includes(k)) || !Array.isArray(value.categories) || value.categories.length!==facts.length || !facts.length || facts.length>MAX_SOURCE_FACTS)return fail('malformed');
   if(facts.some(f=>f.mixedRequirementScope))return fail('mixed_requirement_scope');
   const groups=FACT_SECTIONS.map(()=>[]);
   for(const [index,fact] of facts.entries()) {
@@ -215,7 +229,7 @@ export const validateFactPlan = (value,input,finishReason,options) => {
     if(normalized(overviewText)===normalized(fact.text))groups[value.categories[fact.id]]=groups[value.categories[fact.id]].filter(t=>t!==fact.text);
   }
   const contentSections=groups.filter(g=>g.length).length+(overviewText&&!groups[0].length?1:0);
-  if(contentSections<2)return fail('not_improved');
+  if(contentSections<2&&!improvesSingleSection(input,facts))return fail('not_improved');
   if((input.sourceDescription.match(/<h[1-6]\b/gi)||[]).length>=2 && /<(?:ul|ol)\b/i.test(input.sourceDescription))return fail('already_structured');
   const longest=Math.max(...facts.map(f=>words(f.text)));
   if(longest>160)return fail('dense_source');

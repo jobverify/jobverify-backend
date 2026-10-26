@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import mongoose from 'mongoose'
 import Job from '../../src/models/Job.js'
-import { generateFingerprint, saveToDB } from '../utils/saveToDB.js'
+import { generateFingerprint, saveToDB as persistJobs } from '../utils/saveToDB.js'
+
+// These persistence fixtures stub MongoDB; transactional alert behavior has its own replica-set suite.
+const saveToDB = (jobs, source, options = {}) => persistJobs(jobs, source, { enqueueAlerts: false, ...options })
 import { run as greatLearning } from '../../scraper/greatlearning/script.js'
 import { run as excelra } from '../../scraper/excelraknowledgesolutions/script.js'
 

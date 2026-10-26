@@ -19,15 +19,15 @@ concurrency:
   cancel-in-progress: false
 jobs:
   rewrite_descriptions:
+    name: Rewrite job descriptions
     permissions:
       contents: read
       actions: write
-    name: ${{ inputs.dispatch_token && format('Description Rewrite [dispatch:{0}]', inputs.dispatch_token) || 'Description Rewrite' }}
     runs-on: ubuntu-latest
     timeout-minutes: 350
     env:
       JOB_DESCRIPTION_REWRITE_MODE: 'publish'
-      JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS: ${{ vars.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || '18000' }}
+      JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS: ${{ vars.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || '19800' }}
       JOB_DESCRIPTION_REWRITE_CPU_THREADS: '4'
       JOB_DESCRIPTION_REWRITE_CONCURRENCY: '4'
       JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS: '21000'
@@ -38,6 +38,8 @@ jobs:
       PIPELINE_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       MONGO_URI: ${{ secrets.MONGO_URI }}
     steps:
+      - name: ${{ inputs.dispatch_token && format('Description Rewrite [dispatch:{0}]', inputs.dispatch_token) || 'Description Rewrite' }}
+        run: echo 'Pipeline dispatch identity recorded'
       - name: Record generation job start
         run: printf 'JOB_DESCRIPTION_WORKFLOW_STARTED_AT=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
@@ -73,12 +75,12 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .cache/description-rewrites
-          key: description-lfm12b-rewrites-${{ runner.os }}-v15-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-rewrites-${{ runner.os }}-v17-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            description-lfm12b-rewrites-${{ runner.os }}-v15-${{ github.ref }}-
+            description-lfm12b-rewrites-${{ runner.os }}-v17-${{ github.ref }}-
       - name: Drain the durable source-hash queue
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
-        timeout-minutes: 315
+        timeout-minutes: 345
         run: node scripts/rewriteJobDescriptions.js --apply
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
@@ -87,7 +89,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .cache/description-rewrites
-          key: description-lfm12b-rewrites-${{ runner.os }}-v15-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-rewrites-${{ runner.os }}-v17-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload generation quality and capacity diagnostics
         if: always()
         uses: actions/upload-artifact@v7

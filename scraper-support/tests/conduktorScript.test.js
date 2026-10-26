@@ -110,7 +110,7 @@ test('Conduktor returns no jobs only while the verified first-party open-roles p
   assert.deepEqual(jobs, [])
 })
 
-test('Conduktor fails closed when the first-party careers shell drifts or public jobs reappear', async () => {
+test('Conduktor fails closed when the careers shell drifts or the delegated native inventory is unavailable', async () => {
   const conduktor = await loadScriptModule()
 
   await assert.rejects(
@@ -143,8 +143,9 @@ test('Conduktor fails closed when the first-party careers shell drifts or public
 
         throw new Error(`Unexpected Conduktor URL: ${url}`)
       },
+      fetchJson: async () => { throw new Error('Conduktor delegated native inventory unavailable') },
     }),
-    /open roles page now appears to expose public jobs/i,
+    /delegated native inventory unavailable/i,
   )
 
   await assert.rejects(

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { happyFoxNativeOptions } from './fixtures/happyFoxNativeOptions.js'
 
 const jobsHubHtml = `
 <!doctype html>
@@ -169,38 +170,22 @@ test('HappyFox accepts the current jobs hub and extracts first-party hiring link
   )
 })
 
-test('HappyFox run validates the current jobs hub and decorates first-party jobs', async () => {
+test('HappyFox current runtime checks all regional pages and native details before a caller output cap', async () => {
   const happyfox = await loadModule()
-  const requested = []
-
+  const options = happyFoxNativeOptions()
   const jobs = await happyfox.createHappyFoxScraper({ maxJobs: 1 }).run({
-    fetchText: async (url) => {
-      requested.push(url)
-      if (url === happyfox.JOBS_HUB_URL) return jobsHubHtml
-      if (url === 'https://www.happyfox.com/jobs/chennai/') return cityPageTemplate('Chennai')
-      if (url === 'https://www.happyfox.com/jobs/bengaluru/') return cityPageTemplate('Bengaluru')
-      if (url === 'https://www.happyfox.com/jobs/hyderabad/') return cityPageTemplate('Hyderabad')
-      if (url === 'https://hiring.happyfox.co/jobs/frontend-engineer-chennai/') return detailHtml
-      throw new Error(`Unexpected HappyFox fixture URL: ${url}`)
-    },
-    now: () => '2026-08-02T00:00:00.000Z',
+    ...options,
+    now: () => '2026-10-26T12:00:00.000Z',
   })
-
-  assert.deepEqual(requested, [
-    happyfox.JOBS_HUB_URL,
-    'https://www.happyfox.com/jobs/chennai/',
-    'https://www.happyfox.com/jobs/bengaluru/',
-    'https://www.happyfox.com/jobs/hyderabad/',
-    'https://hiring.happyfox.co/jobs/frontend-engineer-chennai/',
-  ])
+  assert.equal(options.calls.length, 64)
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'happyfox')
   assert.equal(jobs[0].company, 'HappyFox')
-  assert.equal(jobs[0].location, 'Bengaluru, India')
+  assert.equal(jobs[0].location, 'Chennai, India')
   assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].applyUrl, 'https://hiring.happyfox.co/jobs/frontend-engineer-chennai/')
-  assert.equal(jobs[0].experienceRequired, '3 years')
-  assert.equal(jobs[0].publicExperienceChecked, false)
+  assert.equal(jobs[0].applyUrl, 'https://hiring.happyfox.co/jobs/senior-seo-specialist-chennai/#apply-section')
+  assert.equal(jobs[0].sourceListingComplete, false)
+  assert.equal(jobs[0].lifecycleCleanupAllowed, false)
 })
 
 test('HappyFox extractJobDetail parses the current first-party hiring page', async () => {

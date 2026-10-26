@@ -10,7 +10,8 @@ const boardIdentity = value => {
   const parts = url.pathname.split('/').filter(Boolean)
   const publicBoard = identifyPublicAtsBoard(url.href)
   if (publicBoard && parts.length === 1) {
-    const region = publicBoard.atsPlatform === 'greenhouse' ? (url.hostname.includes('.eu.') ? ':eu' : ':us') : ''
+    const region = publicBoard.atsPlatform === 'greenhouse' ? (url.hostname.includes('.eu.') ? ':eu' : ':us')
+      : publicBoard.atsPlatform === 'lever' ? `:${publicBoard.region || 'global'}` : ''
     return `${publicBoard.atsPlatform}${region}:${publicBoard.boardToken}`
   }
   if (/^[a-z\d-]+\.wd\d+\.myworkdayjobs\.com$/i.test(url.hostname)) {

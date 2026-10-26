@@ -17,6 +17,7 @@ import { recoverTailoredResumes } from './src/services/resumeTailoringService.js
 import { processCampaignQueue } from './src/services/campaignService.js';
 import { processApplicationMailboxQueue } from './src/services/applicationMailboxService.js';
 import { processAutoApplyQueue } from './src/services/autoApplyService.js';
+import { recoverJobAlertOutbox } from './src/services/jobAlertOutboxService.js';
 
 async function main() {
   const port = parsePort(process.env.PORT);
@@ -42,6 +43,10 @@ async function main() {
   console.log(`Server is running on 0.0.0.0:${port}`);
 
   const stopTasks = [
+    createPeriodicTask(recoverJobAlertOutbox, {
+      intervalMs: 5000, runImmediately: true,
+      onError: () => console.error('[Job Alerts] Pending alert creation will retry.'),
+    }),
     createPeriodicTask(processAutoApplyQueue, {
       intervalMs: 5000, runImmediately: true,
       onError: () => console.error('[Automated applications] Worker could not finish.'),

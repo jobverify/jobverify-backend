@@ -1,3 +1,5 @@
+import { emptyNativeOptions } from './fixtures/workableSourceOptions.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -57,63 +59,20 @@ test('BharatX keeps the verified official careers handoff explicit and understan
   assert.equal(bharatx.extractJobsFromMarkdown(jobsTableMarkdownWithIndiaRole).length, 1)
 })
 
-test('run returns no jobs for the current empty BharatX board and keeps India jobs when Workable feed entries appear', async () => {
+test('BharatX factory reads the employer-bound native empty inventory and normalizes its clock', async () => {
   const bharatx = await loadBharatXModule()
-  const requestedUrls = []
-  const scrapedAt = new Date('2026-07-14T13:45:00.000Z')
-
-  const scraper = bharatx.createBharatXScraper({
-    now: () => scrapedAt,
-  })
-
-  const noJobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return url === bharatx.OFFICIAL_CAREERS_URL ? officialCareersHtml : emptyJobsMarkdown
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [bharatx.OFFICIAL_CAREERS_URL, bharatx.JOBS_FEED_URL])
-  assert.deepEqual(noJobs, [])
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => (url === bharatx.OFFICIAL_CAREERS_URL ? officialCareersHtml : jobsMarkdownWithIndiaRole),
-  })
-
-  assert.deepEqual(jobs, [{
-    title: 'Backend Engineer',
-    company: 'BharatX',
-    location: 'Bengaluru, Karnataka, India',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    country: 'India',
-    jobId: 'ABC123',
-    requisitionId: 'ABC123',
-    sourceUrl: 'https://apply.workable.com/bharatx/j/ABC123/',
-    applyUrl: 'https://apply.workable.com/bharatx/j/ABC123/',
-    department: null,
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: null,
-    source: 'bharatx',
-    link: 'https://apply.workable.com/bharatx/j/ABC123/',
-    scrapedAt: '2026-07-14T13:45:00.000Z',
-  }])
+  const opts = emptyNativeOptions('bharatx', 'BharatX', 'db2cc781-d7bb-431d-ba2d-62a131069447', bharatx.OFFICIAL_CAREERS_URL, officialCareersHtml)
+  delete opts.now
+  const jobs = await bharatx.createBharatXScraper({ now: () => new Date('2026-10-26T09:00:00.000Z') }).run(opts)
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
+  assert.equal(readInventoryEvidence(jobs).verifiedAt, '2026-10-26T09:00:00.000Z')
 })
 
-test('BharatX fails closed when the official careers page loses the verified Workable handoff', async () => {
+test('BharatX rejects an absent current careers handoff before native requests', async () => {
   const bharatx = await loadBharatXModule()
-  const scraper = bharatx.createBharatXScraper()
-
-  await assert.rejects(
-    scraper.run({
-      fetchText: async () => '<html><body>No handoff here</body></html>',
-    }),
-    /verified official careers page/i,
-  )
+  await assert.rejects(bharatx.createBharatXScraper().run({
+    fetchPage: async url => ({ status: 200, url, html: '<h1>No careers handoff</h1>' }),
+    fetchJson: async () => assert.fail('An unbound source cannot request native inventory'),
+  }), /active full-board careers handoff/i)
 })

@@ -1,5 +1,8 @@
 import { fetchJsonWithRetry } from './fetch.js'
 import { filterIndiaJobs } from './indiaLocationFilter.js'
+import { mapJobsWithInventoryEvidence } from './inventoryEvidence.js'
+import { identifyPublicAtsBoard } from './publicAtsIdentity.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 
 export const DEFAULT_ASHBY_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -60,7 +63,9 @@ export const selectIndiaLocation = (job = {}) => {
   ].filter((candidate) => candidate.location)
 
   const indiaCandidates = filterIndiaJobs(candidates)
-  return indiaCandidates.find(hasExplicitIndiaSignal) || null
+  return indiaCandidates.find(candidate => /^(?:india|in|ind)$/i.test(candidate.country || ''))
+    || indiaCandidates.find(candidate => /\bindia\b/i.test(candidate.location || ''))
+    || indiaCandidates.find(hasExplicitIndiaSignal) || null
 }
 
 export const extractAshbyJobs = ({
@@ -97,13 +102,15 @@ export const extractAshbyJobs = ({
         requiredSkills: [],
         postingDate: normalizeString(job?.publishedAt),
         closingDate: null,
-        jobDescription: normalizeString(job?.descriptionHtml || job?.descriptionPlain),
+        jobDescription: normalizeString(hasSourceDescription({ jobDescription: job?.descriptionHtml })
+          ? job.descriptionHtml : job?.descriptionPlain),
       }
     })
     .filter(Boolean)
 )
 
-const createDefaultFetchJson = (source) => (url) => fetchJsonWithRetry(url, {
+const createDefaultFetchJson = (source) => (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options,
   headers: {
     'User-Agent': DEFAULT_ASHBY_USER_AGENT,
     Accept: 'application/json',
@@ -116,21 +123,35 @@ export const createAshbyApiScraper = ({
   source,
   companyName,
   ashbyJobBoardUrl,
+  sourceScopeComplete,
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
     fetchJson = createDefaultFetchJson(source),
+    signal,
+    now: runNow = now,
   } = {}) {
-    const payload = await fetchJson(ashbyJobBoardUrl)
-
-    return extractAshbyJobs({
-      payload,
-      companyName,
-    }).map((job) => ({
+    signal?.throwIfAborted()
+    const endpoint = new URL(ashbyJobBoardUrl)
+    const board = identifyPublicAtsBoard(endpoint.href)
+    if (endpoint.origin !== 'https://api.ashbyhq.com' || endpoint.username || endpoint.password
+      || board?.atsPlatform !== 'ashby'
+      || endpoint.pathname !== `/posting-api/job-board/${encodeURIComponent(board.boardToken)}`) {
+      throw new Error(`[${source}] Invalid Ashby board identity`)
+    }
+    // The validator imports this module's pure mapper; load it after module
+    // initialization to avoid a static factory/validator dependency cycle.
+    const { createPublishingGapAtsScraper } = await import('./publishingGapAts.js')
+    const jobs = await createPublishingGapAtsScraper({ source, companyName,
+      companyCareerPage: `https://jobs.ashbyhq.com/${board.boardToken}`,
+      atsPlatform: 'ashby', boardToken: board.boardToken,
+      ...(sourceScopeComplete === false ? { sourceScopeComplete: false } : {}),
+    }).run({ signal, fetchJson: (_url, options) => fetchJson(ashbyJobBoardUrl, options) })
+    return mapJobsWithInventoryEvidence(jobs, job => ({
       ...job,
       source,
       link: job.applyUrl,
-      scrapedAt: now(),
+      scrapedAt: runNow(),
     }))
   },
 })

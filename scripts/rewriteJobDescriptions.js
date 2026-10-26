@@ -9,6 +9,7 @@ import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
 import { rewriteDeadline, rewriteStopDetails, rewriteQueueQuery, rewriteQueuePages, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient, rewriteProgress } from '../rewriting/runner.js';
 import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration } from '../rewriting/worker.js';
 import { createRewriteDiagnostics } from '../rewriting/diagnostics.js';
+import { createProgressLogger } from './lib/progressLogger.js';
 
 const apply = process.argv.includes('--apply');
 const mode = process.env.JOB_DESCRIPTION_REWRITE_MODE || 'off';
@@ -24,6 +25,11 @@ const summary = { mode: apply ? mode : 'preview', modelId: REWRITE_MODEL.modelId
     maxPromptCandidates: REWRITE_MODEL.maxPromptCandidates, maxEditCharacters: REWRITE_MODEL.maxEditCharacters, queuePageSize: 8,
     requestSeconds: REWRITE_MODEL.requestSeconds, totalMemoryBytes: os.totalmem() } };
 const summaryFile = path.resolve(process.env.PIPELINE_SUMMARY_FILE || '.cache/scraper-actions/description-summary.json');
+if (REWRITE_MODEL.outputFormat === 'prose') {
+  for (const key of ['maxOutputTokens', 'maxRetryOutputTokens', 'maxModelEdits', 'maxPromptCandidates', 'maxEditCharacters', 'requestSeconds']) delete summary.environment[key];
+  summary.environment.outputSizing = 'remaining_model_context';
+  summary.environment.requestDeadline = 'remaining_workflow_budget';
+}
 const diagnosticFile = path.join(path.dirname(summaryFile), 'description-rejections.json');
 const diagnostics = createRewriteDiagnostics();
 const onRejection = rejection => diagnostics.record(rejection);
@@ -34,28 +40,34 @@ for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => controlle
 const budgetSignal = AbortSignal.timeout(Math.max(1, Math.floor(deadline - Date.now())));
 const signal = AbortSignal.any([controller.signal, budgetSignal]);
 let worker, jobs, phase = 'configuration';
+const progress = createProgressLogger('rewrite', () => ({
+  mode: summary.mode, queued: summary.queued, processed: summary.results?.length || 0,
+  remaining: summary.queued === undefined ? undefined : Math.max(0, summary.queued - (summary.results?.length || 0)),
+}));
+const setPhase = value => { phase = value; progress.phase(value); };
 try {
+  setPhase('configuration');
   if (apply && mode !== 'publish') summary.reason = 'disabled';
   else if (Date.now() >= deadline) summary.reason = 'workflow_budget_exhausted';
   else {
     if (!process.env.MONGO_URI) throw new Error('MONGO_URI is required');
     configureMongoDns();
-    phase = 'connect';
+    setPhase('connect');
     await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: Math.max(1, Math.min(15000, deadline - Date.now())) });
     const query = rewriteQueueQuery();
-    phase = 'count_queue';
+    setPhase('count_queue');
     summary.queued = await Job.countDocuments(query).maxTimeMS(15000);
     if (!apply || !summary.queued) summary.reason = apply ? 'empty_queue' : 'read_only_preview';
     else {
         signal.throwIfAborted();
-        phase = 'prepare_runtime';
+        setPhase('prepare_runtime');
         const runtime = await prepareRewriteRuntime({ signal });
-        phase = 'start_worker';
+        setPhase('start_worker');
         worker = await startRewriteWorker({ ...runtime, signal, deadline,
           threads: workerConfig.threads, parallelism: workerConfig.parallelism });
-        phase = 'probe_worker';
+        setPhase('probe_worker');
         summary.workerProbe = await probeRewriteClient(createRewriteClient(worker), { concurrency: worker.parallelism, deadline, signal, onRejection });
-        phase = 'process_queue';
+        setPhase('process_queue');
         jobs = rewriteQueuePages(Job, query, { pageSize: 8, deadline, signal });
         summary.results = [];
         Object.assign(summary, await rewriteCandidates(jobs, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-rewrites' }), deadline, signal, concurrency: worker.parallelism, onRejection,
@@ -78,6 +90,9 @@ try {
     process.exitCode = 1;
   }
 } finally {
+  // Stop the heartbeat even if worker or database cleanup fails.
+  progress.stop();
+  setPhase('cleanup');
   await jobs?.return();
   if (worker) summary.worker = worker.diagnostics();
   if (worker) summary.workerMemoryBytes = await workerMemoryBytes(worker.pid).catch(() => null);

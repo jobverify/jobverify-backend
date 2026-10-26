@@ -4,6 +4,7 @@ import { readFile, access } from 'node:fs/promises';
 import OutreachTask from '../src/models/OutreachTask.js';
 import { runReferralDiscoveryWorker, referralWorkerDeadline } from '../outreach/discoveryWorker.js';
 import { prepareReferralSearchRuntime, SEARCH_IMAGE } from '../outreach/searchRuntime.js';
+import { findPublicReferralEmail } from '../outreach/referralSearch.js';
 
 function pending(t, rows) {
   t.mock.method(OutreachTask, 'find', filter => {
@@ -26,7 +27,7 @@ test('the discovery worker bounds tasks and always stops both runtimes', async t
   let calls = 0;
   const result = await runReferralDiscoveryWorker({ deadline,
     prepareSearch: async () => ({ stop: () => stopped.push('search') }), prepareModel: async options => { assert.equal(options.deadline, deadline); return { stop: () => stopped.push('model') }; },
-    processTask: async (_id, options) => { calls++; assert.equal(options.provider, 'actions'); assert.equal(typeof options.search, 'function'); assert.equal(typeof options.rankContacts, 'function'); assert.ok(options.deadline <= deadline); return { contacts: [] }; },
+    processTask: async (_id, options) => { calls++; assert.equal(options.provider, 'actions'); assert.equal(typeof options.search, 'function'); assert.equal(typeof options.rankContacts, 'function'); assert.equal(options.findEmail, findPublicReferralEmail); assert.ok(options.deadline <= deadline); return { contacts: [] }; },
   });
   assert.equal(calls, 2);
   assert.deepEqual(result, { attempted: 2, completed: 2, failed: 0 });
@@ -122,5 +123,5 @@ test('discovery workflow uses standard bounded runners and a model-only cache', 
   assert.match(workflow, /OUTREACH_ACTIONS_FREE_CONFIRMED/);
   assert.match(workflow, /node scripts\/runOutreachDiscoveries\.js/);
   assert.match(workflow, /path: \.cache\/outreach-models\/LFM2\.5-1\.2B-Instruct-Q4_K_M\.gguf/);
-  assert.doesNotMatch(workflow, /upload-artifact|TAVILY_API_KEY|pull_request:|schedule:|inputs:/);
+  assert.doesNotMatch(workflow, /upload-artifact|TAVILY_API_KEY|HUNTER_API_KEY|pull_request:|schedule:|inputs:/);
 });

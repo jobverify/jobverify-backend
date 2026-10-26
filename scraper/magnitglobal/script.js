@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import MAGNIT_GLOBAL_CATALOG from './catalog.js'
+import { createMagnitNativeInventory } from './nativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -265,77 +266,7 @@ export const createDayforceSession = async ({
   }
 }
 
-export const createMagnitGlobalScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    createDayforceSessionImpl = createDayforceSession,
-    searchJobPostings,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialMagnitCareersSignals(careersHtml)) {
-      throw new Error('Magnit verified first-party careers page no longer matches the pinned Dayforce handoff')
-    }
-
-    const dayforceBoardHtml = await fetchText(OFFICIAL_DAYFORCE_URL)
-    if (extractTitle(dayforceBoardHtml) !== 'Job Board | Dayforce Jobs') {
-      throw new Error('Magnit verified Dayforce public jobs board no longer matches the pinned public board title')
-    }
-
-    const dayforceSiteInfo = extractDayforceSiteInfoFromBoardHtml(dayforceBoardHtml)
-    if (!hasVerifiedDayforceSiteContext(dayforceSiteInfo)) {
-      throw new Error('Magnit verified Dayforce public jobs surface no longer matches the pinned site context')
-    }
-
-    let dayforceSessionPromise = null
-    const getDayforceSession = async () => {
-      if (!dayforceSessionPromise) {
-        dayforceSessionPromise = Promise.resolve(createDayforceSessionImpl({ fetchJson }))
-      }
-
-      return dayforceSessionPromise
-    }
-
-    const sessionBackedSearchJobPostings = searchJobPostings || (async (payload) => {
-      const session = await getDayforceSession()
-      return fetchJson(buildSearchApiUrl(), {
-        method: 'POST',
-        headers: buildDayforceSessionHeaders(session, { includeContentType: true }),
-        body: JSON.stringify(payload),
-        label: `${SOURCE}-dayforce-search`,
-      })
-    })
-
-    const jobs = []
-    const seenJobIds = new Set()
-    let paginationStart = 0
-
-    while (true) {
-      const payload = await sessionBackedSearchJobPostings(buildSearchRequestPayload(paginationStart))
-      const postings = extractSearchPostings(payload)
-      if (!postings.length) break
-
-      for (const posting of postings) {
-        const job = normalizeSearchPosting(posting)
-        if (!job?.jobId || seenJobIds.has(job.jobId)) continue
-        seenJobIds.add(job.jobId)
-        jobs.push(job)
-      }
-
-      paginationStart += postings.length
-      if (paginationStart >= getTotalCount(payload)) break
-    }
-
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
-  },
-})
+export const createMagnitGlobalScraper = (options = {}) => createMagnitNativeInventory(options)
 
 export const run = async (options = {}) => createMagnitGlobalScraper(options).run(options)
 

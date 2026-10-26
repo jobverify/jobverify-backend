@@ -2,7 +2,10 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import mongoose from 'mongoose'
 import Job from '../../src/models/Job.js'
-import { generateFingerprint, saveToDB } from '../utils/saveToDB.js'
+import { generateFingerprint, saveToDB as persistJobs } from '../utils/saveToDB.js'
+
+// These persistence fixtures stub MongoDB; transactional alert behavior has its own replica-set suite.
+const saveToDB = (jobs, source, options = {}) => persistJobs(jobs, source, { enqueueAlerts: false, ...options })
 const role = (id,title='Software Engineer') => ({jobId:id,requisitionId:id,title,company:'Example',country:'India',city:'Bangalore',location:'Bangalore, India',sourceUrl:'https://example.com/careers',applyUrl:'https://forms.gle/example',applicationUrlIsGeneric:true,sourceListingComplete:false})
 test('distinct roles sharing one application form remain distinct in the same city',()=>{
  assert.notEqual(generateFingerprint(role('engineering')),generateFingerprint(role('testing','QA Engineer')))

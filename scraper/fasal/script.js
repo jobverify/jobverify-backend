@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { createZohoNativeInventoryScraper } from '../../scraper-support/utils/zohoNativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -119,36 +120,12 @@ export const extractIndiaJobs = (payload) => {
 
 export const createFasalScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const officialCareersHtml = await fetchText(OFFICIAL_CAREERS_URL)
-    if (!hasOfficialCareersPageSignal(officialCareersHtml)) {
-      throw new Error('Response is not the verified official Fasal careers page')
-    }
+} = {}) => createZohoNativeInventoryScraper({
+  source: SOURCE, company: COMPANY_NAME, nativeCompany: 'Wolkus Technology Solutions Private Limited', companyDomain: 'fasal.co',
+  officialUrl: OFFICIAL_CAREERS_URL, boardUrl: CAREERS_PORTAL_URL, orgId: '622955000000340005', pageId: '622955000000340237',
+}, { maxJobs: maxJobs ?? 0 })
 
-    const portalHtml = await fetchText(CAREERS_PORTAL_URL)
-    if (!hasOfficialPortalSignal(portalHtml)) {
-      throw new Error('Response is not the verified official Fasal careers portal')
-    }
-
-    const payload = await fetchJson(CAREERS_API_URL)
-    const jobs = extractIndiaJobs(payload)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
-  },
-})
-
-export const run = async (options = {}) => createFasalScraper().run(options)
+export const run = async (options = {}) => createFasalScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

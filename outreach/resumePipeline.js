@@ -2,7 +2,7 @@ import { prepareResumeModel, generateResumeText, RESUME_MODEL, remainingBudget }
 import { prepareResumeCompiler, compileResumeLatex } from './latexCompiler.js';
 import { safeResumeDiagnostic, resumeFailure } from './resumeDiagnostics.js';
 import { buildSourceFacts, buildPreparationPrompt, buildLatexTailoringPrompt, buildLatexRepairPrompt, buildComparisonPrompt,
-  validateLatexSource, validateResumeFidelity } from '../src/services/resumeLatexContent.js';
+  validateLatexSource, validateResumeFidelity, sourceWithCandidateEvidence } from '../src/services/resumeLatexContent.js';
 
 export async function prepareResumeRuntime({ deadline = Date.now() + 29 * 60000 } = {}) {
   await prepareResumeCompiler({ deadline });
@@ -10,8 +10,9 @@ export async function prepareResumeRuntime({ deadline = Date.now() + 29 * 60000 
 }
 export async function processResumeDocument(input, { deadline = Date.now() + 25 * 60000, onPhase = async () => {}, onDiagnostic = () => {}, generate = generateResumeText, compile = compileResumeLatex } = {}) {
   const tailored = input.mode === 'tailored';
-  const facts = input.facts || buildSourceFacts(input.source);
-  const originalPrompt = tailored ? buildLatexTailoringPrompt({ ...input, facts }) : buildPreparationPrompt({ ...input, facts });
+  const source = sourceWithCandidateEvidence(input.source, input.candidateEvidence);
+  const facts = input.candidateEvidence ? buildSourceFacts(source) : input.facts || buildSourceFacts(source);
+  const originalPrompt = tailored ? buildLatexTailoringPrompt({ ...input, source, facts }) : buildPreparationPrompt({ ...input, source, facts });
   let prompt = originalPrompt;
   let failureCode = 'processing_failed';
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -43,7 +44,7 @@ export async function processResumeDocument(input, { deadline = Date.now() + 25 
       if (fidelity.issues.length) { failureCode = 'factual_validation_failed'; diagnose(failureCode, { issueCount: fidelity.issues.length }); }
       stage = 'comparing';
       await onPhase('comparing');
-      const comparisonRaw = await generate(buildComparisonPrompt({ source: input.source, facts, latexText: result.text, links: result.links, tailored }), { deadline, comparison: true, onDiagnostic });
+      const comparisonRaw = await generate(buildComparisonPrompt({ source, facts, latexText: result.text, links: result.links, tailored }), { deadline, comparison: true, onDiagnostic });
       let comparison;
       try { comparison = JSON.parse(comparisonRaw); } catch { throw resumeFailure('comparison_invalid'); }
       if (typeof comparison?.evidence !== 'string' || !comparison.evidence.trim()) throw resumeFailure('comparison_invalid');
@@ -56,7 +57,7 @@ export async function processResumeDocument(input, { deadline = Date.now() + 25 
       }
     } catch (error) {
       failureCode = safeResumeDiagnostic({ code: error.code || ({ latex: 'latex_invalid', compiling: 'compiler_failed', validating: 'pdf_invalid', comparing: 'comparison_invalid' }[stage]) }).code;
-      diagnose(failureCode);
+      diagnose(failureCode, { reason: error.reason });
       // Context overflow is an input error; retrying the same full input cannot fix it.
       if (error.statusCode === 422) throw error;
       issues.push(error.message);

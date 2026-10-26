@@ -42,6 +42,8 @@ test('thread edits are revision guarded and client email changes reset provider 
     assert.equal(filter.revision, 3);
     assert.equal(change.$set['contact.emailStatus'], 'unverified');
     assert.equal(change.$set['contact.emailConfirmed'], false);
+    assert.equal(change.$set['contact.emailSourceUrl'], '');
+    assert.equal(change.$set['contact.emailEvidence'], '');
     assert.equal(change.$inc.revision, 1);
     return { _id: threadId };
   });

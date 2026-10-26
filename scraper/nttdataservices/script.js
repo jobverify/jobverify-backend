@@ -142,6 +142,7 @@ const phenomScraper = createPhenomScraper({
   scraperDir: currentDir,
   defaultDetailConcurrency: 4,
   defaultDetailEnrichmentBudgetMs: 150000,
+  nativeConcatenatedStateCountry: true,
 })
 
 export const {

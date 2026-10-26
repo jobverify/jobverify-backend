@@ -31,7 +31,7 @@ export const buildRewriteInput = (job = {}) => {
   const inputHash = createHash('sha256').update(JSON.stringify({ facts, sourceStructure: sourceDescription.replace(/\r\n?/g, '\n') })).digest('hex');
   const body = Object.entries(facts).filter(([, value]) => value).map(([key, value]) => key + ': ' + value).join('\n');
   const sourceWords = words(facts.description).length;
-  return { facts, sourceDescription, inputHash, body, sourceWords, eligible: sourceWords >= 25 && Buffer.byteLength(body) <= 20000 };
+  return { facts, sourceDescription, inputHash, body, sourceWords, eligible: hasSourceDescription(job) };
 };
 
 export const buildDescriptionSourceUpdate = (job, existing, { mode = 'off', now = new Date() } = {}) => {

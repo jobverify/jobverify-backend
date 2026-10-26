@@ -1,3 +1,5 @@
+import { makeZohoFixture, zohoFixtureOptions } from './fixtures/zohoNativeOptions.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -58,54 +60,21 @@ test('Fasal constants stay pinned to the verified first-party careers handoff an
   assert.equal(fasal.hasOfficialPortalSignal(portalHtml), true)
 })
 
-test('Fasal run validates the verified empty public board contract and returns no jobs when the API is empty', async () => {
-  const fasal = await loadFasalModule()
-  const requestedUrls = []
-
-  const jobs = await fasal.createFasalScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return url === fasal.OFFICIAL_CAREERS_URL ? officialCareersHtml : portalHtml
-    },
-    fetchJson: async (url) => {
-      requestedUrls.push(url)
-      return emptyJobsPayload
-    },
-    now: () => '2026-07-25T12:00:00.000Z',
-  })
-
-  assert.deepEqual(
-    requestedUrls,
-    [fasal.OFFICIAL_CAREERS_URL, fasal.CAREERS_PORTAL_URL, fasal.CAREERS_API_URL],
-  )
+test('Fasal factory certifies a reconciled employer-bound native empty board', async () => {
+  const fasal = await loadFasalModule(), data = makeZohoFixture('fasal'); data.rows = []
+  const jobs = await fasal.createFasalScraper().run(zohoFixtureOptions(data))
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
   assert.deepEqual(fasal.extractIndiaJobs(emptyJobsPayload), [])
-  assert.deepEqual(jobs, [])
+  assert.equal(data.requests.length, 5)
 })
 
-test('Fasal run fails closed when the verified first-party careers page, portal signal, or API payload contract drifts', async () => {
+test('Fasal rejects employer handoff, reciprocal portal and native API changes', async () => {
   const fasal = await loadFasalModule()
-
-  await assert.rejects(
-    fasal.createFasalScraper().run({
-      fetchText: async (url) => (url === fasal.OFFICIAL_CAREERS_URL ? '<html></html>' : portalHtml),
-      fetchJson: async () => emptyJobsPayload,
-    }),
-    /official fasal careers page/i,
-  )
-
-  await assert.rejects(
-    fasal.createFasalScraper().run({
-      fetchText: async (url) => (url === fasal.OFFICIAL_CAREERS_URL ? officialCareersHtml : '<html></html>'),
-      fetchJson: async () => emptyJobsPayload,
-    }),
-    /official fasal careers portal/i,
-  )
-
-  await assert.rejects(
-    fasal.createFasalScraper().run({
-      fetchText: async (url) => (url === fasal.OFFICIAL_CAREERS_URL ? officialCareersHtml : portalHtml),
-      fetchJson: async () => ({ code: 'success', info: { page_name: 'Careers' } }),
-    }),
-    /fasal public jobs api/i,
-  )
+  const absent = makeZohoFixture('fasal'); absent.homepage = '<h1>No handoff</h1>'
+  await assert.rejects(fasal.createFasalScraper().run(zohoFixtureOptions(absent)), /careers handoff/i)
+  const foreign = makeZohoFixture('fasal'); foreign.meta.org_info.id = 'other'
+  await assert.rejects(fasal.createFasalScraper().run(zohoFixtureOptions(foreign)), /organization/i)
+  const data = makeZohoFixture('fasal'), opts = zohoFixtureOptions(data)
+  await assert.rejects(fasal.createFasalScraper().run({ ...opts, fetchJson: async () => ({ code: 'success' }) }), /API success envelope/i)
 })

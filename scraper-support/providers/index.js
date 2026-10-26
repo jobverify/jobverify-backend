@@ -23,6 +23,7 @@ const currentDir = SUPPORT_PROVIDER_DIR
 const scraperDir = SCRAPER_DIR
 export const DEFAULT_PROVIDER_EXTENSION_DIR = path.join(SUPPORT_PROVIDER_DIR, 'providerExtensions')
 const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobverify.workday.authoritative-empty')
+const WORKDAY_COUNTRY_INVENTORY_PROOF = Symbol.for('jobverify.workday.country-inventory-proof')
 const workdayCompanies = JSON.parse(
   readFileSync(path.resolve(currentDir, '../myworkday/companies.json'), 'utf-8'),
 )
@@ -564,6 +565,11 @@ export const decorateJobsWithProviderMetadata = (jobs, provider) => {
       value: true,
     })
   }
+  if (jobs[WORKDAY_COUNTRY_INVENTORY_PROOF]) {
+    Object.defineProperty(decoratedJobs, WORKDAY_COUNTRY_INVENTORY_PROOF, {
+      value: jobs[WORKDAY_COUNTRY_INVENTORY_PROOF],
+    })
+  }
   return decoratedJobs
 }
 
@@ -641,8 +647,10 @@ export const createPublicAtsCatalogScraper = (provider) => ({
   dryRunFile: provider.dryRunFile,
   async run(options = {}) {
     if (!hasMatchingPublicAtsBinding(provider)) throw new Error(`[${provider.source}] Missing matching official ATS binding`)
-    const { createPublishingGapAtsScraper } = await import('../utils/publishingGapAts.js')
-    const jobs = await createPublishingGapAtsScraper(provider).run(options)
+    const factory = provider.runtimeInventoryVerification
+      ? (await import('../utils/publicAtsRuntimeInventory.js')).createRuntimeVerifiedPublicAtsScraper
+      : (await import('../utils/publishingGapAts.js')).createPublishingGapAtsScraper
+    const jobs = await factory(provider).run(options)
     return decorateJobsWithProviderMetadata(jobs, provider)
   },
 })

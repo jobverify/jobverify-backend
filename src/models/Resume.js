@@ -13,6 +13,9 @@ const schema = new Schema({
   sha256: { type: String, required: true, match: /^[a-f0-9]{64}$/ },
   data: { type: Buffer, required: true, select: false, validate: value => (typeof value.length === 'number' ? value.length : value.buffer?.length) <= MAX_RESUME_BYTES },
   uploadedAt: { type: Date, required: true, default: Date.now },
+  currentRevisionId: String,
+  historyVersion: { type: Number, default: 0 },
+  historyFence: { type: Number, default: 0 },
   preparation: {
     status: { type: String, enum: ['unprepared', 'queued', 'running', 'completed', 'failed'], default: 'unprepared' },
     phase: { type: String, default: '' }, error: { type: String, default: '', maxlength: 1000 },
@@ -21,6 +24,8 @@ const schema = new Schema({
     leaseOwner: { type: String, select: false }, leaseUntil: Date, dispatchAt: Date, requestedAt: Date,
     generationId: String, outputResumeSha: String, pageCount: Number, generatedAt: Date,
     modelVersion: String, styleVersion: String,
+    sourceEvidenceVersion: Number, sourceEvidenceHash: String,
+    outputEvidenceVersion: Number, outputEvidenceHash: String,
   },
 }, { timestamps: true });
 

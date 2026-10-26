@@ -38,7 +38,10 @@ for (const metadata of manifest) {
           jobUrl: `https://jobs.ashbyhq.com/${encodeURIComponent(metadata.boardToken)}/1`,
           applyUrl: `https://jobs.ashbyhq.com/${encodeURIComponent(metadata.boardToken)}/1/application`,
           isListed: true, descriptionPlain: 'Build and maintain applications.' }
-        : { id: '1', text: 'Software Engineer', categories: { location: 'Bangalore, India' }, hostedUrl: url, applyUrl: `${url}/apply`, descriptionPlain: 'Build and maintain applications.' }
+        : { id: '1', text: 'Software Engineer', categories: { location: 'Bangalore, India' },
+          hostedUrl: `https://jobs.lever.co/${encodeURIComponent(metadata.boardToken)}/1`,
+          applyUrl: `https://jobs.lever.co/${encodeURIComponent(metadata.boardToken)}/1/apply`,
+          descriptionPlain: 'Build and maintain applications.' }
     const payload = metadata.atsPlatform === 'lever' ? [record]
       : metadata.atsPlatform === 'greenhouse' ? { jobs: [record], meta: { total: 1 } } : { jobs: [record], apiVersion: '1' }
     const jobs = await module.run({ fetchJson: async () => payload })
@@ -47,6 +50,9 @@ for (const metadata of manifest) {
     assert.equal(jobs[0].company, metadata.companyName)
     assert.equal(readInventoryEvidence(jobs).listingComplete, true)
     assert.notEqual(jobs[0].sourceListingComplete, false)
+    if (metadata.atsPlatform === 'lever') {
+      await assert.rejects(module.run({ fetchJson: async () => [{ ...record, hostedUrl: url, applyUrl: `${url}/apply` }] }), /board|identity/i)
+    }
     await assert.rejects(module.run({ fetchJson: async () => { throw new Error('HTTP 503') } }), /503/)
   })
 }

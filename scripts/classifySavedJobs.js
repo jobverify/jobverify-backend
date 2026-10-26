@@ -11,6 +11,7 @@ import { normalizePublicJobType } from '../src/utils/publicJobTypeLabel.js'
 import { alreadyClassified, classificationShard, postScrapeInput, GLICLASS_CONFIG,
   resolvePostScrapeClassification, sourceSnapshotFilter } from '../src/services/postScrapeClassification.js'
 import { startGliclassWorker } from './gliclassWorker.js'
+import { createProgressLogger } from './lib/progressLogger.js'
 import { trialNativeInputHash, trialNativeRuntimeHash } from './trialNativePredictionCache.js'
 import { classificationSkipReason, createClassificationReport, recordClassificationInput, recordClassificationDecision,
   recordClassificationInference } from '../classification/reporting.js'
@@ -186,22 +187,36 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   process.once('SIGINT', () => controller.abort())
   let worker
   const shard = Number(process.env.CLASSIFICATION_SHARD || 0)
+  let latestProgress = {}
+  const progress = createProgressLogger('classification', () => ({ shard, ...latestProgress }))
   const output = process.env.CLASSIFICATION_SUMMARY_FILE || `.cache/scraper-actions/classification-${shard}.json`
   const diagnostics = process.env.CLASSIFICATION_DIAGNOSTICS_FILE || output.replace(/\.json$/, '') + '.ndjson'
   const persist = summary => { fs.mkdirSync(path.dirname(output), { recursive: true }); fs.writeFileSync(output,
     JSON.stringify({ ...summary, diagnosticsFile: path.basename(diagnostics) }, null, 2)) }
   try {
+    progress.phase('configuration')
     if (path.resolve(diagnostics) === path.resolve(output)) throw new Error('Classification diagnostics and summary must use different files')
     fs.mkdirSync(path.dirname(diagnostics), { recursive: true })
     fs.writeFileSync(diagnostics, '')
+    progress.phase('connect')
     await connectDB()
+    progress.phase('start_worker')
     worker = await startGliclassWorker()
+    progress.phase('process_queue')
     const summary = await classifySavedJobs({ worker, shard, shardCount: Number(process.env.CLASSIFICATION_SHARD_COUNT || 1),
       mode: process.env.POST_SCRAPE_CLASSIFICATION_MODE || 'shadow',
       budgetSeconds: Number(process.env.CLASSIFICATION_BUDGET_SECONDS || 18000), signal: controller.signal,
-      onProgress: persist, onResult: row => fs.appendFileSync(diagnostics, JSON.stringify(row) + '\n') })
+      onProgress: value => {
+        const { scanned, assigned, completed, cached, nativeCached, skipped, failed, stale, leased, modelRequests } = value
+        latestProgress = { scanned, assigned, completed, cached, nativeCached, skipped, failed, stale, leased, modelRequests }
+        persist(value)
+      }, onResult: row => fs.appendFileSync(diagnostics, JSON.stringify(row) + '\n') })
     persist(summary)
     console.log(JSON.stringify(summary))
     if (summary.failed || summary.stale || summary.budgetExhausted) process.exitCode = 1
-  } finally { await worker?.stop(); await mongoose.disconnect() }
+  } finally {
+    progress.stop()
+    await worker?.stop()
+    await mongoose.disconnect()
+  }
 }

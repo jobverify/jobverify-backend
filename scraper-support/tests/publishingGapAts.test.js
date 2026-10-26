@@ -31,8 +31,17 @@ test('unknown or worldwide Greenhouse locations never establish zero India inven
   }
 })
 
-test('Greenhouse native offices cannot hide India or unresolved alternate scope', async () => {
-  for (const office of [{ name: 'Bengaluru, India', location: null }, { name: 'Remote', location: null },
+test('Greenhouse includes an explicit native India office alongside a foreign primary location', async () => {
+  const jobs = await run({ jobs: [{ ...job, location: { name: 'Boston, US' },
+    offices: [{ name: 'Bengaluru, India', location: null }] }], meta: { total: 1 } })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].location, 'Bengaluru, India')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 1)
+})
+
+test('Greenhouse unresolved or contradictory office scope cannot authorize completeness', async () => {
+  for (const office of [{ name: 'Remote', location: null },
     { name: 'Bengaluru, India', location: 'Boston, US' }, { name: 'Worldwide', location: 'Boston, US' }]) {
     const jobs = await run({ jobs: [{ ...job, location: { name: 'Boston, US' }, offices: [office] }], meta: { total: 1 } })
     assert.equal(readInventoryEvidence(jobs).listingComplete, false)
@@ -55,12 +64,20 @@ test('contradictory primary country labels cannot create an India vacancy', asyn
   await assert.rejects(run({ jobs: [{ ...job, location: { name: 'India / United States' } }], meta: { total: 1 } }), /contradictory country\/location/)
 })
 
-test('Lever country and allLocations preserve unresolved or unmapped India scope', async () => {
+test('Lever country and allLocations map proven India roles while preserving unresolved scope', async () => {
   const record = { id: 'x', text: 'Engineer', categories: { location: 'Remote' }, hostedUrl: 'https://jobs.lever.co/example/x', applyUrl: 'https://jobs.lever.co/example/x/apply', descriptionPlain: 'Build software' }
-  for (const row of [record, { ...record, country: 'IN' }, { ...record, country: 'US', categories: { location: 'Boston, US', allLocations: ['Boston, US', 'Bengaluru, India'] } }, { ...record, country: 'US', categories: { location: 'Boston, US', allLocations: ['Boston, US', 'Worldwide'] } }]) {
+  for (const row of [record, { ...record, country: 'US', categories: { location: 'Boston, US', allLocations: ['Boston, US', 'Worldwide'] } }]) {
     const jobs = await run([row], { atsPlatform: 'lever' })
     assert.equal(readInventoryEvidence(jobs).listingComplete, false)
     assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  }
+  for (const row of [{ ...record, country: 'IN' },
+    { ...record, country: 'US', categories: { location: 'Boston, US', allLocations: ['Boston, US', 'Bengaluru, India'] } }]) {
+    const jobs = await run([row], { atsPlatform: 'lever' })
+    assert.equal(jobs.length, 1)
+    assert.equal(jobs[0].country, 'India')
+    assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+    assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 1)
   }
   const jobs = await run([{ ...record, country: 'US' }], { atsPlatform: 'lever' })
   assert.equal(jobs.length, 0)

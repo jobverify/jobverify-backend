@@ -11,9 +11,11 @@ import {
   writeScraperRun,
   readPreviousScraperRun,
 } from '../utils/scraperPersistence.js'
-import { generateFingerprint, saveToDB } from '../utils/saveToDB.js'
+import { generateFingerprint, saveToDB as persistJobs } from '../utils/saveToDB.js'
+
+// These persistence fixtures stub MongoDB; transactional alert behavior has its own replica-set suite.
+const saveToDB = (jobs, source, options = {}) => persistJobs(jobs, source, { enqueueAlerts: false, ...options })
 import { DEFAULT_JOB_RETENTION_DAYS } from '../../src/utils/jobLifecycle.js'
-import { jobAlertService } from '../../src/services/jobAlertService.js'
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const setReadyState = (value) => {
@@ -361,60 +363,8 @@ test('saveToDB persists the employer description as the rewrite source', async (
   }
 })
 
-test('saveToDB only enqueues inserted active jobs for WhatsApp alerts', async () => {
-  const restoreReadyState = setReadyState(1)
-  const originalBulkWrite = Job.bulkWrite
-  const originalFind = Job.find
-  const originalEnqueueJobAlertsForJobs = jobAlertService.enqueueJobAlertsForJobs
-  const queuedJobs = []
-
-  Job.bulkWrite = async () => ({
-    upsertedCount: 2,
-    modifiedCount: 0,
-    upsertedIds: { 0: 'job-1', 1: 'job-2' },
-  })
-  Job.find = () => ({
-    lean() {
-      return this
-    },
-    exec: async () => [
-      { _id: 'job-1', title: 'Frontend Intern', status: 'active' },
-      { _id: 'job-2', title: 'Backend Intern', status: 'active' },
-    ],
-  })
-  jobAlertService.enqueueJobAlertsForJobs = (jobs) => {
-    queuedJobs.push(...jobs)
-  }
-
-  try {
-    const result = await saveToDB([
-      {
-        title: 'Frontend Intern',
-        company: 'Example',
-        location: 'Bengaluru, India',
-        city: 'Bengaluru',
-        link: 'https://example.com/jobs/frontend-intern',
-        description: 'Build frontend features with the engineering team.',
-      },
-      {
-        title: 'Backend Intern',
-        company: 'Example',
-        location: 'Bengaluru, India',
-        city: 'Bengaluru',
-        link: 'https://example.com/jobs/backend-intern',
-        description: 'Build backend services with the engineering team.',
-      },
-    ], 'example-source', { replaceExisting: false })
-
-    assert.equal(result.inserted, 2)
-    assert.equal(queuedJobs.length, 2)
-  } finally {
-    Job.bulkWrite = originalBulkWrite
-    Job.find = originalFind
-    jobAlertService.enqueueJobAlertsForJobs = originalEnqueueJobAlertsForJobs
-    restoreReadyState()
-  }
-})
+// Alert atomicity and active-insert selection are covered against a real replica
+// set in test/jobAlertOutboxMongo.test.js. These fixtures test job normalization.
 
 test('saveToDB preserves open roles regardless of their normalized postingDate age', async () => {
   const restoreReadyState = setReadyState(1)

@@ -1,10 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { HAPTIK_CATALOG } from './catalog.js'
+import { createHaptikNativeInventory } from './nativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -18,9 +18,6 @@ export const DETAIL_URL_PATTERN = HAPTIK_CATALOG.detailUrlPattern
 export const VERIFIED_ON = HAPTIK_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = HAPTIK_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = HAPTIK_CATALOG
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const INDIA_LOCATION_PATTERN =
   /\b(mumbai|bengaluru|bangalore|gurugram|gurgaon|hyderabad|chennai|pune|delhi|noida|india)\b/i
@@ -162,15 +159,6 @@ const extractDescriptionHtml = (html) => {
   return String(match?.[1] || '').replace(/^\s*<h2[^>]*>[\s\S]*?<\/h2>\s*/i, '')
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
 export const buildDetailUrl = (opaqueId, slug) =>
   DETAIL_URL_PATTERN
     .replace('{opaque_id}', opaqueId)
@@ -265,44 +253,7 @@ export const extractJobDetail = (html, listing = {}) => {
 
 export const createHaptikScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const now = options.now || (() => new Date().toISOString())
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('The verified Haptik careers page no longer matches the trusted public surface')
-    }
-
-    const listingUrl = extractFreshteamJobsUrl(careersHtml)
-    if (listingUrl !== LISTING_URL) {
-      throw new Error('The verified Haptik careers page no longer points to the expected Freshteam board')
-    }
-
-    const listingHtml = await fetchText(listingUrl)
-    if (!hasOfficialJobsBoardSignal(listingHtml)) {
-      throw new Error('The verified Haptik Freshteam board no longer matches the trusted public surface')
-    }
-
-    const indiaListings = extractListingCards(listingHtml)
-      .filter((listing) => isIndiaLikeLocation(listing.locationHint))
-    const selectedListings = Number.isInteger(maxJobs) ? indiaListings.slice(0, maxJobs) : indiaListings
-    const jobs = []
-
-    for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.detailUrl)
-      jobs.push({
-        ...extractJobDetail(detailHtml, listing),
-        source: SOURCE,
-        link: listing.detailUrl,
-        scrapedAt: now(),
-      })
-    }
-
-    return jobs.filter((job) => job.country === COUNTRY_FILTER)
-  },
-})
+} = {}) => createHaptikNativeInventory({ maxJobs: maxJobs ?? 0 })
 
 export const run = async (options = {}) => createHaptikScraper().run(options)
 

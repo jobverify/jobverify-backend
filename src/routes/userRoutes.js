@@ -25,6 +25,8 @@ import autoApplyRoutes from './autoApplyRoutes.js';
 import campaignRoutes from './campaignRoutes.js';
 import resumeRoutes from './resumeRoutes.js';
 import tailoredResumeRoutes from './tailoredResumeRoutes.js';
+import candidateEvidenceRoutes from './candidateEvidenceRoutes.js';
+import applicationStageRoutes from './applicationStageRoutes.js';
 import {
   mongoIdParamValidation,
   suggestionSubmissionValidation,
@@ -52,6 +54,8 @@ router.use('/auto-apply', autoApplyRoutes);
 router.use('/campaigns', campaignRoutes);
 router.use('/resume', resumeRoutes);
 router.use('/tailored-resumes', tailoredResumeRoutes);
+router.use('/candidate-evidence', candidateEvidenceRoutes);
+router.use(applicationStageRoutes);
 
 router
   .route("/profile")

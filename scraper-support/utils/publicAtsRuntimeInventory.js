@@ -1,0 +1,167 @@
+import { createPublishingGapAtsScraper } from './publishingGapAts.js'
+import { identifyPublicAtsBoard } from './publicAtsIdentity.js'
+import { readNativeDocument, activeIframeSources } from './activeNativeHtml.js'
+import { fetchJsonWithRetry } from './fetch.js'
+import { attachInventoryEvidence, readInventoryEvidence } from './inventoryEvidence.js'
+import { greenhouseCountryLabels, greenhouseLocationLabels } from './greenhouseLocations.js'
+
+const publicHosts = new Set(['jobs.ashbyhq.com', 'jobs.lever.co', 'jobs.eu.lever.co',
+  'boards.greenhouse.io', 'job-boards.greenhouse.io', 'boards.eu.greenhouse.io', 'job-boards.eu.greenhouse.io'])
+const companyHost = value => new URL(value).hostname.replace(/^www\./, '')
+const recruitingDomains = ['myworkdayjobs.com', 'smartrecruiters.com', 'workable.com', 'icims.com',
+  'successfactors.com', 'successfactors.eu', 'taleo.net', 'jobs2web.com', 'teamtailor.com',
+  'personio.com', 'personio.de', 'bamboohr.com', 'freshteam.com', 'applytojob.com', 'breezy.hr',
+  'recruitee.com', 'jobvite.com']
+const parseActiveUrl = (value, base, text = '') => {
+  try {
+    const url = new URL(value, base)
+    return ['http:', 'https:'].includes(url.protocol) ? { url, text } : null
+  } catch { return null }
+}
+const region = (url, board) => board.atsPlatform === 'lever' ? board.region || 'global'
+  : board.atsPlatform === 'greenhouse' && url.hostname.includes('.eu.') ? 'eu' : 'global'
+const parsePublicUrl = value => {
+  try {
+    const url = new URL(value), board = identifyPublicAtsBoard(url.href)
+    return url.protocol === 'https:' && !url.username && !url.password && !url.port
+      && publicHosts.has(url.hostname) && board ? { url, board } : null
+  } catch { return null }
+}
+const sameBoard = (candidate, expected) => candidate?.board.atsPlatform === expected.board.atsPlatform
+  && candidate.board.boardToken === expected.board.boardToken
+  && region(candidate.url, candidate.board) === region(expected.url, expected.board)
+const rootBoard = (candidate, expected) => sameBoard(candidate, expected)
+  && candidate.url.pathname.replace(/\/+$/, '') === `/${encodeURIComponent(expected.board.boardToken)}`
+  && !candidate.url.search && !candidate.url.hash
+const additionalRecruitingSurface = (candidate, expected, officialUrl) => {
+  const native = parsePublicUrl(candidate.url.href)
+  if (native) return !sameBoard(native, expected)
+  const host = candidate.url.hostname
+  if (recruitingDomains.some(domain => host === domain || host.endsWith(`.${domain}`))) return true
+  // Preserve proprietary off-site recruiting actions too; unsupported does not
+  // mean absent. These URLs are observed only, never followed by this detector.
+  return companyHost(candidate.url.href) !== companyHost(officialUrl)
+    && (/\b(?:careers?|apply(?: now)?|open (?:roles|positions)|(?:view|search|browse) (?:jobs|roles|positions))\b/i.test(candidate.text)
+      || /\/(?:careers?|jobs?|apply)(?:\/|$)/i.test(candidate.url.pathname))
+}
+const roleId = (candidate, expected) => {
+  if (!sameBoard(candidate, expected)) return null
+  const prefix = `/${encodeURIComponent(expected.board.boardToken)}/`
+  if (!candidate.url.pathname.startsWith(prefix)) return null
+  const tail = candidate.url.pathname.slice(prefix.length).replace(/\/+$/, '')
+  const match = expected.board.atsPlatform === 'greenhouse' ? tail.match(/^jobs\/(\d+)$/)
+    : expected.board.atsPlatform === 'ashby' ? tail.match(/^([a-z\d._-]+)(?:\/application)?$/i)
+      : tail.match(/^([a-z\d._-]+)(?:\/apply)?$/i)
+  return match?.[1] || null
+}
+const defaultFetchPage = async (url, { signal } = {}) => {
+  const response = await fetch(url, {
+    signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(15000)]),
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify careers inventory check)', Accept: 'text/html' },
+  })
+  if (Number(response.headers.get('content-length')) > 3000000) throw new Error('Employer response exceeds inventory verification budget')
+  const html = await response.text()
+  if (html.length > 3000000) throw new Error('Employer response exceeds inventory verification budget')
+  return { status: response.status, url: response.url, html }
+}
+const indiaCountry = value => typeof value === 'string' && /^(?:India|IN|IND)$/i.test(value.trim())
+const indiaLabel = value => typeof value === 'string' && /\bindia\b/i.test(value)
+const nativeIndiaScope = (record, kind) => {
+  if (!record) return false
+  if (kind === 'greenhouse') return greenhouseCountryLabels(record).some(indiaCountry)
+    || greenhouseLocationLabels(record).some(indiaLabel)
+  if (kind === 'lever') return indiaCountry(record.country) || indiaLabel(record.categories?.location)
+    || (record.categories?.allLocations || []).some(indiaLabel)
+  return [{ location: record.location, address: record.address }, ...(record.secondaryLocations || [])].some(candidate =>
+    indiaLabel(candidate.location) || indiaCountry((candidate.address?.postalAddress || candidate.address || {}).addressCountry))
+}
+
+// Opt-in runtime replacement for historical source-scope uncertainty. Only an
+// inspected employer handoff and reconciled full native inventory can replace
+// the configured false flag. Ordinary public ATS providers retain their policy.
+export const createRuntimeVerifiedPublicAtsScraper = provider => ({
+  async run({ fetchPage = defaultFetchPage, fetchJson = (url, options) => fetchJsonWithRetry(url, {
+    ...options, timeoutMs: 20000, label: provider.source,
+  }), signal } = {}) {
+    signal?.throwIfAborted()
+    const fail = reason => {
+      const error = new Error(`[${provider.source}] Current employer inventory binding unavailable: ${reason}`)
+      Object.assign(error, { softFailure: true, abortRetries: true, failureKind: 'source_identity_unverified' })
+      throw error
+    }
+    const policy = provider.runtimeInventoryVerification || {}
+    const expected = parsePublicUrl(policy.boardUrl)
+    if (!expected || !['board-handoff', 'board-embed', 'role-links-exact'].includes(policy.mode)
+      || expected.board.atsPlatform !== provider.atsPlatform || expected.board.boardToken !== provider.boardToken
+      || !rootBoard(expected, expected)
+      || (provider.atsPlatform === 'lever' && region(expected.url, expected.board) !== (provider.leverRegion || 'global'))) fail('invalid configured board or policy')
+    const page = await fetchPage(provider.companyCareerPage, { signal })
+    signal?.throwIfAborted()
+    let finalUrl
+    try { finalUrl = new URL(page?.url) } catch { fail('invalid employer response URL') }
+    if (Number(page?.status) !== 200 || finalUrl.protocol !== 'https:' || finalUrl.username || finalUrl.password
+      || finalUrl.port || typeof page.html !== 'string' || !page.html.trim()) fail('employer response unavailable')
+    const redirectedToBoard = policy.mode === 'board-handoff' && rootBoard(parsePublicUrl(finalUrl.href), expected)
+    if (!redirectedToBoard && companyHost(finalUrl.href) !== companyHost(provider.companyCareerPage)) fail('foreign employer redirect')
+
+    const document = readNativeDocument(page.html)
+    const anchorCandidates = document.nodes(node => node.tag === 'a' && node.attrs.href)
+      .map(node => parseActiveUrl(node.attrs.href, finalUrl, document.text(node))).filter(Boolean)
+    const anchors = anchorCandidates.map(candidate => parsePublicUrl(candidate.url.href)).filter(Boolean)
+    const advertisedIds = new Set(anchors.map(candidate => roleId(candidate, expected)).filter(Boolean))
+    const hasBoardAnchor = anchors.some(candidate => rootBoard(candidate, expected))
+    const scripts = document.nodes(node => node.tag === 'script' && node.attrs.src
+      && !Object.hasOwn(node.attrs, 'nomodule')
+      && /^(?:|module|(?:text|application)\/javascript)$/i.test(node.attrs.type || '')).map(node => node.attrs.src)
+    const embedCandidates = [...scripts, ...activeIframeSources(page.html)]
+      .map(value => parseActiveUrl(value, finalUrl)).filter(Boolean)
+    const embeds = embedCandidates.map(candidate => parsePublicUrl(candidate.url.href)).filter(Boolean)
+    const hasEmbed = expected.board.atsPlatform === 'ashby' && embeds.some(candidate => sameBoard(candidate, expected)
+      && candidate.url.pathname === `/${encodeURIComponent(provider.boardToken)}/embed`
+      && !candidate.url.search && !candidate.url.hash)
+    const bound = policy.mode === 'board-handoff' ? hasBoardAnchor || redirectedToBoard
+      : policy.mode === 'board-embed' ? hasEmbed : advertisedIds.size > 0
+    if (!bound) fail(`active ${policy.mode} handoff not established`)
+
+    let payload
+    const jobs = await createPublishingGapAtsScraper({ ...provider, sourceScopeComplete: true }).run({ signal,
+      fetchJson: async (url, options) => { payload = await fetchJson(url, options); return payload },
+    })
+    signal?.throwIfAborted()
+    const records = provider.atsPlatform === 'lever' ? payload : payload.jobs
+    const nativeIds = new Set(records.filter(row => row.isListed !== false).map(row => String(row.id)))
+    if (provider.atsPlatform === 'greenhouse') for (const row of records) {
+      if (roleId(parsePublicUrl(row.absolute_url), expected) !== String(row.id)) {
+        throw new Error(`[${provider.source}] Invalid Greenhouse native board or role URL identity`)
+      }
+    }
+    const reasons = []
+    if ([...advertisedIds].some(id => !nativeIds.has(id))
+      || (policy.mode === 'role-links-exact' && (advertisedIds.size !== nativeIds.size
+        || [...nativeIds].some(id => !advertisedIds.has(id))))) reasons.push('official-role-identities-not-reconciled')
+    if ([...anchorCandidates, ...embedCandidates].some(candidate => additionalRecruitingSurface(candidate, expected, provider.companyCareerPage))) {
+      reasons.push('additional-employer-ats-scope-unresolved')
+    }
+    const evidence = readInventoryEvidence(jobs)
+    const byId = new Map(records.map(row => [String(row.id), row]))
+    // A current employer binding does not disambiguate shared city names.
+    // Require native country/India labels before returning an India vacancy.
+    const selectedJobs = jobs.filter(job => nativeIndiaScope(byId.get(String(job.jobId)), provider.atsPlatform))
+    if (selectedJobs.length !== jobs.length) reasons.push('native-location-scope-unresolved:india-country-evidence-unavailable')
+    if (!evidence?.listingComplete) reasons.push(evidence?.reason || 'native-inventory-evidence-unavailable')
+    const listingComplete = reasons.length === 0
+    if (!listingComplete) for (const job of selectedJobs) {
+      job.sourceListingComplete = false
+      job.sourceScopeComplete = false
+      job.lifecycleCleanupAllowed = false
+    }
+    return attachInventoryEvidence(selectedJobs, { ...evidence, listingComplete,
+      status: listingComplete ? evidence.status : 'discovery-only',
+      firstParty: evidence?.firstParty === true,
+      pagesFetched: (evidence?.pagesFetched || 0) + 1,
+      indiaFacetCount: reasons.some(reason => /identities-not-reconciled|additional-employer|native-location-scope-unresolved/.test(reason)) ? null : evidence?.indiaFacetCount,
+      reason: listingComplete ? `public-ats-current-employer-and-native-inventory-verified:${policy.mode}`
+        : `public-ats-runtime-incomplete:${reasons.join(';')}`,
+    })
+  },
+})

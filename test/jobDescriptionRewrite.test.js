@@ -32,17 +32,15 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { fileURLToPath } from 'node:url';
 import Job from '../src/models/Job.js';
-import { jobAlertService } from '../src/services/jobAlertService.js';
 import { rewriteCandidates } from '../rewriting/runner.js';
 import { saveToDB, generateFingerprint } from '../scraper-support/utils/saveToDB.js';
 
 test('scraper persistence queues only new or changed sources and preserves published rewrites', { timeout: 300000 }, async t => {
   const mongo = await MongoMemoryServer.create({ binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
   await mongoose.connect(mongo.getUri());
-  t.mock.method(jobAlertService, 'enqueueJobAlertsForJobs', () => {});
   t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
   const incoming = { title: 'Software Engineer', company: 'Example', city: 'Bangalore', location: 'Bangalore, India', country: 'India', applyUrl: 'https://example.com/jobs/rewrite', sourceUrl: 'https://example.com/jobs/rewrite', jobDescription: raw };
-  const options = { descriptionRewriteMode: 'publish', enrichPublicExperience: false, replaceExisting: false, refreshDatasetSummary: false };
+  const options = { descriptionRewriteMode: 'publish', enrichPublicExperience: false, replaceExisting: false, refreshDatasetSummary: false, enqueueAlerts: false };
   await saveToDB([incoming], 'example', options);
   let stored = await Job.findOne({ company: 'Example' }).lean();
   assert.equal(stored.sourceDescription, raw);

@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import { runApiPortalScraper } from '../apiPortal/engine.js'
 import { getScraperCatalog } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 test('runApiPortalScraper filters ASAPP Lever jobs to India-facing locations', async () => {
   const provider = getScraperCatalog().find((item) => item.source === 'asapp')
@@ -46,7 +47,7 @@ test('runApiPortalScraper filters ASAPP Lever jobs to India-facing locations', a
     company: 'ASAPP',
     location: 'Bangalore',
     city: 'Bangalore',
-    country: 'India',
+    country: null,
     link: 'https://jobs.lever.co/asapp-2/152c4868-2708-4817-a2eb-25fc4141398c',
     applyUrl: 'https://jobs.lever.co/asapp-2/152c4868-2708-4817-a2eb-25fc4141398c/apply',
     sourceUrl: 'https://jobs.lever.co/asapp-2/152c4868-2708-4817-a2eb-25fc4141398c',
@@ -63,5 +64,10 @@ test('runApiPortalScraper filters ASAPP Lever jobs to India-facing locations', a
     postingDate: '2026-06-18T10:00:00.000Z',
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
+  // Neither fixture has a native country; preserve that field as unknown. The India city is usable,
+  // but that unknown location cannot establish complete global/India scope.
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
 })

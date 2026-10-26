@@ -3,6 +3,7 @@ import { protect } from '../middleware/authMiddleware.js';
 import { createRateLimiter } from '../utils/rateLimit.js';
 import { MAX_RESUME_BYTES } from '../utils/resumeFile.js';
 import { getResume, uploadResume, downloadResume, removeResume, prepareResume, baseResume } from '../controllers/resumeController.js';
+import * as revisions from '../controllers/cvRevisionController.js';
 
 const router = express.Router();
 const uploadLimiter = createRateLimiter({ windowMs: 15 * 60_000, limit: 20,
@@ -17,6 +18,10 @@ router.get('/', getResume);
 router.get('/download', downloadResume);
 router.get('/base', baseResume);
 router.get('/base/download', baseResume);
+router.get('/revisions', revisions.list);
+router.get('/revisions/compare', revisions.compare);
+router.get('/revisions/:revisionId/download', revisions.download);
+router.post('/revisions/:revisionId/restore', uploadLimiter, revisions.restore);
 router.post('/prepare', uploadLimiter, prepareResume);
 router.delete('/', removeResume);
 router.put('/', uploadLimiter, (req, res, next) => {

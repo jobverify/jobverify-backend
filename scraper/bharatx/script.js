@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { createEmployerBoundWorkableScraper } from '../../scraper-support/utils/workableEmployerInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -13,10 +13,6 @@ export const JOBS_FEED_URL = 'https://apply.workable.com/bharatx/jobs.md'
 
 const COMPANY_NAME = 'BharatX'
 const SOURCE = 'bharatx'
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  label: 'bharatx workable feed',
-})
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\r/g, '')
@@ -157,44 +153,17 @@ export const extractJobsFromMarkdown = (markdown) => {
     }))
 }
 
-const normalizeScrapedAt = (value) => {
-  if (value instanceof Date) return value.toISOString()
-
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error('Invalid now() value supplied to BharatX scraper')
-  }
-
-  return parsed.toISOString()
-}
 
 export const createBharatXScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date(),
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+} = {}) => createEmployerBoundWorkableScraper({
+  source: SOURCE, company: COMPANY_NAME, tenant: 'bharatx',
+  accountUid: 'db2cc781-d7bb-431d-ba2d-62a131069447',
+  careersUrl: OFFICIAL_CAREERS_URL, companyDomain: 'bharatx.tech',
+}, { now, maxJobs: Number.isInteger(maxJobs) && maxJobs > 0 ? maxJobs : 0 })
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('BharatX verified official careers page no longer matches the verified public surface')
-    }
-
-    const limit = Number.isInteger(options.maxJobs) ? options.maxJobs : maxJobs
-    const jobs = extractJobsFromMarkdown(await fetchText(JOBS_FEED_URL))
-    const selected = limit ? jobs.slice(0, limit) : jobs
-    const scrapedAt = normalizeScrapedAt((options.now || now)())
-
-    return selected.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-    }))
-  },
-})
-
-export const run = async (options = {}) => createBharatXScraper().run(options)
+export const run = async (options = {}) => createBharatXScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

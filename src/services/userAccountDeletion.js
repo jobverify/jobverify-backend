@@ -10,9 +10,12 @@ import UserSuggestion from "../models/UserSuggestion.js";
 import AdminAudit from "../models/AdminAudit.js";
 import SiteSettings from "../models/SiteSettings.js";
 import Application from '../models/Application.js';
+import ApplicationEvent from '../models/ApplicationEvent.js';
+import CandidateEvidence from '../models/CandidateEvidence.js';
 import Resume from '../models/Resume.js';
 import TailoredResume from '../models/TailoredResume.js';
 import ResumeArtifact from '../models/ResumeArtifact.js';
+import CVRevision from '../models/CVRevision.js';
 import OutreachThread from '../models/OutreachThread.js';
 import OutreachTask from '../models/OutreachTask.js';
 import OutreachUsage from '../models/OutreachUsage.js';
@@ -30,6 +33,7 @@ export const removeUserAccount = async (user) => {
   const userId = user._id;
   await User.updateOne({ _id: userId }, { $set: { outreachDeletingAt: new Date() } });
   await cleanupUserCampaignData(userId);
+  for (const Model of [ApplicationEvent, CandidateEvidence, CVRevision]) await Model.deleteMany({ user: userId });
   for (const Model of [ApplicationMailboxAuth, ApplicationMailbox, ApplicationMail, AutoApplyAttempt]) await Model.deleteMany({ user: userId });
   for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application, Resume, TailoredResume, ResumeArtifact, OutreachTask, OutreachThread, OutreachUsage]) {
     await Model.deleteMany({ user: userId });

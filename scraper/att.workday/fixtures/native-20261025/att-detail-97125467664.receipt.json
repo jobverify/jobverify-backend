@@ -1,0 +1,23 @@
+{
+  "name": "att-detail-97125467664",
+  "id": "97125467664",
+  "url": "https://www.att.jobs/job/hyderabad/lead-embedded-firmware-engineer-residential-gateways-prplos-and-wireless/117/97125467664",
+  "at": "2026-10-25T17:57:11.476Z",
+  "method": "GET",
+  "redirect": "manual",
+  "timeoutMs": 20000,
+  "maxHeaderSize": 65536,
+  "maxBodyBytes": 2097152,
+  "retries": 0,
+  "tls": "strict-system-ca",
+  "network": "default-system-route",
+  "status": 200,
+  "finalUrl": "https://www.att.jobs/job/hyderabad/lead-embedded-firmware-engineer-residential-gateways-prplos-and-wireless/117/97125467664",
+  "location": null,
+  "contentType": "text/html; charset=utf-8",
+  "contentEncoding": null,
+  "headerBytes": 21820,
+  "bytes": 601623,
+  "sha256": "7af6c138ebbc7b5267a5ef66205ed00cca37225312bb4c0fbccc118025501892",
+  "elapsedMs": 669
+}

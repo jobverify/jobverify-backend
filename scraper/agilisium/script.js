@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { AGILISIUM_CATALOG } from './catalog.js'
+import { createZohoNativeInventoryScraper } from '../../scraper-support/utils/zohoNativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -77,23 +78,12 @@ export const hasVerifiedBoardSignal = (html = '') => {
     ])
 }
 
-export const createAgilisiumScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Agilisium official careers page no longer matches the verified first-party surface')
-    }
+export const createAgilisiumScraper = (options = {}) => createZohoNativeInventoryScraper({
+  source: SOURCE, company: COMPANY, nativeCompany: 'Agilisium', companyDomain: 'agilisium.com',
+  officialUrl: CAREERS_URL, boardUrl: BOARD_URL, orgId: '589705000000313622', pageId: '589705000000471052',
+}, options)
 
-    const boardHtml = await fetchText(BOARD_URL)
-    if (!hasVerifiedBoardSignal(boardHtml)) {
-      throw new Error('Agilisium Zoho Recruit board no longer matches the verified public surface')
-    }
-
-    return []
-  },
-})
-
-export const run = async (options = {}) => createAgilisiumScraper().run(options)
+export const run = async (options = {}) => createAgilisiumScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

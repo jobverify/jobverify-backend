@@ -5,69 +5,18 @@ import CIVICA_INDIA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
+import { createEmployerBoundWorkableScraper } from '../../scraper-support/utils/workableEmployerInventory.js'
 export const PROVIDER_METADATA = CIVICA_INDIA_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
-export const WORKABLE_PAGE_URL = PROVIDER_METADATA.workablePageUrl
-export const WORKABLE_LLMS_URL = PROVIDER_METADATA.workableLlmsUrl
-
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,text/plain,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
-
-  return response.text()
-}
-
-export const hasOfficialCareersSignal = (html = '') => {
-  const page = String(html ?? '')
-
-  return /Make your future part of ours/i.test(page)
-    && /Our vacancies/i.test(page)
-    && /apply\.workable\.com\/civica/i.test(page)
-}
-
-export const isVerifiedCloudflareChallengePage = (html = '') => {
-  const page = String(html ?? '')
-
-  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
-    && /challenges\.cloudflare\.com/i.test(page)
-    && /noindex,nofollow/i.test(page)
-}
-
-export const hasZeroOpeningsSignal = (text = '') => {
-  const normalized = String(text ?? '')
-  return /0 current openings/i.test(normalized)
-    && /apply\.workable\.com\/civica\/jobs\.md/i.test(normalized)
-}
-
-export const createCivicaIndiaScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml) && !isVerifiedCloudflareChallengePage(careersHtml)) {
-      throw new Error('Civica India verified first-party careers page no longer matches the expected official handoff')
-    }
-
-    const llmsText = await fetchText(WORKABLE_LLMS_URL)
-    if (!hasZeroOpeningsSignal(llmsText)) {
-      throw new Error('Civica India zero-openings contract no longer matches the exact workable llms feed')
-    }
-
-    return []
-  },
-})
-
-export const run = async (options = {}) => createCivicaIndiaScraper(options).run(options)
+export const WORKABLE_PAGE_URL = 'https://apply.workable.com/civica-uk-ltd-1/'
+export const createCivicaIndiaScraper = (defaults = {}) => createEmployerBoundWorkableScraper({
+  source: SOURCE, company: 'Civica', tenant: 'civica-uk-ltd-1',
+  accountUid: '8433007d-b16d-4cd7-bd7d-a8cd3a8ebff3', careersUrl: CAREERS_URL, companyDomain: 'civica.com',
+  reciprocalWebsiteUrl: 'https://www.civica.com/en-gb/', reconcileClosingInventory: true,
+}, defaults)
+export const run = async (options = {}) => createCivicaIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

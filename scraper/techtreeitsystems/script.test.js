@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { classifyScraperError } from '../../scraper-support/utils/failureClassification.js'
+import { withRetry, getRetryMetadata } from '../../scraper-support/utils/retry.js'
+import { applyRetryPolicyToScraperError } from '../../scraper-support/runner.js'
 
 import {
   CAREERS_URL,
@@ -126,4 +129,103 @@ test('healthy observed role keeps explicit native India, publication and incompl
 })
 test('no inline cards is a parse/scope failure, never zero jobs', async () => {
   await assert.rejects(runFixture({ fetchPage: async () => ({ ...page, html: careers('<span class="awsm-job-post-title">broken</span>') }) }), error => error.code === 'careers-cards-missing')
+})
+
+test('a verified Sucuri challenge is a blocked source failure and does not repeat outer retries', async () => {
+  let attempts = 0
+  await assert.rejects(withRetry(async () => {
+    attempts++
+    return createTechtreeItSystemsScraper().run({
+      fetchPage: async url => ({ status: 307, url, html: SUCURI_CHALLENGE_HTML }),
+      fetchJson: async () => { throw Error('Blocked inventory must not query roles') },
+    })
+  }, { attempts: 4, baseDelayMs: 0, label: 'techtree-blocked-regression' }), error => {
+    assert.equal(error.code, 'careers-blocked')
+    assert.deepEqual(classifyScraperError(error), {
+      softFailure: true, upstreamOutage: true, failureKind: 'blocked_or_access_denied',
+    })
+    assert.equal(error.abortRetries, true)
+    assert.equal(getRetryMetadata(error).attemptsUsed, 1)
+    assert.equal(error.cause.diagnostics.status, 307)
+    return true
+  })
+  assert.equal(attempts, 1)
+})
+
+for (const [status, kind, outage] of [
+  [403, 'blocked_or_access_denied', true],
+  [500, 'network_or_timeout', true],
+  [404, 'surface_drift_or_fail_closed', false],
+]) test(`native HTTP ${status} retains its upstream classification without inventing an inventory`, async () => {
+  await assert.rejects(runFixture({ fetchPage: async () => ({ ...page, status }) }), error => {
+    assert.equal(error.code, 'careers-unavailable')
+    assert.equal(error.diagnostics.status, status)
+    assert.equal(error.diagnostics.listingComplete, false)
+    assert.deepEqual(classifyScraperError(error), { softFailure: true, upstreamOutage: outage, failureKind: kind })
+    if (status === 500) assert.notEqual(error.abortRetries, true, 'Transient server errors remain retryable')
+    return true
+  })
+})
+
+test('a failed fetch preserves its original network cause and retry classification', async () => {
+  const cause = Object.assign(new Error('Connect timed out'), { code: 'ETIMEDOUT' })
+  await assert.rejects(runFixture({ fetchPage: async () => { throw cause } }), error => {
+    assert.equal(error.cause, cause)
+    assert.equal(error.code, 'careers-fetch-failed')
+    assert.equal(error.diagnostics.reason, cause.message)
+    assert.deepEqual(classifyScraperError(error), {
+      softFailure: true, upstreamOutage: true, failureKind: 'network_or_timeout',
+    })
+    assert.notEqual(error.abortRetries, true)
+    return true
+  })
+})
+
+test('unexpected fetch programming errors remain hard and preserve their cause', async () => {
+  const cause = new TypeError('Cannot read properties of undefined')
+  await assert.rejects(runFixture({ fetchPage: async () => { throw cause } }), error => {
+    assert.equal(error.cause, cause)
+    assert.equal(classifyScraperError(error).softFailure, false)
+    return true
+  })
+})
+
+test('unrecognized successful HTML remains a surface gap and cannot become verified zero', async () => {
+  await assert.rejects(runFixture({ fetchPage: async url => ({ status: 200, url, html: '<h1>Unrelated page</h1>' }) }), error => {
+    assert.equal(error.code, 'careers-unavailable')
+    assert.equal(error.diagnostics.companyCoverageComplete, false)
+    assert.deepEqual(classifyScraperError(error), {
+      softFailure: true, upstreamOutage: false, failureKind: 'surface_drift_or_fail_closed',
+    })
+    return true
+  })
+})
+
+test('a temporary HTTP 429 can recover on the next runner attempt', async () => {
+  let attempts = 0
+  const decisions = []
+  const jobs = await withRetry(async () => {
+    attempts++
+    try {
+      return await runFixture({ fetchPage: async () => ({ ...page, status: attempts === 1 ? 429 : 200 }) })
+    } catch (error) {
+      const before = error.abortRetries
+      const classified = applyRetryPolicyToScraperError(error)
+      decisions.push({ status: error.diagnostics.status, before, after: classified.abortRetries })
+      throw classified
+    }
+  }, { attempts: 2, baseDelayMs: 0, label: 'techtree-rate-limit-regression' })
+  assert.equal(attempts, 2)
+  assert.deepEqual(decisions, [{ status: 429, before: false, after: false }])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].postingDate, '2024-08-28T06:04:25.000Z')
+  assert.equal(jobs[0].sourceDetailComplete, true)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+})
+
+test('runner retry policy honors an explicit retryable source decision', () => {
+  const error = Object.assign(new Error('Temporary upstream rate limit'), {
+    softFailure: true, upstreamOutage: true, failureKind: 'blocked_or_access_denied', abortRetries: false,
+  })
+  assert.equal(applyRetryPolicyToScraperError(error).abortRetries, false)
 })

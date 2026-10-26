@@ -35,7 +35,7 @@ test('generation client rejects non-local endpoints', () => {
   assert.throws(() => createRewriteClient({ endpoint: 'https://example.com' }), /127\.0\.0\.1/);
 });
 
-test('the production LFM client uses compact decisions and preserves source facts when publishing', async t => {
+test('the explicit legacy LFM client uses compact decisions and preserves source facts when publishing', async t => {
   let requestedModel;
   let request;
   const server = http.createServer(async (req, res) => {
@@ -48,7 +48,7 @@ test('the production LFM client uses compact decisions and preserves source fact
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   let saved;
-  const client = createProductionRewriteClient({ endpoint: 'http://127.0.0.1:' + server.address().port });
+  const client = createProductionRewriteClient({ endpoint: 'http://127.0.0.1:' + server.address().port, format: 'fact-plan' });
   const stats = await rewriteCandidates([{ ...job, sourceContentHash: job.descriptionRewrite.inputHash }], {
     client, deadline: Date.now() + 10000,
     update: async (_filter, values) => { saved = values; return { matchedCount: 1 }; },

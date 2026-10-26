@@ -5,9 +5,11 @@ import { fetchJsonWithRetry } from './fetch.js'
 import { filterIndiaJobs } from './indiaLocationFilter.js'
 import { attachInventoryEvidence, readInventoryEvidence, isFreshCompleteInventoryEvidence } from './inventoryEvidence.js'
 import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { greenhouseLocationLabels, greenhouseCountryLabels, hasUnhandledGreenhouseGeography, selectGreenhouseLocation, NATIVE_INDIA_LOCATION } from './greenhouseLocations.js'
+import { selectLeverLocation, selectLeverCountry } from './leverLocations.js'
 
 // Generic remote work is not evidence that an employer accepts applicants in India.
-const INDIA_LOCATION = /\bindia\b|\bbengaluru\b|\bbangalore\b|\bhyderabad\b|\bpune\b|\bgurugram\b|\bgurgaon\b|\bmumbai\b|\bchennai\b|\bnoida\b|\bdelhi\b|\bahmedabad\b/i
+const INDIA_LOCATION = NATIVE_INDIA_LOCATION
 const TALENT_POOL = /talent (community|network|pool)|speculative|future opportunities|general application/i
 // apiPortal's country defaults to the provider filter; only source location text proves eligibility.
 const indiaLocation = (job) => INDIA_LOCATION.test([job.location, job.city].filter(Boolean).join(' '))
@@ -34,17 +36,33 @@ const unresolvedLocationSegment = (label, country) => {
   return !parts.length ? !country : parts.some(part => GLOBAL_LOCATION.test(part)
     || (!INDIA_LOCATION.test(part) && !foreignCountryPattern.test(part) && !(parts.length === 1 && country)))
 }
-const validatePublicPostingScope = (records, kind, provider) => {
+export const validatePublicPostingScope = (records, kind, provider) => {
   const reasons = new Set()
   const fail = reason => { throw new Error(`[${provider.source}] Invalid ${kind} inventory: ${reason}`) }
   for (const record of records) {
     if (record?.isListed === false || TALENT_POOL.test(record?.title || record?.text || '')) continue
+    if (kind === 'lever') {
+      if (typeof record?.id !== 'string' || !/^[a-z0-9][a-z0-9._-]{0,255}$/i.test(record.id)) fail('missing native role identity')
+      for (const [field, suffix] of [['hostedUrl', ''], ['applyUrl', '/apply']]) {
+        let url
+        try { url = new URL(record[field]) } catch { fail('invalid native role URL identity') }
+        if (url.origin !== `https://jobs.${provider.leverRegion === 'eu' ? 'eu.' : ''}lever.co` || url.username || url.password
+          || url.pathname.replace(/\/+$/, '') !== `/${encodeURIComponent(provider.boardToken)}/${record.id}${suffix}`) {
+          fail('foreign board or native role URL identity')
+        }
+      }
+    }
     const primary = kind === 'greenhouse' ? record?.location?.name : record?.categories?.location
-    const countryValue = kind === 'lever' ? record?.country : null
+    if (kind === 'greenhouse' && hasUnhandledGreenhouseGeography(record)) reasons.add('native-location-scope-unresolved')
+    const greenhouseCountries = kind === 'greenhouse' ? [...new Set(greenhouseCountryLabels(record))] : []
+    const countryValue = kind === 'lever' ? record?.country : greenhouseCountries.length === 1 ? greenhouseCountries[0] : null
     if (countryValue != null && typeof countryValue !== 'string') fail('invalid native country')
     const country = nativeCountry(countryValue)
-    const primaryIndia = typeof primary === 'string' && INDIA_LOCATION.test(primary)
-    const candidates = [{ label: primary, country }]
+    const mappedLocation = kind === 'greenhouse' ? selectGreenhouseLocation(record) : selectLeverLocation(record)
+    const primaryIndia = (typeof mappedLocation === 'string' && INDIA_LOCATION.test(mappedLocation))
+      || (kind === 'lever' && selectLeverCountry(record) === 'India')
+    const candidates = kind === 'greenhouse' ? greenhouseLocationLabels(record).map(label => ({ label, country })) : [{ label: primary, country }]
+    if (!candidates.length) candidates.push({ label: null })
     if (kind === 'lever' && record?.categories?.allLocations != null) {
       if (!Array.isArray(record.categories.allLocations)) fail('invalid native location inventory')
       candidates.push(...record.categories.allLocations.filter(label => label !== primary).map(label => ({ label })))
@@ -146,7 +164,7 @@ export const createPublishingGapAtsScraper = (provider) => ({
       ? `https://boards-api.greenhouse.io/v1/boards/${token}/jobs?content=true`
       : kind === 'ashby'
         ? `https://api.ashbyhq.com/posting-api/job-board/${token}`
-        : `https://api.lever.co/v0/postings/${token}?mode=json`
+        : `https://api.${provider.leverRegion === 'eu' ? 'eu.' : ''}lever.co/v0/postings/${token}?mode=json`
     const payload = await fetchJson(url, { signal })
     signal?.throwIfAborted()
     if (inventoryError(payload)) throw new Error(`[${provider.source}] Failed ${kind} inventory envelope`)
@@ -169,17 +187,15 @@ export const createPublishingGapAtsScraper = (provider) => ({
     if (kind === 'ashby') {
       mapped = extractAshbyJobs({ payload, companyName: provider.companyName })
     } else {
-      const config = expandApiPortalProviderTemplate({ ...provider, template: kind, templateOptions: { boardToken: provider.boardToken } })
+      const config = expandApiPortalProviderTemplate({ ...provider, template: kind, templateOptions: { boardToken: provider.boardToken, region: provider.leverRegion } })
       // Greenhouse updated_at is an edit timestamp, not the original posting date.
       if (kind === 'greenhouse') config.config.mapping.postingDate = 'first_published'
-      const prepared = kind === 'lever'
-        ? records.map((record) => ({ ...record, descriptionBodyPlain: [record.descriptionPlain || record.description, ...(record.lists || []).map((section) => `${section.text || ''}\n${section.content || ''}`), record.additionalPlain || record.additional].filter(Boolean).join('\n\n') || null }))
-        : payload
-      mapped = await runApiPortalScraper({ provider: config, fetchJson: async () => prepared })
+      if (kind === 'greenhouse') config.config.mapping.location = { strategy: 'greenhouse-location' }
+      mapped = await runApiPortalScraper({ provider: config, fetchJson: async () => payload })
     }
     signal?.throwIfAborted()
     const located = filterIndiaJobs(mapped).filter(job => indiaLocation(job)
-      || (kind === 'ashby' && /^(?:india|in|ind)$/i.test(job.country || '')))
+      || (['ashby', 'lever'].includes(kind) && /^(?:india|in|ind)$/i.test(job.country || '')))
     const jobs = located.filter((job) => !TALENT_POOL.test(job.title)).map((job) => ({
       ...job,
       source: provider.source,

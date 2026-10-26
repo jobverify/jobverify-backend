@@ -4,6 +4,17 @@ Hiring-manager discovery, private outreach tracking, GitHub Actions drafting,
 and approved Gmail campaigns are described in [OUTREACH.md](OUTREACH.md).
 Provider and Gmail secrets stay on the backend; no enrichment starts from a page view.
 
+Referral discovery in GitHub Actions uses SearXNG and the existing local LFM model
+to select publicly listed work emails. It requires no Hunter or inference API key.
+Only literal employer-domain addresses in named, employer-grounded search evidence
+are eligible; the model selects an evidence index or abstains. Results retain an
+email source URL and excerpt and are labeled public, not verified. When no address
+is supported, or lookup fails, the contact and available LinkedIn link remain usable.
+Public email recipients still require user confirmation before sending. Each
+selected contact may use one additional public search within the task deadline.
+Hunter remains optional for the legacy Tavily provider. Existing saved records are
+preserved; new Actions requests use a separate discovery and email cache policy.
+
 Express and MongoDB backend for Jobverify, with a separate scraper runtime that collects public job listings and writes normalized jobs into MongoDB.
 
 ## Tech Stack

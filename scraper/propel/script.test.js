@@ -115,19 +115,26 @@ test('extractAshbyJobs returns listed Propel jobs with normalized Ashby fields',
   assert.equal(jobs[1].country, 'United States')
 })
 
-test('run fetches the official Propel Ashby board and adds scraper metadata', async () => {
+test('run checks the official Propel handoff, selects India jobs and adds scraper metadata', async () => {
   const requests = []
   const scraper = createPropelScraper()
 
   const jobs = await scraper.run({
+    fetchPage: async url => ({ status: 200, url,
+      html: '<title>Careers</title><a href="https://jobs.ashbyhq.com/propel">Open roles</a>',
+    }),
     fetchJson: async (url) => {
       requests.push(url)
-      return ashbyPayload
+      return { apiVersion: '1', jobs: [
+        { ...ashbyPayload.jobs[0], location: 'Bengaluru, India', secondaryLocations: [],
+          address: { addressCountry: 'India' } },
+        ashbyPayload.jobs[1],
+      ] }
     },
   })
 
   assert.deepEqual(requests, [ASHBY_JOB_BOARD_URL])
-  assert.equal(jobs.length, 2)
+  assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'propel')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.match(jobs[0].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
