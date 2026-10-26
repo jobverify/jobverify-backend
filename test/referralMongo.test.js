@@ -12,7 +12,7 @@ import OutreachDiscoveryCache from '../src/models/OutreachDiscoveryCache.js';
 import OutreachEmailCache from '../src/models/OutreachEmailCache.js';
 import { requestDiscovery, processDiscoveryTask, saveContact, recoverOutreachTasks } from '../src/services/outreachService.js';
 import { removeUserAccount } from '../src/services/userAccountDeletion.js';
-import { searchReferralWeb } from '../outreach/referralSearch.js';
+import { searchReferralWeb, findPublicReferralEmail } from '../outreach/referralSearch.js';
 
 test('Mongo Actions discovery preserves evidence, provider isolation, leases, recovery and account deletion', { timeout: 90000 }, async t => {
   for (const [key, value] of Object.entries({ OUTREACH_DISCOVERY_PROVIDER: 'actions', TAVILY_API_KEY: undefined, HUNTER_API_KEY: undefined,
@@ -50,7 +50,7 @@ test('Mongo Actions discovery preserves evidence, provider isolation, leases, re
   assert.deepEqual(completed.result.contacts.map(contact => contact.name), ['Jamie Patel', 'Jane Doe', 'Alex Brown']);
   assert.ok(completed.result.contacts.every(contact => contact.sourceUrl && contact.evidence && contact.emailStatus === 'unavailable'));
   assert.equal(await OutreachUsage.countDocuments({ key: /^provider:tavily:/ }), 0);
-  assert.equal((await OutreachUsage.findOne({ key: /^provider:searxng:/ })).used, 1);
+  assert.equal((await OutreachUsage.findOne({ key: /^provider:searxng:/ })).used, 4, 'reserve the initial search and up to three email searches');
   assert.equal(await OutreachThread.countDocuments(), 0, 'discovery does not save a private outreach record');
   const cached = await requestDiscovery(other._id, { jobId: String(jobId) }, options);
   assert.equal(cached.status, 'completed'); assert.equal(dispatched, 1);
@@ -58,6 +58,45 @@ test('Mongo Actions discovery preserves evidence, provider isolation, leases, re
   await assert.rejects(saveContact(other._id, { taskId: String(taskId), contactIndex: 0 }), { statusCode: 404 });
   const thread = await saveContact(owner._id, { taskId: String(taskId), contactIndex: 0 });
   assert.equal(thread.contact.name, 'Jamie Patel');
+
+  await t.test('public email evidence survives cache hits and saving without Hunter usage', async () => {
+    const emailUser = await User.create({ email: 'email-evidence@example.test' });
+    const task = await requestDiscovery(emailUser._id, { jobId: String(jobId), refresh: true }, options);
+    const evidence = { title: 'Jane Doe - Frontend Engineer at Example Corp', url: 'https://example.com/team/jane',
+      content: 'Jane Doe is a Frontend Engineer at Example Corp. Email Jane at jane@example.com.' };
+    const findEmail = (contact, domain, args) => {
+      assert.equal(args.context.companyDomain, 'example.com');
+      assert.equal(args.results.length, 4);
+      return findPublicReferralEmail(contact, domain, { ...args, results: [evidence], fetchImpl: async url => {
+        assert.equal(url, 'http://127.0.0.1:8769/v1/chat/completions');
+        return { ok: true, json: async () => ({ choices: [{ finish_reason: 'stop', message: { content: '{"index":0}' } }] }) };
+      } });
+    };
+    const providersWithEmail = { ...providers, findEmail, rankContacts: async (_context, contacts) => [contacts[0]] };
+    const hunterBefore = await OutreachUsage.findOne({ key: /^provider:hunter:/ }).lean();
+    // An old Hunter cache must not be reused by Actions.
+    const { createHash } = await import('node:crypto');
+    const legacyKey = createHash('sha256').update('example.com:jane doe').digest('hex');
+    await OutreachEmailCache.create({ key: legacyKey, email: 'old@example.com', emailStatus: 'verified', expiresAt: new Date(Date.now() + 86400000) });
+    const value = await processDiscoveryTask(task._id, providersWithEmail);
+    assert.ok(value);
+    assert.equal(value.contacts[0].email, 'jane@example.com');
+    assert.equal(value.contacts[0].emailStatus, 'public');
+    assert.equal(value.contacts[0].emailConfirmed, false);
+    assert.equal(value.contacts[0].emailSourceUrl, evidence.url);
+    assert.equal(value.contacts[0].emailEvidence, evidence.content);
+    const saved = await saveContact(emailUser._id, { taskId: String(task._id), contactIndex: 0 });
+    assert.equal(saved.contact.emailSourceUrl, evidence.url);
+    assert.equal(saved.contact.emailEvidence, evidence.content);
+    const hit = await requestDiscovery(emailUser._id, { jobId: String(jobId) }, options);
+    assert.equal(hit.result.contacts[0].emailSourceUrl, evidence.url);
+    const refreshed = await requestDiscovery(emailUser._id, { jobId: String(jobId), refresh: true }, options);
+    const cachedValue = await processDiscoveryTask(refreshed._id, { ...providersWithEmail, findEmail: async () => assert.fail('reuse the public email cache') });
+    assert.equal(cachedValue.contacts[0].emailSourceUrl, evidence.url);
+    assert.equal((await OutreachUsage.findOne({ key: /^provider:hunter:/ }).lean())?.used, hunterBefore?.used);
+    // Restore the shared contact cache expected by the existing lifecycle checks.
+    await OutreachDiscoveryCache.updateOne({}, { $set: { contacts: completed.result.contacts } });
+  });
 
   await t.test('a replaced lease cannot publish its model result or replace the shared cache', async () => {
     const task = await requestDiscovery(owner._id, { jobId: String(jobId), refresh: true }, options);

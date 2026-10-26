@@ -3,7 +3,10 @@ import test from 'node:test'
 import { readFileSync } from 'node:fs'
 import mongoose from 'mongoose'
 import Job from '../../src/models/Job.js'
-import { generateFingerprint, saveToDB } from '../utils/saveToDB.js'
+import { generateFingerprint, saveToDB as persistJobs } from '../utils/saveToDB.js'
+
+// These persistence fixtures stub MongoDB; transactional alert behavior has its own replica-set suite.
+const saveToDB = (jobs, source, options = {}) => persistJobs(jobs, source, { enqueueAlerts: false, ...options })
 import { extractCurrentElfsightJobs, ELFSIGHT_WIDGET_ID, run } from '../../scraper/remunanceservicespvtltd/script.js'
 const fixture=()=>JSON.parse(readFileSync(new URL('./fixtures/remunanceservicespvtltd/current-widget.json',import.meta.url),'utf8'))
 const settings=payload=>payload.data.widgets[ELFSIGHT_WIDGET_ID].data.settings

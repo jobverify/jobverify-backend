@@ -1,0 +1,17 @@
+{
+  "name": "att-search-client",
+  "url": "https://tbcdn.talentbrew.com/js/client/search.js",
+  "at": "2026-10-25T17:34:08.791Z",
+  "method": "GET",
+  "redirect": "manual",
+  "timeoutMs": 20000,
+  "retries": 0,
+  "tls": "strict-system-ca-command-scoped-proxy",
+  "status": 200,
+  "finalUrl": "https://tbcdn.talentbrew.com/js/client/search.js",
+  "location": null,
+  "contentType": "application/x-javascript",
+  "bytes": 42932,
+  "sha256": "f58913158b9aa603a2a21969c4533ae9023d26ff6699d5ac505ef9d469bd85dd",
+  "elapsedMs": 554
+}

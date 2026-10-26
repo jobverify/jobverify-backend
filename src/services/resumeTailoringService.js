@@ -8,8 +8,10 @@ import { applyPublicJobVisibility } from '../utils/publicJobVisibility.js';
 import { dispatchTailoredResumes, tailoredResumeActionsConfigured, requireTailoredResumeActions } from './resumeTailoringWorkflow.js';
 import { dayKey, reserveUsage } from './outreachUsage.js';
 import { tailoringError } from './resumeTailoringContent.js';
-import { artifactBytes, createResumeArtifact, deleteResumeArtifact, readResumeArtifact } from './resumeArtifactService.js';
-import { activeResumeOwner, activeResumeStatuses, requirePreparedResume, drainResumePreparations, recoverResumePreparations } from './resumePreparationService.js';
+import { artifactBytes, readResumeArtifact } from './resumeArtifactService.js';
+import { activeResumeOwner, activeResumeStatuses, requirePreparedResume, drainResumePreparations, recoverResumePreparations, evidenceMatches } from './resumePreparationService.js';
+import { getCandidateEvidenceSnapshot } from './candidateEvidenceService.js';
+import { publishGeneratedCv } from './cvRevisionService.js';
 
 const recordId = (user, job) => `${user}:${job}`;
 
@@ -25,8 +27,10 @@ async function context(user, jobId, { settings = {}, requireResume = false, with
   if (!job) throw tailoringError('This saved job is no longer available.', 404);
   if (requireResume && !resume) throw tailoringError('Upload your resume before creating a tailored resume.', 409);
   if (requireResume) requirePreparedResume(resume);
+  const evidence = await getCandidateEvidenceSnapshot(user._id);
+  if (requireResume && !evidenceMatches(resume.preparation.outputEvidenceVersion, resume.preparation.outputEvidenceHash, evidence)) throw tailoringError('Your candidate evidence changed. Prepare your base resume again before tailoring.', 409);
   const { resumeJobHash, buildResumeJobSnapshot } = await import('./resumeLatexContent.js');
-  return { job, resume, hash: resumeJobHash(job), jobSnapshot: buildResumeJobSnapshot(job) };
+  return { job, resume, evidence, hash: resumeJobHash(job), jobSnapshot: buildResumeJobSnapshot(job) };
 }
 
 function publicRecord(row, source) {
@@ -35,10 +39,11 @@ function publicRecord(row, source) {
   const legacy = Boolean(!hasArtifact && row.output);
   return { id: row._id, jobId: String(row.job), status: row.status, phase: row.phase || '', error: row.error || '',
     stale: Boolean((hasArtifact || legacy) && (row.outputResumeSha !== source.resume?.sha256 || row.outputJobHash !== source.hash
-      || (hasArtifact && row.outputBaseGenerationId !== source.resume?.preparation?.generationId))),
+      || (hasArtifact && row.outputBaseGenerationId !== source.resume?.preparation?.generationId)
+      || (source.evidence && !evidenceMatches(row.outputEvidenceVersion, row.outputEvidenceHash, source.evidence)))),
     hasPdf: hasArtifact, hasLatex: hasArtifact, pageCount: hasArtifact ? row.pageCount || null : null,
     outputFormat: hasArtifact ? 'latex-pdf' : legacy ? 'legacy-json' : 'latex-pdf', legacy,
-    generatedAt: row.generatedAt || null, sourceFilename: source.resume?.filename || '', updatedAt: row.updatedAt };
+    generatedAt: row.generatedAt || null, currentRevisionId: row.currentRevisionId || null, sourceFilename: source.resume?.filename || '', updatedAt: row.updatedAt };
 }
 
 export async function getTailoredResume(user, jobId, settings) {
@@ -60,7 +65,8 @@ export async function getTailoredResumeArtifact(user, jobId, settings) {
 }
 
 const matchesSource = (source, row) => source.resume?.sha256 === row.sourceResumeSha && source.hash === row.sourceJobHash
-  && source.resume?.preparation?.generationId === row.sourceBaseGenerationId;
+  && source.resume?.preparation?.generationId === row.sourceBaseGenerationId
+  && evidenceMatches(row.sourceEvidenceVersion, row.sourceEvidenceHash, source.evidence);
 
 export async function requestTailoredResume(user, jobId, { regenerate = false, settings, dispatch = dispatchTailoredResumes } = {}) {
   const source = await context(user, jobId, { settings, requireResume: true });
@@ -74,7 +80,8 @@ export async function requestTailoredResume(user, jobId, { regenerate = false, s
   try {
     row = await TailoredResume.findOneAndUpdate({ _id: id, user: user._id, status: { $nin: activeResumeStatuses } }, {
       $set: { status: 'queued', phase: 'queued', ready: false, sourceResumeSha: source.resume.sha256, sourceJobHash: source.hash,
-        sourceBaseGenerationId: source.resume.preparation.generationId, error: '', attempts: 0, requestedAt: new Date() },
+        sourceBaseGenerationId: source.resume.preparation.generationId, sourceEvidenceVersion: source.evidence.version,
+        sourceEvidenceHash: source.evidence.hash, error: '', attempts: 0, requestedAt: new Date() },
       $setOnInsert: { user: user._id, job: jobId }, $inc: { revision: 1 }, $unset: { leaseOwner: 1, leaseUntil: 1, dispatchAt: 1 },
     }, { upsert: true, new: true, runValidators: true });
   } catch (error) {
@@ -111,7 +118,6 @@ export async function drainTailoredResumes({ generate, deadline = Date.now() + 3
   counts.attempted = 1;
   const lease = { _id: row._id, user: row.user, revision: row.revision, status: 'running', leaseOwner,
     sourceResumeSha: row.sourceResumeSha, sourceJobHash: row.sourceJobHash, sourceBaseGenerationId: row.sourceBaseGenerationId };
-  let artifact; let published = false;
   try {
     const settings = await SiteSettings.findOne().lean();
     const source = await context({ _id: row.user }, row.job, { settings, requireResume: true, withData: true });
@@ -121,45 +127,20 @@ export async function drainTailoredResumes({ generate, deadline = Date.now() + 3
     const { extractResumeSource } = await import('./resumeSource.js');
     const document = await extractResumeSource({ extension: source.resume.extension, data: artifactBytes(source.resume.data) });
     const output = await generate({ mode: 'tailored', source: document, baseLatex: artifactBytes(base.latex).toString('utf8'), facts: base.facts,
-      jobSnapshot: source.jobSnapshot }, { deadline, onPhase: async phase => {
+      jobSnapshot: source.jobSnapshot, candidateEvidence: source.evidence }, { deadline, onPhase: async phase => {
       await TailoredResume.updateOne({ ...lease, leaseUntil: { $gt: new Date() } }, { $set: { phase: String(phase).slice(0, 100) } });
     } });
     if (Date.now() >= deadline) throw tailoringError('Resume generation exceeded its time budget. Please retry.', 504);
     const fresh = await context({ _id: row.user }, row.job, { settings, requireResume: true });
     if (!matchesSource(fresh, row)) throw tailoringError('Your resume or this job changed. Generate a new version.', 409);
-    artifact = await createResumeArtifact({ user: row.user, job: row.job, kind: 'tailored', sourceResumeSha: row.sourceResumeSha,
-      sourceJobHash: row.sourceJobHash, sourceBaseGenerationId: row.sourceBaseGenerationId }, output);
-    const beforePublish = await context({ _id: row.user }, row.job, { settings, requireResume: true });
-    if (!matchesSource(beforePublish, row)) throw tailoringError('Your resume or this job changed. Generate a new version.', 409);
-    const completed = await TailoredResume.updateOne({ ...lease, leaseUntil: { $gt: new Date() } }, {
-      $set: { status: 'completed', phase: 'completed', ready: false, generationId: artifact._id, pageCount: artifact.pageCount,
-        outputFormat: 'latex-pdf', outputResumeSha: row.sourceResumeSha, outputJobHash: row.sourceJobHash,
-        outputBaseGenerationId: row.sourceBaseGenerationId, modelVersion: artifact.modelVersion, styleVersion: artifact.styleVersion,
-        error: '', generatedAt: new Date() }, $unset: { leaseOwner: 1, leaseUntil: 1 },
-    });
-    if (!completed.modifiedCount) throw tailoringError('This request changed. Please retry.', 409);
-    published = true;
-    const afterPublish = await context({ _id: row.user }, row.job, { settings, requireResume: true });
-    if (!matchesSource(afterPublish, row)) throw tailoringError('Your resume or this job changed. Generate a new version.', 409);
+    await publishGeneratedCv({ kind: 'tailored', row, lease, output, source: source.resume, document, evidence: source.evidence, jobSnapshot: source.jobSnapshot });
     counts.completed = 1;
   } catch (error) {
     counts.failed = 1;
     const errorMessage = error.statusCode ? error.message : 'Resume generation was interrupted or returned an invalid document. Please retry.';
-    if (published) {
-      const outputKeys = ['generationId', 'pageCount', 'outputFormat', 'outputResumeSha', 'outputJobHash', 'outputBaseGenerationId', 'modelVersion', 'styleVersion', 'generatedAt'];
-      const previous = Object.fromEntries(outputKeys.filter(key => row[key] !== undefined).map(key => [key, row[key]]));
-      const absent = Object.fromEntries(outputKeys.filter(key => row[key] === undefined).map(key => [key, 1]));
-      await TailoredResume.updateOne({ _id: row._id, user: row.user, revision: row.revision, generationId: artifact._id }, {
-        $set: { ...previous, status: 'failed', phase: 'failed', ready: false, error: errorMessage }, $unset: absent,
-      });
-      if (!await TailoredResume.exists({ user: row.user, generationId: artifact._id })) await deleteResumeArtifact(row.user, artifact._id);
-    } else {
-      await deleteResumeArtifact(row.user, artifact?._id);
-      await TailoredResume.updateOne({ ...lease, leaseUntil: { $gt: new Date() } }, { $set: { status: 'failed', phase: 'failed', ready: false, error: errorMessage }, $unset: { leaseOwner: 1, leaseUntil: 1 } });
-    }
+    await TailoredResume.updateOne({ ...lease, leaseUntil: { $gt: new Date() } }, { $set: { status: 'failed', phase: 'failed', ready: false, error: errorMessage }, $unset: { leaseOwner: 1, leaseUntil: 1 } });
     if (!await User.exists(activeResumeOwner(row.user))) await TailoredResume.deleteOne({ _id: row._id, user: row.user });
   }
-  if (counts.completed) await deleteResumeArtifact(row.user, row.generationId).catch(() => {});
   return counts;
 }
 

@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import mongoose from 'mongoose';
 import { fileURLToPath } from 'node:url';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import User from '../src/models/User.js';
 import Application from '../src/models/Application.js';
+import ApplicationEvent from '../src/models/ApplicationEvent.js';
 import { recordApplicationOpen } from '../src/services/applicationService.js';
 const mailbox = await import('../src/services/applicationMailboxService.js').catch(() => ({}));
 
@@ -12,12 +13,12 @@ test('Gmail read consent, acknowledgement deduplication, ambiguous review and di
   assert.equal(typeof mailbox.createMailboxAuthorization, 'function', 'Separate Gmail read authorization must be implemented');
   process.env.MONGOMS_RUNTIME_DOWNLOAD = 'false';
   process.env.GMAIL_TOKEN_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64');
-  const mongo = await MongoMemoryServer.create({ binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
+  const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 }, binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
   t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
   await mongoose.connect(mongo.getUri());
   const { default: Mailbox } = await import('../src/models/ApplicationMailbox.js');
   const { default: Message } = await import('../src/models/ApplicationMail.js');
-  await Promise.all([Mailbox.init(), Message.init(), Application.init()]);
+  await Promise.all([Mailbox.init(), Message.init(), Application.init(), ApplicationEvent.init()]);
   const user = { _id: new mongoose.Types.ObjectId(), email: 'candidate@example.test', sessionVersion: 0 };
   await User.collection.insertOne(user);
   let grant;

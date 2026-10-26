@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import User from '../src/models/User.js';
 import Job from '../src/models/Job.js';
 import Resume from '../src/models/Resume.js';
@@ -24,7 +24,7 @@ test('saved-job tailoring persists, isolates owners, retries and rejects stale g
   process.env.NODE_ENV = 'test';
   process.env.JWT_SECRET = 'tailoring-integration-test-secret-only';
   process.env.CORS_ORIGIN = 'http://localhost:5173';
-  const mongo = await MongoMemoryServer.create({ binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
+  const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 }, binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
   let server;
   t.after(async () => { if (server) await new Promise(resolve => server.close(resolve)); await mongoose.disconnect(); await mongo.stop(); });
   await mongoose.connect(mongo.getUri(), { dbName: 'resume_tailoring_test' });

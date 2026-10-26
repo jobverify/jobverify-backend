@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { createZohoNativeInventoryScraper } from '../../scraper-support/utils/zohoNativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -85,41 +86,15 @@ export const extractSearchResults = (payload) =>
     })
     .filter(Boolean)
 
-const defaultFetchJson = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'application/json,text/plain,*/*',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.json()
-}
-
 export const createCentilyticsScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchJson = options.fetchJson || defaultFetchJson
-    const payload = await fetchJson(buildApiUrl())
-    const listings = extractSearchResults(payload)
-    const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
+} = {}) => createZohoNativeInventoryScraper({
+  source: 'centilytics', company: 'Centilytics', nativeCompany: 'Centilytics', companyDomain: 'centilytics.com',
+  boardUrl: 'https://jobs.centilytics.com/jobs/Careers', orgId: '592387000000320468', pageId: '592387000000320936',
+  organizationType: 'staffing', employerClientName: 'Centilytics',
+}, { maxJobs: maxJobs ?? 0 })
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: 'centilytics',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
-})
-
-export const run = async () => createCentilyticsScraper().run()
+export const run = async (options = {}) => createCentilyticsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

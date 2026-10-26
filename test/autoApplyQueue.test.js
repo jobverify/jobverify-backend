@@ -2,19 +2,20 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import mongoose from 'mongoose';
 import { fileURLToPath } from 'node:url';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import User from '../src/models/User.js';
 import Application from '../src/models/Application.js';
+import ApplicationEvent from '../src/models/ApplicationEvent.js';
 const service = await import('../src/services/autoApplyService.js').catch(() => ({}));
 
 test('reviewed submissions bind the PDF, answers and owner, and never retry uncertain sends', { timeout: 90000 }, async t => {
   assert.equal(typeof service.createAutoApplyAttempt, 'function', 'A durable reviewed submission queue must exist');
   process.env.MONGOMS_RUNTIME_DOWNLOAD = 'false';
-  const mongo = await MongoMemoryServer.create({ binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
+  const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 }, binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
   t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
   await mongoose.connect(mongo.getUri());
   const { default: Attempt } = await import('../src/models/AutoApplyAttempt.js');
-  await Promise.all([Attempt.init(), Application.init()]);
+  await Promise.all([Attempt.init(), Application.init(), ApplicationEvent.init()]);
   const user = { _id: new mongoose.Types.ObjectId(), email: 'candidate@example.test', sessionVersion: 0 };
   await User.collection.insertOne(user);
   const jobId = new mongoose.Types.ObjectId();
@@ -67,6 +68,9 @@ test('reviewed submissions bind the PDF, answers and owner, and never retry unce
   outcome = 'blocked'; await service.processAutoApplyQueue(options);
   assert.equal((await Attempt.findById(third.id)).status, 'unconfirmed', 'An error after sending cannot prove the employer did not receive the application');
   const deletedJob = new mongoose.Types.ObjectId();
+  assert.equal(typeof service.cleanupInactiveAutoApplyData, 'function');
+  assert.equal(await service.cleanupInactiveAutoApplyData(user._id), false, 'An active candidate keeps their history');
+  assert.ok(await ApplicationEvent.countDocuments({ user: user._id }));
   await assert.rejects(service.createAutoApplyAttempt(user, String(deletedJob), { ...options, loadSource: async (...args) => {
     const source = await loadSource(...args);
     await User.deleteOne({ _id: user._id });
@@ -76,4 +80,6 @@ test('reviewed submissions bind the PDF, answers and owner, and never retry unce
   } }));
   assert.equal(await Attempt.countDocuments({ user: user._id }), 0, 'A preparation cannot restore a deleted account request');
   assert.equal(await Application.countDocuments({ user: user._id }), 0, 'A preparation cannot restore deleted application history');
+  assert.equal(await service.cleanupInactiveAutoApplyData(user._id), true);
+  assert.equal(await ApplicationEvent.countDocuments({ user: user._id }), 0, 'Inactive-account cleanup removes event history as well as application rows');
 });

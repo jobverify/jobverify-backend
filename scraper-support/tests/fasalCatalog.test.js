@@ -19,19 +19,19 @@ test('getScraperCatalog includes Fasal as a verified first-party Zoho careers pr
   )
   assert.equal(provider.atsPlatform, 'zohorecruit')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-api-request')
+  assert.equal(provider.paginationStrategy, 'native-board-api-full-array-and-closing-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-life-at-fasal+handoff-to-first-party-zoho-portal+public-job-openings-api',
+    'current-employer-handoff+exact-Wolkus-Fasal-native-organization+full-record-descriptions',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-10-26')
   assert.match(provider.modulePath, /fasal[\\/]script\.js$/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.fasal\.co\/life-at-fasal/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobs\.fasal\.co\/jobs\/Careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobs\.fasal\.co\/recruit\/v2\/public\/Job_Openings/i)
-  assert.match(provider.verifiedSurfaceSummary, /data\:\[\]/i)
+  assert.match(provider.verifiedSurfaceSummary, /Fasal careers page/i)
+  assert.match(provider.verifiedSurfaceSummary, /jobs\.fasal\.co/i)
+  assert.match(provider.verifiedSurfaceSummary, /Board\/API inventories/i)
+  assert.match(provider.verifiedSurfaceSummary, /closing snapshot/i)
 })
 
 test('generateCompanyCoverageReport resolves the exact backlog row Fasal without alias extensions', () => {

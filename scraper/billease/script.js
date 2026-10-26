@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createBillEaseNativeInventory } from './nativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -9,9 +9,6 @@ export const CAREERS_URL = 'https://billease.ph/careers/'
 export const CAREERS_BOARD_URL = 'https://billease.careers-page.com/'
 export const COMPANY = 'BillEase'
 export const SOURCE = 'billease'
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
@@ -237,21 +234,6 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
-  headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
 export const extractCurrentPayloadReference = (html) => {
   const page = String(html ?? '')
   if (!/<title>\s*Careers at Billease\s*\|\s*Join our team\s*<\/title>/i.test(page)
@@ -296,43 +278,7 @@ export const verifyCurrentNoIndiaInventory = (payload, expectedCount) => {
   return true
 }
 
-export const createBillEaseScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('BillEase careers page no longer matches the verified official public surface')
-    }
-
-    const currentPayload = extractCurrentPayloadReference(careersHtml)
-    if (currentPayload) {
-      verifyCurrentNoIndiaInventory(await fetchJson(currentPayload.url), currentPayload.count)
-      return []
-    }
-
-    const boardHtml = await fetchText(CAREERS_BOARD_URL)
-    if (!hasOfficialBoardSignal(boardHtml)) {
-      throw new Error('BillEase public Manatal board no longer matches the verified public surface')
-    }
-
-    const listings = extractListings(boardHtml)
-    const selectedListings = maxJobs ? listings.slice(0, maxJobs) : listings
-    const jobs = []
-
-    for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const job = extractJobDetail(detailHtml, listing)
-      jobs.push({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: now(),
-      })
-    }
-
-    return jobs
-  },
-})
+export const createBillEaseScraper = (options = {}) => createBillEaseNativeInventory(options)
 
 export const run = async (options = {}) => createBillEaseScraper().run(options)
 

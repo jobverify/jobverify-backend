@@ -551,36 +551,11 @@ test('smartData Enterprises extracts India openings from the verified first-part
   assert.match(jobs[1].jobDescription, /Spring Boot/i)
 })
 
-test('Civica India stays fail-closed while the exact workable handoff reports zero current openings', async () => {
+test('Civica India replaces its retired empty board with current full native India details', async () => {
   const civica = await loadModule('../../scraper/civicaindia/script.js')
-
-  assert.equal(civica.hasOfficialCareersSignal(civicaCareersHtml), true)
-  assert.equal(civica.hasZeroOpeningsSignal(civicaLlmsText), true)
-
-  const jobs = await civica.createCivicaIndiaScraper().run({
-    fetchText: async (url) => {
-      if (url === civica.CAREERS_URL) return civicaCareersHtml
-      if (url === civica.WORKABLE_LLMS_URL) return civicaLlmsText
-      throw new Error(`Unexpected Civica URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-
-  await assert.rejects(
-    civica.createCivicaIndiaScraper().run({
-      fetchText: async (url) => {
-        if (url === civica.CAREERS_URL) return civicaCareersHtml
-        if (url === civica.WORKABLE_LLMS_URL) {
-          return `
-            # Civica Careers
-            ## Open Positions
-            - All open roles (GET \`https://apply.workable.com/civica/jobs.md\`): 3 current openings
-          `
-        }
-        throw new Error(`Unexpected Civica URL: ${url}`)
-      },
-    }),
-    /zero-openings contract/i,
-  )
+  const { civicaNativeOptions } = await import('./fixtures/civicaNativeOptions.js')
+  const jobs = await civica.createCivicaIndiaScraper().run(civicaNativeOptions())
+  assert.equal(jobs.length, 15)
+  assert.ok(jobs.every(job => job.company === 'Civica' && job.country === 'India'))
+  await assert.rejects(civica.run({ fetchPage: async url => ({ status: 200, url, html: civicaCareersHtml }) }), /handoff/i)
 })

@@ -28,56 +28,18 @@ Powered by Workable
 test('extractJobsFromMarkdown parses Workable jobs.md content and understands an empty Finzly board', async () => {
   const finzly = await loadFinzlyModule()
 
-  assert.equal(finzly.BOARD_URL, 'https://apply.workable.com/finzly/')
-  assert.equal(finzly.JOBS_FEED_URL, 'https://apply.workable.com/finzly/jobs.md')
+  assert.equal(finzly.LEGACY_WORKABLE_BOARD_URL, 'https://apply.workable.com/finzly/')
+  assert.equal(finzly.LEGACY_WORKABLE_FEED_URL, 'https://apply.workable.com/finzly/jobs.md')
   assert.deepEqual(finzly.extractJobsFromMarkdown(emptyJobsMarkdown), [])
 })
 
-test('run returns no jobs for the current empty Finzly board and keeps India jobs when Workable feed entries appear', async () => {
+test('run follows the current native source and forwards caller time and limits', async () => {
   const finzly = await loadFinzlyModule()
-  const requestedUrls = []
-  const scrapedAt = new Date('2026-07-09T13:45:00.000Z')
-
-  const scraper = finzly.createFinzlyScraper({
-    now: () => scrapedAt,
-  })
-
-  const noJobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return emptyJobsMarkdown
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [finzly.JOBS_FEED_URL])
-  assert.deepEqual(noJobs, [])
-
-  const jobs = await scraper.run({
-    fetchText: async () => jobsMarkdownWithIndiaRole,
-  })
-
-  assert.deepEqual(jobs, [{
-    title: 'Senior Platform Engineer',
-    company: 'Finzly',
-    location: 'Bengaluru, Karnataka, India',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    country: 'India',
-    jobId: 'ABC123',
-    requisitionId: 'ABC123',
-    sourceUrl: 'https://apply.workable.com/finzly/j/ABC123/',
-    applyUrl: 'https://apply.workable.com/finzly/j/ABC123/',
-    department: null,
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: null,
-    source: 'finzly',
-    link: 'https://apply.workable.com/finzly/j/ABC123/',
-    scrapedAt: '2026-07-09T13:45:00.000Z',
-  }])
+  const { finzlyNativeOptions } = await import('./fixtures/finzlyNativeOptions.js')
+  const options = finzlyNativeOptions()
+  const jobs = await finzly.run({ ...options, maxJobs: 2 })
+  assert.equal(jobs.length, 2)
+  assert.equal(finzly.BOARD_URL, 'https://finzly.com/careers/')
+  assert.ok(jobs.every(job => job.country === 'India' && job.postingDate === null))
+  assert.equal(options.calls.filter(url => /\/wp-json\/wp\/v2\/pages\/\d+$/.test(url)).length, 14)
 })

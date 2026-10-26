@@ -9,6 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   tailor:
+    name: Prepare and tailor requested resumes
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

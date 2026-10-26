@@ -1,0 +1,12 @@
+{
+  "url": "https://www.att.jobs/search-jobs?acm=ALL&alrpm=1269750&ascf=%5B%7B%22key%22%3A%22ALL%22%2C%22value%22%3A%22%22%7D%5D",
+  "name": "india5",
+  "source": "att",
+  "at": "2026-10-25T17:22:59.365Z",
+  "status": 200,
+  "finalUrl": "https://www.att.jobs/search-jobs?acm=ALL&alrpm=1269750&ascf=%5B%7B%22key%22%3A%22ALL%22%2C%22value%22%3A%22%22%7D%5D",
+  "location": null,
+  "contentType": "text/html; charset=utf-8",
+  "bytes": 608342,
+  "elapsedMs": 2880
+}

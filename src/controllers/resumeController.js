@@ -1,11 +1,12 @@
 import Resume from '../models/Resume.js';
 import TailoredResume from '../models/TailoredResume.js';
-import ResumeArtifact from '../models/ResumeArtifact.js';
 import User from '../models/User.js';
 import { inspectResume, ResumeValidationError } from '../utils/resumeFile.js';
 import { respondWithInternalError } from '../utils/respondWithInternalError.js';
 import { resumeMetadata, requestResumePreparation, getBaseResumeArtifact } from '../services/resumePreparationService.js';
 import { artifactBytes } from '../services/resumeArtifactService.js';
+import { getCandidateEvidenceSnapshot } from '../services/candidateEvidenceService.js';
+import { retainLegacyCv, removeCvDocuments } from '../services/cvRevisionService.js';
 
 const metadata = resumeMetadata;
 const ownerFilter = user => ({ _id: user._id, user: user._id });
@@ -19,7 +20,7 @@ const failure = (res, error, message) => respondWithInternalError(res,
 export async function getResume(req, res) {
   try {
     const record = await Resume.findOne(ownerFilter(req.user)).lean();
-    return res.status(200).json({ success: true, data: metadata(record) });
+    return res.status(200).json({ success: true, data: metadata(record, record ? await getCandidateEvidenceSnapshot(req.user._id) : undefined) });
   } catch (error) {
     return failure(res, error, 'Could not load your resume.');
   }
@@ -38,13 +39,20 @@ export async function uploadResume(req, res) {
     for (let attempt = 0; attempt < 5 && !record; attempt++) {
       const current = await Resume.findOne(filter).lean();
       if (current?.sha256 === file.sha256) {
-        return res.status(200).json({ success: true, data: metadata(current) });
+        return res.status(200).json({ success: true, data: metadata(current,
+          current.preparation?.generationId ? await getCandidateEvidenceSnapshot(req.user._id) : undefined) });
+      }
+      if (current?.preparation?.generationId && !current.currentRevisionId) {
+        await retainLegacyCv(req.user, { kind: 'base' });
+        continue;
       }
       const update = { $set: { ...file, data: req.body, uploadedAt: new Date(),
         'preparation.status': 'unprepared', 'preparation.phase': '', 'preparation.error': '', 'preparation.ready': false,
         'preparation.sourceSha': file.sha256, 'preparation.attempts': 0 },
       $setOnInsert: { user: req.user._id }, $inc: { 'preparation.revision': 1 },
       $unset: { 'preparation.generationId': 1, 'preparation.outputResumeSha': 1, 'preparation.pageCount': 1,
+        currentRevisionId: 1, 'preparation.sourceEvidenceVersion': 1, 'preparation.sourceEvidenceHash': 1,
+        'preparation.outputEvidenceVersion': 1, 'preparation.outputEvidenceHash': 1,
         'preparation.generatedAt': 1, 'preparation.leaseOwner': 1, 'preparation.leaseUntil': 1,
         'preparation.dispatchAt': 1, 'preparation.requestedAt': 1, 'preparation.modelVersion': 1, 'preparation.styleVersion': 1 } };
       try {
@@ -63,7 +71,6 @@ export async function uploadResume(req, res) {
     // personal data after its deletion sweep has already passed this collection.
     if (!await User.exists(activeOwner(req.user))) {
       await Resume.deleteOne({ ...filter, sha256: file.sha256 });
-      await ResumeArtifact.deleteMany({ user: req.user._id, sourceResumeSha: file.sha256 });
       return res.status(409).json({ success: false, message: 'This account is unavailable for resume uploads.' });
     }
     if (previous) {
@@ -72,8 +79,6 @@ export async function uploadResume(req, res) {
         $set: { status: 'failed', phase: 'failed', ready: false, error: 'Your resume changed. Generate a new version.' },
         $inc: { revision: 1 }, $unset: { leaseOwner: 1, leaseUntil: 1 },
       });
-      if (previous.preparation?.generationId) await ResumeArtifact.deleteOne({ _id: previous.preparation.generationId,
-        user: req.user._id, kind: 'base', sourceResumeSha: previous.sha256 });
     }
     const data = await requestResumePreparation(req.user, { automatic: true, expectedSourceSha: file.sha256 });
     return res.status(200).json({ success: true, data });
@@ -98,11 +103,10 @@ export async function downloadResume(req, res) {
 
 export async function removeResume(req, res) {
   try {
-    await Resume.deleteOne(ownerFilter(req.user));
-    await TailoredResume.deleteMany({ user: req.user._id });
-    await ResumeArtifact.deleteMany({ user: req.user._id });
+    await removeCvDocuments(req.user);
     return res.status(200).json({ success: true, data: null });
   } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ success: false, message: error.message });
     return failure(res, error, 'Could not remove your resume. Please try again.');
   }
 }

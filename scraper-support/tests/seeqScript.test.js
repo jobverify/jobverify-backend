@@ -1,3 +1,5 @@
+import { emptyNativeOptions } from './fixtures/workableSourceOptions.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -80,7 +82,7 @@ test('Seeq helper exports stay pinned to the verified careers handoff, Workable 
   assert.equal(seeq.SOURCE, 'seeq')
   assert.equal(seeq.COMPANY, 'Seeq')
   assert.equal(seeq.OFFICIAL_BRAND_NAME, 'Seeq')
-  assert.equal(seeq.VERIFIED_ON, '2026-07-17')
+  assert.equal(seeq.VERIFIED_ON, '2026-10-26')
   assert.equal(seeq.HOMEPAGE_URL, 'https://www.seeq.com/')
   assert.equal(seeq.CAREERS_URL, 'https://www.seeq.com/careers/')
   assert.equal(seeq.WORKABLE_BOARD_URL, 'https://apply.workable.com/seeq/')
@@ -137,62 +139,22 @@ test('Seeq helper exports stay pinned to the verified careers handoff, Workable 
   ])
 })
 
-test('Seeq run returns [] while the verified Workable board remains live but exposes no India roles', async () => {
+test('Seeq factory reads complete native empty inventory through its current employer handoff', async () => {
   const seeq = await loadScriptModule()
-  const requestedTextUrls = []
-
-  const jobs = await seeq.createSeeqScraper({
-    now: () => '2026-07-17T12:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedTextUrls.push(url)
-      if (url === seeq.CAREERS_URL) return CAREERS_PAGE_HTML
-      if (url === seeq.WORKABLE_BOARD_URL) return WORKABLE_BOARD_HTML
-      if (url === seeq.JOBS_FEED_URL) return CURRENT_NON_INDIA_JOBS_MARKDOWN
-      throw new Error(`Unexpected Seeq URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedTextUrls, [
-    seeq.CAREERS_URL,
-    seeq.WORKABLE_BOARD_URL,
-    seeq.JOBS_FEED_URL,
-  ])
-  assert.deepEqual(jobs, [])
+  const opts = emptyNativeOptions('seeq', 'Seeq', '55c96070-dc05-4efb-baf3-3a71fbc4e6ee', seeq.CAREERS_URL, CAREERS_PAGE_HTML)
+  const jobs = await seeq.createSeeqScraper().run(opts)
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
 })
 
-test('Seeq fails closed when the verified first-party handoff, Workable board, or feed contract drifts', async () => {
+test('Seeq rejects current employer, native account and listing contract changes', async () => {
   const seeq = await loadScriptModule()
-
-  await assert.rejects(
-    seeq.createSeeqScraper().run({
-      fetchText: async (url) => {
-        if (url === seeq.CAREERS_URL) return '<html><body><h1>Unexpected</h1></body></html>'
-        throw new Error(`Unexpected Seeq URL: ${url}`)
-      },
-    }),
-    /verified first-party careers page/i,
-  )
-
-  await assert.rejects(
-    seeq.createSeeqScraper().run({
-      fetchText: async (url) => {
-        if (url === seeq.CAREERS_URL) return CAREERS_PAGE_HTML
-        if (url === seeq.WORKABLE_BOARD_URL) return '<html><body>Unexpected board</body></html>'
-        throw new Error(`Unexpected Seeq URL: ${url}`)
-      },
-    }),
-    /verified workable board/i,
-  )
-
-  await assert.rejects(
-    seeq.createSeeqScraper().run({
-      fetchText: async (url) => {
-        if (url === seeq.CAREERS_URL) return CAREERS_PAGE_HTML
-        if (url === seeq.WORKABLE_BOARD_URL) return WORKABLE_BOARD_HTML
-        return 'unexpected feed'
-      },
-    }),
-    /verified workable jobs feed/i,
-  )
+  const setup = () => emptyNativeOptions('seeq', 'Seeq', '55c96070-dc05-4efb-baf3-3a71fbc4e6ee', seeq.CAREERS_URL, CAREERS_PAGE_HTML)
+  await assert.rejects(seeq.createSeeqScraper().run({ ...setup(),
+    fetchPage: async url => ({ status: 200, url, html: '<h1>Unexpected</h1>' }),
+  }), /active full-board careers handoff/i)
+  await assert.rejects(seeq.createSeeqScraper().run({ ...setup(), fetchJson: async () => ({}) }), /reciprocal company website/i)
+  const opts = setup(), native = opts.fetchJson
+  opts.fetchJson = (url, init) => url.includes('/api/v3/') ? { results: [], total: 3 } : native(url, init)
+  await assert.rejects(seeq.createSeeqScraper().run(opts), /incomplete inventory count/i)
 })

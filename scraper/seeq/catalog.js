@@ -13,16 +13,16 @@ export const SEEQ_CATALOG = {
   workableBoardUrl: 'https://apply.workable.com/seeq/',
   jobsFeedUrl: 'https://apply.workable.com/seeq/jobs.md',
   companyDomain: 'seeq.com',
-  atsPlatform: 'first-party-handoff-workable',
+  atsPlatform: 'workable',
   countryFilter: 'India',
-  paginationStrategy: 'first-party-careers-handoff-plus-workable-markdown-feed',
+  paginationStrategy: 'unfiltered-native-cursor-exact-total',
   extractionStrategy:
-    'verified-first-party-careers-page+verified-workable-board+workable-markdown-feed+india-location-filter',
+    'current-employer-handoff+reciprocal-native-account+complete-india-details',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-10-26',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.seeq.com/careers/ is the official first-party Seeq careers page and that its "See Openings" CTA hands off to the public Workable board at https://apply.workable.com/seeq/. Verified the public board and markdown feed, including current public listings such as Staff Software Engineer - Platform and Principal Customer Success Manager, and confirmed that the verified public surface exposed no India roles on that date. The local provider therefore keeps exact-name coverage through the Workable feed with an India-only location filter.',
+    'On October 26, 2026, https://www.seeq.com/careers/ redirects to the canonical company/careers page and actively links https://apply.workable.com/seeq/. Runtime validates the reciprocal native account, complete unfiltered cursor inventory and full India details. Hidden native locations retain partial India scope; no current India-absence claim is made.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'seeq/jobs.json',
 }

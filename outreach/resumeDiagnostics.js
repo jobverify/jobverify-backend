@@ -1,3 +1,5 @@
+import { RESUME_LATEX_REASONS } from '../src/utils/resumeLatexValidation.js';
+
 // Public Actions logs must never contain candidate data or raw exception text.
 const failures = {
   processing_failed: 'Resume validation failed after one repair. Your previous successful version is unchanged. Please retry.',
@@ -21,6 +23,7 @@ const codes = new Set([...Object.keys(failures), 'started', 'passed']);
 
 export function safeResumeDiagnostic(event = {}) {
   const result = { stage: stages.has(event.stage) ? event.stage : 'worker', code: codes.has(event.code) ? event.code : 'processing_failed' };
+  if (result.stage === 'latex' && result.code === 'latex_invalid' && typeof event.reason === 'string' && Object.hasOwn(RESUME_LATEX_REASONS, event.reason)) result.reason = event.reason;
   for (const key of ['attempt', 'seconds', 'issueCount', 'inputTokens', 'outputTokens', 'pageCount']) {
     if (typeof event[key] === 'number' && Number.isFinite(event[key]) && event[key] >= 0 && event[key] <= 1000000) result[key] = Math.round(event[key] * 100) / 100;
   }

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import mongoose from 'mongoose';
 import AutoApplyAttempt from '../models/AutoApplyAttempt.js';
 import Application from '../models/Application.js';
+import ApplicationEvent from '../models/ApplicationEvent.js';
 import User from '../models/User.js';
 import SiteSettings from '../models/SiteSettings.js';
 import { APIError } from '../middleware/errorHandler.js';
@@ -15,6 +16,12 @@ export const autoApplyEnabled = () => process.env.AUTO_APPLY_ENABLED === 'true';
 const ownerFilter = (user, version) => ({ _id: user, deactivated: { $ne: true }, outreachDeletingAt: null, ...(version === undefined ? {} : { sessionVersion: version }) });
 async function requireOwner(user, version) {
   if (!await User.exists(ownerFilter(user, version))) throw new APIError(401, 'Your account or session is no longer active.');
+}
+
+export async function cleanupInactiveAutoApplyData(user) {
+  if (await User.exists({ _id: user, outreachDeletingAt: null })) return false;
+  await Promise.all([AutoApplyAttempt.deleteMany({ user }), Application.deleteMany({ user }), ApplicationEvent.deleteMany({ user })]);
+  return true;
 }
 const publicAttempt = row => row ? ({ id: row._id, jobId: String(row.job), status: row.status, provider: row.provider, url: row.url, title: row.title, company: row.company,
   generationId: row.generationId, reviewToken: row.reviewToken, fields: row.manifest?.fields || [], answers: row.answers || {},
@@ -63,8 +70,7 @@ export async function createAutoApplyAttempt(user, jobId, { enabled = autoApplyE
     await requireOwner(user._id, user.sessionVersion ?? 0);
     return publicAttempt(row);
   } catch (error) {
-    if (!await User.exists({ _id: user._id, outreachDeletingAt: null })) {
-      await Promise.all([AutoApplyAttempt.deleteMany({ user: user._id }), Application.deleteMany({ user: user._id })]);
+    if (await cleanupInactiveAutoApplyData(user._id)) {
       throw new APIError(401, 'Your account is no longer active.');
     }
     if (error.code === 11000) return publicAttempt(await AutoApplyAttempt.findOne({ _id: id, user: user._id }).lean());

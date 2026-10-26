@@ -179,7 +179,7 @@ export const JobSchema = new Schema(
         inputHash: String, reason: String, modelRevision: String, runtimeTag: String, policyVersion: String,
         queuedAt: Date, attemptedAt: Date, publishedAt: Date, nextAttemptAt: Date, attempts: Number,
         durationMs: Number, wordCount: Number,
-        quality: { method: String, factCoverage: Number, sourceFacts: Number, contentSections: Number, longestFactWords: Number, addedClaims: Number },
+        quality: { method: String, factCoverage: Number, sourceFacts: Number, sourceChunks: Number, contentSections: Number, longestFactWords: Number, addedClaims: Number },
       }, { _id: false }), default: undefined,
     },
     minimumQualification: { type: String, trim: true, default: null },

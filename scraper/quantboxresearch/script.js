@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -11,6 +12,7 @@ export const COMPANY = 'Quantbox Research'
 export const OFFICIAL_BRAND_NAME = 'Quantbox'
 export const VERIFIED_ON = '2026-08-04'
 export const CAREERS_URL = 'https://www.quantboxresearch.com/careers'
+export const APEX_CAREERS_URL = 'https://quantboxresearch.com/careers'
 export const GREENHOUSE_BOARD_URL = 'https://job-boards.eu.greenhouse.io/quantboxresearchpte'
 export const GREENHOUSE_JOBS_API_URL = 'https://boards-api.greenhouse.io/v1/boards/quantboxresearchpte/jobs'
 export const GREENHOUSE_JOBS_API_WITH_CONTENT_URL = `${GREENHOUSE_JOBS_API_URL}?content=true`
@@ -141,6 +143,18 @@ export const normalizeGreenhouseJobUrl = (value, jobId) => {
   }
 }
 
+const hasActiveGreenhouseHandoff = (html) => readNativeDocument(html)
+  .nodes((node) => node.tag === 'a' && node.attrs.href)
+  .some((node) => {
+    try {
+      const target = new URL(node.attrs.href, APEX_CAREERS_URL)
+      return !target.username && !target.password && !target.search && !target.hash
+        && target.href === GREENHOUSE_BOARD_URL
+    } catch {
+      return false
+    }
+  })
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeVisibleText(page)
@@ -152,7 +166,7 @@ export const hasOfficialCareersSignal = (html = '') => {
     && normalized.includes('current openings are listed below.')
     && normalized.includes("stay connected for what's next")
     && normalized.includes('quantbox recruiting messages will come through our official channels.')
-    && page.includes(GREENHOUSE_BOARD_URL)
+    && hasActiveGreenhouseHandoff(page)
 }
 
 export const extractJobsFromGreenhousePayload = (payload = {}) => {
@@ -201,14 +215,28 @@ export const extractJobsFromGreenhousePayload = (payload = {}) => {
     })
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { redirect } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  ...(redirect ? { redirect } : {}),
 })
+
+const isExpiredCertificateError = (error) => {
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+    if (current.code === 'CERT_HAS_EXPIRED') return true
+    current = current.cause
+  }
+
+  return false
+}
 
 const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   headers: {
@@ -222,7 +250,13 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 
 export const createQuantboxResearchScraper = () => ({
   async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (!isExpiredCertificateError(error)) throw error
+      careersHtml = await fetchText(APEX_CAREERS_URL, { redirect: 'error' })
+    }
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Quantbox Research careers page no longer matches the verified first-party public jobs surface')

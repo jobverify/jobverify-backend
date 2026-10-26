@@ -3,6 +3,9 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { extractAshbyJobs } from '../uipath/script.js'
+import { createAshbyApiScraper } from '../../scraper-support/utils/ashbyApi.js'
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { extractAshbyExperienceRequired } from '../../scraper-support/utils/ashbyExperience.js'
 
 import SISENSE_CATALOG from './catalog.js'
 
@@ -29,7 +32,8 @@ const normalizeWhitespace = (value) => String(value ?? '')
 
 const decodeHtml = (value) => normalizeWhitespace(value)
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -42,15 +46,11 @@ export const extractJobsFromAshbyPayload = (payload = {}) =>
   extractAshbyJobs(payload).map((job) => ({ ...job, company: COMPANY }))
 
 export const createSisenseScraper = () => ({
-  async run({ fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
-    const payload = await fetchJson(ASHBY_JOB_BOARD_URL)
-    const jobs = extractJobsFromAshbyPayload(payload)
-
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
+  async run({ fetchJson = defaultFetchJson, now = () => new Date().toISOString(), signal } = {}) {
+    const jobs = await createAshbyApiScraper({ source: SOURCE, companyName: COMPANY,
+      ashbyJobBoardUrl: ASHBY_JOB_BOARD_URL, now }).run({ fetchJson, signal })
+    return mapJobsWithInventoryEvidence(jobs, job => ({ ...job,
+      experienceRequired: extractAshbyExperienceRequired({ title: job.title, jobDescription: job.jobDescription }),
     }))
   },
 })

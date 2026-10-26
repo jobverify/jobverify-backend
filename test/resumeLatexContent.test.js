@@ -133,6 +133,43 @@ test('LaTeX validation accepts a complete standalone readable document', () => {
   assert.equal(validateLatexSource(latex), latex);
 });
 
+test('a single Markdown fence is removed without changing the LaTeX document', () => {
+  for (const label of ['latex', 'tex', '']) {
+    assert.equal(validateLatexSource(`\n\`\`\`${label}\r\n${latex}\r\n\`\`\`\n`), latex);
+  }
+});
+
+test('fence handling never extracts a document out of surrounding prose or skips validation', () => {
+  for (const value of [
+    `Here is your resume:\n\`\`\`latex\n${latex}\n\`\`\``,
+    `\`\`\`latex\n${latex}\n\`\`\`\nExplanation`,
+    `\`\`\`latex\n${latex}\n\`\`\`\n\`\`\`latex\n${latex}\n\`\`\``,
+    `\`\`\`latex\n${latex.replace('\\end{document}', '\\input{/etc/passwd}\\end{document}')}\n\`\`\``,
+    `\`\`\`latex\n${latex.replace('11pt', '9pt')}\n\`\`\``,
+  ]) assert.throws(() => validateLatexSource(value));
+});
+
+test('LaTeX rejection exposes a fixed reason and actionable feedback without candidate text', () => {
+  const cases = [
+    [null, 'size_or_encoding', /size|encoding/i],
+    [latex.replace('\\end{document}', ''), 'document_structure', /documentclass.*end\{document\}/s],
+    [latex.replace('11pt', '9pt'), 'font_size', /10pt/],
+    [latex.replace('\\begin{document}', '\\input{private-file}\\begin{document}'), 'unsupported_command', /remove/i],
+    [latex.replace('\\begin{document}', '\\makeatletter\\begin{document}'), 'tex_escape_hatch', /remove/i],
+    [latex.replace('{hyperref}', '{private-package}'), 'unsupported_package', /geometry.*hyperref/],
+    [latex.replace('mailto:asha@example.test', 'file:///private-file'), 'unsafe_link', /https?.*mailto.*tel/],
+  ];
+  for (const [value, reason, feedback] of cases) {
+    assert.throws(() => validateLatexSource(value), error => {
+      assert.equal(error.code, 'latex_invalid');
+      assert.equal(error.reason, reason);
+      assert.match(error.message, feedback);
+      assert.doesNotMatch(error.message, /asha@|private-file|private-package/);
+      return true;
+    });
+  }
+});
+
 test('LaTeX validation rejects external dependencies, TeX escape hatches and dangerous URI targets', () => {
   for (const injected of [String.raw`\input{/etc/passwd}`, String.raw`\includegraphics{https://evil.test/image}`, String.raw`\write18{curl evil.test}`, String.raw`\openout1=/tmp/file`, String.raw`\csname input\endcsname`, String.raw`\directlua{os.execute('id')}`, String.raw`\special{html:<script>}`, String.raw`\catcode0=12`, '^^5cinput{file}', String.raw`\href{javascript:alert(1)}{Portfolio}`, String.raw`\href{file:///etc/passwd}{File}`, String.raw`\usepackage{shellesc}`, String.raw`\makeatletter\@@input /etc/passwd`, String.raw`\ExplSyntaxOn\file_input:n{/etc/passwd}`, String.raw`\endlinechar=92`, String.raw`\addtocontents{/tmp/file}{text}`]) {
     assert.throws(() => validateLatexSource(latex.replace('\\end{document}', `${injected}\n\\end{document}`)), /unsafe|self.contained|unsupported|link|LaTeX/i, injected);

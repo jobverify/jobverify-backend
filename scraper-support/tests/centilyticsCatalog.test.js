@@ -14,7 +14,7 @@ test('getScraperCatalog includes Centilytics as a Zoho Recruit script provider',
   assert.equal(centilytics.adapter, 'script')
   assert.equal(centilytics.atsPlatform, 'zoho-recruit')
   assert.match(centilytics.companyCareerPage, /jobs\.centilytics\.com\/jobs\/Careers/i)
-  assert.equal(centilytics.companyDomain, 'jobs.centilytics.com')
+  assert.equal(centilytics.companyDomain, 'centilytics.com')
   assert.match(centilytics.modulePath, /centilytics[\\/]script\.js$/)
 })
 

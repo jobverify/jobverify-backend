@@ -1,3 +1,5 @@
+import { makeZohoFixture, zohoFixtureOptions } from './fixtures/zohoNativeOptions.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -45,11 +47,10 @@ test('Agilisium validators stay pinned to the verified careers handoff from Frid
   assert.equal(agilisium.hasVerifiedBoardSignal(boardHtml), true)
 })
 
-test('Agilisium run validates the verified careers page and board and stays fail-closed', async () => {
-  const agilisium = await loadModule()
-  const jobs = await agilisium.createAgilisiumScraper().run({
-    fetchText: async (url) => (url === agilisium.CAREERS_URL ? careersHtml : boardHtml),
-  })
-
-  assert.deepEqual(jobs, [])
+test('Agilisium factory recovers full native India details instead of returning an empty sentinel', async () => {
+  const agilisium = await loadModule(), data = makeZohoFixture('agilisium')
+  const jobs = await agilisium.createAgilisiumScraper().run(zohoFixtureOptions(data))
+  assert.equal(jobs.length, 1)
+  assert.match(jobs[0].jobDescription, /payment infrastructure/)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })

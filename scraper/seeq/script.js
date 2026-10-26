@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { createEmployerBoundWorkableScraper } from '../../scraper-support/utils/workableEmployerInventory.js'
 
 import { SEEQ_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -270,42 +271,13 @@ export const extractJobsFromMarkdown = (markdown = '') => {
 export const createSeeqScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    maxJobs: runMaxJobs,
-    now: runNow,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('Seeq verified first-party careers page no longer matches the trusted public surface')
-    }
+} = {}) => createEmployerBoundWorkableScraper({
+  source: SOURCE, company: COMPANY, tenant: 'seeq',
+  accountUid: '55c96070-dc05-4efb-baf3-3a71fbc4e6ee', careersUrl: CAREERS_URL,
+  canonicalCareersUrls: ['https://www.seeq.com/company/careers/'], companyDomain: 'seeq.com',
+}, { now, maxJobs: Number.isInteger(maxJobs) && maxJobs > 0 ? maxJobs : 0 })
 
-    const workableBoardHtml = await fetchText(WORKABLE_BOARD_URL)
-    if (!hasOfficialWorkableBoardSignal(workableBoardHtml)) {
-      throw new Error('Seeq verified Workable board no longer matches the trusted public surface')
-    }
-
-    const jobsFeed = await fetchText(JOBS_FEED_URL)
-    if (!hasOfficialJobsFeedSignal(jobsFeed)) {
-      throw new Error('Seeq verified Workable jobs feed no longer matches the trusted public surface')
-    }
-
-    const limit = Number.isInteger(runMaxJobs) ? runMaxJobs : maxJobs
-    const jobs = extractJobsFromMarkdown(jobsFeed)
-    const selectedJobs = limit ? jobs.slice(0, limit) : jobs
-    const scrapedAt = normalizeScrapedAt((runNow || now)())
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-    }))
-  },
-})
-
-export const run = async (options = {}) => createSeeqScraper().run(options)
+export const run = async (options = {}) => createSeeqScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -1,20 +1,21 @@
 import mongoose from 'mongoose';
-import Application from '../models/Application.js';
+import Application, { APPLICATION_STAGES } from '../models/Application.js';
 import TailoredResume from '../models/TailoredResume.js';
 import Job from '../models/Job.js';
-import { safeApplicationUrl, recordApplicationEvidence } from '../services/applicationService.js';
+import { safeApplicationUrl, recordApplicationEvidence, publicApplication } from '../services/applicationService.js';
 import { respondWithInternalError } from '../utils/respondWithInternalError.js';
 
 const PAGE_SIZE = 20;
 
 export async function getApplications(req, res) {
-  const { page: rawPage = '1', status = 'all' } = req.query ?? {};
+  const { page: rawPage = '1', status = 'all', stage = 'all' } = req.query ?? {};
   const page = Number(rawPage);
   if (typeof rawPage !== 'string' || !/^\d+$/.test(rawPage) || !Number.isSafeInteger(page) || page < 1 || page > 100000
-    || !['all', 'opened', 'applied'].includes(status)) {
+    || !['all', 'opened', 'applied'].includes(status) || !['all', ...APPLICATION_STAGES].includes(stage)) {
     return res.status(400).json({ success: false, message: 'Invalid application page or status.' });
   }
   try {
+    const filters = [...(status === 'all' ? [] : [{ $match: { status } }]), ...(stage === 'all' ? [] : [{ $match: { stage } }])];
     // Start with durable resume requests so even requests queued before this
     // feature appear without a migration or an employer-page click.
     const [result] = await TailoredResume.aggregate([
@@ -30,6 +31,8 @@ export async function getApplications(req, res) {
       { $project: {
         _id: { $ifNull: ['$application._id', { $concat: ['resume:', { $toString: '$job' }] }] },
         job: 1, status: { $ifNull: ['$application.status', 'opened'] },
+        stage: { $ifNull: ['$application.stage', { $cond: [{ $eq: ['$application.status', 'applied'] }, 'applied', 'preparing'] }] },
+        version: { $ifNull: ['$application.version', 0] },
         canConfirm: { $ne: [{ $ifNull: ['$application._id', null] }, null] },
         firstOpenedAt: { $ifNull: ['$application.firstOpenedAt', null] },
         appliedAt: { $ifNull: ['$application.appliedAt', null] },
@@ -53,14 +56,17 @@ export async function getApplications(req, res) {
         ], as: 'resume' } },
         { $match: { 'resume.0': { $exists: false } } },
         { $project: { job: 1, status: 1, firstOpenedAt: 1, appliedAt: 1, jobSnapshot: 1, evidence: 1, confirmationSource: 1,
-          canConfirm: { $literal: true }, trackedAt: '$firstOpenedAt' } },
+          stage: { $ifNull: ['$stage', { $cond: [{ $eq: ['$status', 'applied'] }, 'applied', 'preparing'] }] },
+          version: { $ifNull: ['$version', 0] }, canConfirm: { $literal: true }, trackedAt: { $ifNull: ['$firstOpenedAt', '$createdAt'] } } },
       ] } },
       { $facet: {
         items: [
-          ...(status === 'all' ? [] : [{ $match: { status } }]),
+          ...filters,
           { $sort: { trackedAt: -1, _id: -1 } }, { $skip: (page - 1) * PAGE_SIZE }, { $limit: PAGE_SIZE },
         ],
         counts: [{ $group: { _id: null, total: { $sum: 1 }, applied: { $sum: { $cond: [{ $eq: ['$status', 'applied'] }, 1, 0] } } } }],
+        stageCounts: [{ $group: { _id: '$stage', total: { $sum: 1 } } }],
+        filteredCounts: [...filters, { $count: 'total' }],
       } },
     ]);
     const { total = 0, applied = 0 } = result.counts[0] ?? {};
@@ -70,9 +76,10 @@ export async function getApplications(req, res) {
       applicationUrl: safeApplicationUrl(item.jobSnapshot),
     } }));
     const summary = { total, opened: total - applied, applied };
-    const filteredTotal = status === 'all' ? total : summary[status];
+    const filteredTotal = result.filteredCounts[0]?.total ?? 0;
+    const stageSummary = Object.fromEntries(APPLICATION_STAGES.map(name => [name, result.stageCounts?.find(row => row._id === name)?.total || 0]));
     return res.status(200).json({
-      success: true, data: items, summary,
+      success: true, data: items, summary, stageSummary,
       pagination: { page, limit: PAGE_SIZE, total: filteredTotal, totalPages: Math.max(1, Math.ceil(filteredTotal / PAGE_SIZE)) },
     });
   } catch (error) {
@@ -100,6 +107,6 @@ export async function getJobApplication(req, res) {
   if (!mongoose.isObjectIdOrHexString(req.params.jobId)) return res.status(400).json({ success: false, message: 'Invalid job ID.' });
   try {
     const data = await Application.findOne({ user: req.user._id, job: req.params.jobId }).lean();
-    return res.json({ success: true, data });
+    return res.json({ success: true, data: publicApplication(data) });
   } catch (error) { return respondWithInternalError(res, error, { message: 'Could not load your application.' }); }
 }

@@ -31,19 +31,14 @@ test('extractSearchResults returns no jobs when the live Centilytics public Zoho
   assert.deepEqual(jobs, [])
 })
 
-test('run fetches Centilytics public job openings and decorates shared runner fields', async () => {
-  const { API_URL, createCentilyticsScraper } = await loadCentilyticsModule()
-  const requests = []
-  const scraper = createCentilyticsScraper()
-
-  const jobs = await scraper.run({
-    fetchJson: async (url) => {
-      requests.push(url)
-      if (url === API_URL) return samplePayload
-      throw new Error(`Unexpected Centilytics URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requests, [API_URL])
-  assert.deepEqual(jobs, [])
+test('run reconciles the current Centilytics board and API before certifying empty inventory', async () => {
+  const { createCentilyticsScraper, API_URL } = await loadCentilyticsModule()
+  const { makeZohoFixture, zohoFixtureOptions } = await import('./fixtures/zohoNativeOptions.js')
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const data = makeZohoFixture('centilytics'); data.rows = []
+  const jobs = await createCentilyticsScraper().run(zohoFixtureOptions(data))
+  assert.equal(jobs.length, 0)
+  assert.equal(data.requests.filter(url => url === API_URL).length, 2)
+  assert.equal(data.requests.filter(url => url === data.spec.board).length, 2)
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
 })

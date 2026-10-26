@@ -187,7 +187,7 @@ test('smartData Enterprises local catalog captures the verified first-party inli
   await assertHydratedCatalogLoadsScript(provider)
 })
 
-test('Civica India local catalog captures the verified careers page plus zero-openings workable handoff', async () => {
+test('Civica India local catalog captures the verified current corporate handoff and full native Workable inventory', async () => {
   const { constant, defaultExport } = await loadCatalog(
     '../../scraper/civicaindia/catalog.js',
     'CIVICA_INDIA_CATALOG',
@@ -200,21 +200,21 @@ test('Civica India local catalog captures the verified careers page plus zero-op
   assert.equal(provider.officialBrandName, 'Civica')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.civica.com/en-in/about-us/careers/')
-  assert.equal(provider.workablePageUrl, 'https://apply.workable.com/civica/')
-  assert.equal(provider.workableLlmsUrl, 'https://apply.workable.com/civica/llms.txt')
+  assert.equal(provider.workablePageUrl, 'https://apply.workable.com/civica-uk-ltd-1/')
+  assert.equal(provider.nativeAccountUrl, 'https://apply.workable.com/api/v1/accounts/civica-uk-ltd-1')
   assert.equal(provider.companyDomain, 'civica.com')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-plus-workable-zero-openings-feed')
+  assert.equal(provider.atsPlatform, 'workable-native-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'civica-careers-page-plus-workable-llms-zero-openings-check')
+  assert.equal(provider.paginationStrategy, 'unfiltered-native-cursor-total-and-closing-snapshot-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-civica-india-careers-page+verified-workable-llms-zero-openings+fail-closed-sentinel',
+    'current-regional-corporate-handoff+exact-native-account-and-website+full-published-india-details',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-10-26')
   assert.match(provider.verifiedSurfaceSummary, /Our vacancies/i)
-  assert.match(provider.verifiedSurfaceSummary, /0 current openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /closing snapshot/i)
   assert.match(provider.verifiedSurfaceSummary, /civica-uk-ltd-1/i)
 
   assertBacklogRowMatches({

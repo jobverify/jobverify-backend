@@ -3,7 +3,10 @@ import test from 'node:test'
 import { readFileSync } from 'node:fs'
 import mongoose from 'mongoose'
 import Job from '../../src/models/Job.js'
-import { saveToDB } from '../utils/saveToDB.js'
+import { saveToDB as persistJobs } from '../utils/saveToDB.js'
+
+// These persistence fixtures stub MongoDB; transactional alert behavior has its own replica-set suite.
+const saveToDB = (jobs, source, options = {}) => persistJobs(jobs, source, { enqueueAlerts: false, ...options })
 import * as techjays from '../../scraper/techjays/script.js'
 const fixture = (name) => readFileSync(new URL('./fixtures/techjays/' + name, import.meta.url), 'utf8')
 const board = fixture('current-openings.html')

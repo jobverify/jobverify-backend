@@ -1,21 +1,22 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createFinzlyNativeInventory } from './nativeInventory.js'
+import { CAREERS_URL } from './nativeInventory.js'
+import { FINZLY_CATALOG } from './catalog.js'
+export { CAREERS_URL, HOMEPAGE_URL } from './nativeInventory.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-export const BOARD_URL = 'https://apply.workable.com/finzly/'
-export const JOBS_FEED_URL = 'https://apply.workable.com/finzly/jobs.md'
+export const PROVIDER_METADATA = FINZLY_CATALOG
+export const BOARD_URL = CAREERS_URL
+export const LEGACY_WORKABLE_BOARD_URL = 'https://apply.workable.com/finzly/'
+export const LEGACY_WORKABLE_FEED_URL = 'https://apply.workable.com/finzly/jobs.md'
 
 const COMPANY_NAME = 'Finzly'
 const SOURCE = 'finzly'
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  label: 'finzly workable feed',
-})
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\r/g, '')
@@ -112,35 +113,9 @@ export const extractJobsFromMarkdown = (markdown) => {
     }))
 }
 
-const normalizeScrapedAt = (value) => {
-  if (value instanceof Date) return value.toISOString()
-
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error('Invalid now() value supplied to Finzly scraper')
-  }
-
-  return parsed.toISOString()
-}
-
 export const createFinzlyScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  now = () => new Date(),
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const limit = Number.isInteger(options.maxJobs) ? options.maxJobs : maxJobs
-    const jobs = extractJobsFromMarkdown(await fetchText(JOBS_FEED_URL))
-    const selected = limit ? jobs.slice(0, limit) : jobs
-    const scrapedAt = normalizeScrapedAt((options.now || now)())
-
-    return selected.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-    }))
-  },
-})
+  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : 0,
+  now = () => new Date().toISOString(),
+} = {}) => createFinzlyNativeInventory({ maxJobs: maxJobs ?? 0, now })
 
 export const run = async (options = {}) => createFinzlyScraper().run(options)

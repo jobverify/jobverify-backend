@@ -29,17 +29,14 @@ Revisions, persisted leases, source hashes and job hashes prevent late writes af
 
 1. Keep TAILORED_RESUME_ACTIONS_ENABLED=false until validation is complete.
 2. Deploy workflows and worker code to the backend default branch. Configure backend GITHUB_REPO and GITHUB_PAT (repository Actions read/write), and repository Actions secret MONGO_URI. The database secret belongs only to the generation step. Review npm run db:indexes:plan and apply the new preparation-queue and ResumeArtifact owner indexes with the existing index tool before enabling generation.
-3. Run Resume Model Rollout Benchmark on the actual standard GitHub runner for AlgoShack, Visa and Elsevier. It uses synthetic facts without database access or secrets, compiles short/long/special-character fixtures, renders every PDF page and reports aggregate timings and validation. Factual, rendering, two-page or time-budget failures block rollout.
-4. Deploy API and frontend. In isolated QA accounts repeat upload/retry/replacement/removal and the three live job scenarios using the authorized resume. Visually inspect every PDF page and verify PDF.js previews and PDF/TeX downloads. Delete QA records afterward.
-5. Enable dispatch after these gates pass. Preparation and tailoring share persisted deduplication, recovery and TAILORED_RESUME_ACTIONS_MONTHLY_RUN_LIMIT (default10, maximum100). Each run can use up to30minutes; configure GitHub billing limits separately. Existing per-user tailoring allowance remains ten requests per UTC day.
+3. Deploy API and frontend. In isolated QA accounts repeat upload/retry/replacement/removal and preparation/tailoring for representative jobs using the authorized resume. Visually inspect every PDF page and verify PDF.js previews and PDF/TeX downloads. Delete QA records afterward.
+4. Enable dispatch after these gates pass. Preparation and tailoring share persisted deduplication, recovery and TAILORED_RESUME_ACTIONS_MONTHLY_RUN_LIMIT (default10, maximum100). Each run can use up to30minutes; configure GitHub billing limits separately. Existing per-user tailoring allowance remains ten requests per UTC day.
 
-Only immutable model/runtime archives and the trusted compiler image are cached. Resumes, prompts, TeX, PDFs and compiler logs are never cached or uploaded as Actions artifacts. Worker output contains aggregate counts only; benchmarks contain aggregate validation/timing evidence only.
+Only immutable model/runtime archives and the trusted compiler image are cached. Resumes, prompts, TeX, PDFs and compiler logs are never cached or uploaded as Actions artifacts. Worker output contains aggregate counts only.
 
 ## Validation
 
     node --test test/resume*.test.js test/tailoredResumeActionsWorker.test.js
     npm run lint
-    node scripts/verifyResumeCompiler.js
-    RESUME_BENCHMARK_SCENARIO=algoshack node scripts/benchmarkResumeModel.js
 
-Real compiler acceptance needs a running Linux container engine and network for its initial trusted image build. Model benchmarking needs Linux x64. Unit, Mongo and browser fixtures verify application behavior; they do not establish model quality or runner speed.
+Unit, Mongo and browser fixtures verify application behavior. Validate model quality, PDF rendering and runner speed through the preparation and tailoring QA flow before enabling generation.

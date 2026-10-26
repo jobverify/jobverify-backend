@@ -409,7 +409,7 @@
       "pagination": {
         "strategy": "single-page",
         "resultsPath": "jobs",
-        "hasMorePath": "hasMore"
+        "totalCountPath": "meta.total"
       },
       "mapping": {
         "title": "title",
@@ -424,7 +424,7 @@
         "include": [
           {
             "field": "location",
-            "pattern": "india"
+            "pattern": "\\bindia\\b"
           }
         ]
       }

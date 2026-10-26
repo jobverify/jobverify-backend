@@ -120,6 +120,12 @@ test('referral discovery does not reuse results cached under the previous hiring
   assert.notEqual(contextHash, oldHash);
 });
 
+test('Actions public email discovery invalidates the prior Hunter discovery cache policy', () => {
+  const { contextHash, ...context } = buildJobContext(job, { provider: 'actions' });
+  const previous = createHash('sha256').update(JSON.stringify({ policy: 'referrals-v2', provider: 'actions', ...context })).digest('hex');
+  assert.notEqual(contextHash, previous);
+});
+
 test('search explicitly uses one-credit basic search and never requests an AI answer', async () => {
   const result = await searchTavily(buildJobContext(job), { apiKey: 'fixture', fetchImpl: async (url, options) => {
     assert.equal(url, 'https://api.tavily.com/search');

@@ -10,6 +10,28 @@ const resolveAbortReason = (signal) => {
 
 const RETRY_METADATA = Symbol('jobverify.retryMetadata')
 
+const PERMANENT_CERTIFICATE_ERROR_CODES = new Set([
+  'CERT_HAS_EXPIRED',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'DEPTH_ZERO_SELF_SIGNED_CERT',
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+])
+
+const isPermanentCertificateError = (error) => {
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+    if (PERMANENT_CERTIFICATE_ERROR_CODES.has(current.code)) return true
+    current = current.cause
+  }
+
+  return false
+}
+
 export const getRetryMetadata = (value) => value?.[RETRY_METADATA] || {
   attemptsUsed: 1,
   retries: 0,
@@ -138,6 +160,8 @@ const buildRetryError = (
     }
   }
 
+  if (aborted) finalErr.abortRetries = true
+
   const resolvedCode = resolveErrorCode(lastError)
   if (resolvedCode) {
     finalErr.code = resolvedCode
@@ -195,7 +219,7 @@ export const withRetry = async (
       console.warn(`\n  [retry:${label}] Attempt ${attempt}/${attempts} failed`)
       console.warn(`  [retry:${label}] Error: ${describeError(err)}`)
 
-      if (err?.abortRetries === true) {
+      if (err?.abortRetries === true || isPermanentCertificateError(err)) {
         throw buildRetryError(label, attempt, attempts, err, { aborted: true, retryDelayMs })
       }
 

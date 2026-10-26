@@ -2,6 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createPublishingGapAtsScraper } from '../../scraper-support/utils/publishingGapAts.js'
+import { attachInventoryEvidence, mapJobsWithInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 import OLX_GROUP_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -70,13 +73,13 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    signal: createTimeoutSignal(15000),
+    signal: AbortSignal.any([...(signal ? [signal] : []), createTimeoutSignal(15000)]),
   })
 
   return {
@@ -86,7 +89,8 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, options) => fetchJsonWithRetry(url, {
+  ...options,
   headers: DEFAULT_JSON_HEADERS,
   label: SOURCE,
   timeoutMs: 15000,
@@ -126,11 +130,16 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /https:\/\/jobs\.eu\.lever\.co\/olx\/[0-9a-f-]{8,}/i.test(page)
 }
 
-export const extractVerifiedLeverBoardUrl = (html = '') => (
-  /https:\/\/jobs\.eu\.lever\.co\/olx(?:\/[0-9a-f-]{8,})?/i.test(String(html ?? ''))
-    ? LEVER_BOARD_URL
-    : null
-)
+const nativeLeverLinks = html => readNativeDocument(html).nodes(node => node.tag === 'a' && node.attrs.href)
+  .flatMap(node => {
+    try {
+      const url = new URL(node.attrs.href, CAREERS_PAGE_URL)
+      return url.origin === 'https://jobs.eu.lever.co' && !url.username && !url.password
+        && /^\/olx(?:\/[^/]+(?:\/apply)?)?\/?$/.test(url.pathname) ? [url] : []
+    } catch { return [] }
+  })
+
+export const extractVerifiedLeverBoardUrl = (html = '') => nativeLeverLinks(html).length ? LEVER_BOARD_URL : null
 
 export const hasOfficialLeverBoardSignal = (html = '') => {
   const page = String(html ?? '')
@@ -192,8 +201,11 @@ export const createOlxGroupScraper = ({
     fetchPage = defaultFetchPage,
     fetchJson = defaultFetchJson,
     now = defaultNow,
+    signal,
   } = {}) {
-    const careersPage = await fetchPage(CAREERS_PAGE_URL)
+    signal?.throwIfAborted()
+    const careersPage = await fetchPage(CAREERS_PAGE_URL, { signal })
+    signal?.throwIfAborted()
     if (
       Number(careersPage.status) !== 200
       || !sameUrl(careersPage.url, CAREERS_PAGE_URL)
@@ -207,7 +219,8 @@ export const createOlxGroupScraper = ({
       throw new Error('OLX Group verified official careers page handoff changed materially')
     }
 
-    const leverBoardPage = await fetchPage(LEVER_BOARD_URL)
+    const leverBoardPage = await fetchPage(LEVER_BOARD_URL, { signal })
+    signal?.throwIfAborted()
     if (
       Number(leverBoardPage.status) !== 200
       || !sameUrl(leverBoardPage.url, LEVER_BOARD_URL)
@@ -216,13 +229,29 @@ export const createOlxGroupScraper = ({
       throw new Error('OLX Group verified public Lever board changed materially')
     }
 
-    const payload = await fetchJson(LEVER_API_URL)
+    const payload = await fetchJson(LEVER_API_URL, { signal })
+    signal?.throwIfAborted()
     if (!Array.isArray(payload)) {
       throw new Error('OLX Group verified Lever payload changed materially')
     }
 
-    return extractLeverJobs(payload).map((job) => ({
+    const jobs = await createPublishingGapAtsScraper({ source: SOURCE, companyName: COMPANY,
+      companyCareerPage: CAREERS_PAGE_URL, atsPlatform: 'lever', boardToken: 'olx', leverRegion: 'eu',
+    }).run({ fetchJson: async () => payload, signal })
+    const advertisedIds = [...nativeLeverLinks(careersPage.html), ...nativeLeverLinks(leverBoardPage.html)]
+      .map(url => url.pathname.split('/').filter(Boolean)[1]).filter(Boolean)
+    if (advertisedIds.some(id => !payload.some(row => row.id === id))) {
+      attachInventoryEvidence(jobs, { ...readInventoryEvidence(jobs), status: 'discovery-only',
+        listingComplete: false, reason: 'olxgroup-official-role-links-not-reconciled' })
+      for (const job of jobs) job.sourceListingComplete = false
+    }
+    const byId = new Map(payload.map(row => [row.id, row]))
+    return mapJobsWithInventoryEvidence(jobs, (job) => ({
       ...job,
+      department: normalizeWhitespace(byId.get(job.jobId)?.categories?.team || byId.get(job.jobId)?.categories?.department),
+      city: extractCity(job.location),
+      postingDate: toIsoDateTime(byId.get(job.jobId)?.createdAt),
+      remoteStatus: toRemoteStatus(byId.get(job.jobId)?.workplaceType),
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),

@@ -1,0 +1,20 @@
+{
+  "name": "att-india-page2-64k",
+  "url": "https://www.att.jobs/search-jobs/results?ActiveFacetID=0&CurrentPage=2&RecordsPerPage=12&TotalContentResults=&Distance=50&RadiusUnitType=0&Keywords=&Location=&ShowRadius=False&IsPagination=False&CustomFacetName=&FacetTerm=&FacetType=0&FacetFilters%5B0%5D.ID=1269750&FacetFilters%5B0%5D.FacetType=2&FacetFilters%5B0%5D.Count=36&FacetFilters%5B0%5D.Display=India&FacetFilters%5B0%5D.IsApplied=true&FacetFilters%5B0%5D.FieldName=&SearchResultsModuleName=Search+Results&SearchFiltersModuleName=Search+Filters&SortCriteria=0&SortDirection=0&SearchType=6&PostalCode=&ResultsType=0&fc=&fl=&fcf=&afc=&afl=&afcf=&TotalContentPages=NaN",
+  "at": "2026-10-25T17:40:28.753Z",
+  "method": "GET",
+  "redirect": "manual",
+  "timeoutMs": 20000,
+  "maxHeaderSize": 65536,
+  "maxBodyBytes": 2097152,
+  "retries": 0,
+  "tls": "strict-system-ca-command-scoped-proxy",
+  "status": 200,
+  "finalUrl": "https://www.att.jobs/search-jobs/results?ActiveFacetID=0&CurrentPage=2&RecordsPerPage=12&TotalContentResults=&Distance=50&RadiusUnitType=0&Keywords=&Location=&ShowRadius=False&IsPagination=False&CustomFacetName=&FacetTerm=&FacetType=0&FacetFilters%5B0%5D.ID=1269750&FacetFilters%5B0%5D.FacetType=2&FacetFilters%5B0%5D.Count=36&FacetFilters%5B0%5D.Display=India&FacetFilters%5B0%5D.IsApplied=true&FacetFilters%5B0%5D.FieldName=&SearchResultsModuleName=Search+Results&SearchFiltersModuleName=Search+Filters&SortCriteria=0&SortDirection=0&SearchType=6&PostalCode=&ResultsType=0&fc=&fl=&fcf=&afc=&afl=&afcf=&TotalContentPages=NaN",
+  "location": null,
+  "contentType": "application/json; charset=utf-8",
+  "headerBytes": 21791,
+  "bytes": 45845,
+  "sha256": "0a4297555fb1bd1c22bb6c1577aebbbfa966a3c15a3ecd72c0a299a27fddba60",
+  "elapsedMs": 1068
+}

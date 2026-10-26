@@ -13,6 +13,38 @@ const readBundle=async bundle=>{
   return JSZip.loadAsync(Buffer.concat(chunks));
 };
 
+for(const stage of keys){
+  test(`${stage} combined download excludes every other stage`,async t=>{
+    const {createPipelineBundle}=await import('../src/pipeline/download.js');
+    const root=await fs.mkdtemp(path.join(os.tmpdir(),'pipeline-stage-test-'));
+    t.after(()=>fs.rm(root,{recursive:true,force:true}));
+    await fs.mkdir(path.join(root,'.cache/pipeline/logs'),{recursive:true});
+    for(const key of keys){
+      await fs.writeFile(path.join(root,'.cache/pipeline/logs',`${id}-${key}.log`),`${key} log`);
+      await fs.writeFile(path.join(root,'.cache/pipeline',`${id}-${key}.json`),'{}');
+    }
+    const bundle=await createPipelineBundle({_id:id,target:'local',status:'running',stages:keys.map(key=>({key,status:'completed',summary:{completed:7}}))},{root,stage});
+    t.after(bundle.cleanup);
+    const zip=await readBundle(bundle);
+    assert.ok(zip.file(`${stage}/logs.txt`));
+    assert.ok(zip.file(`${stage}/artifacts/summary.json`));
+    assert.ok(zip.file(`${stage}/stage-summary.json`));
+    assert.ok(Object.keys(zip.files).every(name=>name.startsWith(`${stage}/`)||['manifest.json','README.txt'].includes(name)));
+    const manifest=JSON.parse(await zip.file('manifest.json').async('string'));
+    assert.deepEqual(manifest.stages.map(entry=>entry.key),[stage]);
+    assert.equal(manifest.kind,'all');
+    assert.equal(manifest.snapshot,true);
+    assert.equal(bundle.filename,`pipeline-${id}-${stage}-${manifest.createdAt.replace(/[:.]/g,'-')}.zip`);
+  });
+}
+
+test('unsupported stage filters are rejected',async()=>{
+  const {createPipelineBundle}=await import('../src/pipeline/download.js');
+  for(const stage of ['invalid','../scraper','', ['scraper','rewrite']]){
+    await assert.rejects(createPipelineBundle({_id:id,target:'local',stages:[]},{stage}),{status:400});
+  }
+});
+
 for(const kind of ['logs','artifacts']){
   test(`${kind} download includes only the requested local resources`,async t=>{
     const {createPipelineBundle}=await import('../src/pipeline/download.js');
@@ -31,9 +63,9 @@ for(const kind of ['logs','artifacts']){
       assert.equal(Boolean(zip.file(`${key}/artifacts/summary.json`)),kind==='artifacts');
       assert.equal(Boolean(zip.file(`${key}/stage-summary.json`)),kind==='artifacts');
     }
-    assert.equal(bundle.filename,`pipeline-${id}-${kind}.zip`);
     const manifest=JSON.parse(await zip.file('manifest.json').async('string'));
     assert.equal(manifest.kind,kind);
+    assert.equal(bundle.filename,`pipeline-${id}-${kind}-${manifest.createdAt.replace(/[:.]/g,'-')}.zip`);
     assert.ok(manifest.stages.every(stage=>stage.unavailable.length===0));
   });
 
@@ -99,7 +131,7 @@ test('local streaming preserves UTF-8 and redacts secrets split across read chun
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'pipeline-download-stream-test-'));
   t.after(()=>fs.rm(root,{recursive:true,force:true}));
   await fs.mkdir(path.join(root,'.cache/pipeline/logs'),{recursive:true});
-  const text='a'.repeat(65533)+'ghp_crossChunkSecret123\n'+'Processed ✓\r\n'.repeat(10000)+'END';
+  const text='a'.repeat(65533)+'ghp_crossChunkSecret123\n'+'Processed âœ“\r\n'.repeat(10000)+'END';
   await fs.writeFile(path.join(root,'.cache/pipeline/logs',`${id}-scraper.log`),text);
   const bundle=await createPipelineBundle({_id:id,target:'local',status:'completed',stages:[{key:'scraper',status:'completed'}]},{root});
   t.after(bundle.cleanup);

@@ -160,7 +160,10 @@ test('createAshbyApiScraper fetches the configured board and decorates India job
   }).run({
     fetchJson: async (url) => {
       requestedUrls.push(url)
-      return ashbyPayload
+      return { ...ashbyPayload, jobs: ashbyPayload.jobs.map(job => ({ ...job,
+        jobUrl: job.jobUrl.replace('/example/', '/exampleco/'),
+        applyUrl: job.applyUrl.replace('/example/', '/exampleco/'),
+      })) }
     },
   })
 

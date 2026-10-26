@@ -9,12 +9,12 @@ concurrency:
   cancel-in-progress: false
 jobs:
   discover:
+    name: Find referral contacts
     if: vars.OUTREACH_ACTIONS_ENABLED == 'true' && vars.OUTREACH_ACTIONS_FREE_CONFIRMED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       MONGO_URI: ${{ secrets.MONGO_URI }}
-      HUNTER_API_KEY: ${{ secrets.HUNTER_API_KEY }}
       NODE_OPTIONS: '--use-system-ca'
     steps:
       - name: Record worker budget start

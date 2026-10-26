@@ -19,6 +19,25 @@ test('pipeline separately compares source claims and returns only validated docu
   assert.ok(result.facts);
 });
 
+test('the actual generation and independent audit consume confirmed candidate evidence and exclude unconfirmed inference', async () => {
+  const candidateEvidence = { version: 3, hash: 'test', experiences: [{ id: 'e1', kind: 'project', company: 'Personal', role: 'Latency monitor', summary: 'Built a service monitor', skills: ['Redis'] }],
+    achievements: [{ id: 'a1', experienceId: 'e1', claim: 'Reduced response latency by 25%', context: 'Redis cache', metrics: '25%', skills: ['Redis'], provenance: 'manual', confirmed: true },
+      { id: 'a2', claim: 'Invented quantum skill', skills: ['Quantum'], provenance: 'agent_inferred', confirmed: false }], skills: ['Redis', 'Quantum'] };
+  const evidenceText = `${source.text}\nPROJECTS\nLatency monitor | Personal\nBuilt a service monitor\nReduced response latency by 25%\nRedis cache\nSkills: Redis`;
+  const prompts = [];
+  const result = await processResumeDocument({ mode: 'base', source, candidateEvidence }, {
+    generate: async (prompt, options) => { prompts.push(prompt); return options.comparison ? supported : latex; },
+    compile: async () => ({ ...compiled, text: evidenceText }),
+  });
+  for (const prompt of prompts) {
+    assert.match(prompt, /Reduced response latency by 25%/);
+    assert.match(prompt, /Redis/);
+    assert.doesNotMatch(prompt, /Invented quantum skill|Quantum/);
+  }
+  assert.ok(result.facts.metrics.includes('25%'), 'evidence numbers participate in actual fidelity validation');
+  assert.ok(result.facts.skills.includes('Redis'));
+});
+
 test('one repair can fix pagination, with no unbounded model loop', async () => {
   let generations = 0, compilations = 0;
   const result = await processResumeDocument({ mode: 'tailored', source, baseLatex: latex, jobSnapshot: { title: 'Engineer' } }, {
@@ -94,4 +113,47 @@ test('a comparison without source evidence cannot publish a resume', async () =>
     generate: async (_prompt, options) => options.comparison ? JSON.stringify({ supported: true, missingFacts: [], unsupportedClaims: [] }) : latex,
     compile: async () => compiled,
   }), error => error.code === 'comparison_invalid');
+});
+
+test('a fenced model response reaches compilation and factual validation without a repair', async () => {
+  let generations = 0;
+  const result = await processResumeDocument({ mode: 'base', source }, {
+    generate: async (_prompt, options) => options.comparison ? supported : (generations++, `\`\`\`latex\n${latex}\n\`\`\``),
+    compile: async document => { assert.equal(document, latex); return compiled; },
+  });
+  assert.equal(generations, 1);
+  assert.equal(result.latex, latex);
+  assert.equal(result.pageCount, 2);
+});
+
+test('LaTeX rejection gives the repair specific guidance and public logs only a safe reason', async () => {
+  let generations = 0;
+  const events = [];
+  const result = await processResumeDocument({ mode: 'base', source }, {
+    onDiagnostic: event => events.push(event),
+    generate: async (prompt, options) => {
+      if (options.comparison) return supported;
+      if (++generations === 1) return latex.replace('\\begin{document}', '\\usepackage{private-package}\n\\begin{document}');
+      const feedback = JSON.parse(prompt.split('\n').at(-1));
+      assert.match(feedback.issues[0], /Remove.*packages.*geometry.*hyperref/i);
+      return latex;
+    },
+    compile: async document => { assert.equal(document, latex); return compiled; },
+  });
+  assert.equal(result.pageCount, 2);
+  assert.equal(generations, 2);
+  assert.ok(events.some(event => event.stage === 'latex' && event.code === 'latex_invalid' && event.reason === 'unsupported_package'));
+  assert.doesNotMatch(JSON.stringify(events), /alex@|private-package|documentclass/);
+});
+
+test('two invalid LaTeX outputs fail with safe reasons and never reach the compiler', async () => {
+  const events = [];
+  let generations = 0;
+  await assert.rejects(processResumeDocument({ mode: 'base', source }, {
+    onDiagnostic: event => events.push(event),
+    generate: async () => { generations++; return latex.replace('11pt', '9pt'); },
+    compile: async () => assert.fail('unreadable LaTeX must not compile'),
+  }), { code: 'latex_invalid' });
+  assert.equal(generations, 2);
+  assert.equal(events.filter(event => event.reason === 'font_size').length, 2);
 });

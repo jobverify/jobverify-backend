@@ -16,6 +16,13 @@ const workflows = [
 ];
 
 for (const { key, label } of workflows) {
+  test(`readable ${key} job names retain exact identity in step metadata`, async t => {
+    t.mock.method(globalThis, 'fetch', async () => Response.json({ jobs: [{
+      name: label, steps: [{ name: `${label} [dispatch:${stage.dispatchToken}]` }],
+    }] }));
+    assert.equal(await matchesGithubStage('owner/jobs', { id: 31, display_title: `${label} #31` }, { ...stage, key }, 'test-token'), true);
+  });
+
   test(`clean ${key} titles retain exact dispatch identity in job metadata`, async t => {
     const calls = [];
     t.mock.method(globalThis, 'fetch', async url => {
@@ -31,7 +38,7 @@ for (const { key, label } of workflows) {
       { name: `${label} [dispatch:other-token]` },
       { name: `${label} [dispatch:${stage.dispatchToken}-suffix]` },
       { name: `Other Stage [dispatch:${stage.dispatchToken}]` },
-      { name: label },
+      { name: label, steps: [{ name: `${label} [dispatch:${stage.dispatchToken}-suffix]` }, { name: `Other Stage [dispatch:${stage.dispatchToken}]` }] },
     ] }));
     assert.equal(await matchesGithubStage('owner/jobs', { id: 32, display_title: `${label} #32` }, { ...stage, key }, 'test-token'), false);
   });
@@ -56,6 +63,7 @@ test('workflow titles are readable while jobs preserve stage correlation', () =>
     const workflow = readFileSync(new URL(`../.github/workflows/${file}`, import.meta.url), 'utf8');
     assert.ok(workflow.includes("run-name: '" + label + " #${{ github.run_number }}'"));
     assert.ok(workflow.includes("format('" + label + " [dispatch:{0}]', inputs.dispatch_token)"));
+    assert.doesNotMatch(workflow, /^    name:.*dispatch_token/m);
   }
   const coordinator = readFileSync(new URL('../.github/workflows/pipeline-completion.yml', import.meta.url), 'utf8');
   assert.match(coordinator, /^name: Jobverify Pipeline Coordinator$/m);
@@ -92,7 +100,7 @@ for (const { key, label, file } of workflows) {
         { id: 39, display_title: `${label} #39`, status: 'completed', conclusion: 'failure' },
       ] });
       if (url.includes('/40/jobs')) return Response.json({ jobs: [{ name: `${label} [dispatch:unrelated]` }] });
-      if (url.includes('/39/jobs')) return Response.json({ jobs: [{ name: `${label} [dispatch:${stage.dispatchToken}]` }] });
+      if (url.includes('/39/jobs')) return Response.json({ jobs: [{ name: label, steps: [{ name: `${label} [dispatch:${stage.dispatchToken}]` }] }] });
       assert.fail(`Unexpected GitHub request: ${url}`);
     });
     await reconcileGithub(snapshot(), { token: 'test-token' });
@@ -127,7 +135,7 @@ for (const { key, label, file } of workflows) {
     t.mock.method(mongoose, 'connect', async () => {});
     t.mock.method(mongoose, 'disconnect', async () => {});
     t.mock.method(globalThis, 'fetch', async url => {
-      if (url.endsWith('/41/jobs?per_page=100')) return Response.json({ jobs: [{ name: `${label} [dispatch:${stage.dispatchToken}]` }] });
+      if (url.endsWith('/41/jobs?per_page=100')) return Response.json({ jobs: [{ name: label, steps: [{ name: `${label} [dispatch:${stage.dispatchToken}]` }] }] });
       if (url.endsWith('/actions/runs/41')) return Response.json({ id: 41, status: 'completed', conclusion: 'failure' });
       assert.fail(`Unexpected GitHub request: ${url}`);
     });

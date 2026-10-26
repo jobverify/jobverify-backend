@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachGreenhouseSourceEvidence } from '../../scraper-support/utils/greenhouseSourceEvidence.js'
+import { hasNativeIndiaLocation, selectGreenhouseLocation } from '../../scraper-support/utils/greenhouseLocations.js'
 
 import DATAIKU_CATALOG from './catalog.js'
 
@@ -43,20 +45,13 @@ const metadataIncludesIndia = (metadata = []) =>
     && /\bindia\b/i.test(String(entry?.value ?? '')))
 
 export const isIndiaJob = (job = {}) => {
-  const locationText = [
-    job?.location?.name,
-    ...(Array.isArray(job?.offices) ? job.offices.map((office) => office?.location ?? office?.name) : []),
-  ]
-    .filter(Boolean)
-    .join(' ')
-
-  return /\bindia\b/i.test(locationText) || metadataIncludesIndia(job.metadata)
+  return hasNativeIndiaLocation(selectGreenhouseLocation(job))
 }
 
 const inferCity = (locationName) => normalizeWhitespace(String(locationName ?? '').split(',')[0]) || null
 
 const mapJob = (job = {}) => {
-  const location = normalizeWhitespace(job?.location?.name)
+  const location = normalizeWhitespace(selectGreenhouseLocation(job))
   const sourceUrl = normalizeWhitespace(job?.absolute_url)
   const title = normalizeWhitespace(job?.title)
 
@@ -91,16 +86,19 @@ export const extractJobsFromGreenhousePayload = (payload = {}) =>
     .filter(Boolean)
 
 export const createDataikuScraper = () => ({
-  async run({ fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
+  async run({ fetchJson = defaultFetchJson, now = () => new Date().toISOString(), signal } = {}) {
+    signal?.throwIfAborted()
     const payload = await fetchJson(GREENHOUSE_API_URL)
     const jobs = extractJobsFromGreenhousePayload(payload)
 
-    return jobs.map((job) => ({
+    const decorated = jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
     }))
+    return attachGreenhouseSourceEvidence(decorated, { source: SOURCE, companyName: COMPANY,
+      companyCareerPage: CAREERS_URL, boardToken: 'dataiku', payload, signal })
   },
 })
 

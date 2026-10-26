@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachGreenhouseSourceEvidence, normalizeGreenhouseSourceRoleUrl } from '../../scraper-support/utils/greenhouseSourceEvidence.js'
+import { hasNativeIndiaLocation, selectGreenhouseLocation } from '../../scraper-support/utils/greenhouseLocations.js'
 
 import { SIGMA_COMPUTING_CATALOG } from './catalog.js'
 
@@ -77,21 +79,7 @@ const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
 export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?content=true`
 
 export const normalizeGreenhouseJobUrl = (value, jobId) => {
-  const canonicalJobId = normalizeWhitespace(jobId)
-  if (!canonicalJobId) return null
-
-  try {
-    const url = new URL(value)
-    const hostname = url.hostname.replace(/^www\./i, '').toLowerCase()
-    const pathname = url.pathname.replace(/\/+$/, '')
-
-    if (hostname !== 'job-boards.greenhouse.io') return null
-    if (pathname !== `/sigmacomputing/jobs/${canonicalJobId}`) return null
-
-    return `https://job-boards.greenhouse.io/sigmacomputing/jobs/${canonicalJobId}`
-  } catch {
-    return null
-  }
+  return normalizeGreenhouseSourceRoleUrl(value, { jobId, boardToken: 'sigmacomputing', companyCareerPage: CAREERS_URL })
 }
 
 export const hasOfficialCareersPageSignal = (html = '') => {
@@ -126,8 +114,8 @@ export const extractIndiaJobsFromGreenhousePayload = (
       throw new Error('Sigma Computing Greenhouse payload no longer exposes the verified Greenhouse detail route')
     }
 
-    const location = collectLocationValues(job).find((value) => hasIndiaMarker(value))
-    if (!location) return []
+    const location = selectGreenhouseLocation(job)
+    if (!hasNativeIndiaLocation(location)) return []
 
     return [{
       title,
@@ -167,10 +155,10 @@ export const createSigmaComputingScraper = () => ({
       throw new Error('Sigma Computing verified official careers page no longer matches the trusted public surface')
     }
 
-    return extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(buildGreenhouseJobsApiUrl(), { signal }),
-      { scrapedAt: now() },
-    )
+    const payload = await fetchJson(buildGreenhouseJobsApiUrl(), { signal })
+    const jobs = extractIndiaJobsFromGreenhousePayload(payload, { scrapedAt: now() })
+    return attachGreenhouseSourceEvidence(jobs, { source: SOURCE, companyName: COMPANY_NAME,
+      companyCareerPage: CAREERS_URL, boardToken: 'sigmacomputing', payload, signal, officialHtml: careersHtml })
   },
 })
 

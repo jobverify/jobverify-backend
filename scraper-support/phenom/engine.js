@@ -388,6 +388,8 @@ export const createPhenomScraper = ({
   targetCountry = 'India',
   defaultDetailEnrichmentBudgetMs = null,
   defaultDetailConcurrency = 1,
+  nativeConcatenatedStateCountry = false,
+  nativeBangaloreLocationAlias = false,
 }) => {
   const config = loadConfig(scraperDir)
 
@@ -461,8 +463,19 @@ export const createPhenomScraper = ({
     const state=normalizeWhitespace(value.state)
     if (state && !/^not location specific$/i.test(state) && !prefixAgrees(locationParts(state),region)) return {consistent:false,target:false}
     if (normalizeWhitespace(value.cityState) && !prefixAgrees(locationParts(value.cityState),fullPrefix)) return {consistent:false,target:false}
-    for(const [field,expected] of [[value.cityCountry,fullPrefix],[value.stateCountry,region]]) {
+    for(const [fieldName,expected] of [['cityCountry',fullPrefix],['stateCountry',region]]) {
+      const field = value[fieldName]
       if (!normalizeWhitespace(field)) continue
+      // NTT's current numeric-role feed serializes this redundant field as
+      // "IndiaIN-TN, ". The adapter opts into that exact native format only;
+      // explicit country, city, ISO state and the full office label above
+      // still have to agree, as do the other supplied office/schema fields.
+      const concatenatedIndiaState = nativeConcatenatedStateCountry && fieldName === 'stateCountry'
+        && country === 'India' && fullCountry === 'IN' && city && /^IN-[A-Z]{2}$/.test(state || '')
+        && region.length === 1 && region[0] === state.toLowerCase()
+        && normalizeWhitespace(value.cityState) && normalizeWhitespace(value.cityCountry)
+        && normalizeWhitespace(field) === country + state + ','
+      if (concatenatedIndiaState) continue
       const parts=locationParts(field)
       if (countryCode(parts.at(-1))!==fullCountry || !prefixAgrees(parts.slice(0,-1),expected)) return {consistent:false,target:false}
     }
@@ -490,7 +503,15 @@ export const createPhenomScraper = ({
     // An abbreviated native label is usable only alongside the same office's
     // explicit country and full label, with every short component equal.
     if (!shortCountry && (!countryCode(country) || !value.cityStateCountry)) return {consistent:false,target:false}
-    const consistent=prefixAgrees(shortPrefix,fullPrefix)
+    // Quest advertises Bangalore while its native office record spells the
+    // same city Bengaluru. Accept only that captured Karnataka/India label,
+    // with every other supplied office component already corroborated above.
+    const nativeBangaloreAlias = nativeBangaloreLocationAlias && countryCode(country) === 'IN'
+      && fullCountry === 'IN' && shortCountry === 'IN' && city?.normalize('NFC').toLowerCase() === 'bengaluru'
+      && fullPrefix.length === 2 && fullPrefix[0] === 'bengaluru' && fullPrefix[1] === 'karnataka'
+      && shortPrefix.length === 2 && shortPrefix[0] === 'bangalore' && shortPrefix[1] === fullPrefix[1]
+      && normalizeWhitespace(value.cityState) && normalizeWhitespace(value.cityCountry)
+    const consistent=prefixAgrees(shortPrefix,fullPrefix) || Boolean(nativeBangaloreAlias)
     return {consistent,target:consistent && fullCountry===countryCode(targetCountry)}
   }
   const detailLocationHasTarget = value => resolveDetailLocation(value).target
@@ -883,6 +904,14 @@ export const createPhenomScraper = ({
             const receiptKey = nativeDetailReceiptKey('phenom', source, baseUrl, listing,
               nativeListingSequences.get(listing), nativeListingCountries.get(listing))
             const cached = readNativeDetailReceipt(recovery, receiptKey)
+            // A continuation must advance past already inspected, unchanged
+            // roles. Keep terminal failures bound to the same exact listing
+            // and the existing short-lived recovery session; they never
+            // certify content, and transport failures remain uncached.
+            if (['identity-mismatch', 'missing-content'].includes(cached?.payload?.failureKind)) {
+              jobs[index].sourceDetailFailureKind = cached.payload.failureKind
+              continue
+            }
             const detailHtml = cached ? null : await requestWithSignal(getPage, listing.sourceUrl, detailSignal)
             const verifiedAt = cached?.fetchedAt ?? Date.now()
             const structured = cached ? cached.payload.structured : extractStructuredJobDetail(detailHtml)
@@ -951,11 +980,13 @@ export const createPhenomScraper = ({
                 || !expectedIds.includes(canonicalId) && !(matchingNativeSequence && canonicalId === listingSequence))
               || !targetDetailCountry) {
               jobs[index].sourceDetailFailureKind = 'identity-mismatch'
+              rememberNativeDetailReceipt(recovery, receiptKey, { failureKind: 'identity-mismatch' }, verifiedAt)
               continue
             }
             const detail = cached ? cached.payload.detail : extractJobDetail(detailHtml, listing)
             if (!hasSourceDescription(detail)) {
               jobs[index].sourceDetailFailureKind = 'missing-content'
+              rememberNativeDetailReceipt(recovery, receiptKey, { failureKind: 'missing-content' }, verifiedAt)
               continue
             }
             const enriched = { ...jobs[index] }

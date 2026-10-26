@@ -198,51 +198,21 @@ test('Haptik extracts India roles from the Freshteam board and enriches them fro
   })
 })
 
-test('Haptik run verifies the official careers page before scraping the Freshteam board and detail pages', async () => {
+test('Haptik runtime reconciles every native detail before applying an output cap', async () => {
   const haptik = await loadHaptikModule()
-  const requested = []
-
-  const jobs = await haptik.createHaptikScraper({ maxJobs: 2 }).run({
-    fetchText: async (url) => {
-      requested.push(url)
-      if (url === haptik.CAREERS_URL) return careersHtml
-      if (url === haptik.LISTING_URL) return boardHtml
-      if (url === 'https://haptik.freshteam.com/jobs/8RrzHwmKvc5h/software-engineer-backend') {
-        return backendDetailHtml
-      }
-      if (url === 'https://haptik.freshteam.com/jobs/XjoJUGgeIgji/software-engineer-backend-l3-python') {
-        return l3DetailHtml
-      }
-      if (url === 'https://haptik.freshteam.com/jobs/HVivFopqkiC1/voice-ai-engineer-hybrid') {
-        return voiceDetailHtml
-      }
-      if (url === 'https://haptik.freshteam.com/jobs/us0000000001/global-alliances-manager') {
-        return usDetailHtml
-      }
-      throw new Error(`Unexpected Haptik fixture URL: ${url}`)
-    },
-    now: () => '2026-07-16T00:00:00.000Z',
-  })
-
-  assert.deepEqual(requested, [
-    haptik.CAREERS_URL,
-    haptik.LISTING_URL,
-    'https://haptik.freshteam.com/jobs/8RrzHwmKvc5h/software-engineer-backend',
-    'https://haptik.freshteam.com/jobs/XjoJUGgeIgji/software-engineer-backend-l3-python',
-  ])
+  const { haptikNativeOptions } = await import('./fixtures/haptikNativeOptions.js')
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const settings = haptikNativeOptions(), jobs = await haptik.createHaptikScraper({ maxJobs: 2 }).run(settings)
   assert.equal(jobs.length, 2)
+  assert.equal(settings.calls.length, 19)
   assert.equal(jobs[0].source, 'haptik')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].scrapedAt, '2026-07-16T00:00:00.000Z')
+  assert.equal(jobs[0].scrapedAt, settings.now())
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
 })
 
-test('Haptik fails closed when the verified careers handoff drifts materially', async () => {
+test('Haptik fails closed when the current active careers handoff disappears', async () => {
   const haptik = await loadHaptikModule()
-
-  await assert.rejects(
-    haptik.createHaptikScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-    }),
-    /verified Haptik careers page/i,
-  )
+  await assert.rejects(haptik.createHaptikScraper().run({
+    fetchPage: async url => ({ status: 200, url, html: '<html><h1>Unexpected</h1></html>' }),
+  }), /active first-party careers handoff/)
 })

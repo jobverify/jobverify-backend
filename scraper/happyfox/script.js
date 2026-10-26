@@ -1,10 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { HAPPYFOX_CATALOG } from './catalog.js'
+import { createHappyFoxNativeInventory } from './nativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -14,7 +14,7 @@ export const SOURCE = HAPPYFOX_CATALOG.source
 export const COUNTRY_FILTER = HAPPYFOX_CATALOG.countryFilter
 export const JOBS_HUB_URL = HAPPYFOX_CATALOG.officialJobsHubUrl
 export const INDIA_CITY_PAGE_URLS = HAPPYFOX_CATALOG.indiaCityPageUrls
-export const TRAKSTAR_JOBS_HOST = HAPPYFOX_CATALOG.trakstarJobsHost
+export const TRAKSTAR_JOBS_HOST = HAPPYFOX_CATALOG.legacyTrakstarJobsHost
 export const HIRING_JOBS_HOST = 'https://hiring.happyfox.co'
 export const VERIFIED_ON = HAPPYFOX_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = HAPPYFOX_CATALOG.verifiedSurfaceSummary
@@ -29,9 +29,6 @@ const INDIA_CITY_LABELS = INDIA_CITY_PAGE_URLS.map((value) => {
     return null
   }
 }).filter(Boolean)
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
@@ -223,15 +220,6 @@ const isTrackedDetailUrl = (value) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
 export const extractIndiaCityPageUrls = (html) => unique(
   [...String(html ?? '').matchAll(/<a[^>]+href="([^"]+)"/gi)]
     .map((match) => toAbsoluteUrl(match[1], JOBS_HUB_URL))
@@ -421,48 +409,7 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-export const createHappyFoxScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const now = options.now || (() => new Date().toISOString())
-    const jobsHubHtml = await fetchText(JOBS_HUB_URL)
-
-    if (!hasOfficialJobsHubSignal(jobsHubHtml)) {
-      throw new Error('The verified HappyFox jobs hub no longer matches the trusted public surface')
-    }
-
-    const listings = []
-    for (const cityPageUrl of INDIA_CITY_PAGE_URLS) {
-      const cityHtml = await fetchText(cityPageUrl)
-      if (!hasCityListingSignal(cityHtml)) {
-        throw new Error(`HappyFox city listings page drifted from the verified surface: ${cityPageUrl}`)
-      }
-
-      listings.push(...extractListingCards(cityHtml, cityPageUrl))
-    }
-
-    const selectedListings = Number.isInteger(maxJobs) ? listings.slice(0, maxJobs) : listings
-    const jobs = []
-
-    for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.detailUrl)
-      if (!hasOfficialJobDetailSignal(detailHtml)) {
-        throw new Error(`HappyFox job detail drifted from the verified first-party surface: ${listing.detailUrl}`)
-      }
-
-      jobs.push({
-        ...extractJobDetail(detailHtml, listing),
-        source: SOURCE,
-        link: listing.detailUrl,
-        scrapedAt: now(),
-      })
-    }
-
-    return jobs
-  },
-})
+export const createHappyFoxScraper = (options = {}) => createHappyFoxNativeInventory({ maxJobs: Number.isInteger(config.maxJobs) ? config.maxJobs : 0, ...options })
 
 export const run = async (options = {}) => createHappyFoxScraper().run(options)
 

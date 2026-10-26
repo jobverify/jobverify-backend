@@ -912,7 +912,7 @@ test('hydrateProviderCatalogEntry prefers the official company career page when 
   assert.match(provider.dryRunFile, /example-workday\.workday[\\/]jobs\.json$/)
 })
 
-test('getScraperCatalog includes apiPortal providers with official metadata and config-driven dry-run files', () => {
+test('getScraperCatalog includes API and native providers with official metadata and dry-run files', () => {
   const catalog = getScraperCatalog()
   const amd = catalog.find((provider) => provider.source === 'amd')
   const cloudflare = catalog.find((provider) => provider.source === 'cloudflare')
@@ -937,10 +937,12 @@ test('getScraperCatalog includes apiPortal providers with official metadata and 
   assert.match(amd.dryRunFile, /amd[\\/]jobs\.json$/)
 
   assert.ok(cloudflare)
-  assert.equal(cloudflare.adapter, 'apiPortal')
+  assert.equal(cloudflare.adapter, 'script')
   assert.equal(cloudflare.atsPlatform, 'greenhouse')
   assert.match(cloudflare.companyCareerPage, /cloudflare\.com\/careers/i)
   assert.equal(cloudflare.companyDomain, 'cloudflare.com')
+  assert.equal(cloudflare.parser, 'cloudflare-native-greenhouse-locations')
+  assert.match(cloudflare.modulePath, /cloudflare[\\/]script\.js$/)
   assert.match(cloudflare.config.discovery.listingApiUrl, /boards-api\.greenhouse\.io\/v1\/boards\/cloudflare\/jobs/i)
 
   assert.ok(cred)
@@ -1021,7 +1023,7 @@ test('getScraperCatalog includes apiPortal providers with official metadata and 
   assert.match(twilio.config.discovery.listingApiUrl, /jobs\.twilio\.com\/api\/pcsx\/search/i)
 })
 
-test('buildScrapers exposes a runnable apiPortal scraper without changing the runner contract', () => {
+test('buildScrapers exposes runnable API and native scrapers through the runner contract', () => {
   const scrapers = buildScrapers()
   const amd = scrapers.find((scraper) => scraper.name === 'amd')
   const cloudflare = scrapers.find((scraper) => scraper.name === 'cloudflare')
@@ -1045,8 +1047,8 @@ test('buildScrapers exposes a runnable apiPortal scraper without changing the ru
 
   assert.ok(cloudflare)
   assert.equal(typeof cloudflare.run, 'function')
-  assert.equal(cloudflare.provider.adapter, 'apiPortal')
-  assert.equal(cloudflare.provider.parser, 'api-portal')
+  assert.equal(cloudflare.provider.adapter, 'script')
+  assert.equal(cloudflare.provider.parser, 'cloudflare-native-greenhouse-locations')
   assert.match(cloudflare.provider.companyCareerPage, /cloudflare\.com\/careers/i)
 
   assert.ok(cred)

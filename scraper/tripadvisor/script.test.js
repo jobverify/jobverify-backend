@@ -56,12 +56,12 @@ test('Tripadvisor scraper requests the official Greenhouse API and adds run meta
   const jobs = await createTripadvisorScraper().run({
     fetchJson: async (url) => {
       assert.equal(url, GREENHOUSE_API_URL)
-      return { jobs: [{ id: 1, title: 'India role', location: { name: 'India' }, absolute_url: 'https://example.test/1' }] }
+      return { jobs: [{ id: 1, title: 'India role', location: { name: 'India' }, absolute_url: 'https://job-boards.greenhouse.io/tripadvisor/jobs/1' }] }
     },
     now: () => '2026-07-25T12:00:00.000Z',
   })
 
   assert.equal(jobs[0].source, 'tripadvisor')
-  assert.equal(jobs[0].link, 'https://example.test/1')
+  assert.equal(jobs[0].link, 'https://job-boards.greenhouse.io/tripadvisor/jobs/1')
   assert.equal(jobs[0].scrapedAt, '2026-07-25T12:00:00.000Z')
 })

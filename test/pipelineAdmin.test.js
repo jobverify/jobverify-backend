@@ -66,18 +66,28 @@ test('pipeline API authorizes configuration, exact dispatch, tracking and confli
  assert.equal((await request('scrape/trigger',{method:'POST'})).status,410);
  const downloaded=await nativeFetch(`http://127.0.0.1:${server.address().port}/api/admin/pipeline/runs/${run._id}/download`,{headers:{Authorization:'Bearer '+jwt.sign({id:'admin'},process.env.JWT_SECRET)}});
  assert.equal(downloaded.status,200);assert.match(downloaded.headers.get('content-type'),/application\/zip/);
- assert.match(downloaded.headers.get('content-disposition'),new RegExp(`pipeline-${run._id}\\.zip`));
+ assert.match(downloaded.headers.get('content-disposition'),new RegExp(`pipeline-${run._id}-[0-9TZ-]+\\.zip`));
  assert.equal(downloaded.headers.get('cache-control'),'no-store');
  const archive=await JSZip.loadAsync(await downloaded.arrayBuffer());
  assert.equal(JSON.parse(await archive.file('manifest.json').async('string')).pipelineId,run._id);
  for(const kind of ['logs','artifacts']){
   const response=await nativeFetch(`http://127.0.0.1:${server.address().port}/api/admin/pipeline/runs/${run._id}/download?kind=${kind}`,{headers:{Authorization:'Bearer '+jwt.sign({id:'admin'},process.env.JWT_SECRET)}});
   assert.equal(response.status,200);
-  assert.ok(response.headers.get('content-disposition').includes(`pipeline-${run._id}-${kind}.zip`));
+  assert.match(response.headers.get('content-disposition'),new RegExp(`pipeline-${run._id}-${kind}-[0-9TZ-]+\\.zip`));
   const zip=await JSZip.loadAsync(await response.arrayBuffer());
   assert.equal(JSON.parse(await zip.file('manifest.json').async('string')).kind,kind);
  }
  assert.equal((await request(`pipeline/runs/${run._id}/download?kind=invalid`)).status,400);
+ for(const stage of ['scraper','rewrite','classification']){
+  const response=await nativeFetch(`http://127.0.0.1:${server.address().port}/api/admin/pipeline/runs/${run._id}/download?stage=${stage}`,{headers:{Authorization:'Bearer '+jwt.sign({id:'admin'},process.env.JWT_SECRET)}});
+  assert.equal(response.status,200);
+  assert.match(response.headers.get('content-disposition'),new RegExp(`pipeline-${run._id}-${stage}-[0-9TZ-]+\\.zip`));
+  const zip=await JSZip.loadAsync(await response.arrayBuffer());
+  const manifest=JSON.parse(await zip.file('manifest.json').async('string'));
+  assert.deepEqual(manifest.stages.map(entry=>entry.key),[stage]);
+  assert.equal(manifest.kind,'all');
+ }
+ assert.equal((await request(`pipeline/runs/${run._id}/download?stage=invalid`)).status,400);
  await failPipeline(run._id,'cancelled','Test cleanup');
 });
 

@@ -30,7 +30,7 @@ export function employerDomain(job) {
 }
 export function buildJobContext(job, { provider = discoveryProvider() } = {}) {
   const context = { title: text(job.title, 1000), company: text(job.company, 500), companyDomain: employerDomain(job), department: text(job.department, 500), location: text(job.location, 2000), description: text(job.sourceDescription || job.description, 24000), jobUrl: safePublicUrl(job.applyUrl) || safePublicUrl(job.sourceUrl) || '' };
-  return { ...context, contextHash: createHash('sha256').update(JSON.stringify({ policy: DISCOVERY_POLICY, provider, ...context })).digest('hex') };
+  return { ...context, contextHash: createHash('sha256').update(JSON.stringify({ policy: provider === 'actions' ? 'referrals-v3-public-email' : DISCOVERY_POLICY, provider, ...context })).digest('hex') };
 }
 export const jobSnapshot = context => Object.fromEntries(['title', 'company', 'companyDomain', 'location', 'jobUrl'].map(key => [key, context[key]]));
 

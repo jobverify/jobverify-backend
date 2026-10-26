@@ -12,6 +12,7 @@ import { buildJobContext, discoveryProvider, jobSnapshot, groundedContacts, sear
 import { dayKey, monthKey, outreachError, reserveUsage, recordUsage } from './outreachUsage.js';
 import { githubRequest } from '../pipeline/github.js';
 import { applyPublicJobVisibility } from '../utils/publicJobVisibility.js';
+import { findPublicReferralEmail } from '../../outreach/referralSearch.js';
 
 const DAY = 86400000;
 const validId = value => typeof value === 'string' && isValidObjectId(value);
@@ -93,7 +94,7 @@ export async function requestDiscovery(user, { jobId, refresh = false }, { sched
 }
 
 /** Called only for an explicit, persisted request, including recovery of interrupted requests. */
-export async function processDiscoveryTask(id, { provider = 'tavily', search = searchTavily, rankContacts, findEmail = findHunterEmail, now = new Date(), deadline = Date.now() + 150000 } = {}) {
+export async function processDiscoveryTask(id, { provider = 'tavily', search = searchTavily, rankContacts, findEmail = provider === 'actions' ? findPublicReferralEmail : findHunterEmail, now = new Date(), deadline = Date.now() + 150000 } = {}) {
   if (provider === 'actions' && (search === searchTavily || typeof rankContacts !== 'function')) throw outreachError('Referral discovery requires its Actions search and ranking worker.', 503);
   const owner = randomUUID();
   const task = await OutreachTask.findOneAndUpdate({ _id: id, kind: 'discovery', 'input.provider': provider === 'actions' ? 'actions' : { $ne: 'actions' }, ready: true, attempts: { $lt: 3 }, $or: [{ status: 'queued' }, { status: 'running', leaseUntil: { $lt: now } }] }, { $set: { status: 'running', leaseOwner: owner, leaseUntil: new Date(now.getTime() + 3 * 60000) }, $inc: { attempts: 1 } }, { new: true }).select('+input +leaseOwner').lean();
@@ -125,14 +126,21 @@ export async function processDiscoveryTask(id, { provider = 'tavily', search = s
     if (!await User.exists({ _id: task.user, deactivated: { $ne: true }, outreachDeletingAt: null })) { await OutreachTask.deleteOne({ _id: task._id, user: task.user }); return null; }
     for (const contact of contacts) {
       if (!context.companyDomain || deadline - Date.now() <= 1000) continue;
-      const key = createHash('sha256').update(`${context.companyDomain}:${contact.name.toLocaleLowerCase()}`).digest('hex');
-      const cachedEmail = await OutreachEmailCache.findOne({ key, expiresAt: { $gt: now } }).lean();
-      if (cachedEmail) { Object.assign(contact, { email: cachedEmail.email, emailStatus: cachedEmail.emailStatus }); continue; }
-      if (!process.env.HUNTER_API_KEY && findEmail === findHunterEmail) continue;
+      const publicEmail = provider === 'actions';
+      const key = createHash('sha256').update(`${publicEmail ? 'public-email-v1:' : ''}${context.companyDomain}:${contact.name.toLocaleLowerCase()}`).digest('hex');
       try {
-        await reserveUsage(`provider:hunter:${monthKey(now)}`, 50, { now });
-        const result = await findEmail(contact, context.companyDomain, { remainingMs: deadline - Date.now() });
+        const cachedEmail = await OutreachEmailCache.findOne({ key, expiresAt: { $gt: now } }).lean();
+        if (cachedEmail) {
+          Object.assign(contact, { email: cachedEmail.email, emailStatus: cachedEmail.emailStatus,
+            ...(publicEmail ? { emailSourceUrl: cachedEmail.emailSourceUrl, emailEvidence: cachedEmail.emailEvidence, emailConfirmed: false } : {}) });
+          continue;
+        }
+        if (!publicEmail && !process.env.HUNTER_API_KEY && findEmail === findHunterEmail) continue;
+        // Reserve conservatively for each possible targeted search; public lookup has no Hunter quota.
+        await reserveUsage(`provider:${publicEmail ? 'searxng' : 'hunter'}:${monthKey(now)}`, publicEmail ? 1000 : 50, { now });
+        const result = await findEmail(contact, context.companyDomain, { context, results: searchResults, deadline, remainingMs: deadline - Date.now() });
         Object.assign(contact, result);
+        if (publicEmail && !result.email) continue; // Do not cache an outage or absence for thirty days.
         await OutreachEmailCache.updateOne({ key }, { $set: { ...result, expiresAt: new Date(now.getTime() + 30 * DAY) } }, { upsert: true });
       } catch { /* Contacts are still useful when email lookup or its budget is unavailable. */ }
     }
@@ -227,7 +235,10 @@ export async function updateThread(user, id, patch) {
   if (patch.email !== undefined) {
     if (!bounded(patch.email, 320) || patch.email && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(patch.email)) throw outreachError('Enter a valid email address.');
     set['contact.email'] = patch.email.toLowerCase().trim();
-    if (set['contact.email'] !== thread.contact.email) { set['contact.emailStatus'] = patch.email ? 'unverified' : 'unavailable'; set['contact.emailConfirmed'] = false; }
+    if (set['contact.email'] !== thread.contact.email) {
+      set['contact.emailStatus'] = patch.email ? 'unverified' : 'unavailable'; set['contact.emailConfirmed'] = false;
+      set['contact.emailSourceUrl'] = ''; set['contact.emailEvidence'] = '';
+    }
   }
   if (patch.emailConfirmed !== undefined) {
     if (typeof patch.emailConfirmed !== 'boolean') throw outreachError('Email confirmation must be a boolean.');
