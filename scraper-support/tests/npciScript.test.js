@@ -1,3 +1,5 @@
+import { makeZohoFixture, zohoFixtureOptions } from './fixtures/zohoNativeOptions.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -107,25 +109,13 @@ test('extractIndiaJobs reads embedded NPCI openings and filters out closed or no
   ])
 })
 
-test('run fetches the official NPCI careers page and decorates shared runner fields', async () => {
-  const npci = await loadNpciModule()
-  const requestedUrls = []
-
-  const jobs = await npci.createNpciScraper({ maxJobs: 1 }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === npci.CAREERS_PORTAL_URL) return careersHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-    now: () => '2026-07-09T00:00:00.000Z',
-  })
-
-  assert.deepEqual(requestedUrls, ['https://careers.npci.org.in/jobs/Careers'])
+test('NPCI factory reads full native NPCI-entity details and decorates runner fields', async () => {
+  const npci = await loadNpciModule(), data = makeZohoFixture('npci')
+  const jobs = await npci.createNpciScraper({ maxJobs: 1 }).run(zohoFixtureOptions(data))
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'npci')
-  assert.equal(
-    jobs[0].link,
-    'https://careers.npci.org.in/jobs/Careers/730000000123456/Lead-Platform-Engineer?source=CareerSite',
-  )
-  assert.equal(jobs[0].scrapedAt, '2026-07-09T00:00:00.000Z')
+  assert.equal(jobs[0].nativeEmployerEntity, 'NPCI')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].link, data.details[data.rows[0].id].$appy_url)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })

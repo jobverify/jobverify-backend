@@ -143,73 +143,22 @@ test('extractSearchResults unwraps the double-encoded API payload and normalizes
   ])
 })
 
-test('run fetches the official BCE Global Tech jobs API with an injectable authorization token and decorates jobs', async () => {
-  const bceglobaltech = await loadBceGlobalTechModule()
-  const requests = []
-  const scraper = bceglobaltech.createBceGlobalTechScraper({ authorizationToken: 'test-token', maxJobs: 1 })
-
-  const jobs = await scraper.run({
-    fetchJson: async (url, options = {}) => {
-      requests.push({ url, options })
-      return buildWrappedPayload(sampleRecords)
+test('BCE runtime requires fresh employer evidence even when an authorization token is injected', async () => {
+  const bce = await loadBceGlobalTechModule()
+  const requested = []
+  await assert.rejects(bce.createBceGlobalTechScraper({ authorizationToken: 'test-token' }).run({
+    fetchPage: async url => {
+      requested.push(url)
+      return { status: 200, url, html: '<html><body>No active careers bundle</body></html>' }
     },
-  })
-
-  assert.deepEqual(requests, [
-    {
-      url: bceglobaltech.JOBS_API_URL,
-      options: {
-        headers: {
-          Accept: 'application/json,text/plain,*/*',
-          authorizationToken: 'test-token',
-        },
-      },
-    },
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'bceglobaltech')
-  assert.equal(jobs[0].company, 'BCE Global Tech')
-  assert.equal(
-    jobs[0].link,
-    'https://bceglobaltech.zohorecruit.in/jobs/Careers/147575000033601315/Desktop-Engineer?source=CareerSite&$apply=true',
-  )
-  assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
+    fetchJson: async () => { throw Error('Unbound native inventory must not be fetched') },
+  }), /active first-party careers bundle/)
+  assert.deepEqual(requested, [bce.CAREER_PAGE_URL])
 })
 
-test('run can discover the public authorization token from the BCE Global Tech careers bundle when no secret is injected', async () => {
-  const bceglobaltech = await loadBceGlobalTechModule()
-  const requests = []
-  const textRequests = []
-  const scraper = bceglobaltech.createBceGlobalTechScraper({ authorizationToken: null, maxJobs: 1 })
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      textRequests.push(url)
-      if (url === bceglobaltech.CAREER_PAGE_URL) return careerPageHtml
-      if (url === 'https://bceglobaltech.com/static/js/main.1e784ffe.js') return bundleJs
-      throw new Error(`Unexpected text URL: ${url}`)
-    },
-    fetchJson: async (url, options = {}) => {
-      requests.push({ url, options })
-      return buildWrappedPayload(sampleRecords)
-    },
-  })
-
-  assert.deepEqual(textRequests, [
-    'https://bceglobaltech.com/career',
-    'https://bceglobaltech.com/static/js/main.1e784ffe.js',
-  ])
-  assert.deepEqual(requests, [
-    {
-      url: bceglobaltech.JOBS_API_URL,
-      options: {
-        headers: {
-          Accept: 'application/json,text/plain,*/*',
-          authorizationToken: 'frontend-bundle-token',
-        },
-      },
-    },
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'bceglobaltech')
+test('BCE runtime rejects cancellation before fetching employer data', async () => {
+  const bce = await loadBceGlobalTechModule()
+  await assert.rejects(bce.run({ signal: AbortSignal.abort(), fetchPage: async () => {
+    assert.fail('Cancelled extraction must not issue a request')
+  } }))
 })

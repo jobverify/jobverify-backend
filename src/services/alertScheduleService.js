@@ -84,8 +84,8 @@ export const updateAlertSchedule = async (userId, { frequency, isActive, deliver
 // Queue insertion and cadence changes both write the same subscription document.
 // MongoDB retries conflicting transactions, so a late insertion cannot retain
 // an obsolete pause/cadence after the settings request has committed.
-const queueDeliveries = async (user, jobs, channel, now = new Date()) => {
-  const created = await mongoose.connection.transaction(async (session) => {
+const queueDeliveries = async (user, jobs, channel, now = new Date(), { session: outerSession } = {}) => {
+  const insert = async (session) => {
     const subscription = await Subscription.findOneAndUpdate(
       { user: user._id },
       { $inc: { dispatchRevision: 1 }, $setOnInsert: { telegramSchedule: {} } },
@@ -113,7 +113,11 @@ const queueDeliveries = async (user, jobs, channel, now = new Date()) => {
       if (result.upsertedId) created.push({ delivery: { _id: result.upsertedId, ...payload }, job });
     }
     return created;
-  });
+  };
+  // Outbox fanout owns the surrounding transaction and must commit its receipt
+  // with these rows. External sends and orphan cleanup happen after commit.
+  if (outerSession) return insert(outerSession);
+  const created = await mongoose.connection.transaction(insert);
   if (!created.length) return created;
   // Validate after commit: a purge may have deleted jobs while this queue
   // transaction was still inserting deliveries from its earlier snapshot.

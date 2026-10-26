@@ -489,9 +489,13 @@ export const buildCoverageGapResult = (_source, outcome) => ({
   zeroJobEvidence: outcome,
 })
 
-export const resolveScraperRetryAttempts = (scraper) => (
-  isWorkdayScraper(scraper) ? 1 : 4
-)
+export const resolveScraperRetryAttempts = (scraper) => {
+  if (isWorkdayScraper(scraper)) return 1
+  const configured = scraper?.provider?.scraperRetryAttempts
+  return Number.isInteger(configured) && configured >= 1 && configured <= 4
+    ? configured
+    : 4
+}
 
 export const resolveScraperTimeoutMs = (
   value = process.env.SCRAPER_SOURCE_TIMEOUT_MS,
@@ -984,7 +988,7 @@ export const applyRetryPolicyToScraperError = (error) => {
   error.failureKind = classification.failureKind
 
   if (
-    error.abortRetries !== true
+    error.abortRetries == null
     && NON_RETRIABLE_SOFT_FAILURE_KINDS.has(classification.failureKind)
   ) {
     error.abortRetries = true

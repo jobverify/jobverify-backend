@@ -9,6 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   draft:
+    name: Generate outreach drafts
     if: vars.OUTREACH_ACTIONS_ENABLED == 'true' && vars.OUTREACH_ACTIONS_FREE_CONFIRMED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10

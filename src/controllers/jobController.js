@@ -602,6 +602,9 @@ const normalizeResponseJobType = job => normalizePublicJobType(resolveResponseJo
 const getSafeExternalApplicationUrl = (value) => {
   try {
     const url = new URL(String(value || "").trim());
+    if (/(^|\.)(?:myworkdayjobs|workdayjobs|myworkdaysite)\.com$/i.test(url.hostname)) {
+      url.pathname = url.pathname.replace(/\/apply\/?$/i, "");
+    }
     return url.protocol === "https:" ? url.href : null;
   } catch {
     return null;
@@ -788,8 +791,8 @@ const persistWorkdayApplicationAvailability = async (job = {}, state = {}) => {
     {
       _id: job._id,
       $or: [
-        { applyUrl: job.applicationUrl },
-        { sourceUrl: job.applicationUrl },
+        { applyUrl: job.applyUrl || job.applicationUrl },
+        { sourceUrl: job.sourceUrl || job.applicationUrl },
       ],
     },
     {

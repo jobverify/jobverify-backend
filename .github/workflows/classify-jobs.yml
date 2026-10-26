@@ -23,14 +23,16 @@ concurrency:
 
 jobs:
   register:
+    name: Register job classification
     permissions:
       contents: read
       actions: write
-    name: ${{ inputs.dispatch_token && format('Job Classification [dispatch:{0}]', inputs.dispatch_token) || 'Job Classification' }}
     runs-on: ubuntu-latest
     outputs:
       pipeline_id: ${{ steps.claim.outputs.pipeline_id }}
     steps:
+      - name: ${{ inputs.dispatch_token && format('Job Classification [dispatch:{0}]', inputs.dispatch_token) || 'Job Classification' }}
+        run: echo 'Pipeline dispatch identity recorded'
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.pipeline_sha || github.sha }}
@@ -49,6 +51,7 @@ jobs:
           PIPELINE_DISPATCH_TOKEN: ${{ inputs.dispatch_token }}
           PIPELINE_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
   classify:
+    name: Classify jobs (shard ${{ matrix.shard }})
     needs: register
     runs-on: ubuntu-latest
     timeout-minutes: 360
@@ -110,6 +113,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
   report:
+    name: Report classification results
     needs: [register, classify]
     if: always() && needs.register.result == 'success'
     runs-on: ubuntu-latest

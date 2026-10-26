@@ -1,0 +1,17 @@
+{
+  "name": "att-core-client",
+  "url": "https://tbcdn.talentbrew.com/bundles/tb-corepack.js",
+  "at": "2026-10-25T17:36:51.921Z",
+  "method": "GET",
+  "redirect": "manual",
+  "timeoutMs": 20000,
+  "retries": 0,
+  "tls": "strict-system-ca-command-scoped-proxy",
+  "status": 200,
+  "finalUrl": "https://tbcdn.talentbrew.com/bundles/tb-corepack.js",
+  "location": null,
+  "contentType": "application/x-javascript",
+  "bytes": 118573,
+  "sha256": "679b3cbd2d0f1c7c867f2a1c3a2b5394042ce544acb547a791a0c1ce0199f669",
+  "elapsedMs": 381
+}

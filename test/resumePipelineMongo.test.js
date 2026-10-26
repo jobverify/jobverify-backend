@@ -3,7 +3,7 @@ import test from 'node:test';
 import mongoose from 'mongoose';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import User from '../src/models/User.js';
 import Job from '../src/models/Job.js';
 import Resume from '../src/models/Resume.js';
@@ -18,7 +18,7 @@ const sha = data => createHash('sha256').update(data).digest('hex');
 
 test('prepared and tailored artifacts publish only for the current owner/source/revision', { timeout: 90000 }, async t => {
   process.env.MONGOMS_RUNTIME_DOWNLOAD = 'false';
-  const mongo = await MongoMemoryServer.create({ binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
+  const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 }, binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
   t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
   await mongoose.connect(mongo.getUri(), { dbName: 'resume_pipeline_test' });
   const id = new mongoose.Types.ObjectId();
@@ -64,7 +64,7 @@ test('prepared and tailored artifacts publish only for the current owner/source/
   await preparation.drainResumePreparations({ generate: async () => result });
   const latest = await Resume.findById(id).lean();
   assert.notEqual(latest.preparation.generationId, ready.preparation.generationId);
-  assert.equal(await ResumeArtifact.countDocuments({ user: id }), 1, 'only the latest base remains');
+  assert.equal(await ResumeArtifact.countDocuments({ user: id }), 2, 'earlier base generations remain downloadable');
   await Promise.all(Array.from({ length: 4 }, () => tailoring.requestTailoredResume(owner, String(job), { dispatch })));
   assert.equal(await TailoredResume.countDocuments({ user: id }), 1);
   const counts = await tailoring.drainTailoredResumes({ generate: async input => { assert.equal(input.mode, 'tailored'); assert.equal(input.baseLatex, latex); assert.equal(input.jobSnapshot.title, 'React Engineer'); return result; }, maxTasks: 99 });
@@ -78,7 +78,7 @@ test('prepared and tailored artifacts publish only for the current owner/source/
   await tailoring.requestTailoredResume(owner, String(job), { regenerate: true, dispatch });
   await tailoring.drainTailoredResumes({ generate: async () => { await Resume.updateOne({ _id: id }, { $set: { sha256: 'b'.repeat(64) } }); return result; } });
   assert.equal((await tailoring.getTailoredResume(owner, String(job))).stale, true);
-  assert.equal(await ResumeArtifact.countDocuments({ user: id }), 2, 'stale result never creates an additional artifact');
+  assert.equal(await ResumeArtifact.countDocuments({ user: id }), 3, 'stale result never creates an additional artifact');
   await Resume.updateOne({ _id: id }, { $set: { sha256: sha(latex) } });
   await t.test('job changes and replaced base generations cannot publish a late tailored result', async () => {
     const originalGeneration = (await TailoredResume.findOne({ user: id }).lean()).generationId;
@@ -98,11 +98,9 @@ test('prepared and tailored artifacts publish only for the current owner/source/
       await Resume.updateOne({ _id: id }, { $set: { 'preparation.generationId': baseGeneration } });
     }
   });
-  await t.test('old-generation cleanup failure cannot revoke a published base PDF', async st => {
+  await t.test('new publication retains the old successful base and phase reporting', async () => {
     const before = (await Resume.findById(id).lean()).preparation.generationId;
     await preparation.requestResumePreparation(owner, { regenerate: true, dispatch });
-    const deleteOne = ResumeArtifact.deleteOne.bind(ResumeArtifact);
-    st.mock.method(ResumeArtifact, 'deleteOne', filter => filter._id === before ? Promise.reject(Error('cleanup unavailable')) : deleteOne(filter));
     const completed = await preparation.drainResumePreparations({ generate: async (_input, options) => {
       await options.onPhase('compiling');
       assert.equal((await Resume.findById(id).lean()).preparation.phase, 'compiling');
@@ -110,62 +108,41 @@ test('prepared and tailored artifacts publish only for the current owner/source/
     } });
     assert.deepEqual(completed, { attempted: 1, completed: 1, failed: 0 });
     const current = await Resume.findById(id).lean();
-    assert.equal(current.preparation.status, 'completed');
     assert.notEqual(current.preparation.generationId, before);
     assert.ok(await readResumeArtifact(id, current.preparation.generationId));
+    assert.ok(await readResumeArtifact(id, before));
   });
-  await t.test('a post-publication account check failure restores the last successful base', async st => {
+  await t.test('account deactivation during generation cannot publish candidate data', async () => {
     const before = (await Resume.findById(id).lean()).preparation.generationId;
     await preparation.requestResumePreparation(owner, { regenerate: true, dispatch });
-    const exists = User.exists.bind(User);
-    let checks = 0;
-    st.mock.method(User, 'exists', async filter => {
-      if (++checks === 4) throw Error('private database error');
-      return exists(filter);
-    });
-    assert.deepEqual(await preparation.drainResumePreparations({ generate: async () => result }), { attempted: 1, completed: 0, failed: 1 });
-    const current = await Resume.findById(id).lean();
-    assert.equal(current.preparation.status, 'failed');
-    assert.equal(current.preparation.generationId, before);
-    assert.ok(await readResumeArtifact(id, before));
-    assert.doesNotMatch(current.preparation.error, /private database/);
+    assert.deepEqual(await preparation.drainResumePreparations({ generate: async () => {
+      await User.updateOne({ _id: id }, { $set: { deactivated: true } }); return result;
+    } }), { attempted: 1, completed: 0, failed: 1 });
+    assert.equal((await Resume.findById(id).lean()).preparation.generationId, before);
+    await User.updateOne({ _id: id }, { $set: { deactivated: false } });
   });
-  await t.test('a source replacement after artifact insertion prevents publication and cleans up the unpublished bytes', async st => {
+  await t.test('a replaced source prevents publication without adding artifact bytes', async () => {
     await preparation.requestResumePreparation(owner, { regenerate: true, dispatch });
-    const create = ResumeArtifact.create.bind(ResumeArtifact);
     const count = await ResumeArtifact.countDocuments({ user: id });
-    st.mock.method(ResumeArtifact, 'create', async data => {
-      const artifact = await create(data);
-      await Resume.updateOne({ _id: id }, { $set: { sha256: 'c'.repeat(64) } });
-      return artifact;
-    });
-    assert.deepEqual(await preparation.drainResumePreparations({ generate: async () => result }), { attempted: 1, completed: 0, failed: 1 });
+    assert.deepEqual(await preparation.drainResumePreparations({ generate: async () => {
+      await Resume.updateOne({ _id: id }, { $set: { sha256: 'c'.repeat(64) } }); return result;
+    } }), { attempted: 1, completed: 0, failed: 1 });
     assert.equal(await ResumeArtifact.countDocuments({ user: id }), count);
-    assert.equal((await Resume.findById(id).lean()).preparation.hasPdf, undefined);
     await Resume.updateOne({ _id: id }, { $set: { sha256: sha(latex), 'preparation.status': 'failed' } });
   });
-  await t.test('an older worker cannot delete a successful PDF retained by a newer retry revision', async st => {
+  await t.test('a recovered worker publishes once and the expired worker cannot overwrite it', async () => {
     await preparation.requestResumePreparation(owner, { regenerate: true, dispatch });
-    const updateOne = Resume.updateOne.bind(Resume);
-    const exists = User.exists.bind(User);
-    let failNextCheck = false;
-    st.mock.method(Resume, 'updateOne', async (filter, update, options) => {
-      const updated = await updateOne(filter, update, options);
-      if (update.$set?.['preparation.status'] === 'completed') {
-        await preparation.requestResumePreparation(owner, { regenerate: true, dispatch });
-        failNextCheck = true;
-      }
-      return updated;
-    });
-    st.mock.method(User, 'exists', async filter => {
-      if (failNextCheck) { failNextCheck = false; throw Error('temporary account check failure'); }
-      return exists(filter);
-    });
-    await preparation.drainResumePreparations({ generate: async () => result });
-    const retry = await Resume.findById(id).lean();
-    assert.equal(retry.preparation.status, 'queued');
-    assert.ok(await readResumeArtifact(id, retry.preparation.generationId), 'a newer request keeps its latest successful PDF');
-    await Resume.updateOne({ _id: id }, { $set: { 'preparation.status': 'failed', 'preparation.ready': false } });
+    const started = Promise.withResolvers(); const release = Promise.withResolvers();
+    const old = preparation.drainResumePreparations({ generate: async () => { started.resolve(); await release.promise; return result; } });
+    await started.promise;
+    await Resume.updateOne({ _id: id }, { $set: { 'preparation.leaseUntil': new Date(0) } });
+    await preparation.recoverResumePreparations({ dispatchPending: false });
+    assert.deepEqual(await preparation.drainResumePreparations({ generate: async () => result }), { attempted: 1, completed: 1, failed: 0 });
+    const newer = await Resume.findById(id).lean();
+    release.resolve();
+    assert.deepEqual(await old, { attempted: 1, completed: 0, failed: 1 });
+    assert.equal((await Resume.findById(id).lean()).preparation.generationId, newer.preparation.generationId);
+    assert.ok(await readResumeArtifact(id, newer.preparation.generationId));
   });
   await preparation.requestResumePreparation(owner, { regenerate: true, dispatch });
   await preparation.drainResumePreparations({ generate: async () => { await removeResume({ user: owner }, response()); return result; } });

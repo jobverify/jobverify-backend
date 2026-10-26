@@ -26,58 +26,25 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Licious local catalog captures the verified official careers handoff plus public Darwinbox jobs API contract', async () => {
+test('Licious local catalog describes its current MyNextHire migration', async () => {
   const { LICIOUS_CATALOG } = await loadCatalogModule()
   const licious = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(LICIOUS_CATALOG)
-
   assert.equal(provider.source, 'licious')
   assert.equal(provider.companyName, 'Licious')
-  assert.equal(provider.officialBrandName, 'Licious')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://careers.licious.com/')
-  assert.equal(
-    provider.officialCareersHandoffUrl,
-    'https://licious.darwinbox.in/ms/candidate/careers',
-  )
-  assert.equal(
-    provider.publicPortalUrl,
-    'https://licious.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-  )
-  assert.equal(
-    provider.darwinboxListingApiUrl,
-    'https://licious.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
-  )
-  assert.equal(provider.darwinboxOrigin, 'https://licious.darwinbox.in')
-  assert.equal(provider.darwinboxCompanyId, 'main')
-  assert.equal(provider.companyDomain, 'careers.licious.com')
-  assert.equal(provider.atsPlatform, 'darwinbox')
+  assert.equal(provider.companyCareerPage, 'https://www.licious.in/careers')
+  assert.equal(provider.officialCareersHandoffUrl, 'https://www.licious.in/careers/jobs')
+  assert.equal(provider.publicPortalUrl, 'https://licious.mynexthire.com/employer/jobs/careers')
+  assert.equal(provider.companyDomain, 'licious.in')
+  assert.equal(provider.atsPlatform, 'mynexthire')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(
-    provider.paginationStrategy,
-    'official-careers-page-plus-darwinbox-listing-api',
-  )
-  assert.equal(
-    provider.extractionStrategy,
-    'verified-official-careers-page-handoff+darwinbox-listing-api',
-  )
-  assert.equal(provider.parser, 'custom-script')
-  assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
-  assert.match(provider.dryRunFile, /licious[\\/]jobs\.json$/i)
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  assert.equal(provider.verifiedOn, '2026-10-26')
   assert.equal(provider.modulePath, liciousModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /July 16, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.licious\.com\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/licious\.darwinbox\.in\/ms\/candidate\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/licious\.darwinbox\.in\/ms\/candidateapi\/job\/alljobs\?companyId=main/i)
+  assert.match(provider.verifiedSurfaceSummary, /1163/)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Licious'), false)
-
-  assert.equal(licious.PROVIDER_METADATA.source, LICIOUS_CATALOG.source)
-  assert.equal(licious.PROVIDER_METADATA.companyName, LICIOUS_CATALOG.companyName)
-  assert.equal(
-    licious.PROVIDER_METADATA.officialCareersHandoffUrl,
-    LICIOUS_CATALOG.officialCareersHandoffUrl,
-  )
+  assert.equal(licious.PROVIDER_METADATA, LICIOUS_CATALOG)
 })
 
 test('Licious backlog row matches directly from the local catalog without alias churn', async () => {

@@ -5,6 +5,8 @@ const schema = new Schema({
   job: { type: Schema.Types.ObjectId, ref: 'Job', required: true, immutable: true },
   status: { type: String, enum: ['queued', 'running', 'completed', 'failed'], required: true },
   revision: { type: Number, default: 0 }, ready: { type: Boolean, default: false },
+  currentRevisionId: String, historyVersion: { type: Number, default: 0 },
+  sourceEvidenceVersion: Number, sourceEvidenceHash: String, outputEvidenceVersion: Number, outputEvidenceHash: String,
   sourceResumeSha: { type: String, required: true }, sourceJobHash: { type: String, required: true },
   phase: { type: String, default: '' }, sourceBaseGenerationId: String,
   generationId: String, outputBaseGenerationId: String, pageCount: Number,

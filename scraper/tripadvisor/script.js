@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachGreenhouseSourceEvidence } from '../../scraper-support/utils/greenhouseSourceEvidence.js'
+import { hasNativeIndiaLocation, selectGreenhouseLocation } from '../../scraper-support/utils/greenhouseLocations.js'
 
 import TRIPADVISOR_CATALOG from './catalog.js'
 
@@ -26,21 +28,14 @@ const normalizeWhitespace = (value) => String(value ?? '')
 const metadataIncludesIndia = (metadata = []) =>
   (Array.isArray(metadata) ? metadata : []).some((entry) =>
     /country/i.test(String(entry?.name ?? ''))
-    && /india/i.test(String(entry?.value ?? '')))
+    && /\bindia\b/i.test(String(entry?.value ?? '')))
 
 export const isIndiaJob = (job = {}) => {
-  const locationText = [
-    job?.location?.name,
-    ...(Array.isArray(job?.offices) ? job.offices.map((office) => office?.location ?? office?.name) : []),
-  ]
-    .filter(Boolean)
-    .join(' ')
-
-  return /india/i.test(locationText) || metadataIncludesIndia(job.metadata)
+  return hasNativeIndiaLocation(selectGreenhouseLocation(job))
 }
 
 const mapJob = (job = {}) => {
-  const location = normalizeWhitespace(job?.location?.name)
+  const location = normalizeWhitespace(selectGreenhouseLocation(job))
   const sourceUrl = normalizeWhitespace(job?.absolute_url)
   const title = normalizeWhitespace(job?.title)
 
@@ -84,15 +79,18 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 })
 
 export const createTripadvisorScraper = () => ({
-  async run({ fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
+  async run({ fetchJson = defaultFetchJson, now = () => new Date().toISOString(), signal } = {}) {
+    signal?.throwIfAborted()
     const payload = await fetchJson(GREENHOUSE_API_URL)
 
-    return extractJobsFromGreenhousePayload(payload).map((job) => ({
+    const jobs = extractJobsFromGreenhousePayload(payload).map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
     }))
+    return attachGreenhouseSourceEvidence(jobs, { source: SOURCE, companyName: COMPANY,
+      companyCareerPage: TRIPADVISOR_CATALOG.companyCareerPage, boardToken: 'tripadvisor', payload, signal })
   },
 })
 

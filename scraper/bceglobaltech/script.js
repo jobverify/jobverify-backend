@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createBceNativeInventoryScraper } from './nativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -152,71 +152,9 @@ export const extractSearchResults = (payload) =>
     })
     .filter(Boolean)
 
-const defaultFetchJson = async (url, options = {}) => {
-  const response = await fetch(url, { headers: options.headers })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.json()
-}
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    Accept: 'text/html,application/javascript,text/javascript;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-const resolveAuthorizationToken = async ({
-  authorizationToken,
-  fetchText = defaultFetchText,
-}) => {
-  const normalizedToken = normalizeWhitespace(authorizationToken)
-  if (normalizedToken) {
-    return normalizedToken
-  }
-
-  const careerPageHtml = await fetchText(CAREER_PAGE_URL)
-  const bundleUrl = extractBundleScriptUrl(careerPageHtml, CAREER_PAGE_URL)
-  if (!bundleUrl) {
-    throw new Error('BCE Global Tech public careers bundle URL could not be discovered')
-  }
-
-  const bundleJs = await fetchText(bundleUrl)
-  const discoveredToken = extractAuthorizationToken(bundleJs)
-  if (!discoveredToken) {
-    throw new Error('BCE Global Tech public careers bundle no longer exposes an authorizationToken')
-  }
-
-  return discoveredToken
-}
-
 export const createBceGlobalTechScraper = ({
-  authorizationToken = process.env.BCE_GLOBAL_TECH_AUTHORIZATION_TOKEN,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run({ fetchJson = defaultFetchJson, fetchText = defaultFetchText, authorizationToken: overrideToken } = {}) {
-    const resolvedToken = await resolveAuthorizationToken({
-      authorizationToken: overrideToken || authorizationToken,
-      fetchText,
-    })
-    const headers = buildRequestHeaders({
-      authorizationToken: resolvedToken,
-    })
-    const listings = extractSearchResults(await fetchJson(JOBS_API_URL, { headers }))
-    const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
-})
+} = {}) => createBceNativeInventoryScraper({ maxJobs: maxJobs ?? 0 })
 
 export const run = async (options = {}) => createBceGlobalTechScraper(options).run(options)
 

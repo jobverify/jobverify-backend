@@ -2,24 +2,29 @@ import { randomUUID } from 'node:crypto';
 import Resume from '../models/Resume.js';
 import User from '../models/User.js';
 import TailoredResume from '../models/TailoredResume.js';
-import { artifactBytes, createResumeArtifact, deleteResumeArtifact, readResumeArtifact } from './resumeArtifactService.js';
+import { artifactBytes, readResumeArtifact } from './resumeArtifactService.js';
+import { getCandidateEvidenceSnapshot } from './candidateEvidenceService.js';
+import { publishGeneratedCv } from './cvRevisionService.js';
 import { dispatchTailoredResumes, requireTailoredResumeActions, tailoredResumeActionsConfigured } from './resumeTailoringWorkflow.js';
 import { tailoringError } from './resumeTailoringContent.js';
 
 export const activeResumeStatuses = ['queued', 'running'];
 export const activeResumeOwner = user => ({ _id: user, deactivated: { $ne: true }, outreachDeletingAt: null });
 const ownerFilter = user => ({ _id: user, user });
-export function preparationMetadata(record) {
+export const evidenceMatches = (version, hash, evidence) => version == null ? evidence.version === 0 : version === evidence.version && hash === evidence.hash;
+export function preparationMetadata(record, evidence) {
   const p = record?.preparation || {};
   const valid = Boolean(p.generationId && p.outputResumeSha === record.sha256);
   return { status: p.status || 'unprepared', phase: p.phase || '', error: p.error || '', revision: p.revision || 0,
     sourceHash: p.sourceSha || record?.sha256 || '', attempts: p.attempts || 0,
+    stale: Boolean(valid && evidence && !evidenceMatches(p.outputEvidenceVersion, p.outputEvidenceHash, evidence)),
     retryable: ['unprepared', 'failed'].includes(p.status || 'unprepared'),
     hasPdf: valid, hasLatex: valid, pageCount: valid ? p.pageCount || null : null, generatedAt: p.generatedAt || null };
 }
-export function resumeMetadata(record) {
+export function resumeMetadata(record, evidence) {
   return record ? { filename: record.filename, extension: record.extension, mimeType: record.mimeType,
-    size: record.size, sha256: record.sha256, uploadedAt: record.uploadedAt, preparation: preparationMetadata(record) } : null;
+    size: record.size, sha256: record.sha256, uploadedAt: record.uploadedAt, currentRevisionId: record.currentRevisionId || null,
+    preparation: preparationMetadata(record, evidence) } : null;
 }
 export function requirePreparedResume(record) {
   const p = record?.preparation;
@@ -36,16 +41,19 @@ export async function requestResumePreparation(user, { regenerate = false, autom
   if (!await User.exists(activeResumeOwner(user._id))) throw tailoringError('This account is unavailable.', 409);
   if (expectedSourceSha && current.sha256 !== expectedSourceSha) return resumeMetadata(current);
   const p = current.preparation || {};
-  if (activeResumeStatuses.includes(p.status) || (!regenerate && p.status === 'completed' && preparationMetadata(current).hasPdf)) return resumeMetadata(current);
+  const evidence = await getCandidateEvidenceSnapshot(user._id);
+  if (activeResumeStatuses.includes(p.status) || (!regenerate && p.status === 'completed' && preparationMetadata(current).hasPdf
+    && evidenceMatches(p.outputEvidenceVersion, p.outputEvidenceHash, evidence))) return resumeMetadata(current, evidence);
   if (!automatic && dispatch === dispatchTailoredResumes) requireTailoredResumeActions();
   const revisionFilter = p.revision === undefined ? { $or: [{ 'preparation.revision': { $exists: false } }, { 'preparation.revision': 0 }] } : { 'preparation.revision': p.revision };
   const row = await Resume.findOneAndUpdate({ ...filter, sha256: current.sha256, ...revisionFilter,
     'preparation.status': { $nin: activeResumeStatuses } }, {
     $set: { 'preparation.status': 'queued', 'preparation.phase': 'queued', 'preparation.error': '', 'preparation.ready': true,
-      'preparation.sourceSha': current.sha256, 'preparation.attempts': 0, 'preparation.requestedAt': new Date() },
+      'preparation.sourceSha': current.sha256, 'preparation.sourceEvidenceVersion': evidence.version, 'preparation.sourceEvidenceHash': evidence.hash,
+      'preparation.attempts': 0, 'preparation.requestedAt': new Date() },
     $inc: { 'preparation.revision': 1 }, $unset: { 'preparation.leaseOwner': 1, 'preparation.leaseUntil': 1, 'preparation.dispatchAt': 1 },
   }, { new: true, runValidators: true }).lean();
-  if (!row) return resumeMetadata(await Resume.findOne(filter).lean());
+  if (!row) return resumeMetadata(await Resume.findOne(filter).lean(), evidence);
   const revision = { ...filter, sha256: current.sha256, 'preparation.revision': row.preparation.revision, 'preparation.status': 'queued' };
   // New base requests invalidate queued tailoring immediately; their old PDF is retained.
   await TailoredResume.updateMany({ user: user._id, sourceResumeSha: current.sha256,
@@ -62,7 +70,7 @@ export async function requestResumePreparation(user, { regenerate = false, autom
       'preparation.error': error.statusCode ? error.message : 'Resume preparation could not start. Please retry.' } });
     if (!automatic) throw error.statusCode ? error : tailoringError('Resume preparation could not start. Please retry.', 503);
   }
-  return resumeMetadata(await Resume.findOne(filter).lean());
+  return resumeMetadata(await Resume.findOne(filter).lean(), evidence);
 }
 
 async function preparationSource(row, { withData = false } = {}) {
@@ -86,61 +94,33 @@ export async function drainResumePreparations({ generate, deadline = Date.now() 
   counts.attempted = 1;
   const lease = { ...ownerFilter(row.user), sha256: row.preparation.sourceSha, 'preparation.revision': row.preparation.revision,
     'preparation.status': 'running', 'preparation.leaseOwner': leaseOwner, 'preparation.leaseUntil': { $gt: new Date() } };
-  let artifact; let published = false;
   try {
     const source = await preparationSource(row, { withData: true });
+    const evidence = await getCandidateEvidenceSnapshot(row.user);
+    if (!evidenceMatches(row.preparation.sourceEvidenceVersion, row.preparation.sourceEvidenceHash, evidence)) throw tailoringError('Your candidate evidence changed. Prepare a new version.', 409);
     const { extractResumeSource } = await import('./resumeSource.js');
     const document = await extractResumeSource({ extension: source.extension, data: artifactBytes(source.data) });
-    const output = await generate({ mode: 'base', source: document }, { deadline, onPhase: async phase => {
+    const output = await generate({ mode: 'base', source: document, candidateEvidence: evidence }, { deadline, onPhase: async phase => {
       await Resume.updateOne({ ...lease, 'preparation.leaseUntil': { $gt: new Date() } }, { $set: { 'preparation.phase': String(phase).slice(0, 100) } });
     } });
     if (Date.now() >= deadline) throw tailoringError('Resume preparation exceeded its time budget. Please retry.', 504);
-    await preparationSource(row);
-    artifact = await createResumeArtifact({ user: row.user, kind: 'base', sourceResumeSha: row.preparation.sourceSha }, output);
-    await preparationSource(row);
-    const completed = await Resume.updateOne({ ...lease, 'preparation.leaseUntil': { $gt: new Date() } }, {
-      $set: { 'preparation.status': 'completed', 'preparation.phase': 'completed', 'preparation.ready': false, 'preparation.error': '',
-        'preparation.generationId': artifact._id, 'preparation.outputResumeSha': row.preparation.sourceSha,
-        'preparation.pageCount': artifact.pageCount, 'preparation.modelVersion': artifact.modelVersion, 'preparation.styleVersion': artifact.styleVersion,
-        'preparation.generatedAt': new Date() }, $unset: { 'preparation.leaseOwner': 1, 'preparation.leaseUntil': 1 },
-    });
-    if (!completed.modifiedCount) throw tailoringError('This preparation request changed. Please retry.', 409);
-    published = true;
-    if (!await User.exists(activeResumeOwner(row.user))) {
-      await Resume.deleteOne(ownerFilter(row.user));
-      throw tailoringError('This account is unavailable.', 409);
-    }
-    const afterPublish = await Resume.findOne({ ...ownerFilter(row.user), sha256: row.preparation.sourceSha }).lean();
-    if (!afterPublish) throw tailoringError('Your resume changed. Prepare the current version.', 409);
+    await publishGeneratedCv({ kind: 'base', row, lease, output, source, document, evidence });
     counts.completed = 1;
   } catch (error) {
     counts.failed = 1;
     const failure = { 'preparation.status': 'failed', 'preparation.phase': 'failed', 'preparation.ready': false,
       'preparation.error': error.statusCode ? error.message : 'Resume preparation was interrupted or returned an invalid document. Please retry.' };
-    if (published) {
-      const outputKeys = ['generationId', 'outputResumeSha', 'pageCount', 'generatedAt', 'modelVersion', 'styleVersion'];
-      const previous = Object.fromEntries(outputKeys.filter(key => row.preparation[key] !== undefined).map(key => [`preparation.${key}`, row.preparation[key]]));
-      const absent = Object.fromEntries(outputKeys.filter(key => row.preparation[key] === undefined).map(key => [`preparation.${key}`, 1]));
-      await Resume.updateOne({ ...ownerFilter(row.user), 'preparation.revision': row.preparation.revision, 'preparation.generationId': artifact._id }, {
-        $set: { ...previous, ...failure }, $unset: absent,
-      });
-      // A concurrent retry can retain this successful generation under a newer
-      // revision. An older worker must not remove bytes it still references.
-      if (!await Resume.exists({ user: row.user, 'preparation.generationId': artifact._id })) await deleteResumeArtifact(row.user, artifact._id);
-    } else {
-      await deleteResumeArtifact(row.user, artifact?._id);
-      await Resume.updateOne({ ...lease, 'preparation.leaseUntil': { $gt: new Date() } }, { $set: failure,
-        $unset: { 'preparation.leaseOwner': 1, 'preparation.leaseUntil': 1 } });
-    }
+    await Resume.updateOne({ ...lease, 'preparation.leaseUntil': { $gt: new Date() } }, { $set: failure,
+      $unset: { 'preparation.leaseOwner': 1, 'preparation.leaseUntil': 1 } });
   }
-  // Cleanup cannot revoke an output that has already been published successfully.
-  if (counts.completed) await deleteResumeArtifact(row.user, row.preparation.generationId).catch(() => {});
   return counts;
 }
 
 export async function getBaseResumeArtifact(user) {
   const row = await Resume.findOne(ownerFilter(user._id)).lean();
   if (!row || !preparationMetadata(row).hasPdf) throw tailoringError('Prepare your resume before downloading the generated version.', 404);
+  const evidence = await getCandidateEvidenceSnapshot(user._id);
+  if (!evidenceMatches(row.preparation.outputEvidenceVersion, row.preparation.outputEvidenceHash, evidence)) throw tailoringError('Your candidate evidence changed. Prepare a current CV or download the earlier version from history.', 409);
   const artifact = await readResumeArtifact(user._id, row.preparation.generationId, { kind: 'base' });
   if (!artifact || artifact.sourceResumeSha !== row.sha256) throw tailoringError('Prepare your current resume again.', 409);
   return { artifact, filename: row.filename };

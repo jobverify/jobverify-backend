@@ -12,17 +12,17 @@ export const AGILISIUM_CATALOG = {
   homepageUrl: 'https://www.agilisium.com/',
   companyCareerPage: 'https://www.agilisium.com/people-and-careers',
   jobsBoardUrl: 'https://agilisium.zohorecruit.com/jobs/Careers',
-  atsPlatform: 'official-careers-page-plus-zohorecruit-board',
+  atsPlatform: 'zohorecruit',
   countryFilter: 'India',
-  paginationStrategy: 'official-careers-handoff-plus-single-public-board-validation',
-  extractionStrategy: 'verified-first-party-careers-page+verified-zohorecruit-board-return-empty-until-parser-is-promoted',
+  paginationStrategy: 'native-board-api-full-array-and-closing-reconciliation',
+  extractionStrategy: 'current-employer-handoff+exact-native-organization+full-record-descriptions',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'agilisium.com',
   dryRunFile: 'agilisium/jobs.json',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-10-26',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.agilisium.com/people-and-careers was the live first-party Agilisium careers page and that its Explore Open Roles CTA handed applicants to the public Zoho Recruit board at https://agilisium.zohorecruit.com/jobs/Careers.',
+    'On October 26, 2026, the current official https://www.agilisium.com/people-and-careers page actively links https://agilisium.zohorecruit.com/jobs/Careers. Runtime validates the exact native organization/page, reconciles complete embedded/API inventories, fetches full native descriptions and application URLs, and preserves original public dates. Additional recruiting scope retains partial evidence.',
 }
 
 export default AGILISIUM_CATALOG

@@ -28,7 +28,7 @@ import { normalizeScrapedJob, resolveJobType } from './normalizeScrapedJob.js'
 import { applicationIdentityLookup, applicationPersistenceFilter, coalesceApplicationIdentities, generateFingerprint, resolveApplicationIdentities } from './applicationIdentity.js'
 export { generateFingerprint } from './applicationIdentity.js'
 import { enrichJobsWithPublicExperience } from './publicExperienceEnrichment.js'
-import { jobAlertService } from '../../src/services/jobAlertService.js'
+import { persistJobChangesWithAlertOutbox } from '../../src/services/jobAlertOutboxService.js'
 import { saveLocalJobOutbox } from './localJobOutbox.js'
 import { buildDescriptionSourceUpdate } from '../../src/services/jobDescriptionPolicy.js'
 import { getSourceDescription, hasSourceDescription } from '../../src/utils/jobSourceContent.js'
@@ -530,7 +530,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
       source,
       onStage,
       'bulkWrite',
-      () => JobModel.bulkWrite(operations, { ordered: false }),
+      () => persistJobChangesWithAlertOutbox(JobModel, operations, { enqueueAlerts: options.enqueueAlerts !== false }),
       { operations: operations.length },
       { signal },
     )
@@ -538,23 +538,6 @@ export const saveToDB = async (jobs, source, options = {}) => {
     result.inserted = bulkResult.upsertedCount ?? 0
     result.updated += bulkResult.modifiedCount ?? 0
 
-    const upsertedIndexes = Object.keys(bulkResult.upsertedIds ?? {})
-      .map((key) => Number.parseInt(key, 10))
-      .filter(Number.isInteger)
-    const insertedFingerprints = upsertedIndexes
-      .map((index) => operations[index]?.updateOne?.update?.$set?.fingerprint)
-      .filter(Boolean)
-
-    if (insertedFingerprints.length > 0 && options.enqueueAlerts !== false) {
-      const insertedJobs = await JobModel.find({
-        fingerprint: { $in: insertedFingerprints },
-        status: 'active',
-      })
-        .lean()
-        .exec()
-
-      jobAlertService.enqueueJobAlertsForJobs(insertedJobs)
-    }
   }
 
   if (hasLiveDatabaseHandle() && availabilityTransitions.length > 0) {

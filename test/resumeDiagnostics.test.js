@@ -10,3 +10,14 @@ test('diagnostics permit fixed codes, stages and bounded numbers only', () => {
   assert.deepEqual(untrusted, { stage: 'worker', code: 'processing_failed' });
   assert.doesNotMatch(JSON.stringify(resumeFailure('private@example.test')), /private/);
 });
+
+test('only allowlisted LaTeX validation reasons can appear in public diagnostics', () => {
+  assert.deepEqual(safeResumeDiagnostic({ stage: 'latex', code: 'latex_invalid', reason: 'unsupported_package' }),
+    { stage: 'latex', code: 'latex_invalid', reason: 'unsupported_package' });
+  for (const reason of ['private@example.test', 'toString', '__proto__', { text: 'private' }, undefined]) {
+    assert.deepEqual(safeResumeDiagnostic({ stage: 'latex', code: 'latex_invalid', reason }),
+      { stage: 'latex', code: 'latex_invalid' });
+  }
+  assert.deepEqual(safeResumeDiagnostic({ stage: 'compiling', code: 'compiler_failed', reason: 'unsupported_package' }),
+    { stage: 'compiling', code: 'compiler_failed' });
+});

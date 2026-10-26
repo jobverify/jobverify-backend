@@ -3,15 +3,16 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import Application from '../src/models/Application.js';
+import ApplicationEvent from '../src/models/ApplicationEvent.js';
 import Job from '../src/models/Job.js';
 import User from '../src/models/User.js';
 import TailoredResume from '../src/models/TailoredResume.js';
 import { recordApplicationOpen } from '../src/services/applicationService.js';
 
 test('MongoDB and HTTP application lifecycle preserves manual status, privacy and history', { timeout: 90000 }, async t => {
-  const mongo = new MongoMemoryServer({ binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
+  const mongo = new MongoMemoryReplSet({ replSet: { count: 1 }, binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
   let server;
   t.after(async () => {
     if (server) await new Promise(resolve => server.close(resolve));
@@ -24,7 +25,7 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   process.env.CORS_ORIGIN = 'http://localhost:5173';
   await mongo.start();
   await mongoose.connect(mongo.getUri(), { dbName: 'application_lifecycle_test' });
-  await Application.init();
+  await Promise.all([Application.init(), ApplicationEvent.init()]);
   const user = new mongoose.Types.ObjectId();
   const otherUser = new mongoose.Types.ObjectId();
   await User.collection.insertMany([
@@ -43,9 +44,9 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   const csrfResponse = await fetch(`${base}/api/auth/csrf-token`, { headers: { Origin: process.env.CORS_ORIGIN } });
   const { token: csrf } = await csrfResponse.json();
   const csrfCookie = csrfResponse.headers.getSetCookie().map(cookie => cookie.split(';')[0]).join('; ');
-  async function request(path, { method = 'GET', owner = user, includeCsrf = true } = {}) {
+  async function request(path, { method = 'GET', owner = user, includeCsrf = true, body } = {}) {
     const auth = owner ? `jobverify_token=${jwt.sign({ id: owner.toString(), sessionVersion: 0 }, process.env.JWT_SECRET)}` : '';
-    const response = await fetch(`${base}${path}`, { method, headers: {
+    const response = await fetch(`${base}${path}`, { method, ...(body ? { body: JSON.stringify(body) } : {}), headers: {
       Origin: process.env.CORS_ORIGIN, 'Content-Type': 'application/json',
       Cookie: `${auth}; ${csrfCookie}`, ...(includeCsrf ? { 'X-CSRF-Token': csrf } : {}),
     } });
@@ -101,6 +102,22 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   assert.equal((await Job.findById(jobId)).clickCount, 1, 'duplicate tracking keeps analytics deduplication');
   const repeated = await request(`/api/user/applications/${id}/applied`, { method: 'PUT' });
   assert.equal(repeated.body.data.appliedAt, confirmed.body.data.appliedAt);
+  const stageCommand = { stage: 'interview', expectedVersion: repeated.body.data.version, eventKey: 'http-interview', note: 'Interview on Tuesday' };
+  const stagePath = `/api/user/applications/${id}/stage`;
+  assert.equal((await request(stagePath, { method: 'PUT', includeCsrf: false, body: stageCommand })).status, 403);
+  assert.equal((await request(stagePath, { method: 'PUT', owner: otherUser, body: stageCommand })).status, 404);
+  assert.equal((await request(stagePath, { method: 'PUT', body: { ...stageCommand, actor: 'system' } })).status, 400);
+  const progressed = await request(stagePath, { method: 'PUT', body: stageCommand });
+  assert.equal(progressed.status, 200); assert.equal(progressed.body.data.stage, 'interview');
+  assert.equal(progressed.body.data.status, 'applied');
+  assert.equal((await request(stagePath, { method: 'PUT', body: { ...stageCommand, stage: 'offer', eventKey: 'stale-http' } })).status, 409);
+  assert.equal((await request(`/api/user/applications/${id}/events`, { owner: otherUser })).status, 404);
+  assert.equal((await request(`/api/user/applications/${id}/events`, { owner: null })).status, 401);
+  assert.equal((await request(`/api/user/applications/${id}/events?page=bad`)).status, 400);
+  const timeline = await request(`/api/user/applications/${id}/events`);
+  assert.equal(timeline.status, 200);
+  const stageEvent = timeline.body.data.find(event => event.kind === 'stage_changed');
+  assert.equal(stageEvent.note, 'Interview on Tuesday'); assert.equal(stageEvent.actor, 'candidate'); assert.equal(stageEvent.actorUser, String(user));
   await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: 'queued' } });
   const regenerating = await request('/api/user/applications');
   assert.equal(regenerating.body.data.length, 1, 'regeneration must not duplicate an application');
@@ -108,6 +125,7 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   assert.equal(regenerating.body.data[0].resumeStatus, 'queued');
   assert.equal(regenerating.body.data[0].appliedAt, confirmed.body.data.appliedAt);
   await Job.deleteOne({ _id: jobId });
+  assert.equal((await request(`/api/user/applications/${id}/events`)).body.pagination.total, timeline.body.pagination.total);
   const history = await request('/api/user/applications?status=applied&page=1');
   assert.equal(history.body.data.length, 1);
   assert.equal(history.body.data[0].jobSnapshot.title, job.title);

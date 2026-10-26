@@ -179,23 +179,41 @@ const processRecords = async (user, records) => {
   }
 };
 
-export const queueJobAlertsForJobs = async (jobs = []) => {
-  if (!Array.isArray(jobs) || !jobs.length) return;
-  const users = await User.find({
+export const stageJobAlertDeliveries = async (jobs = [], { session } = {}) => {
+  if (!Array.isArray(jobs) || !jobs.length) return [];
+  const query = User.find({
     deactivated: false,
+    outreachDeletingAt: null,
     "premium.telegramAlertsEnabled": true,
     $or: [{ role: "admin" }, { "premium.status": "active" }],
-  }).lean().exec();
-  await Promise.all(users.map(async (user) => {
-    if (!canUseTelegramAlerts(user)) return;
+  });
+  if (session) query.session(session);
+  const users = await query.lean().exec();
+  const batches = [];
+  // MongoDB sessions do not support parallel operations within a transaction.
+  for (const user of users) {
+    if (!canUseTelegramAlerts(user)) continue;
     const filters = normalizeProfilePreferenceFilters(user.profile?.telegramAlertFilters);
-    if (!hasSavedFilters(filters)) return;
+    if (!hasSavedFilters(filters)) continue;
     const matching = jobs.filter((job) => !isAggregateHiringSignalJob(job)
       && jobMatchesSavedFilters({ job, filters, userProfile: user.profile }));
-    if (!matching.length) return;
-    const queued = await alertScheduleService.queueDeliveries(user, matching, "telegram");
-    await processRecords(user, queued);
-  }));
+    if (!matching.length) continue;
+    if (session) {
+      // Serialize fanout with account deletion so it cannot recreate private
+      // delivery/subscription rows after the account cleanup has finished.
+      const owner = await User.updateOne({ _id: user._id, deactivated: false, outreachDeletingAt: null },
+        { $inc: { __v: 1 } }, { session });
+      if (!owner.matchedCount) continue;
+    }
+    const records = await alertScheduleService.queueDeliveries(user, matching, "telegram", new Date(), { session });
+    batches.push({ user, records });
+  }
+  return batches;
+};
+
+export const queueJobAlertsForJobs = async (jobs = []) => {
+  const batches = await stageJobAlertDeliveries(jobs);
+  for (const { user, records } of batches) await processRecords(user, records);
 };
 
 let recoveryInProgress = false;
@@ -220,9 +238,3 @@ export const recoverQueuedJobAlerts = async () => {
     recoveryInProgress = false;
   }
 };
-
-export const enqueueJobAlertsForJobs = (jobs = []) => setImmediate(() => {
-  queueJobAlertsForJobs(jobs).catch((error) => console.error("[Telegram Alerts] Failed to process alerts:", error.message));
-});
-
-export const jobAlertService = { enqueueJobAlertsForJobs };

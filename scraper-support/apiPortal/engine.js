@@ -6,6 +6,7 @@ import { isIndiaJob } from '../utils/indiaLocationFilter.js'
 import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { fetchSmartRecruitersDetail } from './smartRecruitersDetail.js'
 import { isGreenhousePublicationProvider, resolveGreenhousePublication } from './greenhousePublication.js'
+import { identifyPublicAtsBoard } from '../utils/publicAtsIdentity.js'
 import {
   expandTemplate,
   getMappedFieldValue,
@@ -160,6 +161,7 @@ const mapRecord = (raw, provider, config, detail = {}, detailObservation = 'not-
   const experienceLevel = getMappedValue(merged, config.mapping.experienceLevel)
   const postingDate = nativePublication ? nativePublication.value : getMappedValue(merged, config.mapping.postingDate)
   const remoteStatus = getMappedValue(merged, config.mapping.remoteStatus)
+  const nativeCountry = config.mapping.country ? getMappedValue(merged, config.mapping.country) : null
   const sourceUrl = toAbsoluteUrl(
     getMappedValue(merged, config.mapping.sourceUrl) ?? detail.sourceUrl,
     provider,
@@ -177,7 +179,9 @@ const mapRecord = (raw, provider, config, detail = {}, detailObservation = 'not-
     company: provider.companyName,
     location,
     city: deriveCity(location),
-    country: provider.countryFilter || 'India',
+    country: config.mapping.country
+      ? nativeCountry || (provider.atsPlatform === 'lever' && /\bindia\b/i.test(String(location || '')) ? 'India' : null)
+      : provider.countryFilter || 'India',
     link: canonicalUrl,
     applyUrl,
     sourceUrl: canonicalUrl,
@@ -411,6 +415,14 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         throw new Error('API portal inventory validation failed: listing array missing or malformed')
       }
       validateInventory(listingPayload, records, config.inventoryValidation)
+      if (provider.atsPlatform === 'lever') {
+        const board = identifyPublicAtsBoard(config.discovery.listingApiUrl)
+        if (board?.atsPlatform !== 'lever') throw new Error('Invalid Lever native board identity')
+        // The wrapper also uses this engine. Import its native validator only
+        // after module initialization, as in the shared Ashby factory.
+        const { validatePublicPostingScope } = await import('../utils/publishingGapAts.js')
+        for (const reason of validatePublicPostingScope(records, 'lever', { ...provider, boardToken: board.boardToken, leverRegion: board.region || 'global' })) markIncomplete(reason)
+      }
       const listingRecords = records
       pagesFetched += 1
       if (listingRecords.length) {
@@ -491,7 +503,9 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
               if (seenIdentities.has(key)) markIncomplete('repeated-vacancy-identity')
               seenIdentities.add(key)
             }
-            if (!hasSourceDescription(mapped)) {
+            const needsIndiaDetails = provider.atsPlatform !== 'lever'
+              || (isIndiaJob(mapped) && passesResultFilter(mapped, config.resultFilter))
+            if (needsIndiaDetails && !hasSourceDescription(mapped)) {
               if (config.detail.enabled && config.detail.required) throw new Error('API portal detail contract incomplete: missing employer description')
               markIncomplete('employer-description-unavailable')
             }
@@ -532,7 +546,10 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
     return attachInventoryEvidence(jobs, {
       status: complete ? recordsFetched === 0 ? 'verified-empty' : 'complete-inventory' : 'discovery-only',
       surface: config.discovery.listingApiUrl, firstParty: true, listingComplete: complete,
-      pagesFetched, reportedTotal, indiaFacetCount: indiaCount, verifiedAt: new Date().toISOString(),
+      pagesFetched, reportedTotal,
+      indiaFacetCount: incompleteReasons.has('native-location-scope-unresolved')
+        || incompleteReasons.has('native-india-location-unmapped') ? null : indiaCount,
+      verifiedAt: new Date().toISOString(),
       reason: complete ? 'api-portal-complete-native-pagination'
         : `api-portal-incomplete-listing-or-role-details:${[...incompleteReasons,
           ...(!state.done || continuation ? ['unconsumed-continuation'] : []),

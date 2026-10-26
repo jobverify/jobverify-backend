@@ -23,6 +23,9 @@ import AutoApplyAttempt from '../src/models/AutoApplyAttempt.js';
 import Resume from '../src/models/Resume.js';
 import TailoredResume from '../src/models/TailoredResume.js';
 import ResumeArtifact from '../src/models/ResumeArtifact.js';
+import ApplicationEvent from '../src/models/ApplicationEvent.js';
+import CandidateEvidence from '../src/models/CandidateEvidence.js';
+import CVRevision from '../src/models/CVRevision.js';
 import PendingUser from '../src/models/PendingUser.js';
 import AdminAudit from '../src/models/AdminAudit.js';
 import SiteSettings from '../src/models/SiteSettings.js';
@@ -37,7 +40,7 @@ test('account deletion blocks new outreach before revoking and removing all priv
   t.mock.method(SiteSettings, 'updateMany', async () => {});
   for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application,
     PendingUser, AdminAudit, GmailConnection, GmailOAuthState, Campaign, OutreachThread, OutreachTask, OutreachUsage,
-    ApplicationMail, ApplicationMailbox, ApplicationMailboxAuth, AutoApplyAttempt, Resume, TailoredResume, ResumeArtifact]) {
+    ApplicationEvent, CandidateEvidence, CVRevision, ApplicationMail, ApplicationMailbox, ApplicationMailboxAuth, AutoApplyAttempt, Resume, TailoredResume, ResumeArtifact]) {
     t.mock.method(Model, 'deleteMany', async filter => { calls.push([Model.modelName, filter]); });
   }
   await removeUserAccount(user);
@@ -45,7 +48,7 @@ test('account deletion blocks new outreach before revoking and removing all priv
   assert.ok(calls[0][2].$set.outreachDeletingAt instanceof Date);
   assert.ok(calls.findIndex(([name]) => name === 'disconnect') < calls.findIndex(([name]) => name === 'OutreachThread'));
   for (const name of ['GmailConnection', 'GmailOAuthState', 'Campaign', 'OutreachThread', 'OutreachTask', 'OutreachUsage',
-    'ApplicationMail', 'ApplicationMailbox', 'ApplicationMailboxAuth', 'AutoApplyAttempt', 'Resume', 'TailoredResume', 'ResumeArtifact']) {
+    'ApplicationEvent', 'CandidateEvidence', 'CVRevision', 'ApplicationMail', 'ApplicationMailbox', 'ApplicationMailboxAuth', 'AutoApplyAttempt', 'Resume', 'TailoredResume', 'ResumeArtifact']) {
     assert.ok(calls.some(([model, filter]) => model === name && filter.user === user._id), name);
   }
   assert.deepEqual(calls.at(-1), ['User', { _id: user._id }]);

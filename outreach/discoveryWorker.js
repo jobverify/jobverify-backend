@@ -2,7 +2,7 @@ import OutreachTask from '../src/models/OutreachTask.js';
 import { processDiscoveryTask } from '../src/services/outreachService.js';
 import { prepareOutreachRuntime } from './runner.js';
 import { prepareReferralSearchRuntime } from './searchRuntime.js';
-import { searchReferralWeb, rankReferralContacts } from './referralSearch.js';
+import { searchReferralWeb, rankReferralContacts, findPublicReferralEmail } from './referralSearch.js';
 
 export function referralWorkerDeadline(workflowStartedAt, now = Date.now()) {
   const started = Date.parse(workflowStartedAt || '');
@@ -11,7 +11,7 @@ export function referralWorkerDeadline(workflowStartedAt, now = Date.now()) {
 
 export async function runReferralDiscoveryWorker({ deadline = Date.now() + 8 * 60000,
   prepareSearch = prepareReferralSearchRuntime, prepareModel = prepareOutreachRuntime,
-  processTask = processDiscoveryTask, search = searchReferralWeb, rankContacts = rankReferralContacts,
+  processTask = processDiscoveryTask, search = searchReferralWeb, rankContacts = rankReferralContacts, findEmail = findPublicReferralEmail,
 } = {}) {
   const pending = await OutreachTask.find({ kind: 'discovery', 'input.provider': 'actions', ready: true, attempts: { $lt: 3 }, $or: [
     { status: 'queued' }, { status: 'running', leaseUntil: { $lt: new Date() } },
@@ -30,7 +30,7 @@ export async function runReferralDiscoveryWorker({ deadline = Date.now() + 8 * 6
     for (const row of pending) {
       if (counts.attempted >= 3 || deadline - Date.now() <= 15000) break;
       counts.attempted++;
-      const result = await processTask(row._id, { provider: 'actions', search, rankContacts, deadline: Math.min(deadline, Date.now() + 150000) });
+      const result = await processTask(row._id, { provider: 'actions', search, rankContacts, findEmail, deadline: Math.min(deadline, Date.now() + 150000) });
       if (result) counts.completed++;
       else if ((await OutreachTask.findById(row._id).select('status').lean())?.status === 'failed') counts.failed++;
     }

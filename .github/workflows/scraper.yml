@@ -2,7 +2,7 @@ name: Jobverify Scraper Cron
 run-name: 'Scraper #${{ github.run_number }}'
 on:
   schedule:
-    - cron: '32 17 * * *' # Every day at 00:44 AM IST
+    - cron: '0 17 * * *' # Every day at 10:30 PM IST
   workflow_dispatch:
     inputs:
       pipeline_id:
@@ -21,10 +21,10 @@ concurrency:
   cancel-in-progress: false
 jobs:
   scrape:
+    name: Scrape company job openings
     permissions:
       contents: read
       actions: write
-    name: ${{ inputs.dispatch_token && format('Scraper [dispatch:{0}]', inputs.dispatch_token) || 'Scraper' }}
     runs-on: ubuntu-latest
     timeout-minutes: 360
     env:
@@ -37,6 +37,8 @@ jobs:
       MONGO_URI: ${{ secrets.MONGO_URI }}
       PIPELINE_SUMMARY_FILE: '.cache/scraper-actions/pipeline-scraper-summary.json'
     steps:
+      - name: ${{ inputs.dispatch_token && format('Scraper [dispatch:{0}]', inputs.dispatch_token) || 'Scraper' }}
+        run: echo 'Pipeline dispatch identity recorded'
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.pipeline_sha || github.sha }}

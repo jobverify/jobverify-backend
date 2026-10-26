@@ -11,6 +11,7 @@ const scraper = createPhenomScraper({
   baseUrl: 'https://careers.quest-global.com',
   searchPath: '/global/en/search-results',
   scraperDir: currentDir,
+  nativeBangaloreLocationAlias: true,
 })
 
 export const {

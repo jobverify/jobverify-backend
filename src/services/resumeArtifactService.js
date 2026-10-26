@@ -18,15 +18,16 @@ export function validateResumeArtifact(output) {
     modelVersion: String(output.modelVersion || '').slice(0, 300), styleVersion: String(output.styleVersion || '').slice(0, 100) };
 }
 
-export async function createResumeArtifact(owner, output) {
+export async function createResumeArtifact(owner, output, { session } = {}) {
   const data = validateResumeArtifact(output);
-  return ResumeArtifact.create({ ...owner, ...data, _id: randomUUID() });
+  if (!session) return ResumeArtifact.create({ ...owner, ...data, _id: randomUUID() });
+  return (await ResumeArtifact.create([{ ...owner, ...data, _id: randomUUID() }], { session }))[0];
 }
 
-export async function readResumeArtifact(user, generationId, { kind, job, withSource = false } = {}) {
+export async function readResumeArtifact(user, generationId, { kind, job, withSource = false, session } = {}) {
   if (!generationId) return null;
   const query = ResumeArtifact.findOne({ _id: generationId, user, ...(kind ? { kind } : {}), ...(job ? { job } : {}) });
-  return query.select(withSource ? '+latex +pdf +facts' : '+latex +pdf').lean();
+  return query.session(session || null).select(withSource ? '+latex +pdf +facts' : '+latex +pdf').lean();
 }
 
 export async function deleteResumeArtifact(user, generationId) {

@@ -1,12 +1,13 @@
 import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { factPlanMessages, factPlanSchema, validateFactPlan, assessRewriteInput, expandModelPlan } from './factPlan.js';
+import { factPlanMessages, factPlanSchema, factPlanRanges, validateFactPlan, assessRewriteInput, expandModelPlan } from './factPlan.js';
 import { REWRITE_MODEL, REWRITE_SCHEMA, MAX_REWRITE_SECTION_ITEMS, buildRewriteInput, rewriteMessages, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
 import { reconcileRewriteCandidate, rewriteSnapshotFilter } from './queue.js';
 import { RewriteWorkerError } from './worker.js';
 import { buildReferencedSections, expandReferencedSections } from './sectionProtocol.js';
 import { buildSourceEdits, expandSourceEdits } from './editProtocol.js';
+import { createProseRewriteClient, validateProseRewrite } from './prose.js';
 
 export const rewriteDeadline = ({ now = Date.now(), budgetSeconds = 1200, workflowStartedAt, workflowSeconds = 9000, cleanupSeconds = 120 } = {}) => {
   const budget = Number(budgetSeconds);
@@ -28,6 +29,7 @@ export const rewriteStopDetails = ({ budgetExpired = false, cancelled = false } 
 // Production uses compact source-fact decisions. Keep the prose protocols
 // available for explicit comparisons and historical regression coverage.
 export const assessDescriptionRewrite = (input, format = REWRITE_MODEL.outputFormat) => {
+  if (format === 'prose') return input.eligible ? { ok: true } : { ok: false, reason: 'insufficient_source' };
   if (['source-edits', 'source-sections'].includes(format)) {
     if (!input.eligible) return { ok: false, reason: 'insufficient_source' };
     const counts = new Map();
@@ -42,11 +44,11 @@ export const assessDescriptionRewrite = (input, format = REWRITE_MODEL.outputFor
   return assessment;
 };
 export const validateDescriptionRewrite = (value, input, finishReason, format) =>
-  format === 'fact-plan' || (!format && value && Object.hasOwn(value, 'categories'))
+  format === 'prose' ? validateProseRewrite(value, input, finishReason) : format === 'fact-plan' || (!format && value && Object.hasOwn(value, 'categories'))
     ? validateFactPlan(value, input, finishReason) : validateRewrite(value, input, finishReason);
 
 /** Read SSE incrementally; a closed socket without a finish frame is not a completion. */
-const readCompletionStream = async response => {
+const readCompletionStream = async (response, { maxCharacters = 100000 } = {}) => {
   if (!response.body || typeof response.body[Symbol.asyncIterator] !== 'function') throw new RewriteGenerationError('Local generator stream missing');
   const decoder=new TextDecoder();let buffer='',content='',finishReason=null,done=false,usage,timings;
   const frame=line=>{
@@ -58,7 +60,7 @@ const readCompletionStream = async response => {
     if(value.error)throw new RewriteGenerationError('Local generator stream error');
     const choice=value.choices?.[0];
     if(typeof choice?.delta?.content==='string')content+=choice.delta.content;
-    if(content.length>100000)throw new RewriteGenerationError('Malformed oversized generator stream');
+    if(content.length>maxCharacters)throw new RewriteGenerationError('Malformed oversized generator stream');
     if(choice?.finish_reason)finishReason=choice.finish_reason;
     usage=value.usage||usage;timings=value.timings||timings;
   };
@@ -66,7 +68,7 @@ const readCompletionStream = async response => {
   for await(const chunk of response.body){
     buffer+=decoder.decode(chunk,{stream:true});
     let end;while((end=buffer.indexOf('\n'))>=0){frame(buffer.slice(0,end).replace(/\r$/,''));buffer=buffer.slice(end+1);}
-    if(buffer.length>100000)throw new RewriteGenerationError('Malformed oversized generator frame');
+    if(buffer.length>maxCharacters)throw new RewriteGenerationError('Malformed oversized generator frame');
   }
   buffer+=decoder.decode();if(buffer.trim())frame(buffer.replace(/\r$/,''));
   if(!done||!finishReason)throw new RewriteGenerationError('Local generator stream incomplete');
@@ -78,10 +80,13 @@ const readCompletionStream = async response => {
 };
 
 export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-lfm',
-  format = REWRITE_MODEL.outputFormat, requestMs = REWRITE_MODEL.requestSeconds * 1000, planCacheDir, assertAlive = () => {} } = {}) => {
-  if (!['source-edits', 'source-sections', 'sections', 'fact-plan'].includes(format)) throw new Error('Invalid rewrite output format');
+  format = REWRITE_MODEL.outputFormat, requestMs, planCacheDir, assertAlive = () => {} } = {}) => {
+  if (!['prose', 'source-edits', 'source-sections', 'sections', 'fact-plan'].includes(format)) throw new Error('Invalid rewrite output format');
   const url = new URL(endpoint);
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error('Generation must run on unauthenticated http://127.0.0.1');
+  if (format === 'prose') return createProseRewriteClient({ endpoint, model, requestMs, planCacheDir, assertAlive, GenerationError: RewriteGenerationError,
+    readCompletion: response => readCompletionStream(response, { maxCharacters: Infinity }) });
+  requestMs ??= REWRITE_MODEL.requestSeconds * 1000;
   const cache = new Map();
   const compact = format === 'fact-plan', boundedEdits = format === 'source-edits', referenced = boundedEdits || format === 'source-sections';
   const cacheVersion = compact ? 1 : boundedEdits ? 4 : referenced ? 3 : 2, cacheBytes = compact ? 16000 : 65536;
@@ -97,15 +102,40 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
     cache.set(key, value);
     if (cache.size > 128) cache.delete(cache.keys().next().value);
   };
-  return { format, generate: async (input, { signal, remainingMs = requestMs } = {}) => {
+  return { format, generate: async function generate(input, { signal, remainingMs = requestMs, factRange } = {}) {
     const startedAt = Date.now(), availableMs = Math.max(1, Math.floor(Math.min(requestMs, remainingMs)));
     const requestDeadline = startedAt + availableMs, timeout = AbortSignal.timeout(availableMs);
     const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
     combined.throwIfAborted();
     assertAlive();
+    const ranges=compact&&!factRange?factPlanRanges(input):null;
+    if(ranges){
+      const rawValue={categories:[],overviewFactId:null};let generationRequests=0;
+      for(let index=0;index<ranges.length;index++){
+        const range=ranges[index];
+        combined.throwIfAborted();
+        let batch;
+        try {batch=await generate(input,{signal:combined,remainingMs:Math.max(1,requestDeadline-Date.now()),factRange:range});}
+        catch(error){
+          generationRequests+=error.generationRequests||0;
+          if(error.reason==='model_context_budget'&&range.end-range.start>1){
+            const middle=Math.floor((range.start+range.end)/2);
+            ranges.splice(index,1,{start:range.start,end:middle},{start:middle,end:range.end});index--;continue;
+          }
+          error.generationRequests=generationRequests;throw error;
+        }
+        generationRequests+=batch.generationRequests||0;
+        // Validate the batch before combining it. A malformed or partial batch
+        // must never publish an incomplete description.
+        if(batch.finishReason!=='stop'||!expandModelPlan(batch.rawValue,input,{factRange:range}))return {...batch,value:null,generationRequests};
+        rawValue.categories.push(...batch.rawValue.categories);
+        if(range.start===0)rawValue.overviewFactId=batch.rawValue.overviewFactId;
+      }
+      return {value:expandModelPlan(rawValue,input),rawValue,format,finishReason:'stop',generationRequests};
+    }
     const protocol = boundedEdits ? buildSourceEdits(input) : referenced ? buildReferencedSections(input) : null;
-    const messages = protocol?.messages || (compact ? factPlanMessages(input) : rewriteMessages(input));
-    const schema = protocol?.schema || (compact ? factPlanSchema(input) : REWRITE_SCHEMA);
+    const messages = protocol?.messages || (compact ? factPlanMessages(input,{factRange}) : rewriteMessages(input));
+    const schema = protocol?.schema || (compact ? factPlanSchema(input,{factRange}) : REWRITE_SCHEMA);
     if (boundedEdits && !protocol.candidates.length) {
       const rawValue = { edits: [] }, value = expand(rawValue, input);
       return { value, rawValue, format, finishReason: 'stop', generationRequests: 0,
@@ -124,7 +154,7 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
     const initialOutputTokens = compact ? 768 : referenced ? REWRITE_MODEL.maxOutputTokens : 2048;
     let result, retrySkipped, generationRequests = 0, outputTokens = initialOutputTokens, promptTokens = 0;
     try {
-      if (!compact) {
+      if (!compact || factRange) {
         // Count the actual local chat template, including special tokens. Sizing
         // and both completion attempts share the original request deadline.
         const metadata = async (route, body) => {
@@ -170,7 +200,7 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
         // Retry only token truncation, within the original timeout and per-slot context.
         let retryTokens = Math.min(initialOutputTokens * 2,
           compact ? Math.floor(REWRITE_MODEL.contextTokens / 4) : referenced ? REWRITE_MODEL.maxRetryOutputTokens : 4096);
-        if (!compact) retryTokens = Math.min(retryTokens, REWRITE_MODEL.contextTokens - promptTokens - 64);
+        if (!compact || factRange) retryTokens = Math.min(retryTokens, REWRITE_MODEL.contextTokens - promptTokens - 64);
         if (Number.isInteger(result.usage?.prompt_tokens) && result.usage.prompt_tokens >= 0) {
           retryTokens = Math.min(retryTokens, REWRITE_MODEL.contextTokens - result.usage.prompt_tokens - (compact ? 32 : 64));
         }

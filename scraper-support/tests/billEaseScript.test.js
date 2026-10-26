@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { billEaseNativeOptions, billEaseIndiaRole } from './fixtures/billEaseNativeOptions.js'
 
 const loadBillEaseModule = async () => {
   try {
@@ -124,29 +125,15 @@ test('BillEase extracts India jobs from the public board and detail page', async
   assert.equal(job.remoteStatus, 'Hybrid')
 })
 
-test('BillEase run follows the official page to the public board and decorates final jobs', async () => {
+test('BillEase run follows the current corporate and paginated native surfaces and decorates final jobs', async () => {
   const billease = await loadBillEaseModule()
-  const requestedUrls = []
-
+  const options = billEaseNativeOptions(packet => billEaseIndiaRole(packet))
   const jobs = await billease.createBillEaseScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === billease.CAREERS_URL) return officialCareersHtml
-      if (url === billease.CAREERS_BOARD_URL) return boardHtml
-      if (url === 'https://billease.careers-page.com/jobs/c95f53d6-6e57-4699-93e7-8adc088d143e') {
-        return detailHtml
-      }
-      throw new Error(`Unexpected BillEase fixture URL: ${url}`)
-    },
-    now: () => '2026-07-14T12:00:00.000Z',
+    ...options,
+    now: () => '2026-10-26T12:00:00.000Z',
   })
-
-  assert.deepEqual(requestedUrls, [
-    billease.CAREERS_URL,
-    billease.CAREERS_BOARD_URL,
-    'https://billease.careers-page.com/jobs/c95f53d6-6e57-4699-93e7-8adc088d143e',
-  ])
+  assert.ok(options.calls.includes(billease.CAREERS_BOARD_URL + '?page=2'))
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'billease')
-  assert.equal(jobs[0].scrapedAt, '2026-07-14T12:00:00.000Z')
+  assert.equal(jobs[0].scrapedAt, '2026-10-26T12:00:00.000Z')
 })

@@ -39,7 +39,7 @@ test('rewrite queue reconciliation repairs metadata without changing employer co
   });
 
   await t.test('ineligible source is skipped without generation or description changes', async () => {
-    const row = await insert({ sourceDescription: 'Short employer source', description: 'Short employer source' });
+    const row = await insert({ sourceDescription: '<p> </p>', description: '<p> </p>' });
     const result = await reconcileRewriteCandidate(row, { update });
     const saved = await Job.findById(row._id).lean();
     assert.equal(result.kind, 'skipped'); assert.equal(result.reason, 'insufficient_source');
@@ -104,7 +104,7 @@ test('rewrite queue reconciliation repairs metadata without changing employer co
 
   await t.test('parallel runner repairs eligible entries and skips ineligible entries', async () => {
     const good = await insert({});
-    const short = await insert({ sourceDescription: 'Short source', description: 'Short source' });
+    const short = await insert({ sourceDescription: '<p> </p>', description: '<p> </p>' });
     let requests = 0;
     const stats = await rewriteCandidates([good, short], { concurrency: 4, update, deadline: Date.now() + 10000,
       client: { generate: async input => { requests++; return { value: { categories: buildSourceFacts(input).map(fact => fact.section ?? 9), overview: null }, finishReason: 'stop' }; } },

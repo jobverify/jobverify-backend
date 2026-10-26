@@ -6,15 +6,15 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Finzly as a Workable markdown-feed script provider with official metadata', () => {
+test('getScraperCatalog includes Finzly as a current first-party native script provider with official metadata', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'finzly')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'workable')
+  assert.equal(provider.atsPlatform, 'first-party-wordpress-careers')
   assert.equal(provider.companyName, 'Finzly')
-  assert.equal(provider.companyCareerPage, 'https://apply.workable.com/finzly/')
-  assert.equal(provider.companyDomain, 'apply.workable.com')
+  assert.equal(provider.companyCareerPage, 'https://finzly.com/careers/')
+  assert.equal(provider.companyDomain, 'finzly.com')
   assert.match(provider.modulePath, /finzly[\\/]script\.js$/i)
 })
 
@@ -24,6 +24,6 @@ test('buildScrapers exposes a runnable Finzly scraper without changing the runne
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'finzly')
-  assert.equal(scraper.provider.atsPlatform, 'workable')
+  assert.equal(scraper.provider.atsPlatform, 'first-party-wordpress-careers')
   assert.match(scraper.dryRunFile, /finzly[\\/]jobs\.json$/)
 })

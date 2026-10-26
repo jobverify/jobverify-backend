@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { classifyScraperError } from '../../scraper-support/utils/failureClassification.js'
 
 import { TECHTREE_IT_SYSTEMS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -279,10 +280,32 @@ export const enrichJobWithDetailJson = (job, detailPayload = {}) => {
   }
 }
 
-const sourceError = (code, diagnostics = {}) => Object.assign(new Error(`TechTree extraction failed: ${code}`), {
-  code,
-  diagnostics: { listingComplete: false, companyCoverageComplete: false, ...diagnostics },
-})
+const sourceError = (code, diagnostics = {}, cause = null) => {
+  const error = Object.assign(new Error(`TechTree extraction failed: ${code}`, cause ? { cause } : undefined), {
+    code,
+    diagnostics: { listingComplete: false, companyCoverageComplete: false, ...diagnostics },
+  })
+  let classification
+  if (code === 'careers-blocked') {
+    classification = { softFailure: true, upstreamOutage: true, failureKind: 'blocked_or_access_denied' }
+  } else if (code === 'careers-fetch-failed' && cause) {
+    classification = classifyScraperError(cause)
+  } else if (code === 'careers-unavailable' || code === 'careers-cards-missing') {
+    const status = Number(diagnostics.status)
+    classification = status >= 400 && status <= 599
+      ? classifyScraperError(new Error(`HTTP ${status}`))
+      : { softFailure: true, upstreamOutage: false, failureKind: 'surface_drift_or_fail_closed' }
+  }
+  if (classification?.softFailure) {
+    Object.assign(error, classification)
+    if (Number(diagnostics.status) === 429) {
+      error.abortRetries = false
+    } else if (['blocked_or_access_denied', 'surface_drift_or_fail_closed'].includes(classification.failureKind)) {
+      error.abortRetries = true
+    }
+  }
+  return error
+}
 
 export const createTechtreeItSystemsScraper = ({
   now = () => new Date().toISOString(),
@@ -293,7 +316,7 @@ export const createTechtreeItSystemsScraper = ({
   } = {}) {
     let careersPage
     try { careersPage = await fetchPage(CAREERS_URL) } catch (error) {
-      throw sourceError('careers-fetch-failed', { reason: error.message })
+      throw sourceError('careers-fetch-failed', { reason: error.message }, error)
     }
 
     if (!isVerifiedCareersPage(careersPage)) {

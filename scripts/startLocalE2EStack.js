@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 
 import Click from "../src/models/Click.js";
 import Job from "../src/models/Job.js";
@@ -418,6 +418,7 @@ const seedLocalState = async () => {
 const spawnBackend = (mongoUri) => {
   const child = spawn(process.execPath, ["server.js"], {
     cwd: backendDir,
+    windowsHide: true,
     env: {
       ...process.env,
       MONGO_URI: mongoUri,
@@ -428,6 +429,10 @@ const spawnBackend = (mongoUri) => {
       FRONTEND_ORIGIN,
       TURNSTILE_SECRET_KEY: "",
       TRUST_PROXY: "false",
+      TELEGRAM_ENABLED: "false",
+      TAILORED_RESUME_ACTIONS_ENABLED: "false",
+      GITHUB_PAT: "",
+      GITHUB_TOKEN: "",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -444,8 +449,11 @@ const createFrontendEnv = () => ({
 });
 
 const buildFrontend = async () => {
-  const child = spawnNpmProcess(["run", "build", "--", "--mode", "local-e2e"], {
+  // The npm build script chains several commands: trailing npm arguments reach
+  // its final command, not Vite. Pass the local mode directly to Vite.
+  const child = spawn(process.execPath, [path.join(frontendDir, 'node_modules/vite/bin/vite.js'), 'build', '--configLoader', 'runner', '--mode', 'local-e2e'], {
     cwd: frontendDir,
+    windowsHide: true,
     env: createFrontendEnv(),
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -493,12 +501,14 @@ async function main() {
   BACKEND_ORIGIN = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
 
   await fs.mkdir(mongoBinaryCacheDir, { recursive: true });
-  mongoServer = await MongoMemoryServer.create({
-    instance: {
+  mongoServer = await MongoMemoryReplSet.create({
+    replSet: {
+      count: 1,
       dbName: "jobverify-local-e2e",
       ip: BACKEND_HOST,
     },
     binary: {
+      version: '8.2.6',
       downloadDir: mongoBinaryCacheDir,
     },
   });
@@ -506,6 +516,12 @@ async function main() {
   const mongoUri = mongoServer.getUri();
   await mongoose.connect(mongoUri);
   const { seedInfo, auditJob } = await seedLocalState();
+  if (process.env.JOBVERIFY_E2E_CANDIDATE_WORKFLOW === 'true') {
+    const owner = await User.findOneAndUpdate({ email: E2E_EMAIL }, { $addToSet: { savedJobs: auditJob._id } }, { new: true });
+    await Job.updateOne({ _id: auditJob._id }, { $set: { requiredSkills: ['React', 'JavaScript'] } });
+    const { seedCandidateWorkflowCv } = await import('./lib/candidateWorkflowCvFixture.js');
+    await seedCandidateWorkflowCv({ userId: owner._id, jobId: auditJob._id });
+  }
   await mongoose.disconnect();
 
   await buildFrontend();

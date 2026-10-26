@@ -5,6 +5,10 @@ import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/ut
 import { filterIndiaJobs } from '../../scraper-support/utils/indiaLocationFilter.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { extractAshbyExperienceRequired } from '../../scraper-support/utils/ashbyExperience.js'
+import { createAshbyApiScraper } from '../../scraper-support/utils/ashbyApi.js'
+import { attachInventoryEvidence, mapJobsWithInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { activeIframeSources, readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
+import { identifyPublicAtsBoard } from '../../scraper-support/utils/publicAtsIdentity.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -86,7 +90,8 @@ const inferRemoteStatus = (job = {}) => {
   return null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
+  ...options,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -95,7 +100,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json',
@@ -126,20 +132,26 @@ export const hasVerifiedCareersPageSignal = (html) => {
     && /ashby-job-board\.css/i.test(rawHtml)
 }
 
-export const extractVerifiedCareersPageUrl = (html = '') =>
-  /href=["']\/careers["']|href=["']https:\/\/www\.prefect\.io\/careers["']|data-analytics-cta-destination":"\/careers"/i.test(String(html ?? ''))
-    ? CAREERS_PAGE_URL
-    : null
+const activeLinks = html => readNativeDocument(html).nodes(node => node.tag === 'a' && node.attrs.href)
+  .map(node => node.attrs.href)
+
+export const extractVerifiedCareersPageUrl = (html = '') => activeLinks(html).some(href => {
+  try { return new URL(href, COMPANY_PAGE_URL).href === CAREERS_PAGE_URL } catch { return false }
+}) ? CAREERS_PAGE_URL : null
 
 export const extractAnyAshbyPublicBoardUrl = (html = '') => {
-  const match = String(html ?? '').match(/https:\/\/jobs\.ashbyhq\.com\/[A-Za-z0-9._-]+\b/i)
-  return match ? match[0] : null
+  for (const href of [...activeLinks(html), ...activeIframeSources(html)]) {
+    let url
+    try { url = new URL(href, COMPANY_PAGE_URL) } catch { continue }
+    const board = identifyPublicAtsBoard(url.href)
+    if (url.origin === 'https://jobs.ashbyhq.com' && !url.username && !url.password
+      && board?.atsPlatform === 'ashby') return `https://jobs.ashbyhq.com/${board.boardToken}`
+  }
+  return null
 }
 
 export const extractVerifiedAshbyPublicBoardUrl = (html = '') =>
-  /https:\/\/jobs\.ashbyhq\.com\/prefect\b/i.test(String(html ?? ''))
-    ? ASHBY_PUBLIC_BOARD_URL
-    : null
+  extractAnyAshbyPublicBoardUrl(html) === ASHBY_PUBLIC_BOARD_URL ? ASHBY_PUBLIC_BOARD_URL : null
 
 export const buildAshbyJobBoardUrl = (publicBoardUrl) => {
   try {
@@ -199,13 +211,18 @@ export const createPrefectScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    signal,
   } = {}) {
-    const companyHtml = await fetchText(COMPANY_PAGE_URL)
+    signal?.throwIfAborted()
+    const companyHtml = await fetchText(COMPANY_PAGE_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasVerifiedCompanyPageSignal(companyHtml)) {
       throw new Error('Verified Prefect company page changed materially')
     }
 
     let verifiedPublicBoardUrl = extractVerifiedAshbyPublicBoardUrl(companyHtml)
+    let currentBindingVerified = Boolean(verifiedPublicBoardUrl)
+    let currentBindingHtml = companyHtml
     const detectedPublicBoardUrl = extractAnyAshbyPublicBoardUrl(companyHtml)
 
     if (detectedPublicBoardUrl && detectedPublicBoardUrl !== ASHBY_PUBLIC_BOARD_URL) {
@@ -218,7 +235,8 @@ export const createPrefectScraper = ({
         throw new Error('Verified Ashby public board handoff changed materially')
       }
 
-      const careersHtml = await fetchText(verifiedCareersPageUrl)
+      const careersHtml = await fetchText(verifiedCareersPageUrl, { signal })
+      signal?.throwIfAborted()
       if (!hasVerifiedCareersPageSignal(careersHtml)) {
         throw new Error('Verified Prefect careers page changed materially')
       }
@@ -229,6 +247,8 @@ export const createPrefectScraper = ({
       }
 
       verifiedPublicBoardUrl = careersDetectedPublicBoardUrl || ASHBY_PUBLIC_BOARD_URL
+      currentBindingVerified = careersDetectedPublicBoardUrl === ASHBY_PUBLIC_BOARD_URL
+      currentBindingHtml = careersHtml
     }
 
     if (verifiedPublicBoardUrl !== ASHBY_PUBLIC_BOARD_URL) {
@@ -240,20 +260,33 @@ export const createPrefectScraper = ({
       throw new Error('Verified Ashby public board handoff changed materially')
     }
 
-    const payload = await fetchJson(ASHBY_JOB_BOARD_URL)
+    const payload = await fetchJson(ASHBY_JOB_BOARD_URL, { signal })
+    signal?.throwIfAborted()
     if (!Array.isArray(payload?.jobs)) {
       throw new Error('Verified Ashby payload changed materially')
     }
 
-    const jobs = extractAshbyJobs(payload)
-    const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+    const nativeIds = new Set(payload.jobs.map(job => job?.id))
+    for (const href of activeLinks(currentBindingHtml)) {
+      let url
+      try { url = new URL(href, COMPANY_PAGE_URL) } catch { continue }
+      if (url.origin === 'https://jobs.ashbyhq.com' && !url.username && !url.password) {
+        const parts = url.pathname.split('/').filter(Boolean)
+        if (parts[0] === 'prefect' && parts[1] && !nativeIds.has(parts[1])) currentBindingVerified = false
+      }
+    }
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: now(),
+    const checked = await createAshbyApiScraper({ source: SOURCE, companyName: COMPANY,
+      ashbyJobBoardUrl: ASHBY_JOB_BOARD_URL, sourceScopeComplete: currentBindingVerified, now,
+    }).run({ fetchJson: async () => payload, signal })
+    const details = new Map(extractAshbyJobs(payload).map(job => [job.jobId, job]))
+    const jobs = mapJobsWithInventoryEvidence(checked, job => ({ ...details.get(job.jobId), ...job,
+      experienceRequired: extractAshbyExperienceRequired({ title: job.title, jobDescription: job.jobDescription }),
     }))
+    if (!Number.isInteger(maxJobs) || maxJobs >= jobs.length) return jobs
+    const selected = jobs.slice(0, Math.max(0, maxJobs)).map(job => ({ ...job, sourceListingComplete: false }))
+    return attachInventoryEvidence(selected, { ...readInventoryEvidence(jobs), status: 'discovery-only',
+      listingComplete: false, reason: 'prefect-source-job-limit-reached' })
   },
 })
 

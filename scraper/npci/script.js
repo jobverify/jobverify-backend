@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { createZohoNativeInventoryScraper } from '../../scraper-support/utils/zohoNativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -174,29 +175,13 @@ const defaultFetchText = async (url) => {
 
 export const createNpciScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const portalHtml = await fetchText(CAREERS_PORTAL_URL)
-    if (!hasOfficialPortalSignal(portalHtml)) {
-      throw new Error('Response is not the verified official NPCI careers portal')
-    }
+} = {}) => createZohoNativeInventoryScraper({
+  source: SOURCE, company: COMPANY, nativeCompany: 'National Payments Corporation of India (NPCI)', companyDomain: 'npci.org.in',
+  boardUrl: CAREERS_PORTAL_URL, orgId: '190737000000336525', pageId: '190737000000336688',
+  employerEntity: 'NPCI', excludedEntities: ['NIPL', 'NBSL', 'NBBL'], allowIndiaCityState: true,
+}, { maxJobs: maxJobs ?? 0 })
 
-    const jobs = extractIndiaJobs(portalHtml)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
-  },
-})
-
-export const run = async (options = {}) => createNpciScraper().run(options)
+export const run = async (options = {}) => createNpciScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

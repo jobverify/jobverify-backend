@@ -46,8 +46,9 @@ async function downloadGithubFile(repo,endpoint,file,{token,signal,budget}) {
 }
 
 /** Snapshot only resources associated with this pipeline; never scan shared caches. */
-export async function createPipelineBundle(run,{root=backendRoot,token=process.env.GITHUB_PAT,signal=new AbortController().signal,kind='all'}={}) {
+export async function createPipelineBundle(run,{root=backendRoot,token=process.env.GITHUB_PAT,signal=new AbortController().signal,kind='all',stage:requestedStage}={}) {
   if(!['all','logs','artifacts'].includes(kind))throw pipelineError('Choose logs or artifacts for the download.',400);
+  if(requestedStage!==undefined&&!STAGES.includes(requestedStage))throw pipelineError('Choose a valid pipeline stage for the download.',400);
   const includeLogs=kind!=='artifacts',includeArtifacts=kind!=='logs';
   // Validate before constructing local paths or attachment names.
   localLogPath(run._id,'scraper');
@@ -71,7 +72,7 @@ export async function createPipelineBundle(run,{root=backendRoot,token=process.e
     inputs.push(input);zip.file(name,input);
   };
   try {
-    for(const key of STAGES){
+    for(const key of requestedStage===undefined?STAGES:[requestedStage]){
       signal.throwIfAborted();
       const stage=run.stages.find(s=>s.key===key)||{key,status:'unavailable'};
       const entry={key,status:stage.status,githubRunId:stage.githubRunId,files:[],unavailable:[]};
@@ -112,6 +113,6 @@ export async function createPipelineBundle(run,{root=backendRoot,token=process.e
     zip.file('manifest.json',JSON.stringify(manifest,null,2));
     zip.file('README.txt',`Pipeline ${kind==='all'?'logs and artifacts':kind}\n\nSee manifest.json for stage states, included files and unavailable resources.\nOnly the requested resource types are included. GitHub downloads are preserved as ZIPs inside each stage folder.\nLocal logs are fully redacted; local artifacts contain saved per-run summaries. Shared caches are excluded.\nDownloads of active pipelines are snapshots. Files may still be generated.\nExpired/deleted GitHub resources cannot be recovered. Remote downloads have a 2 GiB total limit.\n`);
     const stream=new Readable().wrap(zip.generateNodeStream({streamFiles:true,compression:'STORE'}));
-    return {filename:`pipeline-${run._id}${kind==='all'?'':`-${kind}`}.zip`,stream,cleanup};
+    return {filename:`pipeline-${run._id}${requestedStage===undefined?'':`-${requestedStage}`}${kind==='all'?'':`-${kind}`}-${manifest.createdAt.replace(/[:.]/g,'-')}.zip`,stream,cleanup};
   }catch(error){await cleanup();throw error;}
 }

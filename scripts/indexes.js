@@ -12,6 +12,8 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(currentDir, "../.env"), quiet: true });
 
 const { default: Job } = await import("../src/models/Job.js");
+const { default: JobAlertOutbox } = await import('../src/models/JobAlertOutbox.js');
+const { default: JobAlertDelivery } = await import('../src/models/JobAlertDelivery.js');
 const { default: User } = await import("../src/models/User.js");
 const { default: Click } = await import("../src/models/Click.js");
 const { default: Subscription } = await import("../src/models/Subscription.js");
@@ -23,12 +25,15 @@ const { default: ScraperRun } = await import("../src/models/ScraperRun.js");
 const { default: UserSuggestion } = await import("../src/models/UserSuggestion.js");
 const { default: HiringObservation } = await import('../src/models/HiringObservation.js');
 const { default: Application } = await import('../src/models/Application.js');
+const { default: ApplicationEvent } = await import('../src/models/ApplicationEvent.js');
+const { default: CandidateEvidence } = await import('../src/models/CandidateEvidence.js');
 const { default: ApplicationMailbox } = await import('../src/models/ApplicationMailbox.js');
 const { default: ApplicationMailboxAuth } = await import('../src/models/ApplicationMailboxAuth.js');
 const { default: ApplicationMail } = await import('../src/models/ApplicationMail.js');
 const { default: AutoApplyAttempt } = await import('../src/models/AutoApplyAttempt.js');
 const { default: Resume } = await import('../src/models/Resume.js');
 const { default: ResumeArtifact } = await import('../src/models/ResumeArtifact.js');
+const { default: CVRevision } = await import('../src/models/CVRevision.js');
 const { default: TailoredResume } = await import('../src/models/TailoredResume.js');
 const { default: OutreachThread } = await import('../src/models/OutreachThread.js');
 const { default: OutreachTask } = await import('../src/models/OutreachTask.js');
@@ -41,6 +46,8 @@ const { default: Campaign } = await import('../src/models/Campaign.js');
 
 const MODELS = [
   ["Job", Job],
+  ['JobAlertOutbox', JobAlertOutbox],
+  ['JobAlertDelivery', JobAlertDelivery],
   ["User", User],
   ["Click", Click],
   ["Subscription", Subscription],
@@ -52,12 +59,15 @@ const MODELS = [
   ["UserSuggestion", UserSuggestion],
   ['HiringObservation', HiringObservation],
   ['Application', Application],
+  ['ApplicationEvent', ApplicationEvent],
+  ['CandidateEvidence', CandidateEvidence],
   ['ApplicationMailbox', ApplicationMailbox],
   ['ApplicationMailboxAuth', ApplicationMailboxAuth],
   ['ApplicationMail', ApplicationMail],
   ['AutoApplyAttempt', AutoApplyAttempt],
   ['Resume', Resume],
   ['ResumeArtifact', ResumeArtifact],
+  ['CVRevision', CVRevision],
   ['TailoredResume', TailoredResume],
   ['OutreachThread', OutreachThread],
   ['OutreachTask', OutreachTask],

@@ -3,7 +3,10 @@ import test from 'node:test'
 import mongoose from 'mongoose'
 
 import Job from '../../src/models/Job.js'
-import { saveToDB } from '../utils/saveToDB.js'
+import { saveToDB as persistJobs } from '../utils/saveToDB.js'
+
+// These persistence fixtures stub MongoDB; transactional alert behavior has its own replica-set suite.
+const saveToDB = (jobs, source, options = {}) => persistJobs(jobs, source, { enqueueAlerts: false, ...options })
 
 test('saveToDB preserves last good source content when a detail fetch fallback is persisted', async () => {
   const originalReadyState = Object.getOwnPropertyDescriptor(mongoose.connection, 'readyState')

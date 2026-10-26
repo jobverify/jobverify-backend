@@ -13,7 +13,7 @@ test('Propel is registered against its verified Ashby job board without aliases'
   assert.equal(provider.companyName, 'Propel')
   assert.equal(provider.companyCareerPage, 'https://www.propel.app/careers/')
   assert.equal(provider.atsPlatform, 'ashby')
-  assert.equal(provider.countryFilter, 'United States')
+  assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'single-public-ashby-job-board-endpoint')
   assert.equal(provider.extractionStrategy, 'public-ashby-job-board-json')
   assert.equal(provider.parser, 'custom-script')

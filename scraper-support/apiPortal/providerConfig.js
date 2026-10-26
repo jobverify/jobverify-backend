@@ -1,3 +1,7 @@
+import { composeLeverDescription } from '../utils/leverDescription.js'
+import { selectGreenhouseLocation } from '../utils/greenhouseLocations.js'
+import { selectLeverLocation, selectLeverCountry } from '../utils/leverLocations.js'
+
 const DEFAULT_REQUEST = {
   method: 'GET',
   headers: {},
@@ -52,6 +56,10 @@ export const getMappedFieldValue = (payload, selector) => {
   }
   if (typeof selector === 'string') return getValueAtPath(payload, selector)
   if (typeof selector !== 'object' || Array.isArray(selector)) return null
+  if (selector.strategy === 'lever-description') return composeLeverDescription(payload)
+  if (selector.strategy === 'lever-location') return selectLeverLocation(payload)
+  if (selector.strategy === 'lever-country') return selectLeverCountry(payload)
+  if (selector.strategy === 'greenhouse-location') return selectGreenhouseLocation(payload)
   if (selector.strategy === 'suffix') {
     const value = getMappedFieldValue(payload, selector.value)
     const normalized = value == null ? null : String(value).trim()

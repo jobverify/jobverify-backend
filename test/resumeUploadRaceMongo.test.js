@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import mongoose from 'mongoose';
 import { fileURLToPath } from 'node:url';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import Resume from '../src/models/Resume.js';
 import ResumeArtifact from '../src/models/ResumeArtifact.js';
 import TailoredResume from '../src/models/TailoredResume.js';
@@ -21,7 +21,7 @@ const output = bytes => ({ latex: bytes.toString(), pdf: Buffer.from('%PDF-1.7\n
 test('a delayed upload cleans up only the source it replaced and preserves a newer upload artifact and queued tailoring', { timeout: 90000 }, async t => {
   process.env.MONGOMS_RUNTIME_DOWNLOAD = 'false';
   process.env.TAILORED_RESUME_ACTIONS_ENABLED = 'false';
-  const mongo = await MongoMemoryServer.create({ binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
+  const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 }, binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
   t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
   await mongoose.connect(mongo.getUri(), { dbName: 'resume_upload_race' });
   const id = new mongoose.Types.ObjectId();
@@ -71,6 +71,6 @@ test('a delayed upload cleans up only the source it replaced and preserves a new
   assert.equal(queuedAfterA.status, 'queued', 'delayed invalidation must preserve work queued for the newest source');
   assert.equal(queuedAfterA.revision, queuedBeforeA.revision);
   assert.equal(queuedAfterA.ready, true);
-  assert.equal(await ResumeArtifact.exists({ _id: priorBase._id, user: id }), null, 'the source actually replaced by A is still cleaned up');
+  assert.ok(await ResumeArtifact.exists({ _id: priorBase._id, user: id }), 'the replaced base is retained for history');
   assert.equal((await TailoredResume.findById(`${id}:${oldJob}`).lean()).status, 'failed');
 });

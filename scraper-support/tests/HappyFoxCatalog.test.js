@@ -26,7 +26,7 @@ const loadHappyFoxModule = async () => {
   }
 }
 
-test('HappyFox local catalog captures the verified first-party jobs hub and Trakstar India surface without aliases', async () => {
+test('HappyFox local catalog captures the current Astro jobs hub and native hiring domain without aliases', async () => {
   const { HAPPYFOX_CATALOG } = await loadCatalogModule()
   const happyFox = await loadHappyFoxModule()
   const provider = hydrateProviderCatalogEntry(HAPPYFOX_CATALOG)
@@ -42,29 +42,29 @@ test('HappyFox local catalog captures the verified first-party jobs hub and Trak
     'https://www.happyfox.com/jobs/bengaluru/',
     'https://www.happyfox.com/jobs/hyderabad/',
   ])
-  assert.equal(provider.trakstarJobsHost, 'https://happyfox.hire.trakstar.com')
-  assert.equal(provider.atsPlatform, 'first-party-jobs-hub+trakstar-hire')
+  assert.equal(provider.legacyTrakstarJobsHost, 'https://happyfox.hire.trakstar.com')
+  assert.equal(provider.nativeJobsHost, 'https://hiring.happyfox.co')
+  assert.equal(provider.atsPlatform, 'first-party-astro-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-jobs-hub-plus-india-city-pages')
+  assert.equal(provider.paginationStrategy, 'regional-job-pages+verified-local-filters+closing-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-jobs-hub+india-city-listings+trakstar-detail-pages',
+    'explicit-corporate-country-scope+native-role-identity+full-current-detail-content',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'happyfox.com')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-10-26')
   assert.match(provider.dryRunFile, /happyfox[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.happyfox\.com\/jobs\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.happyfox\.com\/jobs\/bengaluru\//i)
-  assert.match(provider.verifiedSurfaceSummary, /Frontend Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /Technical Lead - Backend/i)
+  assert.match(provider.verifiedSurfaceSummary, /hiring\.happyfox\.co/i)
+  assert.match(provider.verifiedSurfaceSummary, /original.*dates.*unknown/i)
   assert.equal(provider.modulePath, happyFoxModulePath)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'HappyFox'), false)
 
   assert.equal(happyFox.PROVIDER_METADATA.source, HAPPYFOX_CATALOG.source)
   assert.equal(happyFox.PROVIDER_METADATA.companyName, HAPPYFOX_CATALOG.companyName)
-  assert.equal(happyFox.PROVIDER_METADATA.trakstarJobsHost, HAPPYFOX_CATALOG.trakstarJobsHost)
+  assert.equal(happyFox.PROVIDER_METADATA.nativeJobsHost, HAPPYFOX_CATALOG.nativeJobsHost)
 })
 
 test('HappyFox backlog row matches directly from the local catalog without alias churn', async () => {
@@ -82,7 +82,7 @@ test('HappyFox backlog row matches directly from the local catalog without alias
   )
 })
 
-test('getScraperCatalog includes HappyFox as a verified jobs-hub and Trakstar provider', () => {
+test('getScraperCatalog includes HappyFox as a current first-party Astro careers provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'happyfox')
 
   assert.ok(provider)
@@ -90,7 +90,7 @@ test('getScraperCatalog includes HappyFox as a verified jobs-hub and Trakstar pr
   assert.equal(provider.companyName, 'HappyFox')
   assert.equal(provider.companyCareerPage, 'https://www.happyfox.com/jobs/')
   assert.equal(provider.companyDomain, 'happyfox.com')
-  assert.equal(provider.atsPlatform, 'first-party-jobs-hub+trakstar-hire')
+  assert.equal(provider.atsPlatform, 'first-party-astro-careers')
   assert.match(provider.modulePath, /happyfox[\\/]script\.js$/i)
 })
 
@@ -100,6 +100,6 @@ test('buildScrapers exposes a runnable HappyFox scraper without changing the run
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'happyfox')
-  assert.equal(scraper.provider.atsPlatform, 'first-party-jobs-hub+trakstar-hire')
+  assert.equal(scraper.provider.atsPlatform, 'first-party-astro-careers')
   assert.match(scraper.dryRunFile, /happyfox[\\/]jobs\.json$/i)
 })

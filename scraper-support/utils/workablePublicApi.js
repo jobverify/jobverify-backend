@@ -1,6 +1,5 @@
-import { toPlainText } from '../detailExtractors/shared.js'
 import { attachInventoryEvidence } from './inventoryEvidence.js'
-import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { extractActiveDescription } from './activeNativeHtml.js'
 
 const text = value => typeof value === 'string' ? value.trim() : ''
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
@@ -76,8 +75,7 @@ export const mapWorkablePublicDetail = (record, detail, locations, config, scrap
   const sections = ['description', 'requirements', 'benefits'].map(key => {
     const raw = detail[key]
     if (raw != null && typeof raw !== 'string') fail('detail employer content section is malformed: ' + key)
-    const content = typeof raw === 'string' && hasSourceDescription({ jobDescription: raw })
-      ? toPlainText(raw.replace(/<!--[\s\S]*?-->|<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')) : ''
+    const content = typeof raw === 'string' ? extractActiveDescription(raw) || '' : ''
     if (requiredSections.includes(key) && !content) fail('detail employer content section is missing: ' + key)
     return content
   })

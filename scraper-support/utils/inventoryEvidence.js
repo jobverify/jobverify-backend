@@ -103,7 +103,7 @@ export const mapJobsWithInventoryEvidence = (jobs, transform) => {
   const evidence = readInventoryEvidence(jobs)
   if (!evidence) return mapped
   const incomplete = mapped.some(job => job?.sourceListingComplete === false)
-  return attachInventoryEvidence(mapped, incomplete ? { ...evidence, status: 'discovery-only', listingComplete: false,
+  return attachInventoryEvidence(mapped, incomplete && evidence.listingComplete !== false ? { ...evidence, status: 'discovery-only', listingComplete: false,
     reason: 'company-wrapper-limited-inventory' } : evidence)
 }
 

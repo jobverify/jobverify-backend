@@ -1,193 +1,28 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import * as licious from '../../scraper/licious/script.js'
+import { liciousNativeOptions } from './fixtures/liciousNativeOptions.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
-const careersHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Licious Careers</title>
-  </head>
-  <body>
-    <main>
-      <h1>Join the mix</h1>
-      <p>Think you are the magic ingredient?</p>
-      <a href="mailto:careers@licious.com">careers@licious.com</a>
-      <a href="https://licious.darwinbox.in/ms/candidate/careers">Open Roles</a>
-    </main>
-  </body>
-</html>
-`
-const currentCareersHtml = `
-  <html><head>
-    <title>Careers - You are the magic ingredient</title>
-    <link rel="canonical" href="https://www.licious.in/careers">
-  </head><body>
-    <a href="/careers/jobs">Start Sizzling</a>
-    <a href="mailto:careers@licious.com">careers@licious.com</a>
-  </body></html>
-`
-const currentJobsHtml = `
-  <html><head>
-    <title>Jobs — Licious Careers</title>
-    <meta name="description" content="Explore open roles at Licious and apply directly through our careers portal.">
-    <link rel="canonical" href="https://www.licious.in/careers/jobs">
-  </head><body>
-    <a href="mailto:careers@licious.com">careers@licious.com</a>
-    <script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{"widgets":[{"type":"closing-cta-footer"}]}}}</script>
-  </body></html>
-`
-
-const loadScriptModule = async () => {
-  try {
-    return await import('../../scraper/licious/script.js')
-  } catch {
-    assert.fail('Expected Licious scraper module at ../../scraper/licious/script.js')
-  }
-}
-
-test('Licious scraper pins the verified official careers handoff and Darwinbox endpoints', async () => {
-  const licious = await loadScriptModule()
-
+test('Licious exports the current corporate and MyNextHire endpoints', () => {
   assert.equal(licious.SOURCE, 'licious')
   assert.equal(licious.COMPANY, 'Licious')
-  assert.equal(licious.OFFICIAL_BRAND_NAME, 'Licious')
-  assert.equal(licious.VERIFIED_ON, '2026-07-16')
-  assert.equal(licious.CAREERS_URL, 'https://careers.licious.com/')
-  assert.equal(
-    licious.OFFICIAL_CAREERS_HANDOFF_URL,
-    'https://licious.darwinbox.in/ms/candidate/careers',
-  )
-  assert.equal(
-    licious.PUBLIC_PORTAL_URL,
-    'https://licious.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-  )
-  assert.equal(
-    licious.LISTING_API_URL,
-    'https://licious.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
-  )
-  assert.equal(licious.DARWINBOX_ORIGIN, 'https://licious.darwinbox.in')
-  assert.equal(licious.DARWINBOX_COMPANY_ID, 'main')
-  assert.equal(
-    licious.extractOfficialDarwinboxUrl(careersHtml),
-    licious.OFFICIAL_CAREERS_HANDOFF_URL,
-  )
-  assert.equal(licious.hasOfficialCareersSignal(careersHtml), true)
-  assert.equal(licious.hasOfficialCareersSignal(currentCareersHtml), true)
-  assert.equal(licious.hasVerifiedEmptyFirstPartyJobsSignal(currentJobsHtml), true)
+  assert.equal(licious.VERIFIED_ON, '2026-10-26')
+  assert.equal(licious.CAREERS_URL, 'https://www.licious.in/careers')
+  assert.equal(licious.CURRENT_JOBS_URL, 'https://www.licious.in/careers/jobs')
+  assert.equal(licious.PUBLIC_PORTAL_URL, 'https://licious.mynexthire.com/employer/jobs/careers')
+  assert.equal(licious.LISTING_API_URL, 'https://licious.mynexthire.com/employer/careers/reqlist/get')
+  assert.equal(licious.DETAIL_URL, 'https://licious.prod.in1.mynexthire.io/d17/careers/requisition/object')
 })
 
-test('Licious follows the current first-party jobs route and returns [] only for its verified empty payload', async () => {
-  const licious = await loadScriptModule()
-  const requestedUrls = []
-  const jobs = await licious.createLiciousScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === licious.CAREERS_URL) return currentCareersHtml
-      if (url === licious.CURRENT_JOBS_URL) return currentJobsHtml
-      throw new Error(`Unexpected Licious URL: ${url}`)
-    },
-    fetchListingPage: async () => assert.fail('retired Darwinbox must not be queried'),
-  })
-
-  assert.deepEqual(requestedUrls, [licious.CAREERS_URL, licious.CURRENT_JOBS_URL])
-  assert.deepEqual(jobs, [])
-
-  await assert.rejects(
-    licious.createLiciousScraper().run({
-      fetchText: async (url) => url === licious.CAREERS_URL
-        ? currentCareersHtml
-        : currentJobsHtml.replace('closing-cta-footer', 'job-list'),
-    }),
-    /jobs page changed materially/i,
-  )
+test('Licious run wrapper forwards cancellation and native transport options', async () => {
+  const options = liciousNativeOptions()
+  const jobs = await licious.run({ ...options, maxJobs: 2 })
+  assert.equal(jobs.length, 2)
+  assert.equal(options.calls.filter(call => call.url.endsWith('/requisition/object')).length, 35)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
 })
 
-test('Licious returns India jobs from the verified public Darwinbox feed and preserves hosted detail URLs', async () => {
-  const licious = await loadScriptModule()
-  const requestedPages = []
-
-  const jobs = await licious.createLiciousScraper({
-    now: () => '2026-07-16T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      if (url === licious.CAREERS_URL) return careersHtml
-
-      throw new Error(`Unexpected Licious URL: ${url}`)
-    },
-    fetchListingPage: async ({ page, pageSize, companyId }) => {
-      requestedPages.push({ page, pageSize, companyId })
-
-      return {
-        status: 'success',
-        data: [
-          {
-            id: 'a6610fb2a780ac',
-            title: 'Area Sales Manager',
-            department_name: 'B2B',
-            locations: 'Multiple Locations',
-            tool_tip_locations: [
-              'Bengaluru, Karnataka, India',
-              'Gurgaon, Haryana, India',
-              'Hyderabad, Telangana, India',
-              'Mumbai, Maharashtra, India',
-            ],
-            country: 'India',
-            emp_type_name: 'Onroll',
-            experience: '4 - 8 Years',
-            posted_on: '03-Feb-2025',
-            jd: '<p>Drive B2B growth across multiple India locations.</p>',
-          },
-          {
-            id: 'licious-us-001',
-            title: 'US Expansion Manager',
-            department_name: 'Growth',
-            locations: 'Seattle, Washington, United States',
-            country: 'United States',
-            emp_type_name: 'Full Time',
-            experience: '8 - 12 Years',
-            posted_on: '03-Feb-2025',
-            jd: '<p>Ignore non-India role.</p>',
-          },
-        ],
-        job_counts: 2,
-      }
-    },
-  })
-
-  assert.deepEqual(requestedPages, [{ page: 1, pageSize: 10, companyId: 'main' }])
-  assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
-    title: 'Area Sales Manager',
-    company: 'Licious',
-    department: 'B2B',
-    location: 'Multiple Locations',
-    city: 'Multiple Locations',
-    jobId: 'a6610fb2a780ac',
-    requisitionId: null,
-    sourceUrl: 'https://licious.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6610fb2a780ac',
-    applyUrl: 'https://licious.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6610fb2a780ac',
-    employmentType: 'Onroll',
-    experienceRequired: '4 - 8 Years',
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: '03-Feb-2025',
-    closingDate: null,
-    jobDescription: '<p>Drive B2B growth across multiple India locations.</p>',
-    source: 'licious',
-    link: 'https://licious.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6610fb2a780ac',
-    scrapedAt: '2026-07-16T00:00:00.000Z',
-  })
-})
-
-test('Licious fails closed when the verified official careers handoff drifts', async () => {
-  const licious = await loadScriptModule()
-
-  await assert.rejects(
-    licious.createLiciousScraper().run({
-      fetchText: async () => '<html><head><title>Unexpected</title></head><body>Placeholder</body></html>',
-      fetchListingPage: async () => ({ status: 'success', data: [], job_counts: 0 }),
-    }),
-    /verified official careers page no longer matches/i,
-  )
+test('Licious rejects a changed corporate handoff before requesting native inventory', async () => {
+  await assert.rejects(licious.run({ fetchPage: async url => ({ status: 200, url, body: '<html><body>Unavailable</body></html>' }) }), /corporate careers handoff/i)
 })

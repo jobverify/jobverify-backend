@@ -18,6 +18,8 @@ export const outreachContactSchema = new Schema({
   email: { type: String, default: '', maxlength: 320 },
   emailStatus: { type: String, enum: ['verified', 'public', 'unverified', 'unavailable'], default: 'unavailable' },
   emailConfirmed: { type: Boolean, default: false },
+  emailSourceUrl: { type: String, default: '', maxlength: 8192 },
+  emailEvidence: { type: String, default: '', maxlength: 3000 },
 }, { _id: false });
 export const outreachDraftSchema = new Schema({
   linkedin: { type: String, default: '', maxlength: 3000 },
