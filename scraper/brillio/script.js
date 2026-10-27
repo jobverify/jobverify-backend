@@ -1,4 +1,5 @@
 import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {resolveWorksiteCountry} from './worksiteCountry.js'
 import {CORPORATE,CAREERS,BOARD,API,listingJobs,jobDetail,pagination,searchBody,validateCorporate,validateClient,countryOf} from './nativeContract.js'
 export const LISTING_PAGE_URL=BOARD
 export const DETAIL_PAGE_URL_PREFIX='https://careers.brillio.com/job-details?job-id='
@@ -25,8 +26,8 @@ export const extractSearchResults=({listingHtmlByUrl={},detailHtmlByUrl={}}={})=
 }
 export const createBrillioScraper=({maxJobs=null}={})=>({
  async run(options={}){
-  const now=new Date(options.now||Date.now()).toISOString(),fetchNative=options.fetch||globalThis.fetch,allRows=[],jobs=[],requests=[],errors=[]
-  let denied=false,pagesFetched=0,enumerationComplete=false,closingMatches=false,bindingVerified=false,unknownCount=0,foreignCount=0,globalCount=0,fullCount=0
+  const now=new Date(options.now||Date.now()).toISOString(),fetchNative=options.fetch||globalThis.fetch,allRows=[],jobs=[],requests=[],errors=[],contextualCountryEvidence=[]
+  let denied=false,pagesFetched=0,enumerationComplete=false,closingMatches=false,bindingVerified=false,unknownCount=0,foreignCount=0,globalCount=0,fullCount=0,closedCount=0
   const get=async(url,init={})=>{
    if(denied)throw Error('Brillio native access already denied')
    options.signal?.throwIfAborted()
@@ -68,11 +69,14 @@ export const createBrillioScraper=({maxJobs=null}={})=>({
     let detail
     try{detail=jobDetail(await get(row.detailUrl),{jobId:row.jobId})}catch(error){errors.push({jobId:row.jobId,reason:error.message});detail=jobDetail('',{jobId:row.jobId})}
     if(denied)break
-    const detailCountry=countryOf(detail.location)
-    if(listingCountry==='India'&&detailCountry==='foreign'||listingCountry==='foreign'&&detailCountry==='India'){unknownCount++;errors.push({jobId:row.jobId,reason:'conflicting native country'});continue}
-    if(listingCountry!=='India'&&detailCountry!=='India'){if(detailCountry==='foreign')foreignCount++;else unknownCount++;continue}
+    if(detail.sourceNativeAvailability==='closed'){closedCount++;errors.push({jobId:row.jobId,reason:'explicit native role closing notice'});continue}
     if(detail.title&&detail.title!==row.title){detail.sourceDetailComplete=false;detail.sourceDetailFailureKind='native-title-identity-mismatch'}
     if(detail.location&&detail.location!==row.location){detail.sourceDetailComplete=false;detail.sourceDetailFailureKind='native-location-identity-mismatch'}
+    const contextCountry=resolveWorksiteCountry({location:detail.location,description:detail.jobDescription,roleWorksiteStatements:detail.sourceRoleWorksiteStatements,complete:detail.sourceDetailComplete})
+    const detailCountry=countryOf(detail.location)||(contextCountry.country==='United States'?'foreign':null)
+    if(contextCountry.country)contextualCountryEvidence.push({jobId:row.jobId,...contextCountry})
+    if(listingCountry==='India'&&detailCountry==='foreign'||listingCountry==='foreign'&&detailCountry==='India'){unknownCount++;errors.push({jobId:row.jobId,reason:'conflicting native country'});continue}
+    if(listingCountry!=='India'&&detailCountry!=='India'){if(detailCountry==='foreign')foreignCount++;else unknownCount++;continue}
     if(detail.sourceDetailComplete)fullCount++
     jobs.push(decorate(row,detail,now))
    }
@@ -80,10 +84,11 @@ export const createBrillioScraper=({maxJobs=null}={})=>({
   }catch(error){errors.push({reason:error.message})}
   const cap=Number.isInteger(options.maxJobs)?options.maxJobs:maxJobs,selected=Number.isInteger(cap)&&cap>=0?jobs.slice(0,cap):jobs
   const complete=enumerationComplete&&closingMatches&&!denied&&!unknownCount&&!errors.length&&fullCount===jobs.length&&selected.length===jobs.length
-  const audit={globalCount,indiaCount:jobs.length,foreignCount,countryUnknownCount:unknownCount,fullDetailCount:fullCount,returnedCount:selected.length,
+  const audit={globalCount,indiaCount:jobs.length,listedIndiaCount:allRows.filter(row=>countryOf(row.location)==='India').length,foreignCount,countryUnknownCount:unknownCount,closedCount,fullDetailCount:fullCount,returnedCount:selected.length,
+   nativeReportedTotal:null,nativeIndiaFacetCount:null,globalPostingIds:allRows.map(row=>row.jobId),contextualCountryEvidence,
    enumerationComplete,closingInventoryMatches:closingMatches,bindingVerified,scopeComplete:complete,pagesFetched,denied,errors,requests}
   for(const job of selected)Object.assign(job,{sourceListingComplete:complete,sourceNativeInventory:audit,lifecycleCleanupAllowed:complete})
-  return attachInventoryEvidence(selected,{status:complete?'complete-inventory':'coverage-gap',surface:BOARD,firstParty:bindingVerified,listingComplete:complete,pagesFetched,reportedTotal:globalCount||null,indiaFacetCount:null,verifiedAt:now,reason:complete?'native-unfiltered-pages-and-closing-inventory-reconciled':'native-country-detail-or-scope-unresolved'})
+  return attachInventoryEvidence(selected,{status:complete?'complete-inventory':'coverage-gap',surface:BOARD,firstParty:bindingVerified,listingComplete:complete,pagesFetched,reportedTotal:null,indiaFacetCount:null,verifiedAt:now,reason:complete?'native-unfiltered-pages-and-closing-inventory-reconciled':'native-country-detail-or-scope-unresolved'})
  }
 })
 export const run=options=>createBrillioScraper().run(options)

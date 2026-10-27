@@ -8,7 +8,7 @@ export const decode = value => String(value ?? '').replace(/&(?:#(x[\da-f]+|\d+)
 export const norm = value => String(value??'').replace(/[\u2012-\u2015]/g,'-').replace(/\s+/g,' ').trim()||null
 export const hasClass=(node,name)=>(node?.attrs?.class||'').split(/\s+/).includes(name)
 const rawTags=new Set(['script','style','textarea','title','xmp','iframe','noembed','noframes','plaintext','noscript'])
-const inertTags=new Set(['template','object','iframe','noscript','textarea','xmp','noembed','noframes','plaintext','head'])
+const inertTags=new Set(['template','object','canvas','iframe','noscript','textarea','xmp','noembed','noframes','plaintext','head'])
 const voids=new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr'])
 const styleState=value=>{
  let hidden=false,uncertain=false

@@ -13,7 +13,7 @@ const loadAgiloftIndiaCatalog = async () => {
   }
 }
 
-test('Agiloft India catalog captures the verified first-party careers page and zero-India Lever board state', async () => {
+test('Agiloft India catalog captures the runtime native inventory contract', async () => {
   const {
     AGILOFT_INDIA_CATALOG,
     default: defaultCatalog,
@@ -38,19 +38,18 @@ test('Agiloft India catalog captures the verified first-party careers page and z
   assert.equal(AGILOFT_INDIA_CATALOG.countryFilter, 'India')
   assert.equal(
     AGILOFT_INDIA_CATALOG.paginationStrategy,
-    'official-careers-validation-plus-lever-api',
+    'corporate-advertised-full-feed-board-details-and-closing-reconciliation',
   )
   assert.equal(
     AGILOFT_INDIA_CATALOG.extractionStrategy,
-    'verified-first-party-careers-page+verified-lever-board+lever-postings-api+india-location-filter',
+    'runtime-corporate-handoff+full-native-inventory+all-visible-details+primary-secondary-countries+closing-membership+india-filter',
   )
   assert.equal(AGILOFT_INDIA_CATALOG.parser, 'custom-script')
   assert.equal(AGILOFT_INDIA_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AGILOFT_INDIA_CATALOG.verifiedOn, '2026-07-14')
+  assert.equal(AGILOFT_INDIA_CATALOG.verifiedOn, '2026-10-27')
   assert.match(AGILOFT_INDIA_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.agiloft\.com\/careers\//)
-  assert.match(AGILOFT_INDIA_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.agiloft\.com\/about-us\/careers\//)
   assert.match(AGILOFT_INDIA_CATALOG.verifiedSurfaceSummary, /https:\/\/jobs\.lever\.co\/agiloft/)
-  assert.match(AGILOFT_INDIA_CATALOG.verifiedSurfaceSummary, /no India roles/i)
+  assert.match(AGILOFT_INDIA_CATALOG.verifiedSurfaceSummary, /not live inventory evidence/i)
   assert.match(AGILOFT_INDIA_CATALOG.modulePath, /agiloftindia[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Agiloft India'), false)
 })

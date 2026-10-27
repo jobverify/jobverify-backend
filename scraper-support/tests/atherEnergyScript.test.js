@@ -101,11 +101,11 @@ test('run reports an API-only migration error when direct HTTP access to Ather c
   )
 })
 
-test('run returns an honest zero-openings result when the verified Ather careers routes are Cloudflare-blocked on Thursday, August 13, 2026', async () => {
+test('run rejects the first Cloudflare-blocked route with unknown inventory', async () => {
   const atherenergy = await loadAtherEnergyModule()
   const requestedPageUrls = []
 
-  const jobs = await atherenergy.createAtherEnergyScraper().run({
+  await assert.rejects(atherenergy.createAtherEnergyScraper().run({
     fetchText: async (url) => {
       throw new Error(`HTTP 403 for ${url}`)
     },
@@ -117,11 +117,9 @@ test('run returns an honest zero-openings result when the verified Ather careers
         html: cloudflareBlockedPageHtml,
       }
     },
-  })
+  }), /HTTP 403/)
 
   assert.deepEqual(requestedPageUrls, [
     atherenergy.CAREERS_HOME_URL,
-    atherenergy.ALL_JOBS_URL,
   ])
-  assert.deepEqual(jobs, [])
 })

@@ -2,16 +2,56 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { gunzipSync } from 'node:zlib'
-import { createCatalogScraper, getScraperCatalog } from '../providers/index.js'
-import { createPublishingGapAtsScraper } from '../utils/publishingGapAts.js'
-import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
-import { analyzePublishableJobs } from '../utils/publishableJobMetrics.js'
-import { classifyProviderImplementation } from '../../scripts/reportScriptCatalogTopology.js'
-import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+globalThis.fetch = () => { throw new Error('OFFLINE shared ATS tests require injected transport') }
+const { createCatalogScraper, getScraperCatalog } = await import('../providers/index.js')
+const { createPublishingGapAtsScraper } = await import('../utils/publishingGapAts.js')
+const { readInventoryEvidence, isFreshCompleteInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+const { analyzePublishableJobs } = await import('../utils/publishableJobMetrics.js')
+const { classifyProviderImplementation } = await import('../../scripts/reportScriptCatalogTopology.js')
+const { hasSourceDescription } = await import('../../src/utils/jobSourceContent.js')
 
 const fixtures = JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/sharedAts082.json.gz', import.meta.url))))
-const ids = ['bugcrowd', 'degreed', 'cymulate', 'esw', 'extrahop', 'datagrail']
-const unresolvedScopes = new Set(['bugcrowd', 'degreed', 'cymulate', 'esw', 'extrahop'])
+// Degreed now has native corporate/board/detail reconciliation, covered in
+// scraper/degreed/native.test.js with fresh retained responses and future cases.
+// ESW and ExtraHop now verify their current corporate/native protocols. Their
+// source-local native tests retain the exact fresh registered responses.
+const ids = ['bugcrowd', 'cymulate', 'datagrail']
+const unresolvedScopes = new Set(['bugcrowd', 'cymulate'])
+
+for (const source of ['esw', 'extrahop']) test(`${source}: registered native adapter replaces the historical guarded feed with current corporate and geography evidence`, async () => {
+  const provider = getScraperCatalog().find(row => row.source === source)
+  assert.equal(provider.adapter, 'script')
+  assert.equal(provider.sourceScopeComplete, null)
+  const current = JSON.parse(gunzipSync(fs.readFileSync(new URL(`../../scraper/${source}/fixtures/registered-native-20261027.json.gz`, import.meta.url))))
+  const bodies = new Map(current.responses.map(row => [row.requestedUrl, row.body]))
+  let audit
+  const jobs = await createCatalogScraper(provider).run({ fetchPage: async url => { assert.ok(bodies.has(url)); return bodies.get(url) }, fetchJson: async url => { assert.ok(bodies.has(url)); return JSON.parse(bodies.get(url)) }, onAudit: value => { audit = value } })
+  assert.equal(audit.fullContentCount, source === 'esw' ? 4 : 23)
+  assert.equal(audit.healthyNativeCount, source === 'esw' ? 3 : 22)
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, source === 'esw')
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, source === 'esw' ? 4 : null)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, source === 'esw' ? 0 : null)
+})
+
+test('degreed: registered native source replaces the historical shared feed with current full reconciliation', async () => {
+  const provider = getScraperCatalog().find(row => row.source === 'degreed')
+  assert.equal(provider.adapter, 'script')
+  const current = JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/degreed/fixtures/current-native-20261027.json.gz', import.meta.url))))
+  const responses = new Map(current.responses.map(row => [row.requestedUrl, row.body]))
+  let audit
+  const jobs = await createCatalogScraper(provider).run({ onAudit: value => { audit = value }, fetchImpl: async (url, options) => {
+    assert.equal(options.method, 'GET')
+    assert.ok(responses.has(url), `Unexpected offline Degreed request ${url}`)
+    return new Response(responses.get(url))
+  } })
+  assert.equal(jobs.length, 0)
+  assert.equal(audit.nativeJobs.length, 1)
+  assert.equal(audit.nativeJobs[0].country, 'United States')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 1)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
+})
 
 for (const source of ids) test(`${source}: registered shared adapter consumes the complete native feed with guarded scope`, async () => {
   const provider = getScraperCatalog().find(row => row.source === source)

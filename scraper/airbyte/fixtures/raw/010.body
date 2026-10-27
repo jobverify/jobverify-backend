@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#473BCE">
+    <meta name="csp-nonce" id="csp-nonce" content="SqCKvTWFSgzCZG98Xtpc33ZMODJGKJwfE8IXwLE0CPY">
+    <link rel="icon" type="image/svg+xml" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.svg">
+    <link rel="icon" type="image/png" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/apple-touch-icon.png" />
+    <title>Accounting Manager @ Airbyte</title><meta name="title" content="Accounting Manager @ Airbyte" />
+    
+  
+  <meta name="description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+ 
+
+
+THE ROLE:
+
+As Airbyte&#39;s Accounting Manager, you’ll own the day-to-day of our accounting operations and reporting - and you’ll help us rebuild how that work gets done, replacing manual processes and outsourced accounting firm dependencies with clean, automated, in-house workflows.
+
+We currently run a lean model with an outsourced accounting firm and a Senior Accountant. You’ll manage both, and over time help us bring accounting back in-house - taking ownership of more of the function as you go. You’ll report directly to the Director of Finance (who reports to the COO) as a thought partner on automating our close and operations, and you’ll have real room to experiment with modern tooling and AI to do it.
+
+We&#39;re hiring someone with the intention of investing in their long-term growth. As the business evolves, this role is expected to take on increasing ownership and responsibility, with the opportunity to help shape and ultimately lead the accounting function over time. If you want to build a modern accounting function - not just maintain one - this is that seat.
+
+ 
+
+
+WHAT YOU’LL DO:
+
+ - Own accounting operations and reporting - GL, AP/AR, and the general ledger close - with accuracy, timeliness, and US GAAP compliance; you’ll operate with high ownership and strong judgment.
+
+ - Run the month-end close, and continuously shorten and automate it.
+
+ - Manage a Senior Accountant and our outsourced accounting team, and help lead the transition of work in-house over time.
+
+ - Prepare for and support external audits, including documentation, technical accounting memos, and internal controls.
+
+ - Apply and help maintain technical accounting policies, including revenue recognition under ASC 606 and lease accounting under ASC 842.
+
+ - Evaluate, implement, and optimize accounting systems and workflows - reducing manual work and building for scale.
+
+ - Partner cross-functionally with Sales, Marketing, Engineering, and Support to keep accounting accurate across our business systems.
+
+ - Act as a thought partner to the Director of Finance on automating close and operations, including using AI where it drives real impact.
+
+ - Grow into broader ownership of the accounting function as the business scales.
+
+ - Perform and review detailed flux and variance analysis, identifying and proactively investigating unexpected trends or anomalies in our financials.
+
+ 
+
+
+WHAT YOU’LL NEED:
+
+ - 5+ years of progressive accounting experience.
+
+ - Ideally a Big 4 audit and startup combined background.
+
+ - Working knowledge of US GAAP, including revenue recognition (ASC 606) and lease accounting (ASC 842).
+
+ - Strong systems instincts - you’ve evaluated, implemented, or redesigned accounting workflows and tools, and you reach for automation before manual effort.
+
+ - Tech-savvy and genuinely AI-curious - you’ve explored (or are eager to explore) how automation and AI can transform accounting, and you like building.
+
+ - An operational, ownership mindset - pragmatic, solution-oriented, and able to work autonomously. Startups move fast, so the ability to adapt and learn quickly is key.
+
+ - A people person. We have a strong culture and care about bringing in teammates who fit in and make it better.
+
+ 
+
+
+NICE TO HAVE:
+
+ - CPA or CMA certification is a plus.
+
+ - Experience implementing or migrating to a new ERP system.
+
+ - Experience with PLG and/or enterprise SaaS revenue models.
+
+ - Familiarity with our stack: NetSuite, Rillet, Campfire, Ramp, Carta, Orb, and Claude Code.
+
+ - Experience with auditing.
+
+ 
+
+
+LOCATION:
+
+ - Onsite 4 days/week in San Francisco, CA
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+• Flexible PTO with a culture that encourages at least 25 days off annually
+ • 16 weeks fully paid parental leave for all parents
+ • Comprehensive medical, dental, and vision coverage for employees and dependents
+ • 401(k) retirement plan
+ • Professional development budget, conference sponsorship, and book reimbursement
+ • Commuter benefits and monthly internet reimbursement
+
+ •  Breakfast and lunch in our San Francisco office
+ • A collaborative, in-person culture focused on learning, growth, and impact
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.
+
+Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.
+
+Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability." />
+  <meta name="twitter:card" content="summary" />
+  <meta property="og:url" content="https://jobs.ashbyhq.com/airbyte/af867d0a-bd70-4a8e-80f9-13567bd0f3a8" />
+  <meta property="og:type" content="website" />
+  
+  <meta property="og:title" content="Accounting Manager" />
+  <meta property="og:description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+ 
+
+
+THE ROLE:
+
+As Airbyte&#39;s Accounting Manager, you’ll own the day-to-day of our accounting operations and reporting - and you’ll help us rebuild how that work gets done, replacing manual processes and outsourced accounting firm dependencies with clean, automated, in-house workflows.
+
+We currently run a lean model with an outsourced accounting firm and a Senior Accountant. You’ll manage both, and over time help us bring accounting back in-house - taking ownership of more of the function as you go. You’ll report directly to the Director of Finance (who reports to the COO) as a thought partner on automating our close and operations, and you’ll have real room to experiment with modern tooling and AI to do it.
+
+We&#39;re hiring someone with the intention of investing in their long-term growth. As the business evolves, this role is expected to take on increasing ownership and responsibility, with the opportunity to help shape and ultimately lead the accounting function over time. If you want to build a modern accounting function - not just maintain one - this is that seat.
+
+ 
+
+
+WHAT YOU’LL DO:
+
+ - Own accounting operations and reporting - GL, AP/AR, and the general ledger close - with accuracy, timeliness, and US GAAP compliance; you’ll operate with high ownership and strong judgment.
+
+ - Run the month-end close, and continuously shorten and automate it.
+
+ - Manage a Senior Accountant and our outsourced accounting team, and help lead the transition of work in-house over time.
+
+ - Prepare for and support external audits, including documentation, technical accounting memos, and internal controls.
+
+ - Apply and help maintain technical accounting policies, including revenue recognition under ASC 606 and lease accounting under ASC 842.
+
+ - Evaluate, implement, and optimize accounting systems and workflows - reducing manual work and building for scale.
+
+ - Partner cross-functionally with Sales, Marketing, Engineering, and Support to keep accounting accurate across our business systems.
+
+ - Act as a thought partner to the Director of Finance on automating close and operations, including using AI where it drives real impact.
+
+ - Grow into broader ownership of the accounting function as the business scales.
+
+ - Perform and review detailed flux and variance analysis, identifying and proactively investigating unexpected trends or anomalies in our financials.
+
+ 
+
+
+WHAT YOU’LL NEED:
+
+ - 5+ years of progressive accounting experience.
+
+ - Ideally a Big 4 audit and startup combined background.
+
+ - Working knowledge of US GAAP, including revenue recognition (ASC 606) and lease accounting (ASC 842).
+
+ - Strong systems instincts - you’ve evaluated, implemented, or redesigned accounting workflows and tools, and you reach for automation before manual effort.
+
+ - Tech-savvy and genuinely AI-curious - you’ve explored (or are eager to explore) how automation and AI can transform accounting, and you like building.
+
+ - An operational, ownership mindset - pragmatic, solution-oriented, and able to work autonomously. Startups move fast, so the ability to adapt and learn quickly is key.
+
+ - A people person. We have a strong culture and care about bringing in teammates who fit in and make it better.
+
+ 
+
+
+NICE TO HAVE:
+
+ - CPA or CMA certification is a plus.
+
+ - Experience implementing or migrating to a new ERP system.
+
+ - Experience with PLG and/or enterprise SaaS revenue models.
+
+ - Familiarity with our stack: NetSuite, Rillet, Campfire, Ramp, Carta, Orb, and Claude Code.
+
+ - Experience with auditing.
+
+ 
+
+
+LOCATION:
+
+ - Onsite 4 days/week in San Francisco, CA
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+• Flexible PTO with a culture that encourages at least 25 days off annually
+ • 16 weeks fully paid parental leave for all parents
+ • Comprehensive medical, dental, and vision coverage for employees and dependents
+ • 401(k) retirement plan
+ • Professional development budget, conference sponsorship, and book reimbursement
+ • Commuter benefits and monthly internet reimbursement
+
+ •  Breakfast and lunch in our San Francisco office
+ • A collaborative, in-person culture focused on learning, growth, and impact
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.
+
+Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.
+
+Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability." />
+  
+  <meta name="twitter:title" content="Accounting Manager" />
+  <meta name="twitter:description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+ 
+
+
+THE ROLE:
+
+As Airbyte&#39;s Accounting Manager, you’ll own the day-to-day of our accounting operations and reporting - and you’ll help us rebuild how that work gets done, replacing manual processes and outsourced accounting firm dependencies with clean, automated, in-house workflows.
+
+We currently run a lean model with an outsourced accounting firm and a Senior Accountant. You’ll manage both, and over time help us bring accounting back in-house - taking ownership of more of the function as you go. You’ll report directly to the Director of Finance (who reports to the COO) as a thought partner on automating our close and operations, and you’ll have real room to experiment with modern tooling and AI to do it.
+
+We&#39;re hiring someone with the intention of investing in their long-term growth. As the business evolves, this role is expected to take on increasing ownership and responsibility, with the opportunity to help shape and ultimately lead the accounting function over time. If you want to build a modern accounting function - not just maintain one - this is that seat.
+
+ 
+
+
+WHAT YOU’LL DO:
+
+ - Own accounting operations and reporting - GL, AP/AR, and the general ledger close - with accuracy, timeliness, and US GAAP compliance; you’ll operate with high ownership and strong judgment.
+
+ - Run the month-end close, and continuously shorten and automate it.
+
+ - Manage a Senior Accountant and our outsourced accounting team, and help lead the transition of work in-house over time.
+
+ - Prepare for and support external audits, including documentation, technical accounting memos, and internal controls.
+
+ - Apply and help maintain technical accounting policies, including revenue recognition under ASC 606 and lease accounting under ASC 842.
+
+ - Evaluate, implement, and optimize accounting systems and workflows - reducing manual work and building for scale.
+
+ - Partner cross-functionally with Sales, Marketing, Engineering, and Support to keep accounting accurate across our business systems.
+
+ - Act as a thought partner to the Director of Finance on automating close and operations, including using AI where it drives real impact.
+
+ - Grow into broader ownership of the accounting function as the business scales.
+
+ - Perform and review detailed flux and variance analysis, identifying and proactively investigating unexpected trends or anomalies in our financials.
+
+ 
+
+
+WHAT YOU’LL NEED:
+
+ - 5+ years of progressive accounting experience.
+
+ - Ideally a Big 4 audit and startup combined background.
+
+ - Working knowledge of US GAAP, including revenue recognition (ASC 606) and lease accounting (ASC 842).
+
+ - Strong systems instincts - you’ve evaluated, implemented, or redesigned accounting workflows and tools, and you reach for automation before manual effort.
+
+ - Tech-savvy and genuinely AI-curious - you’ve explored (or are eager to explore) how automation and AI can transform accounting, and you like building.
+
+ - An operational, ownership mindset - pragmatic, solution-oriented, and able to work autonomously. Startups move fast, so the ability to adapt and learn quickly is key.
+
+ - A people person. We have a strong culture and care about bringing in teammates who fit in and make it better.
+
+ 
+
+
+NICE TO HAVE:
+
+ - CPA or CMA certification is a plus.
+
+ - Experience implementing or migrating to a new ERP system.
+
+ - Experience with PLG and/or enterprise SaaS revenue models.
+
+ - Familiarity with our stack: NetSuite, Rillet, Campfire, Ramp, Carta, Orb, and Claude Code.
+
+ - Experience with auditing.
+
+ 
+
+
+LOCATION:
+
+ - Onsite 4 days/week in San Francisco, CA
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+• Flexible PTO with a culture that encourages at least 25 days off annually
+ • 16 weeks fully paid parental leave for all parents
+ • Comprehensive medical, dental, and vision coverage for employees and dependents
+ • 401(k) retirement plan
+ • Professional development budget, conference sponsorship, and book reimbursement
+ • Commuter benefits and monthly internet reimbursement
+
+ •  Breakfast and lunch in our San Francisco office
+ • A collaborative, in-person culture focused on learning, growth, and impact
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.
+
+Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.
+
+Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability." />
+  
+  <meta name="robots" content="noindex,nofollow" />
+    <link rel="preload" as="image" href="https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png">
+    
+    <script type="application/ld+json">{"@context":"https://schema.org/","@type":"JobPosting","title":"Accounting Manager","description":"<p style=\"min-height:1.5em\">Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, \"the last ten years were all about structured data. The future is all about context.\" We're now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>The Role:</strong></h2><p style=\"min-height:1.5em\">As Airbyte's Accounting Manager, you’ll own the day-to-day of our accounting operations and reporting - and you’ll help us rebuild how that work gets done, replacing manual processes and outsourced accounting firm dependencies with clean, automated, in-house workflows.</p><p style=\"min-height:1.5em\">We currently run a lean model with an outsourced accounting firm and a Senior Accountant. You’ll manage both, and over time help us bring accounting back in-house - taking ownership of more of the function as you go. You’ll report directly to the Director of Finance (who reports to the COO) as a thought partner on automating our close and operations, and you’ll have real room to experiment with modern tooling and AI to do it.</p><p style=\"min-height:1.5em\">We're hiring someone with the intention of investing in their long-term growth. As the business evolves, this role is expected to take on increasing ownership and responsibility, with the opportunity to help shape and ultimately lead the accounting function over time. If you want to build a modern accounting function - not just maintain one - this is that seat.</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>What You’ll Do:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Own accounting operations and reporting - GL, AP/AR, and the general ledger close - with accuracy, timeliness, and US GAAP compliance; you’ll operate with high ownership and strong judgment.</p></li><li><p style=\"min-height:1.5em\">Run the month-end close, and continuously shorten and automate it.</p></li><li><p style=\"min-height:1.5em\">Manage a Senior Accountant and our outsourced accounting team, and help lead the transition of work in-house over time.</p></li><li><p style=\"min-height:1.5em\">Prepare for and support external audits, including documentation, technical accounting memos, and internal controls.</p></li><li><p style=\"min-height:1.5em\">Apply and help maintain technical accounting policies, including revenue recognition under ASC 606 and lease accounting under ASC 842.</p></li><li><p style=\"min-height:1.5em\">Evaluate, implement, and optimize accounting systems and workflows - reducing manual work and building for scale.</p></li><li><p style=\"min-height:1.5em\">Partner cross-functionally with Sales, Marketing, Engineering, and Support to keep accounting accurate across our business systems.</p></li><li><p style=\"min-height:1.5em\">Act as a thought partner to the Director of Finance on automating close and operations, including using AI where it drives real impact.</p></li><li><p style=\"min-height:1.5em\">Grow into broader ownership of the accounting function as the business scales.</p></li><li><p style=\"min-height:1.5em\">Perform and review detailed flux and variance analysis, identifying and proactively investigating unexpected trends or anomalies in our financials.</p></li></ul><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>What You’ll Need:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">5+ years of progressive accounting experience.</p></li><li><p style=\"min-height:1.5em\">Ideally a Big 4 audit and startup combined background.</p></li><li><p style=\"min-height:1.5em\">Working knowledge of US GAAP, including revenue recognition (ASC 606) and lease accounting (ASC 842).</p></li><li><p style=\"min-height:1.5em\">Strong systems instincts - you’ve evaluated, implemented, or redesigned accounting workflows and tools, and you reach for automation before manual effort.</p></li><li><p style=\"min-height:1.5em\">Tech-savvy and genuinely AI-curious - you’ve explored (or are eager to explore) how automation and AI can transform accounting, and you like building.</p></li><li><p style=\"min-height:1.5em\">An operational, ownership mindset - pragmatic, solution-oriented, and able to work autonomously. Startups move fast, so the ability to adapt and learn quickly is key.</p></li><li><p style=\"min-height:1.5em\">A people person. We have a strong culture and care about bringing in teammates who fit in and make it better.</p></li></ul><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>Nice To Have:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">CPA or CMA certification is a plus.</p></li><li><p style=\"min-height:1.5em\">Experience implementing or migrating to a new ERP system.</p></li><li><p style=\"min-height:1.5em\">Experience with PLG and/or enterprise SaaS revenue models.</p></li><li><p style=\"min-height:1.5em\">Familiarity with our stack: NetSuite, Rillet, Campfire, Ramp, Carta, Orb, and Claude Code.</p></li><li><p style=\"min-height:1.5em\">Experience with auditing.</p></li></ul><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>Location:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Onsite 4 days/week in San Francisco, CA</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Why You'll Love Working at Airbyte:</strong></h2><p style=\"min-height:1.5em\">At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">• Flexible PTO with a culture that encourages at least 25 days off annually<br /> • 16 weeks fully paid parental leave for all parents<br /> • Comprehensive medical, dental, and vision coverage for employees and dependents<br /> • 401(k) retirement plan<br /> • Professional development budget, conference sponsorship, and book reimbursement<br /> • Commuter benefits and monthly internet reimbursement</p><p style=\"min-height:1.5em\"> •  Breakfast and lunch in our San Francisco office<br /> • A collaborative, in-person culture focused on learning, growth, and impact</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability.</p>","directApply":false,"identifier":{"@type":"PropertyValue","name":"Airbyte","value":"af867d0a-bd70-4a8e-80f9-13567bd0f3a8"},"datePosted":"2026-10-16","hiringOrganization":{"@type":"Organization","name":"Airbyte","sameAs":"https://airbyte.com/"},"jobLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"San Francisco","addressRegion":"California","addressCountry":"United States"}},"employmentType":"FULL_TIME","baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","minValue":133000,"maxValue":160000,"unitText":"YEAR"}},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"United States"}}</script>
+  
+  
+
+    <link id="vite-preload" rel="preload" as="fetch" href="https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json" crossorigin>    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Book_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Medium_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Semibold_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/WhitneySSm.css" />
+    <style>
+      .grecaptcha-badge {
+        visibility: hidden;
+      }
+
+      body > div > div:not([class]):has(> iframe[src*="/recaptcha/"]) {
+        box-sizing: content-box;
+      }
+    </style>
+
+
+  </head>
+  <body>
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <div id="root">
+      <style>
+        body {
+          overflow: hidden;
+        }
+      
+        .center {
+          align-items: center;
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          justify-content: center;
+          width: 100vw;
+        }
+      
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      
+        .fade-in {
+          animation-delay: 750ms;
+          animation-direction: normal;
+          animation-duration: 500ms;
+          animation-fill-mode: forwards;
+          animation-iteration-count: 1;
+          animation-name: fade-in;
+          animation-timing-function: ease-in-out;
+          opacity: 0;
+        }
+      
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      
+        .spinner {
+          animation-duration: var(--transitionDurationSlow, 600ms);
+          animation-iteration-count: infinite;
+          animation-name: spin;
+          animation-timing-function: linear;
+          border-color: var(--colorNeutral600Transparent, rgba(125, 134, 153, 0.25));
+          border-radius: 100%;
+          border-style: solid;
+          border-top-color: rgba(125, 134, 153, 0.9);
+          border-width: var(--borderWidthHeavy, 3px);
+          display: block;
+          height: var(--spacingXxlarge, 48px);
+          width: var(--spacingXxlarge, 48px);
+        }
+      </style>
+      <div class="center">
+        <div class="fade-in">
+          <div class="spinner"></div>
+        </div>
+      </div>    </div>
+    <script nonce="SqCKvTWFSgzCZG98Xtpc33ZMODJGKJwfE8IXwLE0CPY">
+      window.__appData = {"ddRumApplicationId":"80e0bf43-e772-45ac-858b-1e6dc0f1f415","ddRumClientToken":"pub1a87c7036063ee7d4b7914b397e6324e","environment":"production","maintenanceMode":false,"schedulingMaintenanceMode":false,"organization":{"organizationId":"c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2","name":"Airbyte","publicWebsite":"https://airbyte.com/","customJobsPageUrl":null,"hostedJobsPageSlug":"airbyte","allowJobPostIndexing":false,"isDemoOrg":false,"theme":{"colors":{"version":"1","colorPrimary600":"#6059b2","colorPrimary900":"#1d1b3e"},"showJobFilters":true,"showLocationAddress":false,"showTeams":false,"showAutofillApplicationsBox":true,"logoWordmarkImageUrl":"https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png","logoSquareImageUrl":null,"applicationSubmittedSuccessMessage":null,"jobBoardTopDescriptionHtml":null,"jobBoardBottomDescriptionHtml":null,"jobPostingBackUrl":null,"__typename":"Theme"},"appConfirmationTrackingPixelHtml":null,"recruitingPrivacyPolicyUrl":null,"activeFeatureFlags":["AiNotetakerCandidateConsentPolicies","ApplicationForReferrals","ApprovalNotesFromEmail","BookingLinkRescheduleLimits","CanonicalizeSchools","CoreMultipleBrands","CoreMultipleBrandsFeedFiltering","CoreMultipleBrandsLinkedInJobWrappingStreamingFix","DemoOrgBanners","EducationHistoryFormField","ExplicitAutomatedProcessingOptOutConfirmation","JobBoardCookieConsentControls","JobBoardEtagValidation","JobPostingApplicationDeadlines","JobPostingListV2","JobPostingWorkplaceTypeOverrideSecondaryLocationsToo","LinkedInIntegrationRequireCompanyId","LinkedInTOSUpdate","LocationExternalName","MigrateGoogleRecaptchaAutomatedLegal","RejectBase64EncodedResumesFrontEnd","RejectBase64EncodedResumesThrowErrorFrontEnd","RejectInvalidFileTypeOnUpload","RejectUrlsInCandidateName","SchedulingDirectBookingLogDirectBookingEventsJson","SchedulingGCalSendUpdatesForCancelEvents","SchedulingRescheduleAndCancellationReasonsNonUser","SchedulingUseLocaleInTimeFormatting","ShowCountsOnJobBoardFilterOptions","SocialSharingHtmlMetaSettings","UseGlobalQueryScopesOnGlobalApplicationQuestions","UseGoogleRecaptchaUniversalKey","UseJobPostingFiltersOnGlobalApplicationQuestions","UseJobPostingFiltersOnGlobalApplicationQuestionsUI","UseJobPostingFiltersOnSurveys","UseJobPostingFiltersOnSurveysUI","ValidateFileTypeOnUpload"],"timezone":"America/Los_Angeles","candidateScheduleCancellationReasonRequirementStatus":"Off","showCookieBanner":false,"__typename":"Organization"},"posting":{"id":"af867d0a-bd70-4a8e-80f9-13567bd0f3a8","title":"Accounting Manager","departmentName":"Finance ","departmentExternalName":"Finance ","locationName":"San Francisco","locationAddress":null,"workplaceType":"Hybrid","employmentType":"FullTime","descriptionHtml":"<p style=\"min-height:1.5em\">Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, \"the last ten years were all about structured data. The future is all about context.\" We're now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>The Role:</strong></h2><p style=\"min-height:1.5em\">As Airbyte's Accounting Manager, you’ll own the day-to-day of our accounting operations and reporting - and you’ll help us rebuild how that work gets done, replacing manual processes and outsourced accounting firm dependencies with clean, automated, in-house workflows.</p><p style=\"min-height:1.5em\">We currently run a lean model with an outsourced accounting firm and a Senior Accountant. You’ll manage both, and over time help us bring accounting back in-house - taking ownership of more of the function as you go. You’ll report directly to the Director of Finance (who reports to the COO) as a thought partner on automating our close and operations, and you’ll have real room to experiment with modern tooling and AI to do it.</p><p style=\"min-height:1.5em\">We're hiring someone with the intention of investing in their long-term growth. As the business evolves, this role is expected to take on increasing ownership and responsibility, with the opportunity to help shape and ultimately lead the accounting function over time. If you want to build a modern accounting function - not just maintain one - this is that seat.</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>What You’ll Do:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Own accounting operations and reporting - GL, AP/AR, and the general ledger close - with accuracy, timeliness, and US GAAP compliance; you’ll operate with high ownership and strong judgment.</p></li><li><p style=\"min-height:1.5em\">Run the month-end close, and continuously shorten and automate it.</p></li><li><p style=\"min-height:1.5em\">Manage a Senior Accountant and our outsourced accounting team, and help lead the transition of work in-house over time.</p></li><li><p style=\"min-height:1.5em\">Prepare for and support external audits, including documentation, technical accounting memos, and internal controls.</p></li><li><p style=\"min-height:1.5em\">Apply and help maintain technical accounting policies, including revenue recognition under ASC 606 and lease accounting under ASC 842.</p></li><li><p style=\"min-height:1.5em\">Evaluate, implement, and optimize accounting systems and workflows - reducing manual work and building for scale.</p></li><li><p style=\"min-height:1.5em\">Partner cross-functionally with Sales, Marketing, Engineering, and Support to keep accounting accurate across our business systems.</p></li><li><p style=\"min-height:1.5em\">Act as a thought partner to the Director of Finance on automating close and operations, including using AI where it drives real impact.</p></li><li><p style=\"min-height:1.5em\">Grow into broader ownership of the accounting function as the business scales.</p></li><li><p style=\"min-height:1.5em\">Perform and review detailed flux and variance analysis, identifying and proactively investigating unexpected trends or anomalies in our financials.</p></li></ul><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>What You’ll Need:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">5+ years of progressive accounting experience.</p></li><li><p style=\"min-height:1.5em\">Ideally a Big 4 audit and startup combined background.</p></li><li><p style=\"min-height:1.5em\">Working knowledge of US GAAP, including revenue recognition (ASC 606) and lease accounting (ASC 842).</p></li><li><p style=\"min-height:1.5em\">Strong systems instincts - you’ve evaluated, implemented, or redesigned accounting workflows and tools, and you reach for automation before manual effort.</p></li><li><p style=\"min-height:1.5em\">Tech-savvy and genuinely AI-curious - you’ve explored (or are eager to explore) how automation and AI can transform accounting, and you like building.</p></li><li><p style=\"min-height:1.5em\">An operational, ownership mindset - pragmatic, solution-oriented, and able to work autonomously. Startups move fast, so the ability to adapt and learn quickly is key.</p></li><li><p style=\"min-height:1.5em\">A people person. We have a strong culture and care about bringing in teammates who fit in and make it better.</p></li></ul><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>Nice To Have:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">CPA or CMA certification is a plus.</p></li><li><p style=\"min-height:1.5em\">Experience implementing or migrating to a new ERP system.</p></li><li><p style=\"min-height:1.5em\">Experience with PLG and/or enterprise SaaS revenue models.</p></li><li><p style=\"min-height:1.5em\">Familiarity with our stack: NetSuite, Rillet, Campfire, Ramp, Carta, Orb, and Claude Code.</p></li><li><p style=\"min-height:1.5em\">Experience with auditing.</p></li></ul><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>Location:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Onsite 4 days/week in San Francisco, CA</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Why You'll Love Working at Airbyte:</strong></h2><p style=\"min-height:1.5em\">At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">• Flexible PTO with a culture that encourages at least 25 days off annually<br /> • 16 weeks fully paid parental leave for all parents<br /> • Comprehensive medical, dental, and vision coverage for employees and dependents<br /> • 401(k) retirement plan<br /> • Professional development budget, conference sponsorship, and book reimbursement<br /> • Commuter benefits and monthly internet reimbursement</p><p style=\"min-height:1.5em\"> •  Breakfast and lunch in our San Francisco office<br /> • A collaborative, in-person culture focused on learning, growth, and impact</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability.</p>","isListed":true,"isConfidential":false,"teamNames":["Finance "],"secondaryLocationNames":[],"compensationTierSummary":"$133K – $160K • Offers Equity","compensationTiers":[{"id":"9a51e70f-53ca-49fd-90cb-45cbbf147de9","title":null,"tierSummary":"$133K – $160K • Offers Equity","__typename":"JobPostingCompensationTiers"}],"applicationDeadline":null,"compensationTierGuideUrl":null,"scrapeableCompensationSalarySummary":"$133K - $160K","compensationPhilosophyHtml":"<p style=\"min-height:1.5em\">The actual compensation package within the stated range will be based on a combination of factors such as an individual's skills, experience level, location, and other relevant job-related considerations.</p>","applicationLimitCalloutHtml":null,"shouldAskForTextingConsent":true,"shouldAskForWhatsAppConsent":false,"candidateTextingPrivacyPolicyUrl":"https://airbyte.com/company/privacy-policy","candidateTextingTermsAndConditionsUrl":null,"legalEntityNameForTextingConsent":"Airbyte, Inc","automatedProcessingLegalNotice":null,"__typename":"JobPostingDetails"},"jobBoard":null,"routerPrefix":"/","recaptchaPublicSiteKey":"6LeFb_YUAAAAALUD5h-BiQEp8JaFChe0e0A6r49Y","recaptchaUniversalPublicSiteKey":"6LezdY0tAAAAAEnollNLCAI0z1VDGwM7AzGrU4XZ"};
+      // A Vite manifest key: the entry's HTML filename relative to the build root.
+      // Single-entry apps leave entryHtml unset.
+      const ENTRY_KEY = "index.html";
+      fetch("https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json").then(function (res) { return res.json() }).then(function (manifest) {
+        const entryData = manifest[ENTRY_KEY];
+        if (entryData == null) {
+          throw new Error("Vite manifest is missing entry: " + ENTRY_KEY);
+        }
+    
+        // Walk the entry's static imports transitively. Both the CSS and the JS a
+        // page needs can sit on shared chunks rather than on the entry record, and
+        // the manifest lists only each chunk's direct imports -- so reading the
+        // entry alone silently drops stylesheets and preloads. Depth-first
+        // post-order puts a dependency's CSS ahead of its importer's, which is the
+        // cascade order Vite uses in the HTML it generates for the same entry.
+        const chunks = [];
+        const visited = {};
+        function collectChunks(key) {
+          if (visited[key] === true) {
+            return;
+          }
+          visited[key] = true;
+          const chunk = manifest[key];
+          if (chunk == null) {
+            return;
+          }
+          (chunk.imports ?? []).forEach(collectChunks);
+          chunks.push(chunk);
+        }
+        collectChunks(ENTRY_KEY);
+    
+        // css[] holds output paths, not digests, but every manifest record carries
+        // an integrity for its own file -- so a stylesheet Vite emitted as its own
+        // record can be matched by path. The entry's CSS has no record and loads
+        // unhashed.
+        const integrityByFile = {};
+        Object.keys(manifest).forEach(function (key) {
+          const record = manifest[key];
+          if (record != null && record.file != null && record.integrity != null) {
+            integrityByFile[record.file] = record.integrity;
+          }
+        });
+    
+        const sheets = [];
+        const seenSheets = {};
+        chunks.forEach(function (chunk) {
+          (chunk.css ?? []).forEach(function (sheet) {
+            if (seenSheets[sheet] === true) {
+              return;
+            }
+            seenSheets[sheet] = true;
+            sheets.push(sheet);
+          });
+        });
+    
+        let bundleLoaded = false;
+        function loadBundle() {
+          if (bundleLoaded === true) {
+            return;
+          }
+    
+          const el = document.createElement("script");
+          el.setAttribute("type", "module");
+          el.setAttribute("crossorigin", "");
+          el.setAttribute("integrity", entryData.integrity);
+          el.setAttribute("src", "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + entryData.file);
+          document.head.appendChild(el);
+          bundleLoaded = true;
+        }
+    
+        chunks.forEach(function (chunk) {
+          const preload = document.createElement("link");
+          preload.rel = "modulepreload";
+          preload.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + chunk.file;
+          // Carry the SRI hash on the preload too: Chrome/Firefox reuse the
+          // preloaded bytes for the integrity-bearing script tag, so an integrity-less
+          // preload silently bypasses the SRI check. Without it here, SRI is never
+          // enforced on the code-split chunks (the bulk of the app), in any browser.
+          preload.setAttribute("integrity", chunk.integrity);
+          preload.setAttribute("crossorigin", "");
+          document.head.appendChild(preload);
+        });
+    
+        if (sheets.length > 0) {
+          const loadedSheets = [];
+          sheets.forEach(function (sheet) {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.type = "text/css";
+            link.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + sheet;
+            link.media = "all";
+            const sheetIntegrity = integrityByFile[sheet];
+            if (sheetIntegrity != null) {
+              link.setAttribute("integrity", sheetIntegrity);
+              // SRI on a cross-origin stylesheet requires CORS mode; the CDN sends
+              // access-control-allow-origin: *.
+              link.setAttribute("crossorigin", "");
+            }
+            link.onload = function () {
+              loadedSheets.push(sheet);
+              if (loadedSheets.length === sheets.length) {
+                loadBundle();
+              }
+            };
+            link.onerror = loadBundle;
+            document.head.insertBefore(link, document.getElementById("vite-preload"));
+          });
+        } else {
+          loadBundle();
+        }
+      });
+    </script>  </body>
+</html>

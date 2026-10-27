@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#473BCE">
+    <meta name="csp-nonce" id="csp-nonce" content="0SG8W0noW_XpR3h_qRzEovb9rVe8vGXMG6KOWu2u2T4">
+    <link rel="icon" type="image/svg+xml" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.svg">
+    <link rel="icon" type="image/png" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/apple-touch-icon.png" />
+    <title>Airbyte Jobs</title><meta name="title" content="Airbyte Jobs" />
+    
+  
+  <meta name="description" content="Airbyte Jobs" />
+  <meta name="twitter:card" content="summary" />
+  <meta property="og:url" content="https://jobs.ashbyhq.com/airbyte" />
+  <meta property="og:type" content="website" />
+  
+  <meta property="og:title" content="Airbyte Jobs" />
+  <meta property="og:description" content="Airbyte Jobs" />
+  
+  <meta name="twitter:title" content="Airbyte Jobs" />
+  <meta name="twitter:description" content="Airbyte Jobs" />
+  
+  <meta name="robots" content="noindex,nofollow" /><link rel="preload" as="image" href="https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png">
+
+    <link id="vite-preload" rel="preload" as="fetch" href="https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json" crossorigin>    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Book_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Medium_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Semibold_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/WhitneySSm.css" />
+    <style>
+      .grecaptcha-badge {
+        visibility: hidden;
+      }
+
+      body > div > div:not([class]):has(> iframe[src*="/recaptcha/"]) {
+        box-sizing: content-box;
+      }
+    </style>
+
+
+  </head>
+  <body>
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <div id="root">
+      <style>
+        body {
+          overflow: hidden;
+        }
+      
+        .center {
+          align-items: center;
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          justify-content: center;
+          width: 100vw;
+        }
+      
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      
+        .fade-in {
+          animation-delay: 750ms;
+          animation-direction: normal;
+          animation-duration: 500ms;
+          animation-fill-mode: forwards;
+          animation-iteration-count: 1;
+          animation-name: fade-in;
+          animation-timing-function: ease-in-out;
+          opacity: 0;
+        }
+      
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      
+        .spinner {
+          animation-duration: var(--transitionDurationSlow, 600ms);
+          animation-iteration-count: infinite;
+          animation-name: spin;
+          animation-timing-function: linear;
+          border-color: var(--colorNeutral600Transparent, rgba(125, 134, 153, 0.25));
+          border-radius: 100%;
+          border-style: solid;
+          border-top-color: rgba(125, 134, 153, 0.9);
+          border-width: var(--borderWidthHeavy, 3px);
+          display: block;
+          height: var(--spacingXxlarge, 48px);
+          width: var(--spacingXxlarge, 48px);
+        }
+      </style>
+      <div class="center">
+        <div class="fade-in">
+          <div class="spinner"></div>
+        </div>
+      </div>    </div>
+    <script nonce="0SG8W0noW_XpR3h_qRzEovb9rVe8vGXMG6KOWu2u2T4">
+      window.__appData = {"ddRumApplicationId":"80e0bf43-e772-45ac-858b-1e6dc0f1f415","ddRumClientToken":"pub1a87c7036063ee7d4b7914b397e6324e","environment":"production","maintenanceMode":false,"schedulingMaintenanceMode":false,"organization":{"organizationId":"c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2","name":"Airbyte","publicWebsite":"https://airbyte.com/","customJobsPageUrl":null,"hostedJobsPageSlug":"airbyte","allowJobPostIndexing":false,"isDemoOrg":false,"theme":{"colors":{"version":"1","colorPrimary600":"#6059b2","colorPrimary900":"#1d1b3e"},"showJobFilters":true,"showLocationAddress":false,"showTeams":false,"showAutofillApplicationsBox":true,"logoWordmarkImageUrl":"https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png","logoSquareImageUrl":null,"applicationSubmittedSuccessMessage":null,"jobBoardTopDescriptionHtml":null,"jobBoardBottomDescriptionHtml":null,"jobPostingBackUrl":null,"__typename":"Theme"},"appConfirmationTrackingPixelHtml":null,"recruitingPrivacyPolicyUrl":null,"activeFeatureFlags":["AiNotetakerCandidateConsentPolicies","ApplicationForReferrals","ApprovalNotesFromEmail","BookingLinkRescheduleLimits","CanonicalizeSchools","CoreMultipleBrands","CoreMultipleBrandsFeedFiltering","CoreMultipleBrandsLinkedInJobWrappingStreamingFix","DemoOrgBanners","EducationHistoryFormField","ExplicitAutomatedProcessingOptOutConfirmation","JobBoardCookieConsentControls","JobBoardEtagValidation","JobPostingApplicationDeadlines","JobPostingListV2","JobPostingWorkplaceTypeOverrideSecondaryLocationsToo","LinkedInIntegrationRequireCompanyId","LinkedInTOSUpdate","LocationExternalName","MigrateGoogleRecaptchaAutomatedLegal","RejectBase64EncodedResumesFrontEnd","RejectBase64EncodedResumesThrowErrorFrontEnd","RejectInvalidFileTypeOnUpload","RejectUrlsInCandidateName","SchedulingDirectBookingLogDirectBookingEventsJson","SchedulingGCalSendUpdatesForCancelEvents","SchedulingRescheduleAndCancellationReasonsNonUser","SchedulingUseLocaleInTimeFormatting","ShowCountsOnJobBoardFilterOptions","SocialSharingHtmlMetaSettings","UseGlobalQueryScopesOnGlobalApplicationQuestions","UseGoogleRecaptchaUniversalKey","UseJobPostingFiltersOnGlobalApplicationQuestions","UseJobPostingFiltersOnGlobalApplicationQuestionsUI","UseJobPostingFiltersOnSurveys","UseJobPostingFiltersOnSurveysUI","ValidateFileTypeOnUpload"],"timezone":"America/Los_Angeles","candidateScheduleCancellationReasonRequirementStatus":"Off","showCookieBanner":false,"__typename":"Organization"},"posting":null,"jobBoard":{"teams":[{"id":"bc2844ef-6a21-4177-815d-a0e993e7f269","name":"Finance ","externalName":null,"parentTeamId":null,"__typename":"Team"},{"id":"b1b6b08b-047d-49fb-92fd-67f3931be344","name":"Technical Support ","externalName":null,"parentTeamId":null,"__typename":"Team"},{"id":"9d868fe0-34aa-4f88-b5ab-d0e7a6d251a9","name":"Engineering","externalName":null,"parentTeamId":null,"__typename":"Team"},{"id":"86775c9d-11ab-4fb1-be73-f57507a3f552","name":"Sales","externalName":null,"parentTeamId":null,"__typename":"Team"},{"id":"a335714d-fd1a-4b40-8044-0876706eb0de","name":"Solutions Architecture ","externalName":null,"parentTeamId":"86775c9d-11ab-4fb1-be73-f57507a3f552","__typename":"Team"}],"jobPostings":[{"id":"af867d0a-bd70-4a8e-80f9-13567bd0f3a8","title":"Accounting Manager","teamId":"bc2844ef-6a21-4177-815d-a0e993e7f269","locationId":"9c3fe725-7e8d-4009-b4a0-3b9f1878308f","locationName":"San Francisco","workplaceType":"Hybrid","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"1a29f42d-e446-4ea0-a4f6-c3886e71ba7d","title":"Customer Support Developer (Databases)","teamId":"b1b6b08b-047d-49fb-92fd-67f3931be344","locationId":"86a01ceb-cf9e-403e-9422-2fe38c211675","locationName":"Canada","workplaceType":"Remote","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"9d81a132-966b-4f37-b198-d950e23a7765","title":"Customer Support Developer (Databases)","teamId":"b1b6b08b-047d-49fb-92fd-67f3931be344","locationId":"13b192cd-64b6-43c1-97c7-cbe11fa75049","locationName":"United States","workplaceType":"Remote","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"efe55756-f28b-4030-b9a0-539f6c8ed8ff","title":"Engineering Manager, Platform","teamId":"9d868fe0-34aa-4f88-b5ab-d0e7a6d251a9","locationId":"9c3fe725-7e8d-4009-b4a0-3b9f1878308f","locationName":"San Francisco","workplaceType":"Hybrid","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"5e394a39-58d4-43a6-9ce3-3c009a7362c8","title":"Enterprise Account Executive","teamId":"86775c9d-11ab-4fb1-be73-f57507a3f552","locationId":"13b192cd-64b6-43c1-97c7-cbe11fa75049","locationName":"United States","workplaceType":"Remote","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"9af619c8-163a-4170-bac6-6ceee93558fe","title":"Enterprise Account Executive","teamId":"86775c9d-11ab-4fb1-be73-f57507a3f552","locationId":"86a01ceb-cf9e-403e-9422-2fe38c211675","locationName":"Canada","workplaceType":"Remote","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"b59bbc91-fb77-4a08-9c47-0fca7f755942","title":"Senior Backend Engineer, Agent Infrastructure","teamId":"9d868fe0-34aa-4f88-b5ab-d0e7a6d251a9","locationId":"9c3fe725-7e8d-4009-b4a0-3b9f1878308f","locationName":"San Francisco","workplaceType":"Hybrid","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"5930fed9-c4f6-43c3-87be-3402c2c46489","title":"Senior Site Reliability Engineer","teamId":"9d868fe0-34aa-4f88-b5ab-d0e7a6d251a9","locationId":"9c3fe725-7e8d-4009-b4a0-3b9f1878308f","locationName":"San Francisco","workplaceType":"Hybrid","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"735d5deb-ba6e-49b2-88ba-5ebdf8d315a0","title":"Senior Software Engineer, Platform Fullstack","teamId":"9d868fe0-34aa-4f88-b5ab-d0e7a6d251a9","locationId":"9c3fe725-7e8d-4009-b4a0-3b9f1878308f","locationName":"San Francisco","workplaceType":"Hybrid","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"cbf66746-9e2a-4b23-a208-a6d78eb5ec63","title":"Senior Solutions Architect","teamId":"a335714d-fd1a-4b40-8044-0876706eb0de","locationId":"e7e9b397-5738-434f-b90f-a4af27d92c5e","locationName":"New York","workplaceType":"Remote","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"9b312680-5bcf-40b3-9cba-1023d2c9b895","title":"Senior Technical Account Manager","teamId":"86775c9d-11ab-4fb1-be73-f57507a3f552","locationId":"86a01ceb-cf9e-403e-9422-2fe38c211675","locationName":"Canada","workplaceType":"Remote","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"44ea7c1a-a61b-4b41-bc41-009dd6349d83","title":"Senior Technical Account Manager","teamId":"86775c9d-11ab-4fb1-be73-f57507a3f552","locationId":"e7e9b397-5738-434f-b90f-a4af27d92c5e","locationName":"New York","workplaceType":"Remote","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"},{"id":"c595e670-8afb-47b3-9ba4-0efd11861e8c","title":"Technical Support Engineer","teamId":"b1b6b08b-047d-49fb-92fd-67f3931be344","locationId":"86a01ceb-cf9e-403e-9422-2fe38c211675","locationName":"Canada","workplaceType":"Remote","employmentType":"FullTime","secondaryLocations":[],"compensationTierSummary":null,"__typename":"JobPostingBriefsWithIdsAndTeamId"}],"__typename":"JobBoard"},"routerPrefix":"/","recaptchaPublicSiteKey":"6LeFb_YUAAAAALUD5h-BiQEp8JaFChe0e0A6r49Y","recaptchaUniversalPublicSiteKey":"6LezdY0tAAAAAEnollNLCAI0z1VDGwM7AzGrU4XZ"};
+      // A Vite manifest key: the entry's HTML filename relative to the build root.
+      // Single-entry apps leave entryHtml unset.
+      const ENTRY_KEY = "index.html";
+      fetch("https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json").then(function (res) { return res.json() }).then(function (manifest) {
+        const entryData = manifest[ENTRY_KEY];
+        if (entryData == null) {
+          throw new Error("Vite manifest is missing entry: " + ENTRY_KEY);
+        }
+    
+        // Walk the entry's static imports transitively. Both the CSS and the JS a
+        // page needs can sit on shared chunks rather than on the entry record, and
+        // the manifest lists only each chunk's direct imports -- so reading the
+        // entry alone silently drops stylesheets and preloads. Depth-first
+        // post-order puts a dependency's CSS ahead of its importer's, which is the
+        // cascade order Vite uses in the HTML it generates for the same entry.
+        const chunks = [];
+        const visited = {};
+        function collectChunks(key) {
+          if (visited[key] === true) {
+            return;
+          }
+          visited[key] = true;
+          const chunk = manifest[key];
+          if (chunk == null) {
+            return;
+          }
+          (chunk.imports ?? []).forEach(collectChunks);
+          chunks.push(chunk);
+        }
+        collectChunks(ENTRY_KEY);
+    
+        // css[] holds output paths, not digests, but every manifest record carries
+        // an integrity for its own file -- so a stylesheet Vite emitted as its own
+        // record can be matched by path. The entry's CSS has no record and loads
+        // unhashed.
+        const integrityByFile = {};
+        Object.keys(manifest).forEach(function (key) {
+          const record = manifest[key];
+          if (record != null && record.file != null && record.integrity != null) {
+            integrityByFile[record.file] = record.integrity;
+          }
+        });
+    
+        const sheets = [];
+        const seenSheets = {};
+        chunks.forEach(function (chunk) {
+          (chunk.css ?? []).forEach(function (sheet) {
+            if (seenSheets[sheet] === true) {
+              return;
+            }
+            seenSheets[sheet] = true;
+            sheets.push(sheet);
+          });
+        });
+    
+        let bundleLoaded = false;
+        function loadBundle() {
+          if (bundleLoaded === true) {
+            return;
+          }
+    
+          const el = document.createElement("script");
+          el.setAttribute("type", "module");
+          el.setAttribute("crossorigin", "");
+          el.setAttribute("integrity", entryData.integrity);
+          el.setAttribute("src", "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + entryData.file);
+          document.head.appendChild(el);
+          bundleLoaded = true;
+        }
+    
+        chunks.forEach(function (chunk) {
+          const preload = document.createElement("link");
+          preload.rel = "modulepreload";
+          preload.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + chunk.file;
+          // Carry the SRI hash on the preload too: Chrome/Firefox reuse the
+          // preloaded bytes for the integrity-bearing script tag, so an integrity-less
+          // preload silently bypasses the SRI check. Without it here, SRI is never
+          // enforced on the code-split chunks (the bulk of the app), in any browser.
+          preload.setAttribute("integrity", chunk.integrity);
+          preload.setAttribute("crossorigin", "");
+          document.head.appendChild(preload);
+        });
+    
+        if (sheets.length > 0) {
+          const loadedSheets = [];
+          sheets.forEach(function (sheet) {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.type = "text/css";
+            link.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + sheet;
+            link.media = "all";
+            const sheetIntegrity = integrityByFile[sheet];
+            if (sheetIntegrity != null) {
+              link.setAttribute("integrity", sheetIntegrity);
+              // SRI on a cross-origin stylesheet requires CORS mode; the CDN sends
+              // access-control-allow-origin: *.
+              link.setAttribute("crossorigin", "");
+            }
+            link.onload = function () {
+              loadedSheets.push(sheet);
+              if (loadedSheets.length === sheets.length) {
+                loadBundle();
+              }
+            };
+            link.onerror = loadBundle;
+            document.head.insertBefore(link, document.getElementById("vite-preload"));
+          });
+        } else {
+          loadBundle();
+        }
+      });
+    </script>  </body>
+</html>

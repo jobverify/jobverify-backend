@@ -1,14 +1,17 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import provider from './catalog.js'
-import { createPublicAtsCatalogScraper } from '../../scraper-support/providers/index.js'
+import { createAshbyPairNativeScraper } from '../../scraper-support/shared/ashbyPairNative20261027.js'
 export const SOURCE = provider.source
 export const COMPANY = provider.companyName
 export const CAREERS_URL = provider.companyCareerPage
-export const run = options => createPublicAtsCatalogScraper(provider).run(options)
+export const VERIFIED_ON = provider.verifiedOn
+export const PROVIDER_METADATA = provider
+export const createCheckoutComScraper = options => createAshbyPairNativeScraper({"source":"checkoutcom","company":"Checkout.com","token":"checkout.com","domain":"checkout.com","careersUrl":"https://www.checkout.com/careers","proxyUrl":"https://ashby-careers-checkout-production.up.railway.app/api/jobs"},options)
+export const run = options => createCheckoutComScraper(options).run(options)
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
-  if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs.json'))
-  else await saveToDB(jobs, SOURCE)
+  if (process.argv.includes('--dry-run')) saveToFile(jobs,path.join(path.dirname(fileURLToPath(import.meta.url)),'jobs.json'))
+  else await saveToDB(jobs,SOURCE)
 }

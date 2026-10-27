@@ -1,278 +1,62 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const homepageHtml = `
-<!doctype html>
-<html lang="en-US">
-  <head>
-    <title>Anthem - Home - Anthem</title>
-    <meta
-      name="description"
-      content="Integrated CRDMO services across discovery, development and commercial manufacturing for small molecules, peptides, lipids, oligos, high-potent APIs and large"
-    >
-    <link rel="canonical" href="https://anthembio.com/">
-  </head>
-  <body>
-    <a class="site-logo" href="https://anthembio.com">
-      <img alt="Anthem Biosciences Logo" src="https://anthembio.com/wp-content/uploads/2023/09/Anthem-2.webp">
-    </a>
-    <a class="ekit-wrapper-link" href="https://anthembio.com/careers/"></a>
-    <span class="ekit-stylish-list-content-title">Careers</span>
-  </body>
-</html>
-`
+// Set before importing the scraper, registration, or fixture helpers.
+globalThis.fetch=()=>{throw Error('OFFLINE_NETWORK_TRIPWIRE')}
+const anthem=await import('../../scraper/anthem/script.js')
+const{frozenPairTransport,scenario}=await import('./peopleStrongNativePair20261027.fixtures.js')
+const{readInventoryEvidence}=await import('../utils/inventoryEvidence.js')
+const{getScraperCatalog}=await import('../providers/index.js')
 
-const careersPageHtml = `
-<!doctype html>
-<html lang="en-US">
-  <head>
-    <title>Careers - Anthem</title>
-    <meta
-      name="description"
-      content="We are not just following the science, we are leading it. To do that, we need the curious, the relentless and the visionary. We need YOU."
-    >
-    <link rel="canonical" href="https://anthembio.com/careers/">
-  </head>
-  <body>
-    <p>
-      We are not just following the science, we are leading it.
-      To do that, we need the curious, the relentless and the visionary.
-      We need <strong>YOU.</strong>
-    </p>
-    <h3>Health & Wellness Plans</h3>
-    <h3>Financial Security & Growth</h3>
-    <h3>Flexible & Generous Time Off</h3>
-    <h3>Life & Learning Support</h3>
-    <h3>Wealth Creation Opportunity</h3>
-    <a class="elementor-button" href="https://anthemhrcp.peoplestrong.com/" rel="noopener">
-      Explore openings
-    </a>
-    <h2>Open Positions (5)</h2>
-  </body>
-</html>
-`
+test('Anthem public metadata and search builder expose the current verified 45-row protocol',()=>{
+ assert.equal(anthem.SOURCE,'anthem');assert.equal(anthem.COMPANY,'Anthem')
+ assert.equal(anthem.HOMEPAGE_URL,'https://anthembio.com/')
+ assert.equal(anthem.CAREERS_PAGE_URL,'https://anthembio.com/careers/')
+ assert.equal(anthem.PORTAL_ORIGIN,'https://anthemhrcp.peoplestrong.com')
+ assert.equal(anthem.JOB_LISTINGS_URL,'https://anthemhrcp.peoplestrong.com/')
+ assert.equal(anthem.DEFAULT_PAGE_SIZE,45);assert.deepEqual(anthem.DEFAULT_SEARCH_BODY,{})
+ assert.equal(anthem.buildApiUrl(),'https://anthemhrcp.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=45')
+ assert.equal(anthem.buildApiUrl({offset:45}),'https://anthemhrcp.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=45&limit=45')
+ assert.equal(getScraperCatalog().find(p=>p.source==='anthem').jobsApiUrl,anthem.buildApiUrl())
+ assert.throws(()=>anthem.buildApiUrl({offset:0,limit:20}),/45|reviewed/i)
+ assert.throws(()=>anthem.buildApiUrl({offset:-1}),/offset/i)
+})
 
-const portalShellHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Candidate Portal</title>
-    <base href="/">
-  </head>
-  <body class="LtR candidate-portal">
-    <app-root data-testid="src-index-app-root-page-1"></app-root>
-    <script src="main-IQMZX3K4.js" type="module"></script>
-  </body>
-</html>
-`
+test('Anthem factory injection reads a synthetic full native role rather than publishing its listing preview',async()=>{
+ // Explicitly synthetic future role; the actual frozen Anthem board has zero.
+ const s=scenario('anthem');let report
+ const jobs=await anthem.createAnthemScraper({fetchPage:s.fetchPage,now:'2026-10-27T06:00:00Z'}).run({onReport:r=>{report=r}})
+ assert.equal(jobs.length,1);assert.match(jobs[0].jobDescription,/Full native responsibilities & safety/)
+ assert.doesNotMatch(jobs[0].jobDescription,/PREVIEW|PRIVATE|HIDDEN|INERT/)
+ assert.equal(jobs[0].postingId,'P-9001');assert.equal(jobs[0].requisitionId,'1800001')
+ assert.deepEqual(jobs[0].qualifications,['B.Tech','Safety diploma']);assert.deepEqual(jobs[0].requiredSkills,['Process safety','CAD'])
+ assert.equal(report.nativeInventoryComplete,true);assert.equal(report.sourceScopeComplete,true)
+ const searches=s.calls.filter(c=>c.url.includes('jobs/v1?'));assert.equal(searches.length,4)
+ for(const c of searches){assert.equal(c.method,'POST');assert.equal(c.body,'{}');assert.match(c.url,/limit=45$/)}
+ assert.equal(s.calls.some(c=>c.method==='GET'&&c.url.includes('/job/P-9001/v2?part=basic,organisational,descriprion,workflow,skill,qualification,certification,language,applied&isReqId=false')),true)
+ assert.equal(s.calls.some(c=>c.method==='GET'&&c.url.endsWith('organizationDetails?jobCode=P-9001')),true)
+})
 
-const samplePayload = {
-  totalRecords: 1,
-  response: [
-    {
-      organizationUnitComplete: 'Manufacturing>Process Development>Process Development',
-      jobPostedDate: '2026-07-10',
-      locationHierarchyComplete: 'India>Karnataka>Bengaluru>Bengaluru',
-      jobDetailUrl: 'https://anthemhrcp.peoplestrong.com/job/detail/ANT_MFG_123456',
-      designation: 'Senior Scientist',
-      requisitionId: 123456,
-      jobTitle: 'Senior Scientist',
-      jobCode: 'ANT/MFG/123456',
-      organizationUnit: 'Manufacturing',
-      jobClosureDate: '2026-08-15',
-      locationHierarchy: 'Bengaluru',
-      expRange: '4-8 years',
-      skills: {
-        mustTohave: ['HPLC'],
-        goodtohave: ['Scale-up'],
-      },
-      employmentTenureType: 'Full Time',
-      minimumQualification: 'M.Sc',
-      preferredQualification: 'PhD',
-      jobDescription: 'Lead analytical method development.',
-    },
-  ],
-  messageCode: {
-    code: 200,
-    messages: 'success',
-  },
-  campusHiring: 0,
-  solrSearch: false,
-}
+test('actual frozen Anthem corporate five/native zero stays partial and legacy listing-only injection fails closed',async()=>{
+ let report
+ const jobs=await anthem.createAnthemScraper().run({fetchPage:frozenPairTransport(),now:'2026-10-27T06:00:00Z',onReport:r=>{report=r}})
+ assert.deepEqual(jobs,[]);assert.equal(report.delegation.advertisedCount,5);assert.equal(report.reportedNativeTotal,0)
+ assert.equal(report.advertisedCountMismatch,true);assert.equal(report.sourceScopeComplete,false)
+ assert.equal(report.rawJobs,null);assert.equal(report.verifiedZeroInventory,false);assert.equal(readInventoryEvidence(jobs).status,'discovery-only')
+ let legacyCalls=0;await assert.rejects(anthem.createAnthemScraper().run({fetchJson:async()=>{legacyCalls++;return{totalRecords:0,response:null}}}),/Listing-only injection/);assert.equal(legacyCalls,0)
+})
 
-const emptyPayload = {
-  totalRecords: 0,
-  response: [],
-  messageCode: {
-    code: 200,
-    messages: 'success',
-  },
-  campusHiring: 0,
-  solrSearch: false,
-}
-
-const loadModule = async () => {
-  try {
-    return await import('../../scraper/anthem/script.js')
-  } catch {
-    assert.fail('Expected Anthem scraper module at ../../scraper/anthem/script.js')
+test('Anthem current first-party handoff, portal shell and native client drift stop before search',async()=>{
+ for(const stage of ['corporate-brand','corporate-handoff','portal-shell','native-client']){
+  const s=scenario('anthem'),original=s.fetchPage
+  const fetchPage=async(url,init)=>{const r=await original(url,init);let body=r.body
+   if(url==='https://anthembio.com/careers/'&&stage==='corporate-brand')body=body.replace('Careers - Anthem','Careers - Other Company')
+   if(url==='https://anthembio.com/careers/'&&stage==='corporate-handoff')body=body.replace('https://anthemhrcp.peoplestrong.com/','https://example.com/jobs')
+   if(url==='https://anthemhrcp.peoplestrong.com/'&&stage==='portal-shell')body='<title>Unexpected Portal</title>'
+   if(url.endsWith('/main-PUBLIC123.js')&&stage==='native-client')body='public client with no advertised job module'
+   return{...r,body,html:body}
   }
-}
-
-test('Anthem scraper constants stay pinned to the verified first-party careers page and public PeopleStrong feed', async () => {
-  const anthem = await loadModule()
-
-  assert.equal(anthem.SOURCE, 'anthem')
-  assert.equal(anthem.COMPANY, 'Anthem')
-  assert.equal(anthem.HOMEPAGE_URL, 'https://anthembio.com/')
-  assert.equal(anthem.CAREERS_PAGE_URL, 'https://anthembio.com/careers/')
-  assert.equal(anthem.PORTAL_ORIGIN, 'https://anthemhrcp.peoplestrong.com')
-  assert.equal(anthem.JOB_LISTINGS_URL, 'https://anthemhrcp.peoplestrong.com/')
-  assert.equal(
-    anthem.buildApiUrl(),
-    'https://anthemhrcp.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=20',
-  )
-  assert.equal(
-    anthem.buildApiUrl({ offset: 20, limit: 10 }),
-    'https://anthemhrcp.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=20&limit=10',
-  )
-  assert.equal(
-    anthem.buildJobDetailUrl('ANT/MFG/123456'),
-    'https://anthemhrcp.peoplestrong.com/job/detail/ANT%2FMFG%2F123456',
-  )
-  assert.equal(anthem.hasOfficialHomepageSignal(homepageHtml), true)
-  assert.equal(anthem.hasOfficialCareersPageSignal(careersPageHtml), true)
-  assert.equal(
-    anthem.extractPeopleStrongHandoffUrl(careersPageHtml),
-    'https://anthemhrcp.peoplestrong.com/',
-  )
-  assert.equal(anthem.hasPublicPortalShell(portalShellHtml), true)
-  assert.equal(anthem.buildPublicHeaders().Origin, 'https://anthemhrcp.peoplestrong.com')
-  assert.equal(anthem.buildPublicHeaders().Referer, 'https://anthemhrcp.peoplestrong.com/')
-
-  const jobs = anthem.extractSearchResults(samplePayload)
-  assert.deepEqual(jobs, [
-    {
-      title: 'Senior Scientist',
-      company: 'Anthem',
-      department: 'Manufacturing',
-      location: 'Bengaluru, Karnataka, India',
-      city: 'Bengaluru',
-      country: 'India',
-      jobId: 'ANT/MFG/123456',
-      requisitionId: '123456',
-      sourceUrl: 'https://anthemhrcp.peoplestrong.com/job/detail/ANT_MFG_123456',
-      applyUrl: 'https://anthemhrcp.peoplestrong.com/job/detail/ANT_MFG_123456',
-      employmentType: 'Full Time',
-      experienceRequired: '4-8 years',
-      minimumQualification: 'M.Sc',
-      preferredQualification: 'PhD',
-      requiredSkills: ['HPLC', 'Scale-up'],
-      postingDate: '2026-07-10',
-      closingDate: '2026-08-15',
-      jobDescription: 'Lead analytical method development.',
-    },
-  ])
-  assert.deepEqual(anthem.extractSearchResults(emptyPayload), [])
-})
-
-test('Anthem returns no jobs while the verified careers page still hands off to an empty public PeopleStrong feed', async () => {
-  const anthem = await loadModule()
-  const pageRequests = []
-  const apiRequests = []
-
-  const jobs = await anthem.createAnthemScraper().run({
-    fetchPage: async (url) => {
-      pageRequests.push(url)
-
-      if (url === anthem.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === anthem.CAREERS_PAGE_URL) {
-        return { status: 200, url, html: careersPageHtml }
-      }
-
-      if (url === anthem.JOB_LISTINGS_URL) {
-        return { status: 200, url, html: portalShellHtml }
-      }
-
-      throw new Error(`Unexpected Anthem page URL: ${url}`)
-    },
-    fetchJson: async (url, options = {}) => {
-      apiRequests.push({ url, options })
-      return emptyPayload
-    },
-  })
-
-  assert.deepEqual(pageRequests, [
-    anthem.HOMEPAGE_URL,
-    anthem.CAREERS_PAGE_URL,
-    anthem.JOB_LISTINGS_URL,
-  ])
-  assert.equal(apiRequests.length, 1)
-  assert.equal(apiRequests[0].url, anthem.buildApiUrl())
-  assert.equal(apiRequests[0].options.method, 'POST')
-  assert.equal(apiRequests[0].options.body, JSON.stringify(anthem.DEFAULT_SEARCH_BODY))
-  assert.equal(apiRequests[0].options.headers.Origin, 'https://anthemhrcp.peoplestrong.com')
-  assert.deepEqual(jobs, [])
-})
-
-test('Anthem fails closed when the verified homepage, careers handoff, or public PeopleStrong portal drift', async () => {
-  const anthem = await loadModule()
-
-  await assert.rejects(
-    anthem.createAnthemScraper().run({
-      fetchPage: async (url) => {
-        if (url === anthem.HOMEPAGE_URL) {
-          return { status: 200, url, html: '<html><title>Unexpected</title></html>' }
-        }
-
-        throw new Error(`Unexpected Anthem page URL: ${url}`)
-      },
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    anthem.createAnthemScraper().run({
-      fetchPage: async (url) => {
-        if (url === anthem.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === anthem.CAREERS_PAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: careersPageHtml.replace('https://anthemhrcp.peoplestrong.com/', 'https://example.com/jobs'),
-          }
-        }
-
-        throw new Error(`Unexpected Anthem page URL: ${url}`)
-      },
-    }),
-    /known PeopleStrong handoff/i,
-  )
-
-  await assert.rejects(
-    anthem.createAnthemScraper().run({
-      fetchPage: async (url) => {
-        if (url === anthem.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === anthem.CAREERS_PAGE_URL) {
-          return { status: 200, url, html: careersPageHtml }
-        }
-
-        if (url === anthem.JOB_LISTINGS_URL) {
-          return { status: 200, url, html: '<html><title>Unexpected</title></html>' }
-        }
-
-        throw new Error(`Unexpected Anthem page URL: ${url}`)
-      },
-    }),
-    /verified public PeopleStrong portal/i,
-  )
+  await assert.rejects(anthem.createAnthemScraper().run({fetchPage}),/corporate brand|official native delegation|app shell|job module/i,stage)
+  assert.equal(s.calls.some(c=>c.url.includes('jobs/v1?')),false,stage)
+ }
 })

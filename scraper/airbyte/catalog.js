@@ -14,14 +14,14 @@ export const AIRBYTE_CATALOG = {
   companyDomain: 'airbyte.com',
   atsPlatform: 'ashby',
   countryFilter: 'India',
-  paginationStrategy: 'single-public-ashby-job-board-get',
+  paginationStrategy: 'complete-native-board-feed-all-details-and-closing-reconciliation',
   extractionStrategy:
-    'verified-first-party-careers-page+verified-public-ashby-board+public-ashby-get-feed+india-location-filter',
+    'current-corporate-lazy-client-embed-binding+native-board-feed-all-role-details+explicit-worksite-countries+closing-role-state',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-25',
+  verifiedOn: '2026-10-27',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 25, 2026 that the first-party careers page at https://airbyte.com/company/careers was live with the Airbyte careers shell, that the public Ashby board at https://jobs.ashbyhq.com/airbyte was live and exposed Airbyte job titles including Engineering Manager, Platform and Senior AI Platform Engineer, and that the public Ashby GET feed at https://api.ashbyhq.com/posting-api/job-board/airbyte exposed 14 listed roles. The verified public Airbyte jobs surface had zero India openings on the verified date, so the scraper should return an authoritative empty India result until India-targeted roles appear.',
+    'Current first-party careers at https://airbyte.com/company/careers bind https://jobs.ashbyhq.com/airbyte through the advertised lazy careers module and native embed. Each run reconciles the full public board, https://api.ashbyhq.com/posting-api/job-board/airbyte feed, every native role detail, all primary and secondary countries, original publication and expiry, and closing corporate and native role state. Current completeness comes only from that run; historical zero India observations do not authorize cleanup.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

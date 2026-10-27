@@ -1,5 +1,5 @@
 ﻿export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://www.autoform.com/ resolves to AutoForm Engineering\'s live official homepage at https://www.autoform.com/en/, that the homepage links candidates to the first-party careers site at https://careers.autoform.com/en/, and that https://careers.autoform.com/en/jobs/job-search/ exposes a public India location filter plus the first-party RSS feed at https://careers.autoform.com/en/jobs.rss. The verified search/feed surface currently lists openings in Europe, Switzerland, China, Mexico, and France but no India roles live right now for AutoForm India.'
+  'Verified October 27, 2026: https://www.autoform.com/en/ binds AutoForm Engineering to https://careers.autoform.com/en/ and https://careers.autoform.com/en/jobs/job-search/. Runtime reconciles advertised native listing channels, pagination and both first-party RSS feeds with full role details, native UID, formal requisition, employer, work countries and publication dates, then rechecks closing scope. Observed five native roles, four healthy; one native role has conflicting work countries and description text. Whole-company totals and India absence remain unknown while any scope or detail issue persists.'
 
 export const AUTOFORM_INDIA_CATALOG = {
   source: 'autoformindia',
@@ -13,14 +13,15 @@ export const AUTOFORM_INDIA_CATALOG = {
   jobsLandingUrl: 'https://careers.autoform.com/en/jobs/',
   jobsRssUrl: 'https://careers.autoform.com/en/jobs.rss',
   companyDomain: 'autoform.com',
-  atsPlatform: 'official-company-careers-rss-feed',
+  atsPlatform: 'official-typo3-native-listing-rss-and-details',
   countryFilter: 'India',
-  paginationStrategy: 'official-homepage-plus-first-party-careers-home-plus-job-search-plus-rss-feed',
+  paginationStrategy: 'all-advertised-native-listing-pages-next-links-and-closing-recheck',
   extractionStrategy:
-    'verified-official-homepage+verified-first-party-careers-home+verified-job-search+first-party-rss-feed+india-filter',
+    'current-corporate-handoff+native-listing-rss-reconciliation+full-native-details+explicit-role-countries+closing-recheck',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-27',
+  zeroResultPolicy: 'evidence-required',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

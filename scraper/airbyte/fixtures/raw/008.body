@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#473BCE">
+    <meta name="csp-nonce" id="csp-nonce" content="P0dvfz6GlF7auSAw9ggRne5NXfsJ4YDN-_9zFmcfWZY">
+    <link rel="icon" type="image/svg+xml" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.svg">
+    <link rel="icon" type="image/png" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/apple-touch-icon.png" />
+    <title>Senior Software Engineer, Platform Fullstack @ Airbyte</title><meta name="title" content="Senior Software Engineer, Platform Fullstack @ Airbyte" />
+    
+  
+  <meta name="description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+THE ROLE:
+
+Every great product is built on a great platform. At Airbyte, the Platform team builds the systems that power every product we ship, including Airbyte Cloud, Airbyte Flex, and Airbyte Agents.
+
+We create the infrastructure, internal tooling, developer platforms, and user-facing product surfaces that allow engineers to build quickly, deploy safely, and operate reliably at scale. Our work spans cloud infrastructure, deployment automation, observability, engineering productivity, and the product experiences that our customers and engineers rely on every day.
+
+As a Senior Fullstack Engineer on Platform, you&#39;ll work across the full stack to build both the internal tools that accelerate engineering and the user-facing features that customers interact with directly. You&#39;ll move fluidly between building an internal deployment dashboard and shipping a product feature in Airbyte Cloud.
+
+This role is ideal for engineers who care about craft across the entire stack, whether the user is an internal engineer or an external customer, and who believe great platform work makes everything around it better.
+
+ 
+
+
+WHAT YOU’LL DO:
+
+Build Internal Platform Products
+
+ - Design and build applications that power Airbyte&#39;s engineering platform and product surfaces.
+
+ - Develop internal dashboards for deployments, infrastructure health, connector operations, and platform performance.
+
+ - Build and improve user-facing features in Airbyte Cloud and Flex, working closely with product and design.
+
+ - Create self-service tools that enable engineers to provision infrastructure, manage services, and troubleshoot production systems.
+
+Build Across the Stack
+
+ - Build modern React and TypeScript applications backed by scalable backend services.
+
+ - Design APIs and services that support both internal engineering workflows and customer-facing product features.
+
+ - Collaborate with Platform Engineers, SREs, Product Engineering, Product Managers, and Designers to ship high-quality software.
+
+ - Improve the usability and reliability of the systems that power Airbyte&#39;s products, for both internal and external users.
+
+Improve Developer Experience
+
+ - Build tooling that automates repetitive engineering work and reduces friction across the org.
+
+ - Improve release workflows, deployment visibility, and operational dashboards.
+
+ - Contribute to the quality of user-facing product surfaces: performance, accessibility, and reliability.
+
+ - Help establish engineering standards and reusable platform components.
+
+Drive Operational Excellence
+
+ - Build interfaces that improve observability, incident response, and production operations.
+
+ - Create tools that help engineers and customers understand system health, deployment status, and service reliability.
+
+ - Improve visibility into platform performance through dashboards, metrics, and reporting.
+
+ - Continuously identify opportunities to reduce operational toil through automation.
+
+Technical Leadership
+
+ - Mentor engineers through design reviews, architecture discussions, and technical leadership.
+
+ - Raise the quality bar for frontend architecture, testing, accessibility, and maintainability.
+
+ - Contribute to platform-wide engineering standards and best practices.
+
+ - Help shape the future of Airbyte&#39;s platform and product engineering.
+
+ 
+
+
+WHAT YOU’LL NEED:
+
+ - 7+ years of experience building production fullstack applications.
+
+ - Deep expertise with React and TypeScript.
+
+ - Strong backend engineering experience building APIs and distributed systems.
+
+ - Experience shipping user-facing SaaS products alongside internal tools, developer platforms, or operational dashboards.
+
+ - Experience working with product managers and designers to ship customer-facing features.
+
+ - Familiarity with cloud infrastructure and modern deployment workflows.
+
+ - Strong product instincts and customer empathy, whether your user is an engineer or an external customer.
+
+ - Excellent written and verbal communication skills.
+
+ - A bias toward ownership, automation, and shipping.
+
+
+NICE TO HAVE:
+
+ - Experience with Kubernetes, Docker, Terraform, or cloud infrastructure.
+
+ - Experience with GitHub Actions, CI/CD pipelines, or developer productivity tooling.
+
+ - Familiarity with observability platforms such as Grafana, Datadog, or Prometheus.
+
+ - Experience with Java or Kotlin.
+
+ - Experience with distributed systems and cloud-native architectures.
+
+ - Experience building internal engineering tools or developer platforms.
+
+ - Familiarity with data infrastructure or large-scale SaaS platforms.
+
+
+WHAT SUCCESS LOOKS LIKE:
+
+Success means the software you build makes both engineers and customers more effective.
+
+Engineers deploy with confidence.
+
+Infrastructure is easier to understand.
+
+Production issues are easier to diagnose.
+
+Operational workflows become self-service.
+
+Development becomes faster, safer, and more reliable.
+
+You&#39;ll build software that spans the full spectrum, from internal platforms that multiply engineering velocity to product features that customers use every day.
+
+
+WHY THIS ROLE MATTERS:
+
+Platform Engineering is the foundation beneath Airbyte Cloud, Airbyte Flex, and Airbyte Agents. Our mission is to build the infrastructure, tooling, and developer experience that allows every engineering team to deliver reliable software at scale.
+
+When Platform succeeds, engineers move faster and customers get a better product. You&#39;ll help build the systems that let Airbyte focus on what matters most: building the future of data movement and AI.
+
+ 
+
+
+LOCATION:
+
+ - Onsite 4 days/week in San Francisco, CA
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+• Flexible PTO with a culture that encourages at least 25 days off annually
+ • 16 weeks fully paid parental leave for all parents
+ • Comprehensive medical, dental, and vision coverage for employees and dependents
+ • 401(k) retirement plan
+ • Professional development budget, conference sponsorship, and book reimbursement
+ • Commuter benefits and monthly internet reimbursement
+
+ •  Breakfast and lunch in our San Francisco office
+ • A collaborative, in-person culture focused on learning, growth, and impact
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.
+
+Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.
+
+Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability." />
+  <meta name="twitter:card" content="summary" />
+  <meta property="og:url" content="https://jobs.ashbyhq.com/airbyte/735d5deb-ba6e-49b2-88ba-5ebdf8d315a0" />
+  <meta property="og:type" content="website" />
+  
+  <meta property="og:title" content="Senior Software Engineer, Platform Fullstack" />
+  <meta property="og:description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+THE ROLE:
+
+Every great product is built on a great platform. At Airbyte, the Platform team builds the systems that power every product we ship, including Airbyte Cloud, Airbyte Flex, and Airbyte Agents.
+
+We create the infrastructure, internal tooling, developer platforms, and user-facing product surfaces that allow engineers to build quickly, deploy safely, and operate reliably at scale. Our work spans cloud infrastructure, deployment automation, observability, engineering productivity, and the product experiences that our customers and engineers rely on every day.
+
+As a Senior Fullstack Engineer on Platform, you&#39;ll work across the full stack to build both the internal tools that accelerate engineering and the user-facing features that customers interact with directly. You&#39;ll move fluidly between building an internal deployment dashboard and shipping a product feature in Airbyte Cloud.
+
+This role is ideal for engineers who care about craft across the entire stack, whether the user is an internal engineer or an external customer, and who believe great platform work makes everything around it better.
+
+ 
+
+
+WHAT YOU’LL DO:
+
+Build Internal Platform Products
+
+ - Design and build applications that power Airbyte&#39;s engineering platform and product surfaces.
+
+ - Develop internal dashboards for deployments, infrastructure health, connector operations, and platform performance.
+
+ - Build and improve user-facing features in Airbyte Cloud and Flex, working closely with product and design.
+
+ - Create self-service tools that enable engineers to provision infrastructure, manage services, and troubleshoot production systems.
+
+Build Across the Stack
+
+ - Build modern React and TypeScript applications backed by scalable backend services.
+
+ - Design APIs and services that support both internal engineering workflows and customer-facing product features.
+
+ - Collaborate with Platform Engineers, SREs, Product Engineering, Product Managers, and Designers to ship high-quality software.
+
+ - Improve the usability and reliability of the systems that power Airbyte&#39;s products, for both internal and external users.
+
+Improve Developer Experience
+
+ - Build tooling that automates repetitive engineering work and reduces friction across the org.
+
+ - Improve release workflows, deployment visibility, and operational dashboards.
+
+ - Contribute to the quality of user-facing product surfaces: performance, accessibility, and reliability.
+
+ - Help establish engineering standards and reusable platform components.
+
+Drive Operational Excellence
+
+ - Build interfaces that improve observability, incident response, and production operations.
+
+ - Create tools that help engineers and customers understand system health, deployment status, and service reliability.
+
+ - Improve visibility into platform performance through dashboards, metrics, and reporting.
+
+ - Continuously identify opportunities to reduce operational toil through automation.
+
+Technical Leadership
+
+ - Mentor engineers through design reviews, architecture discussions, and technical leadership.
+
+ - Raise the quality bar for frontend architecture, testing, accessibility, and maintainability.
+
+ - Contribute to platform-wide engineering standards and best practices.
+
+ - Help shape the future of Airbyte&#39;s platform and product engineering.
+
+ 
+
+
+WHAT YOU’LL NEED:
+
+ - 7+ years of experience building production fullstack applications.
+
+ - Deep expertise with React and TypeScript.
+
+ - Strong backend engineering experience building APIs and distributed systems.
+
+ - Experience shipping user-facing SaaS products alongside internal tools, developer platforms, or operational dashboards.
+
+ - Experience working with product managers and designers to ship customer-facing features.
+
+ - Familiarity with cloud infrastructure and modern deployment workflows.
+
+ - Strong product instincts and customer empathy, whether your user is an engineer or an external customer.
+
+ - Excellent written and verbal communication skills.
+
+ - A bias toward ownership, automation, and shipping.
+
+
+NICE TO HAVE:
+
+ - Experience with Kubernetes, Docker, Terraform, or cloud infrastructure.
+
+ - Experience with GitHub Actions, CI/CD pipelines, or developer productivity tooling.
+
+ - Familiarity with observability platforms such as Grafana, Datadog, or Prometheus.
+
+ - Experience with Java or Kotlin.
+
+ - Experience with distributed systems and cloud-native architectures.
+
+ - Experience building internal engineering tools or developer platforms.
+
+ - Familiarity with data infrastructure or large-scale SaaS platforms.
+
+
+WHAT SUCCESS LOOKS LIKE:
+
+Success means the software you build makes both engineers and customers more effective.
+
+Engineers deploy with confidence.
+
+Infrastructure is easier to understand.
+
+Production issues are easier to diagnose.
+
+Operational workflows become self-service.
+
+Development becomes faster, safer, and more reliable.
+
+You&#39;ll build software that spans the full spectrum, from internal platforms that multiply engineering velocity to product features that customers use every day.
+
+
+WHY THIS ROLE MATTERS:
+
+Platform Engineering is the foundation beneath Airbyte Cloud, Airbyte Flex, and Airbyte Agents. Our mission is to build the infrastructure, tooling, and developer experience that allows every engineering team to deliver reliable software at scale.
+
+When Platform succeeds, engineers move faster and customers get a better product. You&#39;ll help build the systems that let Airbyte focus on what matters most: building the future of data movement and AI.
+
+ 
+
+
+LOCATION:
+
+ - Onsite 4 days/week in San Francisco, CA
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+• Flexible PTO with a culture that encourages at least 25 days off annually
+ • 16 weeks fully paid parental leave for all parents
+ • Comprehensive medical, dental, and vision coverage for employees and dependents
+ • 401(k) retirement plan
+ • Professional development budget, conference sponsorship, and book reimbursement
+ • Commuter benefits and monthly internet reimbursement
+
+ •  Breakfast and lunch in our San Francisco office
+ • A collaborative, in-person culture focused on learning, growth, and impact
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.
+
+Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.
+
+Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability." />
+  
+  <meta name="twitter:title" content="Senior Software Engineer, Platform Fullstack" />
+  <meta name="twitter:description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+THE ROLE:
+
+Every great product is built on a great platform. At Airbyte, the Platform team builds the systems that power every product we ship, including Airbyte Cloud, Airbyte Flex, and Airbyte Agents.
+
+We create the infrastructure, internal tooling, developer platforms, and user-facing product surfaces that allow engineers to build quickly, deploy safely, and operate reliably at scale. Our work spans cloud infrastructure, deployment automation, observability, engineering productivity, and the product experiences that our customers and engineers rely on every day.
+
+As a Senior Fullstack Engineer on Platform, you&#39;ll work across the full stack to build both the internal tools that accelerate engineering and the user-facing features that customers interact with directly. You&#39;ll move fluidly between building an internal deployment dashboard and shipping a product feature in Airbyte Cloud.
+
+This role is ideal for engineers who care about craft across the entire stack, whether the user is an internal engineer or an external customer, and who believe great platform work makes everything around it better.
+
+ 
+
+
+WHAT YOU’LL DO:
+
+Build Internal Platform Products
+
+ - Design and build applications that power Airbyte&#39;s engineering platform and product surfaces.
+
+ - Develop internal dashboards for deployments, infrastructure health, connector operations, and platform performance.
+
+ - Build and improve user-facing features in Airbyte Cloud and Flex, working closely with product and design.
+
+ - Create self-service tools that enable engineers to provision infrastructure, manage services, and troubleshoot production systems.
+
+Build Across the Stack
+
+ - Build modern React and TypeScript applications backed by scalable backend services.
+
+ - Design APIs and services that support both internal engineering workflows and customer-facing product features.
+
+ - Collaborate with Platform Engineers, SREs, Product Engineering, Product Managers, and Designers to ship high-quality software.
+
+ - Improve the usability and reliability of the systems that power Airbyte&#39;s products, for both internal and external users.
+
+Improve Developer Experience
+
+ - Build tooling that automates repetitive engineering work and reduces friction across the org.
+
+ - Improve release workflows, deployment visibility, and operational dashboards.
+
+ - Contribute to the quality of user-facing product surfaces: performance, accessibility, and reliability.
+
+ - Help establish engineering standards and reusable platform components.
+
+Drive Operational Excellence
+
+ - Build interfaces that improve observability, incident response, and production operations.
+
+ - Create tools that help engineers and customers understand system health, deployment status, and service reliability.
+
+ - Improve visibility into platform performance through dashboards, metrics, and reporting.
+
+ - Continuously identify opportunities to reduce operational toil through automation.
+
+Technical Leadership
+
+ - Mentor engineers through design reviews, architecture discussions, and technical leadership.
+
+ - Raise the quality bar for frontend architecture, testing, accessibility, and maintainability.
+
+ - Contribute to platform-wide engineering standards and best practices.
+
+ - Help shape the future of Airbyte&#39;s platform and product engineering.
+
+ 
+
+
+WHAT YOU’LL NEED:
+
+ - 7+ years of experience building production fullstack applications.
+
+ - Deep expertise with React and TypeScript.
+
+ - Strong backend engineering experience building APIs and distributed systems.
+
+ - Experience shipping user-facing SaaS products alongside internal tools, developer platforms, or operational dashboards.
+
+ - Experience working with product managers and designers to ship customer-facing features.
+
+ - Familiarity with cloud infrastructure and modern deployment workflows.
+
+ - Strong product instincts and customer empathy, whether your user is an engineer or an external customer.
+
+ - Excellent written and verbal communication skills.
+
+ - A bias toward ownership, automation, and shipping.
+
+
+NICE TO HAVE:
+
+ - Experience with Kubernetes, Docker, Terraform, or cloud infrastructure.
+
+ - Experience with GitHub Actions, CI/CD pipelines, or developer productivity tooling.
+
+ - Familiarity with observability platforms such as Grafana, Datadog, or Prometheus.
+
+ - Experience with Java or Kotlin.
+
+ - Experience with distributed systems and cloud-native architectures.
+
+ - Experience building internal engineering tools or developer platforms.
+
+ - Familiarity with data infrastructure or large-scale SaaS platforms.
+
+
+WHAT SUCCESS LOOKS LIKE:
+
+Success means the software you build makes both engineers and customers more effective.
+
+Engineers deploy with confidence.
+
+Infrastructure is easier to understand.
+
+Production issues are easier to diagnose.
+
+Operational workflows become self-service.
+
+Development becomes faster, safer, and more reliable.
+
+You&#39;ll build software that spans the full spectrum, from internal platforms that multiply engineering velocity to product features that customers use every day.
+
+
+WHY THIS ROLE MATTERS:
+
+Platform Engineering is the foundation beneath Airbyte Cloud, Airbyte Flex, and Airbyte Agents. Our mission is to build the infrastructure, tooling, and developer experience that allows every engineering team to deliver reliable software at scale.
+
+When Platform succeeds, engineers move faster and customers get a better product. You&#39;ll help build the systems that let Airbyte focus on what matters most: building the future of data movement and AI.
+
+ 
+
+
+LOCATION:
+
+ - Onsite 4 days/week in San Francisco, CA
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+• Flexible PTO with a culture that encourages at least 25 days off annually
+ • 16 weeks fully paid parental leave for all parents
+ • Comprehensive medical, dental, and vision coverage for employees and dependents
+ • 401(k) retirement plan
+ • Professional development budget, conference sponsorship, and book reimbursement
+ • Commuter benefits and monthly internet reimbursement
+
+ •  Breakfast and lunch in our San Francisco office
+ • A collaborative, in-person culture focused on learning, growth, and impact
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.
+
+Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.
+
+Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability." />
+  
+  <meta name="robots" content="noindex,nofollow" />
+    <link rel="preload" as="image" href="https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png">
+    
+    <script type="application/ld+json">{"@context":"https://schema.org/","@type":"JobPosting","title":"Senior Software Engineer, Platform Fullstack","description":"<p style=\"min-height:1.5em\">Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, \"the last ten years were all about structured data. The future is all about context.\" We're now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.</p><p style=\"min-height:1.5em\"></p><h2><strong>The Role:</strong></h2><p style=\"min-height:1.5em\">Every great product is built on a great platform. At Airbyte, the Platform team builds the systems that power every product we ship, including Airbyte Cloud, Airbyte Flex, and Airbyte Agents.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We create the infrastructure, internal tooling, developer platforms, and user-facing product surfaces that allow engineers to build quickly, deploy safely, and operate reliably at scale. Our work spans cloud infrastructure, deployment automation, observability, engineering productivity, and the product experiences that our customers and engineers rely on every day.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">As a Senior Fullstack Engineer on Platform, you'll work across the full stack to build both the internal tools that accelerate engineering and the user-facing features that customers interact with directly. You'll move fluidly between building an internal deployment dashboard and shipping a product feature in Airbyte Cloud.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">This role is ideal for engineers who care about craft across the entire stack, whether the user is an internal engineer or an external customer, and who believe great platform work makes everything around it better.</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>What You’ll Do:</strong></h2><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Build Internal Platform Products</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Design and build applications that power Airbyte's engineering platform and product surfaces.</p></li><li><p style=\"min-height:1.5em\">Develop internal dashboards for deployments, infrastructure health, connector operations, and platform performance.</p></li><li><p style=\"min-height:1.5em\">Build and improve user-facing features in Airbyte Cloud and Flex, working closely with product and design.</p></li><li><p style=\"min-height:1.5em\">Create self-service tools that enable engineers to provision infrastructure, manage services, and troubleshoot production systems.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Build Across the Stack</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Build modern React and TypeScript applications backed by scalable backend services.</p></li><li><p style=\"min-height:1.5em\">Design APIs and services that support both internal engineering workflows and customer-facing product features.</p></li><li><p style=\"min-height:1.5em\">Collaborate with Platform Engineers, SREs, Product Engineering, Product Managers, and Designers to ship high-quality software.</p></li><li><p style=\"min-height:1.5em\">Improve the usability and reliability of the systems that power Airbyte's products, for both internal and external users.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Improve Developer Experience</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Build tooling that automates repetitive engineering work and reduces friction across the org.</p></li><li><p style=\"min-height:1.5em\">Improve release workflows, deployment visibility, and operational dashboards.</p></li><li><p style=\"min-height:1.5em\">Contribute to the quality of user-facing product surfaces: performance, accessibility, and reliability.</p></li><li><p style=\"min-height:1.5em\">Help establish engineering standards and reusable platform components.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Drive Operational Excellence</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Build interfaces that improve observability, incident response, and production operations.</p></li><li><p style=\"min-height:1.5em\">Create tools that help engineers and customers understand system health, deployment status, and service reliability.</p></li><li><p style=\"min-height:1.5em\">Improve visibility into platform performance through dashboards, metrics, and reporting.</p></li><li><p style=\"min-height:1.5em\">Continuously identify opportunities to reduce operational toil through automation.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Technical Leadership</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Mentor engineers through design reviews, architecture discussions, and technical leadership.</p></li><li><p style=\"min-height:1.5em\">Raise the quality bar for frontend architecture, testing, accessibility, and maintainability.</p></li><li><p style=\"min-height:1.5em\">Contribute to platform-wide engineering standards and best practices.</p></li><li><p style=\"min-height:1.5em\">Help shape the future of Airbyte's platform and product engineering.</p></li></ul><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>What You’ll Need:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">7+ years of experience building production fullstack applications.</p></li><li><p style=\"min-height:1.5em\">Deep expertise with React and TypeScript.</p></li><li><p style=\"min-height:1.5em\">Strong backend engineering experience building APIs and distributed systems.</p></li><li><p style=\"min-height:1.5em\">Experience shipping user-facing SaaS products alongside internal tools, developer platforms, or operational dashboards.</p></li><li><p style=\"min-height:1.5em\">Experience working with product managers and designers to ship customer-facing features.</p></li><li><p style=\"min-height:1.5em\">Familiarity with cloud infrastructure and modern deployment workflows.</p></li><li><p style=\"min-height:1.5em\">Strong product instincts and customer empathy, whether your user is an engineer or an external customer.</p></li><li><p style=\"min-height:1.5em\">Excellent written and verbal communication skills.</p></li><li><p style=\"min-height:1.5em\">A bias toward ownership, automation, and shipping.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Nice To Have:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Experience with Kubernetes, Docker, Terraform, or cloud infrastructure.</p></li><li><p style=\"min-height:1.5em\">Experience with GitHub Actions, CI/CD pipelines, or developer productivity tooling.</p></li><li><p style=\"min-height:1.5em\">Familiarity with observability platforms such as Grafana, Datadog, or Prometheus.</p></li><li><p style=\"min-height:1.5em\">Experience with Java or Kotlin.</p></li><li><p style=\"min-height:1.5em\">Experience with distributed systems and cloud-native architectures.</p></li><li><p style=\"min-height:1.5em\">Experience building internal engineering tools or developer platforms.</p></li><li><p style=\"min-height:1.5em\">Familiarity with data infrastructure or large-scale SaaS platforms.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>What Success Looks Like:</strong></h2><p style=\"min-height:1.5em\">Success means the software you build makes both engineers and customers more effective.</p><p style=\"min-height:1.5em\">Engineers deploy with confidence.</p><p style=\"min-height:1.5em\">Infrastructure is easier to understand.</p><p style=\"min-height:1.5em\">Production issues are easier to diagnose.</p><p style=\"min-height:1.5em\">Operational workflows become self-service.</p><p style=\"min-height:1.5em\">Development becomes faster, safer, and more reliable.</p><p style=\"min-height:1.5em\">You'll build software that spans the full spectrum, from internal platforms that multiply engineering velocity to product features that customers use every day.</p><p style=\"min-height:1.5em\"></p><h2><strong>Why This Role Matters:</strong></h2><p style=\"min-height:1.5em\">Platform Engineering is the foundation beneath Airbyte Cloud, Airbyte Flex, and Airbyte Agents. Our mission is to build the infrastructure, tooling, and developer experience that allows every engineering team to deliver reliable software at scale.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">When Platform succeeds, engineers move faster and customers get a better product. You'll help build the systems that let Airbyte focus on what matters most: building the future of data movement and AI.</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>Location:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Onsite 4 days/week in San Francisco, CA</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Why You'll Love Working at Airbyte:</strong></h2><p style=\"min-height:1.5em\">At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">• Flexible PTO with a culture that encourages at least 25 days off annually<br /> • 16 weeks fully paid parental leave for all parents<br /> • Comprehensive medical, dental, and vision coverage for employees and dependents<br /> • 401(k) retirement plan<br /> • Professional development budget, conference sponsorship, and book reimbursement<br /> • Commuter benefits and monthly internet reimbursement</p><p style=\"min-height:1.5em\"> •  Breakfast and lunch in our San Francisco office<br /> • A collaborative, in-person culture focused on learning, growth, and impact</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability.</p>","directApply":false,"identifier":{"@type":"PropertyValue","name":"Airbyte","value":"735d5deb-ba6e-49b2-88ba-5ebdf8d315a0"},"datePosted":"2026-10-17","hiringOrganization":{"@type":"Organization","name":"Airbyte","sameAs":"https://airbyte.com/"},"jobLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"San Francisco","addressRegion":"California","addressCountry":"United States"}},"employmentType":"FULL_TIME","baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","minValue":196000,"maxValue":235000,"unitText":"YEAR"}},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"United States"}}</script>
+  
+  
+
+    <link id="vite-preload" rel="preload" as="fetch" href="https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json" crossorigin>    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Book_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Medium_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Semibold_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/WhitneySSm.css" />
+    <style>
+      .grecaptcha-badge {
+        visibility: hidden;
+      }
+
+      body > div > div:not([class]):has(> iframe[src*="/recaptcha/"]) {
+        box-sizing: content-box;
+      }
+    </style>
+
+
+  </head>
+  <body>
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <div id="root">
+      <style>
+        body {
+          overflow: hidden;
+        }
+      
+        .center {
+          align-items: center;
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          justify-content: center;
+          width: 100vw;
+        }
+      
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      
+        .fade-in {
+          animation-delay: 750ms;
+          animation-direction: normal;
+          animation-duration: 500ms;
+          animation-fill-mode: forwards;
+          animation-iteration-count: 1;
+          animation-name: fade-in;
+          animation-timing-function: ease-in-out;
+          opacity: 0;
+        }
+      
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      
+        .spinner {
+          animation-duration: var(--transitionDurationSlow, 600ms);
+          animation-iteration-count: infinite;
+          animation-name: spin;
+          animation-timing-function: linear;
+          border-color: var(--colorNeutral600Transparent, rgba(125, 134, 153, 0.25));
+          border-radius: 100%;
+          border-style: solid;
+          border-top-color: rgba(125, 134, 153, 0.9);
+          border-width: var(--borderWidthHeavy, 3px);
+          display: block;
+          height: var(--spacingXxlarge, 48px);
+          width: var(--spacingXxlarge, 48px);
+        }
+      </style>
+      <div class="center">
+        <div class="fade-in">
+          <div class="spinner"></div>
+        </div>
+      </div>    </div>
+    <script nonce="P0dvfz6GlF7auSAw9ggRne5NXfsJ4YDN-_9zFmcfWZY">
+      window.__appData = {"ddRumApplicationId":"80e0bf43-e772-45ac-858b-1e6dc0f1f415","ddRumClientToken":"pub1a87c7036063ee7d4b7914b397e6324e","environment":"production","maintenanceMode":false,"schedulingMaintenanceMode":false,"organization":{"organizationId":"c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2","name":"Airbyte","publicWebsite":"https://airbyte.com/","customJobsPageUrl":null,"hostedJobsPageSlug":"airbyte","allowJobPostIndexing":false,"isDemoOrg":false,"theme":{"colors":{"version":"1","colorPrimary600":"#6059b2","colorPrimary900":"#1d1b3e"},"showJobFilters":true,"showLocationAddress":false,"showTeams":false,"showAutofillApplicationsBox":true,"logoWordmarkImageUrl":"https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png","logoSquareImageUrl":null,"applicationSubmittedSuccessMessage":null,"jobBoardTopDescriptionHtml":null,"jobBoardBottomDescriptionHtml":null,"jobPostingBackUrl":null,"__typename":"Theme"},"appConfirmationTrackingPixelHtml":null,"recruitingPrivacyPolicyUrl":null,"activeFeatureFlags":["AiNotetakerCandidateConsentPolicies","ApplicationForReferrals","ApprovalNotesFromEmail","BookingLinkRescheduleLimits","CanonicalizeSchools","CoreMultipleBrands","CoreMultipleBrandsFeedFiltering","CoreMultipleBrandsLinkedInJobWrappingStreamingFix","DemoOrgBanners","EducationHistoryFormField","ExplicitAutomatedProcessingOptOutConfirmation","JobBoardCookieConsentControls","JobBoardEtagValidation","JobPostingApplicationDeadlines","JobPostingListV2","JobPostingWorkplaceTypeOverrideSecondaryLocationsToo","LinkedInIntegrationRequireCompanyId","LinkedInTOSUpdate","LocationExternalName","MigrateGoogleRecaptchaAutomatedLegal","RejectBase64EncodedResumesFrontEnd","RejectBase64EncodedResumesThrowErrorFrontEnd","RejectInvalidFileTypeOnUpload","RejectUrlsInCandidateName","SchedulingDirectBookingLogDirectBookingEventsJson","SchedulingGCalSendUpdatesForCancelEvents","SchedulingRescheduleAndCancellationReasonsNonUser","SchedulingUseLocaleInTimeFormatting","ShowCountsOnJobBoardFilterOptions","SocialSharingHtmlMetaSettings","UseGlobalQueryScopesOnGlobalApplicationQuestions","UseGoogleRecaptchaUniversalKey","UseJobPostingFiltersOnGlobalApplicationQuestions","UseJobPostingFiltersOnGlobalApplicationQuestionsUI","UseJobPostingFiltersOnSurveys","UseJobPostingFiltersOnSurveysUI","ValidateFileTypeOnUpload"],"timezone":"America/Los_Angeles","candidateScheduleCancellationReasonRequirementStatus":"Off","showCookieBanner":false,"__typename":"Organization"},"posting":{"id":"735d5deb-ba6e-49b2-88ba-5ebdf8d315a0","title":"Senior Software Engineer, Platform Fullstack","departmentName":"Engineering","departmentExternalName":"Engineering","locationName":"San Francisco","locationAddress":null,"workplaceType":"Hybrid","employmentType":"FullTime","descriptionHtml":"<p style=\"min-height:1.5em\">Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, \"the last ten years were all about structured data. The future is all about context.\" We're now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.</p><p style=\"min-height:1.5em\"></p><h2><strong>The Role:</strong></h2><p style=\"min-height:1.5em\">Every great product is built on a great platform. At Airbyte, the Platform team builds the systems that power every product we ship, including Airbyte Cloud, Airbyte Flex, and Airbyte Agents.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We create the infrastructure, internal tooling, developer platforms, and user-facing product surfaces that allow engineers to build quickly, deploy safely, and operate reliably at scale. Our work spans cloud infrastructure, deployment automation, observability, engineering productivity, and the product experiences that our customers and engineers rely on every day.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">As a Senior Fullstack Engineer on Platform, you'll work across the full stack to build both the internal tools that accelerate engineering and the user-facing features that customers interact with directly. You'll move fluidly between building an internal deployment dashboard and shipping a product feature in Airbyte Cloud.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">This role is ideal for engineers who care about craft across the entire stack, whether the user is an internal engineer or an external customer, and who believe great platform work makes everything around it better.</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>What You’ll Do:</strong></h2><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Build Internal Platform Products</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Design and build applications that power Airbyte's engineering platform and product surfaces.</p></li><li><p style=\"min-height:1.5em\">Develop internal dashboards for deployments, infrastructure health, connector operations, and platform performance.</p></li><li><p style=\"min-height:1.5em\">Build and improve user-facing features in Airbyte Cloud and Flex, working closely with product and design.</p></li><li><p style=\"min-height:1.5em\">Create self-service tools that enable engineers to provision infrastructure, manage services, and troubleshoot production systems.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Build Across the Stack</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Build modern React and TypeScript applications backed by scalable backend services.</p></li><li><p style=\"min-height:1.5em\">Design APIs and services that support both internal engineering workflows and customer-facing product features.</p></li><li><p style=\"min-height:1.5em\">Collaborate with Platform Engineers, SREs, Product Engineering, Product Managers, and Designers to ship high-quality software.</p></li><li><p style=\"min-height:1.5em\">Improve the usability and reliability of the systems that power Airbyte's products, for both internal and external users.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Improve Developer Experience</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Build tooling that automates repetitive engineering work and reduces friction across the org.</p></li><li><p style=\"min-height:1.5em\">Improve release workflows, deployment visibility, and operational dashboards.</p></li><li><p style=\"min-height:1.5em\">Contribute to the quality of user-facing product surfaces: performance, accessibility, and reliability.</p></li><li><p style=\"min-height:1.5em\">Help establish engineering standards and reusable platform components.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Drive Operational Excellence</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Build interfaces that improve observability, incident response, and production operations.</p></li><li><p style=\"min-height:1.5em\">Create tools that help engineers and customers understand system health, deployment status, and service reliability.</p></li><li><p style=\"min-height:1.5em\">Improve visibility into platform performance through dashboards, metrics, and reporting.</p></li><li><p style=\"min-height:1.5em\">Continuously identify opportunities to reduce operational toil through automation.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Technical Leadership</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Mentor engineers through design reviews, architecture discussions, and technical leadership.</p></li><li><p style=\"min-height:1.5em\">Raise the quality bar for frontend architecture, testing, accessibility, and maintainability.</p></li><li><p style=\"min-height:1.5em\">Contribute to platform-wide engineering standards and best practices.</p></li><li><p style=\"min-height:1.5em\">Help shape the future of Airbyte's platform and product engineering.</p></li></ul><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>What You’ll Need:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">7+ years of experience building production fullstack applications.</p></li><li><p style=\"min-height:1.5em\">Deep expertise with React and TypeScript.</p></li><li><p style=\"min-height:1.5em\">Strong backend engineering experience building APIs and distributed systems.</p></li><li><p style=\"min-height:1.5em\">Experience shipping user-facing SaaS products alongside internal tools, developer platforms, or operational dashboards.</p></li><li><p style=\"min-height:1.5em\">Experience working with product managers and designers to ship customer-facing features.</p></li><li><p style=\"min-height:1.5em\">Familiarity with cloud infrastructure and modern deployment workflows.</p></li><li><p style=\"min-height:1.5em\">Strong product instincts and customer empathy, whether your user is an engineer or an external customer.</p></li><li><p style=\"min-height:1.5em\">Excellent written and verbal communication skills.</p></li><li><p style=\"min-height:1.5em\">A bias toward ownership, automation, and shipping.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Nice To Have:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Experience with Kubernetes, Docker, Terraform, or cloud infrastructure.</p></li><li><p style=\"min-height:1.5em\">Experience with GitHub Actions, CI/CD pipelines, or developer productivity tooling.</p></li><li><p style=\"min-height:1.5em\">Familiarity with observability platforms such as Grafana, Datadog, or Prometheus.</p></li><li><p style=\"min-height:1.5em\">Experience with Java or Kotlin.</p></li><li><p style=\"min-height:1.5em\">Experience with distributed systems and cloud-native architectures.</p></li><li><p style=\"min-height:1.5em\">Experience building internal engineering tools or developer platforms.</p></li><li><p style=\"min-height:1.5em\">Familiarity with data infrastructure or large-scale SaaS platforms.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>What Success Looks Like:</strong></h2><p style=\"min-height:1.5em\">Success means the software you build makes both engineers and customers more effective.</p><p style=\"min-height:1.5em\">Engineers deploy with confidence.</p><p style=\"min-height:1.5em\">Infrastructure is easier to understand.</p><p style=\"min-height:1.5em\">Production issues are easier to diagnose.</p><p style=\"min-height:1.5em\">Operational workflows become self-service.</p><p style=\"min-height:1.5em\">Development becomes faster, safer, and more reliable.</p><p style=\"min-height:1.5em\">You'll build software that spans the full spectrum, from internal platforms that multiply engineering velocity to product features that customers use every day.</p><p style=\"min-height:1.5em\"></p><h2><strong>Why This Role Matters:</strong></h2><p style=\"min-height:1.5em\">Platform Engineering is the foundation beneath Airbyte Cloud, Airbyte Flex, and Airbyte Agents. Our mission is to build the infrastructure, tooling, and developer experience that allows every engineering team to deliver reliable software at scale.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">When Platform succeeds, engineers move faster and customers get a better product. You'll help build the systems that let Airbyte focus on what matters most: building the future of data movement and AI.</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><h2><strong>Location:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Onsite 4 days/week in San Francisco, CA</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Why You'll Love Working at Airbyte:</strong></h2><p style=\"min-height:1.5em\">At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">• Flexible PTO with a culture that encourages at least 25 days off annually<br /> • 16 weeks fully paid parental leave for all parents<br /> • Comprehensive medical, dental, and vision coverage for employees and dependents<br /> • 401(k) retirement plan<br /> • Professional development budget, conference sponsorship, and book reimbursement<br /> • Commuter benefits and monthly internet reimbursement</p><p style=\"min-height:1.5em\"> •  Breakfast and lunch in our San Francisco office<br /> • A collaborative, in-person culture focused on learning, growth, and impact</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability.</p>","isListed":true,"isConfidential":false,"teamNames":["Engineering"],"secondaryLocationNames":[],"compensationTierSummary":"$196K – $235K • Offers Equity","compensationTiers":[{"id":"92ca182f-5bf1-45fa-a0f8-5eda23a94b5e","title":null,"tierSummary":"$196K – $235K • Offers Equity","__typename":"JobPostingCompensationTiers"}],"applicationDeadline":null,"compensationTierGuideUrl":null,"scrapeableCompensationSalarySummary":"$196K - $235K","compensationPhilosophyHtml":"<p style=\"min-height:1.5em\">The actual compensation package within the stated range will be based on a combination of factors such as an individual's skills, experience level, location, and other relevant job-related considerations.</p>","applicationLimitCalloutHtml":null,"shouldAskForTextingConsent":true,"shouldAskForWhatsAppConsent":false,"candidateTextingPrivacyPolicyUrl":"https://airbyte.com/company/privacy-policy","candidateTextingTermsAndConditionsUrl":null,"legalEntityNameForTextingConsent":"Airbyte, Inc","automatedProcessingLegalNotice":null,"__typename":"JobPostingDetails"},"jobBoard":null,"routerPrefix":"/","recaptchaPublicSiteKey":"6LeFb_YUAAAAALUD5h-BiQEp8JaFChe0e0A6r49Y","recaptchaUniversalPublicSiteKey":"6LezdY0tAAAAAEnollNLCAI0z1VDGwM7AzGrU4XZ"};
+      // A Vite manifest key: the entry's HTML filename relative to the build root.
+      // Single-entry apps leave entryHtml unset.
+      const ENTRY_KEY = "index.html";
+      fetch("https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json").then(function (res) { return res.json() }).then(function (manifest) {
+        const entryData = manifest[ENTRY_KEY];
+        if (entryData == null) {
+          throw new Error("Vite manifest is missing entry: " + ENTRY_KEY);
+        }
+    
+        // Walk the entry's static imports transitively. Both the CSS and the JS a
+        // page needs can sit on shared chunks rather than on the entry record, and
+        // the manifest lists only each chunk's direct imports -- so reading the
+        // entry alone silently drops stylesheets and preloads. Depth-first
+        // post-order puts a dependency's CSS ahead of its importer's, which is the
+        // cascade order Vite uses in the HTML it generates for the same entry.
+        const chunks = [];
+        const visited = {};
+        function collectChunks(key) {
+          if (visited[key] === true) {
+            return;
+          }
+          visited[key] = true;
+          const chunk = manifest[key];
+          if (chunk == null) {
+            return;
+          }
+          (chunk.imports ?? []).forEach(collectChunks);
+          chunks.push(chunk);
+        }
+        collectChunks(ENTRY_KEY);
+    
+        // css[] holds output paths, not digests, but every manifest record carries
+        // an integrity for its own file -- so a stylesheet Vite emitted as its own
+        // record can be matched by path. The entry's CSS has no record and loads
+        // unhashed.
+        const integrityByFile = {};
+        Object.keys(manifest).forEach(function (key) {
+          const record = manifest[key];
+          if (record != null && record.file != null && record.integrity != null) {
+            integrityByFile[record.file] = record.integrity;
+          }
+        });
+    
+        const sheets = [];
+        const seenSheets = {};
+        chunks.forEach(function (chunk) {
+          (chunk.css ?? []).forEach(function (sheet) {
+            if (seenSheets[sheet] === true) {
+              return;
+            }
+            seenSheets[sheet] = true;
+            sheets.push(sheet);
+          });
+        });
+    
+        let bundleLoaded = false;
+        function loadBundle() {
+          if (bundleLoaded === true) {
+            return;
+          }
+    
+          const el = document.createElement("script");
+          el.setAttribute("type", "module");
+          el.setAttribute("crossorigin", "");
+          el.setAttribute("integrity", entryData.integrity);
+          el.setAttribute("src", "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + entryData.file);
+          document.head.appendChild(el);
+          bundleLoaded = true;
+        }
+    
+        chunks.forEach(function (chunk) {
+          const preload = document.createElement("link");
+          preload.rel = "modulepreload";
+          preload.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + chunk.file;
+          // Carry the SRI hash on the preload too: Chrome/Firefox reuse the
+          // preloaded bytes for the integrity-bearing script tag, so an integrity-less
+          // preload silently bypasses the SRI check. Without it here, SRI is never
+          // enforced on the code-split chunks (the bulk of the app), in any browser.
+          preload.setAttribute("integrity", chunk.integrity);
+          preload.setAttribute("crossorigin", "");
+          document.head.appendChild(preload);
+        });
+    
+        if (sheets.length > 0) {
+          const loadedSheets = [];
+          sheets.forEach(function (sheet) {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.type = "text/css";
+            link.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + sheet;
+            link.media = "all";
+            const sheetIntegrity = integrityByFile[sheet];
+            if (sheetIntegrity != null) {
+              link.setAttribute("integrity", sheetIntegrity);
+              // SRI on a cross-origin stylesheet requires CORS mode; the CDN sends
+              // access-control-allow-origin: *.
+              link.setAttribute("crossorigin", "");
+            }
+            link.onload = function () {
+              loadedSheets.push(sheet);
+              if (loadedSheets.length === sheets.length) {
+                loadBundle();
+              }
+            };
+            link.onerror = loadBundle;
+            document.head.insertBefore(link, document.getElementById("vite-preload"));
+          });
+        } else {
+          loadBundle();
+        }
+      });
+    </script>  </body>
+</html>

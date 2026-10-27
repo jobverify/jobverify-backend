@@ -1,174 +1,127 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
+﻿import { createHash } from 'node:crypto'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { analyzePublishableJobs } from '../../scraper-support/utils/publishableJobMetrics.js'
+import { visibleDocument, decodeLeaf, normalizeText } from './nativeVisibility.js'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
-
+export const SOURCE = 'bluebinaries'
+export const HOMEPAGE_URL = 'https://www.bluebinaries.com/'
 export const CAREER_PAGE_URL = 'https://www.bluebinaries.com/become-a-bluebee/'
-
-const normalizeWhitespace = (value) =>
-  String(value ?? '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&#8211;|&#8212;/gi, '-')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-const extractFirst = (pattern, value) => normalizeWhitespace(pattern.exec(value || '')?.[1])
-
-const stripHtmlToLines = (value) =>
-  String(value ?? '')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<\/(p|li|ul|ol|br)>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .split('\n')
-    .map((line) => normalizeWhitespace(line))
-    .filter(Boolean)
-
-const slugify = (value) =>
-  normalizeWhitespace(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-
-const parsePostedDate = (value) => {
-  const match = /Posted on\s+(\d{2})-([A-Za-z]{3})-(\d{4})/i.exec(String(value ?? ''))
+export const WORKSITES_URL = 'https://www.bluebinaries.com/connect-to-us/'
+const cls = (n, c) => (n.attrs.class || '').split(/\s+/).includes(c)
+const clean = v => normalizeText(v) || null
+const descendants = (n, p) => typeof n === 'string' || n.inert ? [] : [...(p(n) ? [n] : []), ...n.children.flatMap(c => descendants(c, p))]
+const absolute = (value, base = CAREER_PAGE_URL) => { try { return new URL(value, base).href } catch { return null } }
+const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex')
+export class BlueBinariesNativeError extends Error { constructor(message) { super('Blue Binaries native: ' + message); this.abortRetries = true } }
+const valid = (value, message) => { if (!value) throw new BlueBinariesNativeError(message) }
+const countryFromLocation = value => {
+  const countries = new Set()
+  for (const part of String(value || '').split(/[,;|]/).map(v => v.trim())) for (const [pattern, country] of [[/^India$/i, 'India'], [/^(?:UK|United Kingdom)$/i, 'United Kingdom'], [/^Austria$/i, 'Austria'], [/^(?:USA|United States(?: of America)?)$/i, 'United States']]) if (pattern.test(part)) countries.add(country)
+  return countries.size === 1 ? [...countries][0] : null
+}
+export const isIndiaLocation = value => countryFromLocation(value) === 'India'
+const publicationDate = value => {
+  const match = /^Posted on\s+(\d{2})-([A-Za-z]{3})-(\d{4})$/i.exec(value || '')
   if (!match) return null
-
-  const monthMap = {
-    jan: '01',
-    feb: '02',
-    mar: '03',
-    apr: '04',
-    may: '05',
-    jun: '06',
-    jul: '07',
-    aug: '08',
-    sep: '09',
-    oct: '10',
-    nov: '11',
-    dec: '12',
-  }
-
-  const month = monthMap[match[2].toLowerCase()]
+  const month = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(match[2].toLowerCase()) + 1
   if (!month) return null
-
-  return `${match[3]}-${month}-${match[1]}`
+  const date = `${match[3]}-${String(month).padStart(2, '0')}-${match[1]}`
+  return Number.isFinite(Date.parse(date)) && new Date(date).toISOString().startsWith(date) ? date : null
 }
-
-export const isIndiaLocation = (location) =>
-  /\bindia\b|\bchennai\b|\bbengaluru\b|\bbangalore\b|\bpune\b|\bhyderabad\b|\bmumbai\b|\bgurgaon\b|\bgurugram\b|\bnoida\b/i
-    .test(String(location ?? ''))
-
-const extractCity = (location) => {
-  const parts = normalizeWhitespace(location)
-    .split(',')
-    .map((part) => normalizeWhitespace(part))
-    .filter(Boolean)
-
-  if (parts.length === 0) return null
-  if (parts.length === 1) return parts[0]
-
-  const lastPart = parts.at(-1)
-  if (/^india$/i.test(lastPart) || /^[A-Z]{2,3}$/i.test(lastPart)) {
-    return parts.at(-2) || lastPart
+const labelValue = (lines, label) => lines.map(value => new RegExp('^' + label + '\\s*:\\s*(.+)$', 'i').exec(value)?.[1]).find(Boolean) || null
+export const extractOfficialWorksites = html => {
+  const doc = visibleDocument(html, n => cls(n, 'accordion-item')), parents = new WeakMap()
+  const walk = (node, parent) => { if (typeof node === 'string') return; if (parent) parents.set(node,parent); node.children.forEach(c => walk(c,node)) }
+  walk(doc.nodes(n => n.tag === 'root')[0])
+  const sites = []
+  for (const item of doc.nodes(n => cls(n,'accordion-item'))) {
+    let nested = false
+    for (let p = parents.get(item); p; p = parents.get(p)) if (cls(p,'accordion-item')) nested = true
+    if (nested) continue
+    const heading = item.children.find(n => typeof n !== 'string' && ['h2','h3'].includes(n.tag)), buttons = heading ? descendants(heading,n => n.tag === 'button') : []
+    if (buttons.length !== 1 || !/\bTroy,\s*MI\s+48084\b/i.test(doc.text(item))) continue
+    sites.push({ city: 'Troy', state: 'MI', country: countryFromLocation(doc.text(buttons[0])), sourceUrl: WORKSITES_URL })
   }
-
-  return lastPart
+  const employerBound = doc.nodes(n => n.tag === 'title' && /BlueBinaries/i.test(decodeLeaf(n.raw))).length === 1
+  return employerBound && !doc.unresolved ? sites : []
 }
-
-const extractDescription = (jobHtml) => {
-  const detailsHtml = extractFirst(
-    /<div class="job-requirements"[\s\S]*?>([\s\S]*?)<\/div>\s*(?:<\/div>|<!--)/i,
-    jobHtml,
-  )
-
-  return stripHtmlToLines(detailsHtml).join('\n') || null
-}
-
-export const extractJobEntries = (html) => {
-  const jobs = []
-  const sanitizedHtml = String(html ?? '').replace(/<!--[\s\S]*?-->/g, ' ')
-  const chunks = sanitizedHtml.split(/<div class="acc-job-post">/i).slice(1)
-
-  for (const chunk of chunks) {
-    const title = extractFirst(/<div class="job-role">[\s\S]*?<h3>([\s\S]*?)<\/h3>/i, chunk)
-    const postingRaw = extractFirst(/<div class="job-role">[\s\S]*?<span>([\s\S]*?)<\/span>/i, chunk)
-    const location = extractFirst(/<div class="job-location">[\s\S]*?<span[^>]*>([\s\S]*?)<\/span\s*>/i, chunk)
-    const jobId = extractFirst(/<div class="job-details"[^>]+data-attribute="([^"]+)"/i, chunk)
-      || slugify(title)
-
-    if (!title || !jobId) continue
-
-    jobs.push({
-      title,
-      company: 'Blue Binaries',
-      department: null,
-      location,
-      city: extractCity(location),
-      jobId,
-      requisitionId: null,
-      sourceUrl: `${CAREER_PAGE_URL}#${jobId}`,
-      applyUrl: `${CAREER_PAGE_URL}#${jobId}`,
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: parsePostedDate(postingRaw),
-      closingDate: null,
-      jobDescription: extractDescription(chunk),
-    })
-  }
-
-  return jobs
-}
-
-const fetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
+export const extractNativeInventory = (html, { worksites = [] } = {}) => {
+  const doc = visibleDocument(html, n => cls(n, 'acc-job-post'))
+  const cards = doc.nodes(n => cls(n, 'acc-job-post'))
+  const rows = cards.map(card => {
+    const find = p => descendants(card, p), details = find(n => cls(n, 'job-details')), roots = find(n => cls(n, 'job-requirements'))
+    const id = details.length === 1 ? clean(details[0].attrs['data-attribute']) : null
+    const titleNodes = find(n => n.tag === 'h3'), title = titleNodes.length === 1 ? clean(doc.text(titleNodes[0])) : null
+    const locations = find(n => cls(n, 'job-location')), location = locations.length === 1 ? clean(doc.text(locations[0])) : null
+    const root = roots.length === 1 ? roots[0] : null
+    const identity = Boolean(id && /^[\w:-]+$/.test(id) && root?.attrs.id === id && title)
+    const lines = root ? descendants(root, n => ['p','li','h4','h5','h6'].includes(n.tag)).map(n => doc.text(n)).filter(Boolean) : []
+    const description = root ? clean(doc.text(root)) : null
+    const full = Boolean(identity && description && !doc.unresolved)
+    const role = find(n => cls(n, 'job-role'))[0], dateNodes = role ? descendants(role, n => n.tag === 'span') : []
+    const rawDate = dateNodes.length === 1 ? doc.text(dateNodes[0]) : null, date = publicationDate(rawDate)
+    const explicitCountry = countryFromLocation(location), worksiteMatches = /^BlueBinaries Engineering and Solutions Inc\., Troy, MI$/i.test(location || '') ? worksites.filter(s => s.city === 'Troy' && s.state === 'MI') : []
+    const worksiteCountries = worksiteMatches.map(s => s.country), worksiteCountry = worksiteCountries.length && worksiteCountries.every(Boolean) && new Set(worksiteCountries).size === 1 ? worksiteCountries[0] : null
+    const country = explicitCountry || worksiteCountry
+    const applies = root ? descendants(root, n => n.tag === 'a' && /apply/i.test(doc.text(n))).map(n => ({ href: absolute(n.attrs.href), text: doc.text(n) })).filter(a => a.href && /^(?:https?:|mailto:)/.test(a.href) && !a.href.endsWith('#')) : []
+    const apply = applies.length === 1 ? applies[0].href : null
+    return { source: SOURCE, company: 'Blue Binaries', title, jobId: id, id, sourceJobId: id, requisitionId: null,
+      location, country, countryCode: ({ India: 'IN', 'United States': 'US', 'United Kingdom': 'GB', Austria: 'AT' })[country] || null,
+      city: worksiteCountry ? 'Troy' : country ? clean(location?.split(',').map(s => s.trim()).filter(s => s && !/^BlueBinaries\b/.test(s) && !countryFromLocation(s))[0]) : null, state: worksiteCountry ? 'MI' : null,
+      sourceUrl: id ? CAREER_PAGE_URL + '#' + encodeURIComponent(id) : CAREER_PAGE_URL, applyUrl: apply,
+      link: apply || (id ? CAREER_PAGE_URL + '#' + encodeURIComponent(id) : CAREER_PAGE_URL),
+      applicationUrlIsGeneric: apply ? apply === CAREER_PAGE_URL : null, applicationUrlScope: apply ? 'published-native-application' : 'unavailable',
+      applicationPostingContext: { nativePostingId: id, title, formalRequisitionId: null }, applicationPublicContextValidated: Boolean(apply), applicationSubmitted: false, candidateActionsTaken: false,
+      department: labelValue(lines, 'Department'), employmentType: labelValue(lines, 'Employment Type'), remoteStatus: labelValue(lines, '(?:Work arrangement|Work mode)'),
+      experienceRequired: labelValue(lines, '(?:Experience|Work Experience required)'), minimumQualification: labelValue(lines, '(?:Qualification|Education)'), preferredQualification: labelValue(lines, 'Preferred Qualification'), requiredSkills: labelValue(lines, '(?:Skills|Required Skills)') ? [labelValue(lines, '(?:Skills|Required Skills)')] : null,
+      compensation: labelValue(lines, '(?:Salary|Compensation)'), postingDate: date, postedAt: date, nativePublicationDate: date,
+      nativePublicationSource: date ? 'visible job-role Posted on label' : null, sourcePublicationDateUnavailable: !date, sourceClosingDateIsExact: false, closingDate: null,
+      jobDescription: full ? description : null, sourceDescription: full ? description : null, sourceDetailComplete: full, sourceIdentityComplete: identity,
+      sourceDetailFailureKind: full ? null : identity ? 'native-visible-criteria-unresolved' : 'native-posting-identity-unresolved',
+      sourceNativeCriteria: { fullObservedText: description, lines, visibilityIssues: doc.visibilityIssues }, sourceNativeCountryEvidence: { location, country, basis: explicitCountry ? 'explicit-role-location-country' : worksiteCountry ? 'current-employer-exact-worksite' : null, matchedWorksites: worksiteMatches },
+      sourceNativeDates: { publicationLabel: rawDate, publication: date }, sourceNativeEmployerEvidence: { homepage: HOMEPAGE_URL, careerPage: CAREER_PAGE_URL, nativePostingId: id } }
   })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
+  const ids = rows.map(r => r.jobId).filter(Boolean), duplicates = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))]
+  for (const row of rows) if (duplicates.includes(row.jobId)) { row.sourceIdentityComplete = false; row.sourceDetailComplete = false; row.jobDescription = null; row.sourceDescription = null; row.sourceDetailFailureKind = 'ambiguous-native-posting-id' }
+  const containers = doc.nodes(n => n.attrs.id === 'job-posts-container' && cls(n, 'job-posts'))
+  const pagination = containers.flatMap(n => descendants(n, x => ['a','button'].includes(x.tag) && (/\bnext\b/i.test(x.attrs.rel || '') || /load more|next page/i.test(doc.text(x)) || /[?&](?:page|paged|offset|cursor)=|\/page\/\d+/i.test(x.attrs.href || '') || Object.hasOwn(x.attrs, 'data-page'))))
+  const accordionProven = doc.nodes(n => n.tag === 'script' && !n.attrs.src && /\.job-details/.test(n.raw || '') && /data-attribute/.test(n.raw || '') && /\.toggle\(/.test(n.raw || '')).length > 0
+  const advertised = doc.nodes(n => n.tag === 'a' && /career|job opening|vacanc|apply now/i.test(doc.text(n))).map(n => absolute(n.attrs.href)).filter(u => u && !u.startsWith(CAREER_PAGE_URL) && !rows.some(r => r.applyUrl === u))
+  return { rows, observedCount: rows.length, uniqueNativeIdCount: new Set(ids).size, duplicateIds: duplicates, terminal: containers.length === 1 && !pagination.length && accordionProven, visibilityUnresolved: doc.unresolved, additionalRecruitmentChannels: [...new Set(advertised)] }
 }
-
-export const run = async () => {
-  const html = await fetchText(CAREER_PAGE_URL)
-  const jobs = extractJobEntries(html)
-    .filter((job) => isIndiaLocation(job.location))
-    .map((job) => ({
-      ...job,
-      source: 'bluebinaries',
-      link: job.applyUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-
-  const maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null
-  return maxJobs ? jobs.slice(0, maxJobs) : jobs
+export const extractJobEntries = (html, options) => extractNativeInventory(html, options).rows.filter(r => r.jobId && r.title)
+export const defaultFetchPage = async (url, { fetchImpl = fetch, timeoutMs = 30000, signal, ...init } = {}) => {
+  const response = await fetchImpl(url, { ...init, redirect: 'follow', signal: signal || AbortSignal.timeout(timeoutMs) })
+  return { status: response.status, url: response.url, contentType: response.headers.get('content-type'), body: await response.text() }
 }
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
-  console.log(`Running Blue Binaries scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
-  const jobs = await run()
-  console.log(`\nTotal India jobs scraped: ${jobs.length}`)
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-    console.log(`Dry run - wrote ${jobs.length} jobs to jobs.json`)
-  } else {
-    const result = await saveToDB(jobs, 'bluebinaries')
-    console.log('DB result:', result)
-    process.exit(0)
-  }
+export const run = async (options = {}) => {
+  const load = options.fetchPage || defaultFetchPage, now = new Date((options.now || (() => new Date().toISOString()))()).toISOString(), maxJobs = options.maxJobs ?? 0
+  valid(Number.isSafeInteger(maxJobs) && maxJobs >= 0, 'invalid output budget')
+  valid(!options.fetchJson && !options.fetchText || options.fetchPage, 'use native fetchPage transport')
+  let requests = 0
+  const page = async url => { options.signal?.throwIfAborted(); const r = await load(url, { method: 'GET', headers: { Accept: 'text/html' }, signal: options.signal }); requests++; const body = r?.body ?? r?.html; if ([401,403,429].includes(Number(r?.status)) || /<(?:title|h1)\b[^>]*>\s*(?:access denied|just a moment|verify you are human|request rejected|captcha|attention required|pardon our interruption|robot check)|\bid=["'](?:challenge-form|cf-chl-)/i.test(body || '')) throw new BlueBinariesNativeError('public access denied HTTP ' + r?.status); valid(r?.status === 200 && r.url === url && typeof body === 'string', 'public response or employer binding changed'); return body }
+  const home = async () => { const html = await page(HOMEPAGE_URL), doc = visibleDocument(html, n => n.tag === 'a'); valid(doc.nodes(n => n.tag === 'title' && /BlueBinaries/i.test(decodeLeaf(n.raw))).length === 1 && doc.nodes(n => n.tag === 'a' && absolute(n.attrs.href, HOMEPAGE_URL) === CAREER_PAGE_URL).length > 0, 'official homepage career handoff changed'); return doc.nodes(n => n.tag === 'a' && absolute(n.attrs.href,HOMEPAGE_URL) === WORKSITES_URL).length > 0 }
+  const openingContactAdvertised = await home(), openingWorksites = openingContactAdvertised ? extractOfficialWorksites(await page(WORKSITES_URL)) : []
+  const opening = extractNativeInventory(await page(CAREER_PAGE_URL), { worksites: openingWorksites })
+  const closingContactAdvertised = await home(), closingWorksites = closingContactAdvertised ? extractOfficialWorksites(await page(WORKSITES_URL)) : []
+  const closing = extractNativeInventory(await page(CAREER_PAGE_URL), { worksites: closingWorksites })
+  const closingReconciled = digest(opening.rows) === digest(closing.rows), reasons = []
+  if (!closingReconciled) reasons.push('closing-native-criteria-or-identity-changed')
+  if (openingContactAdvertised !== closingContactAdvertised || digest(openingWorksites) !== digest(closingWorksites)) reasons.push('closing-employer-worksite-country-evidence-changed')
+  if (!opening.terminal || !closing.terminal) reasons.push('native-terminal-unresolved')
+  if (opening.duplicateIds.length) reasons.push('duplicate-native-posting-id')
+  if (opening.rows.some(r => !r.sourceIdentityComplete)) reasons.push('native-posting-identity-unresolved')
+  if (opening.rows.some(r => !r.country)) reasons.push('role-owned-country-unresolved')
+  if (opening.rows.some(r => !r.sourceDetailComplete)) reasons.push('full-native-criteria-unresolved')
+  const additional = [...new Set([...opening.additionalRecruitmentChannels, ...closing.additionalRecruitmentChannels])]
+  if (additional.length) reasons.push('additional-recruitment-channel-unresolved')
+  // An empty generic container is not an explicit employer no-vacancies statement.
+  if (!opening.rows.length) reasons.push('native-empty-state-unproven')
+  const primaryComplete = closingReconciled && opening.terminal && closing.terminal && opening.rows.length > 0 && opening.rows.every(r => r.sourceIdentityComplete), scopeComplete = reasons.length === 0
+  const india = opening.rows.filter(r => r.country === 'India' && r.jobId && r.title), outputCapped = maxJobs > 0 && india.length > maxJobs, listingComplete = scopeComplete && !outputCapped
+  const jobs = (outputCapped ? india.slice(0, maxJobs) : india).map(r => ({ ...r, scrapedAt: now, sourceListingComplete: listingComplete, sourceCleanupEligible: listingComplete, sourcePrimaryScopeComplete: primaryComplete }))
+  const metrics = analyzePublishableJobs(jobs, { now: new Date(now) })
+  const audit = { source: SOURCE, observedGlobalCount: opening.observedCount, nativeGlobalReportedTotal: null, uniqueNativeIdCount: opening.uniqueNativeIdCount, duplicateNativeIds: opening.duplicateIds, nativeJobs: opening.rows, primaryScopeComplete: primaryComplete, scopeComplete, closingReconciled, indiaJobCount: scopeComplete ? india.length : null, fullHealthyIndia: india.filter(r => r.sourceDetailComplete && r.applicationPublicContextValidated).length, eligibleCount: metrics.eligibleJobs.length, cleanupEligible: listingComplete, outputCapped, requests, additionalRecruitmentChannels: additional, reasons }
+  options.onAudit?.(audit)
+  return attachInventoryEvidence(jobs, { status: listingComplete ? 'complete-inventory' : 'coverage-gap', surface: CAREER_PAGE_URL, firstParty: true, listingComplete, pagesFetched: 2, reportedTotal: null, indiaFacetCount: scopeComplete ? india.length : null, verifiedAt: now, reason: reasons.concat(outputCapped ? ['output-capped-after-reconciliation'] : []).join(';') || 'full-native-static-board-and-closing-reconciliation' })
 }

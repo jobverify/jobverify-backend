@@ -50,14 +50,8 @@ const createFetchPageFromText = (fetchText) => async (url) => ({
   html: await fetchText(url),
 })
 
-const isHttpStatusError = (error, statusCode, url) => {
-  const escapedUrl = String(url).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return new RegExp(`HTTP\\s+${statusCode}\\b[\\s\\S]*${escapedUrl}`, 'i')
-    .test(String(error?.message ?? error ?? ''))
-}
-
 const isDeterministicHttpBlock = (error) =>
-  /HTTP\s+(?:401|403|404|410|451)\b/i.test(String(error?.message ?? error ?? ''))
+  /HTTP\s+(?:401|403|404|410|429|451)\b/i.test(String(error?.message ?? error ?? ''))
 
 const wrapApiOnlyFetchError = (url, error) => {
   const wrapped = new Error(
@@ -65,7 +59,7 @@ const wrapApiOnlyFetchError = (url, error) => {
     { cause: error },
   )
 
-  for (const key of ['abortRetries', 'softFailure', 'upstreamOutage', 'failureKind', 'localTimeout', 'retryDelayMs']) {
+  for (const key of ['status', 'abortRetries', 'softFailure', 'upstreamOutage', 'failureKind', 'localTimeout', 'retryDelayMs']) {
     if (error?.[key] != null) {
       wrapped[key] = error[key]
     }
@@ -84,7 +78,7 @@ const wrapApiOnlyFetchError = (url, error) => {
 const buildHttpStatusError = ({ status, url }) => {
   const error = new Error(`HTTP ${status} for ${url}`)
   error.status = status
-  if ([401, 403, 404, 410, 451].includes(status)) {
+  if ([401, 403, 404, 410, 429, 451].includes(status)) {
     error.abortRetries = true
   }
   return error
@@ -115,6 +109,14 @@ export const hasCloudflareBlockSignal = (page = {}) => {
     )
 }
 
+const rejectPublicAccessGate = (page, url) => {
+  const html = String(page?.html ?? '')
+  if (hasCloudflareBlockSignal({ ...page, status: 403, url })
+    || /<title[^>]*>\s*(?:verify you are human|just a moment(?:\.{3})?|access denied)\s*<\/title>/i.test(html)) {
+    throw Object.assign(new Error(`Ather Energy public access denied (HTTP ${page?.status}); inventory unknown`), { status: page?.status, abortRetries: true })
+  }
+}
+
 export const extractJobs = (html) => {
   if (!hasJobsPageSignal(html)) {
     return []
@@ -140,28 +142,23 @@ export const createAtherEnergyScraper = ({
     let careersHomePage = null
     try {
       careersHomePage = await loadPage(CAREERS_HOME_URL)
+      rejectPublicAccessGate(careersHomePage, CAREERS_HOME_URL)
     } catch (error) {
-      if (!isHttpStatusError(error, 403, CAREERS_HOME_URL)) {
-        throw error
-      }
+      throw wrapApiOnlyFetchError(CAREERS_HOME_URL, error)
+    }
+    if (Number(careersHomePage?.status) !== 200) {
+      throw wrapApiOnlyFetchError(CAREERS_HOME_URL, buildHttpStatusError({ status: careersHomePage?.status, url: CAREERS_HOME_URL }))
     }
 
     let allJobsPage
     try {
       allJobsPage = await loadPage(ALL_JOBS_URL)
+      rejectPublicAccessGate(allJobsPage, ALL_JOBS_URL)
     } catch (error) {
       throw wrapApiOnlyFetchError(ALL_JOBS_URL, error)
     }
 
-    if (careersHomePage && careersHomePage.status >= 400 && !hasCloudflareBlockSignal(careersHomePage)) {
-      throw wrapApiOnlyFetchError(CAREERS_HOME_URL, buildHttpStatusError(careersHomePage))
-    }
-
-    if (allJobsPage.status >= 400 && hasCloudflareBlockSignal(allJobsPage)) {
-      return []
-    }
-
-    if (allJobsPage.status >= 400) {
+    if (Number(allJobsPage?.status) !== 200) {
       throw wrapApiOnlyFetchError(ALL_JOBS_URL, buildHttpStatusError(allJobsPage))
     }
 
@@ -169,12 +166,13 @@ export const createAtherEnergyScraper = ({
     const allJobsHtml = allJobsPage.html ?? ''
 
     if (careersHomeHtml && !hasCloudflareBlockSignal(careersHomePage) && !hasCareersHomeSignal(careersHomeHtml)) {
-      return []
+      throw new Error('Ather Energy careers surface unverified; inventory unknown')
     }
 
     if (!hasJobsPageSignal(allJobsHtml)) {
-      return []
+      throw new Error('Ather Energy job listing surface unverified; inventory unknown')
     }
+    if (!hasNoOpenJobsSignal(allJobsHtml)) throw new Error('Ather Energy current full native extraction unavailable; inventory unknown')
 
     const jobs = extractJobs(allJobsHtml)
 
@@ -182,7 +180,7 @@ export const createAtherEnergyScraper = ({
   },
 })
 
-export const run = async () => createAtherEnergyScraper().run()
+export const run = async (options = {}) => createAtherEnergyScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

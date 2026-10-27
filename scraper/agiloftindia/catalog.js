@@ -15,14 +15,14 @@ export const AGILOFT_INDIA_CATALOG = {
   leverApiUrl: 'https://api.lever.co/v0/postings/agiloft?mode=json',
   atsPlatform: 'lever',
   countryFilter: 'India',
-  paginationStrategy: 'official-careers-validation-plus-lever-api',
+  paginationStrategy: 'corporate-advertised-full-feed-board-details-and-closing-reconciliation',
   extractionStrategy:
-    'verified-first-party-careers-page+verified-lever-board+lever-postings-api+india-location-filter',
+    'runtime-corporate-handoff+full-native-inventory+all-visible-details+primary-secondary-countries+closing-membership+india-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-14',
+  verifiedOn: '2026-10-27',
   verifiedSurfaceSummary:
-    'Verified on July 14, 2026 that https://www.agiloft.com/careers/ and https://www.agiloft.com/about-us/careers/ both resolve to Agiloft’s live first-party careers experience, and that page hands applicants to the public Lever board at https://jobs.lever.co/agiloft. The verified public board currently surfaces roles only in Canada, the United Kingdom, and the United States, so there are no India roles live for Agiloft India right now.',
+    'The corporate careers page https://www.agiloft.com/careers/ advertises https://api.lever.co/v0/postings/agiloft?mode=json in its native inline careers code and renders public hostedUrl links on https://jobs.lever.co/agiloft. Every run must re-prove this handoff, reconcile the full native board/feed, validate all visible descriptions and primary/secondary work countries, and recheck closing details and membership before filtering India. Catalog notes are not live inventory evidence.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

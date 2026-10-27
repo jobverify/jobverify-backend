@@ -1,430 +1,174 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+globalThis.fetch = () => { throw new Error('Agiloft India tests prohibit network before imports') }
+const { getScraperCatalog, createCatalogScraper } = await import('../providers/index.js')
+const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+const agiloft = await import('../../scraper/agiloftindia/script.js')
+const { futureJob, futureBoard, futureCareers, futureDetail } = await import('../../scraper/agiloftindia/fixtures/synthetic.js')
 
-const officialCareersHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Agiloft Careers: Join Our Innovative Team Today</title>
-  </head>
-  <body>
-    <main>
-      <h1>Level Up With Us</h1>
-      <p>We're defining the future of how enterprises work with contracts.</p>
-      <h2>Why work at Agiloft?</h2>
-      <p>Join us in defining a new standard.</p>
-      <h2>Find your seat</h2>
-      <a href="https://jobs.lever.co/agiloft">Explore Open Roles</a>
-    </main>
-    <footer>2026 © Agiloft Inc. All Rights Reserved</footer>
-  </body>
-</html>
-`
-
-const currentCareersHtmlWithoutLeverHref = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Agiloft Careers: Join Our Innovative Team Today</title>
-  </head>
-  <body>
-    <main>
-      <h1>Level Up With Us</h1>
-      <p>Better contract outcomes start with Agiloft careers.</p>
-      <section id="financial-career-growth"></section>
-    </main>
-    <footer>2025 (c) Agiloft Inc. All Rights Reserved</footer>
-  </body>
-</html>
-`
-
-const officialLeverBoardHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Agiloft</h1>
-    <section>Location type</section>
-    <section>Location</section>
-    <ul>
-      <li>Canada</li>
-      <li>United Kingdom</li>
-      <li>United States</li>
-    </ul>
-    <section>Team</section>
-    <section>Work type</section>
-    <h2>Product</h2>
-    <h3>Engineering</h3>
-    <a href="https://jobs.lever.co/agiloft/us-platform">Apply</a>
-    <a href="https://jobs.lever.co/agiloft/us-platform">Senior Platform Engineer Remote — Full-time United States</a>
-    <a href="https://jobs.lever.co/agiloft/ca-platform">Apply</a>
-    <a href="https://jobs.lever.co/agiloft/ca-platform">Senior Platform Engineer Remote — Full-time Canada</a>
-    <a href="https://jobs.lever.co/agiloft/us-fullstack">Apply</a>
-    <a href="https://jobs.lever.co/agiloft/us-fullstack">Sr Software Engineer- Fullstack Remote — Full-time United States</a>
-    <h2>Professional Services</h2>
-    <h3>Implementation</h3>
-    <a href="https://jobs.lever.co/agiloft/uk-architect">Apply</a>
-    <a href="https://jobs.lever.co/agiloft/uk-architect">Senior Solution Architect Remote — Full-time United Kingdom</a>
-    <h2>Sales</h2>
-    <h3>Account Exec</h3>
-    <a href="https://jobs.lever.co/agiloft/us-ae-east">Apply</a>
-    <a href="https://jobs.lever.co/agiloft/us-ae-east">Enterprise Account Executive – (East) Remote — Full-time United States</a>
-    <a href="https://jobs.lever.co/agiloft/us-midmarket">Apply</a>
-    <a href="https://jobs.lever.co/agiloft/us-midmarket">Mid-Market Account Executive Remote — Full-time United States</a>
-    <h3>Pre-Sales</h3>
-    <a href="https://jobs.lever.co/agiloft/uk-consultant">Apply</a>
-    <a href="https://jobs.lever.co/agiloft/uk-consultant">Senior Solution Consultant Remote — Full-time United Kingdom</a>
-  </body>
-</html>
-`
-
-const currentLeverBoardHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Agiloft</h1>
-    <section>Location type</section>
-    <section>Location</section>
-    <ul>
-      <li>Canada</li>
-      <li>United Kingdom</li>
-      <li>United States</li>
-    </ul>
-    <section>Team</section>
-    <section>Work type</section>
-    <h2>Product</h2>
-    <h3>Engineering</h3>
-    <a href="https://jobs.lever.co/agiloft/us-platform">Senior Platform Engineer Remote - Full-time United States</a>
-    <a href="https://jobs.lever.co/agiloft/us-fullstack">Sr Software Engineer- Fullstack Remote - Full-time United States</a>
-    <h2>Sales</h2>
-    <a href="https://jobs.lever.co/agiloft/us-ae-east">Enterprise Account Executive Remote - Full-time United States</a>
-    <p>Jobs powered by Lever</p>
-  </body>
-</html>
-`
-
-const sampleLeverJobs = [
-  {
-    id: 'india-solution-architect',
-    text: 'Senior Solution Architect',
-    hostedUrl: 'https://jobs.lever.co/agiloft/india-solution-architect',
-    applyUrl: 'https://jobs.lever.co/agiloft/india-solution-architect/apply',
-    createdAt: 1_783_507_200_000,
-    categories: {
-      location: 'Bengaluru, India',
-      team: 'Implementation',
-      commitment: 'Full-time',
-      allLocations: ['Bengaluru, India'],
+const registered = () => createCatalogScraper(getScraperCatalog().find(p => p.source === 'agiloftindia'))
+const syntheticRun = async ({ opening = [futureJob()], closing = opening, maxJobs, schema = {}, transform = body => body, response, clock = () => '2026-10-27T09:00:00.000Z' } = {}) => {
+  const requests = []; let jsonCalls = 0; let boards = 0; let audit
+  const jobs = await registered().run({
+    now: clock, maxJobs,
+    onNativeAudit: value => { audit = value },
+    fetchJson: async url => { requests.push(url); return structuredClone(jsonCalls++ ? closing : opening) },
+    fetchPage: async url => {
+      requests.push(url)
+      if (response) { const override = response(url, requests); if (override) return override }
+      const html = url === agiloft.CAREERS_URL ? futureCareers : url === agiloft.LEVER_BOARD_URL ? futureBoard(boards++ ? closing : opening) : transform(futureDetail(opening.find(j => j.hostedUrl === url), schema))
+      return { status: 200, url, html }
     },
-    workplaceType: 'remote',
-    descriptionPlain: 'Help enterprise customers deploy Agiloft.',
-  },
-  {
-    id: 'us-platform-engineer',
-    text: 'Senior Platform Engineer',
-    hostedUrl: 'https://jobs.lever.co/agiloft/us-platform-engineer',
-    applyUrl: 'https://jobs.lever.co/agiloft/us-platform-engineer/apply',
-    createdAt: 1_783_420_800_000,
-    categories: {
-      location: 'United States',
-      team: 'Engineering',
-      commitment: 'Full-time',
-      allLocations: ['United States'],
-    },
-    workplaceType: 'remote',
-    descriptionPlain: 'Ignore this non-India role.',
-  },
-]
-
-const liveBoardShapeWithoutIndiaJobs = [
-  {
-    id: 'us-platform-engineer',
-    text: 'Senior Platform Engineer',
-    hostedUrl: 'https://jobs.lever.co/agiloft/us-platform-engineer',
-    applyUrl: 'https://jobs.lever.co/agiloft/us-platform-engineer/apply',
-    createdAt: 1_783_420_800_000,
-    categories: {
-      location: 'United States',
-      team: 'Engineering',
-      commitment: 'Full-time',
-      allLocations: ['United States'],
-    },
-    workplaceType: 'remote',
-    descriptionPlain: 'Current US role.',
-  },
-  {
-    id: 'uk-solution-consultant',
-    text: 'Senior Solution Consultant',
-    hostedUrl: 'https://jobs.lever.co/agiloft/uk-solution-consultant',
-    applyUrl: 'https://jobs.lever.co/agiloft/uk-solution-consultant/apply',
-    createdAt: 1_783_248_000_000,
-    categories: {
-      location: 'United Kingdom',
-      team: 'Pre-Sales',
-      commitment: 'Full-time',
-      allLocations: ['United Kingdom'],
-    },
-    workplaceType: 'remote',
-    descriptionPlain: 'Current UK role.',
-  },
-]
-
-const loadAgiloftIndiaModule = async () => {
-  try {
-    return await import('../../scraper/agiloftindia/script.js')
-  } catch {
-    assert.fail('Expected Agiloft India scraper module at ../../scraper/agiloftindia/script.js')
-  }
+  })
+  return { jobs, audit, requests, evidence: readInventoryEvidence(jobs) }
 }
 
-test('Agiloft India scraper pins the verified official careers page and public Lever board', async () => {
-  const agiloftIndia = await loadAgiloftIndiaModule()
-
-  assert.equal(agiloftIndia.SOURCE, 'agiloftindia')
-  assert.equal(agiloftIndia.COMPANY, 'Agiloft India')
-  assert.equal(agiloftIndia.CAREERS_ENTRY_URL, 'https://www.agiloft.com/careers/')
-  assert.equal(agiloftIndia.CAREERS_URL, 'https://www.agiloft.com/careers/')
-  assert.deepEqual(agiloftIndia.ACCEPTED_CAREERS_URLS, [
-    'https://www.agiloft.com/careers',
-    'https://www.agiloft.com/careers/',
-    'https://www.agiloft.com/about-us/careers',
-    'https://www.agiloft.com/about-us/careers/',
-  ])
-  assert.equal(agiloftIndia.LEVER_BOARD_URL, 'https://jobs.lever.co/agiloft')
-  assert.equal(agiloftIndia.LEVER_API_URL, 'https://api.lever.co/v0/postings/agiloft?mode=json')
-  assert.equal(agiloftIndia.hasOfficialCareersSignal(officialCareersHtml), true)
-  assert.equal(agiloftIndia.hasOfficialCareersSignal(currentCareersHtmlWithoutLeverHref), true)
-  assert.equal(
-    agiloftIndia.extractLeverBoardUrl(officialCareersHtml),
-    'https://jobs.lever.co/agiloft',
-  )
-  assert.equal(agiloftIndia.hasOfficialLeverBoardSignal(officialLeverBoardHtml), true)
-  assert.equal(agiloftIndia.hasOfficialLeverBoardSignal(currentLeverBoardHtml), true)
-})
-
-test('Agiloft India keeps checking the configured Lever board when the current careers shell omits a raw Lever href', async () => {
-  const agiloftIndia = await loadAgiloftIndiaModule()
-  const requestedPages = []
-  const requestedJson = []
-
-  const jobs = await agiloftIndia.createAgiloftIndiaScraper({
-    now: () => '2026-07-14T00:00:00.000Z',
-  }).run({
-    fetchPage: async (url) => {
-      requestedPages.push(url)
-
-      if (url === agiloftIndia.CAREERS_ENTRY_URL) {
-        return {
-          status: 200,
-          url: 'https://www.agiloft.com/careers',
-          html: currentCareersHtmlWithoutLeverHref,
-        }
-      }
-
-      if (url === agiloftIndia.LEVER_BOARD_URL) {
-        return {
-          status: 200,
-          url,
-          html: officialLeverBoardHtml,
-        }
-      }
-
-      throw new Error(`Unexpected page URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJson.push(url)
-
-      if (url === agiloftIndia.LEVER_API_URL) {
-        return liveBoardShapeWithoutIndiaJobs
-      }
-
-      throw new Error(`Unexpected json URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedPages, [
-    agiloftIndia.CAREERS_ENTRY_URL,
-    agiloftIndia.LEVER_BOARD_URL,
-  ])
-  assert.deepEqual(requestedJson, [agiloftIndia.LEVER_API_URL])
-  assert.deepEqual(jobs, [])
-})
-
-test('Agiloft India extracts only India roles from the Lever postings payload shape', async () => {
-  const agiloftIndia = await loadAgiloftIndiaModule()
-  const jobs = agiloftIndia.extractLeverJobs(sampleLeverJobs)
-
+test('Agiloft India synthetic future India role is complete only after all native and closing checks', async () => {
+  const { jobs, audit, evidence, requests } = await syntheticRun()
   assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
-    title: 'Senior Solution Architect',
-    company: 'Agiloft India',
-    department: 'Implementation',
-    location: 'Bengaluru, India',
-    city: 'Bengaluru',
-    country: 'India',
-    jobId: 'india-solution-architect',
-    requisitionId: 'india-solution-architect',
-    sourceUrl: 'https://jobs.lever.co/agiloft/india-solution-architect',
-    applyUrl: 'https://jobs.lever.co/agiloft/india-solution-architect/apply',
-    employmentType: 'Full-time',
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: '2026-07-08T10:40:00.000Z',
-    closingDate: null,
-    jobDescription: 'Help enterprise customers deploy Agiloft.',
-    remoteStatus: 'Remote',
-  })
-})
-
-test('Agiloft India run returns an honest zero-job result while the verified Lever board exposes no India roles', async () => {
-  const agiloftIndia = await loadAgiloftIndiaModule()
-  const requestedPages = []
-  const requestedJson = []
-
-  const jobs = await agiloftIndia.createAgiloftIndiaScraper({
-    now: () => '2026-07-14T00:00:00.000Z',
-  }).run({
-    fetchPage: async (url) => {
-      requestedPages.push(url)
-
-      if (url === agiloftIndia.CAREERS_ENTRY_URL) {
-        return {
-          status: 200,
-          url: 'https://www.agiloft.com/about-us/careers/',
-          html: officialCareersHtml,
-        }
-      }
-
-      if (url === agiloftIndia.LEVER_BOARD_URL) {
-        return {
-          status: 200,
-          url,
-          html: officialLeverBoardHtml,
-        }
-      }
-
-      throw new Error(`Unexpected page URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJson.push(url)
-
-      if (url === agiloftIndia.LEVER_API_URL) {
-        return liveBoardShapeWithoutIndiaJobs
-      }
-
-      throw new Error(`Unexpected json URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedPages, [
-    agiloftIndia.CAREERS_ENTRY_URL,
-    agiloftIndia.LEVER_BOARD_URL,
-  ])
-  assert.deepEqual(requestedJson, [agiloftIndia.LEVER_API_URL])
-  assert.deepEqual(jobs, [])
-})
-
-test('Agiloft India fails closed when the verified careers surface or Lever board changes materially', async () => {
-  const agiloftIndia = await loadAgiloftIndiaModule()
-
-  await assert.rejects(
-    agiloftIndia.createAgiloftIndiaScraper().run({
-      fetchPage: async (url) => {
-        if (url === agiloftIndia.CAREERS_ENTRY_URL) {
-          return {
-            status: 200,
-            url: agiloftIndia.CAREERS_URL,
-            html: '<html><body><h1>Join Agiloft</h1></body></html>',
-          }
-        }
-
-        throw new Error(`Unexpected page URL: ${url}`)
-      },
-      fetchJson: async () => liveBoardShapeWithoutIndiaJobs,
-    }),
-    /verified official careers surface/i,
-  )
-
-  await assert.rejects(
-    agiloftIndia.createAgiloftIndiaScraper().run({
-      fetchPage: async (url) => {
-        if (url === agiloftIndia.CAREERS_ENTRY_URL) {
-          return {
-            status: 200,
-            url: 'https://www.agiloft.com/about-us/careers/',
-            html: officialCareersHtml,
-          }
-        }
-
-        if (url === agiloftIndia.LEVER_BOARD_URL) {
-          return {
-            status: 200,
-            url,
-            html: '<html><body><h1>Board changed</h1></body></html>',
-          }
-        }
-
-        throw new Error(`Unexpected page URL: ${url}`)
-      },
-      fetchJson: async () => liveBoardShapeWithoutIndiaJobs,
-    }),
-    /verified public lever board/i,
-  )
-})
-
-test('Agiloft India accepts posting turnover that removes United Kingdom from the public board', async () => {
-  const agiloftIndia = await loadAgiloftIndiaModule()
-  const contractedLocationsHtml = currentLeverBoardHtml.replace(/\s*<li>United Kingdom<\/li>/, '')
-  const jobs = await agiloftIndia.run({
-    fetchPage: async (url) => {
-      if (url === agiloftIndia.CAREERS_ENTRY_URL) {
-        return { status: 200, url, html: officialCareersHtml }
-      }
-      if (url === agiloftIndia.LEVER_BOARD_URL) {
-        return { status: 200, url, html: contractedLocationsHtml }
-      }
-      throw new Error(`Unexpected page URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      assert.equal(url, 'https://api.lever.co/v0/postings/agiloft?mode=json')
-      return liveBoardShapeWithoutIndiaJobs
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-})
-
-test('Agiloft India can extract India roles when the board has no historical overseas locations', async () => {
-  const agiloftIndia = await loadAgiloftIndiaModule()
-  const indiaOnlyBoardHtml = `
-    <html><head><title>Agiloft</title></head><body>
-      <section>Location type</section><section>Location</section>
-      <ul><li>Bengaluru, India</li></ul>
-      <section>Team</section><section>Work type</section>
-      <a href="https://jobs.lever.co/agiloft/india-solution-architect">Senior Solution Architect</a>
-    </body></html>
-  `
-  const jobs = await agiloftIndia.run({
-    now: () => '2026-10-08T17:20:00.000Z',
-    fetchPage: async (url) => {
-      if (url === agiloftIndia.CAREERS_ENTRY_URL) {
-        return { status: 200, url, html: officialCareersHtml }
-      }
-      if (url === agiloftIndia.LEVER_BOARD_URL) {
-        return { status: 200, url, html: indiaOnlyBoardHtml }
-      }
-      throw new Error(`Unexpected page URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      assert.equal(url, 'https://api.lever.co/v0/postings/agiloft?mode=json')
-      return sampleLeverJobs.filter(job => job.id === 'india-solution-architect')
-    },
-  })
-
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].jobId, 'india-solution-architect')
+  assert.equal(jobs[0].jobId, '11111111-1111-4111-8111-111111111111')
+  assert.equal(jobs[0].requisitionId, null)
+  assert.equal(jobs[0].company, 'Agiloft')
   assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].source, 'agiloftindia')
-  assert.equal(jobs[0].scrapedAt, '2026-10-08T17:20:00.000Z')
+  assert.equal(jobs[0].city, 'Bengaluru')
+  assert.equal(jobs[0].jobDescription, 'Build contract systems.\n\nResponsibilities\nDesign secure services.\n\nEqual opportunity employer.\n\nSynthetic visible AI recruiting notice.')
+  assert.equal(jobs[0].sourceListingComplete, true)
+  assert.equal(jobs[0].allowSourceCleanup, true)
+  assert.equal(evidence.listingComplete, true)
+  assert.equal(audit.complete, true)
+  assert.equal(requests.length, 7)
+})
+
+test('Agiloft India synthetic future secondary India location is retained alongside the primary country', async () => {
+  const job = futureJob({ country: 'US', categories: { location: 'United States', allLocations: ['United States', 'India'], commitment: 'Full-time', department: 'Product', team: 'Engineering' } })
+  const { jobs, audit } = await syntheticRun({ opening: [job] })
+  assert.equal(audit.complete, true)
+  assert.deepEqual(jobs[0].workCountries, ['India', 'United States'])
+  assert.equal(jobs[0].location, 'India')
+  assert.equal(jobs[0].city, null)
+  assert.equal(jobs[0].primaryLocation, 'United States')
+})
+
+test('Agiloft India synthetic future country outside historical board locations can complete', async () => {
+  const job = futureJob({ country: 'DE', categories: { location: 'Germany', allLocations: ['Germany'], commitment: 'Full-time' } })
+  const { jobs, audit } = await syntheticRun({ opening: [job] })
+  assert.deepEqual(jobs, [])
+  assert.equal(audit.complete, true)
+  assert.deepEqual(audit.rows[0].workCountries, ['Germany'])
+})
+
+test('Agiloft India synthetic output cap follows full inventory and suppresses whole-source completion', async () => {
+  const second = futureJob({ id: '22222222-2222-4222-8222-222222222222' })
+  const { jobs, audit, evidence, requests } = await syntheticRun({ opening: [futureJob(), second], maxJobs: 1 })
+  assert.equal(jobs.length, 1)
+  assert.equal(audit.fullDetailCount, 2)
+  assert.equal(requests.length, 8)
+  assert.equal(audit.complete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
+  assert.equal(jobs[0].allowSourceCleanup, false)
+  assert.equal(jobs[0].sourceReportedTotal, null)
+})
+
+test('Agiloft India synthetic closing detail or secondary country changes withhold the changed role', async () => {
+  const opening = [futureJob()]
+  const closing = structuredClone(opening)
+  closing[0].categories.allLocations.push('Canada')
+  const { jobs, audit, evidence } = await syntheticRun({ opening, closing })
+  assert.deepEqual(jobs, [])
+  assert.equal(audit.complete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(audit.allowSourceCleanup, false)
+})
+
+test('Agiloft India synthetic expired and withdrawn native postings remain ineligible', async () => {
+  for (const job of [futureJob({ status: 'withdrawn' }), futureJob({ validThrough: '2026-10-26' })]) {
+    const { jobs, audit } = await syntheticRun({ opening: [job] })
+    assert.deepEqual(jobs, [])
+    assert.equal(audit.complete, true)
+    assert.equal(audit.fullDetailCount, 1)
+    assert.equal(audit.fullyHealthyCount, 0)
+  }
+  const expiredSchema = await syntheticRun({ schema: { validThrough: '2026-10-26' } })
+  assert.deepEqual(expiredSchema.jobs, [])
+})
+
+test('Agiloft India synthetic role that expires during the closing check is ineligible at completion', async () => {
+  let ticks = 0
+  const { jobs } = await syntheticRun({ opening: [futureJob({ validThrough: '2026-10-27T09:00:30.000Z' })],
+    clock: () => ticks++ ? '2026-10-27T09:01:00.000Z' : '2026-10-27T09:00:00.000Z' })
+  assert.deepEqual(jobs, [])
+})
+
+test('Agiloft India synthetic unresolved secondary geography prevents completion and India eligibility', async () => {
+  const job = futureJob()
+  job.categories.allLocations.push('Unspecified global offices')
+  const { jobs, audit, evidence } = await syntheticRun({ opening: [job] })
+  assert.deepEqual(jobs, [])
+  assert.equal(audit.complete, false)
+  assert.equal(evidence.reportedTotal, null)
+})
+
+test('Agiloft India synthetic generic posting identifier is not fabricated into a requisition', async () => {
+  const { jobs } = await syntheticRun({ schema: { identifier: { name: 'Posting ID', value: 'native-posting-only' } } })
+  assert.equal(jobs[0].requisitionId, null)
+})
+
+test('Agiloft India synthetic hidden and inert descriptions do not become visible job content', async () => {
+  const { jobs } = await syntheticRun({ transform: html => html.replace('Build contract systems.', 'Build contract systems.<span hidden>Hidden bait</span><template>Template bait</template>') })
+  assert.equal(jobs.length, 1)
+  assert.doesNotMatch(jobs[0].jobDescription, /bait/)
+})
+
+test('Agiloft India synthetic encoded text remains text after exactly one entity decode', async () => {
+  const job = futureJob({ description: '<p>Use &lt;script&gt; as literal text &amp; keep &#x1F4DD;.</p>' })
+  const { jobs } = await syntheticRun({ opening: [job] })
+  assert.equal(jobs.length, 1)
+  assert.match(jobs[0].jobDescription, /Use <script> as literal text & keep 📝\./)
+})
+
+test('Agiloft India immediately stops on the first denied public response at any stage', async () => {
+  for (const status of [401, 403, 429]) for (const at of [1, 2, 3, 4, 5, 6, 7]) {
+    let calls = 0
+    const opening = [futureJob()]
+    await assert.rejects(registered().run({
+      fetchPage: async url => {
+        calls++
+        if (calls === at) return { status, url, html: 'Denied' }
+        return { status: 200, url, html: url === agiloft.CAREERS_URL ? futureCareers : url === agiloft.LEVER_BOARD_URL ? futureBoard(opening) : futureDetail(opening[0]) }
+      },
+      fetchJson: async () => { calls++; if (calls === at) throw Object.assign(new Error(`HTTP ${status}`), { status }); return opening },
+    }), /access denied|HTTP (401|403|429)/i)
+    assert.equal(calls, at)
+  }
+})
+
+test('Agiloft India synthetic primary native country code is sufficient without inferring a city country', async () => {
+  const job = futureJob({ categories: { location: 'Bengaluru', allLocations: ['Bengaluru'], commitment: 'Full-time' } })
+  const { jobs, audit } = await syntheticRun({ opening: [job] })
+  assert.equal(audit.complete, true)
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].city, null)
+})
+
+test('Agiloft India synthetic closing corporate redirect prevents complete first-party proof', async () => {
+  let corporateCalls = 0
+  const { audit, evidence } = await syntheticRun({ response: url => url === agiloft.CAREERS_URL && ++corporateCalls === 2 ? { status: 200, url: 'https://unrelated.invalid/careers', html: futureCareers } : null })
+  assert.equal(audit.complete, false)
+  assert.equal(evidence.reportedTotal, null)
+})
+
+test('Agiloft India stops at a bot gate in an HTTP 200 native detail', async () => {
+  let calls = 0
+  await assert.rejects(registered().run({
+    fetchPage: async url => { calls++; return { status: 200, url, html: url === agiloft.CAREERS_URL ? futureCareers : url === agiloft.LEVER_BOARD_URL ? futureBoard([futureJob()]) : '<h1>Access Denied</h1>' } },
+    fetchJson: async () => { calls++; return [futureJob()] },
+  }), /access denied/i)
+  assert.equal(calls, 4)
+})
+
+test('Agiloft India immediately stops on an explicit bot gate in a successful HTTP response', async () => {
+  let calls = 0
+  await assert.rejects(registered().run({ fetchPage: async url => { calls++; return { status: 200, url, html: '<title>Just a moment</title><p>Verify you are human</p>' } } }), /access denied/i)
+  assert.equal(calls, 1)
 })

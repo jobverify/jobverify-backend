@@ -37,7 +37,7 @@ export const validateClient=html=>{
 }
 export const jobDetail=(html,{jobId=null}={})=>{
  const d=readHtml(html),modern=d.find(n=>hasClass(n,'job-detail__item')),legacy=d.find(n=>hasClass(n,'_detail-content')),scope=(modern.length===1?modern:legacy)[0]
- const blank={title:null,applyUrl:null,requiredSkills:[],jobDescription:null,location:null,postingDate:null,closingDate:null,remoteStatus:null,employmentType:null,sourceDetailComplete:false,sourceDetailFailureKind:'native-detail-scope-missing',sourceDocumentDates:[],sourceNativeStructuredCriteria:[]}
+ const blank={title:null,applyUrl:null,requiredSkills:[],jobDescription:null,location:null,postingDate:null,closingDate:null,remoteStatus:null,employmentType:null,sourceDetailComplete:false,sourceDetailFailureKind:'native-detail-scope-missing',sourceDocumentDates:[],sourceNativeStructuredCriteria:[],sourceRoleWorksiteStatements:[]}
  if(!scope||modern.length>1||legacy.length>1)return blank
  const primaryTitles=d.within(scope,n=>n.tag==='h1'&&hasClass(n,'title'))
  const titleNodes=primaryTitles.length?primaryTitles:d.within(scope,n=>n.tag==='h1'),title=titleNodes.length===1?d.text(titleNodes[0]):null
@@ -49,6 +49,16 @@ export const jobDetail=(html,{jobId=null}={})=>{
  const section=d.find(n=>hasClass(n,'job-detail')&&within(n,scope))[0]
  const outsideCriteria=section?d.text(section,{exclude:n=>n===scope||hasClass(n,'job-detail__highlight')||n.tag==='a'&&applyUrl&&absolute(n.attrs.href)===applyUrl&&/^apply(?: now)?$/i.test(d.text(n)||'')}):null
  const jobDescription=norm([d.text(scope,{exclude}),outsideCriteria].filter(Boolean).join(' '))
+ const sourceRoleWorksiteStatements=[]
+ const headings=d.within(scope,n=>/^h[1-6]$/.test(n.tag))
+ for(const node of d.within(scope,n=>['p','li','div'].includes(n.tag))){
+  const text=d.text(node)
+  if(!/^(?:Location:|This position is based in\b)/i.test(text||''))continue
+  const previousHeading=headings.filter(heading=>d.nodes.indexOf(heading)<d.nodes.indexOf(node)).at(-1)
+  const companyContext=/^(?:About\s+(?:Brillio|(?:the\s+)?(?:company|client|employer))|Headquarters?|Client(?:\s+(?:information|profile|details))?|Company(?:\s+(?:information|profile|details))?)$/i.test(d.text(previousHeading)||'')
+  if(/^Location:/i.test(text)&&companyContext)continue
+  if(!sourceRoleWorksiteStatements.includes(text))sourceRoleWorksiteStatements.push(text)
+ }
  const skills=d.within(scope,n=>/^h[1-6]$/.test(n.tag)&&/^Primary Skills$/i.test(d.text(n)||''))
  const requiredSkills=[]
  for(const heading of skills){const siblings=heading.parent.children,index=siblings.indexOf(heading);const next=siblings.slice(index+1).find(n=>typeof n!=='string');if(next?.tag==='ul')requiredSkills.push(...(d.text(next)||'').split(',').map(norm).filter(Boolean))}
@@ -63,5 +73,5 @@ export const jobDetail=(html,{jobId=null}={})=>{
  const uncertain=scope.uncertain||d.within(scope,n=>n.uncertain,{includeHidden:true}).length>0
  const closed=/\b(?:this (?:job|position|vacancy) (?:is |has been )?(?:closed|filled|expired)|no longer (?:accepting applications|available)|applications? (?:are )?closed)\b/i.test(d.text(scope)||'')
  const full=Boolean(title&&jobDescription&&applyUrl&&!outsideCriteria&&!uncertain&&!hiddenCriteria&&!structuredInvalid&&!sourceNativeStructuredCriteria.length&&!/\.{2,}\s*$|…\s*$/.test(jobDescription)&&!closed)
- return{...blank,title,location,applyUrl,requiredSkills,jobDescription,sourceDetailComplete:full,sourceDetailFailureKind:full?null:closed?'native-role-closed':!applyUrl?'native-application-identity-unresolved':sourceNativeStructuredCriteria.length||structuredInvalid?'native-structured-criteria-unresolved':uncertain||hiddenCriteria?'native-visibility-unresolved':'native-description-incomplete',sourceDocumentDates,sourceNativeStructuredCriteria,sourceNativeAvailability:closed?'closed':applyUrl?'listed-with-native-apply':'unknown'}
+ return{...blank,title,location,applyUrl,requiredSkills,jobDescription,sourceRoleWorksiteStatements,sourceDetailComplete:full,sourceDetailFailureKind:full?null:closed?'native-role-closed':!applyUrl?'native-application-identity-unresolved':sourceNativeStructuredCriteria.length||structuredInvalid?'native-structured-criteria-unresolved':uncertain||hiddenCriteria?'native-visibility-unresolved':'native-description-incomplete',sourceDocumentDates,sourceNativeStructuredCriteria,sourceNativeAvailability:closed?'closed':applyUrl?'listed-with-native-apply':'unknown'}
 }

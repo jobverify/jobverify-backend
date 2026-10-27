@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { transport } from '../../scraper/delinea/native.fixtures.js'
+
+globalThis.fetch = async () => { throw new Error('NETWORK_TRIPWIRE: inject Delinea transport before import') }
 
 const FIXED_SCRAPED_AT = '2026-07-25T00:00:00.000Z'
 
@@ -79,7 +82,7 @@ test('Delinea pins the first-party careers handoff and Ashby API', async () => {
   const delinea = await loadModule()
 
   assert.equal(delinea.SOURCE, 'delinea')
-  assert.equal(delinea.COMPANY, 'Delinea India')
+  assert.equal(delinea.COMPANY, 'Delinea')
   assert.equal(delinea.CAREERS_PAGE_URL, 'https://delinea.com/careers')
   assert.equal(delinea.ASHBY_PUBLIC_BOARD_URL, 'https://jobs.ashbyhq.com/delinea')
   assert.equal(
@@ -95,31 +98,22 @@ test('Delinea extracts only listed India jobs from the official Ashby payload', 
 
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Senior Sales Engineer')
-  assert.equal(jobs[0].company, 'Delinea India')
+  assert.equal(jobs[0].company, 'Delinea')
+  assert.equal(jobs[0].requisitionId, null)
   assert.equal(jobs[0].location, 'Home Office (India)')
   assert.equal(jobs[0].sourceUrl, 'https://jobs.ashbyhq.com/delinea/india-role')
 })
 
-test('Delinea validates the first-party careers handoff before fetching Ashby jobs', async () => {
+test('synthetic Delinea run validates careers, board and all details before closing inventory', async () => {
   const delinea = await loadModule()
-  const requestedTexts = []
-  const requestedJson = []
+  const io = transport()
 
   const jobs = await delinea.createDelineaScraper({
     now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requestedTexts.push(url)
-      return CAREERS_HTML
-    },
-    fetchJson: async (url) => {
-      requestedJson.push(url)
-      return ASHBY_PAYLOAD
-    },
-  })
+  }).run(io)
 
-  assert.deepEqual(requestedTexts, [delinea.CAREERS_PAGE_URL])
-  assert.deepEqual(requestedJson, [delinea.ASHBY_JOB_BOARD_URL])
+  assert.deepEqual(io.calls, [delinea.CAREERS_PAGE_URL, delinea.ASHBY_PUBLIC_BOARD_URL, delinea.ASHBY_JOB_BOARD_URL,
+    'https://jobs.ashbyhq.com/delinea/synthetic-india', delinea.ASHBY_PUBLIC_BOARD_URL, delinea.ASHBY_JOB_BOARD_URL, delinea.CAREERS_PAGE_URL])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'delinea')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)

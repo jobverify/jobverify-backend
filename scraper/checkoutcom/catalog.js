@@ -1,67 +1,28 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const PROVIDER_METADATA = { ...{
+const dir = path.dirname(fileURLToPath(import.meta.url))
+export const PROVIDER_METADATA = { ...{
   "source": "checkoutcom",
   "companyName": "Checkout.com",
-  "adapter": "publicAts",
+  "adapter": "script",
   "catalogOverride": true,
-  "atsPlatform": "ashby",
-  "boardToken": "checkout.com",
   "companyCareerPage": "https://www.checkout.com/careers",
+  "companyDomain": "checkout.com",
+  "atsPlatform": "ashby-native-with-corporate-proxy",
+  "boardToken": "checkout.com",
   "jobsBoardUrl": "https://jobs.ashbyhq.com/checkout.com",
-  "parser": "shared-native-public-ATS",
+  "parser": "company-native-script",
   "countryFilter": "India",
   "normalizationProfile": "engineering-default",
-  "paginationStrategy": "complete-single-native-API-response;native-schema-and-explicit-total-guards;reject-truncation",
-  "extractionStrategy": "native-India-location-evidence;full-native-description-and-publication-fields;no-application-requests",
-  "backfillMode": "live-shared-adapter",
-  "originalAdapter": "script",
-  "originalAtsPlatform": "workbook-exact-name-sentinel",
-  "originalModulePath": "../workbookbatch08/failClosedSentinel.js",
-  "zeroResultPolicy": "coverage-gap",
-  "sourceScopeComplete": false,
-  "lifecycleCleanupAllowed": false,
-  "bindingEvidence": {
-    "verified": true,
-    "verifiedAt": "2026-10-22T21:42:41.091Z",
-    "matchedLinks": [
-      "https://jobs.ashbyhq.com/checkout.com/form/talent-communities"
-    ],
-    "officialCareerPage": "https://www.checkout.com/careers",
-    "bindingSurface": "https://www.checkout.com/careers",
-    "handoffType": "official-HTML-link",
-    "bindingScope": "current-company-advertised-native-board;whole-employer-and-location-scope-unresolved",
-    "scriptsExecuted": false,
-    "applicationsOpened": false
-  },
-  "verifiedOn": null,
-  "verifiedAt": null,
+  "paginationStrategy": "finite-native-api-board-and-corporate-proxy-reconciliation",
+  "extractionStrategy": "all-native-role-details-primary-secondary-countries-and-closing-state",
+  "verifiedOn": "2026-10-27",
+  "sourceScopeComplete": null,
+  "lifecycleCleanupAllowed": null,
+  "runtimeSourceScopeVerification": true,
   "verifiedPublicJobCount": null,
   "verifiedIndiaJobCount": null,
-  "verifiedInventoryStatus": "unverified",
-  "runtimeQualification": "actual-isolated-native-API-and-loopback-zero-preservation-status-history-public-predicate-proof",
-  "remediationStatus": "live-native-API-connected;no-India-matches;whole-employer-and-location-scope-unresolved",
-  "sourceResearchObservedAt": "2026-10-22T21:45:49.248Z",
-  "sourceResearchNativeRecords": 174,
-  "sourceResearchIndiaLocationMatches": 0,
-  "verifiedSurfaceSummary": "Current official careers official-HTML-link identifies this native board. Actual restricted-worker GET completed 2026-10-22T21:50:29.640Z: 174 complete native records;0 India matches/0eligible. Native records do not establish explicit India eligibility. Loopback zero handling preserves prior inventory and complete-check clock/counts;0new realjobs/0visible under either setting. Full employer/location scope and current production publication remain unknown;not verified companyzero.",
-  "sourceScopeNotes": "Read the native public complete single-response inventory, including full descriptions, source publication timestamps, source application links and available location fields. Ashby validates apiVersion1, role/board identities and structured primary/secondary countries; Greenhouse reconciles meta.total. Generic remote/global scope is unresolved and cannot supply India eligibility. Explicit empty arrays remain observed board emptiness, not company-wide zero. Whole-employer scope and lifecycle cleanup stay disabled. Large JSON audit capture is bounded separately from HTML transport. No application/login/consent paths are requested.",
-  "verificationDisposition": "observed-native-records-without-India-matches;not-verified-company-zero",
-  "sourceLatestLiveAttemptedAt": "2026-10-22T21:50:29.004Z",
-  "sourceLatestLiveCompletedAt": "2026-10-22T21:50:29.640Z",
-  "sourceLatestLiveOutcome": "unverified-zero",
-  "sourceLatestLiveObservedRecords": 174,
-  "sourceLatestLiveIndiaJobs": 0,
-  "sourceLatestLiveEligibleJobs": 0,
-  "sourceLatestLiveNativeSingleResponseComplete": true,
-  "sourceLatestLiveHTTPStatus": 200,
-  "sourceLatestLiveNativeEmptyArray": false,
-  "localPersistenceNewRealJobsSaved": 0,
-  "localPreservationPriorJobControls": 1,
-  "localVisibilityExperiencedEnabled": 0,
-  "localVisibilityExperiencedDisabled": 0,
-  "sourceNativeObservationCompletedAt": "2026-10-22T21:50:29.640Z"
-}, modulePath: path.join(currentDir, 'script.js'), dryRunFile: path.join(currentDir, 'jobs.json') }
+  "zeroResultPolicy": "coverage-gap",
+  "verifiedSurfaceSummary": "Current corporate hiring paths and exact language-menu client-derived locale routes are reconciled with the public Railway proxy, exact employer Ashby board/feed, full role details and closing states. Unanswered routes, native/proxy drift or unknown geography keep source totals unresolved; healthy India candidates remain available."
+}, modulePath:path.join(dir,'script.js'),dryRunFile:path.join(dir,'jobs.json') }
 export default PROVIDER_METADATA
-export { PROVIDER_METADATA }
