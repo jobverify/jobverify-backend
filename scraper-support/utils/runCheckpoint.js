@@ -218,12 +218,13 @@ export const openRunCheckpoint = ({
       }
       persist()
     },
-    finish({ interruptedBy = null, error = null, restartable = true } = {}) {
+    finish({ interruptedBy = null, error = null, restartable = true, persistencePending = false } = {}) {
       state.interruptedBy = interruptedBy
       state.error = error ? String(error) : null
       state.restartable = restartable
+      state.persistencePending = persistencePending
       state.inProgress = {}
-      state.status = Object.keys(state.completed).length >= state.totalSources
+      state.status = Object.keys(state.completed).length >= state.totalSources && !persistencePending
         ? 'complete'
         : 'interrupted'
       state.finishedAt = asIsoString(now)

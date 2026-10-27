@@ -18,7 +18,7 @@ test('job persistence retains the alert obligation without a running worker', { 
     replSet: { count: 1 },
   });
   t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
-  await mongoose.connect(mongo.getUri());
+  await mongoose.connect(mongo.getUri(), { monitorCommands: true });
   await Promise.all([Job.init(), User.init(), Subscription.init(), JobAlertDelivery.init(), JobAlertOutbox.init()]);
   t.mock.method(globalThis, 'fetch', async () => { throw new Error('External sends are forbidden in local outbox tests.'); });
   const source = [{ title: 'Software Engineer', company: 'Example', location: 'Bengaluru, India',
@@ -54,6 +54,73 @@ test('job persistence retains the alert obligation without a running worker', { 
     assert.equal(await Job.countDocuments(), 1);
     assert.equal((await Job.findById(old._id)).title, 'Before');
     assert.equal(await JobAlertOutbox.countDocuments(), 0);
+  });
+
+  await t.test('529 fresh jobs use bounded bulk outbox writes and replay without duplicate alerts', async () => {
+    await reset();
+    const operations = Array.from({ length: 529 }, (_, index) => ({ updateOne: {
+      filter: { fingerprint: `large-batch-${index}` },
+      update: { $set: { fingerprint: `large-batch-${index}`, title: 'Engineer', company: 'Example', status: 'active' } },
+      upsert: true,
+    } }));
+    const commands = [];
+    const observe = event => {
+      if (event.commandName === 'update' && ['jobs', 'jobalertoutboxes'].includes(event.command.update)) commands.push(event.command);
+    };
+    const client = mongoose.connection.getClient();
+    client.on('commandStarted', observe);
+    let result;
+    try { result = await persistJobChangesWithAlertOutbox(Job, operations); }
+    finally { client.off('commandStarted', observe); }
+    assert.equal(result.upsertedCount, 529);
+    assert.equal(Object.keys(result.upsertedIds).length, 529);
+    assert.equal(new Set(Object.values(result.upsertedIds).map(String)).size, 529);
+    assert.ok(commands.every(command => command.updates.length <= 100));
+    assert.ok(commands.filter(command => command.update === 'jobalertoutboxes').length <= 6,
+      'Large inventories must not make a separate network round trip for every alert.');
+    assert.equal(await Job.countDocuments(), 529);
+    assert.equal(await JobAlertOutbox.countDocuments(), 529);
+    const replay = await persistJobChangesWithAlertOutbox(Job, operations);
+    assert.equal(replay.upsertedCount, 0);
+    assert.equal(await JobAlertOutbox.countDocuments(), 529);
+  });
+
+  await t.test('a later batch failure keeps earlier job-alert pairs atomic and safely resumable', async () => {
+    await reset();
+    const operations = Array.from({ length: 250 }, (_, index) => ({ updateOne: {
+      filter: { fingerprint: `resume-batch-${index}` },
+      update: { $set: { fingerprint: `resume-batch-${index}`, title: 'Engineer', status: 'active' } }, upsert: true,
+    } }));
+    const original = JobAlertOutbox.bulkWrite.bind(JobAlertOutbox);
+    let writes = 0;
+    const failure = new TypeError('injected outbox failure');
+    const bulk = t.mock.method(JobAlertOutbox, 'bulkWrite', (...args) => {
+      if (++writes === 2) throw failure;
+      return original(...args);
+    });
+    try { await assert.rejects(persistJobChangesWithAlertOutbox(Job, operations), error => error === failure); }
+    finally { bulk.mock.restore(); }
+    assert.equal(await Job.countDocuments(), 100);
+    assert.equal(await JobAlertOutbox.countDocuments(), 100);
+    const resumed = await persistJobChangesWithAlertOutbox(Job, operations);
+    assert.equal(resumed.upsertedCount, 150);
+    assert.equal(await Job.countDocuments(), 250);
+    assert.equal(await JobAlertOutbox.countDocuments(), 250);
+  });
+
+  await t.test('resuming a source attempt does not double-count unseen jobs or expire them early', async () => {
+    await reset();
+    const unseen = await Job.create({ fingerprint: 'unseen-lifecycle-job', title: 'Engineer', company: 'Example',
+      source: 'lifecycle-fixture', status: 'active', missedScrapeCount: 0 });
+    const options = { lifecycleAttemptId: 'stable-checkpoint-attempt', refreshDatasetSummary: false, enrichPublicExperience: false };
+    await saveToDB(source, 'lifecycle-fixture', options);
+    assert.equal((await Job.findById(unseen._id)).missedScrapeCount, 1);
+    await saveToDB(source, 'lifecycle-fixture', options);
+    const resumed = await Job.findById(unseen._id);
+    assert.ok(resumed, 'A resumed attempt must not turn one missing inventory into two misses.');
+    assert.equal(resumed.missedScrapeCount, 1);
+    await saveToDB(source, 'lifecycle-fixture', { ...options, lifecycleAttemptId: 'next-scheduled-attempt' });
+    assert.equal(await Job.findById(unseen._id), null);
   });
 
   await t.test('restart recovery persists matching deliveries and completion without sending', async () => {

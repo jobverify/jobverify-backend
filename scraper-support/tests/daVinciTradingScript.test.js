@@ -18,7 +18,7 @@ const careersHtml = `
   </section>
 `
 
-test('extractCareerJobs keeps official Da Vinci Mumbai roles and excludes non-India roles', async () => {
+test('archived Da Vinci pure listing helper retains its original contract', async () => {
   const daVinci = await loadDaVinciModule()
 
   assert.deepEqual(daVinci.extractCareerJobs(careersHtml), [{
@@ -43,18 +43,20 @@ test('extractCareerJobs keeps official Da Vinci Mumbai roles and excludes non-In
   }])
 })
 
-test('run fetches the official Da Vinci careers page', async () => {
+test('Da Vinci script exports delegate to the full current native inventory and preserve caller options', async () => {
   const daVinci = await loadDaVinciModule()
-  const requestedUrls = []
-  const jobs = await daVinci.createDaVinciTradingScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return careersHtml
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [daVinci.CAREERS_PAGE_URL])
+  const { daVinciNativeOptions } = await import('./fixtures/daVinciNativeOptions.js')
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const options = daVinciNativeOptions()
+  const jobs = await daVinci.run(options)
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'davincitrading')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].jobId, '4046811101')
+  assert.equal(options.calls.length, 36)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 15)
+})
+
+test('Da Vinci rejects old listing-only transport overrides before an implicit network request', async () => {
+  const daVinci = await loadDaVinciModule()
+  await assert.rejects(daVinci.run({ fetchText: async () => careersHtml }), /current native transport requires fetchPage/)
 })

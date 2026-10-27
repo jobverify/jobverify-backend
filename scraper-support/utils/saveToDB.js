@@ -530,7 +530,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
       source,
       onStage,
       'bulkWrite',
-      () => persistJobChangesWithAlertOutbox(JobModel, operations, { enqueueAlerts: options.enqueueAlerts !== false }),
+      () => persistJobChangesWithAlertOutbox(JobModel, operations, { enqueueAlerts: options.enqueueAlerts !== false, signal }),
       { operations: operations.length },
       { signal },
     )
@@ -600,6 +600,9 @@ export const saveToDB = async (jobs, source, options = {}) => {
     if (currentFingerprints.length > 0) {
       unseenFilter.fingerprint = { $nin: currentFingerprints }
     }
+    // A lost acknowledgement must not turn a checkpoint resume into a second
+    // missing inventory, or delete a vacancy earlier than the configured limit.
+    if (options.lifecycleAttemptId) unseenFilter.lastMissedScrapeRunId = { $ne: options.lifecycleAttemptId }
 
     const expirationDeletion = await runStage(
       source,
@@ -621,7 +624,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
       'recordMisses',
       () => JobModel.updateMany(
         unseenFilter,
-        { $inc: { missedScrapeCount: 1 } },
+        { $inc: { missedScrapeCount: 1 }, ...(options.lifecycleAttemptId ? { $set: { lastMissedScrapeRunId: options.lifecycleAttemptId } } : {}) },
       ).exec(),
       {},
       { signal },

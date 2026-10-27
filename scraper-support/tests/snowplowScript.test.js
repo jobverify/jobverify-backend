@@ -166,80 +166,9 @@ test('Snowplow extracts public HiBob jobs into shared scraper fields', async () 
   ])
 })
 
-test('Snowplow run validates the official careers handoff and returns normalized public HiBob jobs', async () => {
-  const snowplow = await loadModule()
-  const requestedTexts = []
-  const requestedJson = []
-
-  const jobs = await snowplow.createSnowplowScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requestedTexts.push(url)
-      if (url === snowplow.CAREERS_PAGE_URL) return CAREERS_HTML
-      throw new Error(`Unexpected Snowplow text URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJson.push(url)
-      if (url === snowplow.HIBOB_CAREER_SITE_API_URL) return CAREER_SITE_PAYLOAD
-      if (url === snowplow.HIBOB_JOB_BOARD_API_URL) return JOB_AD_PAYLOAD
-      throw new Error(`Unexpected Snowplow JSON URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedTexts, [snowplow.CAREERS_PAGE_URL])
-  assert.deepEqual(requestedJson, [
-    snowplow.HIBOB_CAREER_SITE_API_URL,
-    snowplow.HIBOB_JOB_BOARD_API_URL,
-  ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'snowplow')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
-})
-
-test('Snowplow fails closed when the verified careers page, HiBob handoff, or HiBob payload drift', async () => {
-  const snowplow = await loadModule()
-
-  await assert.rejects(
-    snowplow.createSnowplowScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-      fetchJson: async () => JOB_AD_PAYLOAD,
-    }),
-    /verified snowplow official careers page/i,
-  )
-
-  await assert.rejects(
-    snowplow.createSnowplowScraper().run({
-      fetchText: async () =>
-        CAREERS_HTML.replaceAll('https://snowplow.careers.hibob.com/', 'https://example.com/jobs'),
-      fetchJson: async (url) => {
-        if (url === snowplow.HIBOB_CAREER_SITE_API_URL) return CAREER_SITE_PAYLOAD
-        return JOB_AD_PAYLOAD
-      },
-    }),
-    /verified hibob career site handoff/i,
-  )
-
-  await assert.rejects(
-    snowplow.createSnowplowScraper().run({
-      fetchText: async () => CAREERS_HTML,
-      fetchJson: async (url) => {
-        if (url === snowplow.HIBOB_CAREER_SITE_API_URL) return {}
-        return JOB_AD_PAYLOAD
-      },
-    }),
-    /verified hibob career site payload/i,
-  )
-
-  await assert.rejects(
-    snowplow.createSnowplowScraper().run({
-      fetchText: async () => CAREERS_HTML,
-      fetchJson: async (url) => {
-        if (url === snowplow.HIBOB_CAREER_SITE_API_URL) return CAREER_SITE_PAYLOAD
-        return { jobs: [] }
-      },
-    }),
-    /verified hibob job board payload/i,
-  )
+test('current snowplow extraction requires transport response identity', async () => {
+  const module = await import('../../scraper/snowplow/script.js')
+  await assert.rejects(module.createSnowplowScraper().run({ fetchText: async () => '' }), /transport requires fetchPage/)
+  assert.equal(module.PROVIDER_METADATA.atsPlatform, 'hibob')
+  assert.equal(module.PROVIDER_METADATA.countryFilter, 'India')
 })

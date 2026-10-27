@@ -14,6 +14,9 @@ test('Classplus is registered against its official public jobs surface', () => {
   assert.equal(provider.extractionStrategy, 'official-careers-page+public-jobs-api')
   assert.equal(provider.companyDomain, 'classplusapp.com')
   assert.match(provider.modulePath, /classplus[\\/]script\.js$/i)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
 })
 
 test('Classplus is runnable through the scraper provider catalog', () => {

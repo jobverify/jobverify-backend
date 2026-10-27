@@ -358,3 +358,35 @@ test('Workday maintenance HTML is classified as an upstream outage even inside a
   const error = new Error('Expected JSON from https://example.wd1.myworkdayjobs.com/wday/cxs/example/jobs/jobs but received HTML (Workday is currently unavailable.)')
   assert.deepEqual(classifyScraperError(error), {softFailure: true, upstreamOutage: true, failureKind: 'network_or_timeout'})
 })
+
+test('transaction aborts are operational database warnings through wrapped causes', () => {
+  const cause = Object.assign(new Error('Transaction with { txnNumber: 195 } has been aborted.'), {
+    name: 'MongoServerError', code: 251, errorLabels: ['TransientTransactionError'],
+  })
+  assert.deepEqual(classifyScraperError(new Error('persistence failed', { cause })), {
+    softFailure: true, upstreamOutage: false, failureKind: 'database_unavailable',
+  })
+})
+
+test('database recovery retries transient errors with bounded backoff and preserves code errors', async () => {
+  const { retryAfterMongoQuotaRecovery } = await import('../runner.js')
+  const delays = []
+  let calls = 0
+  const transient = Object.assign(new Error('transaction aborted'), { code: 251, name: 'MongoServerError' })
+  const result = await retryAfterMongoQuotaRecovery(async () => {
+    if (++calls < 3) throw transient
+    return 'saved'
+  }, { wait: async delay => delays.push(delay) })
+  assert.equal(result, 'saved')
+  assert.deepEqual(delays, [250, 500])
+  calls = 0
+  await assert.rejects(retryAfterMongoQuotaRecovery(async () => {
+    calls++
+    throw transient
+  }, { wait: async () => {} }), error => error === transient)
+  assert.equal(calls, 3)
+  calls = 0
+  const bug = new TypeError('invalid query construction')
+  await assert.rejects(retryAfterMongoQuotaRecovery(async () => { calls++; throw bug }), error => error === bug)
+  assert.equal(calls, 1)
+})

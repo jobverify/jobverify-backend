@@ -76,7 +76,7 @@ const searchPayload = {
   ],
 }
 
-test('Magnit Global recognizes the verified careers handoff and normalizes India Dayforce jobs', async () => {
+test('Magnit archived pure helpers retain their original response contract', async () => {
   const magnit = await import('../../scraper/magnitglobal/script.js')
 
   assert.equal(
@@ -128,84 +128,27 @@ test('Magnit Global recognizes the verified careers handoff and normalizes India
   )
 })
 
-test('Magnit Global scraper returns only India jobs from the Dayforce search payload', async () => {
+test('Magnit public script factory extracts full current India details from the verified native transport', async () => {
   const magnit = await import('../../scraper/magnitglobal/script.js')
-  const jobs = await magnit.createMagnitGlobalScraper({
-    now: () => '2026-08-03T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      if (url === magnit.CAREERS_URL) return officialCareersHtml
-      if (url === magnit.OFFICIAL_DAYFORCE_URL) return dayforceBoardHtml
-      throw new Error(`Unexpected Magnit URL: ${url}`)
-    },
-    searchJobPostings: async () => searchPayload,
-  })
-
+  const { magnitNativeOptions, magnitDayforceIndiaRole } = await import('./fixtures/magnitNativeOptions.js')
+  const jobs = await magnit.createMagnitGlobalScraper(magnitNativeOptions(magnitDayforceIndiaRole)).run()
   assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Analyst, Accounts Payable')
   assert.equal(jobs[0].source, 'magnitglobal')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].jobId, '7493')
+  assert.ok(jobs[0].sourceDescription.length > 3000)
 })
 
-test('Magnit Global uses the default Dayforce session bootstrap when overrides are absent', async () => {
+test('Magnit script delegates exported run through the current two-system native adapter', async () => {
   const magnit = await import('../../scraper/magnitglobal/script.js')
-  const requested = []
-
-  const jobs = await magnit.createMagnitGlobalScraper().run({
-    fetchText: async (url) => {
-      if (url === magnit.CAREERS_URL) return officialCareersHtml
-      if (url === magnit.OFFICIAL_DAYFORCE_URL) return dayforceBoardHtml
-      throw new Error(`Unexpected Magnit URL: ${url}`)
-    },
-    createDayforceSessionImpl: async () => ({
-      csrfToken: 'csrf-token',
-      cookieHeader: 'cookie-a=1; cookie-b=2',
-    }),
-    fetchJson: async (url, options = {}) => {
-      requested.push({
-        url,
-        method: options.method || 'GET',
-        headers: options.headers || {},
-        body: options.body || null,
-      })
-
-      if (url === magnit.buildSearchApiUrl()) return searchPayload
-
-      throw new Error(`Unexpected Magnit JSON URL: ${url}`)
-    },
-  })
-
-  assert.equal(jobs.length, 1)
-  assert.deepEqual(requested, [
-    {
-      url: magnit.buildSearchApiUrl(),
-      method: 'POST',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-        Accept: 'application/json,text/plain,*/*',
-        Cookie: 'cookie-a=1; cookie-b=2',
-        'X-CSRF-Token': 'csrf-token',
-        Referer: magnit.OFFICIAL_DAYFORCE_URL,
-        Origin: magnit.DAYFORCE_ORIGIN,
-        'Content-Type': 'application/json;charset=UTF-8',
-      },
-      body: JSON.stringify(magnit.buildSearchRequestPayload(0)),
-    },
-  ])
+  const { magnitNativeOptions } = await import('./fixtures/magnitNativeOptions.js')
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const jobs = await magnit.run(magnitNativeOptions())
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 9)
 })
 
-test('fails closed when the Magnit Dayforce board site context no longer matches the pinned board', async () => {
+test('Magnit rejects obsolete runtime transport overrides before any implicit network request', async () => {
   const magnit = await import('../../scraper/magnitglobal/script.js')
-
-  await assert.rejects(
-    magnit.createMagnitGlobalScraper().run({
-      fetchText: async (url) => {
-        if (url === magnit.CAREERS_URL) return officialCareersHtml
-        if (url === magnit.OFFICIAL_DAYFORCE_URL) return '<html><head><title>Job Board | Dayforce Jobs</title></head><body></body></html>'
-        throw new Error(`Unexpected Magnit URL: ${url}`)
-      },
-      searchJobPostings: async () => searchPayload,
-    }),
-    /Magnit verified Dayforce public jobs surface no longer matches the pinned site context/i,
-  )
+  await assert.rejects(magnit.run({ fetchText: async () => officialCareersHtml, searchJobPostings: async () => searchPayload }),
+    /current native transport requires fetchPage/)
 })

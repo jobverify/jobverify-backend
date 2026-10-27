@@ -1,0 +1,33 @@
+[
+  {
+    "source": "brillio",
+    "catalogOverride": true,
+    "companyName": "Brillio",
+    "adapter": "script",
+    "modulePath": "../brillio/script.js",
+    "companyCareerPage": "https://www.brillio.com/careers/",
+    "jobsBoardUrl": "https://careers.brillio.com/job-listing/",
+    "companyDomain": "brillio.com",
+    "atsPlatform": "wordpress-native-search-post",
+    "countryFilter": "India",
+    "paginationStrategy": "client-proven-unfiltered-search-post-all-advertised-pages-and-closing-snapshot-before-cap",
+    "extractionStrategy": "native-role-scope-visible-criteria-and-role-owned-country-with-exact-application-posting-identity",
+    "sourceScopeComplete": false,
+    "lifecycleCleanupAllowed": false,
+    "verifiedInventoryStatus": "coverage-gap",
+    "zeroResultPolicy": "coverage-gap",
+    "verifiedAt": null,
+    "verifiedOn": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "bindingEvidence": {
+      "verified": true,
+      "corporateUrl": "https://www.brillio.com/",
+      "careersUrl": "https://www.brillio.com/careers/",
+      "jobsBoardUrl": "https://careers.brillio.com/job-listing/",
+      "verifiedOn": "2026-10-27"
+    },
+    "sourceScopeNotes": "Current corporate careers page declares the native Brillio board. Its reviewed anonymous filter_jobs client posts unfiltered search values to the public WordPress AJAX search, replacing obsolete guessed path pagination and card/detail delimiters. All advertised pages and a second complete inventory precede any cap. Native numeric posting ID and title-owned requisition remain distinct. Full visible role criteria and exact native privacy-notice application identity are required for detail completeness. LTR is retained without inventing employment or work arrangement; document template dates are kept separately from unknown role dates. City-only country, uncertain visibility, hidden criteria, unresolved JobPosting schema, request failure, native denial, changing inventory or caps keep partial results and disable cleanup. The captured 219-posting inventory includes two city-only country records, so employer-wide India coverage remains partial.",
+    "remediationStatus": "current-native-search-and-full-role-details-implemented;country-only-unknowns-retain-partial-scope"
+  }
+]

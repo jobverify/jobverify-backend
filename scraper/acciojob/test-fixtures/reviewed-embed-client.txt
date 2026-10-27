@@ -1,0 +1,2112 @@
+(() => {
+    var careerPortalInfoPromise = null;
+    function getCareerPortalInfo() {
+        var portalName = khConfig.portalName ?? "default";
+        if (!careerPortalInfoPromise) {
+            careerPortalInfoPromise = fetch(khConfig.domain + `api/organization/${portalName}/careerportalinfo`).then((response) => response.json());
+        }
+        return careerPortalInfoPromise;
+    }
+
+    function khSetStyles() {
+        getCareerPortalInfo().then((data) => {
+            applyStyles = data.applyStyles;
+            var stylesTag = document.createElement('style');
+            var styles = `
+    @import url('https://cdn.keka.com/shared/icons/1.0.16/keka-icons.css');
+    @import url('https://cdn.keka.com/shared/fonts/proximanova/proximanova.css');
+    ${applyStyles ? `@import url('https://cdn.keka.com/shared/careers-ui/0.0.8/dist/css/careers-ui.min.css');` : ''}
+    @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
+    
+    .kh-main-container {
+      font-family: "Proxima Nova";
+    }
+    
+    .kh-main-container a {
+      text-decoration: none;
+    }
+
+    .kh-main-container h1 {
+      font-size: var(--font-size-subheading);
+      /* 24px*/
+      line-height: calc(var(--font-size) * 2.538);
+    }
+    
+    .kh-main-container h2 {
+      font-size: calc(var(--font-size) * 1.538);
+      /* 20px*/
+      line-height: calc(var(--font-size) * 2.077);
+      margin-top: 0px !important;
+      margin-bottom: 10px !important;
+    }
+    
+    .kh-main-container h3 {
+      font-size: calc(var(--font-size) * 1.385);
+      /*  18px*/
+      line-height: calc(var(--font-size) * 1.923);
+      margin: 0px !important;
+    }
+    
+    .kh-main-container *,
+    .kh-main-container *::before,
+    .kh-main-container *::after {
+      box-sizing: border-box;
+    }
+    
+    .kh-bg-slate-900 {
+      background: #999999;
+    }
+    
+    .kh-dot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    .kh-dot.kh-dot-xs {
+      width: 4px;
+      height: 4px;
+    }
+    
+    .kh-job-card {
+      border-radius: 10px;
+      border: 1px solid #e9ecef;
+      cursor: pointer;
+    }
+    
+    .kh-job-card .kh-job-title:hover {
+      color: rgba(var(--theme-color), 1) !important;
+    }
+    
+    .kh-job-card:hover {
+      text-decoration: none !important;
+      color: unset;
+    }
+    
+    .kh-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      word-wrap: break-word;
+      background-color:${applyStyles ? 'transparent' : '#fff'};
+      background-clip: border-box;
+      border: 1px solid #e9ecef;
+      border-radius: calc(var(--font-size) * 0.50);
+    }
+    
+    .kh-card-body{
+      flex: 1 1 auto;
+      padding: calc(var(--font-size) * 1.25);
+    }
+    
+    .kh-font-32 {
+      font-size: 32px;
+      line-height: 39px;
+    }
+    
+    .kh-font-large {
+      font-size: calc(var(--font-size) * 1.077);
+      ${applyStyles ? 'color: var(--description-color);' : ''}
+      /* 14px*/
+      line-height: calc(var(--font-size) * 1.462);
+    }
+    
+    .kh-text-capitalize {
+      text-transform: capitalize!important;
+    }
+    
+    .kh-font-normal {
+      font-size: var(--font-size);
+      ${applyStyles ? 'color: var(--description-color);' : ''}
+      /*  13px;*/
+    }
+    
+    .kh-font-small {
+      font-size: calc(var(--font-size) * 0.9231);
+      /*12px;*/
+      line-height: calc(var(--font-size) * 1.231);
+    }
+    
+    .kh-font-x-small {
+      font-size: calc(var(--font-size) * 0.8462);
+      /* 11px;*/
+      line-height: calc(var(--font-size) * 1.154);
+    }
+
+    .kh-mb-0 {
+      margin-bottom: 0 !important;
+    }
+
+    .kh-mb-16 {
+      margin-bottom: 16px !important;
+    }
+    
+    .kh-mb-20 {
+      margin-bottom: 20px !important;
+    }
+    
+    .kh-mb-10 {
+      margin-bottom: 10px !important;
+    }
+
+    .kh-mb-1 {
+      margin-bottom: calc(var(--font-size) * 0.25) !important;
+    }
+    
+    .kh-mb-3 {
+      margin-bottom: calc(var(--font-size) * 1) !important;
+    }
+    
+    .kh-mb-4 {
+      margin-bottom: calc(var(--font-size) * 1.5) !important;
+    }
+
+    .kh-mb-4 {
+      margin-bottom: calc(var(--font-size) * 3) !important;
+    }
+
+    .kh-mt-0 {
+      margin-top: 0 !important;
+    }
+    
+    .kh-mt-20 {
+      margin-top: 20px !important;
+    }
+    
+    .kh-mr-15 {
+      margin-right: 15px !important;
+    }
+    
+    .kh-mr-3 {
+      margin-right: calc(var(--font-size) * 1) !important;
+    }
+    
+    .kh-ml-1 {
+      margin-left: calc(var(--font-size) * 0.25) !important;
+    }
+    
+    .kh-clear-magin {
+      margin: 0px !important;
+    }
+
+    .kh-py-3 {
+      padding-top: calc(var(--font-size) * 1) !important ;
+      padding-bottom: calc(var(--font-size) * 1) !important;
+    }
+
+    .kh-px-1 {
+        padding-left: calc(var(--font-size) * 0.25) !important;
+        padding-right: calc(var(--font-size) * 0.25) !important;
+    }
+    
+    .kh-col-default-4 .card {
+      margin-right: 30px;
+      height: 160px;
+    }
+    
+    .kh-col-default-4 a {
+      text-decoration: none;
+      color: rgba(0, 0, 0, 0.125);
+    }
+    
+    .kh-text-link {
+      color: rgba(var(--theme-color), 1) !important;
+    }
+    
+    .kh-position-relative {
+      position: relative;
+    }
+    
+    .kh-position-absolute {
+      position: absolute;
+    }
+    
+    .kh-hiro-job-filters .kh-hiro-filter {
+      position: relative;
+      border-radius: 3px;
+      cursor: pointer;
+      height: 40px;
+      margin-bottom: 10px;
+    }
+    
+    .kh-hiro-job-filters .kh-hiro-filter .label,
+    .kh-hiro-job-filters .kh-hiro-filter span,
+    .kh-hiro-job-filters .kh-hiro-filter .icon {
+      z-index: 0;
+    }
+    
+    .kh-hiro-job-filters .kh-hiro-filter .icon {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      margin-right: 20px;
+      margin-top: auto;
+      margin-bottom: auto;
+      margin-left: auto;
+      color: #a2a9b4;
+    }
+    
+    .kh-hiro-job-filters .kh-hiro-filter select {
+      -webkit-appearance: none;
+      -moz-appearance: none; /* Firefox */
+      cursor: pointer;
+      height: 40px !important;
+      outline: none;
+      padding-right: 24px;
+    }
+
+    .kh-form-control {
+      font-family: inherit;
+    }
+
+    .kh-hiro-job-filters .kh-hiro-filter select:focus {
+      box-shadow: none;
+      border-color: #ced4da;
+    }
+    
+    .kh-hiro-job-filters .kh-hiro-filter select option {
+      padding: 8px 12px;
+      font-size: 16px;
+      color: #222;
+    }
+    
+    .kh-hiro-job-filters .kh-hiro-filter select:invalid {
+      color: #777 !important;
+    }
+    
+    .kh-hiro-job-filters .kh-hiro-search {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .kh-hiro-job-filters .kh-hiro-search .ki-search {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      font-size: 18px;
+      align-items: center;
+      margin-left: 24px;
+      margin-top: auto;
+      margin-bottom: auto;
+      color: #a2a9b4;
+    }
+    
+    .kh-hiro-job-filters .kh-hiro-search input {
+      height: 40px !important;
+      background: transparent;
+      border-radius: 3px;
+      transition: 0.3s linear;
+      outline: none;
+      position: relative;
+      padding-left: 32px !important;
+      border: 1px solid #d8dde6 !important;
+    }
+    
+    .kh-hiro-job-filters .kh-hiro-search input,
+    .kh-hiro-job-filters .kh-hiro-search input:focus {
+      border: none;
+      outline: none;
+      box-shadow: none;
+    }
+    
+    .kh-text-truncate-1,
+    .kh-text-truncate-2 {
+      display: -webkit-box;
+      overflow: hidden;
+      white-space: initial !important;
+      /*! autoprefixer: ignore next */
+      -webkit-box-orient: vertical;
+    }
+    
+    .kh-text-truncate-1 {
+      -webkit-line-clamp: 1;
+    }
+    
+    .kh-text-truncate-2 {
+      -webkit-line-clamp: 2;
+    }
+    
+    .kh-text-dark {
+      color: #343a40!important;
+    }
+    
+    .kh-min-height-100-73 {
+      min-height: calc(100vh - 73px);
+    }
+    
+    .kh-min-height-100-102 {
+      min-height: calc(100vh - 102px);
+    }
+    
+    .kh-footer .kh-footer-content {
+      border-top: 1px solid #dee2e6;
+    }
+    
+    .kh-company-social-links a {
+      font-size: 18px;
+      color: #d9d9d9 !important;
+      transition: 0.3s linear;
+    }
+    
+    .ki-linkedin-square:hover {
+      color: #0966c3;
+      cursor: pointer;
+    }
+    
+    .ki-twitter:hover {
+      color: #1da1f2;
+      cursor: pointer;
+    }
+    
+    .ki-instagram-fill:hover {
+      color: #c4285e;
+      cursor: pointer;
+    }
+    
+    .ki-youtube-fill:hover {
+      color: #ff0000;
+      cursor: pointer;
+    }
+
+    .kh-icon {
+        height: 24px;
+        width: 24px;
+        font-size: 20px;
+        line-height: 28px !important;
+        font-weight: 400 !important;
+        color: #A2A9B4;
+    }
+
+    .kh-icon-sm {
+        height: 20px;
+        width: 20px;
+        font-size: 16px !important;
+        line-height: 28px !important;
+        font-weight: 400 !important;
+    }
+
+    .kh-icon-lg {
+        height: 28px;
+        width: 28px;
+        font-size: 24px !important;
+        line-height: 28px !important;
+        font-weight: 300 !important;
+    }
+    
+    .kh-row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-left: 0;
+      margin-right: 0;
+    }
+    
+    .kh-cursor-pointer {
+      cursor: pointer;
+    }
+    
+    .kh-d-flex {
+      display: flex !important;
+    }
+    
+    .kh-flex-column {
+      flex-direction: column !important;
+    }
+    
+    .kh-flex-wrap {
+      flex-wrap: wrap !important;
+    }
+    
+    .kh-justify-content-center {
+      justify-content: center !important;
+    }
+
+    .kh-justify-content-between {
+      justify-content: space-between !important;
+    }
+    
+    .kh-align-items-center {
+      align-items: center !important;
+    }
+    
+    .kh-align-items-baseline {
+      align-items: baseline !important;
+    }
+    
+    .kh-d-none {
+        display: none !important;
+    }
+
+    .kh-container-fluid {
+      width: 100%;
+      padding-right: 15px;
+      padding-left: 15px;
+      margin-right: auto;
+      margin-left: auto;
+    }
+    
+    .kh-text-center {
+      text-align: center !important;
+    }
+
+    .kh-text-heading {
+        font-size: var(--fontsize-heading);
+    }
+
+    .kh-text-sub-heading {
+        font-size: var(--fontsize-subheading);
+    }
+
+    .kh-text-secondary {
+      color: #6c757d!important;
+    }
+    
+    .kh-w-100 {
+      width: 100% !important;
+    }
+    
+    .kh-align-middle {
+      vertical-align: middle!important;
+    }
+    
+    .kh-pr-2, .kh-px-2 {
+      padding-right: calc(var(--font-size) * 0.5)!important;
+    }
+    
+    .kh-mt-1 {
+      margin-top: calc(var(--font-size) * 0.25) !important;
+    }
+    
+    .kh-form-control {
+      display: block;
+      width: 100%;
+      font-weight: 400;
+      background-color: #fff;
+      color: #495057;
+      background-clip: padding-box;
+      border: 1px solid #ced4da;
+      transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    }
+
+    .kh-input-search input {
+        height: 40px !important;
+        background: transparent;
+        border-radius: 3px;
+        padding-left: 32px;
+        transition: 0.3s linear;
+        outline: none;
+        border: 1px solid #D8DDE6 !important;
+    }
+
+    .kh-form-control-lg {
+      padding: calc(var(--font-size) * 0.5) calc(var(--font-size) * 1);
+      font-size: calc(var(--font-size) * 1.25);
+      line-height: 1.5;
+      border-radius: calc(var(--font-size) * 0.3);
+    }
+    
+    .kh-align-self-center{
+      align-self: center !important;
+    }
+    
+    .kh-font-weight-bold {
+      font-weight: 700!important;
+    }
+
+    .kh-col-lg,.kh-col-lg-9, .kh-col-lg-3, .kh-col-lg-2, .kh-col-lg-1,
+    .kh-col-md-12,.kh-col-md-6,
+    .kh-col-sm-12,.kh-col-sm-6 {
+        position: relative;
+        width: 100%;
+        min-height: 1px;
+        padding-right: 15px;
+        padding-left: 15px;
+    }
+
+    @media (min-width: 576px) {
+      .kh-col-sm-6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+      }
+
+      .kh-col-sm-12 {
+        flex: 0 0 100%;
+        max-width: 100%;
+      }
+    }
+    
+    @media (min-width: 992px) {
+        .kh-col-lg {
+            flex-basis: 0;
+            flex-grow: 1;
+            max-width: 100%;
+        }
+    
+        .kh-col-lg-2 {
+          flex: 0 0 16.666667%;
+          max-width: 16.666667%;
+        }
+
+        .kh-pl-lg-3 {
+            padding-left: calc(var(--font-size) * 1) !important;
+        }
+
+        .kh-pr-lg-3 {
+            padding-right: calc(var(--font-size) * 1) !important;
+        }
+
+        .kh-col-lg-3 {
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+
+        .kh-col-lg-9 {
+            flex: 0 0 75%;
+            max-width: 75%;
+        }
+    }
+    
+    .kh-mx-2 {
+      margin-right: calc(var(--font-size) * 0.5) !important;
+      margin-left: calc(var(--font-size) * 0.5) !important;
+    }
+    
+    .kh-mr-1 {
+      margin-right: calc(var(--font-size) * 0.25) !important;
+    }
+    
+    .kh-mx-1 {
+      margin-right: calc(var(--font-size) *  0.25) !important;
+      margin-left: calc(var(--font-size) * 0.25), !important;
+    }
+    
+    .kh-mx-4 {
+      margin-right: 4px !important;
+      margin-left: 4px !important;
+    }
+    
+    .kh-px-3 {
+      padding-left: calc(var(--font-size) * 1) !important;
+      padding-right: calc(var(--font-size) * 1) !important;
+    }
+
+    .kh-my-2 {
+      margin-top: calc(var(--font-size) * 0.5) !important;
+      margin-bottom: calc(var(--font-size) * 0.5) !important;
+    }
+
+    .kh-mt-3 {
+      margin-top: calc(var(--font-size) * 1) !important;
+    }
+    
+    .kh-mt-4 {
+      margin-top: calc(var(--font-size) * 1.5) !important;
+    }
+    
+    .kh-alert {
+      position: relative;
+      padding: calc(var(--font-size) * 0.75) calc(var(--font-size) * 1.25);
+      margin-bottom: calc(var(--font-size) * 1);
+      border: 1px solid transparent;
+      border-radius: calc(var(--font-size) * 0.25);
+    }
+    
+    .kh-alert-info {
+      color: #0c5460;
+      background-color: #d1ecf1;
+      border-color: #bee5eb;
+    }
+
+    .kh-font-weight-600 {
+        font-weight: 600 !important;
+    }
+
+    .kh-border-pill {
+        border-radius: 20px;
+        border: 1px solid #101828 !important;
+    }
+
+    .kh-text-small {
+        font-size: 12px;
+        line-height: 18px;
+    }
+
+    .kh-job-container:hover .kh-job-title, .kh-job-container:hover .kh-icon {
+        color: rgba(var(--theme-color), 1) !important;
+    }
+    ${applyStyles ? `.kh-job-title{
+                    color: var(--heading-color) !important;
+        }` : ''}
+    .kh-job-description{
+        color: var(--description-color) !important;
+    }
+
+    .kh-job-container .kh-icon.ki-circle-arrow-right-fill {
+        display: none !important;
+    }
+
+    .kh-job-container:hover .kh-icon.ki-circle-arrow-right-fill {
+        display: block !important;
+    }
+
+    .kh-job-container:hover.kh-job-card {
+        border-color: rgba(var(--theme-color), 1) !important;
+    }
+
+    .kh-rotate-315 {
+        transform: rotate(315deg);
+    }
+
+    @media (min-width: 768px) {
+        .kh-pl-md-8 {
+            padding-left: 8px !important;
+        }
+
+        .kh-pr-md-8 {
+            padding-right: 8px !important;
+        }
+
+        .kh-col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .kh-col-md-12 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        .kh-d-md-none {
+            display: none !important;
+        }
+
+        .kh-d-md-block {
+            display: block !important;
+        }
+    }
+
+    .kh-overflow-x-hidden {
+        overflow-x: hidden;
+    }
+
+    .kh-no-gutters {
+        margin-right: 0;
+        margin-left: 0;
+    }
+
+    .kh-no-gutters > [class*=kh-col-] {
+        padding-right: 0;
+        padding-left: 0;
+    }
+
+    .kh-badge {
+        display: inline-block;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+    }
+
+    .kh-badge-pill {
+        border-radius: calc(var(--font-size) * 10);
+        font-size: var(--font-size);
+    }
+
+    .kh-bg-secondary {
+        background: #EAECF0 !important;
+    }
+
+    .kh-jobs-bg-color {
+        background: #fcfcfd !important;
+    }
+
+    .kh-font-weight-normal {
+        font-weight: 400 !important;
+    }
+
+    .kh-py-1 {
+        padding-top: calc(var(--font-size) * 0.25) !important;
+        padding-bottom: calc(var(--font-size) * 0.25) !important;
+    }
+
+    .kh-mr-2, .kh-main-container h3.kh-mr-2 {
+        margin-right: calc(var(--font-size) * 0.5) !important;
+    }
+
+    .kh-ml-2 {
+        margin-left: calc(var(--font-size) * 0.5) !important;
+    }
+
+    .kh-ml-4 {
+        margin-left: calc(var(--font-size) * 1.5) !important;
+    }
+
+    .kh-ml-8 {
+        margin-left: 8px !important;
+    }
+
+    .kh-pl-2 {
+        padding-left: calc(var(--font-size) * 0.5) !important;
+    }
+
+    .kh-h-100 {
+        height: 100% !important;
+    }
+
+    .kh-list-unstyled {
+        padding-left: 0;
+        list-style: none;
+        margin-top: 0;
+    }
+    [class*=" ki-"]::before {
+        line-height: inherit;
+        vertical-align: inherit;
+    }
+    .kh-accordion-title + .kh-accordion-content {
+        display: none;
+    }
+
+    .kh-max-w-75 {
+        max-width: 75% !important;
+    }
+
+    .kh-accordion-title.kh-is-open + .kh-accordion-content {
+        display: block;
+    }
+
+    .kh-accordion-title.kh-is-open .ki-arrow-dropdown::before {
+        content: '\\F374';
+    }   
+
+    .kh-form-check {
+        position: relative;
+        display: block;
+        margin-bottom: calc(var(--font-size) * 0.5);
+    }
+
+    input[type=checkbox] {
+        box-sizing: border-box;
+        padding: 0;
+    }
+
+
+    .kh-form-check-input {
+        position: absolute;
+        margin-top: 0.25rem;
+        margin-left: -1rem;
+    }
+  `
+            stylesTag.textContent = styles;
+            document.head.appendChild(stylesTag)
+        })
+        
+    }
+
+    function khGetTargetContainer() {
+        var dt = document.querySelector(khConfig.targetContainer);
+        return dt;
+    }
+
+    // creating embededJob container Container Element
+    function khSetJobFilterContainer() {
+        var mainContainer = document.createElement("div");
+        mainContainer.id = "kh-main-container";
+        mainContainer.classList.add("kh-main-container");
+        khGetTargetContainer().appendChild(mainContainer);
+
+        var embedJobContainer = document.createElement("div");
+        embedJobContainer.id = "kh-embed-job-container";
+        embedJobContainer.classList.add("kh-row", "kh-no-gutters");
+        mainContainer.appendChild(embedJobContainer);
+
+        var embedJobsFilters = document.createElement("div");
+        embedJobsFilters.id = "kh-embed-jobs-filters";
+        embedJobsFilters.classList.add("kh-col-lg-3", "kh-col-sm-12", "kh-pr-lg-3", "kh-mb-4");
+        embedJobContainer.appendChild(embedJobsFilters);
+    }
+
+    function khSetJobWidgetContainer() {
+        var jobWidget = document.createElement("div");
+        jobWidget.id = "kh-job-widget";
+        jobWidget.classList.add("kh-col-lg-9", "kh-col-sm-12", "kh-pl-lg-3");
+
+        var embedJobContainer = document.getElementById("kh-embed-job-container");
+        embedJobContainer.appendChild(jobWidget)
+    }
+
+    // creating Footer Element
+    function khSetFooterContainer() {
+        var footer = document.createElement("div");
+        footer.classList.add("kh-d-flex", "kh-flex-column", "kh-footer", "kh-container-fluid", "kh-justify-content-center", "kh-position-absolute");
+
+        // Create the companyShortName paragraph
+        var companyShortName = document.createElement("p");
+        companyShortName.classList.add("kh-text-center", "kh-text-secondary");
+        companyShortName.id = "kh-companyShortName";
+
+        // Create the company-social-links element
+        var companySocialLinksContainer = document.createElement("div");
+        companySocialLinksContainer.classList.add("kh-d-flex", "kh-align-items-center", "kh-justify-content-center", "kh-mb-3");
+
+        var companySocialLinks = document.createElement("div");
+        companySocialLinks.classList.add("kh-company-social-links", "kh-align-middle");
+
+        // Create the footer-content element
+        var footerContent = document.createElement("div");
+        footerContent.classList.add("kh-text-center", "kh-py-3", "kh-footer-content", "kh-w-100", "kh-d-flex", "kh-align-items-center", "kh-justify-content-center");
+
+        // Create the year span
+        var yearSpan = document.createElement("span");
+        yearSpan.classList.add("kh-text-secondary", "kh-align-middle", "kh-pr-2", "kh-font-normal");
+        yearSpan.innerHTML = '&copy; <span id="year"></span> Keka Hire. Powered by ';
+
+        // Create the keka logo anchor
+        var kekaLogoAnchor = document.createElement("a");
+        kekaLogoAnchor.href = "https://www.keka.com";
+        kekaLogoAnchor.target = "_blank";
+
+        // Create the keka logo image
+        var kekaLogoImage = document.createElement("img");
+        kekaLogoImage.width = "50";
+        kekaLogoImage.src = "https://cdn.keka.com/shared/branding/logo/V2/keka-full-24.svg";
+
+        // Append elements to their respective parent containers
+        footer.appendChild(companyShortName);
+        footer.appendChild(companySocialLinksContainer);
+        companySocialLinksContainer.appendChild(companySocialLinks);
+        footerContent.appendChild(yearSpan);
+        kekaLogoAnchor.appendChild(kekaLogoImage);
+        footerContent.appendChild(kekaLogoAnchor);
+        footer.appendChild(footerContent);
+
+        var mainContainer = document.getElementById("kh-main-container");
+        mainContainer.appendChild(footer);
+    }
+
+    function init() {
+        khSetStyles();
+        khSetJobFilterContainer();
+        khSetJobWidgetContainer();
+        if (!window.isCareersPage) {
+            khSetFooterContainer();
+        }
+    }
+
+    const SalaryPeriod = {
+        0: "Not Available",
+        1: "Hourly",
+        2: "Bi Weekly",
+        3: "Monthly",
+        4: "Annual"
+    }
+
+    const SocialNetworkType = {
+        Skype: 0,
+        LinkedIn: 1,
+        Facebook: 2,
+        Twitter: 3,
+        GooglePlus: 4,
+        Website: 5,
+        GitHub: 6,
+        Medium: 7,
+        Behance: 8,
+        Instagram: 9,
+        Dribble: 10,
+        Quora: 11,
+        Youtube: 12,
+    };
+
+    var jobTypeList = [
+        {
+            id: 1,
+            name: "Part Time",
+        },
+        {
+            id: 2,
+            name: "Full Time",
+        },
+    ];
+
+    if (document.readyState != 'loading') {
+        loadEmbedJobs();
+    }
+
+    function loadEmbedJobs() {
+        init();
+        getCareerPortalInfo().then(applyCompanyTheme);
+        var departmentList = [];
+        var globalFilterGroupsData = null;
+        var businessUnitList = [];
+        var locationList = [];
+        var locationListWithNoCountry = [];
+        var jobList = [];
+        var filtersTemplate;
+        let selectedLocations = new Set();
+        var applyStyles = false;
+
+        function applyCompanyTheme(companyInfo) {
+            if (document.querySelector("#kh-companyShortName")) {
+                document.querySelector("#kh-companyShortName").textContent = companyInfo.shortName;
+            }
+            khGetTargetContainer().querySelector('.kh-main-container').style.fontFamily = companyInfo.fontFamily;
+            document.querySelector('.kh-main-container').style.setProperty('--font-size', companyInfo.fontSize == 0 ? '14px' : companyInfo.fontSize == 1 ? '16px' : '18px');
+            document.body.style.setProperty('--font-family', companyInfo.fontFamily ?? 'segoe ui');
+            document.body.style.setProperty('--font-size', companyInfo.fontSize == 0 ? '14px' : companyInfo.fontSize == 1 ? '16px' : '18px');
+            if (companyInfo.headingColor) {
+                document.body.style.setProperty('--heading-color', companyInfo.headingColor);
+            }
+            if (companyInfo.descriptionColor) {
+                document.body.style.setProperty('--description-color', companyInfo.descriptionColor);
+            }
+            document.body.style.setProperty('--theme-color', hexToRgbNew(companyInfo.careersPortalColorCode) || hexToRgbNew('#356BB4'));
+            document.body.style.setProperty('--brand-color', `rgb(var(--theme-color))`);
+            if (companyInfo.backgroundColor) {
+                document.body.style.setProperty('--background-color', `rgb(${hexToRgbNew(companyInfo.backgroundColor) || hexToRgbNew('#356BB4')})`);
+            }
+            document.body.style.setProperty('--font-size-increment', companyInfo.fontSize == 0 ? '6px' : companyInfo.fontSize == 1 ? '8px' : '12px');
+            document.body.style.setProperty('--button-label-color', companyInfo.buttonLabelColor ?? '#ffffff');
+        }
+
+        function setupWidgetFromCompanyData(companyInfo, jobs, orgColorCode, orgSocialLinks) {
+            jobListingFormat = companyInfo.jobListingSetting.jobListingFormat;
+            jobGroupByItem = !companyInfo.jobListingSetting.groupBy ? "department" : companyInfo.jobListingSetting.groupBy;
+            hasJobSalaryRangeField = companyInfo.jobListingSetting.jobFields?.map((l) => l.toLowerCase()).includes("salaryrange");
+            hasJobLocationField = companyInfo.jobListingSetting.jobFields?.map((l) => l.toLowerCase()).includes("location");
+            hasJobExperienceField = companyInfo.jobListingSetting.jobFields?.map((l) => l.toLowerCase()).includes("experience");
+            hasJobTypeField = companyInfo.jobListingSetting.jobFields?.map((l) => l.toLowerCase()).includes("jobtype");
+            hasJobIdField = companyInfo.jobListingSetting.jobFields?.map((l) => l.toLowerCase()).includes("jobnumber");
+            hasJobPostingDateField = companyInfo.jobListingSetting.jobFields?.map((l) => l.toLowerCase()).includes("dateofposting");
+            hasJobDepartmentFilter = companyInfo.jobListingSetting.filters?.map((l) => l.toLowerCase()).includes("department");
+            hasJobLocationFilter = companyInfo.jobListingSetting.filters?.map((l) => l.toLowerCase()).includes("location");
+            hasJobTypeFilter = companyInfo.jobListingSetting.filters?.map((l) => l.toLowerCase()).includes("jobtype");
+            locationList = [];
+            locationListWithNoCountry = [];
+            jobList = jobs;
+            applyStyles = companyInfo.applyStyles;
+            filtersTemplate =
+                '<div class="kh-card">' +
+                '<div class="kh-card-body">' +
+                '<ul class="kh-list-unstyled kh-overflow-x-hidden kh-mb-0">' +
+                '<li>' +
+                '<div class="kh-d-flex kh-align-items-center">' +
+                '<div class="kh-input-search kh-position-relative kh-w-100 kh-mb-0 kh-d-flex kh-align-items-center">' +
+                '<span class="ki-search ' + (applyStyles ? 'kch-description-color' : 'kh-icon ')+' kh-icon-sm kh-position-absolute kh-ml-8 kh-d-flex kh-align-items-center"></span>' +
+                '<input class="kh-form-control" placeholder="Search" onkeyup="filterJobs()" id="kh-hiro-searchText">' +
+                '</div>' +
+                '<span class="' + (applyStyles ? 'kch-description-color' : 'kh-icon ') +' ki-clear-filter kh-icon-lg kh-cursor-pointer kh-ml-2" onclick="clearAllFilters()"></span>' +
+                '</div>' +
+                '</li>' +
+                (hasJobDepartmentFilter
+                    ? '<li class="kh-mt-3">' +
+                    '<div class="kh-accordion-item">' +
+                    '<div class="kh-accordion-title">' +
+                    '<div class="kh-d-flex kh-align-items-center kh-justify-content-between kh-cursor-pointer">' +
+                    '<span class="kh-font-large">Department</span>' +
+                    '<span class="ki-arrow-dropdown ' + (applyStyles ? 'kch-description-color' : 'kh-icon ') +' kh-d-flex kh-align-items-center kh-justify-content-center"></span>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="kh-accordion-content">' +
+                    '<ul class="kh-list-unstyled kh-font-normal kh-my-2 kh-ml-4" id="kh-hiro-departments"></ul>' +
+                    '</div>' +
+                    '</div>' +
+                    '</li>' : "") +
+                (hasJobLocationFilter
+                    ? '<li class="kh-mt-3">' +
+                    '<div class="kh-accordion-item">' +
+                    '<div class="kh-accordion-title">' +
+                    '<div class="kh-d-flex kh-align-items-center kh-justify-content-between kh-cursor-pointer">' +
+                    '<span class="kh-font-large">Location</span>' +
+                    '<span class="ki-arrow-dropdown ' + (applyStyles ? 'kch-description-color' : 'kh-icon ') +' kh-d-flex kh-align-items-center kh-justify-content-center"></span>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="kh-accordion-content">' +
+                    '<ul class="kh-list-unstyled kh-font-normal kh-my-2 kh-ml-4" id="kh-hiro-locations"></ul>' +
+                    '</div>' +
+                    '</div>' +
+                    '</li>' : "") +
+                (hasJobTypeFilter
+                    ? '<li class="kh-mt-3">' +
+                    '<div class="kh-accordion-item">' +
+                    '<div class="kh-accordion-title">' +
+                    '<div class="kh-d-flex kh-align-items-center kh-justify-content-between kh-cursor-pointer">' +
+                    '<span class="kh-font-large">Job Type</span>' +
+                    '<span class="ki-arrow-dropdown ' + (applyStyles ? 'kch-description-color' : 'kh-icon ') +' kh-d-flex kh-align-items-center kh-justify-content-center"></span>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="kh-accordion-content">' +
+                    '<ul class="kh-list-unstyled kh-font-normal kh-my-2 kh-ml-4" id="kh-hiro-jobType"></ul>' +
+                    '</div>' +
+                    '</div>' +
+                    '</li>' : "") +
+                '</ul>';
+            document.querySelector("#kh-embed-jobs-filters").insertAdjacentHTML("afterbegin", filtersTemplate);
+            khGetTargetContainer().querySelector('.kh-main-container').style.setProperty("--theme-color", hexToRgbNew(orgColorCode.toString()) || hexToRgbNew("#356BB4"));
+            jobList.forEach((job) => {
+                job.jobLocations.forEach((location) => {
+                    if (location.countryName != '' && location.countryName && !locationList.some(function (l) { return l.name ? l.name === location.name : l.city === location.city })) {
+                        locationList.push(location);
+                    }
+                });
+            });
+            jobList.forEach((job) => {
+                job.jobLocations.forEach((loc) => {
+                    if (!locationListWithNoCountry.some(function (lc) { return lc.name ? lc.name === loc.name || lc.name === loc.city : lc.city === loc.city }) && (loc.countryName == '' || !loc.countryName)) {
+                        locationListWithNoCountry.push(loc);
+                    }
+                });
+            });
+        }
+
+        function JobWidget() {
+            var portalName = khConfig.portalName ?? "default";
+
+            // Step 1: fetch group link status, then branch fetches based on result.
+            fetch(khConfig.domain + "api/embedjobs/grouplinkstatus/" + khConfig.identifier)
+                .then(function(r) { return r.json(); })
+                .then(function(groupLinkStatus) {
+                    var isGroupLinked = groupLinkStatus && groupLinkStatus.isGroupLinked;
+
+                    var commonFetches = [
+                        fetch(khConfig.domain + `api/embedjobs/${portalName}/active/` + khConfig.identifier).then(function(r) { return r.json(); }),
+                        fetch(khConfig.domain + `api/embedjobs/${portalName}/colorcode/` + khConfig.identifier).then(function(r) { return r.json(); }),
+                        fetch(khConfig.domain + `api/embedjobs/${portalName}/sociallinks`).then(function(r) { return r.json(); }),
+                        getCareerPortalInfo(),
+                    ];
+
+                    if (!isGroupLinked) {
+                        Promise.all(
+                            [fetch(khConfig.domain + "api/embedjobs/departments/" + khConfig.identifier).then(function(r) { return r.json(); })]
+                            .concat(commonFetches)
+                        ).then(function(results) {
+                            var departments = results[0];
+                            var jobs = results[1], orgColorCode = results[2], orgSocialLinks = results[3], CompanyData = results[4];
+                            setupWidgetFromCompanyData(CompanyData, jobs, orgColorCode, orgSocialLinks);
+                            departmentList = departments.filter(function(d) {
+                                return jobList.map(function(j) { return j.departmentIdentifier; }).indexOf(d.identifier) !== -1;
+                            });
+                            bindFilters();
+                            bindJobs(jobList);
+                            addSocialLinks(orgSocialLinks);
+                            accordion();
+                        });
+                    } else {
+                        Promise.all([
+                            fetch(khConfig.domain + "api/embedjobs/globalfiltergroups/" + khConfig.identifier).then(function(r) { return r.json(); }),
+                            fetch(khConfig.domain + "api/embedjobs/departments/" + khConfig.identifier).then(function(r) { return r.json(); }),
+                            fetch(khConfig.domain + "api/embedjobs/businessunits/" + khConfig.identifier).then(function(r) { return r.json(); }),
+                        ].concat(commonFetches)).then(function(results) {
+                            var globalFilterGroups = results[0];
+                            var departments = results[1];
+                            var businessUnits = results[2];
+                            var jobs = results[3], orgColorCode = results[4], orgSocialLinks = results[5], CompanyData = results[6];
+                            setupWidgetFromCompanyData(CompanyData, jobs, orgColorCode, orgSocialLinks);
+                            globalFilterGroupsData = globalFilterGroups;
+                            departmentList = departments;
+                            businessUnitList = businessUnits;
+                            bindFilters();
+                            bindJobs(jobList);
+                            addSocialLinks(orgSocialLinks);
+                            accordion();
+                        });
+                    }
+                });
+        }
+
+        function addSocialLinks(socialLinks) {
+            var socialLinksContainer = document.querySelector(".kh-company-social-links");
+            if (socialLinks && socialLinksContainer) {
+                for (var i = 0; i < socialLinks.length; i++) {
+                    if (socialLinks[i].type === SocialNetworkType.LinkedIn) {
+                        var linkedInLink = document.createElement("a");
+                        linkedInLink.className = "header-3 kh-mr-3";
+                        linkedInLink.target = "_blank";
+                        linkedInLink.href = socialLinks[i].url;
+                        linkedInLink.innerHTML = '<span class="ki-linkedin-square"></span>';
+                        socialLinksContainer.appendChild(linkedInLink);
+                    } else if (socialLinks[i].type === SocialNetworkType.Twitter) {
+                        var twitterLink = document.createElement("a");
+                        twitterLink.className = "header-3 kh-mr-3";
+                        twitterLink.target = "_blank";
+                        twitterLink.href = socialLinks[i].url;
+                        twitterLink.innerHTML = '<span class="ki-twitter"></span>';
+                        socialLinksContainer.appendChild(twitterLink);
+                    } else if (socialLinks[i].type === SocialNetworkType.Instagram) {
+                        var instagramLink = document.createElement("a");
+                        instagramLink.className = "header-3 kh-mr-3";
+                        instagramLink.target = "_blank";
+                        instagramLink.href = socialLinks[i].url;
+                        instagramLink.innerHTML = '<span class="ki-instagram-fill"></span>';
+                        socialLinksContainer.appendChild(instagramLink);
+                    } else if (socialLinks[i].type === SocialNetworkType.Youtube) {
+                        var youtubeLink = document.createElement("a");
+                        youtubeLink.className = "header-3 kh-mr-3";
+                        youtubeLink.target = "_blank";
+                        youtubeLink.href = socialLinks[i].url;
+                        youtubeLink.innerHTML = '<span class="ki-youtube-fill"></span>';
+                        socialLinksContainer.appendChild(youtubeLink);
+                    }
+                }
+            }
+        }
+
+        function hexToRgbNew(hex) {
+            const rgbArray = hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => "#" + r + r + g + g + b + b).substring(1).match(/.{2}/g).map((x) => parseInt(x, 16));
+            return rgbArray[0] + "," + rgbArray[1] + "," + rgbArray[2];
+        }
+
+        function getJobGroupLabel(job) {
+            if (!globalFilterGroupsData || !job.groupLinkIdentifier) {
+                return job.departmentName;
+            }
+            var allItems = (globalFilterGroupsData[0] && globalFilterGroupsData[0].groupList) || [];
+            var linkItem = allItems.find(function (item) { return item.identifier === job.groupLinkIdentifier; });
+            if (!linkItem) return job.departmentName;
+            var buItem = allItems.find(function (item) { return item.systemGroupType === 1 && item.id === linkItem.parentNodeId; });
+            var buName = buItem ? buItem.name : '';
+            return buName ? linkItem.name + ' (' + buName + ')' : linkItem.name;
+        }
+
+        function bindJobs(jobs) {
+
+            const jobGroupBy = jobs.reduce((group, job) => {
+                let groupKey = getJobGroupLabel(job);
+                if (!groupKey) {
+                    group["Other Jobs"] = group["Other Jobs"] ?? [];
+                    if (!group["Other Jobs"].some(existingJob => existingJob.id === job.id)) {
+                        group["Other Jobs"].push(job);
+                    }
+                } else {
+                    group[groupKey] = group[groupKey] ?? [];
+                    if (!group[groupKey].some(existingJob => existingJob.id === job.id)) {
+                        group[groupKey].push(job);
+                    }
+                }
+                return group;
+            }, {});
+
+            const otherDepartmentJobs = jobGroupBy["Other Jobs"] ?? [];
+            delete jobGroupBy["Other Jobs"];
+
+            const jobGroupByCountry = jobs.reduce((group, job) => {
+                if (!job.jobLocations || job.jobLocations.length === 0) {
+                    group["Other Jobs"] = group["Other Jobs"] ?? [];
+                    if (!group["Other Jobs"].some(existingJob => existingJob.id === job.id)) {
+                        group["Other Jobs"].push(job);
+                    }
+                } else {
+                    job.jobLocations?.forEach(location => {
+                        const { countryName } = location;
+                        if (!countryName || countryName == '') {
+                            group["Other Jobs"] = group["Other Jobs"] ?? [];
+                            if (!group["Other Jobs"].some(existingJob => existingJob.id === job.id)) {
+                                group["Other Jobs"].push(job);
+                            }
+                        }
+                        else {
+                            group[countryName] = group[countryName] ?? [];
+                            if (!group[countryName].some(existingJob => existingJob.id === job.id)) {
+                                group[countryName].push(job);
+                            }
+                        }
+                    });
+                }
+                return group;
+            }, {});
+
+            const otherCountryJobs = jobGroupByCountry["Other Jobs"] ?? [];
+            delete jobGroupByCountry["Other Jobs"];
+
+            const jobGroupByLocationName = jobs.reduce((group, job) => {
+                if (!job.jobLocations || job.jobLocations.length === 0) {
+                    group["Other Jobs"] = group["Other Jobs"] ?? [];
+                    if (!group["Other Jobs"].some(existingJob => existingJob.id === job.id)) {
+                        group["Other Jobs"].push(job);
+                    }
+                } else {
+                    job.jobLocations.forEach(location => {
+                        const locationKey = location.name ?? location.city ?? location.state;
+                        group[locationKey] = group[locationKey] ?? [];
+                        if (!group[locationKey].some(existingJob => existingJob.id === job.id)) {
+                            group[locationKey].push(job);
+                        }
+                    });
+                }
+                return group;
+            }, {});
+
+            const otherLocationJobs = jobGroupByLocationName["Other Jobs"] ?? [];
+            delete jobGroupByLocationName["Other Jobs"];
+
+            let groupedJobs = jobGroupByItem == "location" ? jobGroupByLocationName : jobGroupByItem == "country" ? jobGroupByCountry : jobGroupBy;
+            let groupedOtherJobs = jobGroupByItem == "location" ? otherLocationJobs : jobGroupByItem == "country" ? otherCountryJobs : otherDepartmentJobs;
+
+            let filteredJobs = {};
+            let filteredOtherJobs = {};
+            if (jobGroupByItem != "department") {
+                selectedLocations.forEach(location => {
+                    const parsedLocation = JSON.parse(location);
+
+                    if (jobGroupByItem === "location") {
+                        const locationKey = parsedLocation.name || parsedLocation.city;
+                        if (jobGroupByLocationName[locationKey]) {
+                            filteredJobs[locationKey] = jobGroupByLocationName[locationKey];
+                        }
+
+                        if (parsedLocation.country == "Others") {
+                            filteredOtherJobs = otherLocationJobs;
+                        }
+                    } else if (jobGroupByItem === "country") {
+                        if (jobGroupByCountry[parsedLocation.country]) {
+                            filteredJobs[parsedLocation.country] = jobGroupByCountry[parsedLocation.country];
+                        }
+
+                        if (parsedLocation.country == "Others") {
+                            filteredOtherJobs = otherCountryJobs;
+                        }
+                    }
+
+                    groupedJobs = filteredJobs;
+                    groupedOtherJobs = filteredOtherJobs;
+                });
+            }
+
+            const orderedJobs = Object.keys(groupedJobs).sort().reduce(function (result, key) {
+                result[key] = groupedJobs[key];
+                result[key].sort((a, b) => a.title.toLowerCase() > b.title.toLowerCase ? 1 : -1);
+                return result;
+            }, {});
+
+            var jobListTemplate = "";
+            var portalNameUrl = (typeof khConfig.portalName !== 'undefined') ? khConfig.portalName + "/" : "";
+            const urlParams = new URLSearchParams(window.location.search);
+            const source = urlParams.get('source');
+            Object.keys(orderedJobs).forEach((departmentIndex) => {
+                jobListTemplate += '<div class="kh-mb-3 kh-row kh-no-gutters kh-w-100"><h1 class="kh-font-weight-600 kh-col-sm-12 kh-mb-16 kh-mt-0 kh-d-flex ' + (applyStyles ? 'kch-heading-color' : '') + ' kh-align-items-center kh-flex-wrap kh-text-truncate-2" title="' + departmentIndex + '">' + departmentIndex + '<span class="kh-text-lowercase kh-badge kh-badge-pill  ' + (applyStyles ? 'kch-bg-brand-color kch-btn-label-color' : 'kch-job-section-badge kh-ml-2 kh-font-weight-normal') +'  kh-ml-2 kh-text-small kh-px-3 kh-py-1">' + orderedJobs[departmentIndex].length + (orderedJobs[departmentIndex].length == 1 ? ' job' : ' jobs') + '</span></h1>';
+                orderedJobs[departmentIndex].forEach((job, index) => {
+                    if (job && job.experience) {
+                        const experienceRegex = /^[0-9]+[.]?[0-9]*[ ]*[+]?$/g;
+                        job.experience = experienceRegex.test(job.experience) && job.experience > 0 ? job.experience + (+job.experience === 1 ? " year" : " years") : job.experience;
+                    }
+                    hasJobSalaryRangeItem = hasJobSalaryRangeField && job.salaryRangeFormat && job.salaryRange.maximum !== 0;
+                    hasJobLocationItem = hasJobLocationField && job.jobLocations.length > 0;
+                    hasJobExperienceItem = hasJobExperienceField && job.experience;
+                    hasJobTypeItem = hasJobTypeField && job.jobType;
+                    hasJobIdItem = hasJobIdField && job.jobNumber;
+                    jobListTemplate +=
+                        '<div class="kh-col-sm-12 kh-mb-16 ' + (jobListingFormat == 1 ? 'kh-col-md-12' : 'kh-col-md-6') + (jobListingFormat == 2 && index % 2 == 0 ? ' kh-pr-md-8' : '') + (jobListingFormat == 2 && index % 2 != 0 ? ' kh-pl-md-8' : '') + '">' +
+                        '<a class="kh-card kh-job-card kh-h-100 kh-job-container" href="' + khConfig.domain + portalNameUrl + 'jobdetails/' + job.id + (source ? ('?source=' + source) : '') + (window.isCareersPage ? '">' : '" target="_blank">') +
+                        '<div class="kh-card-body kh-d-flex kh-flex-column kh-py-3">' +
+                        '<div class="kh-d-flex kh-align-items-center kh-justify-content-between"><div class="kh-w-100">' +
+                        '<div class="' + (applyStyles ? 'kch-job-heading' : '') + ' kh-d-flex kh-align-items-center kh-mb-1 kh-flex-wrap"><h4 class="kh-job-title ' + (applyStyles ? '' : 'kch-text-black') +' kh-text-truncate-1' + (hasJobPostingDateField ? ' kh-max-w-75' : '') + ' kh-font-weight-600 kh-mb-0 kh-mt-0 kh-mr-2" title="' + job.title + '">' + job.title + "</h4>" +
+                        (hasJobPostingDateField ? '<small class="' + (applyStyles ? 'kch-job-time-span kch-description-color' : 'kh-text-secondary kh-font-normal')  + '">' + job.publishedSinceDays + (job.publishedSinceDays > 1 ? " days" : " day") + " ago</small>" : "") +
+                        "</div>" +
+                        '<div class="kh-d-flex kh-text-secondary kh-align-items-center mt-auto">' +
+                        '<div class="kh-d-flex kh-align-items-center kh-flex-wrap">' +
+                        (hasJobLocationItem ? `${job.jobLocations.length > 2 ? '<span class="kh-font-large kh-text-capitalize kh-text-truncate-1 kh-mr-1" title="' + (job.jobLocations && job.jobLocations[0].name ? job.jobLocations[0].name : job.jobLocations[0].city) + '">' +
+                            (job.jobLocations && job.jobLocations[0].name
+                                ? job.jobLocations[0].name
+                                : job.jobLocations[0].city) +
+                            '</span><span class="kh-font-normal" title="' +
+                            job.jobLocations.slice(1).map((j) => (j.name ? j.name : j.city)).join(", ") + '"> +' +
+                            (job.jobLocations.length - 1) +
+                            " locations </span>"
+                            : job.jobLocations.length == 2
+                                ? '<span class="kh-font-large kh-text-capitalize text-nowrap kh-text-truncate-1" title="' +
+                                (job.jobLocations && job.jobLocations[0].name
+                                    ? job.jobLocations[0].name
+                                    : job.jobLocations[0].city) +
+                                '">' +
+                                (job.jobLocations && job.jobLocations[0].name
+                                    ? job.jobLocations[0].name
+                                    : job.jobLocations[0].city) +
+                                "</span>,&nbsp;" +
+                                '<span class="kh-font-large kh-text-capitalize text-nowrap kh-text-truncate-1" title="' +
+                                (job.jobLocations && job.jobLocations[1].name
+                                    ? job.jobLocations[1].name
+                                    : job.jobLocations[1].city) +
+                                '"> ' +
+                                (job.jobLocations && job.jobLocations[1].name
+                                    ? job.jobLocations[1].name
+                                    : job.jobLocations[1].city) +
+                                "</span>"
+                                : '<span class="kh-font-large kh-text-capitalize text-nowrap kh-text-truncate-1" title="' +
+                                (job.jobLocations && job.jobLocations[0].name
+                                    ? job.jobLocations[0].name
+                                    : job.jobLocations[0].city) +
+                                '">' +
+                                (job.jobLocations && job.jobLocations[0].name
+                                    ? job.jobLocations[0].name
+                                    : job.jobLocations[0].city) +
+                                "</span>"
+                            }`
+                            : "") +
+                        (hasJobLocationItem && hasJobExperienceItem
+                            ? '<div class="kh-dot kh-dot-xs kh-bg-slate-900 kh-mx-2"></div>'
+                            : "") +
+                        (hasJobExperienceItem
+                            ? '<span class="kh-font-normal kh-text-capitalize kh-text-truncate-1" title="' +
+                            job.experience +
+                            '">' +
+                            job.experience +
+                            " </span>"
+                            : "") +
+                        (((hasJobLocationItem || hasJobExperienceItem) && hasJobTypeItem)
+                            ? '<div class="kh-dot kh-dot-xs kh-bg-slate-900 kh-mx-2"></div>'
+                            : "") +
+                        (hasJobTypeItem
+                            ? '<p class="kh-font-normal kh-clear-magin" >' +
+                            (job.jobType && job.jobType == 2 ? "Full Time" : "Part time") +
+                            '</p>'
+                            : '') +
+                        (((hasJobLocationItem || hasJobExperienceItem || hasJobTypeItem) && hasJobIdItem)
+                            ? '<div class="kh-dot kh-dot-xs kh-bg-slate-900 kh-mx-2"></div>'
+                            : "") +
+                        (hasJobIdItem
+                            ? '<p class="kh-font-normal kh-clear-magin" >' + job.jobNumber + '</p>'
+                            : '') +
+                        ((hasJobLocationItem || hasJobExperienceItem || hasJobTypeItem || hasJobIdItem) && hasJobSalaryRangeItem
+                            ? '<div class="kh-dot kh-dot-xs kh-bg-slate-900 kh-mx-2"></div>'
+                            : "") +
+                        (hasJobSalaryRangeItem
+                            ? (job.salaryRange.currency
+                                ? '<p class="kh-mr-1 kh-font-normal kh-clear-magin">' +
+                                job.salaryRange.currency +
+                                "</p>"
+                                : "") +
+                            '<p class="kh-font-normal kh-clear-magin">' +
+                            job.salaryRange.minimum +
+                            '</p>' +
+                            '<span class="kh-mx-4">-</span>' +
+                            '<p class="kh-font-normal kh-clear-magin">' +
+                            job.salaryRange.maximum + (job.salaryRange.salaryPeriod ? (' (' + SalaryPeriod[job.salaryRange.salaryPeriod] + ')') : '') +
+                            '</p>'
+                            : "") +
+                        "</div>" +
+                        "</div>" +
+                        "</div>" +
+                        '<div class="kh-px-1 kh-d-none ' + (jobListingFormat == 1 || jobListingFormat == 2 ? 'kh-d-md-block ' : '') + '"><span class="ki-circle-arrow-right-fill kh-icon kh-icon-lg kh-my-auto kh-rotate-315 kh-d-none"></span></div>' +
+                        "</div>" +
+                        "</div>" +
+                        "</a>" +
+                        "</div>";
+                });
+                jobListTemplate += '</div>';
+            });
+
+            if (groupedOtherJobs && groupedOtherJobs.length) {
+                jobListTemplate += '<div class="kh-mb-3 kh-row kh-no-gutters kh-w-100"><h1 class="kh-font-weight-600 kh-col-sm-12 kh-mb-16 kh-mt-0 kh-d-flex kh-align-items-center kh-flex-wrap kh-text-truncate-2 ' + (applyStyles ? 'kch-description-color' : '') + '" title="' + "Other Jobs" + '">' + "Other Jobs" + '<span class="kh-text-lowercase kh-badge kh-badge-pill ' + (applyStyles ? 'kch-bg-brand-color kch-btn-label-color' : 'kch-job-section-badge kh-ml-2 kh-font-weight-normal') +' kh-ml-2 kh-text-small kh-px-3 kh-py-1">' + groupedOtherJobs.length + (groupedOtherJobs.length == 1 ? ' job' : ' jobs') + '</span></h1>';
+                groupedOtherJobs.forEach((job, index) => {
+                    if (job && job.experience) {
+                        const experienceRegex = /^[0-9]+[.]?[0-9]*[ ]*[+]?$/g;
+                        job.experience = experienceRegex.test(job.experience) && job.experience > 0 ? job.experience + (+job.experience === 1 ? " year" : " years") : job.experience;
+                    }
+                    hasJobSalaryRangeItem = hasJobSalaryRangeField && job.salaryRangeFormat && job.salaryRange.maximum !== 0;
+                    hasJobLocationItem = hasJobLocationField && job.jobLocations.length > 0;
+                    hasJobExperienceItem = hasJobExperienceField && job.experience;
+                    hasJobTypeItem = hasJobTypeField && job.jobType;
+                    hasJobIdItem = hasJobIdField && job.jobNumber;
+                    jobListTemplate +=
+                        '<div class="kh-col-sm-12 kh-mb-16 ' + (jobListingFormat == 1 ? 'kh-col-md-12' : 'kh-col-md-6') + (jobListingFormat == 2 && index % 2 == 0 ? ' kh-pr-md-8' : '') + (jobListingFormat == 2 && index % 2 != 0 ? ' kh-pl-md-8' : '') + '">' +
+                        '<a class="kh-card kh-job-card kh-h-100 kh-job-container" href="' + khConfig.domain + portalNameUrl + 'jobdetails/' + job.id + (source ? ('?source=' + source) : '') + (window.isCareersPage ? '">' : '" target="_blank">') +
+                        '<div class="kh-card-body kh-d-flex kh-flex-column kh-py-3">' +
+                        '<div class="kh-d-flex kh-align-items-center kh-justify-content-between"><div class="kh-w-100">' +
+                    '<div class="kh-d-flex kh-align-items-center kh-mb-1 kh-flex-wrap"><h4 class="kh-job-title ' + (applyStyles ? '' : 'kch-text-black') + ' kh-text-truncate-1' + (hasJobPostingDateField ? ' kh-max-w-75' : '') + ' kh-text-dark kh-font-weight-600 kh-mb-0 kh-mr-2 kh-mt-0 kh-mr-2" title="' + job.title + '">' + job.title + "</h4>" +
+                    (hasJobPostingDateField ? '<small class="' + (applyStyles ? 'kch-job-time-span kch-description-color' : 'kh-text-secondary kh-font-normal') + '">' + job.publishedSinceDays + (job.publishedSinceDays > 1 ? " days" : " day") + " ago</small>" : "") +
+                        "</div>" +
+                        '<div class="kh-d-flex kh-text-secondary kh-align-items-center mt-auto">' +
+                        '<div class="kh-d-flex kh-align-items-center kh-flex-wrap">' +
+                        (hasJobLocationItem ? `${job.jobLocations.length > 2 ? '<span class="kh-font-large kh-text-capitalize kh-text-truncate-1 kh-mr-1" title="' + (job.jobLocations && job.jobLocations[0].name ? job.jobLocations[0].name : job.jobLocations[0].city) + '">' +
+                            (job.jobLocations && job.jobLocations[0].name
+                                ? job.jobLocations[0].name
+                                : job.jobLocations[0].city) +
+                            '</span><span class="kh-font-normal" title="' +
+                            job.jobLocations.slice(1).map((j) => (j.name ? j.name : j.city)).join(", ") + '"> +' +
+                            (job.jobLocations.length - 1) +
+                            " locations </span>"
+                            : job.jobLocations.length == 2
+                                ? '<span class="kh-font-large kh-text-capitalize text-nowrap kh-text-truncate-1" title="' +
+                                (job.jobLocations && job.jobLocations[0].name
+                                    ? job.jobLocations[0].name
+                                    : job.jobLocations[0].city) +
+                                '">' +
+                                (job.jobLocations && job.jobLocations[0].name
+                                    ? job.jobLocations[0].name
+                                    : job.jobLocations[0].city) +
+                                "</span>,&nbsp;" +
+                                '<span class="kh-font-large kh-text-capitalize text-nowrap kh-text-truncate-1" title="' +
+                                (job.jobLocations && job.jobLocations[1].name
+                                    ? job.jobLocations[1].name
+                                    : job.jobLocations[1].city) +
+                                '"> ' +
+                                (job.jobLocations && job.jobLocations[1].name
+                                    ? job.jobLocations[1].name
+                                    : job.jobLocations[1].city) +
+                                "</span>"
+                                : '<span class="kh-font-large kh-text-capitalize text-nowrap kh-text-truncate-1" title="' +
+                                (job.jobLocations && job.jobLocations[0].name
+                                    ? job.jobLocations[0].name
+                                    : job.jobLocations[0].city) +
+                                '">' +
+                                (job.jobLocations && job.jobLocations[0].name
+                                    ? job.jobLocations[0].name
+                                    : job.jobLocations[0].city) +
+                                "</span>"
+                            }`
+                            : "") +
+                        (hasJobLocationItem && hasJobExperienceItem
+                            ? '<div class="kh-dot kh-dot-xs kh-bg-slate-900 kh-mx-2"></div>'
+                            : "") +
+                        (hasJobExperienceItem
+                            ? '<span class="kh-font-normal kh-text-capitalize kh-text-truncate-1" title="' +
+                            job.experience +
+                            '">' +
+                            job.experience +
+                            " </span>"
+                            : "") +
+                        (((hasJobLocationItem || hasJobExperienceItem) && hasJobTypeItem)
+                            ? '<div class="kh-dot kh-dot-xs kh-bg-slate-900 kh-mx-2"></div>'
+                            : "") +
+                        (hasJobTypeItem
+                            ? '<p class="kh-font-normal kh-clear-magin" >' +
+                            (job.jobType && job.jobType == 2 ? "Full Time" : "Part time") +
+                            '</p>'
+                            : '') +
+                        (((hasJobLocationItem || hasJobExperienceItem || hasJobTypeItem) && hasJobIdItem)
+                            ? '<div class="kh-dot kh-dot-xs kh-bg-slate-900 kh-mx-2"></div>'
+                            : "") +
+                        (hasJobIdItem
+                            ? '<p class="kh-font-normal kh-clear-magin" >' + job.jobNumber + '</p>'
+                            : '') +
+                        ((hasJobLocationItem || hasJobExperienceItem || hasJobTypeItem || hasJobIdItem) && hasJobSalaryRangeItem
+                            ? '<div class="kh-dot kh-dot-xs kh-bg-slate-900 kh-mx-2"></div>'
+                            : "") +
+                        (hasJobSalaryRangeItem
+                            ? (job.salaryRange.currency
+                                ? '<p class="kh-mr-1 kh-font-normal kh-clear-magin">' +
+                                job.salaryRange.currency +
+                                "</p>"
+                                : "") +
+                            '<p class="kh-font-normal kh-clear-magin">' +
+                            job.salaryRange.minimum +
+                            '</p>' +
+                            '<span class="kh-mx-4">-</span>' +
+                            '<p class="kh-font-normal kh-clear-magin">' +
+                            job.salaryRange.maximum + (job.salaryRange.salaryPeriod ? (' (' + SalaryPeriod[job.salaryRange.salaryPeriod] + ')') : '' ) +
+                            '</p>' 
+                            : "") +
+                        "</div>" +
+                        "</div>" +
+                        "</div>" +
+                        '<div class="kh-px-1 kh-d-none ' + (jobListingFormat == 1 || jobListingFormat == 2 ? 'kh-d-md-block ' : '') + '"><span class="ki-circle-arrow-right-fill kh-icon kh-icon-lg kh-my-auto kh-rotate-315 kh-d-none"></span></div>' +
+                        "</div>" +
+                        "</div>" +
+                        "</a>" +
+                        "</div>";
+                });
+                jobListTemplate += '</div>';
+            }
+
+            var jobWidget = document.getElementById("kh-job-widget");
+            if (jobs.length > 0) {
+                jobWidget.innerHTML = jobListTemplate;
+            } else {
+                jobWidget.innerHTML = '<div class="kh-alert kh-alert-info kh-col-sm-12 kh-px-3 kh-mt-4">There are no job postings matching the filters.</div>';
+            }
+        }
+
+        function renderEmbedDeptCheckbox(container, dept) {
+            var listItem = document.createElement("li");
+            listItem.className = "kh-form-check";
+            container.appendChild(listItem);
+
+            var input = document.createElement("input");
+            input.className = "kh-form-check-input";
+            input.type = "checkbox";
+            input.id = "dept-" + dept.identifier;
+            input.value = dept.identifier;
+            input.name = "departments";
+            input.onchange = function () { filterJobs(); };
+            listItem.appendChild(input);
+
+            var label = document.createElement("label");
+            label.className = "kh-form-check-label kh-cursor-pointer kh-text-truncate-2 kh-pl-2";
+            label.setAttribute("for", "dept-" + dept.identifier);
+            label.innerHTML = dept.name;
+            listItem.appendChild(label);
+        }
+
+        function bindFilters() {
+            var departmentSelect = document.getElementById("kh-hiro-departments");
+            if (departmentSelect) {
+                if (!globalFilterGroupsData) {
+                    // Flat mode: departments fetched directly, filter to only those with active jobs.
+                    departmentList.forEach(function (department) {
+                        var listItem = document.createElement("li");
+                        listItem.className = "kh-form-check";
+                        departmentSelect.appendChild(listItem);
+
+                        var input = document.createElement("input");
+                        input.className = "kh-form-check-input";
+                        input.type = "checkbox";
+                        input.id = department.identifier;
+                        input.value = department.identifier;
+                        input.name = "departments";
+                        input.onchange = function () { filterJobs() };
+                        listItem.appendChild(input);
+
+                        var label = document.createElement("label");
+                        label.className = "kh-form-check-label kh-cursor-pointer kh-text-truncate-2 kh-pl-2";
+                        label.setAttribute("for", department.identifier);
+                        label.innerHTML = department.name;
+                        listItem.appendChild(label);
+                    });
+                } else {
+                    // BU-linked mode.
+                    // globalFilterGroupsData is an array with one entry whose groupList is flat,
+                    // mixing BU items (systemGroupType=1) and dept link items (systemGroupType=100).
+                    // parentNodeId identifies the BU; childNodeId/childNodeIdentifier identify the dept;
+                    // parentGroupId identifies the direct parent (BU id when direct, link item id when nested).
+                    var allGroupItems = (globalFilterGroupsData[0] && globalFilterGroupsData[0].groupList) || [];
+                    var activeGroupLinkIds = jobList.map(function (j) { return j.groupLinkIdentifier; }).filter(Boolean);
+
+                    // BU items filtered to those present in the fetched businessUnitList.
+                    var buItems = allGroupItems.filter(function (item) {
+                        return item.systemGroupType === 1 &&
+                            businessUnitList.some(function (b) { return b.id === item.id; });
+                    });
+
+                    // Dept link items: must have a childNodeId, and childNodeIdentifier must exist
+                    // in the fetched departmentList.
+                    var deptLinkItems = allGroupItems.filter(function (item) {
+                        return item.systemGroupType === 100 &&
+                            item.childNodeId &&
+                            departmentList.some(function (d) { return d.identifier === item.childNodeIdentifier; });
+                    });
+
+                    // Further narrow to links whose groupLinkIdentifier is present in at least one job.
+                    var activeDeptLinks = deptLinkItems.filter(function (d) {
+                        return activeGroupLinkIds.indexOf(d.identifier) !== -1;
+                    });
+
+                    buItems.forEach(function (bu) {
+                        var buDeptLinks = activeDeptLinks.filter(function (d) { return d.parentNodeId === bu.id; });
+                        if (!buDeptLinks.length) return;
+
+                        // Resolve BU display name from businessUnitList.
+                        var buData = businessUnitList.find(function (b) { return b.id === bu.id; });
+                        var buName = buData ? buData.name : bu.name;
+
+                        var buLi = document.createElement("li");
+                        buLi.className = "kh-accordion-item kh-mt-3";
+                        departmentSelect.appendChild(buLi);
+
+                        var buTitleDiv = document.createElement("div");
+                        buTitleDiv.className = "kh-accordion-title kh-d-flex kh-align-items-center kh-cursor-pointer";
+
+                        var buCheckbox = document.createElement("input");
+                        buCheckbox.type = "checkbox";
+                        buCheckbox.className = "kh-form-check-input";
+                        buCheckbox.id = "bu-select-" + bu.id;
+                        buTitleDiv.appendChild(buCheckbox);
+
+                        var buArrow = document.createElement("span");
+                        buArrow.className = "ki-arrow-dropdown kh-d-flex kh-align-items-center kh-justify-content-center";
+                        buTitleDiv.appendChild(buArrow);
+
+                        var buLabel = document.createElement("label");
+                        buLabel.className = "kh-form-check-label kh-cursor-pointer kh-pl-2 kh-font-large";
+                        buLabel.setAttribute("for", "bu-select-" + bu.id);
+                        buLabel.innerHTML = buName;
+                        buTitleDiv.appendChild(buLabel);
+
+                        buLi.appendChild(buTitleDiv);
+
+                        var buContentDiv = document.createElement("div");
+                        buContentDiv.className = "kh-accordion-content kh-ml-4";
+                        buContentDiv.style.display = "none";
+                        buLi.appendChild(buContentDiv);
+
+                        var buDeptList = document.createElement("ul");
+                        buDeptList.className = "kh-list-unstyled kh-my-2";
+                        buContentDiv.appendChild(buDeptList);
+
+                        // Direct links: parentGroupId === bu.id (no intermediate parent dept).
+                        // Nested links: parentGroupId is another link item's id.
+                        var directLinks = buDeptLinks.filter(function (d) { return d.parentGroupId === bu.id; });
+                        var nestedLinks = buDeptLinks.filter(function (d) { return d.parentGroupId !== bu.id; });
+
+                        // Group nested links by their immediate parentGroupId.
+                        var parentDeptGroups = {};
+                        nestedLinks.forEach(function (d) {
+                            var pgId = d.parentGroupId;
+                            if (!parentDeptGroups[pgId]) {
+                                var parentLinkItem = allGroupItems.find(function (item) { return item.id === pgId; });
+                                var pgName = '';
+                                if (parentLinkItem) {
+                                    // If the parent link item also maps to a dept, resolve its name from departmentList.
+                                    if (parentLinkItem.childNodeIdentifier) {
+                                        var pgDeptData = departmentList.find(function (dept) { return dept.identifier === parentLinkItem.childNodeIdentifier; });
+                                        pgName = pgDeptData ? pgDeptData.name : parentLinkItem.name;
+                                    } else {
+                                        pgName = parentLinkItem.name;
+                                    }
+                                }
+                                parentDeptGroups[pgId] = { name: pgName, links: [], linkItem: parentLinkItem };
+                            }
+                            parentDeptGroups[pgId].links.push(d);
+                        });
+
+                        // Render parent department sub-accordions.
+                        Object.keys(parentDeptGroups).forEach(function (pgId) {
+                            var pg = parentDeptGroups[pgId];
+                            var pdItem = document.createElement("li");
+                            pdItem.className = "kh-accordion-item kh-mt-2";
+                            buDeptList.appendChild(pdItem);
+
+                            var pdTitleDiv = document.createElement("div");
+                            pdTitleDiv.className = "kh-accordion-title kh-d-flex kh-align-items-center kh-cursor-pointer";
+
+                            var pdCheckbox = document.createElement("input");
+                            pdCheckbox.type = "checkbox";
+                            pdCheckbox.className = "kh-form-check-input";
+                            pdCheckbox.id = "pd-select-" + pgId;
+                            // When the parent link item maps to an active dept, the accordion header
+                            // checkbox itself acts as the filter for the parent dept's own jobs —
+                            // no separate leaf is needed.
+                            if (pg.linkItem && pg.linkItem.childNodeIdentifier &&
+                                activeGroupLinkIds.indexOf(pg.linkItem.identifier) !== -1) {
+                                pdCheckbox.name = "departments";
+                                pdCheckbox.value = pg.linkItem.identifier;
+                            }
+                            pdTitleDiv.appendChild(pdCheckbox);
+
+                            var pdArrow = document.createElement("span");
+                            pdArrow.className = "ki-arrow-dropdown kh-d-flex kh-align-items-center kh-justify-content-center";
+                            pdTitleDiv.appendChild(pdArrow);
+
+                            var pdLabel = document.createElement("label");
+                            pdLabel.className = "kh-form-check-label kh-cursor-pointer kh-pl-2";
+                            pdLabel.setAttribute("for", "pd-select-" + pgId);
+                            pdLabel.innerHTML = pg.name;
+                            pdTitleDiv.appendChild(pdLabel);
+
+                            pdItem.appendChild(pdTitleDiv);
+
+                            var pdContentDiv = document.createElement("div");
+                            pdContentDiv.className = "kh-accordion-content kh-ml-4";
+                            pdContentDiv.style.display = "none";
+                            pdItem.appendChild(pdContentDiv);
+
+                            var pdDeptList = document.createElement("ul");
+                            pdDeptList.className = "kh-list-unstyled kh-my-2";
+                            pdContentDiv.appendChild(pdDeptList);
+
+                            pg.links.forEach(function (d) {
+                                var deptData = departmentList.find(function (dept) { return dept.identifier === d.childNodeIdentifier; });
+                                renderEmbedDeptCheckbox(pdDeptList, { identifier: d.identifier, name: deptData ? deptData.name : d.name });
+                            });
+
+                            // Checking parent dept selects all child dept checkboxes; unchecking clears them.
+                            // Child checkboxes never alter the parent dept checkbox state — only the user does.
+                            pdCheckbox.onchange = function () {
+                                pdContentDiv.querySelectorAll('input[name="departments"]').forEach(function (cb) {
+                                    cb.checked = pdCheckbox.checked;
+                                });
+                                filterJobs();
+                            };
+
+                            // Toggle accordion only when clicking outside the checkbox/label.
+                            pdTitleDiv.addEventListener("click", function (e) {
+                                if (e.target.tagName === "INPUT" || e.target.tagName === "LABEL") return;
+                                pdContentDiv.style.display = pdContentDiv.style.display === "none" ? "block" : "none";
+                            });
+                        });
+
+                        // Render dept links directly under BU, skipping any that already appear
+                        // as a parent department accordion header above.
+                        var parentDeptGroupIds = Object.keys(parentDeptGroups).map(Number);
+                        directLinks.filter(function (d) {
+                            return parentDeptGroupIds.indexOf(d.id) === -1;
+                        }).forEach(function (d) {
+                            var deptData = departmentList.find(function (dept) { return dept.identifier === d.childNodeIdentifier; });
+                            renderEmbedDeptCheckbox(buDeptList, { identifier: d.identifier, name: deptData ? deptData.name : d.name });
+                        });
+
+                        // Checking BU selects all dept and parent-dept checkboxes underneath; unchecking clears them.
+                        buCheckbox.onchange = function () {
+                            var isChecked = buCheckbox.checked;
+                            buContentDiv.querySelectorAll('input[name="departments"]').forEach(function (cb) {
+                                cb.checked = isChecked;
+                            });
+                            // Sync parent department select-all checkboxes (no name attr, inside accordion titles).
+                            buContentDiv.querySelectorAll('.kh-accordion-title input[type="checkbox"]').forEach(function (cb) {
+                                cb.checked = isChecked;
+                                cb.indeterminate = false;
+                            });
+                            filterJobs();
+                        };
+
+                        // Keep BU checkbox in sync when individual dept checkboxes change.
+                        buContentDiv.addEventListener("change", function (e) {
+                            if (e.target.name !== "departments") return;
+                            var allDeptCbs = Array.from(buContentDiv.querySelectorAll('input[name="departments"]'));
+                            var checkedCount = allDeptCbs.filter(function (cb) { return cb.checked; }).length;
+                            buCheckbox.checked = checkedCount === allDeptCbs.length;
+                            buCheckbox.indeterminate = checkedCount > 0 && checkedCount < allDeptCbs.length;
+                        });
+
+                        // Toggle accordion only when clicking outside the checkbox/label.
+                        buTitleDiv.addEventListener("click", function (e) {
+                            if (e.target.tagName === "INPUT" || e.target.tagName === "LABEL") return;
+                            buContentDiv.style.display = buContentDiv.style.display === "none" ? "block" : "none";
+                        });
+                    });
+                }
+            }
+
+            var jobTypeSelect = document.getElementById("kh-hiro-jobType");
+            if (jobTypeSelect) {
+                jobTypeList.forEach(function (jobType) {
+                    var listItem = document.createElement("li");
+                    listItem.className = "kh-form-check";
+                    jobTypeSelect.appendChild(listItem);
+
+                    var input = document.createElement("input");
+                    input.className = "kh-form-check-input";
+                    input.type = "checkbox";
+                    input.id = jobType.id;
+                    input.value = jobType.id;
+                    input.name = "jobTypes";
+                    input.onchange = function () { filterJobs() };
+                    listItem.appendChild(input);
+
+                    var label = document.createElement("label");
+                    label.className = "kh-form-check-label kh-cursor-pointer kh-text-truncate-2 kh-pl-2";
+                    label.setAttribute("for", jobType.id);
+                    label.innerHTML = jobType.name;
+                    listItem.appendChild(label);
+                });
+            }
+            var locationSelect = document.getElementById("kh-hiro-locations");
+            if (locationSelect) {
+
+                // locationList: country >> city >> name
+                const groupedLocations = locationList.reduce((groups, location) => {
+                    if (location.countryName) {
+                        const country = location.countryName;
+                        const city = location.city || "";
+                        const name = location.name || location.city;
+                        if (!name) return groups;
+                        if (!groups[country]) groups[country] = {};
+                        if (!groups[country][city]) groups[country][city] = [];
+                        const exists = groups[country][city].some(function (l) { return l.name === name; });
+                        if (!exists) groups[country][city].push({ name: name, id: location.id });
+                    }
+                    return groups;
+                }, {});
+
+                if (locationListWithNoCountry.length) {
+                    groupedLocations["Others"] = locationListWithNoCountry.reduce((others, location) => {
+                        const city = location.name ?? location.city;
+                        if (city) others.push(city);
+                        return others;
+                    }, groupedLocations["Others"] ?? []);
+                }
+
+                for (const [country, citiesOrNames] of Object.entries(groupedLocations)) {
+                    const isOthers = country === "Others";
+                    if (isOthers) {
+                        const countryItem = document.createElement("li");
+                        countryItem.className = "kh-accordion-item kh-mt-3";
+                        locationSelect.appendChild(countryItem);
+                        const titleDiv = document.createElement("div");
+                        titleDiv.className = "kh-accordion-title kh-d-flex kh-align-items-center kh-cursor-pointer";
+                        titleDiv.innerHTML = `
+                            <input type="checkbox" class="kh-form-check-input country-checkbox" id="country-${country.replace(/\s/g, "-")}" value="${country}" name="locations">
+                            <span class="ki-arrow-dropdown kch-description-color kh-d-flex kh-align-items-center kh-justify-content-center kh-pl-2"></span>
+                            <label class="kh-form-check-label kh-cursor-pointer kh-text-truncate-2 kh-pl-2" for="country-${country.replace(/\s/g, "-")}">${country}</label>
+                        `;
+                        countryItem.appendChild(titleDiv);
+                        const contentDiv = document.createElement("div");
+                        contentDiv.className = "kh-accordion-content kh-ml-4";
+                        contentDiv.style.display = "none";
+                        countryItem.appendChild(contentDiv);
+                        const cityList = document.createElement("ul");
+                        cityList.className = "kh-list-unstyled kh-font-normal kh-my-2";
+                        contentDiv.appendChild(cityList);
+                        const othersList = Array.isArray(citiesOrNames) ? citiesOrNames : [];
+                        othersList.forEach(function (cityVal) {
+                            const cityItem = document.createElement("li");
+                            cityItem.className = "kh-form-check";
+                            cityList.appendChild(cityItem);
+                            const cityCheckbox = document.createElement("input");
+                            cityCheckbox.type = "checkbox";
+                            cityCheckbox.className = "kh-form-check-input city-checkbox";
+                            cityCheckbox.id = "others-" + String(cityVal).replace(/\s/g, "-") + country.replace(/\s/g, "-");
+                            cityCheckbox.value = cityVal;
+                            cityCheckbox.name = "locations";
+                            cityCheckbox.onchange = function () {
+                                const locationKey = JSON.stringify({ country: "Others", city: cityVal });
+                                if (cityCheckbox.checked) selectedLocations.add(locationKey); else selectedLocations.delete(locationKey);
+                                filterJobs();
+                            };
+                            cityItem.appendChild(cityCheckbox);
+                            const cityLabel = document.createElement("label");
+                            cityLabel.className = "kh-form-check-label kh-cursor-pointer kh-text-truncate-2 kh-pl-2";
+                            cityLabel.setAttribute("for", cityCheckbox.id);
+                            cityLabel.innerHTML = cityVal;
+                            cityItem.appendChild(cityLabel);
+                        });
+                        titleDiv.addEventListener("click", function () {
+                            const isExpanded = contentDiv.style.display === "block";
+                            contentDiv.style.display = isExpanded ? "none" : "block";
+                        });
+                        const countryCheckbox = titleDiv.querySelector("input[type='checkbox']");
+                        countryCheckbox.onchange = function () {
+                            contentDiv.querySelectorAll("input[name='locations']").forEach(function (cb) {
+                                cb.checked = countryCheckbox.checked;
+                                const locationKey = JSON.stringify({ country: "Others", city: cb.value });
+                                if (countryCheckbox.checked) selectedLocations.add(locationKey); else selectedLocations.delete(locationKey);
+                            });
+                            filterJobs();
+                        };
+                        continue;
+                    }
+
+                    const countryItem = document.createElement("li");
+                    countryItem.className = "kh-accordion-item kh-mt-3";
+                    locationSelect.appendChild(countryItem);
+
+                    const titleDiv = document.createElement("div");
+                    titleDiv.className = "kh-accordion-title kh-d-flex kh-align-items-center kh-cursor-pointer";
+                    const countryId = "country-" + country.replace(/\s/g, "-");
+                    titleDiv.innerHTML = `
+                        <input type="checkbox" class="kh-form-check-input country-checkbox" id="${countryId}" value="${country}" name="locations">
+                        <span class="ki-arrow-dropdown kch-description-color kh-d-flex kh-align-items-center kh-justify-content-center kh-pl-2"></span>
+                        <label class="kh-form-check-label kh-cursor-pointer kh-text-truncate-2 kh-pl-2" for="${countryId}">${country}</label>
+                    `;
+                    countryItem.appendChild(titleDiv);
+
+                    const contentDiv = document.createElement("div");
+                    contentDiv.className = "kh-accordion-content kh-ml-4";
+                    contentDiv.style.display = "none";
+                    countryItem.appendChild(contentDiv);
+
+                    const cityList = document.createElement("ul");
+                    cityList.className = "kh-list-unstyled kh-font-normal kh-my-2";
+                    contentDiv.appendChild(cityList);
+
+                    for (const [city, names] of Object.entries(citiesOrNames)) {
+                        const cityItem = document.createElement("li");
+                        cityItem.className = "kh-accordion-item kh-mt-2";
+                        cityList.appendChild(cityItem);
+
+                        const cityTitleDiv = document.createElement("div");
+                        cityTitleDiv.className = "kh-accordion-title kh-d-flex kh-align-items-center kh-cursor-pointer kh-font-normal";
+                        const cityId = "city-" + country.replace(/\s/g, "-") + "-" + (city || "default").replace(/\s/g, "-");
+                        const cityCheckboxId = "city-checkbox-" + cityId;
+                        cityTitleDiv.innerHTML = `
+                            <input type="checkbox" class="kh-form-check-input city-group-checkbox" id="${cityCheckboxId}" name="locations" value="${(city || "").replace(/"/g, "&quot;")}" data-country="${country.replace(/"/g, "&quot;")}">
+                            <span class="ki-arrow-dropdown kch-description-color kh-d-flex kh-align-items-center kh-justify-content-center kh-pl-2"></span>
+                            <span class="kh-pl-2 kh-text-truncate-2">${city || "—"}</span>
+                        `;
+                        cityItem.appendChild(cityTitleDiv);
+
+                        const cityContentDiv = document.createElement("div");
+                        cityContentDiv.className = "kh-accordion-content kh-ml-4";
+                        cityContentDiv.style.display = "none";
+                        cityItem.appendChild(cityContentDiv);
+
+                        const nameList = document.createElement("ul");
+                        nameList.className = "kh-list-unstyled kh-font-normal kh-my-2 kh-ml-4";
+                        cityContentDiv.appendChild(nameList);
+
+                        names.forEach(function (loc) {
+                            const name = loc.name;
+                            const locId = "loc-" + (loc.id != null ? loc.id : (country + "-" + city + "-" + name).replace(/\s/g, "-"));
+                            const nameItem = document.createElement("li");
+                            nameItem.className = "kh-form-check";
+                            nameList.appendChild(nameItem);
+
+                            const nameCheckbox = document.createElement("input");
+                            nameCheckbox.type = "checkbox";
+                            nameCheckbox.className = "kh-form-check-input city-checkbox";
+                            nameCheckbox.id = locId;
+                            nameCheckbox.value = name;
+                            nameCheckbox.name = "locations";
+                            nameCheckbox.onchange = function () {
+                                handleNameCheckboxChange(country, citiesOrNames);
+                            };
+                            nameItem.appendChild(nameCheckbox);
+
+                            const nameLabel = document.createElement("label");
+                            nameLabel.className = "kh-form-check-label kh-cursor-pointer kh-text-truncate-2 kh-pl-2";
+                            nameLabel.setAttribute("for", locId);
+                            nameLabel.innerHTML = name;
+                            nameItem.appendChild(nameLabel);
+                        });
+
+                        const cityCheckbox = cityTitleDiv.querySelector("input.city-group-checkbox");
+                        cityCheckbox.onchange = function (e) {
+                            e.stopPropagation();
+                            const isChecked = cityCheckbox.checked;
+                            names.forEach(function (loc) {
+                                const name = loc.name;
+                                const locationKey = JSON.stringify({ country, city, name });
+                                const cb = document.getElementById("loc-" + String(loc.id != null ? loc.id : (country + "-" + city + "-" + name).replace(/\s/g, "-")));
+                                if (cb) {
+                                    cb.checked = isChecked;
+                                    if (isChecked) selectedLocations.add(locationKey); else selectedLocations.delete(locationKey);
+                                }
+                            });
+                            handleNameCheckboxChange(country, citiesOrNames);
+                        };
+
+                        cityTitleDiv.addEventListener("click", function (e) {
+                            if (e.target === cityCheckbox || (e.target.tagName === "INPUT" && e.target.type === "checkbox" && e.target.classList.contains("city-group-checkbox"))) return;
+                            const isExpanded = cityContentDiv.style.display === "block";
+                            cityContentDiv.style.display = isExpanded ? "none" : "block";
+                        });
+                    }
+
+                    titleDiv.addEventListener("click", function () {
+                        const isExpanded = contentDiv.style.display === "block";
+                        contentDiv.style.display = isExpanded ? "none" : "block";
+                    });
+
+                    const countryCheckbox = titleDiv.querySelector("input[type='checkbox']");
+                    countryCheckbox.onchange = function () {
+                        handleCountryCheckboxChange(country, citiesOrNames);
+                    };
+                }
+
+                function handleNameCheckboxChange(country, citiesOrNames) {
+                    const countryCheckbox = document.querySelector("#country-" + CSS.escape(country.replace(/\s/g, "-")));
+                    if (!countryCheckbox) return;
+                    var allChecked = true;
+                    for (const city in citiesOrNames) {
+                        if (!citiesOrNames.hasOwnProperty(city)) continue;
+                        const names = citiesOrNames[city];
+                        var cityAllChecked = true;
+                        names.forEach(function (loc) {
+                            const name = loc.name;
+                            const locationKey = JSON.stringify({ country, city, name });
+                            const cb = document.querySelector("#loc-" + CSS.escape(String(loc.id != null ? loc.id : (country + "-" + city + "-" + name).replace(/\s/g, "-"))));
+                            if (cb) {
+                                if (cb.checked) selectedLocations.add(locationKey); else selectedLocations.delete(locationKey);
+                                cityAllChecked = cityAllChecked && cb.checked;
+                                allChecked = allChecked && cb.checked;
+                            }
+                        });
+                        const cityCheckboxId = "city-checkbox-city-" + country.replace(/\s/g, "-") + "-" + (city || "default").replace(/\s/g, "-");
+                        const cityCheckboxEl = document.getElementById(cityCheckboxId);
+                        if (cityCheckboxEl) cityCheckboxEl.checked = cityAllChecked;
+                    }
+                    countryCheckbox.checked = allChecked;
+                    filterJobs();
+                }
+
+                function handleCountryCheckboxChange(country, citiesOrNames) {
+                    const countryCheckbox = document.querySelector("#country-" + CSS.escape(country.replace(/\s/g, "-")));
+                    if (!countryCheckbox) return;
+                    const isChecked = countryCheckbox.checked;
+                    for (const city in citiesOrNames) {
+                        if (!citiesOrNames.hasOwnProperty(city)) continue;
+                        const names = citiesOrNames[city];
+                        names.forEach(function (loc) {
+                            const name = loc.name;
+                            const locationKey = JSON.stringify({ country, city, name });
+                            const cb = document.querySelector("#loc-" + CSS.escape(String(loc.id != null ? loc.id : (country + "-" + city + "-" + name).replace(/\s/g, "-"))));
+                            if (cb) {
+                                cb.checked = isChecked;
+                                if (isChecked) selectedLocations.add(locationKey); else selectedLocations.delete(locationKey);
+                            }
+                        });
+                        const cityCheckboxEl = document.getElementById("city-checkbox-city-" + country.replace(/\s/g, "-") + "-" + (city || "default").replace(/\s/g, "-"));
+                        if (cityCheckboxEl) cityCheckboxEl.checked = isChecked;
+                    }
+                    filterJobs();
+                }
+            }
+        }
+
+        window.filterJobs = function () {
+            var departmentIdentifiers = getCheckedBoxes("departments");
+            var jobTypeId = getCheckedBoxes("jobTypes");
+            var locationName = getCheckedBoxes("locations");
+            var searchText = document.getElementById("kh-hiro-searchText")?.value;
+
+            if (locationName || departmentIdentifiers || searchText || jobTypeId) {
+                groupJobs(departmentIdentifiers, locationName, searchText, jobTypeId);
+            } else {
+                bindJobs(jobList);
+            }
+        };
+
+        function getCheckedBoxes(chkboxName) {
+            var checkboxes = document.getElementsByName(chkboxName);
+            var checkboxesChecked = [];
+            if (chkboxName === "locations" || chkboxName === "departments") {
+                for (var i = 0; i < checkboxes.length; i++) {
+                    if (checkboxes[i].checked) {
+                        checkboxesChecked.push(checkboxes[i].value);
+                    }
+                }
+            } else {
+                for (var i = 0; i < checkboxes.length; i++) {
+                    if (checkboxes[i].checked) {
+                        checkboxesChecked.push(parseInt(checkboxes[i].value));
+                    }
+                }
+            }
+
+            return checkboxesChecked;
+        }
+
+        window.clearAllFilters = function () {
+            document.querySelectorAll('input[name="departments"]:checked').forEach(el => el.checked = false);
+            document.querySelectorAll('input[name="locations"]:checked').forEach(el => el.checked = false);
+            document.querySelectorAll('input[name="jobTypes"]:checked').forEach(el => el.checked = false);
+            document.getElementById("kh-hiro-searchText").value = "";
+
+            bindJobs(jobList);
+        };
+
+        function groupJobs(departmentIdentifiers, locationName, searchText, jobTypeId) {
+            var jobs = jobList.filter(function (j) {
+                var lNames = j.jobLocations.filter(lc => lc.name).map(l => l.name);
+                var lCities = j.jobLocations.filter(lc => lc.city).map(l => l.city);
+                var deptFilterValue = globalFilterGroupsData ? j.groupLinkIdentifier : j.departmentIdentifier;
+                return (departmentIdentifiers.length === 0 || departmentIdentifiers.includes(deptFilterValue)) && (jobTypeId.length === 0 || jobTypeId.includes(j.jobType)) && (locationName.length === 0 || (lNames && lNames.length && locationName.some(ln => lNames.includes(ln))) || (lCities && lCities.length && locationName.some(lc => lCities.includes(lc))));
+            });
+            searchText === "" ? bindJobs(jobs) : bindJobs(jobs.filter(function (j) { return (j.title.toLowerCase().indexOf(searchText.toLowerCase()) !== -1 || j.departmentName.toLowerCase().indexOf(searchText.toLowerCase()) !== -1); }));
+
+        }
+
+        JobWidget();
+        var date = new Date().getFullYear();
+        if (document.getElementById("year")) {
+            document.getElementById("year").innerText = date;
+        }
+
+        function accordion() {
+            const accordionTitles = document.querySelectorAll(".kh-accordion-title");
+
+            accordionTitles.forEach((accordionTitle) => {
+                accordionTitle.addEventListener("click", () => {
+                    if (accordionTitle.classList.contains("kh-is-open")) {
+                        accordionTitle.classList.remove("kh-is-open");
+                    } else {
+                        accordionTitle.classList.add("kh-is-open");
+                    }
+                });
+            });
+        }
+    }
+})();
+

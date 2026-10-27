@@ -51,6 +51,14 @@ test('scraper and rewrite item failures do not hide failed execution', () => {
   assert.equal(stageOutcome('classification',{failed:1,warnings:1},0),'failed');
 });
 
+test('a scraper code failure overrides simultaneous pending operational work', () => {
+  assert.equal(stageOutcome('scraper', { pendingEstimate: 1 }, 1), 'failed');
+  assert.equal(stageOutcome('scraper', { pendingEstimate: 1 }, 0), 'incomplete');
+  const summary = describeStageCompletion('scraper', { pendingEstimate: 1 }, 'incomplete');
+  assert.equal(summary.handoffReady, false);
+  assert.equal(summary.processingComplete, false);
+});
+
 test('rewrite item failures and source races are non-blocking while execution errors stop the stage', () => {
   for (const summary of [{ failed: 3103 }, { staleSources: 2 }, { concurrentChanges: 1 }]) {
     assert.equal(stageOutcome('rewrite', { ...summary, pendingEstimate: 0 }, 0), 'completed');

@@ -1,48 +1,21 @@
 ﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createHiBobNativeInventory } from '../../scraper-support/hibob/nativeInventory.js'
+import CATALOG, { NATIVE_CONFIG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
 export const SOURCE = 'snowplow'
 export const COMPANY = 'Snowplow'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-10-26'
 export const CAREERS_PAGE_URL = 'https://snowplow.io/careers'
 export const HIBOB_CAREER_SITE_URL = 'https://snowplow.careers.hibob.com/'
 export const HIBOB_CAREER_SITE_API_URL = 'https://snowplow.careers.hibob.com/api/career-site'
 export const HIBOB_JOB_BOARD_API_URL = 'https://snowplow.careers.hibob.com/api/job-ad'
-export const PROVIDER_METADATA = {
-  source: SOURCE,
-  companyName: COMPANY,
-  adapter: 'script',
-  modulePath: '../../scraper/snowplow/script.js',
-  dryRunFile: 'snowplow/jobs.json',
-  companyCareerPage: CAREERS_PAGE_URL,
-  hiBobCareerSiteUrl: HIBOB_CAREER_SITE_URL,
-  hiBobCareerSiteApiUrl: HIBOB_CAREER_SITE_API_URL,
-  hiBobJobBoardApiUrl: HIBOB_JOB_BOARD_API_URL,
-  companyDomain: 'snowplow.io',
-  atsPlatform: 'hibob',
-  countryFilter: 'Global',
-  paginationStrategy: 'single-hibob-job-ad-feed',
-  extractionStrategy: 'verified-first-party-careers-page+verified-hibob-branding+public-hibob-job-ad-feed',
-  parser: 'custom-script',
-  normalizationProfile: 'engineering-default',
-  verifiedOn: VERIFIED_ON,
-  verifiedSurfaceSummary:
-    'Verified on Saturday, July 25, 2026 that https://snowplow.io/careers was the live first-party Snowplow careers page, that its public "See Open Roles" call-to-action linked directly to the official HiBob board at https://snowplow.careers.hibob.com/, and that the companion public HiBob endpoints https://snowplow.careers.hibob.com/api/career-site and https://snowplow.careers.hibob.com/api/job-ad returned live public Snowplow openings including Customer Success Engineer, Market Development Representative, and Product Manager.',
-}
-
-const HIBOB_HEADERS = {
-  'User-Agent': USER_AGENT,
-  Referer: HIBOB_CAREER_SITE_URL,
-  Origin: HIBOB_CAREER_SITE_URL.replace(/\/$/, ''),
-}
-
+export const PROVIDER_METADATA = CATALOG
+// Archived pure helpers retain their original fixture contract. Registered
+// extraction uses the current identity-aware native engine below.
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
@@ -107,24 +80,6 @@ const inferRemoteStatus = (job = {}) => {
   return null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
-  headers: {
-    ...HIBOB_HEADERS,
-    Accept: 'application/json',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
 export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
@@ -181,41 +136,7 @@ export const extractHiBobJobs = (payload = {}) =>
     })
     .filter(Boolean)
 
-export const createSnowplowScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Verified Snowplow official careers page changed materially')
-    }
-
-    const verifiedCareerSiteUrl = extractVerifiedHiBobCareerSiteUrl(careersHtml)
-    if (verifiedCareerSiteUrl !== HIBOB_CAREER_SITE_URL) {
-      throw new Error('Verified HiBob career site handoff changed materially')
-    }
-
-    const careerSitePayload = await fetchJson(HIBOB_CAREER_SITE_API_URL)
-    if (!hasVerifiedCareerSitePayload(careerSitePayload)) {
-      throw new Error('Verified HiBob career site payload changed materially')
-    }
-
-    const jobBoardPayload = await fetchJson(HIBOB_JOB_BOARD_API_URL)
-    if (!Array.isArray(jobBoardPayload?.jobAdDetails)) {
-      throw new Error('Verified HiBob job board payload changed materially')
-    }
-
-    return extractHiBobJobs(jobBoardPayload).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: now(),
-    }))
-  },
-})
+export const createSnowplowScraper = (options = {}) => createHiBobNativeInventory(NATIVE_CONFIG, options)
 
 export const run = async (options = {}) => createSnowplowScraper(options).run(options)
 

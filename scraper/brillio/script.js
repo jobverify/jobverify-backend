@@ -1,256 +1,89 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
-
-export const LISTING_PAGE_URL = 'https://careers.brillio.com/job-listing/'
-export const DETAIL_PAGE_URL_PREFIX = 'https://careers.brillio.com/job-details?job-id='
-export const APPLY_PAGE_URL_PREFIX = 'https://careers.brillio.com/privacy-notice?job-id='
-
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
-const MAX_LISTING_PAGES = 50
-
-const normalizeWhitespace = (value) => {
-  if (value == null) return null
-
-  const normalized = String(value)
-    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
-    .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#8211;/gi, (entity) => {
-      if (/8211/.test(entity)) return '-'
-      return "'"
-    })
-    .replace(/[\u2012\u2013\u2014\u2015]/g, '-')
-    .replace(/\u00a0/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-  return normalized || null
-}
-
-const stripTags = (value) => normalizeWhitespace(
-  String(value ?? '')
-    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol)\b[^>]*>/gi, '\n')
-    .replace(/<li\b[^>]*>/gi, '\n')
-    .replace(/<p\b[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, ' '),
-)
-
-const toAbsoluteUrl = (value) => {
-  if (!value) return null
-  return new URL(value, LISTING_PAGE_URL).toString()
-}
-
-const extractCity = (location) => normalizeWhitespace(
-  normalizeWhitespace(location)?.split(',')[0],
-)
-
-const isIndiaLocation = (value) => /\bindia\b/i.test(String(value ?? ''))
-
-const buildPrivacyNoticeUrl = (jobId) => (
-  jobId ? `${APPLY_PAGE_URL_PREFIX}${jobId}` : null
-)
-
-const extractJobIdFromDetailUrl = (value) => {
-  try {
-    return normalizeWhitespace(new URL(value).searchParams.get('job-id'))
-  } catch {
-    return null
-  }
-}
-
-export const buildListingUrl = (page = 1) => (
-  page <= 1
-    ? LISTING_PAGE_URL
-    : new URL(`job-listing/page/${page}/`, 'https://careers.brillio.com/').toString()
-)
-
-export const extractListingJobs = (html) => {
-  const jobs = []
-  const pattern = /<div class="job-list-wrap job_list">[\s\S]*?<a href="([^"]*job-details\?job-id=[^"]+)"><\/a>[\s\S]*?<div class="job-card">[\s\S]*?<h4>([\s\S]*?)<\/h4>[\s\S]*?<p class="infoline">[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<\/p>[\s\S]*?<p>([\s\S]*?)<\/p>[\s\S]*?<\/div>[\s\S]*?<\/div>/gi
-
-  for (const match of String(html ?? '').matchAll(pattern)) {
-    const detailUrl = toAbsoluteUrl(match[1])
-    const jobId = extractJobIdFromDetailUrl(detailUrl)
-
-    jobs.push({
-      detailUrl,
-      jobId,
-      title: normalizeWhitespace(match[2]),
-      location: normalizeWhitespace(match[3]),
-      department: normalizeWhitespace(match[4]),
-      requisitionId: normalizeWhitespace(match[5]),
-      summary: normalizeWhitespace(match[6]),
-    })
-  }
-
-  return jobs
-}
-
-const extractDetailContentHtml = (html) => {
-  const source = String(html ?? '')
-  const startMarker = '<div class="_detail-content">'
-  const startIndex = source.indexOf(startMarker)
-  if (startIndex < 0) return ''
-
-  const afterStart = source.slice(startIndex + startMarker.length)
-  const endCandidates = [
-    afterStart.indexOf('<div class="_sidelist">'),
-    afterStart.indexOf('<div class="col-lg-4 col-md-12">'),
-    afterStart.indexOf('</section>'),
-  ].filter((index) => index >= 0)
-
-  if (endCandidates.length === 0) return afterStart
-  return afterStart.slice(0, Math.min(...endCandidates))
-}
-
-export const extractJobDetail = (html, { jobId = null } = {}) => {
-  const source = String(html ?? '')
-  const title = normalizeWhitespace((source.match(/<h1>([\s\S]*?)<\/h1>/i) || [])[1])
-  const applyUrl = toAbsoluteUrl(
-    (source.match(/<a[^>]+href="([^"]+)"[^>]*>\s*APPLY\s*<\/a>/i) || [])[1],
-  ) || buildPrivacyNoticeUrl(jobId)
-
-  const contentHtml = extractDetailContentHtml(source)
-  const descriptionWithoutTitle = contentHtml.replace(/<h1>[\s\S]*?<\/h1>/i, ' ')
-  const primarySkillsHtml = (descriptionWithoutTitle.match(
-    /<h6>\s*Primary Skills\s*<\/h6>\s*<ul>([\s\S]*?)<\/ul>/i,
-  ) || [])[1]
-  const primarySkillsText = stripTags(primarySkillsHtml)
-  const requiredSkills = primarySkillsText
-    ? primarySkillsText.split(',').map((skill) => normalizeWhitespace(skill)).filter(Boolean)
-    : []
-
-  return {
-    title,
-    applyUrl,
-    requiredSkills,
-    jobDescription: stripTags(descriptionWithoutTitle),
-  }
-}
-
-export const extractSearchResults = ({
-  listingHtmlByUrl = {},
-  detailHtmlByUrl = {},
-} = {}) => {
-  const jobs = []
-  const seenDetailUrls = new Set()
-
-  for (const html of Object.values(listingHtmlByUrl)) {
-    for (const listing of extractListingJobs(html)) {
-      if (!listing.detailUrl || seenDetailUrls.has(listing.detailUrl)) continue
-      if (!isIndiaLocation(listing.location)) continue
-
-      seenDetailUrls.add(listing.detailUrl)
-      const detail = extractJobDetail(detailHtmlByUrl[listing.detailUrl] || '', {
-        jobId: listing.jobId,
-      })
-
-      jobs.push({
-        title: detail.title || listing.title,
-        company: 'Brillio',
-        department: listing.department,
-        location: listing.location,
-        city: extractCity(listing.location),
-        country: 'India',
-        jobId: listing.jobId,
-        requisitionId: listing.requisitionId,
-        sourceUrl: listing.detailUrl,
-        applyUrl: detail.applyUrl || buildPrivacyNoticeUrl(listing.jobId),
-        employmentType: null,
-        experienceRequired: null,
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: detail.requiredSkills,
-        postingDate: null,
-        closingDate: null,
-        jobDescription: detail.jobDescription || listing.summary,
-        remoteStatus: null,
-      })
-    }
-  }
-
-  return jobs
-}
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'brillio',
-  timeoutMs: 15000,
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {CORPORATE,CAREERS,BOARD,API,listingJobs,jobDetail,pagination,searchBody,validateCorporate,validateClient,countryOf} from './nativeContract.js'
+export const LISTING_PAGE_URL=BOARD
+export const DETAIL_PAGE_URL_PREFIX='https://careers.brillio.com/job-details?job-id='
+export const APPLY_PAGE_URL_PREFIX='https://careers.brillio.com/privacy-notice?job-id='
+export const buildListingUrl=(page=1)=>page<=1?BOARD:`${BOARD}?paged=${page}`
+export const extractListingJobs=listingJobs
+export const extractJobDetail=jobDetail
+const blocked=text=>/access denied|verify you are human|captcha|request blocked|attention required|cf-chl-/i.test(text)
+const decorate=(listing,detail,now)=>({
+ title:detail.title||listing.title,company:'Brillio',department:listing.department,location:detail.location||listing.location,
+ city:(detail.location||listing.location)?.split(',')[0]?.trim()||null,country:'India',jobId:listing.jobId,requisitionId:listing.requisitionId,
+ sourceUrl:listing.detailUrl,applyUrl:detail.applyUrl,link:detail.applyUrl||null,employmentType:null,experienceRequired:null,
+ minimumQualification:null,preferredQualification:null,requiredSkills:detail.requiredSkills||[],postingDate:detail.postingDate||null,closingDate:detail.closingDate||null,
+ jobDescription:detail.jobDescription||listing.summary,remoteStatus:null,source:'brillio',scrapedAt:now,
+ sourceDetailComplete:detail.sourceDetailComplete===true,sourceDetailFailureKind:detail.sourceDetailFailureKind||null,
+ sourceDescriptionType:detail.jobDescription?'native-role-content':'listing-preview',sourceDescription:detail.jobDescription||listing.summary,
+ sourceDocumentDates:detail.sourceDocumentDates||[],sourceNativeStructuredCriteria:detail.sourceNativeStructuredCriteria||[],
+ sourceNativeAvailability:detail.sourceNativeAvailability||'unknown',nativePills:listing.nativePills||[],
+ applicationUrlIsGeneric:!detail.applyUrl,lifecycleCleanupAllowed:false,
 })
-
-export const createBrillioScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const listingHtmlByUrl = {}
-
-    for (let page = 1; page <= MAX_LISTING_PAGES; page += 1) {
-      const url = buildListingUrl(page)
-      const html = await fetchText(url)
-      const listings = extractListingJobs(html)
-
-      if (listings.length === 0) {
-        break
-      }
-
-      listingHtmlByUrl[url] = html
-    }
-
-    const detailHtmlByUrl = {}
-    const detailUrls = new Set(
-      Object.values(listingHtmlByUrl)
-        .flatMap((html) => extractListingJobs(html))
-        .filter((listing) => isIndiaLocation(listing.location))
-        .map((listing) => listing.detailUrl),
-    )
-
-    for (const url of detailUrls) {
-      try {
-        detailHtmlByUrl[url] = await fetchText(url)
-      } catch {
-        detailHtmlByUrl[url] = ''
-      }
-    }
-
-    const jobs = extractSearchResults({ listingHtmlByUrl, detailHtmlByUrl })
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: 'brillio',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
-})
-
-export const run = async () => createBrillioScraper().run()
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
-  console.log(`Running Brillio scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
-  const jobs = await run()
-  console.log(`\nTotal India jobs scraped: ${jobs.length}`)
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-    console.log(`Dry run - wrote ${jobs.length} jobs to jobs.json`)
-  } else {
-    const result = await saveToDB(jobs, 'brillio')
-    console.log('DB result:', result)
-    process.exit(0)
-  }
+export const extractSearchResults=({listingHtmlByUrl={},detailHtmlByUrl={}}={})=>{
+ const listings=[...new Map(Object.values(listingHtmlByUrl).flatMap(listingJobs).map(row=>[row.jobId,row])).values()]
+ return listings.filter(row=>countryOf(row.location)==='India').map(row=>({...decorate(row,jobDetail(detailHtmlByUrl[row.detailUrl]||'',{jobId:row.jobId}),null),sourceListingComplete:false}))
 }
+export const createBrillioScraper=({maxJobs=null}={})=>({
+ async run(options={}){
+  const now=new Date(options.now||Date.now()).toISOString(),fetchNative=options.fetch||globalThis.fetch,allRows=[],jobs=[],requests=[],errors=[]
+  let denied=false,pagesFetched=0,enumerationComplete=false,closingMatches=false,bindingVerified=false,unknownCount=0,foreignCount=0,globalCount=0,fullCount=0
+  const get=async(url,init={})=>{
+   if(denied)throw Error('Brillio native access already denied')
+   options.signal?.throwIfAborted()
+   let body,finalURL=url,status=200
+   try{
+    if(options.fetchText){body=await options.fetchText(url,init)}else{
+     const response=await fetchNative(url,{...init,headers:{Accept:init.method==='POST'?'application/json':'text/html',...(init.headers||{})},signal:options.signal||AbortSignal.timeout(options.timeoutMs||30000)})
+     status=response.status;finalURL=response.url||url;body=await response.text()
+    }
+   }catch(error){throw Error('Brillio native request failed: '+error.message)}
+   requests.push({url,method:init.method||'GET',status,finalURL})
+   if([401,403,429].includes(status)||blocked(body)){denied=true;throw Error('Brillio native public access denied')}
+   if(status<200||status>=300)throw Error('Brillio native HTTP '+status)
+   const requested=new URL(url),final=new URL(finalURL)
+   if(requested.hostname!==final.hostname||requested.searchParams.get('job-id')!==final.searchParams.get('job-id'))throw Error('Brillio native response identity redirect mismatch')
+   return body
+  }
+  const inventory=async()=>{
+   const rows=[],ids=new Set();let lastPage=1,pageSize=null
+   for(let page=1;page<=lastPage;page++){
+    const raw=await get(API,{method:'POST',body:searchBody(page),headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'}});pagesFetched++
+    let data;try{data=JSON.parse(raw)}catch{throw Error('Brillio native search JSON invalid')}
+    if(data?.success!==true||typeof data.data?.html!=='string'||typeof data.data.pagination!=='string')throw Error('Brillio native search response invalid')
+    const parsed=listingJobs(data.data.html),pager=pagination(data.data.pagination,page)
+    if(page===1){lastPage=pager.lastPage;pageSize=parsed.length}else if(pager.lastPage!==lastPage)throw Error('Brillio native page count changed')
+    if(lastPage>1000||!parsed.length||page<lastPage&&parsed.length!==pageSize||page===lastPage&&parsed.length>pageSize||page<lastPage&&!pager.hasNext||page===lastPage&&pager.hasNext)throw Error('Brillio native pagination does not reconcile')
+    for(const row of parsed){if(!row.jobId||!row.title||!row.location||row.visibilityUncertain||ids.has(row.jobId))throw Error('Brillio native listing duplicate or incomplete');ids.add(row.jobId);rows.push(row)}
+   }
+   return rows
+  }
+  try{
+   validateCorporate(await get(CORPORATE),CAREERS)
+   validateCorporate(await get(CAREERS),BOARD)
+   const board=await get(BOARD);validateClient(board);bindingVerified=true
+   allRows.push(...await inventory());globalCount=allRows.length;enumerationComplete=true
+   for(const row of allRows){
+    const listingCountry=countryOf(row.location)
+    if(listingCountry==='foreign'){foreignCount++;continue}
+    let detail
+    try{detail=jobDetail(await get(row.detailUrl),{jobId:row.jobId})}catch(error){errors.push({jobId:row.jobId,reason:error.message});detail=jobDetail('',{jobId:row.jobId})}
+    if(denied)break
+    const detailCountry=countryOf(detail.location)
+    if(listingCountry==='India'&&detailCountry==='foreign'||listingCountry==='foreign'&&detailCountry==='India'){unknownCount++;errors.push({jobId:row.jobId,reason:'conflicting native country'});continue}
+    if(listingCountry!=='India'&&detailCountry!=='India'){if(detailCountry==='foreign')foreignCount++;else unknownCount++;continue}
+    if(detail.title&&detail.title!==row.title){detail.sourceDetailComplete=false;detail.sourceDetailFailureKind='native-title-identity-mismatch'}
+    if(detail.location&&detail.location!==row.location){detail.sourceDetailComplete=false;detail.sourceDetailFailureKind='native-location-identity-mismatch'}
+    if(detail.sourceDetailComplete)fullCount++
+    jobs.push(decorate(row,detail,now))
+   }
+   if(!denied){const closing=await inventory();const identity=rows=>JSON.stringify(rows.map(r=>[r.jobId,r.title,r.location,r.requisitionId,r.nativePills]));closingMatches=identity(allRows)===identity(closing);if(!closingMatches)errors.push({reason:'closing native inventory changed'})}
+  }catch(error){errors.push({reason:error.message})}
+  const cap=Number.isInteger(options.maxJobs)?options.maxJobs:maxJobs,selected=Number.isInteger(cap)&&cap>=0?jobs.slice(0,cap):jobs
+  const complete=enumerationComplete&&closingMatches&&!denied&&!unknownCount&&!errors.length&&fullCount===jobs.length&&selected.length===jobs.length
+  const audit={globalCount,indiaCount:jobs.length,foreignCount,countryUnknownCount:unknownCount,fullDetailCount:fullCount,returnedCount:selected.length,
+   enumerationComplete,closingInventoryMatches:closingMatches,bindingVerified,scopeComplete:complete,pagesFetched,denied,errors,requests}
+  for(const job of selected)Object.assign(job,{sourceListingComplete:complete,sourceNativeInventory:audit,lifecycleCleanupAllowed:complete})
+  return attachInventoryEvidence(selected,{status:complete?'complete-inventory':'coverage-gap',surface:BOARD,firstParty:bindingVerified,listingComplete:complete,pagesFetched,reportedTotal:globalCount||null,indiaFacetCount:null,verifiedAt:now,reason:complete?'native-unfiltered-pages-and-closing-inventory-reconciled':'native-country-detail-or-scope-unresolved'})
+ }
+})
+export const run=options=>createBrillioScraper().run(options)

@@ -1,10 +1,13 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { createAvasoftNativeInventory } from './nativeInventory.js'
+import AVASOFT_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const CAREERS_URL = 'https://avasoft.com/career/'
 const BASE_URL = 'https://avasoft.com'
+export const PROVIDER_METADATA = AVASOFT_CATALOG
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#8211;|&ndash;/gi, '-')
@@ -67,6 +70,8 @@ const inferExperienceRequired = (value) => {
   return null
 }
 
+// Archived pure helpers retain the old fixture contract. Registered extraction
+// below uses current visibility, full native role documents and inventory proof.
 export const extractJobCards = (html) => [...String(html ?? '').matchAll(
   /<div[^>]*open-position[^>]*>[\s\S]*?<div class="elementor-widget-container">\s*([^<]+?)\s*<\/div>[\s\S]*?<h4 class="elementor-heading-title elementor-size-default"><a href="([^"]+)">([^<]+)<\/a><\/h4>[\s\S]*?<div class="elementor-widget-container">\s*([^<]+?)\s*<span class="star-icon"><\/span>\s*([^<]+?)\s*<\/div>/gi,
 )]
@@ -132,59 +137,7 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
-
-export const createAvasoftScraper = ({ fetchText = defaultFetchText } = {}) => ({
-  run: async ({ fetchText: overrideFetchText } = {}) => {
-    const fetchImpl = overrideFetchText || fetchText
-    const careersHtml = await fetchImpl(CAREERS_URL)
-    const listings = extractJobCards(careersHtml)
-    const jobs = []
-
-    for (const listing of listings) {
-      const detailHtml = await fetchImpl(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml, listing)
-
-      jobs.push({
-        jobId: detail.jobId || listing.jobId,
-        requisitionId: detail.requisitionId || listing.requisitionId,
-        title: detail.title || listing.title,
-        company: 'AVASOFT',
-        department: detail.department || listing.department,
-        location: detail.location || listing.location,
-        city: detail.city || listing.city,
-        link: detail.applyUrl || detail.sourceUrl || listing.applyUrl || listing.sourceUrl,
-        applyUrl: detail.applyUrl || listing.applyUrl,
-        sourceUrl: detail.sourceUrl || listing.sourceUrl,
-        source: 'avasoft',
-        employmentType: detail.employmentType || listing.employmentType,
-        experienceRequired: detail.experienceRequired || listing.experienceRequired,
-        jobDescription: detail.jobDescription,
-        minimumQualification: detail.minimumQualification,
-        preferredQualification: detail.preferredQualification,
-        requiredSkills: detail.requiredSkills,
-        postingDate: detail.postingDate || listing.postingDate,
-        closingDate: detail.closingDate || listing.closingDate,
-        scrapedAt: new Date().toISOString(),
-      })
-    }
-
-    return jobs
-  },
-})
+export const createAvasoftScraper = (options = {}) => createAvasoftNativeInventory(options)
 
 export const run = async (options = {}) => createAvasoftScraper().run(options)
 

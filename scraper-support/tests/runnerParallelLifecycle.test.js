@@ -27,17 +27,56 @@ test('parallel lifecycle timeout records a source failure and continues the queu
   assert.equal(result.finished.aborted, false)
 })
 
-test('fatal persistence failure cancels a peer even when its lifecycle timeout is disabled', () => {
+test('quota exhaustion leaves pending work and continues the queue', () => {
   const result = runScenario('quota')
 
-  assert.equal(result.error.name, 'FatalScraperPersistenceError')
-  assert.deepEqual(result.started.sort(), ['broken', 'peer'])
-  assert.equal(result.peerAborted, true)
-  assert.equal(result.peerSettled, true)
-  assert.equal(result.finished.aborted, true)
-  assert.deepEqual(Object.keys(result.history).sort(), ['broken', 'peer'])
-  assert.equal(result.settledBeforeHistory, true)
+  assert.equal(result.error, null)
+  assert.deepEqual(result.started, ['alpha', 'beta'])
+  assert.equal(result.summary.alpha.persistencePending, true)
+  assert.deepEqual(Object.keys(result.checkpoint.completed), ['beta'])
 })
+
+for (const parallel of [true, false]) {
+  for (const scenario of ['transaction', 'connection', 'status-read', 'status-write']) {
+    test(`${parallel ? 'parallel' : 'sequential'} ${scenario} failure stays pending while the next source completes`, () => {
+      const result = runScenario(scenario, parallel)
+      assert.equal(result.error, null)
+      assert.equal(result.summary.alpha.persistencePending, true)
+      assert.equal(result.summary.alpha.processingComplete, false)
+      assert.equal(result.summary.beta.success, true)
+      assert.deepEqual(Object.keys(result.checkpoint.completed), ['beta'])
+      assert.equal(result.checkpoint.status, 'interrupted')
+    })
+  }
+  test(`${parallel ? 'parallel' : 'sequential'} resume retries only unfinished database work`, () => {
+    const result = runScenario('transaction-resume', parallel)
+    assert.equal(result.error, null)
+    assert.deepEqual(Object.keys(result.firstCheckpoint.completed), ['beta'])
+    assert.deepEqual(result.started, ['alpha', 'beta', 'alpha'])
+    assert.equal(result.checkpoint.status, 'complete')
+    assert.equal(result.checkpoint.completedCount, 2)
+  })
+  for (const scenario of ['finalization-resume', 'finalization-still-unavailable']) {
+    test(`${parallel ? 'parallel' : 'sequential'} ${scenario} retries metadata without repeating completed sources`, () => {
+      const result = runScenario(scenario, parallel)
+      assert.equal(result.error, null)
+      assert.equal(result.firstCheckpoint.persistencePending, true)
+      assert.equal(result.firstCheckpoint.status, 'interrupted')
+      assert.deepEqual(result.started, ['alpha', 'beta'])
+      assert.equal(result.checkpoint.completedCount, 2)
+      assert.equal(result.checkpoint.status, scenario === 'finalization-resume' ? 'complete' : 'interrupted')
+    })
+  }
+  for (const scenario of ['code-error', 'source-code-error']) {
+    test(`${parallel ? 'parallel' : 'sequential'} ${scenario} still stops execution`, () => {
+      const result = runScenario(scenario, parallel)
+      assert.ok(result.error)
+      assert.match(result.error.message, /invalid .* code/)
+      assert.deepEqual(result.started, ['alpha'])
+      assert.equal(result.checkpoint.completedCount, 0)
+    })
+  }
+}
 
 for (const scenario of ['fatal-cleanup', 'persistence-cleanup']) {
   test(`lifecycle timeout preserves ${scenario} errors instead of downgrading them to a warning`, () => {

@@ -2,14 +2,13 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runNativeInventory } from './native.js'
+export { extractNativeInventory } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://easyecom.io/careers'
-
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -97,6 +96,8 @@ const extractSectionLines = (html) => [...String(html ?? '').matchAll(/<(h[1-6]|
   .map((match) => stripTags(match[2])?.replace(/^[●•*\-]\s*/, ''))
   .filter(Boolean)
 
+// Archived Webflow fixture readers remain exported for historical data review.
+// The registered runtime below exclusively uses the current native inventory.
 export const extractSearchResults = (html) => {
   const pattern = /<div role="listitem" class="career-item w-dyn-item">[\s\S]*?<h3 class="heading-h3-size mg-bottom-10px">([\s\S]*?)<\/h3>[\s\S]*?<div class="text-200 medium color-neutral-800">([\s\S]*?)<\/div>[\s\S]*?<a href="([^"]+)" class="btn-primary width-100---mbl w-button">Apply now<\/a>/gi
 
@@ -190,40 +191,15 @@ function normalizeEmploymentType(value) {
   return normalizeWhitespace(value)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'easyecom',
-  timeoutMs: 15000,
-})
-
 export const createEasyEcomScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const html = await fetchText(CAREER_PAGE_URL)
-    const listings = extractSearchResults(html)
-    const jobs = []
-
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      jobs.push(extractJobDetail(detailHtml, listing))
-    }
-
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: 'easyecom',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+    return runNativeInventory({ ...options, maxJobs })
   },
 })
 
-export const run = async () => createEasyEcomScraper().run()
+export const run = async options => createEasyEcomScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

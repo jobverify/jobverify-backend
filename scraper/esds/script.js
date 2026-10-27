@@ -1,16 +1,14 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createDarwinboxScraper } from '../darwinbox/script.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { activeHead } from '../../scraper-support/utils/activeNativeHtml.js'
+import { readVisibleNativeDocument } from '../../scraper-support/utils/visibleNativeHtml.js'
 import { ESDS_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
-
 export const SOURCE = ESDS_CATALOG.source
 export const COMPANY = ESDS_CATALOG.companyName
 export const OFFICIAL_BRAND_NAME = ESDS_CATALOG.officialBrandName
@@ -23,337 +21,179 @@ export const DARWINBOX_COMPANY_ID = ESDS_CATALOG.darwinboxCompanyId
 export const PUBLIC_PORTAL_URL = ESDS_CATALOG.publicAllJobsUrl
 export const PROVIDER_METADATA = ESDS_CATALOG
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
-const darwinboxScraper = createDarwinboxScraper({
-  companyName: COMPANY,
-  source: SOURCE,
-  companyId: DARWINBOX_COMPANY_ID,
-  origin: DARWINBOX_ORIGIN,
-})
-
-const decodeHtmlEntities = (value) => String(value ?? '')
-  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
-  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/&amp;/gi, '&')
-  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
-  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
-  .replace(/&lt;/gi, '<')
-  .replace(/&gt;/gi, '>')
-
-const normalizeWhitespace = (value) => {
-  if (value == null) return null
-
-  const normalized = decodeHtmlEntities(value)
-    .replace(/\u00a0/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-  return normalized || null
-}
-
-const stripTags = (value) => normalizeWhitespace(
-  String(value ?? '')
-    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/td)\b[^>]*>/gi, '\n')
-    .replace(/<(p|div|li|h[1-6]|td)\b[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, ' '),
-)
-
-const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
-  if (!value) return null
-
+const normalize = value => String(value ?? '').replace(/\s+/g, ' ').trim() || null
+const allowedHosts = new Set(['www.esds.co.in', 'esds.co.in', 'esds.darwinbox.in'])
+const deniedStatuses = new Set([401, 403, 429])
+const descendants = (node, predicate) => node.inert ? [] : [
+  ...(predicate(node) ? [node] : []),
+  ...node.children.filter(child => typeof child !== 'string').flatMap(child => descendants(child, predicate)),
+]
+const toUrl = (value, base = CAREERS_URL) => {
   try {
-    return new URL(decodeHtmlEntities(value), baseUrl).toString().replace(/\/+$/g, '')
-  } catch {
-    return null
-  }
+    const url = new URL(value, base)
+    if (url.protocol !== 'https:' || url.username || url.password || !allowedHosts.has(url.hostname)) return null
+    url.hash = ''
+    return url.toString()
+  } catch { return null }
+}
+const listingUrl = value => {
+  const url = toUrl(value)
+  if (!url || !/^\/(?:esds-peoples\/)?careers\/?$/.test(new URL(url).pathname)) return null
+  return url === CAREERS_URL ? url : url.replace(/\/$/, '')
+}
+export const buildDetailUrl = jobId => `${HOMEPAGE_URL}career-details/${encodeURIComponent(normalize(jobId) || '')}`
+
+export const hasOfficialCareersSignal = html => {
+  const document = readVisibleNativeDocument(html)
+  return activeHead(html).titles.includes('Careers at ESDS | IT and Cloud Job Opportunities')
+    && document.nodes(node => /^h[12]$/.test(node.tag)).some(node => /Find your Next Job|Life at ESDS/i.test(document.text(node)))
+    && document.nodes(node => /^h[1-6]$/.test(node.tag)).some(node => /^Jobs of the day$/i.test(document.text(node)))
 }
 
-const extractFirst = (pattern, value, transform = (match) => match[1]) => {
-  const match = pattern.exec(String(value ?? ''))
-  return match ? transform(match) : null
-}
-
-const extractListItems = (html) => [...String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
-  .map((match) => stripTags(match[1]))
-  .filter(Boolean)
-
-const extractLabelValueMap = (items = []) => {
-  const labeledEntries = items
-    .map((item) => {
-      const separatorIndex = item.indexOf(':')
-      if (separatorIndex === -1) return null
-
-      const key = normalizeWhitespace(item.slice(0, separatorIndex))?.toLowerCase()
-      const value = normalizeWhitespace(item.slice(separatorIndex + 1))
-      if (!key || !value) return null
-      return [key, value]
-    })
-    .filter(Boolean)
-
-  return new Map(labeledEntries)
-}
-
-const extractPrimaryCity = (location) => {
-  const normalized = normalizeWhitespace(location)
-  if (!normalized) return null
-
-  const firstToken = normalized.split(',')[0]?.trim()
-  if (!firstToken) return null
-
-  return normalizeCity(firstToken) || firstToken
-}
-
-const normalizeDetailLocation = (value) => {
-  const raw = String(value ?? '')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-
-  const lines = decodeHtmlEntities(raw)
-    .split('\n')
-    .map((line) => normalizeWhitespace(line))
-    .filter(Boolean)
-    .map((line) => line.replace(/\s*\([^)]*\)\s*$/g, '').trim())
-    .filter(Boolean)
-
-  return lines.join(', ') || null
-}
-
-const extractTableFieldMap = (html) => {
-  const fields = new Map()
-
-  for (const match of String(html ?? '').matchAll(
-    /<tr>\s*<td[^>]*>\s*<strong>([\s\S]*?)<\/strong>\s*<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<\/tr>/gi,
-  )) {
-    const key = normalizeWhitespace(match[1])?.toLowerCase()
-    const value = key === 'location(s)'
-      ? normalizeDetailLocation(match[2])
-      : stripTags(match[2])
-
-    if (key && value) {
-      fields.set(key, value)
-    }
-  }
-
-  return fields
-}
-
-const matchesVerifiedCompanyName = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return true
-
-  return /^esds(?:\s+software\s+solution\s+limited)?$/i.test(normalized)
-}
-
-const isIndiaJob = (job = {}) => {
-  const country = normalizeWhitespace(job.country)
-  if (country && /^india$/i.test(country)) return true
-
-  return /india/i.test(normalizeWhitespace(job.location) || '')
-}
-
-const normalizeJobId = (value) => normalizeWhitespace(value)
-
-const filterToVerifiedPublicJobs = (firstPartyListings = [], darwinboxJobs = []) => {
-  const verifiedJobIds = new Set(
-    firstPartyListings
-      .map((listing) => normalizeJobId(listing.jobId))
-      .filter(Boolean),
-  )
-
-  return darwinboxJobs.filter((job) => verifiedJobIds.has(normalizeJobId(job.jobId)))
-}
-
-export const buildDetailUrl = (jobId) =>
-  `https://www.esds.co.in/career-details/${normalizeWhitespace(jobId) || ''}`
-
-export const hasOfficialCareersSignal = (html) => {
-  const page = String(html ?? '')
-
-  return /<title>\s*Careers at ESDS \| IT and Cloud Job Opportunities\s*<\/title>/i.test(page)
-    && /Life at ESDS/i.test(page)
-    && /Jobs of the day/i.test(page)
-    && /career-details\//i.test(page)
-}
-
-export const hasOfficialJobDetailSignal = (html) => {
-  const page = String(html ?? '')
-
-  return /<title>\s*Life at ESDS\s*<\/title>/i.test(page)
-    && /Job Title/i.test(page)
-    && /Company/i.test(page)
-    && /Department/i.test(page)
-    && /Employee Type/i.test(page)
-    && /Location\(s\)/i.test(page)
-    && /Country/i.test(page)
-    && /Apply Now/i.test(page)
-    && /https:\/\/esds\.darwinbox\.in\/ms\/candidate\/candidate\/login\?redirect=/i.test(page)
-}
-
-export const hasDarwinboxShellFallbackSignal = (html) => {
-  const page = String(html ?? '')
-
-  return /<title>\s*<\/title>/i.test(page)
-    && /<base href="\/ms\/candidatev2\/">/i.test(page)
-    && /db-components(?:\.esm)?\.js/i.test(page)
-    && /\/ms\/formbuilder\/assets\/db-form\/db-form\.js/i.test(page)
-}
-
-export const extractDarwinboxApplyUrl = (html) => toAbsoluteUrl(
-  extractFirst(
-    /https:\/\/esds\.darwinbox\.in\/ms\/candidate\/candidate\/login\?redirect=[^"'\\\s<]+/i,
-    html,
-    (match) => match[0],
-  ),
-  HOMEPAGE_URL,
-)
-
-export const extractJobCards = (html) => [...String(html ?? '').matchAll(
-  /window\.location='([^']*career-details\/[^']+)'[\s\S]*?<h5><a[^>]*>([\s\S]*?)<\/a><\/h5>[\s\S]*?<ul>([\s\S]*?)<\/ul>\s*<ol class="autoplaySlider">([\s\S]*?)<\/ol>[\s\S]*?<p class="m-0">([\s\S]*?)<\/p>/gi,
-)]
-  .map((match) => {
-    const sourceUrl = toAbsoluteUrl(match[1])
-    const title = stripTags(match[2])
-    const summaryItems = extractListItems(match[3])
-    const detailItems = extractListItems(match[4])
-    const detailMap = extractLabelValueMap(detailItems)
-    const location = stripTags(match[5])
-    const jobId = normalizeWhitespace(detailMap.get('job id'))
-      || normalizeWhitespace(sourceUrl?.split('/').pop())
-
-    if (!title || !location || !jobId || !sourceUrl) return null
-
-    const expectedSourceUrl = buildDetailUrl(jobId)
-    if (sourceUrl !== expectedSourceUrl) {
-      throw new Error('ESDS verified official careers surface no longer exposes the expected first-party detail routes')
-    }
-
+export const extractJobCards = html => {
+  const document = readVisibleNativeDocument(html)
+  return document.nodes(node => /window\.location\s*=/.test(node.attrs.onclick || '')).map(node => {
+    const route = node.attrs.onclick.match(/window\.location\s*=\s*['"]([^'"]+)['"]/)?.[1]
+    const sourceUrl = toUrl(route)
+    const match = sourceUrl && new URL(sourceUrl).pathname.match(/^\/career-details\/([a-zA-Z0-9_-]+)\/?$/)
+    if (!match || new URL(sourceUrl).hostname !== 'www.esds.co.in') return null
+    const titleNodes = descendants(node, child => child.tag === 'h5')
+    const locationNodes = descendants(node, child => child.tag === 'p' && document.hasClass(child, 'm-0'))
+    if (titleNodes.length !== 1 || locationNodes.length !== 1) return null
+    const title = document.text(titleNodes[0]), location = document.text(locationNodes[0])
+    const fields = new Map(descendants(node, child => child.tag === 'li').map(child => {
+      const text = document.text(child), at = text.indexOf(':')
+      return at < 0 ? [] : [normalize(text.slice(0, at))?.toLowerCase(), normalize(text.slice(at + 1))]
+    }).filter(entry => entry.length === 2))
+    const jobId = match[1]
+    if (!title || !location || fields.get('job id') !== jobId || sourceUrl.replace(/\/$/, '') !== buildDetailUrl(jobId)) return null
     return {
-      title,
-      company: COMPANY,
-      department: normalizeWhitespace(detailMap.get('department')),
-      location,
-      city: extractPrimaryCity(location),
-      country: null,
-      jobId,
-      requisitionId: jobId,
-      sourceUrl,
-      applyUrl: sourceUrl,
-      employmentType: summaryItems[0] || null,
-      experienceRequired: normalizeWhitespace(detailMap.get('experience (years)')),
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: summaryItems[1] || null,
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: null,
+      jobId, title, company: COMPANY, location, country: null, requisitionId: null,
+      postingDate: null, closingDate: null, jobDescription: null,
+      department: fields.get('department') || null,
+      experienceRequired: fields.get('experience (years)') || null,
+      sourceUrl, applyUrl: null,
     }
+  }).filter(Boolean)
+}
+
+// A 200 response containing only ESDS Open Graph metadata is neither a job nor a
+// working application client. Unexpected content requires a fresh contract review.
+export const hasOfficialJobDetailSignal = () => false
+const classifyDetail = html => {
+  const document = readVisibleNativeDocument(html)
+  const bodies = document.nodes(node => node.tag === 'body')
+  const text = bodies.length === 1 ? document.text(bodies[0]) : ''
+  if (activeHead(html).titles.includes('ESDS') && /^ESDS\s*-?\s*$/.test(text)) return 'metadata-only-public-detail'
+  return 'unverified-public-detail-contract'
+}
+
+const advertisedRoutes = html => {
+  const document = readVisibleNativeDocument(html)
+  const routes = document.nodes(node => node.tag === 'a' || node.tag === 'form').flatMap(node => {
+    const value = node.tag === 'form' ? node.attrs.action : node.attrs.href
+    const url = toUrl(value)
+    if (!url || (node.tag === 'form' && (node.attrs.method || 'get').toLowerCase() !== 'get')) return []
+    const listing = listingUrl(url)
+    if (listing) return [{ kind: 'corporate-listing', url: listing }]
+    if (new URL(url).hostname === 'esds.darwinbox.in' && /\/careers(?:\/|$)/i.test(new URL(url).pathname)) return [{ kind: 'native-hiring-route', url }]
+    return []
   })
-  .filter(Boolean)
+  return [...new Map(routes.map(route => [route.url, route])).values()]
+}
 
-export const extractJobDetail = (html, listing = {}) => {
-  const fields = extractTableFieldMap(html)
-  const detailTitle = normalizeWhitespace(fields.get('job title'))
-  const detailCompany = normalizeWhitespace(fields.get('company'))
-  const detailDepartment = normalizeWhitespace(fields.get('department'))
-  const detailLocation = normalizeWhitespace(fields.get('location(s)'))
-  const detailCountry = normalizeWhitespace(fields.get('country'))
-  const detailExperience = normalizeWhitespace(fields.get('experience required'))
-  const detailEmploymentType = normalizeWhitespace(fields.get('employee type'))
-  const applyUrl = extractDarwinboxApplyUrl(html)
-
-  if (detailTitle && listing.title && detailTitle.toLowerCase() !== listing.title.toLowerCase()) {
-    throw new Error('ESDS verified public detail/apply surface no longer matches the first-party listing titles')
-  }
-
-  if (!matchesVerifiedCompanyName(detailCompany)) {
-    throw new Error('ESDS verified public detail/apply surface no longer maps to the verified company identity')
-  }
-
-  return {
-    ...listing,
-    title: detailTitle || listing.title || null,
-    company: COMPANY,
-    department: detailDepartment || listing.department || null,
-    location: listing.location || detailLocation || null,
-    city: listing.city || extractPrimaryCity(detailLocation) || null,
-    country: detailCountry || listing.country || null,
-    applyUrl: applyUrl || listing.applyUrl || null,
-    employmentType: detailEmploymentType || listing.employmentType || null,
-    experienceRequired: detailExperience || listing.experienceRequired || null,
-    jobDescription: null,
-    requiredSkills: [],
+// Single-attempt, anonymous GETs only. Redirects receive the same host spacing
+// and access-denial handling as the initial URL; no fallback session or headers.
+export const createPublicGetTransport = ({ fetchImpl = fetch, spacingMs = 1100 } = {}) => {
+  const lastRequestAt = new Map()
+  let denied = false
+  return async (initialUrl, { signal } = {}) => {
+    let url = toUrl(initialUrl)
+    for (let hop = 0; hop <= 5; hop += 1) {
+      signal?.throwIfAborted()
+      if (!url || denied) throw new Error('[esds] public GET stopped by URL or access-denial guard')
+      const host = new URL(url).hostname
+      const delay = Math.max(0, Math.max(1000, spacingMs) - (Date.now() - (lastRequestAt.get(host) || 0)))
+      if (delay) await new Promise(resolve => setTimeout(resolve, delay))
+      signal?.throwIfAborted()
+      lastRequestAt.set(host, Date.now())
+      const response = await fetchImpl(url, { method: 'GET', redirect: 'manual', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000) })
+      if (deniedStatuses.has(response.status)) denied = true
+      if ([301, 302, 303, 307, 308].includes(response.status)) {
+        const nextUrl = toUrl(response.headers.get('location'), url)
+        await response.body?.cancel?.()
+        if (!nextUrl) throw new Error('[esds] public redirect left the verified employer hosts')
+        url = nextUrl
+        continue
+      }
+      return { status: response.status, url, text: await response.text() }
+    }
+    throw new Error('[esds] public redirect limit exceeded')
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+export const createEsdsScraper = ({ now = () => new Date().toISOString() } = {}) => ({
+  async run({ fetchPage, fetchText, maxPages = config.maxPages || 10, signal, onSourceEvidence } = {}) {
+    const transport = fetchPage || (fetchText ? async url => ({ status: 200, url, text: await fetchText(url) }) : createPublicGetTransport())
+    const evidence = { source: SOURCE, codeRepaired: false, partial: true, observedAt: now(),
+      advertisedCandidates: [], listingPages: [], details: [], advertisedHiringRoutes: [], issues: ['native-inventory-and-role-country-unverified'] }
+    const pages = new Map(), candidates = new Map(), queue = [CAREERS_URL]
+    let stopped = false
+    const read = async url => {
+      signal?.throwIfAborted()
+      try {
+        const page = await transport(url, { signal })
+        if (!page || typeof page.text !== 'string' || !Number.isInteger(page.status) || !toUrl(page.url || url)) throw new Error('invalid-response')
+        if (deniedStatuses.has(page.status)) { stopped = true; evidence.issues.push('access-denied') }
+        return page
+      } catch (error) {
+        signal?.throwIfAborted()
+        evidence.issues.push(deniedStatuses.has(error.status) ? 'access-denied' : 'public-fetch-failed')
+        stopped = true
+        return null
+      }
+    }
+    for (let index = 0; index < queue.length && !stopped; index += 1) {
+      if (index >= maxPages) { evidence.issues.push('corporate-pagination-limit'); break }
+      const url = queue[index], page = await read(url)
+      if (!page) break
+      evidence.listingPages.push({ url, finalUrl: page.url || url, status: page.status })
+      if (page.status !== 200 || !hasOfficialCareersSignal(page.text)) { evidence.issues.push('unverified-corporate-listing'); break }
+      const cards = extractJobCards(page.text)
+      pages.set(url, JSON.stringify(cards))
+      for (const card of cards) {
+        if (candidates.has(card.jobId) && JSON.stringify(candidates.get(card.jobId)) !== JSON.stringify(card)) evidence.issues.push('contradictory-corporate-candidate')
+        candidates.set(card.jobId, card)
+      }
+      for (const route of advertisedRoutes(page.text)) {
+        if (!evidence.advertisedHiringRoutes.some(item => item.url === route.url)) evidence.advertisedHiringRoutes.push(route)
+        if (route.kind === 'corporate-listing' && !queue.includes(route.url)) queue.push(route.url)
+        if (route.kind === 'native-hiring-route') evidence.issues.push('unverified-advertised-native-hiring-route')
+      }
+    }
+    evidence.advertisedCandidates = [...candidates.values()]
+    if (!candidates.size) evidence.issues.push('corporate-candidates-missing-or-changed')
+    for (const candidate of candidates.values()) {
+      if (stopped) break
+      const page = await read(candidate.sourceUrl)
+      evidence.details.push({ jobId: candidate.jobId, url: candidate.sourceUrl, finalUrl: page?.url || null,
+        status: page?.status || null, outcome: !page ? 'public-fetch-failed' : deniedStatuses.has(page.status) ? 'access-denied' : page.status !== 200 ? 'public-detail-unavailable' : classifyDetail(page.text) })
+    }
+    // Closing discovery checks happen before any output cap. They cannot prove
+    // the native inventory complete while the advertised public client is absent.
+    if (!stopped) for (const [url, opening] of pages) {
+      const page = await read(url)
+      if (!page || stopped) break
+      if (page.status !== 200 || !hasOfficialCareersSignal(page.text) || JSON.stringify(extractJobCards(page.text)) !== opening
+          || advertisedRoutes(page.text).some(route => !evidence.advertisedHiringRoutes.some(item => item.url === route.url))) evidence.issues.push('closing-corporate-inventory-changed')
+    }
+    evidence.issues = [...new Set([...evidence.issues, ...evidence.details.map(detail => detail.outcome)])]
+    onSourceEvidence?.(evidence)
+    return attachInventoryEvidence([], { status: 'discovery-only', surface: CAREERS_URL,
+      firstParty: pages.size > 0, listingComplete: false, pagesFetched: pages.size,
+      reportedTotal: null, indiaFacetCount: null, verifiedAt: evidence.observedAt,
+      reason: `esds-unresolved-coverage-gap:${evidence.issues.join(',')}` })
   },
-  label: SOURCE,
-  timeoutMs: 15000,
 })
 
-export const createEsdsScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    maxPages = config.maxPages,
-    fetchText = defaultFetchText,
-    fetchListingPage,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('ESDS verified official careers surface no longer matches the first-party contract')
-    }
-
-    const firstPartyListings = extractJobCards(careersHtml)
-    if (firstPartyListings.length === 0) {
-      throw new Error('ESDS verified official careers surface no longer exposes the expected job cards')
-    }
-
-    const darwinboxJobs = await darwinboxScraper.run({
-      maxPages,
-      maxJobs,
-      fetchListingPage,
-    })
-    const verifiedPublicJobs = filterToVerifiedPublicJobs(firstPartyListings, darwinboxJobs)
-
-    if (verifiedPublicJobs.length === 0) {
-      throw new Error('ESDS verified first-party careers surface no longer lines up with the live Darwinbox public jobs portal')
-    }
-
-    const scrapedAt = now()
-    const selectedJobs = Number.isInteger(maxJobs)
-      ? verifiedPublicJobs.slice(0, maxJobs)
-      : verifiedPublicJobs
-
-    return selectedJobs
-      .filter((job) => isIndiaJob(job))
-      .map((job) => ({
-        ...job,
-        country: normalizeWhitespace(job.country) || 'India',
-        scrapedAt,
-      }))
-  },
-})
-
-export const run = async (options = {}) => createEsdsScraper(options).run(options)
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
-  const jobs = await run()
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
-  }
-}
+export const run = options => createEsdsScraper(options).run(options)

@@ -42,6 +42,7 @@ import { LocalJobOutboxPersistenceError, saveLocalJobOutbox } from './utils/loca
 import { buildClassificationInput } from '../src/services/jobClassificationPolicy.js'
 import { acquireMongoRunLease } from './utils/runLease.js'
 import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
+import { isMongoOperationalError, retryMongoOperation } from '../src/utils/mongoOperationalError.js'
 import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
 import { buildScrapers } from './providers/index.js'
@@ -262,12 +263,42 @@ export class FatalScraperPersistenceError extends Error {
 }
 
 const toFatalScraperPersistenceError = (context, error, { required = false } = {}) => {
+  if (isMongoOperationalError(error)) return null
   if (!required && !isMongoStorageQuotaWriteBlockError(error)) return null
 
   return new FatalScraperPersistenceError(
     `${context}: ${error?.message || String(error)}`,
     error ? { cause: error } : undefined,
   )
+}
+
+const pendingPersistenceResult = (error, result = {}) => ({
+  ...result,
+  success: false,
+  softFailure: true,
+  upstreamOutage: false,
+  failureKind: 'database_unavailable',
+  persistencePending: true,
+  processingComplete: false,
+  error: error?.message || String(error),
+})
+
+const hasPendingPersistence = result => result?.persistencePending || result?.classificationPending
+const deferRunPersistence = summary => Object.defineProperty(summary, 'persistencePending', { value: true, configurable: true })
+
+const isProgrammingError = error => {
+  const seen = new Set()
+  for (let current = error; current && !seen.has(current); current = current.cause) {
+    seen.add(current)
+    if (current instanceof TypeError || current instanceof ReferenceError || current instanceof SyntaxError || current instanceof RangeError) return true
+  }
+  return false
+}
+
+const writePipelineSummary = summary => {
+  if (!process.env.PIPELINE_SUMMARY_FILE) return
+  fs.mkdirSync(path.dirname(process.env.PIPELINE_SUMMARY_FILE), { recursive: true })
+  fs.writeFileSync(process.env.PIPELINE_SUMMARY_FILE, JSON.stringify(summary))
 }
 
 export const isLatePuppeteerTargetClose = (reason) => {
@@ -850,6 +881,10 @@ const updateLiveScraperStatus = async (source, result, logStage) => {
       status: 'error',
       error: dbErr?.message || String(dbErr),
     })
+    if (isMongoOperationalError(dbErr)) {
+      Object.assign(result, pendingPersistenceResult(dbErr, result))
+      return
+    }
     const fatalPersistenceError = toFatalScraperPersistenceError(
       `[pipeline] Failed to save status for [${source}]; aborting run`,
       dbErr,
@@ -895,8 +930,9 @@ const isPipelineFatalError = (error) => {
 }
 
 const rethrowFatalError = (error, { source, processingStarted, signal }) => {
+  if (isMongoOperationalError(error, { networkCodes: processingStarted })) return
   if (isPipelineFatalError(error)) throw error
-  if (!processingStarted || error?.classificationPending) return
+  if (error?.classificationPending || (!processingStarted && (!isProgrammingError(error) || classifyScraperError(error).softFailure))) return
   const seen = new Set()
   for (let current = error; current && !seen.has(current); current = current.cause) {
     seen.add(current)
@@ -940,32 +976,35 @@ export const retryAfterMongoQuotaRecovery = async (
   operation,
   {
     purgeExpiredJobs = purgeExpiredJobsForQuotaRecovery,
+    ...retryOptions
   } = {},
 ) => {
-  try {
-    return await operation()
-  } catch (error) {
-    if (!isMongoStorageQuotaWriteBlockError(error)) throw error
-
-    let recovery
+  return retryMongoOperation(async () => {
     try {
-      recovery = await purgeExpiredJobs()
-    } catch (purgeError) {
-      console.error('[pipeline] Atlas quota recovery purge failed:', purgeError.message)
-      throw error
-    }
+      return await operation()
+    } catch (error) {
+      if (!isMongoStorageQuotaWriteBlockError(error)) throw error
 
-    if (!recovery || recovery.deletedCount <= 0) {
-      console.error('[pipeline] Atlas quota recovery found no eligible expired jobs to remove.')
-      throw error
-    }
+      let recovery
+      try {
+        recovery = await purgeExpiredJobs()
+      } catch (purgeError) {
+        console.error('[pipeline] Atlas quota recovery purge failed:', purgeError.message)
+        throw error
+      }
 
-    console.warn(
-      `[pipeline] Atlas quota recovery removed ${recovery.deletedCount} expired jobs ` +
-      `(~${(recovery.estimatedBytes / (1024 * 1024)).toFixed(1)} MB); retrying the blocked write once.`,
-    )
-    return operation()
-  }
+      if (!recovery || recovery.deletedCount <= 0) {
+        console.error('[pipeline] Atlas quota recovery found no eligible expired jobs to remove.')
+        throw error
+      }
+
+      console.warn(
+        `[pipeline] Atlas quota recovery removed ${recovery.deletedCount} expired jobs ` +
+        `(~${(recovery.estimatedBytes / (1024 * 1024)).toFixed(1)} MB); retrying the blocked write once.`,
+      )
+      return operation()
+    }
+  }, retryOptions)
 }
 
 const NON_RETRIABLE_SOFT_FAILURE_KINDS = new Set([
@@ -980,6 +1019,7 @@ export const applyRetryPolicyToScraperError = (error) => {
 
   const classification = classifyScraperError(error)
   if (classification.softFailure !== true) {
+    if (isProgrammingError(error)) error.abortRetries = true
     return error
   }
 
@@ -1032,6 +1072,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
   const summary = checkpoint?.completedSummary() || {}
   const startTime = Date.now()
   const startedAt = new Date(startTime)
+  const lifecycleAttemptId = checkpoint?.snapshot().createdAt || startedAt.toISOString()
   const checkpointHeartbeat = checkpoint
     ? setInterval(() => checkpoint.heartbeat({
         pid: process.pid,
@@ -1052,6 +1093,14 @@ export const runAll = async ({ stopSignal = null } = {}) => {
     try {
       await retryAfterMongoQuotaRecovery(() => ensureScrapersSeeded())
     } catch (seedErr) {
+      if (isMongoOperationalError(seedErr)) {
+        console.warn(`[runner] Database unavailable during status seeding; leaving sources pending: ${seedErr.message}`)
+        for (const scraper of scrapers) summary[scraper.name] = pendingPersistenceResult(seedErr)
+        if (!scrapers.length) deferRunPersistence(summary)
+        checkpoint?.finish({ persistencePending: Boolean(summary.persistencePending) })
+        if (checkpointHeartbeat) clearInterval(checkpointHeartbeat)
+        return summary
+      }
       const fatalPersistenceError = toFatalScraperPersistenceError(
         '[pipeline] Failed while seeding scraper status records; aborting run',
         seedErr,
@@ -1072,13 +1121,18 @@ export const runAll = async ({ stopSignal = null } = {}) => {
     try {
       await retryAfterMongoQuotaRecovery(() => markPipelineRunStarted(startedAt))
     } catch (pipelineErr) {
-      const fatalPersistenceError = toFatalScraperPersistenceError(
-        '[pipeline] Failed while marking the pipeline as running; aborting run',
-        pipelineErr,
-        { required: true },
-      )
-      console.error(`  ${fatalPersistenceError.message}`)
-      throw fatalPersistenceError
+      if (isMongoOperationalError(pipelineErr)) {
+        console.warn(`[runner] Pipeline start reporting deferred: ${pipelineErr.message}`)
+        deferRunPersistence(summary)
+      } else {
+        const fatalPersistenceError = toFatalScraperPersistenceError(
+          '[pipeline] Failed while marking the pipeline as running; aborting run',
+          pipelineErr,
+          { required: true },
+        )
+        console.error(`  ${fatalPersistenceError.message}`)
+        throw fatalPersistenceError
+      }
     }
   }
 
@@ -1091,9 +1145,11 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         summary,
         checkpoint,
         stopSignal,
+        lifecycleAttemptId,
       })
       checkpoint?.finish({
         interruptedBy: stopSignal?.aborted ? (stopSignal.reason?.signalName || 'signal') : null,
+        persistencePending: Boolean(parallelSummary.persistencePending),
       })
       return parallelSummary
     } catch (error) {
@@ -1118,7 +1174,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
     // Skip execution if the scraper has been deactivated by an administrator
     if (!isDryRun) {
       try {
-        const status = await ScraperStatus.findOne({ source: scraper.name }).lean().exec()
+        const status = await retryAfterMongoQuotaRecovery(() => ScraperStatus.findOne({ source: scraper.name }).lean().exec(), { signal: stopSignal })
         if (status && status.isActive === false) {
           console.log(`  WARN ${progressStr}[${scraper.name}] is currently deactivated (isActive = false). Skipping run.\n`)
           const skippedResult = {
@@ -1133,6 +1189,10 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         }
       } catch (dbErr) {
         console.error(`  ERROR ${progressStr}[${scraper.name}] Failed to verify active status from DB:`, dbErr.message)
+        if (isMongoOperationalError(dbErr)) {
+          summary[scraper.name] = pendingPersistenceResult(dbErr)
+          continue
+        }
         throw toFatalScraperPersistenceError(`[pipeline] Failed to read status for [${scraper.name}]; aborting run`, dbErr, { required: true })
       }
     }
@@ -1186,14 +1246,15 @@ export const runAll = async ({ stopSignal = null } = {}) => {
           file: scraper.dryRunFile,
         }
       } else {
-        result = await retryAfterMongoQuotaRecovery(() => saveToDB(jobs, scraper.name, {
+        result = await saveToDB(jobs, scraper.name, {
           ...inventoryCleanupOptions(attemptDiagnostics),
           refreshDatasetSummary: false,
           authoritativeEmpty: zeroJobEvidence === 'verified-empty',
           enrichPublicExperience: resolveLivePublicExperienceEnabled(scraper),
           signal: stopSignal,
           onStage: logStage,
-        }))
+          lifecycleAttemptId,
+        })
         result.jobs = indiaJobs.length
         result.cities = cities
       }
@@ -1235,6 +1296,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         retry: getRetryMetadata(err),
         durationMs: Date.now() - scraperStart,
         ...classification,
+        ...(isMongoOperationalError(err, { networkCodes: processingStarted }) ? pendingPersistenceResult(err) : {}),
       }
       const failureLabel = failureResult.softFailure ? 'UPSTREAM:' : 'SOURCE FAILED:'
       console.warn(`  WARN [${scraper.name}] ${failureLabel}`, err.message)
@@ -1242,20 +1304,10 @@ export const runAll = async ({ stopSignal = null } = {}) => {
     }
 
     if (!isDryRun) {
-      try {
-        await retryAfterMongoQuotaRecovery(() => upsertScraperStatus(scraper.name, summary[scraper.name]))
-      } catch (dbErr) {
-        const fatalPersistenceError = toFatalScraperPersistenceError(
-          `[pipeline] Failed to save status for [${scraper.name}]; aborting run`,
-          dbErr,
-          { required: true },
-        )
-        console.error(`  ${fatalPersistenceError.message}`)
-        throw fatalPersistenceError
-      }
+      await updateLiveScraperStatus(scraper.name, summary[scraper.name], logStage)
     }
 
-    if (!summary[scraper.name]?.classificationPending) checkpoint?.markSourceCompleted(scraper.name, summary[scraper.name])
+    if (!hasPendingPersistence(summary[scraper.name])) checkpoint?.markSourceCompleted(scraper.name, summary[scraper.name])
 
     console.log()
   }
@@ -1274,6 +1326,8 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       await retryAfterMongoQuotaRecovery(() => writeScraperRun(new Date(startTime), summary))
     } catch (dbErr) {
       console.error(`  ERROR Failed to save run history to DB:`, dbErr.message)
+      if (!isMongoOperationalError(dbErr)) throw dbErr
+      deferRunPersistence(summary)
     }
   }
 
@@ -1289,7 +1343,8 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       }))
     } catch (pipelineErr) {
       console.error(`  [pipeline] Failed to mark pipeline as complete:`, pipelineErr.message)
-      throw toFatalScraperPersistenceError('[pipeline] Failed to mark pipeline as complete; aborting run', pipelineErr, { required: true })
+      if (!isMongoOperationalError(pipelineErr)) throw toFatalScraperPersistenceError('[pipeline] Failed to mark pipeline as complete; aborting run', pipelineErr, { required: true })
+      deferRunPersistence(summary)
     }
   }
 
@@ -1298,6 +1353,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
   })
   checkpoint?.finish({
     interruptedBy: stopSignal?.aborted ? (stopSignal.reason?.signalName || 'signal') : null,
+    persistencePending: Boolean(summary.persistencePending),
   })
   if (checkpointHeartbeat) clearInterval(checkpointHeartbeat)
   return summary
@@ -1322,13 +1378,14 @@ export const runScraper = async (
   // Skip execution if the scraper has been deactivated by an administrator
   if (!isDryRun) {
     try {
-      const status = await ScraperStatus.findOne({ source: scraper.name }).lean().exec()
+      const status = await retryAfterMongoQuotaRecovery(() => ScraperStatus.findOne({ source: scraper.name }).lean().exec(), { signal: persistenceOptions.signal })
       if (status && status.isActive === false) {
         console.log(`  WARN ${progressStr}[${scraper.name}] is currently deactivated (isActive = false). Skipping run.\n`)
         return { name: scraper.name, success: true, skipped: true, jobs: 0, eligibleJobs: 0, inserted: 0, updated: 0, deleted: 0, filteredOld: 0, missed: 0, expired: 0, durationMs: 0 }
       }
     } catch (dbErr) {
       console.error(`  ERROR ${progressStr}[${scraper.name}] Failed to verify active status from DB:`, dbErr.message)
+      if (isMongoOperationalError(dbErr)) return { name: scraper.name, ...pendingPersistenceResult(dbErr) }
       throw toFatalScraperPersistenceError(`[pipeline] Failed to read status for [${scraper.name}]; aborting run`, dbErr, { required: true })
     }
   }
@@ -1399,7 +1456,7 @@ export const runScraper = async (
         file: scraper.dryRunFile,
       }
     } else {
-      result = await retryAfterMongoQuotaRecovery(() => saveToDB(jobs, scraper.name, {
+      result = await saveToDB(jobs, scraper.name, {
         ...persistenceOptions,
         ...inventoryCleanupOptions(attemptDiagnostics),
         refreshDatasetSummary: false,
@@ -1407,7 +1464,7 @@ export const runScraper = async (
         enrichPublicExperience: resolveLivePublicExperienceEnabled(scraper),
         signal: lifecycleSignal,
         onStage: logStage,
-      }))
+      })
       result.jobs = indiaJobs.length
       result.cities = cities
     }
@@ -1453,6 +1510,7 @@ export const runScraper = async (
       retry: getRetryMetadata(err),
       durationMs: Date.now() - scraperStart,
       ...classification,
+      ...(isMongoOperationalError(err, { networkCodes: processingStarted }) ? pendingPersistenceResult(err) : {}),
     }
     const failureLabel = failResult.softFailure ? 'UPSTREAM:' : 'SOURCE FAILED:'
     console.warn(`  WARN [${scraper.name}] ${failureLabel}`, err.message)
@@ -1471,6 +1529,7 @@ const runAllParallel = async ({
   summary = {},
   checkpoint = null,
   stopSignal = null,
+  lifecycleAttemptId = startedAt.toISOString(),
 } = {}) => {
   const startTime = Date.now()
   let previousRun = null
@@ -1516,7 +1575,7 @@ const runAllParallel = async ({
           ({ signal, pauseTimeout, resumeTimeout }) => runScraper(
             scraper,
             progressStr,
-            { signal, pauseTimeout, resumeTimeout },
+            { signal, pauseTimeout, resumeTimeout, lifecycleAttemptId },
           ),
           resolveSourceLifecycleTimeoutMs(undefined, scraper),
           { signal: pipelineController.signal },
@@ -1559,7 +1618,7 @@ const runAllParallel = async ({
       }
       const { name, ...rest } = result
       summary[name] = rest
-      if (!escapedError && !rest.classificationPending && !stopSignal?.aborted) checkpoint?.markSourceCompleted(name, rest)
+      if (!escapedError && !hasPendingPersistence(rest) && !stopSignal?.aborted) checkpoint?.markSourceCompleted(name, rest)
       
       completedCount++
       console.log(`${formatParallelProgressLog(completedCount, totalScrapers)}\n`)
@@ -1585,6 +1644,8 @@ const runAllParallel = async ({
       await retryAfterMongoQuotaRecovery(() => writeScraperRun(new Date(startTime), summary))
     } catch (dbErr) {
       console.error(`  ERROR Failed to save run history to DB:`, dbErr.message)
+      if (!isMongoOperationalError(dbErr)) throw dbErr
+      deferRunPersistence(summary)
     }
   }
 
@@ -1602,7 +1663,8 @@ const runAllParallel = async ({
       }))
     } catch (pipelineErr) {
       console.error(`  [pipeline] Failed to mark pipeline as complete:`, pipelineErr.message)
-      throw toFatalScraperPersistenceError('[pipeline] Failed to mark pipeline as complete; aborting run', pipelineErr, { required: true })
+      if (!isMongoOperationalError(pipelineErr)) throw toFatalScraperPersistenceError('[pipeline] Failed to mark pipeline as complete; aborting run', pipelineErr, { required: true })
+      deferRunPersistence(summary)
     }
   }
 
@@ -1670,30 +1732,31 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
     }))
 
     const rows = Object.values(summary)
-    const pipelineSummary = summarizeScraperRun(rows, { interrupted: shutdown.requested })
+    const pipelineSummary = summarizeScraperRun(rows, { interrupted: shutdown.requested, persistencePending: summary.persistencePending })
     const warnings = pipelineSummary.warnings
     if (warnings > 0) {
       console.warn(`[runner] Recorded ${warnings} source warning(s). See source diagnostics above.`)
     }
-    if (Object.values(summary).some(result => result.classificationPending)) {
-      console.error('Some sources have unfinished persistence. Resume this checkpoint to retry.')
-      process.exitCode = 1
+    if (Object.values(summary).some(hasPendingPersistence)) {
+      console.warn('Some sources have unfinished persistence. Resume this checkpoint to retry.')
     }
     if (shutdown.requested) process.exitCode = shutdown.exitCode
-    if (process.env.PIPELINE_SUMMARY_FILE) {
-      fs.mkdirSync(path.dirname(process.env.PIPELINE_SUMMARY_FILE), { recursive: true })
-      fs.writeFileSync(process.env.PIPELINE_SUMMARY_FILE, JSON.stringify(pipelineSummary))
-      if (pipelineSummary.pendingEstimate > 0) process.exitCode = 1
-    }
+    writePipelineSummary(pipelineSummary)
   } catch (err) {
-    console.error('Pipeline error:', err)
-    process.exitCode = Number.isInteger(err?.exitCode) ? err.exitCode : 1
+    if (isMongoOperationalError(err)) {
+      console.warn('[runner] Database unavailable; checkpoint retained for recovery:', err.message)
+      writePipelineSummary({ ...summarizeScraperRun([], { interrupted: true }), pendingEstimate: 1, stopReason: 'database_unavailable' })
+      process.exitCode = 0
+    } else {
+      console.error('Pipeline error:', err)
+      process.exitCode = Number.isInteger(err?.exitCode) ? err.exitCode : 1
+    }
   } finally {
     try {
       await runLease?.release()
     } catch (error) {
       console.error('[runner] Failed to release MongoDB run lease:', error.message)
-      process.exitCode = process.exitCode || 1
+      if (!isMongoOperationalError(error)) process.exitCode = process.exitCode || 1
     }
     shutdown.dispose()
   }

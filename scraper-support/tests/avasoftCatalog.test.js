@@ -14,6 +14,10 @@ test('getScraperCatalog includes the AVASOFT careers page script provider with o
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.match(provider.companyCareerPage, /avasoft\.com\/career/i)
+  assert.equal(provider.verifiedOn, '2026-10-26')
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  assert.equal(provider.verifiedPublicPostingCount, null)
+  assert.equal(provider.verifiedIndiaRoleCount, null)
 })
 
 test('buildScrapers exposes a runnable AVASOFT scraper without changing the runner contract', () => {
@@ -24,4 +28,14 @@ test('buildScrapers exposes a runnable AVASOFT scraper without changing the runn
   assert.equal(typeof scraper.run, 'function')
   assert.match(scraper.dryRunFile, /avasoft[\\/]jobs\.json$/)
   assert.equal(scraper.provider.source, 'avasoft')
+})
+
+test('Avasoft local metadata records current native visibility, content and career-enquiry rules', async () => {
+  const { AVASOFT_CATALOG } = await import('../../scraper/avasoft/catalog.js')
+  const { PROVIDER_METADATA } = await import('../../scraper/avasoft/script.js')
+  assert.equal(PROVIDER_METADATA, AVASOFT_CATALOG)
+  assert.equal(AVASOFT_CATALOG.applicationStrategy, 'role-declared-contact-page+verified-career-enquiry')
+  assert.equal(AVASOFT_CATALOG.verifiedIndiaRoleCount, null)
+  assert.match(AVASOFT_CATALOG.verifiedSurfaceSummary, /hidden.*breakpoints/i)
+  assert.match(AVASOFT_CATALOG.verifiedSurfaceSummary, /unknown.*publication/i)
 })
