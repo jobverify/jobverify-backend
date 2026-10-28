@@ -1,14 +1,16 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { createHiBobNativeInventory } from '../../scraper-support/hibob/nativeInventory.js'
+import CATALOG, { NATIVE_CONFIG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 const BASE_URL = 'https://careers.sapiens.com'
 const DEFAULT_LOCALE = 'en_US'
 const PAGE_SIZE = 15
+export const PROVIDER_METADATA = CATALOG
+// Pure SuccessFactors helpers below preserve archived fixture contracts only.
 
 export const SEARCH_PAGE_URL = `${BASE_URL}/search/?createNewAlert=false&q=&locationsearch=`
 
@@ -262,64 +264,7 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
-
-export const createSapiensScraper = () => ({
-  async run({
-    maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
-    maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-    fetchText = defaultFetchText,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (let page = 0; page < maxPages; page += 1) {
-      const startRow = page * PAGE_SIZE
-      const listingUrl = startRow === 0 ? SEARCH_PAGE_URL : buildSearchUrl({ startRow })
-      const listingHtml = await fetchText(listingUrl)
-      const listings = extractSearchResults(listingHtml)
-      const summary = extractPaginationSummary(listingHtml)
-
-      if (listings.length === 0) break
-
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detail = extractJobDetail(await fetchText(listing.sourceUrl), listing)
-        if (!isIndiaLocation(detail.location)) continue
-
-        jobs.push({
-          ...detail,
-          company: COMPANY_NAME,
-          link: detail.applyUrl || detail.sourceUrl,
-          source: SOURCE,
-          scrapedAt: now(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) return jobs
-      }
-
-      if (!summary.totalPages || page + 1 >= summary.totalPages) break
-    }
-
-    return jobs
-  },
-})
+export const createSapiensScraper = (options = {}) => createHiBobNativeInventory(NATIVE_CONFIG, options)
 
 export const run = async (options = {}) => createSapiensScraper().run(options)
 

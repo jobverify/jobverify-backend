@@ -1,0 +1,10 @@
+{
+  "kind":"exact-exploratory-public-response-bodies",
+  "capturedOn":"2026-10-27",
+  "manifest":"raw-manifest.json",
+  "rawResponseCount":19,
+  "retainedActualNativeRoles":13,
+  "syntheticRegressions":"native.test.js explicitly labels transformed future roles and controlled failures as synthetic",
+  "closingFixturePolicy":"These deterministic source tests reuse retained opening response bytes for closing requests. They do not claim a live closing observation.",
+  "independentFreshClosingProof":"artifacts/scraper-log-review-1b360f27/airbyte-native-20261027/registered-fresh/raw-manifest.json contains 38 ordered actual registered-run requests, including separately acquired closing details, board, feed and corporate client surfaces."
+}

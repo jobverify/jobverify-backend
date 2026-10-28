@@ -134,52 +134,20 @@ test('extractJobDetail reads Tech Mahindra detail metadata, experience, and qual
   )
 })
 
-test('run passes caller signal and fetches Tech Mahindra detail pages concurrently', async () => {
+test('run refuses legacy unbranded listing fragments as current native employer evidence', async () => {
   const originalFetch = globalThis.fetch
   const controller = new AbortController()
   const signals = []
-  let activeDetailFetches = 0
-  let maxActiveDetailFetches = 0
-  const listingPage = readFixture('current-opportunity-india-page-1.html')
-    .replace(/<div class="col-md-12 mt-2 mb-4">[\s\S]*?<\/div>\s*<\/form>/i, '</form>')
-
   globalThis.fetch = async (url, init = {}) => {
     signals.push(init.signal)
-
-    if (String(url).endsWith('/CurrentOpportunity.aspx') && (init.method || 'GET') === 'GET') {
-      return response(`
-        <input type="hidden" name="__VIEWSTATE" value="state-token" />
-        <input type="hidden" name="__EVENTVALIDATION" value="event-token" />
-      `)
-    }
-
-    if (String(url).endsWith('/CurrentOpportunity.aspx') && init.method === 'POST') {
-      return response(listingPage)
-    }
-
-    if (String(url).includes('/JobDetails.aspx?')) {
-      activeDetailFetches += 1
-      maxActiveDetailFetches = Math.max(maxActiveDetailFetches, activeDetailFetches)
-      await new Promise((resolve) => setTimeout(resolve, 20))
-      activeDetailFetches -= 1
-      const jobId = String(url).includes('SamplePage1') ? '4091209' : '4091208'
-      return response(readFixture('job-detail-4091208.html').replaceAll('4091208', jobId))
-    }
-
-    throw new Error(`Unexpected Tech Mahindra URL: ${url}`)
+    return response(readFixture('current-opportunity-india-page-1.html'))
   }
-
   try {
-    const jobs = await run({
-      detailConcurrency: 2,
-      maxPages: 1,
-      signal: controller.signal,
-    })
-
-    assert.equal(jobs.length, 2)
-    assert.ok(maxActiveDetailFetches > 1)
-    assert.ok(signals.every((signal) => signal instanceof AbortSignal))
-  } finally {
-    globalThis.fetch = originalFetch
-  }
+    const jobs = await run({ maxPages: 1, signal: controller.signal })
+    assert.equal(jobs.length, 0)
+    const evidence = jobs[Symbol.for('jobverify.inventory-evidence')]
+    assert.equal(evidence.listingComplete, false)
+    assert.match(evidence.reason, /employer identity missing/)
+    assert.ok(signals.every(signal => signal instanceof AbortSignal))
+  } finally { globalThis.fetch = originalFetch }
 })

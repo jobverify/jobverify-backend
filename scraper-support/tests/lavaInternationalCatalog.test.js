@@ -43,23 +43,21 @@ test('Lava International local catalog captures the verified empty-openposition 
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-about-page-plus-careers-landing-plus-joblist-plus-empty-openposition-api',
+    'native-unfiltered-all-roles+full-pdf+closing-snapshots-before-cap',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-about-page+verified-careers-landing+verified-joblist-page+empty-openposition-api-return-empty',
+    'current-first-party-clients+full-native-role-and-pdf+explicit-work-country',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-17')
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
   assert.match(provider.dryRunFile, /lavainternational[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Monday, August 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.lavamobiles\.com\/aboutus/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.lavamobiles\.com\/career/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.lavamobiles\.com\/career\/joblist/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.lavamobiles\.com\/api\/openpositionlist/i)
-  assert.match(provider.verifiedSurfaceSummary, /\[\]/i)
+  assert.match(provider.verifiedSurfaceSummary, /HTTP failures remain failures/i)
+  assert.match(provider.verifiedSurfaceSummary, /full PDF/i)
 
   assert.equal(lavainternational.PROVIDER_METADATA.source, LAVA_INTERNATIONAL_CATALOG.source)
   assert.equal(lavainternational.PROVIDER_METADATA.companyName, LAVA_INTERNATIONAL_CATALOG.companyName)

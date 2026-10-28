@@ -32,18 +32,19 @@ test('Brainium Information Technologies local catalog captures the verified firs
   assert.equal(provider.companyDomain, 'brainiuminfotech.com')
   assert.equal(provider.atsPlatform, 'first-party-html-open-roles')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-page-or-verified-cloudflare-blocked-empty')
+  assert.equal(provider.paginationStrategy, 'legacy-public-page-unverified-stop-on-access-denial')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+html-open-roles-or-verified-cloudflare-blocked-empty',
+    'legacy-first-party-cards-unverified-access-denial-is-not-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedOn, '2026-10-27')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /brainiuminformationtechnologies[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Attention Required! \| Cloudflare/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 27, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 403/i)
+  assert.match(provider.verifiedSurfaceSummary, /cannot establish empty inventory/i)
   assert.equal(companyAliases.Brainium, 'brainiuminformationtechnologies')
 })
 

@@ -7,15 +7,15 @@ import {
 } from '../providers/index.js'
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 
-test('getScraperCatalog includes Sapiens as an official SuccessFactors script provider', () => {
+test('getScraperCatalog includes Sapiens as an current official HiBob script provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'sapiens')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'successfactors')
+  assert.equal(provider.atsPlatform, 'hibob')
   assert.equal(provider.companyName, 'Sapiens')
-  assert.equal(provider.companyCareerPage, 'https://careers.sapiens.com/search/?createNewAlert=false&q=&locationsearch=')
-  assert.equal(provider.companyDomain, 'careers.sapiens.com')
+  assert.equal(provider.companyCareerPage, 'https://sapiens.com/careers/')
+  assert.equal(provider.companyDomain, 'sapiens.com')
   assert.match(provider.modulePath, /sapiens[\\/]script\.js$/i)
 })
 
@@ -26,7 +26,7 @@ test('buildScrapers exposes a runnable Sapiens scraper without changing the runn
   assert.equal(typeof scraper.run, 'function')
   assert.match(scraper.dryRunFile, /sapiens[\\/]jobs\.json$/)
   assert.equal(scraper.provider.source, 'sapiens')
-  assert.equal(scraper.provider.atsPlatform, 'successfactors')
+  assert.equal(scraper.provider.atsPlatform, 'hibob')
 })
 
 test('company coverage resolves the exact CSV company name Sapiens without aliases', () => {

@@ -3,20 +3,33 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { pathToFileURL, fileURLToPath } from 'node:url'
 import { gunzipSync } from 'node:zlib'
-import { getScraperCatalog, createCatalogScraper } from '../providers/index.js'
-import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
-import { identifyPublicAtsBoard, hasMatchingPublicAtsBinding } from '../utils/publicAtsIdentity.js'
-import { analyzePublishableJobs } from '../utils/publishableJobMetrics.js'
-import { createPublicAtsAuditCapture } from '../../scripts/catalogExtractionPublicAtsCapture.js'
+globalThis.fetch = async () => { throw new Error('OFFLINE_FETCH_TRIPWIRE') }
+const { getScraperCatalog, createCatalogScraper } = await import('../providers/index.js')
+const { readInventoryEvidence, isFreshCompleteInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+const { identifyPublicAtsBoard, hasMatchingPublicAtsBinding } = await import('../utils/publicAtsIdentity.js')
+const { analyzePublishableJobs } = await import('../utils/publishableJobMetrics.js')
+const { createPublicAtsAuditCapture } = await import('../../scripts/catalogExtractionPublicAtsCapture.js')
 import os from 'node:os'
 import path from 'node:path'
-import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+const { hasSourceDescription } = await import('../../src/utils/jobSourceContent.js')
 
 const fixtures = JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/sharedAts083.json.gz', import.meta.url))))
 const catalog = getScraperCatalog()
-const ids = Object.keys(fixtures).sort()
-assert.equal(ids.length, 22)
+assert.equal(Object.keys(fixtures).length, 22)
+// Ebury now reconciles live native HTML pages and details in scraper/ebury/native.test.js.
+// Checkout.com current corporate proxy/native reconciliation is covered in scraper/checkoutcom/native.test.js.
+const ids = Object.keys(fixtures).filter(source => !['ebury', 'checkoutcom'].includes(source)).sort()
 const unresolvedScopes = new Set(['characterai', 'checkoutcom', 'clearco', 'cohere', 'datafold', 'doximity', 'dutchie', 'ebury', 'elationhealth', 'eqtab', 'eqtcorporation', 'financialtimes'])
+
+test('checkoutcom: current native script reconciles details instead of the legacy one-response adapter', async () => {
+  const { transport } = await import('../../scraper/checkoutcom/native.fixtures.js')
+  const provider = catalog.find(row => row.source === 'checkoutcom')
+  const jobs = await createCatalogScraper(provider).run(transport('checkoutcom'))
+  assert.equal(jobs.length, 1)
+  assert.match(jobs[0].jobDescription, /5\+ years building C\+\+/)
+  assert.equal(jobs[0].closingDate, '2026-11-30T23:59:00.000Z')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+})
 
 for (const source of ids) test(`${source}: exact registered board and direct wrapper retain current zero-match evidence`, async () => {
   const provider = catalog.find(row => row.source === source)

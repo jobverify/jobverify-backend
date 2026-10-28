@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { runNativeBrainvire } from './nativeRun.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -11,9 +11,6 @@ const config = loadConfig(currentDir)
 export const CAREERS_URL = 'https://www.brainvire.com/careers/'
 export const COMPANY = 'Brainvire'
 export const SOURCE = 'brainvire'
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   const normalized = String(value ?? '')
@@ -96,35 +93,13 @@ export const extractPublicListings = (html) => [...String(html ?? '').matchAll(
   })
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
 export const createBrainvireScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
+  ...defaults
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Brainvire careers page no longer matches the verified official first-party careers surface')
-    }
-
-    const jobs = extractPublicListings(careersHtml)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
+  async run(options = {}) {
+    return runNativeBrainvire({maxJobs,now,...defaults,...options})
   },
 })
 

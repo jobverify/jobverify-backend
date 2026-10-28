@@ -9,6 +9,7 @@ import path from 'node:path'
 import { attachInventoryEvidence } from '../../utils/inventoryEvidence.js'
 
 const scenario = process.argv[2]
+const recoveryScenario = ['transaction', 'transaction-resume', 'finalization-resume', 'finalization-still-unavailable', 'connection', 'status-read', 'status-write', 'quota', 'code-error', 'source-code-error'].includes(scenario)
 const state = {
   started: [],
   peerAborted: false,
@@ -19,17 +20,20 @@ const state = {
   checkpoint: null,
 }
 const quotaError = new Error('over your space quota. Writes are blocked on your cluster.')
+const databaseError = () => Object.assign(new Error('Transaction has been aborted.'), { name: 'MongoServerError', code: 251 })
 const source = (name, sourceLifecycleTimeoutMs = 0) => ({
   name,
   sourceLifecycleTimeoutMs,
   run: async () => {
     state.started.push(name)
+    if (scenario === 'source-code-error' && name === 'alpha') throw new TypeError('invalid scraper code')
     return attachInventoryEvidence([], { status: 'verified-empty', firstParty: true, listingComplete: true,
       surface: 'https://example.invalid/careers', pagesFetched: 1, reportedTotal: 0, verifiedAt: new Date().toISOString() })
   },
 })
 globalThis.runnerLifecycleFixture = {
-  scrapers: scenario === 'shutdown-classification'
+  scrapers: recoveryScenario ? [source('alpha'), source('beta')]
+    : scenario === 'shutdown-classification'
     ? [source('peer'), source('queued')]
     : scenario === 'classification-pending'
     ? [source('alpha'), source('beta')]
@@ -47,8 +51,20 @@ globalThis.runnerLifecycleFixture = {
     : ['timeout', 'uncooperative-timeout', 'checkpoint-timeout', 'cooperative-timeout', 'slow-cleanup', 'fatal-cleanup', 'persistence-cleanup'].includes(scenario)
       ? [source('broken', 5), source('queued')]
       : [source('broken', 5), source('peer'), source('queued')],
-  status: () => ({ isActive: scenario !== 'inactive' }),
+  status: name => {
+    if (scenario === 'status-read' && name === 'alpha') throw databaseError()
+    return { isActive: scenario !== 'inactive' }
+  },
+  updateStatus: name => {
+    if (scenario === 'status-write' && name === 'alpha') throw databaseError()
+  },
   save: async (_jobs, name, { signal, onStage }) => {
+    if (name === 'alpha' && !state.recovered) {
+      if (scenario.startsWith('transaction')) throw databaseError()
+      if (scenario === 'quota') throw quotaError
+      if (scenario === 'connection') throw Object.assign(new Error('connection lost'), { name: 'MongoNetworkError' })
+      if (scenario === 'code-error') throw new TypeError('invalid persistence code')
+    }
     if (scenario === 'classification-pending' && name === 'alpha') {
       const error = new Error('source persistence unfinished')
       error.classificationPending = true
@@ -96,7 +112,13 @@ globalThis.runnerLifecycleFixture = {
     state.history = structuredClone(summary)
     state.settledBeforeHistory = state.peerSettled
   },
-  finished: (details) => { state.finished = details },
+  seed: () => {
+    if (scenario === 'finalization-still-unavailable' && state.recovered) throw databaseError()
+  },
+  finished: (details) => {
+    state.finished = details
+    if (scenario.startsWith('finalization-') && !state.recovered) throw databaseError()
+  },
 }
 
 const stubs = new Map([
@@ -108,15 +130,15 @@ const stubs = new Map([
     export const saveDryRunSnapshot = async () => { throw new Error('Unexpected dry-run write') }
   `],
   [new URL('../../utils/scraperPersistence.js', import.meta.url).href, `
-    export const ensureScrapersSeeded = async () => {}
+    export const ensureScrapersSeeded = async () => globalThis.runnerLifecycleFixture.seed()
     export const markPipelineRunStarted = async () => {}
     export const readPreviousScraperRun = async () => null
-    export const upsertScraperStatus = async () => {}
+    export const upsertScraperStatus = async name => globalThis.runnerLifecycleFixture.updateStatus(name)
     export const writeScraperRun = async (...args) => globalThis.runnerLifecycleFixture.history(...args)
     export const markPipelineRunFinished = async (...args) => globalThis.runnerLifecycleFixture.finished(...args)
   `],
   [new URL('../../../src/models/ScraperStatus.js', import.meta.url).href, `
-    export default { findOne: () => ({ lean: () => ({ exec: async () => globalThis.runnerLifecycleFixture.status() }) }) }
+    export default { findOne: query => ({ lean: () => ({ exec: async () => globalThis.runnerLifecycleFixture.status(query.source) }) }) }
   `],
   [new URL('../../../src/services/jobDatasetSummaryService.js', import.meta.url).href,
     'export const refreshJobDatasetSummary = async () => {}'],
@@ -139,7 +161,7 @@ registerHooks({
 
 // Child-only inputs avoid the developer's .env and source-selection settings.
 process.env.MONGO_URI = 'mongodb://offline.invalid/never-connected'
-process.env.SCRAPER_CONCURRENCY = ['timeout', 'uncooperative-timeout', 'checkpoint-timeout', 'cooperative-timeout', 'slow-cleanup', 'shutdown-classification', 'fatal-cleanup', 'persistence-cleanup'].includes(scenario) ? '1' : '2'
+process.env.SCRAPER_CONCURRENCY = recoveryScenario || ['timeout', 'uncooperative-timeout', 'checkpoint-timeout', 'cooperative-timeout', 'slow-cleanup', 'shutdown-classification', 'fatal-cleanup', 'persistence-cleanup'].includes(scenario) ? '1' : '2'
 let checkpointDir = null
 if (['checkpoint-resume', 'checkpoint-failure-threshold'].includes(scenario)) {
   checkpointDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-runner-resume-'))
@@ -165,7 +187,7 @@ if (['checkpoint-resume', 'checkpoint-failure-threshold'].includes(scenario)) {
     },
   }))
 }
-if (['checkpoint-timeout', 'classification-pending', 'shutdown-classification'].includes(scenario)) {
+if (recoveryScenario || ['checkpoint-timeout', 'classification-pending', 'shutdown-classification'].includes(scenario)) {
   checkpointDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-runner-resume-'))
   process.env.SCRAPER_CHECKPOINT_FILE = path.join(checkpointDir, 'run-state.json')
 }
@@ -180,7 +202,15 @@ const { runAll } = await import('../../runner.js')
 mock.timers.enable({ apis: ['setTimeout'] })
 let completed = false
 const shutdownController = new AbortController()
-const run = runAll({ stopSignal: shutdownController.signal }).catch((error) => {
+const execute = async () => {
+  state.summary = await runAll({ stopSignal: shutdownController.signal })
+  if (scenario === 'transaction-resume' || scenario.startsWith('finalization-')) {
+    state.firstCheckpoint = JSON.parse(fs.readFileSync(process.env.SCRAPER_CHECKPOINT_FILE, 'utf8'))
+    state.recovered = true
+    state.summary = await runAll({ stopSignal: shutdownController.signal })
+  }
+}
+const run = execute().catch((error) => {
   state.error = { name: error.name, message: error.message }
 }).finally(() => { completed = true })
 

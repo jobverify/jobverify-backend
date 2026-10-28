@@ -1,0 +1,103 @@
+{
+  "reviewedOn": "2026-10-27",
+  "method": "Contextual inference from explicit role-owned worksite clauses and all alternatives; never a city-only/company/HQ inference.",
+  "governmentEvidence": {
+    "references": {
+      "states": "https://www.census.gov/library/reference/code-lists/ansi/ansi-codes-for-states.html",
+      "minneapolis": "https://www.census.gov/quickfacts/fact/table/minneapoliscityminnesota/PST045225",
+      "madison": "https://www.census.gov/quickfacts/fact/table/madisonboroughnewjersey/PST045225",
+      "manhattan": "https://portal.311.nyc.gov/article/?kanumber=KA-02877",
+      "boston": "https://www.mass.gov/info-details/greater-boston-region-housing-snapshot",
+      "southFlorida": "https://www.weather.gov/mfl/",
+      "seattle": "https://www.census.gov/quickfacts/fact/table/seattlecitywashington/PST045225"
+    },
+    "retrieval": "Government primary pages retrieved through web extraction; direct transport successes/failures preserved separately. These hashes identify preserved extraction representations, not fabricated raw HTTP receipts.",
+    "extractionSHA256": "1a9ccfc33f987494fd4eda2afe1acabd07665d72df4b09351e20fea2fdbdac6c",
+    "contextExtractionSHA256": "d2a01f035a0e09d82fbf55343c059a66303db29b53afb276b0189b949ffab460"
+  },
+  "cases": [
+    {
+      "jobId": "21212",
+      "title": "Forward Deployed Engineer - R01572128",
+      "roleLocation": "Minneapolis",
+      "nativeSourceUrl": "https://careers.brillio.com/job-details/?job-id=21212",
+      "nativeResponseSHA256": "9fccad06ab3ee59331bff2f5652e2fbae84f0c510c1061391b2a1180ab7ba462",
+      "roleOwnedContexts": [
+        "Minneapolis, MN | Hybrid",
+        "Minneapolis, Minnesota"
+      ],
+      "expectedCountry": "United States",
+      "expectedAlternatives": [
+        {
+          "worksite": "Minneapolis, MN",
+          "country": "United States",
+          "referenceUrls": [
+            "https://www.census.gov/quickfacts/fact/table/minneapoliscityminnesota/PST045225",
+            "https://www.census.gov/library/reference/code-lists/ansi/ansi-codes-for-states.html"
+          ]
+        },
+        {
+          "worksite": "Minneapolis, Minnesota",
+          "country": "United States",
+          "referenceUrls": [
+            "https://www.census.gov/quickfacts/fact/table/minneapoliscityminnesota/PST045225",
+            "https://www.census.gov/library/reference/code-lists/ansi/ansi-codes-for-states.html"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "21096",
+      "title": "Lead OR Full Stack Developer (React, TypeScript, Go/ Java/Python/Node.js, AWS) - R01570568",
+      "roleLocation": "Boston",
+      "nativeSourceUrl": "https://careers.brillio.com/job-details/?job-id=21096",
+      "nativeResponseSHA256": "ecc2a84c0fa39255b3b5abb3292ce7db39d903f5723bba533c91d9f97e48e169",
+      "roleOwnedContexts": [
+        "Hybrid 3 days for these locations Madison, NJ/Manhattan, | Greater Boston Area |South Florida Area | Greater Seattle Area , WA"
+      ],
+      "expectedCountry": "United States",
+      "expectedAlternatives": [
+        {
+          "worksite": "Madison, NJ",
+          "country": "United States",
+          "referenceUrls": [
+            "https://www.census.gov/quickfacts/fact/table/madisonboroughnewjersey/PST045225",
+            "https://www.census.gov/library/reference/code-lists/ansi/ansi-codes-for-states.html"
+          ]
+        },
+        {
+          "worksite": "Manhattan",
+          "country": "United States",
+          "referenceUrls": [
+            "https://portal.311.nyc.gov/article/?kanumber=KA-02877",
+            "https://www.census.gov/library/reference/code-lists/ansi/ansi-codes-for-states.html"
+          ]
+        },
+        {
+          "worksite": "Greater Boston Area",
+          "country": "United States",
+          "referenceUrls": [
+            "https://www.mass.gov/info-details/greater-boston-region-housing-snapshot",
+            "https://www.census.gov/library/reference/code-lists/ansi/ansi-codes-for-states.html"
+          ]
+        },
+        {
+          "worksite": "South Florida Area",
+          "country": "United States",
+          "referenceUrls": [
+            "https://www.weather.gov/mfl/",
+            "https://www.census.gov/library/reference/code-lists/ansi/ansi-codes-for-states.html"
+          ]
+        },
+        {
+          "worksite": "Greater Seattle Area, WA",
+          "country": "United States",
+          "referenceUrls": [
+            "https://www.census.gov/quickfacts/fact/table/seattlecitywashington/PST045225",
+            "https://www.census.gov/library/reference/code-lists/ansi/ansi-codes-for-states.html"
+          ]
+        }
+      ]
+    }
+  ]
+}

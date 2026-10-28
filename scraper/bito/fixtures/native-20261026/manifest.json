@@ -1,0 +1,32 @@
+{
+  "careers.html": {
+    "sha256": "e2b53bf94b845604578af82625a34791b7703b9bba46f26235b94eda4055a0a0",
+    "bytes": 462387,
+    "source": "C:\\Users\\mohv\\GitHub\\Release-26.11.01\\artifacts\\scraper-log-review-1b360f27\\current-native\\next-platforms-2026-10-26T19-34-39-275Z\\bito.html"
+  },
+  "jobs.json": {
+    "sha256": "14732749cc44a3b9f2c8f00f4e2eba3bbe905dd9096cd8b80172b0b42478edf1",
+    "bytes": 5495,
+    "source": "C:\\Users\\mohv\\GitHub\\Release-26.11.01\\artifacts\\scraper-log-review-1b360f27\\current-native\\bito-native-2026-10-26T19-43-20-706Z\\jobs.txt"
+  },
+  "board.html": {
+    "sha256": "b61a820f0e1b795c163dde49f22e878b057fbc8b73c310205ec1b8dd17b745ca",
+    "bytes": 13688,
+    "source": "C:\\Users\\mohv\\GitHub\\Release-26.11.01\\artifacts\\scraper-log-review-1b360f27\\current-native\\bito-native-2026-10-26T19-43-20-706Z\\board.txt"
+  },
+  "detail.html": {
+    "sha256": "8af81f191a5d5416e842a4f7f4005c3d95c45e43ea339d16b8134f8238568e9a",
+    "bytes": 37517,
+    "source": "C:\\Users\\mohv\\GitHub\\Release-26.11.01\\artifacts\\scraper-log-review-1b360f27\\current-native\\bito-details-2026-10-26T19-47-13-307Z\\role-0.txt"
+  },
+  "widget-client.js": {
+    "sha256": "28890ffe00c3ef3f51cd40bcdc6bc3b00d6d680db6e19e93a8cc46ac09700980",
+    "bytes": 397597,
+    "source": "C:\\Users\\mohv\\GitHub\\Release-26.11.01\\artifacts\\scraper-log-review-1b360f27\\current-native\\bito-details-2026-10-26T19-47-13-307Z\\widget-client.txt"
+  },
+  "widget-bootstrap.js": {
+    "sha256": "879a225ecf147e803e29530e27bfbcbaf3dbba6f1aa7a15f55035e7ab40e095c",
+    "bytes": 1012,
+    "source": "C:\\Users\\mohv\\GitHub\\Release-26.11.01\\artifacts\\scraper-log-review-1b360f27\\current-native\\bito-browser-2026-10-26T19-48-03-762Z\\2-879a225ecf14.txt"
+  }
+}

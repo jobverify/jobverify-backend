@@ -1,0 +1,14 @@
+{
+  "sequence": 24,
+  "requestedUrl": "https://jobs.jobvite.com/absolute/job/ogAUAfw4",
+  "method": "GET",
+  "startedAt": "2026-10-27T10:09:31.642Z",
+  "finalUrl": "https://jobs.jobvite.com/absolute/job/ogAUAfw4",
+  "status": 200,
+  "completedAt": "2026-10-27T10:09:32.022Z",
+  "contentType": "text/html;charset=UTF-8",
+  "bytes": 42374,
+  "sha256": "f87dc39280b108452f482624364ec162d2f0d5381c1ec17fcb6940c85b34d133",
+  "body": "024.body.gz",
+  "note": "Actual current later body; only data-cfemail randomized relative to earlier role HTML. No decoded contact retained separately."
+}

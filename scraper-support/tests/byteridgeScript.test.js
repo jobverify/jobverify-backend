@@ -31,23 +31,22 @@ test('extractOpenings returns an empty job list when Byteridge only exposes a ta
   assert.deepEqual(jobs, [])
 })
 
-test('run fetches the Byteridge careers page and returns no jobs when no live openings are published', async () => {
+test('a talent pool alone cannot certify an empty Byteridge inventory', async () => {
   const byteridge = await loadByteridgeModule()
   assert.ok(byteridge)
 
   const requestedUrls = []
   const scraper = byteridge.createByteridgeScraper()
 
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === byteridge.CAREER_PAGE_URL) return careersHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), error => error.code === 'BYTERIDGE_NATIVE_CONTRACT')
 
   assert.deepEqual(requestedUrls, [byteridge.CAREER_PAGE_URL])
-  assert.deepEqual(jobs, [])
 })
 
 test('run reports Byteridge transport timeouts as soft upstream failures', async () => {

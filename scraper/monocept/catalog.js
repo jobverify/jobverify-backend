@@ -13,12 +13,12 @@ const MONOCEPT_CATALOG = {
   careersUrl: 'https://www.monocept.com/careers',
   handoffUrl: 'https://monocept.turbohire.co/careerpage/0e8227c1-c352-4202-8e40-c0aa16b6ca69',
   officialBrandName: 'Monocept',
-  atsPlatform: 'turbohire-js-shell',
+  atsPlatform: 'turbohire',
   countryFilter: 'India',
-  paginationStrategy: 'fail-closed',
-  extractionStrategy: 'verified-first-party-handoff-but-no-server-rendered-jobs',
-  verifiedOn: '2026-08-03',
-  verifiedSurfaceSummary: 'Monday, August 3, 2026: https://www.monocept.com/careers remained the live first-party Monocept careers page, now titled "Careers | Build the Future of Insurance | Monocept", and still linked to the same TurboHire handoff at https://monocept.turbohire.co/careerpage/0e8227c1-c352-4202-8e40-c0aa16b6ca69. The TurboHire page still rendered as a JS shell with career-page metadata but no trustworthy server-rendered jobs payloads, so this provider stays fail-closed.',
+  paginationStrategy: 'native-total-and-unique-identities+all-public-details+closing-snapshots-before-cap',
+  extractionStrategy: 'visible-first-party-handoff+reviewed-public-client+full-public-job-dto+matching-jobposting',
+  verifiedOn: '2026-10-26',
+  verifiedSurfaceSummary: '2026-10-26: Current Careers | Build the Future of Insurance | Monocept delegates to its TurboHire careerpage. The reviewed current native client and normal anonymous All Jobs route expose seven public native roles despite the old careerpage vacancy-free view. Full native descriptions, job-owned India addresses, original CAREERPAGE publication dates, no source expiry, employer and application template identities are reconciled before caps.',
 }
 
 export default MONOCEPT_CATALOG

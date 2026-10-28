@@ -1,3 +1,5 @@
+import { isMongoOperationalError } from '../../src/utils/mongoOperationalError.js'
+
 const getErrorText = (error = {}) => [
   error?.message,
   error?.cause?.message,
@@ -20,6 +22,9 @@ const PARSER_OR_CONTRACT_PATTERN =
   /http[\s_:-]*(?:400|422)\b|bad request|unprocessable|selector|parse|expected json|cannot read|undefined|not a function|not iterable/i
 
 export const classifyScraperError = (error = {}) => {
+  if (isMongoOperationalError(error, { networkCodes: false })) {
+    return { softFailure: true, upstreamOutage: false, failureKind: 'database_unavailable' }
+  }
   if (error.localTimeout === true) {
     return {
       softFailure: false,

@@ -1,4 +1,8 @@
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createBitoNativeInventory } from './nativeInventory.js'
+import CATALOG from './catalog.js'
+export const PROVIDER_METADATA = CATALOG
+// Archived July pure helpers below retain their historical fixture contract.
+// Registered execution delegates to the current native inventory engine.
 
 export const SOURCE = 'bito'
 export const COMPANY = 'Bito'
@@ -393,58 +397,6 @@ export const assertVerifiedListingContract = (listings = []) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: `${SOURCE}-html`,
-  timeoutMs: 15000,
-})
+export const createBitoScraper = (options = {}) => createBitoNativeInventory(options)
 
-export const createBitoScraper = ({
-  maxJobs = null,
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('Bito verified first-party careers page changed materially')
-    }
-
-    if (!hasVerifiedFreshteamWidgetEmbed(careersHtml)) {
-      throw new Error('Bito verified Freshteam embed changed materially')
-    }
-
-    const listingHtml = await fetchText(FRESHTEAM_JOBS_URL)
-    if (!hasFreshteamJobsBoardSignal(listingHtml)) {
-      throw new Error('Bito verified public Freshteam jobs board changed materially')
-    }
-
-    const listings = extractListingJobs(listingHtml)
-    assertVerifiedListingContract(listings)
-
-    const selectedListings = Number.isInteger(maxJobs) ? listings.slice(0, maxJobs) : listings
-    const scrapedAt = now()
-    const jobs = []
-
-    for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.detailUrl)
-      const job = extractJobDetail(detailHtml, listing)
-
-      jobs.push({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt,
-      })
-    }
-
-    return jobs
-  },
-})
-
-export const run = async (options = {}) => createBitoScraper().run(options)
+export const run = async (options = {}) => createBitoScraper(options).run(options)

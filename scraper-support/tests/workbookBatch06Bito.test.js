@@ -164,7 +164,7 @@ const VERIFIED_DETAIL_HTML = `
 </html>
 `
 
-test('Bito validates the verified first-party careers page and public Freshteam board contract', async () => {
+test('Archived Bito fixture validates the verified first-party careers page and public Freshteam board contract', async () => {
   const bito = await loadModule()
   const listings = bito.extractListingJobs(VERIFIED_LISTING_HTML)
   const jobPosting = bito.extractJobPosting(VERIFIED_DETAIL_HTML)
@@ -201,7 +201,7 @@ test('Bito validates the verified first-party careers page and public Freshteam 
   assert.equal(jobPosting?.jobLocation?.address?.addressCountry, 'India')
 })
 
-test('Bito extracts the verified public Freshteam role conservatively from the visible detail page fields', async () => {
+test('Archived Bito fixture extracts the verified public Freshteam role conservatively from the visible detail page fields', async () => {
   const bito = await loadModule()
   const listing = bito.extractListingJobs(VERIFIED_LISTING_HTML)[0]
   const job = bito.extractJobDetail(VERIFIED_DETAIL_HTML, listing)
@@ -231,94 +231,16 @@ test('Bito extracts the verified public Freshteam role conservatively from the v
   assert.match(job.jobDescription, /5\+ years of quota-carrying sales experience/i)
 })
 
-test('Bito run validates the official careers surface, public Freshteam board, and detail page before decorating the verified public role', async () => {
+test('current Bito run requires response identity rather than the archived fetchText-only contract', async () => {
   const bito = await loadModule()
-  const requestedUrls = []
-
-  const jobs = await bito.createBitoScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === bito.CAREERS_URL) return VERIFIED_CAREERS_HTML
-      if (url === bito.FRESHTEAM_JOBS_URL) return VERIFIED_LISTING_HTML
-      if (url === 'https://bito.freshteam.com/jobs/Ot1OTp378jzF/account-executive-new-business-san-francisco-bay-area') {
-        return VERIFIED_DETAIL_HTML
-      }
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-    now: () => '2026-07-25T00:00:00.000Z',
-  })
-
-  assert.deepEqual(
-    requestedUrls,
-    [
-      bito.CAREERS_URL,
-      bito.FRESHTEAM_JOBS_URL,
-      'https://bito.freshteam.com/jobs/Ot1OTp378jzF/account-executive-new-business-san-francisco-bay-area',
-    ],
-  )
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'bito')
-  assert.equal(
-    jobs[0].link,
-    'https://bito.freshteam.com/jobs/Ot1OTp378jzF/account-executive-new-business-san-francisco-bay-area',
-  )
-  assert.equal(jobs[0].scrapedAt, '2026-07-25T00:00:00.000Z')
+  await assert.rejects(bito.run({ fetchText: async () => VERIFIED_CAREERS_HTML }), /transport requires fetchPage/)
 })
-
-test('Bito fails closed when the verified careers, Freshteam listing, or detail contract drifts', async () => {
+test('current Bito catalog uses native India scope and evidence-required zero handling', async () => {
   const bito = await loadModule()
-
-  await assert.rejects(
-    bito.run({
-      fetchText: async (url) => {
-        if (url === bito.CAREERS_URL) {
-          return VERIFIED_CAREERS_HTML.replace('Currently open positions', 'Careers')
-        }
-        return VERIFIED_LISTING_HTML
-      },
-    }),
-    /first-party careers page changed materially/i,
-  )
-
-  await assert.rejects(
-    bito.run({
-      fetchText: async (url) => {
-        if (url === bito.CAREERS_URL) {
-          return VERIFIED_CAREERS_HTML.replace('6000034511_widget.js', 'other-widget.js')
-        }
-        return VERIFIED_LISTING_HTML
-      },
-    }),
-    /Freshteam embed changed materially/i,
-  )
-
-  await assert.rejects(
-    bito.run({
-      fetchText: async (url) => {
-        if (url === bito.CAREERS_URL) return VERIFIED_CAREERS_HTML
-        if (url === bito.FRESHTEAM_JOBS_URL) {
-          return VERIFIED_LISTING_HTML.replace(
-            'Account Executive, New Business (San Francisco Bay Area)',
-            'Founding Engineer',
-          )
-        }
-        return VERIFIED_DETAIL_HTML
-      },
-    }),
-    /listing contract changed materially/i,
-  )
-
-  await assert.rejects(
-    bito.run({
-      fetchText: async (url) => {
-        if (url === bito.CAREERS_URL) return VERIFIED_CAREERS_HTML
-        if (url === bito.FRESHTEAM_JOBS_URL) return VERIFIED_LISTING_HTML
-        return VERIFIED_DETAIL_HTML.replace(
-          'San Francisco, United States of America | New York, United States of America',
-          'Pune, India',
-        )
-      },
-    }),
-    /detail page changed materially/i,
-  )
+  const { getScraperCatalog } = await import('../providers/index.js')
+  const provider = getScraperCatalog().find(row => row.source === 'bito')
+  assert.equal(provider.atsPlatform, 'freshteam')
+  assert.equal(provider.countryFilter, 'India')
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  assert.equal(bito.PROVIDER_METADATA.verifiedOn, '2026-10-26')
 })

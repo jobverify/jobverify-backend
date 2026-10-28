@@ -14,7 +14,8 @@ const inventory = (jobs, status = jobs.length ? 'complete-inventory' : 'verified
   reportedTotal: jobs.length, verifiedAt: new Date().toISOString(),
 })
 globalThis.runnerWarningFixture = {
-  check: boundary => {
+  check: (boundary, source) => {
+    if (scenario === `database-${boundary}` && (!source || source === 'broken')) throw Object.assign(new Error(`database ${boundary}`), { name: 'MongoNetworkError' })
     if (scenario === boundary) throw new Error(`shared ${boundary}`)
   },
   build: () => {
@@ -22,6 +23,7 @@ globalThis.runnerWarningFixture = {
     return ['broken', 'healthy'].map(name => ({ name, sourceLifecycleTimeoutMs: 0,
       dryRunFile: scenario === 'artifact-error' ? directory : path.join(directory, `${name}.json`), run: async () => {
       state.started.push(name)
+      if (name === 'broken' && scenario === 'source-network-error') throw Object.assign(new Error('provider DNS unavailable'), { code: 'ENOTFOUND', abortRetries: true })
       if (scenario === 'all-fail' || (name === 'broken' && ['source-failure', 'fatal-source'].includes(scenario))) {
         throw Object.assign(new Error('source inventory contract failed'), {
           abortRetries: true, ...(scenario === 'fatal-source' ? { abortPipeline: true } : {}),
@@ -50,6 +52,7 @@ globalThis.runnerWarningFixture = {
     state.persistenceOptions[name] = { replaceExisting: options.replaceExisting, authoritativeEmpty: options.authoritativeEmpty }
     if (scenario === 'persistence-error') throw new TypeError('shared persistence code failed')
     if (scenario === 'quota-error') throw new Error('over your space quota. Writes are blocked on your cluster.')
+    if (name === 'broken' && scenario === 'transaction-error') throw Object.assign(new Error('transaction aborted'), { name: 'MongoServerError', code: 251 })
     if (name === 'broken' && scenario === 'pending') {
       throw Object.assign(new Error('source persistence unfinished'), { classificationPending: true })
     }
@@ -79,13 +82,13 @@ const stubs = new Map([
     export const ensureScrapersSeeded = async () => globalThis.runnerWarningFixture.check('seed-error')
     export const markPipelineRunStarted = async () => globalThis.runnerWarningFixture.check('pipeline-start-error')
     export const readPreviousScraperRun = async () => null
-    export const upsertScraperStatus = async () => globalThis.runnerWarningFixture.check('status-write-error')
+    export const upsertScraperStatus = async source => globalThis.runnerWarningFixture.check('status-write-error', source)
     export const writeScraperRun = (...args) => globalThis.runnerWarningFixture.history(...args)
     export const markPipelineRunFinished = (...args) => globalThis.runnerWarningFixture.finished(...args)
   `],
   [new URL('../../../src/models/ScraperStatus.js', import.meta.url).href,
     `export default { findOne: ({ source }) => ({ lean: () => ({ exec: async () => {
-      globalThis.runnerWarningFixture.check('active-status-error')
+      globalThis.runnerWarningFixture.check('active-status-error', source)
       return globalThis.runnerWarningFixture.status(source)
     } }) }) }`],
   [new URL('../../../src/services/jobDatasetSummaryService.js', import.meta.url).href,

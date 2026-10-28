@@ -1,66 +1,32 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const PROVIDER_METADATA = { ...{
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+export const PROVIDER_METADATA={...{
   "source": "extrahop",
   "companyName": "ExtraHop",
-  "adapter": "publicAts",
+  "companyDomain": "extrahop.com",
+  "adapter": "script",
   "catalogOverride": true,
-  "atsPlatform": "greenhouse",
+  "modulePath": "../extrahop/script.js",
+  "dryRunFile": "extrahop/jobs.json",
+  "atsPlatform": "greenhouse-native-public-api",
   "boardToken": "extrahopnetworks",
   "companyCareerPage": "https://www.extrahop.com/careers",
   "jobsBoardUrl": "https://job-boards.greenhouse.io/extrahopnetworks",
   "countryFilter": "India",
-  "parser": "shared-public-ATS-Greenhouse-native-content",
+  "parser": "extrahop-current-corporate-native-full-content-20261027",
   "normalizationProfile": "engineering-default",
-  "paginationStrategy": "complete-single-public-API-response-reconciled-with-meta.total;reject-truncation",
-  "extractionStrategy": "native-description-and-first-published;explicit-India-location;no-application-fetches",
-  "backfillMode": "live-shared-adapter",
-  "originalAdapter": "script",
-  "originalAtsPlatform": "workbook-exact-name-sentinel",
-  "originalModulePath": "../workbookbatch08/failClosedSentinel.js",
-  "zeroResultPolicy": "coverage-gap",
-  "sourceScopeComplete": false,
+  "paginationStrategy": "all-current-native-pages-before-caps;opening-and-closing-board-api-office-and-corporate-inventories",
+  "extractionStrategy": "current-corporate-all-advertised-locales-and-hiring-channels;full-public-content;exact-post-internal-requisition-identities;explicit-worksite-countries",
+  "sourceScopeComplete": null,
   "lifecycleCleanupAllowed": false,
-  "bindingEvidence": {
-    "verified": true,
-    "verifiedAt": "2026-10-22T21:17:59.982Z",
-    "matchedLinks": [
-      "https://job-boards.greenhouse.io/extrahopnetworks"
-    ],
-    "officialCareerPage": "https://www.extrahop.com/careers",
-    "bindingSurface": "https://www.extrahop.com/careers",
-    "bindingScope": "company-advertised-Greenhouse-board;whole-employer-scope-unresolved",
-    "applicationsOpened": false,
-    "scriptsExecuted": false
-  },
-  "verifiedOn": null,
-  "verifiedAt": null,
+  "zeroResultPolicy": "evidence-required",
+  "runtimeInventoryVerification": false,
   "verifiedPublicJobCount": null,
   "verifiedIndiaJobCount": null,
-  "verifiedInventoryStatus": "unverified",
-  "runtimeQualification": "actual-isolated-public-API-extraction-and-loopback-local-persistence-only",
-  "remediationStatus": "native-single-response-no-India-primary-location-match;whole-employer-scope-and-production-unobserved",
-  "sourceResearchObservedAt": "2026-10-22T21:13:42.565Z",
-  "sourceResearchNativeListingRows": 27,
-  "sourceResearchIndiaLocationMatches": 0,
-  "verifiedSurfaceSummary": "Company-advertised Greenhouse board verified through retained official content. Actual isolated GET completed 2026-10-22T21:28:09.191Z: 27 native records reconcile meta.total; 0 India jobs, 0 eligible. Loopback persistence saved 0, repeat inserts0; visible with experienced enabled0/disabled0. Prior inventory and complete-check history preserved. Full employer/secondary-location scope and current production publication remain unknown; this is not a verified company zero.",
-  "sourceScopeNotes": "Read only the public complete jobs?content=true response, including full native descriptions, original first_published dates and application links. Reconcile meta.total and reject incomplete/error responses. Existing shared India filtering and quality rules remain in force. No India matches does not establish company-wide zero openings. Whole-employer/secondary-location scope remains unresolved; complete-check promotion and lifecycle cleanup are disabled.",
-  "verificationDisposition": "observed-no-India-primary-location-match;not-verified-company-zero",
-  "sourceLatestLiveAttemptedAt": "2026-10-22T21:28:08.271Z",
-  "sourceLatestLiveCompletedAt": "2026-10-22T21:28:09.191Z",
-  "sourceLatestLiveOutcome": "unverified-zero",
-  "sourceLatestLiveObservedListingCount": 27,
-  "sourceLatestLiveIndiaJobs": 0,
-  "sourceLatestLiveEligibleJobs": 0,
-  "sourceLatestLiveNativeSingleResponseComplete": true,
-  "sourceLatestLiveHTTPResponses": 1,
-  "sourceLatestLiveHTTPStatus": 200,
-  "localPersistenceSavedJobs": 0,
-  "localPersistenceRepeatInserted": 0,
-  "localVisibilityExperiencedEnabled": 0,
-  "localVisibilityExperiencedDisabled": 0,
-  "sourceNativeObservationCompletedAt": "2026-10-22T21:28:09.191Z"
-}, modulePath: path.join(currentDir, 'script.js'), dryRunFile: path.join(currentDir, 'jobs.json') }
+  "verifiedAt": null,
+  "verifiedOn": null,
+  "backfillMode": "source-local-current-native-extraction",
+  "sourceScopeNotes": "Each runtime independently verifies corporate handoff, all advertised corporate locales/hiring channels, complete native pages and API content, every primary and secondary worksite against the current native office graph, original publication and expiry, closing role and inventory states. Unknown country/fields, drift or denial retain unknown totals and disable cleanup. Catalog metadata never grants or permanently prevents completeness. Public GET only; no application or persistence actions."
+},modulePath:path.join(currentDir,'script.js'),dryRunFile:path.join(currentDir,'jobs.json')}
 export default PROVIDER_METADATA
-export { PROVIDER_METADATA }

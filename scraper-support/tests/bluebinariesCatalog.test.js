@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import {
+globalThis.fetch = async () => { throw new Error('OFFLINE network tripwire') }
+const {
   buildScrapers,
   getScraperCatalog,
-} from '../providers/index.js'
+} = await import('../providers/index.js')
 
 test('getScraperCatalog includes Blue Binaries with its official careers page metadata', () => {
   const catalog = getScraperCatalog()
@@ -12,7 +13,7 @@ test('getScraperCatalog includes Blue Binaries with its official careers page me
 
   assert.ok(bluebinaries)
   assert.equal(bluebinaries.adapter, 'script')
-  assert.equal(bluebinaries.atsPlatform, 'wordpress-company-careers')
+  assert.equal(bluebinaries.atsPlatform, 'wordpress-native-accordion')
   assert.match(bluebinaries.companyCareerPage, /bluebinaries\.com\/become-a-bluebee/i)
   assert.equal(bluebinaries.companyDomain, 'bluebinaries.com')
 })

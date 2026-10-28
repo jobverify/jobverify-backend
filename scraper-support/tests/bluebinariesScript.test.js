@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import {
+globalThis.fetch = async () => { throw new Error('OFFLINE Blue Binaries source-family tripwire') }
+const {
   CAREER_PAGE_URL,
   extractJobEntries,
   isIndiaLocation,
-} from '../../scraper/bluebinaries/script.js'
+} = await import('../../scraper/bluebinaries/script.js')
 
 const listingHtml = `
   <html>
@@ -59,54 +60,40 @@ test('isIndiaLocation identifies India-based Blue Binaries roles', () => {
     true,
   )
   assert.equal(isIndiaLocation('BlueBinaries Engineering and Solutions Inc., Troy, MI'), false)
+  assert.equal(isIndiaLocation('Chennai'), false)
+  assert.equal(isIndiaLocation('Fort Wayne, IN'), false)
+  assert.equal(isIndiaLocation('BlueBinaries India Pvt Ltd, Troy, MI'), false)
 })
 
-test('extractJobEntries reads Blue Binaries accordion listings into scraper jobs', () => {
-  assert.deepEqual(extractJobEntries(listingHtml), [
-    {
-      title: 'Software Developer',
-      company: 'Blue Binaries',
-      department: null,
-      location: 'BlueBinaries Engineering and Solutions India Pvt Ltd, Chennai, India',
-      city: 'Chennai',
-      jobId: 'sd',
-      requisitionId: null,
-      sourceUrl: 'https://www.bluebinaries.com/become-a-bluebee/#sd',
-      applyUrl: 'https://www.bluebinaries.com/become-a-bluebee/#sd',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '2024-03-01',
-      closingDate: null,
-      jobDescription: [
-        'Job Duties:',
-        'Build embedded software systems',
-        'Collaborate with cross-functional teams',
-      ].join('\n'),
-    },
-    {
-      title: 'Quality Engineer',
-      company: 'Blue Binaries',
-      department: null,
-      location: 'BlueBinaries Engineering and Solutions Inc., Troy, MI',
-      city: 'Troy',
-      jobId: 'qa',
-      requisitionId: null,
-      sourceUrl: 'https://www.bluebinaries.com/become-a-bluebee/#qa',
-      applyUrl: 'https://www.bluebinaries.com/become-a-bluebee/#qa',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '2023-10-04',
-      closingDate: null,
-      jobDescription: [
-        'Job Duties:',
-        'Lead quality validation activities',
-      ].join('\n'),
-    },
-  ])
+test('extractJobEntries preserves complete native role identity, criteria and publication without invented application fields', () => {
+  const jobs = extractJobEntries(listingHtml)
+  assert.equal(jobs.length, 2)
+  assert.deepEqual(jobs.map(job => job.jobId), ['sd', 'qa'])
+  const [india, unprovenCountry] = jobs
+  assert.equal(india.title, 'Software Developer')
+  assert.equal(india.company, 'Blue Binaries')
+  assert.equal(india.country, 'India')
+  assert.equal(india.city, 'Chennai')
+  assert.equal(india.sourceUrl, 'https://www.bluebinaries.com/become-a-bluebee/#sd')
+  assert.equal(india.applicationPostingContext.nativePostingId, 'sd')
+  assert.equal(india.requisitionId, null)
+  assert.equal(india.sourceIdentityComplete, true)
+  assert.equal(india.sourceDetailComplete, true)
+  assert.equal(india.postingDate, '2024-03-01')
+  assert.equal(india.sourceNativeDates.publicationLabel, 'Posted on 01-Mar-2024')
+  assert.match(india.jobDescription, /Build embedded software systems/)
+  assert.match(india.jobDescription, /Collaborate with cross-functional teams/)
+  assert.equal(india.sourceDescription, india.jobDescription)
+  assert.equal(india.applyUrl, null)
+  assert.equal(india.applicationPublicContextValidated, false)
+  assert.equal(india.employmentType, null)
+  assert.equal(india.remoteStatus, null)
+  assert.equal(unprovenCountry.title, 'Quality Engineer')
+  assert.equal(unprovenCountry.country, null)
+  assert.equal(unprovenCountry.sourceNativeCountryEvidence.basis, null)
+  assert.equal(unprovenCountry.requisitionId, null)
+  assert.equal(unprovenCountry.postingDate, '2023-10-04')
+  assert.equal(unprovenCountry.sourceIdentityComplete, true)
+  assert.equal(unprovenCountry.sourceDetailComplete, true)
+  assert.match(unprovenCountry.jobDescription, /Lead quality validation activities/)
 })

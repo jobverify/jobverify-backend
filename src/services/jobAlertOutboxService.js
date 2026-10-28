@@ -3,26 +3,37 @@ import mongoose from 'mongoose';
 import Job from '../models/Job.js';
 import JobAlertOutbox from '../models/JobAlertOutbox.js';
 import { stageJobAlertDeliveries } from './jobAlertService.js';
+import { retryMongoOperation } from '../utils/mongoOperationalError.js';
 
 const CLAIM_TTL_MS = 5 * 60_000;
+const INGESTION_BATCH_SIZE = 100;
 
-export const persistJobChangesWithAlertOutbox = async (JobModel, operations, { enqueueAlerts = true } = {}) => {
+export const persistJobChangesWithAlertOutbox = async (JobModel, operations, { enqueueAlerts = true, signal } = {}) => {
   if (!operations.length) return { upsertedCount: 0, modifiedCount: 0, upsertedIds: {} };
   // Maintenance callers may explicitly suppress alerts. Normal ingestion has
   // no nontransactional fallback, including on standalone MongoDB servers.
   if (!enqueueAlerts) return JobModel.bulkWrite(operations, { ordered: false });
-  return JobModel.db.transaction(async session => {
-    const result = await JobModel.bulkWrite(operations, { ordered: true, session });
-    const ids = Object.values(result.upsertedIds ?? {});
-    if (ids.length) {
-      const jobs = await JobModel.find({ _id: { $in: ids }, status: 'active' }).select('_id').session(session).lean();
-      for (const job of jobs) {
-        await JobAlertOutbox.updateOne({ job: job._id, kind: 'job_published' },
-          { $setOnInsert: { status: 'pending', nextAttemptAt: new Date() } }, { upsert: true, session });
+  const combined = { upsertedCount: 0, modifiedCount: 0, matchedCount: 0, insertedCount: 0, deletedCount: 0, upsertedIds: {} };
+  for (let offset = 0; offset < operations.length; offset += INGESTION_BATCH_SIZE) {
+    signal?.throwIfAborted();
+    // Bound the transaction lifetime while retaining each job's alert obligation.
+    // Earlier committed batches are safe to replay after a later batch fails.
+    const result = await retryMongoOperation(() => JobModel.db.transaction(async session => {
+      const result = await JobModel.bulkWrite(operations.slice(offset, offset + INGESTION_BATCH_SIZE), { ordered: true, session });
+      const ids = Object.values(result.upsertedIds ?? {});
+      if (ids.length) {
+        const jobs = await JobModel.find({ _id: { $in: ids }, status: 'active' }).select('_id').session(session).lean();
+        if (jobs.length) await JobAlertOutbox.bulkWrite(jobs.map(job => ({ updateOne: {
+          filter: { job: job._id, kind: 'job_published' },
+          update: { $setOnInsert: { status: 'pending', nextAttemptAt: new Date() } }, upsert: true,
+        } })), { ordered: true, session });
       }
-    }
-    return result;
-  });
+      return result;
+    }), { signal });
+    for (const key of ['upsertedCount', 'modifiedCount', 'matchedCount', 'insertedCount', 'deletedCount']) combined[key] += result[key] ?? 0;
+    for (const [index, id] of Object.entries(result.upsertedIds ?? {})) combined.upsertedIds[offset + Number(index)] = id;
+  }
+  return combined;
 };
 
 export const claimJobAlertEvent = async (now = new Date()) => JobAlertOutbox.findOneAndUpdate({

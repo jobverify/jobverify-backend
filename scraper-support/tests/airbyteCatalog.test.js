@@ -29,23 +29,21 @@ test('Airbyte catalog captures the verified first-party careers and Ashby metada
   assert.equal(provider.ashbyJobBoardUrl, 'https://api.ashbyhq.com/posting-api/job-board/airbyte')
   assert.equal(provider.atsPlatform, 'ashby')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-ashby-job-board-get')
+  assert.equal(provider.paginationStrategy, 'complete-native-board-feed-all-details-and-closing-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-public-ashby-board+public-ashby-get-feed+india-location-filter',
+    'current-corporate-lazy-client-embed-binding+native-board-feed-all-role-details+explicit-worksite-countries+closing-role-state',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'airbyte.com')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-10-27')
   assert.match(provider.modulePath, /airbyte[\\/]script\.js$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/airbyte\.com\/company\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobs\.ashbyhq\.com\/airbyte/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/api\.ashbyhq\.com\/posting-api\/job-board\/airbyte/i)
-  assert.match(provider.verifiedSurfaceSummary, /Engineering Manager, Platform/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior AI Platform Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /zero India openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /every native role detail/i)
+  assert.match(provider.verifiedSurfaceSummary, /closing corporate and native role state/i)
 })
 
 test('buildScrapers and company coverage resolve Airbyte from the shared catalog', () => {
@@ -56,6 +54,10 @@ test('buildScrapers and company coverage resolve Airbyte from the shared catalog
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Airbyte')
   assert.equal(provider.companyCareerPage, 'https://airbyte.com/company/careers')
+  assert.equal(provider.runtimeSourceScopeVerification, true)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.sourceScopeComplete, null)
   assert.match(scraper.dryRunFile, /airbyte[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

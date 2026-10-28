@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+        <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <link href="https://cdn.kekastatic.net/shared/icons/1.0.16/keka-icons.css" rel="stylesheet">
+                <link href="https://cdn.kekastatic.net/shared/careers-ui/0.0.6/dist/css/careers-ui.min.css" rel="stylesheet">
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+                <link href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700&family=Montserrat:wght@100;200;300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+                <script>
+                        window.khConfig =
+                            {
+                                identifier: '7d86eeef-8f44-46cd-bc3a-2155e3ff042c',domain: 'https://acciojob.keka.com/careers/',targetContainer: '#khembedjobs'}</script> <script src="https://acciojob.keka.com/careers/api/embedjobs/js/7d86eeef-8f44-46cd-bc3a-2155e3ff042c" defer=""></script>
+          <script>
+            
+        const imageContainers = document.querySelectorAll('.js-closed-slider');
+        imageContainers.forEach(imageContainer => {
+            for (let i = 0; i < 2; i++) {
+                const images = imageContainer.querySelectorAll('.js-closed-slider-wrapper');
+                images.forEach(image => {
+                    const clone = image.cloneNode(true);
+                    imageContainer.appendChild(clone);
+                });
+            }
+        });
+    
+            
+        const imgElements = document.querySelectorAll(".js-image-content");
+        const lastImgElement = imgElements[imgElements.length - 1];
+        imgElements.forEach(imgElement => {
+            imgElement.addEventListener("mouseover", function () {
+                if (imgElement !== lastImgElement) {
+                    imgElement.classList.add("kch-on-hover-image");
+                    lastImgElement.classList.remove("kch-on-hover-image");
+                }
+            });
+
+            imgElement.addEventListener("mouseleave", function () {
+                if (imgElement !== lastImgElement) {
+                    lastImgElement.classList.add("kch-on-hover-image");
+                    imgElement.classList.remove("kch-on-hover-image");
+                }
+            });
+        })
+            
+        const menuToggle = document.querySelector('.kch-menu-toggle');
+        const menu = document.querySelector('.kch-nav-list');
+
+        menuToggle?.addEventListener('click', () => {
+            menu?.classList.toggle('active');
+        });
+
+        const navbarNavigation = document.querySelector('.kch-navbar');
+        navbarNavigation?.addEventListener('click', function(event) {
+            if(event.target.tagName === 'A') {
+              event.preventDefault();
+              if(event.target.href) {
+                  window.open(event.target.href, '_blank');
+              }
+            }
+        });
+
+        const navbarLogoNavigation = document.querySelector('.kch-company-logo');
+        navbarLogoNavigation?.addEventListener('click', function(event) {
+            const href = navbarLogoNavigation.getAttribute('href');
+            if (href) {
+                event.preventDefault();
+                if(href) {
+                    window.open(href, '_blank');
+                }
+            }
+        });
+    
+            
+        let slidePosition = 0;
+        const sliderItem = document.querySelectorAll('.js-slider-item');
+        const totalSlider = sliderItem.length;
+        
+        updatePosition = (previousSlidePosition) => {
+            dots.forEach(dot => dot.classList.remove('js-dot-active', 'kch-dot-active' ));
+            dots[slidePosition]?.classList.add('js-dot-active', 'kch-dot-active' );
+        
+            const sliderImage = document.querySelectorAll('.js-slider-image');
+            sliderImage.forEach(image => {
+                image.classList.remove('js-image-fade-in', 'kch-image-fade-in');
+                image.classList.add('js-image-fade-out', 'kch-image-fade-out');
+            })
+            if(sliderImage[slidePosition]) {
+                sliderImage[slidePosition].classList.remove('js-image-fade-out', 'kch-image-fade-out');
+                sliderImage[slidePosition].classList.add('js-image-fade-in', 'kch-image-fade-in');
+            }
+            positionSlider();
+            slideAnimation(previousSlidePosition);
+        }
+        
+        slideAnimation = (previousSlidePosition) => {
+            sliderItem.forEach((item) => {
+                const classList = item.classList;
+                classList.remove('js-slide-left', 'kch-slide-left', 'js-slide-right', 'kch-slide-right','js-slide-left-to-right', 'kch-slide-left-to-right', 'js-slide-right-to-left', 'kch-slide-right-to-left');
+            })
+            
+            if (previousSlidePosition === slidePosition) return;
+            else if(previousSlidePosition > slidePosition) {
+                sliderItem[slidePosition]?.classList.add('js-slide-left-to-right', 'kch-slide-left-to-right');
+                sliderItem[previousSlidePosition]?.classList.add('js-slide-right', 'kch-slide-right');
+            } else if(previousSlidePosition < slidePosition) {
+                sliderItem[slidePosition]?.classList.add('js-slide-right-to-left', 'kch-slide-right-to-left');
+                sliderItem[previousSlidePosition]?.classList.add('js-slide-left', 'kch-slide-left');
+            }
+        }
+        
+        positionSlider = () => {
+            if (sliderItem.length > 1 ){
+                sliderItem.forEach((item, index) => {
+                    if(slidePosition == index) {
+                        item.style.transform = 'translateX(0%)';
+                    } else {
+                        item.style.transform = index < slidePosition ? 'translateX(-100%)' : 'translateX(100%)';
+                    }
+                });
+            }
+            else if (dotContainer){
+                dotContainer.style.display = 'none';
+            }
+        }
+        
+        const dotContainer = document.querySelector('.js-slider-indicator');
+        
+        sliderItem.forEach((slide) => {
+            const dot = document.createElement('li');
+            dot.classList.add('js-indicator-dot', 'kch-indicator-dot');
+            dotContainer?.appendChild(dot);
+        });
+        
+        const dots = document.querySelectorAll('.js-indicator-dot');
+        dots[slidePosition]?.classList.add('js-dot-active', 'kch-dot-active');
+        
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', function () {
+                let previousSlidePosition = slidePosition;
+                slidePosition = index;
+                updatePosition(previousSlidePosition);
+            });
+        });
+        
+        updatePosition();
+
+        const startCarousel = () => {
+            if (totalSlider > 1) {
+                setInterval(() => {
+                    let previousSlidePosition = slidePosition;
+                    slidePosition = (slidePosition + 1) % totalSlider;
+                    updatePosition(previousSlidePosition);
+                }, 15000);
+            } 
+        };
+          
+        startCarousel();
+        
+            
+        const socialMediaNavigation = document.querySelector('.kch-social-media-block');
+        socialMediaNavigation?.addEventListener('click', function(event) {
+            const socialMediaLink = event.target.closest('a');
+            if (socialMediaLink && socialMediaLink.href) {
+                event.preventDefault();
+                window.open(socialMediaLink.href, '_blank');
+            }
+        });
+    
+            
+        let currentyear = new Date().getFullYear();
+        if (document.getElementById("currentyear")) {
+            document.getElementById("currentyear").innerText = currentyear;
+        }
+    
+          </script>
+          
+                <style>
+                    * { box-sizing: border-box; } body {margin: 0;}body{--font-family:Poppins;--brand-color:#2f80ed;--heading-color:#101828;--description-color:#667085;--background-color:#FFFFFF;--button-label-color:#FFFFFF !important;}#iwmoay{background-color:#ffffff;}
+                    .kch-w-170 {
+                        width: 170px;
+                    }
+                </style>
+            </head>
+            <body><div class="kch-d-flex kch-justify-content-around kch-align-items-center" block-name="navbar-block">
+                    <div class="kch-section kch-w-800" style="background-color: #ffffff">
+                        <div class="kch-navbar-view kch-px-12">
+                            <div class="kch-min-h-50 kch-d-flex kch-justify-content-between kch-align-items-center">
+                                <div class="kch-my-8">
+                                    <a class="kch-company-logo kch-d-flex" href="">
+                                        <img src="/ats/documents/7d86eeef-8f44-46cd-bc3a-2155e3ff042c/careerportal/bc2a28db5ed446369caf3ca1b9852f67.png" alt="logo" height="24px" attr-name="block-image" class="kch-max-h-400 kch-object-fit-cover">
+                                    </a>
+                                    <div attr="short-name" class="kch-text-heading kch-heading-color kch-mx-0 kch-d-none">ACCIOJOB PRIVATE LIMITED</div>
+                                </div>
+                                <div class="kch-d-none">
+                                    <i class="ki ki-menu ki-xl"></i>
+                                </div>
+                            </div>
+                            <nav>
+                                
+        <ul class="kch-d-flex kch-nav-list">
+            
+        </ul>
+        
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            <div style="background-image: url(/ats/documents/7d86eeef-8f44-46cd-bc3a-2155e3ff042c/careerportal/13ed8e86abcd4cc1bdaa623ea0336c4f.jpg); background-size: contain; background-repeat: no-repeat; background-position: center; min-width: 350px; max-height: 480px; kch-header-min-height; aspect-ratio: 16/9;" block-name="header-block" attr-name="content-position" position="center" class="kch-section kch-header-section kch-d-flex kch-justify-content-center kch-w-100 kch-mb-30 kch-position-sticky kch-px-32">
+                <div class="kch-mb-8 kch-align-self-center">
+                    <div attr-name="title" class="kch-d-flex kch-justify-content-center kch-mb-16 kch-w-800 kch-px-12 kch-heading-color kch-text-heading kch-font-weight-700 kch-text-center kch-text-center-sm kch-overflow-hidden kch-header-title-max-height"></div>
+                    <div class="kch-d-flex kch-justify-content-center kch-text-center-sm">
+                        <div class="kch-mb-8 kch-d-flex kch-justify-content-null ">
+                            <p attr-name="btn-link" class="kch-btn kch-btn-primary kch-btn-label-color" onclick="document.getElementById('kh-jobs-section').scrollIntoView({ behavior: 'smooth' })">Browse all jobs</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <div class="kch-section kch-benefits kch-justify-content-center kch-d-flex" block-name="benefits-block">
+            <div class="kch-mb-30 kch-max-w-1280 kch-w-800">
+                <div class="kch-mb-30 kch-text-center">
+                    <p attr-name="benefit-title" class="kch-text-heading kch-heading-color kch-font-weight-600 kch-my-0 kch-mb-8">Benefits</p>
+                    <p attr-name="benefit-description" class="kch-text-description kch-description-color kch-font-weight-600 kch-mt-0 kch-px-20 kch-py-12">Our people make us who we are. We provide what they need</p>
+                </div>
+                <div class="kch-d-flex kch-justify-content-center">
+                    <div class="kch-d-flex kch-flex-wrap kch-gap-16 kch-justify-content-center kch-pb-12">
+                        
+        <div attr-name="benefit-card" class="kch-w-170 kch-gap-16 kch-p-12  kch-border-radius-6">
+            <span attr-name="benefit-icon" class="ki ki-xxl ki-briefcase"></span>
+            <p attr-name="benefit-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Medical Insurance</p>
+            <small attr-name="benefit-description" class="kch-description-color"></small>
+        </div>
+        <div attr-name="benefit-card" class="kch-w-170 kch-gap-16 kch-p-12  kch-border-radius-6">
+            <span attr-name="benefit-icon" class="ki ki-xxl ki-money"></span>
+            <p attr-name="benefit-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Competitive Salary</p>
+            <small attr-name="benefit-description" class="kch-description-color"></small>
+        </div>
+        <div attr-name="benefit-card" class="kch-w-170 kch-gap-16 kch-p-12  kch-border-radius-6">
+            <span attr-name="benefit-icon" class="ki ki-xxl ki-trophy"></span>
+            <p attr-name="benefit-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Recognition</p>
+            <small attr-name="benefit-description" class="kch-description-color"></small>
+        </div>
+        <div attr-name="benefit-card" class="kch-w-170 kch-gap-16 kch-p-12  kch-border-radius-6">
+            <span attr-name="benefit-icon" class="ki ki-xxl ki-dumbbell"></span>
+            <p attr-name="benefit-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Fitness</p>
+            <small attr-name="benefit-description" class="kch-description-color"></small>
+        </div>
+                    </div>
+                </div>
+            </div>
+        </div><div class="kch-jobs-bg-color  kch-bg-transparent">
+                        <div id="kh-jobs-section" class="kch-job-container kch-section kch-p-30 kch-max-w-1280 kch-rounded-10">
+                            <div class="kch-d-flex kch-align-items-center kch-justify-content-center">
+                                <h2 attr-name="Job-title" class="kch-text-heading kch-font-weight-700 kch-mt-0 kch-mb-12 kch-text-center  kch-heading-color">Open positions</h2>
+                            </div>
+                            <div attr-name="job-description" class="kch-text-description kch-text-secondary kch-font-weight-600 kch-text-center kch-mt-0 kch-mb-16"></div>
+                        <div id="khembedjobs"></div>
+                        </div>
+                    </div>
+        <div block-name="footer-block">
+            <div class="kch-section kch-footer kch-d-flex kch-justify-content-center kch-align-items-center kch-py-8 kch-text-small kch-description-color">
+            <i class="ki ki-copyright ki-sm"></i>    
+            <div><span id="currentyear"></span> Keka Hire. Powered by</div>
+                <div>
+                    <img src="https://d2w2i7rp1a0wob.cloudfront.net/static/images/logos/KekaLogoBlack.svg" alt="footer-logo" width="40" style="max-height: auto" attr-name="block-image" class="kch-max-h-400 kch-px-4">
+                </div>
+            </div>
+        </div>
+        </body>
+        </html>

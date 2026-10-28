@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#473BCE">
+    <meta name="csp-nonce" id="csp-nonce" content="cbL_ceJTRpSzQ5ziHdULEQp1AO6tu3txFYybVPlKGYA">
+    <link rel="icon" type="image/svg+xml" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.svg">
+    <link rel="icon" type="image/png" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/apple-touch-icon.png" />
+    <title>Customer Support Developer (Databases) @ Airbyte</title><meta name="title" content="Customer Support Developer (Databases) @ Airbyte" />
+    
+  
+  <meta name="description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+THE ROLE:
+
+Are you the kind of developer who gets a rush from cracking a gnarly replication bug, an issue with CDC implementation, or a query that hangs with no obvious reason? Do you thrive at the intersection of writing code and helping customers succeed? As a Customer Support Developer (Databases) at Airbyte, you&#39;ll combine hands-on development skills with deep technical empathy to support our growing cloud, embedded, and open-source integration platform. 
+
+This isn&#39;t a traditional support role. You&#39;ll be writing Java and Kotlin, shipping contributions to our open-source database source and destination connectors, digging into query plans and transaction logs, and directly shaping how customers move mission-critical data between databases, warehouses, and lakes. You&#39;ll champion the customer voice alongside our engineering and product teams every day, getting your hands dirty in the code.
+
+
+WHAT YOU’LL DO:
+
+Customer Support &amp; Technical Troubleshooting
+
+ - Serve as the primary technical escalation point for database-related customer issues, responding via email, ticketing systems, and video calls with precision and clarity.
+
+ - Triage and prioritize incoming issues with urgency, consistently meeting SLA targets while leveraging AI tools to work smarter and resolve issues faster.
+
+ - Dig into complex issues across relational databases, data warehouses, data lakes, and cloud object storage, not just finding workarounds but partnering with Engineering to root-cause and drive real fixes.
+
+ - Reproduce customer-reported bugs by inspecting connector logs, query plans, replication slots, transaction logs, sync state, and destination table state, and document findings with enough technical detail for Engineering to act on immediately.
+
+ - Support customers through onboarding and troubleshooting for SSH tunnels, network configuration, database user permissions, CDC setup (WAL/binlog/redo logs), and warehouse/lake authentication.
+
+Database Connector Development
+
+ - Get hands-on with customers building and debugging integrations, helping them navigate Airbyte&#39;s database sources and destinations with confidence, from authentication and SSL/SSH setup to CDC, schema evolution, incremental cursors, and typed destination tables.
+
+ - Validate database version compatibility across supported engines and releases, maintain testing environments, and reproduce customer-reported behavior on real database and warehouse instances.
+
+ - Support customers writing to data warehouses (Snowflake, BigQuery, Redshift), data lakes and object storage (S3, GCS, Azure Blob, Databricks, Iceberg), and databases (Postgres, MySQL, MSSQL, ClickHouse), including schema evolution and typed-columns behavior.
+
+ - Help customers running database sources (PostgreSQL, MySQL, MSSQL, Oracle, MongoDB, and more) troubleshoot replication behavior, cursor selection, full-refresh vs. incremental vs. CDC trade-offs, and sync state recovery.
+
+ - Contribute directly to Airbyte&#39;s open-source database connectors and the Java/Kotlin Bulk CDK: fix bugs, improve error handling, harden schema-evolution and CDC paths, and submit pull requests to the Airbyte repository.
+
+ - Review and test community contributions to database sources and destinations, helping external contributors land high-quality changes.
+
+ - Stay sharp on Airbyte&#39;s connector catalog, new database and destination releases, and platform updates so your guidance is always accurate and timely.
+
+Cross-Functional Collaboration &amp; Enablement
+
+ - Be the voice of the customer within Airbyte, working closely with Engineering and Product to surface issues, advocate for feature requests, and ensure customer pain points actually influence the database reliability and performance roadmap.
+
+ - Partner with Solutions Engineering and Sales Engineering to provide white-glove technical onboarding for enterprise customers, including CDC architecture reviews, destination schema modeling, and production readiness assessments.
+
+ - Train and mentor Technical Support Engineers on database connector concepts, including JDBC fundamentals, CDC patterns, schema evolution, query optimization, destination typing and normalization, and the Airbyte protocol (spec, discover, check, read, write).
+
+ - Partner with Sales and Customer Success for technical conversations, onboarding, and expansion efforts, bringing the kind of product depth that helps close and retain customers.
+
+Knowledge, Process Improvement, &amp; AI 
+
+ - Create and maintain internal and external knowledge base articles, troubleshooting guides, and database connector documentation to support scalability.
+
+ - Document research and troubleshooting processes,( including CDC debugging, destination schema reconciliation, and performance tuning runbooks), to aid faster ticket resolution and team knowledge sharing.
+
+ - Identify AI-driven opportunities for automation and process improvements that reduce support load and improve the customer experience.
+
+ - Embrace AI-assisted workflows and contribute to developing playbooks and skills that encode repeatable troubleshooting procedures, connector debugging patterns, and onboarding Runbooks, enabling the team to scale expertise through automation.
+
+ - Spearhead initiatives to fill organizational or support gaps and take ownership of unique projects.
+
+
+WHAT YOU’LL NEED:
+
+ - 2+ years in software engineering, data engineering, technical support, DevOps, QA, or a similar role supporting developers or technical users.
+
+ - Fluency in SQL, with hands-on experience investigating query plans, isolation levels, and performance bottlenecks.
+
+ - Proficiency in Java or Kotlin. You must be able to read, write, and debug JVM-based connector code. You&#39;ll be contributing to database sources and destinations, the Bulk CDK, and automation tooling.
+
+ - Hands-on experience with relational databases, data warehouses, or data lakes, including concepts like CDC (Change Data Capture), schema evolution, and query optimization.
+
+ - Experience with JDBC and common database drivers, and comfort debugging connection, authentication, SSL, and SSH tunnel issues.
+
+ - Understanding of cloud platforms (AWS, GCP, or Azure) and data integration concepts, including ELT/ETL workflows.
+
+ - Strong troubleshooting instincts, clear communication with both technical and non-technical stakeholders, and a growth mindset that keeps you improving even when things get hard.
+
+ - High tolerance for ambiguity and a natural self-starter.
+
+
+NICE TO HAVE:
+
+ - Experience with PostgreSQL, MySQL, MSSQL, Oracle, MongoDB, Snowflake, BigQuery, Redshift, ClickHouse, or similar relational and non-relational systems.
+
+ - Experience with data lakes and open table formats (Iceberg, Delta Lake), and cloud object storage (S3, GCS, Azure Blob).
+
+ - Familiarity with Airbyte&#39;s Bulk CDK or contributions to open-source database connectors.
+
+ - Experience with container orchestration tools like Kubernetes or Docker and multi-tenant architectures.
+
+ - Background supporting developer-facing or embedded/platform products in a B2B SaaS context.
+
+ - Experience with CI/CD pipelines and GitHub-based open-source workflows.
+
+ - Experience with AI-assisted development tools and building automated playbooks or Runbooks.
+
+
+LOCATION:
+
+ - Remote in Canada (Pacific, Mountain, Central timezones)
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+ - Flexible PTO with a culture that encourages at least 25 days off annually, and public holidays in line with provincial employment standards
+
+ - Comprehensive health coverage – extended health benefits on top of provincial public healthcare
+
+ - Virtual healthcare – access to doctors and other care providers online, so you can get care without waiting
+
+ - Retirement savings – a group retirement savings plan to help you build for the future
+
+ - Statutory protections – Canada/Québec Pension Plan, Employment Insurance and workers&#39; compensation coverage
+
+ - Professional development budget, conference sponsorship, and book reimbursement
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+ 
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered." />
+  <meta name="twitter:card" content="summary" />
+  <meta property="og:url" content="https://jobs.ashbyhq.com/airbyte/1a29f42d-e446-4ea0-a4f6-c3886e71ba7d" />
+  <meta property="og:type" content="website" />
+  
+  <meta property="og:title" content="Customer Support Developer (Databases)" />
+  <meta property="og:description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+THE ROLE:
+
+Are you the kind of developer who gets a rush from cracking a gnarly replication bug, an issue with CDC implementation, or a query that hangs with no obvious reason? Do you thrive at the intersection of writing code and helping customers succeed? As a Customer Support Developer (Databases) at Airbyte, you&#39;ll combine hands-on development skills with deep technical empathy to support our growing cloud, embedded, and open-source integration platform. 
+
+This isn&#39;t a traditional support role. You&#39;ll be writing Java and Kotlin, shipping contributions to our open-source database source and destination connectors, digging into query plans and transaction logs, and directly shaping how customers move mission-critical data between databases, warehouses, and lakes. You&#39;ll champion the customer voice alongside our engineering and product teams every day, getting your hands dirty in the code.
+
+
+WHAT YOU’LL DO:
+
+Customer Support &amp; Technical Troubleshooting
+
+ - Serve as the primary technical escalation point for database-related customer issues, responding via email, ticketing systems, and video calls with precision and clarity.
+
+ - Triage and prioritize incoming issues with urgency, consistently meeting SLA targets while leveraging AI tools to work smarter and resolve issues faster.
+
+ - Dig into complex issues across relational databases, data warehouses, data lakes, and cloud object storage, not just finding workarounds but partnering with Engineering to root-cause and drive real fixes.
+
+ - Reproduce customer-reported bugs by inspecting connector logs, query plans, replication slots, transaction logs, sync state, and destination table state, and document findings with enough technical detail for Engineering to act on immediately.
+
+ - Support customers through onboarding and troubleshooting for SSH tunnels, network configuration, database user permissions, CDC setup (WAL/binlog/redo logs), and warehouse/lake authentication.
+
+Database Connector Development
+
+ - Get hands-on with customers building and debugging integrations, helping them navigate Airbyte&#39;s database sources and destinations with confidence, from authentication and SSL/SSH setup to CDC, schema evolution, incremental cursors, and typed destination tables.
+
+ - Validate database version compatibility across supported engines and releases, maintain testing environments, and reproduce customer-reported behavior on real database and warehouse instances.
+
+ - Support customers writing to data warehouses (Snowflake, BigQuery, Redshift), data lakes and object storage (S3, GCS, Azure Blob, Databricks, Iceberg), and databases (Postgres, MySQL, MSSQL, ClickHouse), including schema evolution and typed-columns behavior.
+
+ - Help customers running database sources (PostgreSQL, MySQL, MSSQL, Oracle, MongoDB, and more) troubleshoot replication behavior, cursor selection, full-refresh vs. incremental vs. CDC trade-offs, and sync state recovery.
+
+ - Contribute directly to Airbyte&#39;s open-source database connectors and the Java/Kotlin Bulk CDK: fix bugs, improve error handling, harden schema-evolution and CDC paths, and submit pull requests to the Airbyte repository.
+
+ - Review and test community contributions to database sources and destinations, helping external contributors land high-quality changes.
+
+ - Stay sharp on Airbyte&#39;s connector catalog, new database and destination releases, and platform updates so your guidance is always accurate and timely.
+
+Cross-Functional Collaboration &amp; Enablement
+
+ - Be the voice of the customer within Airbyte, working closely with Engineering and Product to surface issues, advocate for feature requests, and ensure customer pain points actually influence the database reliability and performance roadmap.
+
+ - Partner with Solutions Engineering and Sales Engineering to provide white-glove technical onboarding for enterprise customers, including CDC architecture reviews, destination schema modeling, and production readiness assessments.
+
+ - Train and mentor Technical Support Engineers on database connector concepts, including JDBC fundamentals, CDC patterns, schema evolution, query optimization, destination typing and normalization, and the Airbyte protocol (spec, discover, check, read, write).
+
+ - Partner with Sales and Customer Success for technical conversations, onboarding, and expansion efforts, bringing the kind of product depth that helps close and retain customers.
+
+Knowledge, Process Improvement, &amp; AI 
+
+ - Create and maintain internal and external knowledge base articles, troubleshooting guides, and database connector documentation to support scalability.
+
+ - Document research and troubleshooting processes,( including CDC debugging, destination schema reconciliation, and performance tuning runbooks), to aid faster ticket resolution and team knowledge sharing.
+
+ - Identify AI-driven opportunities for automation and process improvements that reduce support load and improve the customer experience.
+
+ - Embrace AI-assisted workflows and contribute to developing playbooks and skills that encode repeatable troubleshooting procedures, connector debugging patterns, and onboarding Runbooks, enabling the team to scale expertise through automation.
+
+ - Spearhead initiatives to fill organizational or support gaps and take ownership of unique projects.
+
+
+WHAT YOU’LL NEED:
+
+ - 2+ years in software engineering, data engineering, technical support, DevOps, QA, or a similar role supporting developers or technical users.
+
+ - Fluency in SQL, with hands-on experience investigating query plans, isolation levels, and performance bottlenecks.
+
+ - Proficiency in Java or Kotlin. You must be able to read, write, and debug JVM-based connector code. You&#39;ll be contributing to database sources and destinations, the Bulk CDK, and automation tooling.
+
+ - Hands-on experience with relational databases, data warehouses, or data lakes, including concepts like CDC (Change Data Capture), schema evolution, and query optimization.
+
+ - Experience with JDBC and common database drivers, and comfort debugging connection, authentication, SSL, and SSH tunnel issues.
+
+ - Understanding of cloud platforms (AWS, GCP, or Azure) and data integration concepts, including ELT/ETL workflows.
+
+ - Strong troubleshooting instincts, clear communication with both technical and non-technical stakeholders, and a growth mindset that keeps you improving even when things get hard.
+
+ - High tolerance for ambiguity and a natural self-starter.
+
+
+NICE TO HAVE:
+
+ - Experience with PostgreSQL, MySQL, MSSQL, Oracle, MongoDB, Snowflake, BigQuery, Redshift, ClickHouse, or similar relational and non-relational systems.
+
+ - Experience with data lakes and open table formats (Iceberg, Delta Lake), and cloud object storage (S3, GCS, Azure Blob).
+
+ - Familiarity with Airbyte&#39;s Bulk CDK or contributions to open-source database connectors.
+
+ - Experience with container orchestration tools like Kubernetes or Docker and multi-tenant architectures.
+
+ - Background supporting developer-facing or embedded/platform products in a B2B SaaS context.
+
+ - Experience with CI/CD pipelines and GitHub-based open-source workflows.
+
+ - Experience with AI-assisted development tools and building automated playbooks or Runbooks.
+
+
+LOCATION:
+
+ - Remote in Canada (Pacific, Mountain, Central timezones)
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+ - Flexible PTO with a culture that encourages at least 25 days off annually, and public holidays in line with provincial employment standards
+
+ - Comprehensive health coverage – extended health benefits on top of provincial public healthcare
+
+ - Virtual healthcare – access to doctors and other care providers online, so you can get care without waiting
+
+ - Retirement savings – a group retirement savings plan to help you build for the future
+
+ - Statutory protections – Canada/Québec Pension Plan, Employment Insurance and workers&#39; compensation coverage
+
+ - Professional development budget, conference sponsorship, and book reimbursement
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+ 
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered." />
+  
+  <meta name="twitter:title" content="Customer Support Developer (Databases)" />
+  <meta name="twitter:description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+THE ROLE:
+
+Are you the kind of developer who gets a rush from cracking a gnarly replication bug, an issue with CDC implementation, or a query that hangs with no obvious reason? Do you thrive at the intersection of writing code and helping customers succeed? As a Customer Support Developer (Databases) at Airbyte, you&#39;ll combine hands-on development skills with deep technical empathy to support our growing cloud, embedded, and open-source integration platform. 
+
+This isn&#39;t a traditional support role. You&#39;ll be writing Java and Kotlin, shipping contributions to our open-source database source and destination connectors, digging into query plans and transaction logs, and directly shaping how customers move mission-critical data between databases, warehouses, and lakes. You&#39;ll champion the customer voice alongside our engineering and product teams every day, getting your hands dirty in the code.
+
+
+WHAT YOU’LL DO:
+
+Customer Support &amp; Technical Troubleshooting
+
+ - Serve as the primary technical escalation point for database-related customer issues, responding via email, ticketing systems, and video calls with precision and clarity.
+
+ - Triage and prioritize incoming issues with urgency, consistently meeting SLA targets while leveraging AI tools to work smarter and resolve issues faster.
+
+ - Dig into complex issues across relational databases, data warehouses, data lakes, and cloud object storage, not just finding workarounds but partnering with Engineering to root-cause and drive real fixes.
+
+ - Reproduce customer-reported bugs by inspecting connector logs, query plans, replication slots, transaction logs, sync state, and destination table state, and document findings with enough technical detail for Engineering to act on immediately.
+
+ - Support customers through onboarding and troubleshooting for SSH tunnels, network configuration, database user permissions, CDC setup (WAL/binlog/redo logs), and warehouse/lake authentication.
+
+Database Connector Development
+
+ - Get hands-on with customers building and debugging integrations, helping them navigate Airbyte&#39;s database sources and destinations with confidence, from authentication and SSL/SSH setup to CDC, schema evolution, incremental cursors, and typed destination tables.
+
+ - Validate database version compatibility across supported engines and releases, maintain testing environments, and reproduce customer-reported behavior on real database and warehouse instances.
+
+ - Support customers writing to data warehouses (Snowflake, BigQuery, Redshift), data lakes and object storage (S3, GCS, Azure Blob, Databricks, Iceberg), and databases (Postgres, MySQL, MSSQL, ClickHouse), including schema evolution and typed-columns behavior.
+
+ - Help customers running database sources (PostgreSQL, MySQL, MSSQL, Oracle, MongoDB, and more) troubleshoot replication behavior, cursor selection, full-refresh vs. incremental vs. CDC trade-offs, and sync state recovery.
+
+ - Contribute directly to Airbyte&#39;s open-source database connectors and the Java/Kotlin Bulk CDK: fix bugs, improve error handling, harden schema-evolution and CDC paths, and submit pull requests to the Airbyte repository.
+
+ - Review and test community contributions to database sources and destinations, helping external contributors land high-quality changes.
+
+ - Stay sharp on Airbyte&#39;s connector catalog, new database and destination releases, and platform updates so your guidance is always accurate and timely.
+
+Cross-Functional Collaboration &amp; Enablement
+
+ - Be the voice of the customer within Airbyte, working closely with Engineering and Product to surface issues, advocate for feature requests, and ensure customer pain points actually influence the database reliability and performance roadmap.
+
+ - Partner with Solutions Engineering and Sales Engineering to provide white-glove technical onboarding for enterprise customers, including CDC architecture reviews, destination schema modeling, and production readiness assessments.
+
+ - Train and mentor Technical Support Engineers on database connector concepts, including JDBC fundamentals, CDC patterns, schema evolution, query optimization, destination typing and normalization, and the Airbyte protocol (spec, discover, check, read, write).
+
+ - Partner with Sales and Customer Success for technical conversations, onboarding, and expansion efforts, bringing the kind of product depth that helps close and retain customers.
+
+Knowledge, Process Improvement, &amp; AI 
+
+ - Create and maintain internal and external knowledge base articles, troubleshooting guides, and database connector documentation to support scalability.
+
+ - Document research and troubleshooting processes,( including CDC debugging, destination schema reconciliation, and performance tuning runbooks), to aid faster ticket resolution and team knowledge sharing.
+
+ - Identify AI-driven opportunities for automation and process improvements that reduce support load and improve the customer experience.
+
+ - Embrace AI-assisted workflows and contribute to developing playbooks and skills that encode repeatable troubleshooting procedures, connector debugging patterns, and onboarding Runbooks, enabling the team to scale expertise through automation.
+
+ - Spearhead initiatives to fill organizational or support gaps and take ownership of unique projects.
+
+
+WHAT YOU’LL NEED:
+
+ - 2+ years in software engineering, data engineering, technical support, DevOps, QA, or a similar role supporting developers or technical users.
+
+ - Fluency in SQL, with hands-on experience investigating query plans, isolation levels, and performance bottlenecks.
+
+ - Proficiency in Java or Kotlin. You must be able to read, write, and debug JVM-based connector code. You&#39;ll be contributing to database sources and destinations, the Bulk CDK, and automation tooling.
+
+ - Hands-on experience with relational databases, data warehouses, or data lakes, including concepts like CDC (Change Data Capture), schema evolution, and query optimization.
+
+ - Experience with JDBC and common database drivers, and comfort debugging connection, authentication, SSL, and SSH tunnel issues.
+
+ - Understanding of cloud platforms (AWS, GCP, or Azure) and data integration concepts, including ELT/ETL workflows.
+
+ - Strong troubleshooting instincts, clear communication with both technical and non-technical stakeholders, and a growth mindset that keeps you improving even when things get hard.
+
+ - High tolerance for ambiguity and a natural self-starter.
+
+
+NICE TO HAVE:
+
+ - Experience with PostgreSQL, MySQL, MSSQL, Oracle, MongoDB, Snowflake, BigQuery, Redshift, ClickHouse, or similar relational and non-relational systems.
+
+ - Experience with data lakes and open table formats (Iceberg, Delta Lake), and cloud object storage (S3, GCS, Azure Blob).
+
+ - Familiarity with Airbyte&#39;s Bulk CDK or contributions to open-source database connectors.
+
+ - Experience with container orchestration tools like Kubernetes or Docker and multi-tenant architectures.
+
+ - Background supporting developer-facing or embedded/platform products in a B2B SaaS context.
+
+ - Experience with CI/CD pipelines and GitHub-based open-source workflows.
+
+ - Experience with AI-assisted development tools and building automated playbooks or Runbooks.
+
+
+LOCATION:
+
+ - Remote in Canada (Pacific, Mountain, Central timezones)
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+ - Flexible PTO with a culture that encourages at least 25 days off annually, and public holidays in line with provincial employment standards
+
+ - Comprehensive health coverage – extended health benefits on top of provincial public healthcare
+
+ - Virtual healthcare – access to doctors and other care providers online, so you can get care without waiting
+
+ - Retirement savings – a group retirement savings plan to help you build for the future
+
+ - Statutory protections – Canada/Québec Pension Plan, Employment Insurance and workers&#39; compensation coverage
+
+ - Professional development budget, conference sponsorship, and book reimbursement
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+ 
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered." />
+  
+  <meta name="robots" content="noindex,nofollow" />
+    <link rel="preload" as="image" href="https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png">
+    
+    <script type="application/ld+json">{"@context":"https://schema.org/","@type":"JobPosting","title":"Customer Support Developer (Databases)","description":"<p style=\"min-height:1.5em\">Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, \"the last ten years were all about structured data. The future is all about context.\" We're now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.</p><p style=\"min-height:1.5em\"></p><h2><strong>The Role:</strong></h2><p style=\"min-height:1.5em\">Are you the kind of developer who gets a rush from cracking a gnarly replication bug, an issue with CDC implementation, or a query that hangs with no obvious reason? Do you thrive at the intersection of writing code and helping customers succeed? As a Customer Support Developer (Databases) at Airbyte, you'll combine hands-on development skills with deep technical empathy to support our growing cloud, embedded, and open-source integration platform. </p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">This isn't a traditional support role. You'll be writing Java and Kotlin, shipping contributions to our open-source database source and destination connectors, digging into query plans and transaction logs, and directly shaping how customers move mission-critical data between databases, warehouses, and lakes. You'll champion the customer voice alongside our engineering and product teams every day, getting your hands dirty in the code.</p><p style=\"min-height:1.5em\"></p><h2><strong>What You’ll Do:</strong></h2><p style=\"min-height:1.5em\">Customer Support &amp; Technical Troubleshooting</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Serve as the primary technical escalation point for database-related customer issues, responding via email, ticketing systems, and video calls with precision and clarity.</p></li><li><p style=\"min-height:1.5em\">Triage and prioritize incoming issues with urgency, consistently meeting SLA targets while leveraging AI tools to work smarter and resolve issues faster.</p></li><li><p style=\"min-height:1.5em\">Dig into complex issues across relational databases, data warehouses, data lakes, and cloud object storage, not just finding workarounds but partnering with Engineering to root-cause and drive real fixes.</p></li><li><p style=\"min-height:1.5em\">Reproduce customer-reported bugs by inspecting connector logs, query plans, replication slots, transaction logs, sync state, and destination table state, and document findings with enough technical detail for Engineering to act on immediately.</p></li><li><p style=\"min-height:1.5em\">Support customers through onboarding and troubleshooting for SSH tunnels, network configuration, database user permissions, CDC setup (WAL/binlog/redo logs), and warehouse/lake authentication.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Database Connector Development</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Get hands-on with customers building and debugging integrations, helping them navigate Airbyte's database sources and destinations with confidence, from authentication and SSL/SSH setup to CDC, schema evolution, incremental cursors, and typed destination tables.</p></li><li><p style=\"min-height:1.5em\">Validate database version compatibility across supported engines and releases, maintain testing environments, and reproduce customer-reported behavior on real database and warehouse instances.</p></li><li><p style=\"min-height:1.5em\">Support customers writing to data warehouses (Snowflake, BigQuery, Redshift), data lakes and object storage (S3, GCS, Azure Blob, Databricks, Iceberg), and databases (Postgres, MySQL, MSSQL, ClickHouse), including schema evolution and typed-columns behavior.</p></li><li><p style=\"min-height:1.5em\">Help customers running database sources (PostgreSQL, MySQL, MSSQL, Oracle, MongoDB, and more) troubleshoot replication behavior, cursor selection, full-refresh vs. incremental vs. CDC trade-offs, and sync state recovery.</p></li><li><p style=\"min-height:1.5em\">Contribute directly to Airbyte's open-source database connectors and the Java/Kotlin Bulk CDK: fix bugs, improve error handling, harden schema-evolution and CDC paths, and submit pull requests to the Airbyte repository.</p></li><li><p style=\"min-height:1.5em\">Review and test community contributions to database sources and destinations, helping external contributors land high-quality changes.</p></li><li><p style=\"min-height:1.5em\">Stay sharp on Airbyte's connector catalog, new database and destination releases, and platform updates so your guidance is always accurate and timely.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Cross-Functional Collaboration &amp; Enablement</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Be the voice of the customer within Airbyte, working closely with Engineering and Product to surface issues, advocate for feature requests, and ensure customer pain points actually influence the database reliability and performance roadmap.</p></li><li><p style=\"min-height:1.5em\">Partner with Solutions Engineering and Sales Engineering to provide white-glove technical onboarding for enterprise customers, including CDC architecture reviews, destination schema modeling, and production readiness assessments.</p></li><li><p style=\"min-height:1.5em\">Train and mentor Technical Support Engineers on database connector concepts, including JDBC fundamentals, CDC patterns, schema evolution, query optimization, destination typing and normalization, and the Airbyte protocol (spec, discover, check, read, write).</p></li><li><p style=\"min-height:1.5em\">Partner with Sales and Customer Success for technical conversations, onboarding, and expansion efforts, bringing the kind of product depth that helps close and retain customers.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Knowledge, Process Improvement, &amp; AI </p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Create and maintain internal and external knowledge base articles, troubleshooting guides, and database connector documentation to support scalability.</p></li><li><p style=\"min-height:1.5em\">Document research and troubleshooting processes,( including CDC debugging, destination schema reconciliation, and performance tuning runbooks), to aid faster ticket resolution and team knowledge sharing.</p></li><li><p style=\"min-height:1.5em\">Identify AI-driven opportunities for automation and process improvements that reduce support load and improve the customer experience.</p></li><li><p style=\"min-height:1.5em\">Embrace AI-assisted workflows and contribute to developing playbooks and skills that encode repeatable troubleshooting procedures, connector debugging patterns, and onboarding Runbooks, enabling the team to scale expertise through automation.</p></li><li><p style=\"min-height:1.5em\">Spearhead initiatives to fill organizational or support gaps and take ownership of unique projects.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>What You’ll Need:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">2+ years in software engineering, data engineering, technical support, DevOps, QA, or a similar role supporting developers or technical users.</p></li><li><p style=\"min-height:1.5em\">Fluency in SQL, with hands-on experience investigating query plans, isolation levels, and performance bottlenecks.</p></li><li><p style=\"min-height:1.5em\">Proficiency in Java or Kotlin. You must be able to read, write, and debug JVM-based connector code. You'll be contributing to database sources and destinations, the Bulk CDK, and automation tooling.</p></li><li><p style=\"min-height:1.5em\">Hands-on experience with relational databases, data warehouses, or data lakes, including concepts like CDC (Change Data Capture), schema evolution, and query optimization.</p></li><li><p style=\"min-height:1.5em\">Experience with JDBC and common database drivers, and comfort debugging connection, authentication, SSL, and SSH tunnel issues.</p></li><li><p style=\"min-height:1.5em\">Understanding of cloud platforms (AWS, GCP, or Azure) and data integration concepts, including ELT/ETL workflows.</p></li><li><p style=\"min-height:1.5em\">Strong troubleshooting instincts, clear communication with both technical and non-technical stakeholders, and a growth mindset that keeps you improving even when things get hard.</p></li><li><p style=\"min-height:1.5em\">High tolerance for ambiguity and a natural self-starter.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Nice To Have:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Experience with PostgreSQL, MySQL, MSSQL, Oracle, MongoDB, Snowflake, BigQuery, Redshift, ClickHouse, or similar relational and non-relational systems.</p></li><li><p style=\"min-height:1.5em\">Experience with data lakes and open table formats (Iceberg, Delta Lake), and cloud object storage (S3, GCS, Azure Blob).</p></li><li><p style=\"min-height:1.5em\">Familiarity with Airbyte's Bulk CDK or contributions to open-source database connectors.</p></li><li><p style=\"min-height:1.5em\">Experience with container orchestration tools like Kubernetes or Docker and multi-tenant architectures.</p></li><li><p style=\"min-height:1.5em\">Background supporting developer-facing or embedded/platform products in a B2B SaaS context.</p></li><li><p style=\"min-height:1.5em\">Experience with CI/CD pipelines and GitHub-based open-source workflows.</p></li><li><p style=\"min-height:1.5em\">Experience with AI-assisted development tools and building automated playbooks or Runbooks.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Location:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Remote in Canada (Pacific, Mountain, Central timezones)</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Why You'll Love Working at Airbyte:</strong></h2><p style=\"min-height:1.5em\">At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Flexible PTO with a culture that encourages at least 25 days off annually, and public holidays in line with provincial employment standards</p></li><li><p style=\"min-height:1.5em\">Comprehensive health coverage – extended health benefits on top of provincial public healthcare</p></li><li><p style=\"min-height:1.5em\">Virtual healthcare – access to doctors and other care providers online, so you can get care without waiting</p></li><li><p style=\"min-height:1.5em\">Retirement savings – a group retirement savings plan to help you build for the future</p></li><li><p style=\"min-height:1.5em\">Statutory protections – Canada/Québec Pension Plan, Employment Insurance and workers' compensation coverage</p></li><li><p style=\"min-height:1.5em\">Professional development budget, conference sponsorship, and book reimbursement</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><p style=\"min-height:1.5em\">We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.</p>","directApply":false,"identifier":{"@type":"PropertyValue","name":"Airbyte","value":"1a29f42d-e446-4ea0-a4f6-c3886e71ba7d"},"datePosted":"2026-10-08","hiringOrganization":{"@type":"Organization","name":"Airbyte","sameAs":"https://airbyte.com/"},"jobLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressCountry":"Canada"}},"employmentType":"FULL_TIME","baseSalary":{"@type":"MonetaryAmount","currency":"CAD","value":{"@type":"QuantitativeValue","minValue":101000,"maxValue":110000,"unitText":"YEAR"}},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"Canada"}}</script>
+  
+  
+
+    <link id="vite-preload" rel="preload" as="fetch" href="https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json" crossorigin>    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Book_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Medium_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Semibold_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/WhitneySSm.css" />
+    <style>
+      .grecaptcha-badge {
+        visibility: hidden;
+      }
+
+      body > div > div:not([class]):has(> iframe[src*="/recaptcha/"]) {
+        box-sizing: content-box;
+      }
+    </style>
+
+
+  </head>
+  <body>
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <div id="root">
+      <style>
+        body {
+          overflow: hidden;
+        }
+      
+        .center {
+          align-items: center;
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          justify-content: center;
+          width: 100vw;
+        }
+      
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      
+        .fade-in {
+          animation-delay: 750ms;
+          animation-direction: normal;
+          animation-duration: 500ms;
+          animation-fill-mode: forwards;
+          animation-iteration-count: 1;
+          animation-name: fade-in;
+          animation-timing-function: ease-in-out;
+          opacity: 0;
+        }
+      
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      
+        .spinner {
+          animation-duration: var(--transitionDurationSlow, 600ms);
+          animation-iteration-count: infinite;
+          animation-name: spin;
+          animation-timing-function: linear;
+          border-color: var(--colorNeutral600Transparent, rgba(125, 134, 153, 0.25));
+          border-radius: 100%;
+          border-style: solid;
+          border-top-color: rgba(125, 134, 153, 0.9);
+          border-width: var(--borderWidthHeavy, 3px);
+          display: block;
+          height: var(--spacingXxlarge, 48px);
+          width: var(--spacingXxlarge, 48px);
+        }
+      </style>
+      <div class="center">
+        <div class="fade-in">
+          <div class="spinner"></div>
+        </div>
+      </div>    </div>
+    <script nonce="cbL_ceJTRpSzQ5ziHdULEQp1AO6tu3txFYybVPlKGYA">
+      window.__appData = {"ddRumApplicationId":"80e0bf43-e772-45ac-858b-1e6dc0f1f415","ddRumClientToken":"pub1a87c7036063ee7d4b7914b397e6324e","environment":"production","maintenanceMode":false,"schedulingMaintenanceMode":false,"organization":{"organizationId":"c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2","name":"Airbyte","publicWebsite":"https://airbyte.com/","customJobsPageUrl":null,"hostedJobsPageSlug":"airbyte","allowJobPostIndexing":false,"isDemoOrg":false,"theme":{"colors":{"version":"1","colorPrimary600":"#6059b2","colorPrimary900":"#1d1b3e"},"showJobFilters":true,"showLocationAddress":false,"showTeams":false,"showAutofillApplicationsBox":true,"logoWordmarkImageUrl":"https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png","logoSquareImageUrl":null,"applicationSubmittedSuccessMessage":null,"jobBoardTopDescriptionHtml":null,"jobBoardBottomDescriptionHtml":null,"jobPostingBackUrl":null,"__typename":"Theme"},"appConfirmationTrackingPixelHtml":null,"recruitingPrivacyPolicyUrl":null,"activeFeatureFlags":["AiNotetakerCandidateConsentPolicies","ApplicationForReferrals","ApprovalNotesFromEmail","BookingLinkRescheduleLimits","CanonicalizeSchools","CoreMultipleBrands","CoreMultipleBrandsFeedFiltering","CoreMultipleBrandsLinkedInJobWrappingStreamingFix","DemoOrgBanners","EducationHistoryFormField","ExplicitAutomatedProcessingOptOutConfirmation","JobBoardCookieConsentControls","JobBoardEtagValidation","JobPostingApplicationDeadlines","JobPostingListV2","JobPostingWorkplaceTypeOverrideSecondaryLocationsToo","LinkedInIntegrationRequireCompanyId","LinkedInTOSUpdate","LocationExternalName","MigrateGoogleRecaptchaAutomatedLegal","RejectBase64EncodedResumesFrontEnd","RejectBase64EncodedResumesThrowErrorFrontEnd","RejectInvalidFileTypeOnUpload","RejectUrlsInCandidateName","SchedulingDirectBookingLogDirectBookingEventsJson","SchedulingGCalSendUpdatesForCancelEvents","SchedulingRescheduleAndCancellationReasonsNonUser","SchedulingUseLocaleInTimeFormatting","ShowCountsOnJobBoardFilterOptions","SocialSharingHtmlMetaSettings","UseGlobalQueryScopesOnGlobalApplicationQuestions","UseGoogleRecaptchaUniversalKey","UseJobPostingFiltersOnGlobalApplicationQuestions","UseJobPostingFiltersOnGlobalApplicationQuestionsUI","UseJobPostingFiltersOnSurveys","UseJobPostingFiltersOnSurveysUI","ValidateFileTypeOnUpload"],"timezone":"America/Los_Angeles","candidateScheduleCancellationReasonRequirementStatus":"Off","showCookieBanner":false,"__typename":"Organization"},"posting":{"id":"1a29f42d-e446-4ea0-a4f6-c3886e71ba7d","title":"Customer Support Developer (Databases)","departmentName":"Technical Support ","departmentExternalName":"Technical Support ","locationName":"Canada","locationAddress":null,"workplaceType":"Remote","employmentType":"FullTime","descriptionHtml":"<p style=\"min-height:1.5em\">Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, \"the last ten years were all about structured data. The future is all about context.\" We're now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.</p><p style=\"min-height:1.5em\"></p><h2><strong>The Role:</strong></h2><p style=\"min-height:1.5em\">Are you the kind of developer who gets a rush from cracking a gnarly replication bug, an issue with CDC implementation, or a query that hangs with no obvious reason? Do you thrive at the intersection of writing code and helping customers succeed? As a Customer Support Developer (Databases) at Airbyte, you'll combine hands-on development skills with deep technical empathy to support our growing cloud, embedded, and open-source integration platform. </p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">This isn't a traditional support role. You'll be writing Java and Kotlin, shipping contributions to our open-source database source and destination connectors, digging into query plans and transaction logs, and directly shaping how customers move mission-critical data between databases, warehouses, and lakes. You'll champion the customer voice alongside our engineering and product teams every day, getting your hands dirty in the code.</p><p style=\"min-height:1.5em\"></p><h2><strong>What You’ll Do:</strong></h2><p style=\"min-height:1.5em\">Customer Support &amp; Technical Troubleshooting</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Serve as the primary technical escalation point for database-related customer issues, responding via email, ticketing systems, and video calls with precision and clarity.</p></li><li><p style=\"min-height:1.5em\">Triage and prioritize incoming issues with urgency, consistently meeting SLA targets while leveraging AI tools to work smarter and resolve issues faster.</p></li><li><p style=\"min-height:1.5em\">Dig into complex issues across relational databases, data warehouses, data lakes, and cloud object storage, not just finding workarounds but partnering with Engineering to root-cause and drive real fixes.</p></li><li><p style=\"min-height:1.5em\">Reproduce customer-reported bugs by inspecting connector logs, query plans, replication slots, transaction logs, sync state, and destination table state, and document findings with enough technical detail for Engineering to act on immediately.</p></li><li><p style=\"min-height:1.5em\">Support customers through onboarding and troubleshooting for SSH tunnels, network configuration, database user permissions, CDC setup (WAL/binlog/redo logs), and warehouse/lake authentication.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Database Connector Development</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Get hands-on with customers building and debugging integrations, helping them navigate Airbyte's database sources and destinations with confidence, from authentication and SSL/SSH setup to CDC, schema evolution, incremental cursors, and typed destination tables.</p></li><li><p style=\"min-height:1.5em\">Validate database version compatibility across supported engines and releases, maintain testing environments, and reproduce customer-reported behavior on real database and warehouse instances.</p></li><li><p style=\"min-height:1.5em\">Support customers writing to data warehouses (Snowflake, BigQuery, Redshift), data lakes and object storage (S3, GCS, Azure Blob, Databricks, Iceberg), and databases (Postgres, MySQL, MSSQL, ClickHouse), including schema evolution and typed-columns behavior.</p></li><li><p style=\"min-height:1.5em\">Help customers running database sources (PostgreSQL, MySQL, MSSQL, Oracle, MongoDB, and more) troubleshoot replication behavior, cursor selection, full-refresh vs. incremental vs. CDC trade-offs, and sync state recovery.</p></li><li><p style=\"min-height:1.5em\">Contribute directly to Airbyte's open-source database connectors and the Java/Kotlin Bulk CDK: fix bugs, improve error handling, harden schema-evolution and CDC paths, and submit pull requests to the Airbyte repository.</p></li><li><p style=\"min-height:1.5em\">Review and test community contributions to database sources and destinations, helping external contributors land high-quality changes.</p></li><li><p style=\"min-height:1.5em\">Stay sharp on Airbyte's connector catalog, new database and destination releases, and platform updates so your guidance is always accurate and timely.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Cross-Functional Collaboration &amp; Enablement</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Be the voice of the customer within Airbyte, working closely with Engineering and Product to surface issues, advocate for feature requests, and ensure customer pain points actually influence the database reliability and performance roadmap.</p></li><li><p style=\"min-height:1.5em\">Partner with Solutions Engineering and Sales Engineering to provide white-glove technical onboarding for enterprise customers, including CDC architecture reviews, destination schema modeling, and production readiness assessments.</p></li><li><p style=\"min-height:1.5em\">Train and mentor Technical Support Engineers on database connector concepts, including JDBC fundamentals, CDC patterns, schema evolution, query optimization, destination typing and normalization, and the Airbyte protocol (spec, discover, check, read, write).</p></li><li><p style=\"min-height:1.5em\">Partner with Sales and Customer Success for technical conversations, onboarding, and expansion efforts, bringing the kind of product depth that helps close and retain customers.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Knowledge, Process Improvement, &amp; AI </p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Create and maintain internal and external knowledge base articles, troubleshooting guides, and database connector documentation to support scalability.</p></li><li><p style=\"min-height:1.5em\">Document research and troubleshooting processes,( including CDC debugging, destination schema reconciliation, and performance tuning runbooks), to aid faster ticket resolution and team knowledge sharing.</p></li><li><p style=\"min-height:1.5em\">Identify AI-driven opportunities for automation and process improvements that reduce support load and improve the customer experience.</p></li><li><p style=\"min-height:1.5em\">Embrace AI-assisted workflows and contribute to developing playbooks and skills that encode repeatable troubleshooting procedures, connector debugging patterns, and onboarding Runbooks, enabling the team to scale expertise through automation.</p></li><li><p style=\"min-height:1.5em\">Spearhead initiatives to fill organizational or support gaps and take ownership of unique projects.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>What You’ll Need:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">2+ years in software engineering, data engineering, technical support, DevOps, QA, or a similar role supporting developers or technical users.</p></li><li><p style=\"min-height:1.5em\">Fluency in SQL, with hands-on experience investigating query plans, isolation levels, and performance bottlenecks.</p></li><li><p style=\"min-height:1.5em\">Proficiency in Java or Kotlin. You must be able to read, write, and debug JVM-based connector code. You'll be contributing to database sources and destinations, the Bulk CDK, and automation tooling.</p></li><li><p style=\"min-height:1.5em\">Hands-on experience with relational databases, data warehouses, or data lakes, including concepts like CDC (Change Data Capture), schema evolution, and query optimization.</p></li><li><p style=\"min-height:1.5em\">Experience with JDBC and common database drivers, and comfort debugging connection, authentication, SSL, and SSH tunnel issues.</p></li><li><p style=\"min-height:1.5em\">Understanding of cloud platforms (AWS, GCP, or Azure) and data integration concepts, including ELT/ETL workflows.</p></li><li><p style=\"min-height:1.5em\">Strong troubleshooting instincts, clear communication with both technical and non-technical stakeholders, and a growth mindset that keeps you improving even when things get hard.</p></li><li><p style=\"min-height:1.5em\">High tolerance for ambiguity and a natural self-starter.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Nice To Have:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Experience with PostgreSQL, MySQL, MSSQL, Oracle, MongoDB, Snowflake, BigQuery, Redshift, ClickHouse, or similar relational and non-relational systems.</p></li><li><p style=\"min-height:1.5em\">Experience with data lakes and open table formats (Iceberg, Delta Lake), and cloud object storage (S3, GCS, Azure Blob).</p></li><li><p style=\"min-height:1.5em\">Familiarity with Airbyte's Bulk CDK or contributions to open-source database connectors.</p></li><li><p style=\"min-height:1.5em\">Experience with container orchestration tools like Kubernetes or Docker and multi-tenant architectures.</p></li><li><p style=\"min-height:1.5em\">Background supporting developer-facing or embedded/platform products in a B2B SaaS context.</p></li><li><p style=\"min-height:1.5em\">Experience with CI/CD pipelines and GitHub-based open-source workflows.</p></li><li><p style=\"min-height:1.5em\">Experience with AI-assisted development tools and building automated playbooks or Runbooks.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Location:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Remote in Canada (Pacific, Mountain, Central timezones)</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Why You'll Love Working at Airbyte:</strong></h2><p style=\"min-height:1.5em\">At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Flexible PTO with a culture that encourages at least 25 days off annually, and public holidays in line with provincial employment standards</p></li><li><p style=\"min-height:1.5em\">Comprehensive health coverage – extended health benefits on top of provincial public healthcare</p></li><li><p style=\"min-height:1.5em\">Virtual healthcare – access to doctors and other care providers online, so you can get care without waiting</p></li><li><p style=\"min-height:1.5em\">Retirement savings – a group retirement savings plan to help you build for the future</p></li><li><p style=\"min-height:1.5em\">Statutory protections – Canada/Québec Pension Plan, Employment Insurance and workers' compensation coverage</p></li><li><p style=\"min-height:1.5em\">Professional development budget, conference sponsorship, and book reimbursement</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><p style=\"min-height:1.5em\">We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.</p>","isListed":true,"isConfidential":false,"teamNames":["Technical Support "],"secondaryLocationNames":[],"compensationTierSummary":"CA$101K – CA$110K • Offers Equity","compensationTiers":[{"id":"ae319c0d-3496-4641-8c44-fa8b2a8da6ff","title":null,"tierSummary":"CA$101K – CA$110K • Offers Equity","__typename":"JobPostingCompensationTiers"}],"applicationDeadline":null,"compensationTierGuideUrl":null,"scrapeableCompensationSalarySummary":"CA$101K - CA$110K","compensationPhilosophyHtml":"<p style=\"min-height:1.5em\">The actual compensation package within the stated range will be based on a combination of factors such as an individual's skills, experience level, location, and other relevant job-related considerations.</p>","applicationLimitCalloutHtml":null,"shouldAskForTextingConsent":true,"shouldAskForWhatsAppConsent":false,"candidateTextingPrivacyPolicyUrl":"https://airbyte.com/company/privacy-policy","candidateTextingTermsAndConditionsUrl":null,"legalEntityNameForTextingConsent":"Airbyte, Inc","automatedProcessingLegalNotice":null,"__typename":"JobPostingDetails"},"jobBoard":null,"routerPrefix":"/","recaptchaPublicSiteKey":"6LeFb_YUAAAAALUD5h-BiQEp8JaFChe0e0A6r49Y","recaptchaUniversalPublicSiteKey":"6LezdY0tAAAAAEnollNLCAI0z1VDGwM7AzGrU4XZ"};
+      // A Vite manifest key: the entry's HTML filename relative to the build root.
+      // Single-entry apps leave entryHtml unset.
+      const ENTRY_KEY = "index.html";
+      fetch("https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json").then(function (res) { return res.json() }).then(function (manifest) {
+        const entryData = manifest[ENTRY_KEY];
+        if (entryData == null) {
+          throw new Error("Vite manifest is missing entry: " + ENTRY_KEY);
+        }
+    
+        // Walk the entry's static imports transitively. Both the CSS and the JS a
+        // page needs can sit on shared chunks rather than on the entry record, and
+        // the manifest lists only each chunk's direct imports -- so reading the
+        // entry alone silently drops stylesheets and preloads. Depth-first
+        // post-order puts a dependency's CSS ahead of its importer's, which is the
+        // cascade order Vite uses in the HTML it generates for the same entry.
+        const chunks = [];
+        const visited = {};
+        function collectChunks(key) {
+          if (visited[key] === true) {
+            return;
+          }
+          visited[key] = true;
+          const chunk = manifest[key];
+          if (chunk == null) {
+            return;
+          }
+          (chunk.imports ?? []).forEach(collectChunks);
+          chunks.push(chunk);
+        }
+        collectChunks(ENTRY_KEY);
+    
+        // css[] holds output paths, not digests, but every manifest record carries
+        // an integrity for its own file -- so a stylesheet Vite emitted as its own
+        // record can be matched by path. The entry's CSS has no record and loads
+        // unhashed.
+        const integrityByFile = {};
+        Object.keys(manifest).forEach(function (key) {
+          const record = manifest[key];
+          if (record != null && record.file != null && record.integrity != null) {
+            integrityByFile[record.file] = record.integrity;
+          }
+        });
+    
+        const sheets = [];
+        const seenSheets = {};
+        chunks.forEach(function (chunk) {
+          (chunk.css ?? []).forEach(function (sheet) {
+            if (seenSheets[sheet] === true) {
+              return;
+            }
+            seenSheets[sheet] = true;
+            sheets.push(sheet);
+          });
+        });
+    
+        let bundleLoaded = false;
+        function loadBundle() {
+          if (bundleLoaded === true) {
+            return;
+          }
+    
+          const el = document.createElement("script");
+          el.setAttribute("type", "module");
+          el.setAttribute("crossorigin", "");
+          el.setAttribute("integrity", entryData.integrity);
+          el.setAttribute("src", "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + entryData.file);
+          document.head.appendChild(el);
+          bundleLoaded = true;
+        }
+    
+        chunks.forEach(function (chunk) {
+          const preload = document.createElement("link");
+          preload.rel = "modulepreload";
+          preload.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + chunk.file;
+          // Carry the SRI hash on the preload too: Chrome/Firefox reuse the
+          // preloaded bytes for the integrity-bearing script tag, so an integrity-less
+          // preload silently bypasses the SRI check. Without it here, SRI is never
+          // enforced on the code-split chunks (the bulk of the app), in any browser.
+          preload.setAttribute("integrity", chunk.integrity);
+          preload.setAttribute("crossorigin", "");
+          document.head.appendChild(preload);
+        });
+    
+        if (sheets.length > 0) {
+          const loadedSheets = [];
+          sheets.forEach(function (sheet) {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.type = "text/css";
+            link.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + sheet;
+            link.media = "all";
+            const sheetIntegrity = integrityByFile[sheet];
+            if (sheetIntegrity != null) {
+              link.setAttribute("integrity", sheetIntegrity);
+              // SRI on a cross-origin stylesheet requires CORS mode; the CDN sends
+              // access-control-allow-origin: *.
+              link.setAttribute("crossorigin", "");
+            }
+            link.onload = function () {
+              loadedSheets.push(sheet);
+              if (loadedSheets.length === sheets.length) {
+                loadBundle();
+              }
+            };
+            link.onerror = loadBundle;
+            document.head.insertBefore(link, document.getElementById("vite-preload"));
+          });
+        } else {
+          loadBundle();
+        }
+      });
+    </script>  </body>
+</html>

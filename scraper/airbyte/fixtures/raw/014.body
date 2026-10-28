@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#473BCE">
+    <meta name="csp-nonce" id="csp-nonce" content="-4FLHcs6J1D2so_sBx5st5fQzubgEot-3xtCXQXc3Rg">
+    <link rel="icon" type="image/svg+xml" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.svg">
+    <link rel="icon" type="image/png" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/apple-touch-icon.png" />
+    <title>Technical Support Engineer @ Airbyte</title><meta name="title" content="Technical Support Engineer @ Airbyte" />
+    
+  
+  <meta name="description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+THE ROLE:
+
+Do you get excited when a gnarly API issue finally clicks into place? Do you love being the person customers can count on when things get complicated? As a Technical Support Engineer at Airbyte, you&#39;ll bring together deep technical expertise and genuine customer empathy to support our growing cloud and embedded integration platform. You won&#39;t just be closing tickets, you&#39;ll be influencing how our product evolves by championing the customer voice with our engineering and product teams every day.
+
+
+
+WHAT YOU’LL DO:
+
+
+Customer Support &amp; Troubleshooting
+
+ - Be the person customers can count on, responding via email, ticketing systems, and the occasional video call with the kind of clarity and care that turns frustrated users into loyal ones.
+
+ - Triage and prioritize incoming issues with urgency, consistently meeting SLA targets while leveraging AI tools to work smarter and resolve issues faster.
+
+ - Dig into complex issues across APIs, connectors, data pipelines, and SaaS integrations, not just finding workarounds but partnering with Engineering to get to the root cause and drive real fixes.
+
+ - Document and reproduce customer-reported bugs with enough detail that the right people can act on them quickly.
+
+ - Support embedded platform customers through onboarding and troubleshooting, including OAuth flows, widget tokens, scoped API tokens, and connector configuration.
+
+API &amp; Technical Expertise
+
+ - Get hands-on with customers who are building and debugging integrations, helping them navigate the Airbyte API and third-party APIs with confidence, from authentication and pagination to rate limiting, error handling, and webhooks.
+
+ - Test and validate API endpoints, review request/response payloads, and guide customers through integration best practices.
+
+ - Support customers with the Embedded API and Airbyte MCP, covering source creation, connector template management, and widget token authentication.
+
+ - Help customers building on the Airbyte Connector SDK find their footing, including YAML-based connector definitions, OpenAPI specs, and cassette-based testing workflows.
+
+ - Stay sharp on Airbyte&#39;s API surface, new connector releases, and platform updates so your guidance is always accurate and timely.
+
+Cross-Functional Collaboration
+
+ - Be the voice of the customer inside Airbyte, working closely with Engineering and Product to surface issues, advocate for feature requests, and make sure customer pain points actually influence the roadmap.
+
+ - Partner with the Engineering teams to relay platform-specific feedback, connector gaps, and SDK usability issues before they become bigger problems.
+
+ - Partner with Sales and Customer Success for technical conversations, onboarding, and expansion efforts, bringing the kind of product depth that helps close and retain customers.
+
+Knowledge &amp; Process Improvement
+
+ - Create and maintain internal and external knowledge base articles, troubleshooting guides, and API documentation to support scalability.
+
+ - Document research and troubleshooting processes to aid in faster ticket resolution and team knowledge-sharing.
+
+ - Identify opportunities for automation and process improvements with AI that reduce support load and improve the customer experience.
+
+ - Spearhead initiatives to fill organizational or support gaps and take ownership of unique projects.
+   
+
+
+WHAT YOU&#39;LL NEED:
+
+ - 3+ years in technical support, data engineering, DevOps, QA, or a similar role supporting developers or technical users.
+
+ - Hands-on experience with RESTful APIs and GraphQL, including OAuth, pagination, webhooks, rate limiting, and error handling.
+
+ - Proficiency with API testing tools like Postman or cURL.
+
+ - Understanding of cloud platforms (AWS, GCP, or Azure) and data integration concepts including ELT/ETL workflows.
+
+ - Strong troubleshooting instincts, clear communication with both technical and non-technical stakeholders, and a growth mindset that keeps you improving even when things get hard.
+
+ - Demonstrated use of AI tools to speed up troubleshooting or automate a workflow, such as agents, MCP, or prompt and context engineering. Tell us what you built.
+
+ - High tolerance for ambiguity and a natural self-starter.
+
+
+NICE TO HAVE:
+
+ - Familiarity with Python, Java, or Kotlin and experience with CI/CD pipelines and GitHub.
+
+ - Experience with container orchestration tools like Kubernetes or Docker and multi-tenant architectures.
+
+ - Background supporting developer-facing or embedded/platform products in a B2B SaaS context.
+
+ - Familiarity with OpenAPI specs, YAML configuration, and Jinja expressions.
+
+ - Experience with SQL and working knowledge of databases, including CDC setups.
+
+
+LOCATION:
+
+ - Remote in Canada (Eastern timezone)
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+ - Flexible PTO with a culture that encourages at least 25 days off annually, and public holidays in line with provincial employment standards
+
+ - Comprehensive health coverage – extended health benefits on top of provincial public healthcare
+
+ - Virtual healthcare – access to doctors and other care providers online, so you can get care without waiting
+
+ - Retirement savings – a group retirement savings plan to help you build for the future
+
+ - Statutory protections – Canada/Québec Pension Plan, Employment Insurance and workers&#39; compensation coverage
+
+ - Professional development budget, conference sponsorship, and book reimbursement
+
+ 
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+ 
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered." />
+  <meta name="twitter:card" content="summary" />
+  <meta property="og:url" content="https://jobs.ashbyhq.com/airbyte/c595e670-8afb-47b3-9ba4-0efd11861e8c" />
+  <meta property="og:type" content="website" />
+  
+  <meta property="og:title" content="Technical Support Engineer" />
+  <meta property="og:description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+THE ROLE:
+
+Do you get excited when a gnarly API issue finally clicks into place? Do you love being the person customers can count on when things get complicated? As a Technical Support Engineer at Airbyte, you&#39;ll bring together deep technical expertise and genuine customer empathy to support our growing cloud and embedded integration platform. You won&#39;t just be closing tickets, you&#39;ll be influencing how our product evolves by championing the customer voice with our engineering and product teams every day.
+
+
+
+WHAT YOU’LL DO:
+
+
+Customer Support &amp; Troubleshooting
+
+ - Be the person customers can count on, responding via email, ticketing systems, and the occasional video call with the kind of clarity and care that turns frustrated users into loyal ones.
+
+ - Triage and prioritize incoming issues with urgency, consistently meeting SLA targets while leveraging AI tools to work smarter and resolve issues faster.
+
+ - Dig into complex issues across APIs, connectors, data pipelines, and SaaS integrations, not just finding workarounds but partnering with Engineering to get to the root cause and drive real fixes.
+
+ - Document and reproduce customer-reported bugs with enough detail that the right people can act on them quickly.
+
+ - Support embedded platform customers through onboarding and troubleshooting, including OAuth flows, widget tokens, scoped API tokens, and connector configuration.
+
+API &amp; Technical Expertise
+
+ - Get hands-on with customers who are building and debugging integrations, helping them navigate the Airbyte API and third-party APIs with confidence, from authentication and pagination to rate limiting, error handling, and webhooks.
+
+ - Test and validate API endpoints, review request/response payloads, and guide customers through integration best practices.
+
+ - Support customers with the Embedded API and Airbyte MCP, covering source creation, connector template management, and widget token authentication.
+
+ - Help customers building on the Airbyte Connector SDK find their footing, including YAML-based connector definitions, OpenAPI specs, and cassette-based testing workflows.
+
+ - Stay sharp on Airbyte&#39;s API surface, new connector releases, and platform updates so your guidance is always accurate and timely.
+
+Cross-Functional Collaboration
+
+ - Be the voice of the customer inside Airbyte, working closely with Engineering and Product to surface issues, advocate for feature requests, and make sure customer pain points actually influence the roadmap.
+
+ - Partner with the Engineering teams to relay platform-specific feedback, connector gaps, and SDK usability issues before they become bigger problems.
+
+ - Partner with Sales and Customer Success for technical conversations, onboarding, and expansion efforts, bringing the kind of product depth that helps close and retain customers.
+
+Knowledge &amp; Process Improvement
+
+ - Create and maintain internal and external knowledge base articles, troubleshooting guides, and API documentation to support scalability.
+
+ - Document research and troubleshooting processes to aid in faster ticket resolution and team knowledge-sharing.
+
+ - Identify opportunities for automation and process improvements with AI that reduce support load and improve the customer experience.
+
+ - Spearhead initiatives to fill organizational or support gaps and take ownership of unique projects.
+   
+
+
+WHAT YOU&#39;LL NEED:
+
+ - 3+ years in technical support, data engineering, DevOps, QA, or a similar role supporting developers or technical users.
+
+ - Hands-on experience with RESTful APIs and GraphQL, including OAuth, pagination, webhooks, rate limiting, and error handling.
+
+ - Proficiency with API testing tools like Postman or cURL.
+
+ - Understanding of cloud platforms (AWS, GCP, or Azure) and data integration concepts including ELT/ETL workflows.
+
+ - Strong troubleshooting instincts, clear communication with both technical and non-technical stakeholders, and a growth mindset that keeps you improving even when things get hard.
+
+ - Demonstrated use of AI tools to speed up troubleshooting or automate a workflow, such as agents, MCP, or prompt and context engineering. Tell us what you built.
+
+ - High tolerance for ambiguity and a natural self-starter.
+
+
+NICE TO HAVE:
+
+ - Familiarity with Python, Java, or Kotlin and experience with CI/CD pipelines and GitHub.
+
+ - Experience with container orchestration tools like Kubernetes or Docker and multi-tenant architectures.
+
+ - Background supporting developer-facing or embedded/platform products in a B2B SaaS context.
+
+ - Familiarity with OpenAPI specs, YAML configuration, and Jinja expressions.
+
+ - Experience with SQL and working knowledge of databases, including CDC setups.
+
+
+LOCATION:
+
+ - Remote in Canada (Eastern timezone)
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+ - Flexible PTO with a culture that encourages at least 25 days off annually, and public holidays in line with provincial employment standards
+
+ - Comprehensive health coverage – extended health benefits on top of provincial public healthcare
+
+ - Virtual healthcare – access to doctors and other care providers online, so you can get care without waiting
+
+ - Retirement savings – a group retirement savings plan to help you build for the future
+
+ - Statutory protections – Canada/Québec Pension Plan, Employment Insurance and workers&#39; compensation coverage
+
+ - Professional development budget, conference sponsorship, and book reimbursement
+
+ 
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+ 
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered." />
+  
+  <meta name="twitter:title" content="Technical Support Engineer" />
+  <meta name="twitter:description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+THE ROLE:
+
+Do you get excited when a gnarly API issue finally clicks into place? Do you love being the person customers can count on when things get complicated? As a Technical Support Engineer at Airbyte, you&#39;ll bring together deep technical expertise and genuine customer empathy to support our growing cloud and embedded integration platform. You won&#39;t just be closing tickets, you&#39;ll be influencing how our product evolves by championing the customer voice with our engineering and product teams every day.
+
+
+
+WHAT YOU’LL DO:
+
+
+Customer Support &amp; Troubleshooting
+
+ - Be the person customers can count on, responding via email, ticketing systems, and the occasional video call with the kind of clarity and care that turns frustrated users into loyal ones.
+
+ - Triage and prioritize incoming issues with urgency, consistently meeting SLA targets while leveraging AI tools to work smarter and resolve issues faster.
+
+ - Dig into complex issues across APIs, connectors, data pipelines, and SaaS integrations, not just finding workarounds but partnering with Engineering to get to the root cause and drive real fixes.
+
+ - Document and reproduce customer-reported bugs with enough detail that the right people can act on them quickly.
+
+ - Support embedded platform customers through onboarding and troubleshooting, including OAuth flows, widget tokens, scoped API tokens, and connector configuration.
+
+API &amp; Technical Expertise
+
+ - Get hands-on with customers who are building and debugging integrations, helping them navigate the Airbyte API and third-party APIs with confidence, from authentication and pagination to rate limiting, error handling, and webhooks.
+
+ - Test and validate API endpoints, review request/response payloads, and guide customers through integration best practices.
+
+ - Support customers with the Embedded API and Airbyte MCP, covering source creation, connector template management, and widget token authentication.
+
+ - Help customers building on the Airbyte Connector SDK find their footing, including YAML-based connector definitions, OpenAPI specs, and cassette-based testing workflows.
+
+ - Stay sharp on Airbyte&#39;s API surface, new connector releases, and platform updates so your guidance is always accurate and timely.
+
+Cross-Functional Collaboration
+
+ - Be the voice of the customer inside Airbyte, working closely with Engineering and Product to surface issues, advocate for feature requests, and make sure customer pain points actually influence the roadmap.
+
+ - Partner with the Engineering teams to relay platform-specific feedback, connector gaps, and SDK usability issues before they become bigger problems.
+
+ - Partner with Sales and Customer Success for technical conversations, onboarding, and expansion efforts, bringing the kind of product depth that helps close and retain customers.
+
+Knowledge &amp; Process Improvement
+
+ - Create and maintain internal and external knowledge base articles, troubleshooting guides, and API documentation to support scalability.
+
+ - Document research and troubleshooting processes to aid in faster ticket resolution and team knowledge-sharing.
+
+ - Identify opportunities for automation and process improvements with AI that reduce support load and improve the customer experience.
+
+ - Spearhead initiatives to fill organizational or support gaps and take ownership of unique projects.
+   
+
+
+WHAT YOU&#39;LL NEED:
+
+ - 3+ years in technical support, data engineering, DevOps, QA, or a similar role supporting developers or technical users.
+
+ - Hands-on experience with RESTful APIs and GraphQL, including OAuth, pagination, webhooks, rate limiting, and error handling.
+
+ - Proficiency with API testing tools like Postman or cURL.
+
+ - Understanding of cloud platforms (AWS, GCP, or Azure) and data integration concepts including ELT/ETL workflows.
+
+ - Strong troubleshooting instincts, clear communication with both technical and non-technical stakeholders, and a growth mindset that keeps you improving even when things get hard.
+
+ - Demonstrated use of AI tools to speed up troubleshooting or automate a workflow, such as agents, MCP, or prompt and context engineering. Tell us what you built.
+
+ - High tolerance for ambiguity and a natural self-starter.
+
+
+NICE TO HAVE:
+
+ - Familiarity with Python, Java, or Kotlin and experience with CI/CD pipelines and GitHub.
+
+ - Experience with container orchestration tools like Kubernetes or Docker and multi-tenant architectures.
+
+ - Background supporting developer-facing or embedded/platform products in a B2B SaaS context.
+
+ - Familiarity with OpenAPI specs, YAML configuration, and Jinja expressions.
+
+ - Experience with SQL and working knowledge of databases, including CDC setups.
+
+
+LOCATION:
+
+ - Remote in Canada (Eastern timezone)
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+ - Flexible PTO with a culture that encourages at least 25 days off annually, and public holidays in line with provincial employment standards
+
+ - Comprehensive health coverage – extended health benefits on top of provincial public healthcare
+
+ - Virtual healthcare – access to doctors and other care providers online, so you can get care without waiting
+
+ - Retirement savings – a group retirement savings plan to help you build for the future
+
+ - Statutory protections – Canada/Québec Pension Plan, Employment Insurance and workers&#39; compensation coverage
+
+ - Professional development budget, conference sponsorship, and book reimbursement
+
+ 
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+ 
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered." />
+  
+  <meta name="robots" content="noindex,nofollow" />
+    <link rel="preload" as="image" href="https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png">
+    
+    <script type="application/ld+json">{"@context":"https://schema.org/","@type":"JobPosting","title":"Technical Support Engineer","description":"<p style=\"min-height:1.5em\">Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, \"the last ten years were all about structured data. The future is all about context.\" We're now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.</p><p style=\"min-height:1.5em\"></p><h2><strong>The Role:</strong></h2><p style=\"min-height:1.5em\">Do you get excited when a gnarly API issue finally clicks into place? Do you love being the person customers can count on when things get complicated? As a Technical Support Engineer at Airbyte, you'll bring together deep technical expertise and genuine customer empathy to support our growing cloud and embedded integration platform. You won't just be closing tickets, you'll be influencing how our product evolves by championing the customer voice with our engineering and product teams every day.</p><h2><br /><strong>What You’ll Do:</strong><br /></h2><p style=\"min-height:1.5em\">Customer Support &amp; Troubleshooting</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Be the person customers can count on, responding via email, ticketing systems, and the occasional video call with the kind of clarity and care that turns frustrated users into loyal ones.</p></li><li><p style=\"min-height:1.5em\">Triage and prioritize incoming issues with urgency, consistently meeting SLA targets while leveraging AI tools to work smarter and resolve issues faster.</p></li><li><p style=\"min-height:1.5em\">Dig into complex issues across APIs, connectors, data pipelines, and SaaS integrations, not just finding workarounds but partnering with Engineering to get to the root cause and drive real fixes.</p></li><li><p style=\"min-height:1.5em\">Document and reproduce customer-reported bugs with enough detail that the right people can act on them quickly.</p></li><li><p style=\"min-height:1.5em\">Support embedded platform customers through onboarding and troubleshooting, including OAuth flows, widget tokens, scoped API tokens, and connector configuration.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">API &amp; Technical Expertise</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Get hands-on with customers who are building and debugging integrations, helping them navigate the Airbyte API and third-party APIs with confidence, from authentication and pagination to rate limiting, error handling, and webhooks.</p></li><li><p style=\"min-height:1.5em\">Test and validate API endpoints, review request/response payloads, and guide customers through integration best practices.</p></li><li><p style=\"min-height:1.5em\">Support customers with the Embedded API and Airbyte MCP, covering source creation, connector template management, and widget token authentication.</p></li><li><p style=\"min-height:1.5em\">Help customers building on the Airbyte Connector SDK find their footing, including YAML-based connector definitions, OpenAPI specs, and cassette-based testing workflows.</p></li><li><p style=\"min-height:1.5em\">Stay sharp on Airbyte's API surface, new connector releases, and platform updates so your guidance is always accurate and timely.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Cross-Functional Collaboration</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Be the voice of the customer inside Airbyte, working closely with Engineering and Product to surface issues, advocate for feature requests, and make sure customer pain points actually influence the roadmap.</p></li><li><p style=\"min-height:1.5em\">Partner with the Engineering teams to relay platform-specific feedback, connector gaps, and SDK usability issues before they become bigger problems.</p></li><li><p style=\"min-height:1.5em\">Partner with Sales and Customer Success for technical conversations, onboarding, and expansion efforts, bringing the kind of product depth that helps close and retain customers.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Knowledge &amp; Process Improvement</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Create and maintain internal and external knowledge base articles, troubleshooting guides, and API documentation to support scalability.</p></li><li><p style=\"min-height:1.5em\">Document research and troubleshooting processes to aid in faster ticket resolution and team knowledge-sharing.</p></li><li><p style=\"min-height:1.5em\">Identify opportunities for automation and process improvements with AI that reduce support load and improve the customer experience.</p></li><li><p style=\"min-height:1.5em\">Spearhead initiatives to fill organizational or support gaps and take ownership of unique projects.<br /></p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>What You'll Need:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">3+ years in technical support, data engineering, DevOps, QA, or a similar role supporting developers or technical users.</p></li><li><p style=\"min-height:1.5em\">Hands-on experience with RESTful APIs and GraphQL, including OAuth, pagination, webhooks, rate limiting, and error handling.</p></li><li><p style=\"min-height:1.5em\">Proficiency with API testing tools like Postman or cURL.</p></li><li><p style=\"min-height:1.5em\">Understanding of cloud platforms (AWS, GCP, or Azure) and data integration concepts including ELT/ETL workflows.</p></li><li><p style=\"min-height:1.5em\">Strong troubleshooting instincts, clear communication with both technical and non-technical stakeholders, and a growth mindset that keeps you improving even when things get hard.</p></li><li><p style=\"min-height:1.5em\">Demonstrated use of AI tools to speed up troubleshooting or automate a workflow, such as agents, MCP, or prompt and context engineering. Tell us what you built.</p></li><li><p style=\"min-height:1.5em\">High tolerance for ambiguity and a natural self-starter.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Nice To Have:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Familiarity with Python, Java, or Kotlin and experience with CI/CD pipelines and GitHub.</p></li><li><p style=\"min-height:1.5em\">Experience with container orchestration tools like Kubernetes or Docker and multi-tenant architectures.</p></li><li><p style=\"min-height:1.5em\">Background supporting developer-facing or embedded/platform products in a B2B SaaS context.</p></li><li><p style=\"min-height:1.5em\">Familiarity with OpenAPI specs, YAML configuration, and Jinja expressions.</p></li><li><p style=\"min-height:1.5em\">Experience with SQL and working knowledge of databases, including CDC setups.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Location:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Remote in Canada (Eastern timezone)</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Why You'll Love Working at Airbyte:</strong></h2><p style=\"min-height:1.5em\">At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Flexible PTO with a culture that encourages at least 25 days off annually, and public holidays in line with provincial employment standards</p></li><li><p style=\"min-height:1.5em\">Comprehensive health coverage – extended health benefits on top of provincial public healthcare</p></li><li><p style=\"min-height:1.5em\">Virtual healthcare – access to doctors and other care providers online, so you can get care without waiting</p></li><li><p style=\"min-height:1.5em\">Retirement savings – a group retirement savings plan to help you build for the future</p></li><li><p style=\"min-height:1.5em\">Statutory protections – Canada/Québec Pension Plan, Employment Insurance and workers' compensation coverage</p></li><li><p style=\"min-height:1.5em\">Professional development budget, conference sponsorship, and book reimbursement</p></li></ul><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><p style=\"min-height:1.5em\">If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><p style=\"min-height:1.5em\">We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.</p>","directApply":false,"identifier":{"@type":"PropertyValue","name":"Airbyte","value":"c595e670-8afb-47b3-9ba4-0efd11861e8c"},"datePosted":"2026-10-15","hiringOrganization":{"@type":"Organization","name":"Airbyte","sameAs":"https://airbyte.com/"},"jobLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressCountry":"Canada"}},"employmentType":"FULL_TIME","baseSalary":{"@type":"MonetaryAmount","currency":"CAD","value":{"@type":"QuantitativeValue","minValue":89000,"maxValue":105000,"unitText":"YEAR"}},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"Canada"}}</script>
+  
+  
+
+    <link id="vite-preload" rel="preload" as="fetch" href="https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json" crossorigin>    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Book_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Medium_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Semibold_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/WhitneySSm.css" />
+    <style>
+      .grecaptcha-badge {
+        visibility: hidden;
+      }
+
+      body > div > div:not([class]):has(> iframe[src*="/recaptcha/"]) {
+        box-sizing: content-box;
+      }
+    </style>
+
+
+  </head>
+  <body>
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <div id="root">
+      <style>
+        body {
+          overflow: hidden;
+        }
+      
+        .center {
+          align-items: center;
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          justify-content: center;
+          width: 100vw;
+        }
+      
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      
+        .fade-in {
+          animation-delay: 750ms;
+          animation-direction: normal;
+          animation-duration: 500ms;
+          animation-fill-mode: forwards;
+          animation-iteration-count: 1;
+          animation-name: fade-in;
+          animation-timing-function: ease-in-out;
+          opacity: 0;
+        }
+      
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      
+        .spinner {
+          animation-duration: var(--transitionDurationSlow, 600ms);
+          animation-iteration-count: infinite;
+          animation-name: spin;
+          animation-timing-function: linear;
+          border-color: var(--colorNeutral600Transparent, rgba(125, 134, 153, 0.25));
+          border-radius: 100%;
+          border-style: solid;
+          border-top-color: rgba(125, 134, 153, 0.9);
+          border-width: var(--borderWidthHeavy, 3px);
+          display: block;
+          height: var(--spacingXxlarge, 48px);
+          width: var(--spacingXxlarge, 48px);
+        }
+      </style>
+      <div class="center">
+        <div class="fade-in">
+          <div class="spinner"></div>
+        </div>
+      </div>    </div>
+    <script nonce="-4FLHcs6J1D2so_sBx5st5fQzubgEot-3xtCXQXc3Rg">
+      window.__appData = {"ddRumApplicationId":"80e0bf43-e772-45ac-858b-1e6dc0f1f415","ddRumClientToken":"pub1a87c7036063ee7d4b7914b397e6324e","environment":"production","maintenanceMode":false,"schedulingMaintenanceMode":false,"organization":{"organizationId":"c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2","name":"Airbyte","publicWebsite":"https://airbyte.com/","customJobsPageUrl":null,"hostedJobsPageSlug":"airbyte","allowJobPostIndexing":false,"isDemoOrg":false,"theme":{"colors":{"version":"1","colorPrimary600":"#6059b2","colorPrimary900":"#1d1b3e"},"showJobFilters":true,"showLocationAddress":false,"showTeams":false,"showAutofillApplicationsBox":true,"logoWordmarkImageUrl":"https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png","logoSquareImageUrl":null,"applicationSubmittedSuccessMessage":null,"jobBoardTopDescriptionHtml":null,"jobBoardBottomDescriptionHtml":null,"jobPostingBackUrl":null,"__typename":"Theme"},"appConfirmationTrackingPixelHtml":null,"recruitingPrivacyPolicyUrl":null,"activeFeatureFlags":["AiNotetakerCandidateConsentPolicies","ApplicationForReferrals","ApprovalNotesFromEmail","BookingLinkRescheduleLimits","CanonicalizeSchools","CoreMultipleBrands","CoreMultipleBrandsFeedFiltering","CoreMultipleBrandsLinkedInJobWrappingStreamingFix","DemoOrgBanners","EducationHistoryFormField","ExplicitAutomatedProcessingOptOutConfirmation","JobBoardCookieConsentControls","JobBoardEtagValidation","JobPostingApplicationDeadlines","JobPostingListV2","JobPostingWorkplaceTypeOverrideSecondaryLocationsToo","LinkedInIntegrationRequireCompanyId","LinkedInTOSUpdate","LocationExternalName","MigrateGoogleRecaptchaAutomatedLegal","RejectBase64EncodedResumesFrontEnd","RejectBase64EncodedResumesThrowErrorFrontEnd","RejectInvalidFileTypeOnUpload","RejectUrlsInCandidateName","SchedulingDirectBookingLogDirectBookingEventsJson","SchedulingGCalSendUpdatesForCancelEvents","SchedulingRescheduleAndCancellationReasonsNonUser","SchedulingUseLocaleInTimeFormatting","ShowCountsOnJobBoardFilterOptions","SocialSharingHtmlMetaSettings","UseGlobalQueryScopesOnGlobalApplicationQuestions","UseGoogleRecaptchaUniversalKey","UseJobPostingFiltersOnGlobalApplicationQuestions","UseJobPostingFiltersOnGlobalApplicationQuestionsUI","UseJobPostingFiltersOnSurveys","UseJobPostingFiltersOnSurveysUI","ValidateFileTypeOnUpload"],"timezone":"America/Los_Angeles","candidateScheduleCancellationReasonRequirementStatus":"Off","showCookieBanner":false,"__typename":"Organization"},"posting":{"id":"c595e670-8afb-47b3-9ba4-0efd11861e8c","title":"Technical Support Engineer","departmentName":"Technical Support ","departmentExternalName":"Technical Support ","locationName":"Canada","locationAddress":null,"workplaceType":"Remote","employmentType":"FullTime","descriptionHtml":"<p style=\"min-height:1.5em\">Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, \"the last ten years were all about structured data. The future is all about context.\" We're now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.</p><p style=\"min-height:1.5em\"></p><h2><strong>The Role:</strong></h2><p style=\"min-height:1.5em\">Do you get excited when a gnarly API issue finally clicks into place? Do you love being the person customers can count on when things get complicated? As a Technical Support Engineer at Airbyte, you'll bring together deep technical expertise and genuine customer empathy to support our growing cloud and embedded integration platform. You won't just be closing tickets, you'll be influencing how our product evolves by championing the customer voice with our engineering and product teams every day.</p><h2><br /><strong>What You’ll Do:</strong><br /></h2><p style=\"min-height:1.5em\">Customer Support &amp; Troubleshooting</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Be the person customers can count on, responding via email, ticketing systems, and the occasional video call with the kind of clarity and care that turns frustrated users into loyal ones.</p></li><li><p style=\"min-height:1.5em\">Triage and prioritize incoming issues with urgency, consistently meeting SLA targets while leveraging AI tools to work smarter and resolve issues faster.</p></li><li><p style=\"min-height:1.5em\">Dig into complex issues across APIs, connectors, data pipelines, and SaaS integrations, not just finding workarounds but partnering with Engineering to get to the root cause and drive real fixes.</p></li><li><p style=\"min-height:1.5em\">Document and reproduce customer-reported bugs with enough detail that the right people can act on them quickly.</p></li><li><p style=\"min-height:1.5em\">Support embedded platform customers through onboarding and troubleshooting, including OAuth flows, widget tokens, scoped API tokens, and connector configuration.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">API &amp; Technical Expertise</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Get hands-on with customers who are building and debugging integrations, helping them navigate the Airbyte API and third-party APIs with confidence, from authentication and pagination to rate limiting, error handling, and webhooks.</p></li><li><p style=\"min-height:1.5em\">Test and validate API endpoints, review request/response payloads, and guide customers through integration best practices.</p></li><li><p style=\"min-height:1.5em\">Support customers with the Embedded API and Airbyte MCP, covering source creation, connector template management, and widget token authentication.</p></li><li><p style=\"min-height:1.5em\">Help customers building on the Airbyte Connector SDK find their footing, including YAML-based connector definitions, OpenAPI specs, and cassette-based testing workflows.</p></li><li><p style=\"min-height:1.5em\">Stay sharp on Airbyte's API surface, new connector releases, and platform updates so your guidance is always accurate and timely.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Cross-Functional Collaboration</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Be the voice of the customer inside Airbyte, working closely with Engineering and Product to surface issues, advocate for feature requests, and make sure customer pain points actually influence the roadmap.</p></li><li><p style=\"min-height:1.5em\">Partner with the Engineering teams to relay platform-specific feedback, connector gaps, and SDK usability issues before they become bigger problems.</p></li><li><p style=\"min-height:1.5em\">Partner with Sales and Customer Success for technical conversations, onboarding, and expansion efforts, bringing the kind of product depth that helps close and retain customers.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Knowledge &amp; Process Improvement</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Create and maintain internal and external knowledge base articles, troubleshooting guides, and API documentation to support scalability.</p></li><li><p style=\"min-height:1.5em\">Document research and troubleshooting processes to aid in faster ticket resolution and team knowledge-sharing.</p></li><li><p style=\"min-height:1.5em\">Identify opportunities for automation and process improvements with AI that reduce support load and improve the customer experience.</p></li><li><p style=\"min-height:1.5em\">Spearhead initiatives to fill organizational or support gaps and take ownership of unique projects.<br /></p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>What You'll Need:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">3+ years in technical support, data engineering, DevOps, QA, or a similar role supporting developers or technical users.</p></li><li><p style=\"min-height:1.5em\">Hands-on experience with RESTful APIs and GraphQL, including OAuth, pagination, webhooks, rate limiting, and error handling.</p></li><li><p style=\"min-height:1.5em\">Proficiency with API testing tools like Postman or cURL.</p></li><li><p style=\"min-height:1.5em\">Understanding of cloud platforms (AWS, GCP, or Azure) and data integration concepts including ELT/ETL workflows.</p></li><li><p style=\"min-height:1.5em\">Strong troubleshooting instincts, clear communication with both technical and non-technical stakeholders, and a growth mindset that keeps you improving even when things get hard.</p></li><li><p style=\"min-height:1.5em\">Demonstrated use of AI tools to speed up troubleshooting or automate a workflow, such as agents, MCP, or prompt and context engineering. Tell us what you built.</p></li><li><p style=\"min-height:1.5em\">High tolerance for ambiguity and a natural self-starter.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Nice To Have:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Familiarity with Python, Java, or Kotlin and experience with CI/CD pipelines and GitHub.</p></li><li><p style=\"min-height:1.5em\">Experience with container orchestration tools like Kubernetes or Docker and multi-tenant architectures.</p></li><li><p style=\"min-height:1.5em\">Background supporting developer-facing or embedded/platform products in a B2B SaaS context.</p></li><li><p style=\"min-height:1.5em\">Familiarity with OpenAPI specs, YAML configuration, and Jinja expressions.</p></li><li><p style=\"min-height:1.5em\">Experience with SQL and working knowledge of databases, including CDC setups.</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Location:</strong></h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Remote in Canada (Eastern timezone)</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Why You'll Love Working at Airbyte:</strong></h2><p style=\"min-height:1.5em\">At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Flexible PTO with a culture that encourages at least 25 days off annually, and public holidays in line with provincial employment standards</p></li><li><p style=\"min-height:1.5em\">Comprehensive health coverage – extended health benefits on top of provincial public healthcare</p></li><li><p style=\"min-height:1.5em\">Virtual healthcare – access to doctors and other care providers online, so you can get care without waiting</p></li><li><p style=\"min-height:1.5em\">Retirement savings – a group retirement savings plan to help you build for the future</p></li><li><p style=\"min-height:1.5em\">Statutory protections – Canada/Québec Pension Plan, Employment Insurance and workers' compensation coverage</p></li><li><p style=\"min-height:1.5em\">Professional development budget, conference sponsorship, and book reimbursement</p></li></ul><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><p style=\"min-height:1.5em\">If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!</p><div style=\"min-height:1.2em;margin-top:0px;margin-bottom:0px\"> </div><p style=\"min-height:1.5em\">We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.</p>","isListed":true,"isConfidential":false,"teamNames":["Technical Support "],"secondaryLocationNames":[],"compensationTierSummary":"CA$89K – CA$105K • Offers Equity","compensationTiers":[{"id":"43902e0e-f05a-4f6d-bba0-424fcfa107bd","title":null,"tierSummary":"CA$89K – CA$105K • Offers Equity","__typename":"JobPostingCompensationTiers"}],"applicationDeadline":null,"compensationTierGuideUrl":null,"scrapeableCompensationSalarySummary":"CA$89K - CA$105K","compensationPhilosophyHtml":"<p style=\"min-height:1.5em\">The actual compensation package within the stated range will be based on a combination of factors such as an individual's skills, experience level, location, and other relevant job-related considerations.</p>","applicationLimitCalloutHtml":null,"shouldAskForTextingConsent":true,"shouldAskForWhatsAppConsent":false,"candidateTextingPrivacyPolicyUrl":"https://airbyte.com/company/privacy-policy","candidateTextingTermsAndConditionsUrl":null,"legalEntityNameForTextingConsent":"Airbyte, Inc","automatedProcessingLegalNotice":null,"__typename":"JobPostingDetails"},"jobBoard":null,"routerPrefix":"/","recaptchaPublicSiteKey":"6LeFb_YUAAAAALUD5h-BiQEp8JaFChe0e0A6r49Y","recaptchaUniversalPublicSiteKey":"6LezdY0tAAAAAEnollNLCAI0z1VDGwM7AzGrU4XZ"};
+      // A Vite manifest key: the entry's HTML filename relative to the build root.
+      // Single-entry apps leave entryHtml unset.
+      const ENTRY_KEY = "index.html";
+      fetch("https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json").then(function (res) { return res.json() }).then(function (manifest) {
+        const entryData = manifest[ENTRY_KEY];
+        if (entryData == null) {
+          throw new Error("Vite manifest is missing entry: " + ENTRY_KEY);
+        }
+    
+        // Walk the entry's static imports transitively. Both the CSS and the JS a
+        // page needs can sit on shared chunks rather than on the entry record, and
+        // the manifest lists only each chunk's direct imports -- so reading the
+        // entry alone silently drops stylesheets and preloads. Depth-first
+        // post-order puts a dependency's CSS ahead of its importer's, which is the
+        // cascade order Vite uses in the HTML it generates for the same entry.
+        const chunks = [];
+        const visited = {};
+        function collectChunks(key) {
+          if (visited[key] === true) {
+            return;
+          }
+          visited[key] = true;
+          const chunk = manifest[key];
+          if (chunk == null) {
+            return;
+          }
+          (chunk.imports ?? []).forEach(collectChunks);
+          chunks.push(chunk);
+        }
+        collectChunks(ENTRY_KEY);
+    
+        // css[] holds output paths, not digests, but every manifest record carries
+        // an integrity for its own file -- so a stylesheet Vite emitted as its own
+        // record can be matched by path. The entry's CSS has no record and loads
+        // unhashed.
+        const integrityByFile = {};
+        Object.keys(manifest).forEach(function (key) {
+          const record = manifest[key];
+          if (record != null && record.file != null && record.integrity != null) {
+            integrityByFile[record.file] = record.integrity;
+          }
+        });
+    
+        const sheets = [];
+        const seenSheets = {};
+        chunks.forEach(function (chunk) {
+          (chunk.css ?? []).forEach(function (sheet) {
+            if (seenSheets[sheet] === true) {
+              return;
+            }
+            seenSheets[sheet] = true;
+            sheets.push(sheet);
+          });
+        });
+    
+        let bundleLoaded = false;
+        function loadBundle() {
+          if (bundleLoaded === true) {
+            return;
+          }
+    
+          const el = document.createElement("script");
+          el.setAttribute("type", "module");
+          el.setAttribute("crossorigin", "");
+          el.setAttribute("integrity", entryData.integrity);
+          el.setAttribute("src", "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + entryData.file);
+          document.head.appendChild(el);
+          bundleLoaded = true;
+        }
+    
+        chunks.forEach(function (chunk) {
+          const preload = document.createElement("link");
+          preload.rel = "modulepreload";
+          preload.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + chunk.file;
+          // Carry the SRI hash on the preload too: Chrome/Firefox reuse the
+          // preloaded bytes for the integrity-bearing script tag, so an integrity-less
+          // preload silently bypasses the SRI check. Without it here, SRI is never
+          // enforced on the code-split chunks (the bulk of the app), in any browser.
+          preload.setAttribute("integrity", chunk.integrity);
+          preload.setAttribute("crossorigin", "");
+          document.head.appendChild(preload);
+        });
+    
+        if (sheets.length > 0) {
+          const loadedSheets = [];
+          sheets.forEach(function (sheet) {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.type = "text/css";
+            link.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + sheet;
+            link.media = "all";
+            const sheetIntegrity = integrityByFile[sheet];
+            if (sheetIntegrity != null) {
+              link.setAttribute("integrity", sheetIntegrity);
+              // SRI on a cross-origin stylesheet requires CORS mode; the CDN sends
+              // access-control-allow-origin: *.
+              link.setAttribute("crossorigin", "");
+            }
+            link.onload = function () {
+              loadedSheets.push(sheet);
+              if (loadedSheets.length === sheets.length) {
+                loadBundle();
+              }
+            };
+            link.onerror = loadBundle;
+            document.head.insertBefore(link, document.getElementById("vite-preload"));
+          });
+        } else {
+          loadBundle();
+        }
+      });
+    </script>  </body>
+</html>
