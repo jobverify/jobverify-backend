@@ -1,54 +1,24 @@
 import assert from 'node:assert/strict'
-import path from 'node:path'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
+globalThis.fetch=async()=>{throw Error('NETWORK_TRIPWIRE_BEFORE_SOURCE_IMPORT')}
+const {getScraperCatalog,createCatalogScraper}=await import('../providers/index.js')
+const {readInventoryEvidence}=await import('../utils/inventoryEvidence.js')
+const {fixture,transport}=await import('../../scraper/checkoutcom/native.fixtures.js')
 
-import { getScraperCatalog, hydrateProviderCatalogEntry } from '../providers/index.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const modulePath = path.resolve(currentDir, '../../scraper/vanta/script.js')
-
-const loadCatalogModule = async () => {
-  try {
-    return await import('../../scraper/vanta/catalog.js')
-  } catch {
-    assert.fail('Expected Vanta catalog module at ../../scraper/vanta/catalog.js')
-  }
-}
-
-test('Vanta local catalog captures the verified first-party careers pagination surface', async () => {
-  const { VANTA_CATALOG, default: defaultCatalog } = await loadCatalogModule()
-  const provider = hydrateProviderCatalogEntry(VANTA_CATALOG)
-
-  assert.equal(defaultCatalog, VANTA_CATALOG)
-  assert.equal(provider.source, 'vanta')
-  assert.equal(provider.companyName, 'Vanta')
-  assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://www.vanta.com/company/careers')
-  assert.equal(provider.companyDomain, 'vanta.com')
-  assert.equal(provider.atsPlatform, 'official-first-party-webflow-careers')
-  assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-webflow-pagination')
-  assert.equal(
-    provider.extractionStrategy,
-    'verified-first-party-careers-pages+browser-rendered-role-cards+india-filter',
-  )
-  assert.equal(provider.verifiedOn, '2026-07-25')
-  assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /\?9a22bd08_page=2/i)
-  assert.match(provider.verifiedSurfaceSummary, /No open position found/i)
-  assert.match(provider.verifiedSurfaceSummary, /zero India-visible openings/i)
+test('Vanta registered catalog follows its current native client and reconciles foreign full details',async()=>{
+  const provider=getScraperCatalog().find(p=>p.source==='vanta')
+  const jobs=await createCatalogScraper(provider).run(transport('vanta',[fixture('vanta',{country:'USA',location:'Remote U.S.'})]))
+  assert.equal(jobs.length,0)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal,1)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount,0)
 })
 
-test('Vanta is registered in the scraper catalog through customProviders metadata', () => {
-  const provider = getScraperCatalog().find((entry) => entry.source === 'vanta')
-
-  assert.ok(provider)
-  assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyName, 'Vanta')
-  assert.equal(provider.companyCareerPage, 'https://www.vanta.com/company/careers')
-  assert.equal(provider.atsPlatform, 'official-first-party-webflow-careers')
-  assert.equal(provider.verifiedOn, '2026-07-25')
-  assert.equal(path.resolve(currentDir, provider.modulePath), modulePath)
+test('Vanta local catalog and registered wrapper use the same native extraction',async()=>{
+  const {VANTA_CATALOG}=await import('../../scraper/vanta/catalog.js')
+  const jobs=await createCatalogScraper(VANTA_CATALOG).run(transport('vanta'))
+  assert.equal(jobs.length,1)
+  assert.equal(jobs[0].country,'India')
+  assert.equal(jobs[0].jobId,'10000000-0000-4000-8000-000000000001')
+  assert.equal(readInventoryEvidence(jobs).listingComplete,true)
 })

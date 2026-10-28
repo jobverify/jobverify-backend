@@ -35,3 +35,55 @@ export const magnitDayforceIndiaRole = packet => {
   if (packet.name === 'dayforce-page-7493') packet.body = packet.body.replace(/(<script\b[^>]*id="__NEXT_DATA__"[^>]*>)([\s\S]*?)(<\/script>)/,
     (all, start, raw, end) => { const next = JSON.parse(raw); next.props.pageProps.dehydratedState.queries.forEach(query => alter(query.state.data)); return start + JSON.stringify(next) + end })
 }
+export const magnitDirectIndiaRole = packet => {
+  if (packet.name !== 'directsource-detail-0') return
+  packet.body = packet.body.replace(/(<script\b[^>]*type="application\/ld\+json"[^>]*>)([\s\S]*?)(<\/script>)/,
+    (all, start, raw, end) => {
+      const value = JSON.parse(raw)
+      value.jobLocation.address = { ...value.jobLocation.address, addressCountry: 'IN', addressLocality: 'Bengaluru', addressRegion: 'Karnataka' }
+      return start + JSON.stringify(value) + end
+    })
+  packet.body = packet.body.replaceAll('Warsaw', 'Bengaluru').replaceAll('Mazowieckie', 'Karnataka')
+}
+
+// Synthetic future pagination scenario derived from the captured public contract.
+// Its 26 rows and generated IDs are regression data, never live inventory evidence.
+export const magnitTwoPageCapture = () => {
+  const fixture = magnitCapture(), original = fixture.packets.find(p => p.name === 'initial-search-en-US-0')
+  const rows = JSON.parse(original.body).jobPostings
+  const extra = Array.from({ length: 21 }, (_, index) => ({ ...structuredClone(rows[0]), jobPostingId: 9000 + index, jobReqId: 19000 + index }))
+  for (const stage of ['initial', 'closing']) {
+    const first = fixture.packets.find(p => p.name === stage + '-search-en-US-0')
+    const combined = [...rows, ...extra], data = JSON.parse(first.body)
+    first.body = JSON.stringify({ ...data, jobPostings: combined.slice(0, 25), count: 25, maxCount: 26 })
+    fixture.packets.push({ ...structuredClone(first), name: stage + '-search-en-US-25',
+      requestBody: JSON.stringify({ ...JSON.parse(first.requestBody), paginationStart: 25 }),
+      body: JSON.stringify({ ...data, jobPostings: combined.slice(25), offset: 25, count: 1, maxCount: 26 }) })
+  }
+  for (const row of extra) {
+    for (const kind of ['detail', 'page']) {
+      const packet = structuredClone(fixture.packets.find(p => p.name === 'dayforce-' + kind + '-7493'))
+      packet.name = 'dayforce-' + kind + '-' + row.jobPostingId
+      packet.url = packet.url.replace(/7493$/, String(row.jobPostingId)); packet.finalUrl = packet.url
+      if (kind === 'detail') {
+        const detail = JSON.parse(packet.body)
+        detail.jobPostingId = row.jobPostingId; detail.jobReqId = row.jobReqId
+        packet.body = JSON.stringify(detail)
+      } else packet.body = packet.body.replace(/(<script\b[^>]*id="__NEXT_DATA__"[^>]*>)([\s\S]*?)(<\/script>)/,
+        (all, start, raw, end) => {
+          const next = JSON.parse(raw)
+          next.query.id = String(row.jobPostingId)
+          for (const query of next.props.pageProps.dehydratedState.queries) {
+            if (query.queryKey?.[0] === 'site-info') query.queryKey[1].jobPostingId = String(row.jobPostingId)
+            if (query.queryKey?.[0] === 'jobs') {
+              query.queryKey[2].id = String(row.jobPostingId)
+              query.state.data.jobPostingId = row.jobPostingId; query.state.data.jobReqId = row.jobReqId
+            }
+          }
+          return start + JSON.stringify(next) + end
+        })
+      fixture.packets.push(packet)
+    }
+  }
+  return fixture
+}

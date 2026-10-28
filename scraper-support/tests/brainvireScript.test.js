@@ -80,18 +80,12 @@ test('Brainvire accepts the current first-party careers shell when it exposes no
   assert.deepEqual(brainvire.extractPublicListings(currentCareersHtml), [])
 })
 
-test('Brainvire run maps inline first-party roles into Jobverify jobs', async () => {
+test('Brainvire runtime rejects the retired inline card surface instead of fabricating current India jobs', async () => {
   const brainvire = await loadBrainvireModule()
 
-  const jobs = await brainvire.createBrainvireScraper({
+  await assert.rejects(brainvire.createBrainvireScraper({
     now: () => '2026-07-14T12:00:00.000Z',
   }).run({
     fetchText: async () => careersHtml,
-  })
-
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'brainvire')
-  assert.equal(jobs[0].scrapedAt, '2026-07-14T12:00:00.000Z')
-  assert.match(jobs[0].sourceUrl, /#technical-architect-odoo$/)
-  assert.equal(jobs[1].city, 'Mumbai')
+  }), /Brainvire/)
 })

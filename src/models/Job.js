@@ -225,6 +225,7 @@ export const JobSchema = new Schema(
     scrapedTimestamp: { type: Date, default: Date.now },
     lastSeenAt: { type: Date, default: Date.now },
     missedScrapeCount: { type: Number, default: 0, min: 0 },
+    lastMissedScrapeRunId: { type: String, default: null },
     status: {
       type: String,
       enum: ["active", "expired", "hidden"],

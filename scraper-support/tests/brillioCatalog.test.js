@@ -12,9 +12,12 @@ test('getScraperCatalog includes Brillio with its official job listing metadata'
 
   assert.ok(brillio)
   assert.equal(brillio.adapter, 'script')
-  assert.equal(brillio.atsPlatform, 'wordpress-careers-pages')
-  assert.equal(brillio.companyCareerPage, 'https://careers.brillio.com/job-listing/')
-  assert.equal(brillio.companyDomain, 'careers.brillio.com')
+  assert.equal(brillio.atsPlatform, 'wordpress-native-search-post')
+  assert.equal(brillio.companyCareerPage, 'https://www.brillio.com/careers/')
+  assert.equal(brillio.jobsBoardUrl, 'https://careers.brillio.com/job-listing/')
+  assert.equal(brillio.companyDomain, 'brillio.com')
+  assert.equal(brillio.sourceScopeComplete, true)
+  assert.equal(brillio.lifecycleCleanupAllowed, true)
 })
 
 test('buildScrapers exposes a runnable Brillio scraper without changing the runner contract', () => {

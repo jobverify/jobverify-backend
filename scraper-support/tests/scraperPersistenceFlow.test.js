@@ -5,7 +5,7 @@ import mongoose from 'mongoose'
 import Job from '../../src/models/Job.js'
 import ScraperRun from '../../src/models/ScraperRun.js'
 import ScraperStatus from '../../src/models/ScraperStatus.js'
-import { FatalScraperPersistenceError, resolveZeroJobOutcome, runAll } from '../runner.js'
+import { resolveZeroJobOutcome, runAll } from '../runner.js'
 import {
   upsertScraperStatus,
   writeScraperRun,
@@ -155,7 +155,7 @@ test('runAll preserves the existing jobs collection during a full live run', asy
   }
 })
 
-test('runAll aborts before starting scrapers when Atlas storage quota blocks status seeding', async () => {
+test('runAll defers sources without starting scrapers when Atlas storage quota blocks status seeding', async () => {
   const restoreReadyState = setReadyState(1)
   const restoreMongoUri = setMongoUri()
   const originalBulkWrite = ScraperStatus.bulkWrite
@@ -195,15 +195,9 @@ test('runAll aborts before starting scrapers when Atlas storage quota blocks sta
   ScraperRun.create = async () => ({})
 
   try {
-    await assert.rejects(
-      runAll(),
-      (error) => {
-        assert.ok(error instanceof FatalScraperPersistenceError)
-        assert.match(error.message, /seeding scraper status records/i)
-        assert.equal(error.cause, quotaError)
-        return true
-      },
-    )
+    const summary = await runAll()
+    assert.ok(Object.keys(summary).length > 0)
+    assert.ok(Object.values(summary).every(result => result.persistencePending && result.processingComplete === false))
     assert.equal(pipelineStatusWrites, 0)
     assert.equal(activeStatusReads, 0)
     assert.deepEqual(deleteFilters, [])

@@ -40,7 +40,7 @@ test('completion errors expose the failing command and underlying cause while re
   assert.doesNotMatch(output, /password|test-secret-token|mongodb\+srv:\/\//);
 });
 
-for (const jobResult of ['success', 'failure']) {
+for (const jobResult of ['success', 'failure', 'incomplete']) {
 test(`report preserves source warnings and respects the ${jobResult} workflow result`, async t => {
   const messages = cliContext(t, 'report');
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'pipeline-diagnostics-'));
@@ -48,11 +48,12 @@ test(`report preserves source warnings and respects the ${jobResult} workflow re
   t.after(async () => { process.chdir(cwd); await fs.rm(directory, { recursive: true, force: true }); });
   process.chdir(directory);
   process.env.PIPELINE_STAGE = 'scraper';
-  process.env.PIPELINE_JOB_RESULT = jobResult;
+  process.env.PIPELINE_JOB_RESULT = jobResult === 'incomplete' ? 'success' : jobResult;
   process.env.GITHUB_RUN_ID = '31';
   await fs.mkdir('.cache/scraper-actions', { recursive: true });
   await fs.writeFile('.cache/scraper-actions/pipeline-scraper-summary.json', JSON.stringify({
     scanned: 4654, completed: 4318, failed: 10, warnings: 10,
+    ...(jobResult === 'incomplete' ? { pendingEstimate: 1 } : {}),
   }));
   t.mock.method(mongoose, 'connect', async () => {});
   t.mock.method(PipelineRun, 'findOne', () => ({ lean: async () => ({ _id: 'pipeline' }) }));
@@ -61,15 +62,15 @@ test(`report preserves source warnings and respects the ${jobResult} workflow re
     stages: [{ key: 'scraper', status: 'running', githubRunId: 31 }],
   }) }));
   t.mock.method(PipelineRun, 'findOneAndUpdate', (_filter, update) => ({ lean: async () => {
-    assert.equal(update.$set.stages[0].processingOutcome, jobResult === 'success' ? 'completed' : 'failed');
+    assert.equal(update.$set.stages[0].processingOutcome, jobResult === 'success' ? 'completed' : jobResult === 'incomplete' ? 'incomplete' : 'failed');
     assert.equal(update.$set.stages[0].summary.failed, 10);
     assert.equal(update.$set.stages[0].summary.warnings, 10);
     return update.$set;
   } }));
   await import(`../scripts/pipelineGithub.js?diagnostic=report-${jobResult}`);
-  assert.equal(process.exitCode, jobResult === 'success' ? undefined : 1);
+  assert.equal(process.exitCode, jobResult === 'failure' ? 1 : undefined);
   const output = messages.join('\n');
-  assert.match(output, new RegExp(`scraper.*${jobResult === 'success' ? 'completed' : 'failed'}`));
+  assert.match(output, new RegExp(`scraper.*${jobResult === 'success' ? 'completed' : jobResult === 'incomplete' ? 'incomplete' : 'failed'}`));
   assert.match(output, /"failed":10/);
   assert.match(output, /"scanned":4654/);
 });

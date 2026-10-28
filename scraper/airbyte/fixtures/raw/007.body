@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#473BCE">
+    <meta name="csp-nonce" id="csp-nonce" content="CzBdq45YyAdvVc80xZ4qLKKFtFsQD6_L7M3DV2DraSo">
+    <link rel="icon" type="image/svg+xml" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.svg">
+    <link rel="icon" type="image/png" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/favicon.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/apple-touch-icon.png" />
+    <title>Senior Backend Engineer, Agent Infrastructure @ Airbyte</title><meta name="title" content="Senior Backend Engineer, Agent Infrastructure @ Airbyte" />
+    
+  
+  <meta name="description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+
+
+
+THE ROLE:
+
+Airbyte is building the runtime that powers production-grade AI agents.
+
+This is not an ML research or prompt engineering role. We’re looking for an experienced backend or platform engineer who has built complex production systems and has also worked hands-on with AI agents, orchestration, retrieval, or LLM-powered applications.
+
+Our AI Runtime sits between language models and the enterprise systems agents need to understand and act on. It is responsible for assembling the right context, identifying entities across systems, selecting tools and connectors, coordinating execution, validating evidence, enforcing permissions, and handling failures safely.
+
+A user may ask something simple like:
+
+ - “Investigate this customer and tell me what changed.”
+
+Behind that request, the runtime may need to identify the customer across multiple systems, retrieve fresh data, determine which tools to call, coordinate multiple steps, validate the result, and return an answer with evidence the user can trust.
+
+That infrastructure is what you’ll help build.
+
+We’re still early. The architecture is taking shape, but there is significant room to influence how the runtime is designed, how developers interact with it, and how we make agentic systems reliable in production.
+
+
+
+
+
+
+WHAT YOU’LL DO:
+
+Build the Runtime
+
+ - Design and implement the orchestration layer that turns natural-language intent into reliable, multi-step execution.
+
+ - Build systems for routing, state management, retries, failure handling, and long-running agent workflows.
+
+ - Develop systems for entity resolution, context assembly, connector orchestration, and evidence retrieval.
+
+ - Build reusable Skills that encapsulate business workflows and domain-specific capabilities.
+
+ - Coordinate connectors, APIs, tools, deterministic logic, retrieval systems, and multiple language models.
+
+Build Reliable AI Infrastructure
+
+ - Design systems that retrieve and assemble the right enterprise context at runtime.
+
+ - Build evidence-backed reasoning with citations and traceability that users can inspect and verify.
+
+ - Implement permission models, freshness validation, and action policies for production environments.
+
+ - Build evaluation, replay, observability, and debugging systems that help us understand why agents succeed or fail.
+
+ - Improve the reliability of systems where model outputs may be probabilistic, but execution cannot be.
+
+Own Products End to End
+
+ - Take ambiguous product ideas from prototype through production.
+
+ - Own features across architecture, implementation, rollout, and iteration.
+
+ - Work directly with Product, Design, Sales Engineering, Customer Success, and customers to understand real-world problems.
+
+ - Write high-leverage code that creates reusable infrastructure for future product areas.
+
+ - Experiment with new agent architectures while maintaining production-grade reliability.
+
+
+WHAT YOU’LL NEED:
+
+You may be a strong fit if you are fundamentally a backend or platform engineer who has also spent meaningful time building production AI systems.
+
+ - 7+ years of software engineering experience building and operating production systems.
+
+ - Strong backend engineering fundamentals and experience designing distributed systems.
+
+ - Experience building complex systems involving APIs, asynchronous workflows, concurrency, queues, state, retries, or distributed execution.
+
+ - Hands-on experience building production applications using LLMs, agents, RAG, tool calling, MCP, or similar technologies.
+
+ - Experience with orchestration systems, workflow engines, developer platforms, or infrastructure products.
+
+ - Strong system design skills and the ability to reason about reliability, scale, observability, and failure modes.
+
+ - Ability to move quickly from prototype to production without sacrificing engineering quality.
+
+ - Strong product instincts and comfort operating in ambiguous, 0-to-1 environments.
+
+ - Exceptional written communication skills.
+
+ - A strong bias toward ownership and shipping.
+
+
+NICE TO HAVE
+
+ - Experience building agent infrastructure, agent platforms, or evaluation systems.
+
+ - Familiarity with orchestration technologies such as LangGraph, Temporal, MCP, or similar.
+
+ - Experience with retrieval systems, vector search, search infrastructure, or knowledge graphs.
+
+ - Experience building developer tools or platform infrastructure.
+
+ - Experience with data infrastructure such as Kafka, Iceberg, Postgres, Spark, or modern data warehouses.
+
+ - Experience working on early-stage products where you helped define architecture and technical direction.
+
+
+WHAT SUCCESS LOOKS LIKE
+
+Success is not measured by the sophistication of the prompts. It is measured by whether the runtime becomes more reliable, observable, and trustworthy over time.
+
+You’ll build systems that:
+
+ - Assemble the right context and choose the correct connectors, tools, and Skills.
+
+ - Execute multi-step workflows reliably.
+
+ - Recover gracefully when something fails.
+
+ - Produce evidence-backed answers with citations and traceability.
+
+ - Enforce permissions, freshness guarantees, and action policies.
+
+ - Learn from failures through replay, evaluation, and observability.
+
+ - Allow users to focus on outcomes rather than coordinating individual tools themselves.
+
+As the runtime evolves, developers and users should need to think less about the underlying tools and more about what they want to accomplish. The runtime should handle the complexity underneath.
+
+
+
+
+
+
+WHY THIS ROLE MATTERS
+
+AI agents work impressively in demos. Making them reliable in production is much harder.
+
+The difficult problems are often not the model itself. They are retrieving the right context, connecting to real enterprise systems, maintaining permissions, coordinating multiple actions, recovering from failures, and determining whether an answer can actually be trusted.
+
+Airbyte already connects to hundreds of business systems. We’re building the runtime that allows agents to use that infrastructure intelligently and safely.
+
+If we succeed, developers will not need to rebuild orchestration, retrieval, permissions, evaluation, and enterprise connectivity every time they build a new agent.
+
+
+
+
+
+
+LOCATION
+
+ - Onsite 4 days/week in San Francisco, CA
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+• Flexible PTO with a culture that encourages at least 25 days off annually
+ • 16 weeks fully paid parental leave for all parents
+ • Comprehensive medical, dental, and vision coverage for employees and dependents
+ • 401(k) retirement plan
+ • Professional development budget, conference sponsorship, and book reimbursement
+ • Commuter benefits and monthly internet reimbursement
+
+ •  Breakfast and lunch in our San Francisco office
+ • A collaborative, in-person culture focused on learning, growth, and impact
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.
+
+Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.
+
+Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability." />
+  <meta name="twitter:card" content="summary" />
+  <meta property="og:url" content="https://jobs.ashbyhq.com/airbyte/b59bbc91-fb77-4a08-9c47-0fca7f755942" />
+  <meta property="og:type" content="website" />
+  
+  <meta property="og:title" content="Senior Backend Engineer, Agent Infrastructure" />
+  <meta property="og:description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+
+
+
+THE ROLE:
+
+Airbyte is building the runtime that powers production-grade AI agents.
+
+This is not an ML research or prompt engineering role. We’re looking for an experienced backend or platform engineer who has built complex production systems and has also worked hands-on with AI agents, orchestration, retrieval, or LLM-powered applications.
+
+Our AI Runtime sits between language models and the enterprise systems agents need to understand and act on. It is responsible for assembling the right context, identifying entities across systems, selecting tools and connectors, coordinating execution, validating evidence, enforcing permissions, and handling failures safely.
+
+A user may ask something simple like:
+
+ - “Investigate this customer and tell me what changed.”
+
+Behind that request, the runtime may need to identify the customer across multiple systems, retrieve fresh data, determine which tools to call, coordinate multiple steps, validate the result, and return an answer with evidence the user can trust.
+
+That infrastructure is what you’ll help build.
+
+We’re still early. The architecture is taking shape, but there is significant room to influence how the runtime is designed, how developers interact with it, and how we make agentic systems reliable in production.
+
+
+
+
+
+
+WHAT YOU’LL DO:
+
+Build the Runtime
+
+ - Design and implement the orchestration layer that turns natural-language intent into reliable, multi-step execution.
+
+ - Build systems for routing, state management, retries, failure handling, and long-running agent workflows.
+
+ - Develop systems for entity resolution, context assembly, connector orchestration, and evidence retrieval.
+
+ - Build reusable Skills that encapsulate business workflows and domain-specific capabilities.
+
+ - Coordinate connectors, APIs, tools, deterministic logic, retrieval systems, and multiple language models.
+
+Build Reliable AI Infrastructure
+
+ - Design systems that retrieve and assemble the right enterprise context at runtime.
+
+ - Build evidence-backed reasoning with citations and traceability that users can inspect and verify.
+
+ - Implement permission models, freshness validation, and action policies for production environments.
+
+ - Build evaluation, replay, observability, and debugging systems that help us understand why agents succeed or fail.
+
+ - Improve the reliability of systems where model outputs may be probabilistic, but execution cannot be.
+
+Own Products End to End
+
+ - Take ambiguous product ideas from prototype through production.
+
+ - Own features across architecture, implementation, rollout, and iteration.
+
+ - Work directly with Product, Design, Sales Engineering, Customer Success, and customers to understand real-world problems.
+
+ - Write high-leverage code that creates reusable infrastructure for future product areas.
+
+ - Experiment with new agent architectures while maintaining production-grade reliability.
+
+
+WHAT YOU’LL NEED:
+
+You may be a strong fit if you are fundamentally a backend or platform engineer who has also spent meaningful time building production AI systems.
+
+ - 7+ years of software engineering experience building and operating production systems.
+
+ - Strong backend engineering fundamentals and experience designing distributed systems.
+
+ - Experience building complex systems involving APIs, asynchronous workflows, concurrency, queues, state, retries, or distributed execution.
+
+ - Hands-on experience building production applications using LLMs, agents, RAG, tool calling, MCP, or similar technologies.
+
+ - Experience with orchestration systems, workflow engines, developer platforms, or infrastructure products.
+
+ - Strong system design skills and the ability to reason about reliability, scale, observability, and failure modes.
+
+ - Ability to move quickly from prototype to production without sacrificing engineering quality.
+
+ - Strong product instincts and comfort operating in ambiguous, 0-to-1 environments.
+
+ - Exceptional written communication skills.
+
+ - A strong bias toward ownership and shipping.
+
+
+NICE TO HAVE
+
+ - Experience building agent infrastructure, agent platforms, or evaluation systems.
+
+ - Familiarity with orchestration technologies such as LangGraph, Temporal, MCP, or similar.
+
+ - Experience with retrieval systems, vector search, search infrastructure, or knowledge graphs.
+
+ - Experience building developer tools or platform infrastructure.
+
+ - Experience with data infrastructure such as Kafka, Iceberg, Postgres, Spark, or modern data warehouses.
+
+ - Experience working on early-stage products where you helped define architecture and technical direction.
+
+
+WHAT SUCCESS LOOKS LIKE
+
+Success is not measured by the sophistication of the prompts. It is measured by whether the runtime becomes more reliable, observable, and trustworthy over time.
+
+You’ll build systems that:
+
+ - Assemble the right context and choose the correct connectors, tools, and Skills.
+
+ - Execute multi-step workflows reliably.
+
+ - Recover gracefully when something fails.
+
+ - Produce evidence-backed answers with citations and traceability.
+
+ - Enforce permissions, freshness guarantees, and action policies.
+
+ - Learn from failures through replay, evaluation, and observability.
+
+ - Allow users to focus on outcomes rather than coordinating individual tools themselves.
+
+As the runtime evolves, developers and users should need to think less about the underlying tools and more about what they want to accomplish. The runtime should handle the complexity underneath.
+
+
+
+
+
+
+WHY THIS ROLE MATTERS
+
+AI agents work impressively in demos. Making them reliable in production is much harder.
+
+The difficult problems are often not the model itself. They are retrieving the right context, connecting to real enterprise systems, maintaining permissions, coordinating multiple actions, recovering from failures, and determining whether an answer can actually be trusted.
+
+Airbyte already connects to hundreds of business systems. We’re building the runtime that allows agents to use that infrastructure intelligently and safely.
+
+If we succeed, developers will not need to rebuild orchestration, retrieval, permissions, evaluation, and enterprise connectivity every time they build a new agent.
+
+
+
+
+
+
+LOCATION
+
+ - Onsite 4 days/week in San Francisco, CA
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+• Flexible PTO with a culture that encourages at least 25 days off annually
+ • 16 weeks fully paid parental leave for all parents
+ • Comprehensive medical, dental, and vision coverage for employees and dependents
+ • 401(k) retirement plan
+ • Professional development budget, conference sponsorship, and book reimbursement
+ • Commuter benefits and monthly internet reimbursement
+
+ •  Breakfast and lunch in our San Francisco office
+ • A collaborative, in-person culture focused on learning, growth, and impact
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.
+
+Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.
+
+Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability." />
+  
+  <meta name="twitter:title" content="Senior Backend Engineer, Agent Infrastructure" />
+  <meta name="twitter:description" content="Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.
+
+We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, &quot;the last ten years were all about structured data. The future is all about context.&quot; We&#39;re now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.
+
+Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.
+
+
+
+
+
+THE ROLE:
+
+Airbyte is building the runtime that powers production-grade AI agents.
+
+This is not an ML research or prompt engineering role. We’re looking for an experienced backend or platform engineer who has built complex production systems and has also worked hands-on with AI agents, orchestration, retrieval, or LLM-powered applications.
+
+Our AI Runtime sits between language models and the enterprise systems agents need to understand and act on. It is responsible for assembling the right context, identifying entities across systems, selecting tools and connectors, coordinating execution, validating evidence, enforcing permissions, and handling failures safely.
+
+A user may ask something simple like:
+
+ - “Investigate this customer and tell me what changed.”
+
+Behind that request, the runtime may need to identify the customer across multiple systems, retrieve fresh data, determine which tools to call, coordinate multiple steps, validate the result, and return an answer with evidence the user can trust.
+
+That infrastructure is what you’ll help build.
+
+We’re still early. The architecture is taking shape, but there is significant room to influence how the runtime is designed, how developers interact with it, and how we make agentic systems reliable in production.
+
+
+
+
+
+
+WHAT YOU’LL DO:
+
+Build the Runtime
+
+ - Design and implement the orchestration layer that turns natural-language intent into reliable, multi-step execution.
+
+ - Build systems for routing, state management, retries, failure handling, and long-running agent workflows.
+
+ - Develop systems for entity resolution, context assembly, connector orchestration, and evidence retrieval.
+
+ - Build reusable Skills that encapsulate business workflows and domain-specific capabilities.
+
+ - Coordinate connectors, APIs, tools, deterministic logic, retrieval systems, and multiple language models.
+
+Build Reliable AI Infrastructure
+
+ - Design systems that retrieve and assemble the right enterprise context at runtime.
+
+ - Build evidence-backed reasoning with citations and traceability that users can inspect and verify.
+
+ - Implement permission models, freshness validation, and action policies for production environments.
+
+ - Build evaluation, replay, observability, and debugging systems that help us understand why agents succeed or fail.
+
+ - Improve the reliability of systems where model outputs may be probabilistic, but execution cannot be.
+
+Own Products End to End
+
+ - Take ambiguous product ideas from prototype through production.
+
+ - Own features across architecture, implementation, rollout, and iteration.
+
+ - Work directly with Product, Design, Sales Engineering, Customer Success, and customers to understand real-world problems.
+
+ - Write high-leverage code that creates reusable infrastructure for future product areas.
+
+ - Experiment with new agent architectures while maintaining production-grade reliability.
+
+
+WHAT YOU’LL NEED:
+
+You may be a strong fit if you are fundamentally a backend or platform engineer who has also spent meaningful time building production AI systems.
+
+ - 7+ years of software engineering experience building and operating production systems.
+
+ - Strong backend engineering fundamentals and experience designing distributed systems.
+
+ - Experience building complex systems involving APIs, asynchronous workflows, concurrency, queues, state, retries, or distributed execution.
+
+ - Hands-on experience building production applications using LLMs, agents, RAG, tool calling, MCP, or similar technologies.
+
+ - Experience with orchestration systems, workflow engines, developer platforms, or infrastructure products.
+
+ - Strong system design skills and the ability to reason about reliability, scale, observability, and failure modes.
+
+ - Ability to move quickly from prototype to production without sacrificing engineering quality.
+
+ - Strong product instincts and comfort operating in ambiguous, 0-to-1 environments.
+
+ - Exceptional written communication skills.
+
+ - A strong bias toward ownership and shipping.
+
+
+NICE TO HAVE
+
+ - Experience building agent infrastructure, agent platforms, or evaluation systems.
+
+ - Familiarity with orchestration technologies such as LangGraph, Temporal, MCP, or similar.
+
+ - Experience with retrieval systems, vector search, search infrastructure, or knowledge graphs.
+
+ - Experience building developer tools or platform infrastructure.
+
+ - Experience with data infrastructure such as Kafka, Iceberg, Postgres, Spark, or modern data warehouses.
+
+ - Experience working on early-stage products where you helped define architecture and technical direction.
+
+
+WHAT SUCCESS LOOKS LIKE
+
+Success is not measured by the sophistication of the prompts. It is measured by whether the runtime becomes more reliable, observable, and trustworthy over time.
+
+You’ll build systems that:
+
+ - Assemble the right context and choose the correct connectors, tools, and Skills.
+
+ - Execute multi-step workflows reliably.
+
+ - Recover gracefully when something fails.
+
+ - Produce evidence-backed answers with citations and traceability.
+
+ - Enforce permissions, freshness guarantees, and action policies.
+
+ - Learn from failures through replay, evaluation, and observability.
+
+ - Allow users to focus on outcomes rather than coordinating individual tools themselves.
+
+As the runtime evolves, developers and users should need to think less about the underlying tools and more about what they want to accomplish. The runtime should handle the complexity underneath.
+
+
+
+
+
+
+WHY THIS ROLE MATTERS
+
+AI agents work impressively in demos. Making them reliable in production is much harder.
+
+The difficult problems are often not the model itself. They are retrieving the right context, connecting to real enterprise systems, maintaining permissions, coordinating multiple actions, recovering from failures, and determining whether an answer can actually be trusted.
+
+Airbyte already connects to hundreds of business systems. We’re building the runtime that allows agents to use that infrastructure intelligently and safely.
+
+If we succeed, developers will not need to rebuild orchestration, retrieval, permissions, evaluation, and enterprise connectivity every time they build a new agent.
+
+
+
+
+
+
+LOCATION
+
+ - Onsite 4 days/week in San Francisco, CA
+
+
+WHY YOU&#39;LL LOVE WORKING AT AIRBYTE:
+
+At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:
+
+• Flexible PTO with a culture that encourages at least 25 days off annually
+ • 16 weeks fully paid parental leave for all parents
+ • Comprehensive medical, dental, and vision coverage for employees and dependents
+ • 401(k) retirement plan
+ • Professional development budget, conference sponsorship, and book reimbursement
+ • Commuter benefits and monthly internet reimbursement
+
+ •  Breakfast and lunch in our San Francisco office
+ • A collaborative, in-person culture focused on learning, growth, and impact
+
+If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!
+
+We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.
+
+Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.
+
+Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability." />
+  
+  <meta name="robots" content="noindex,nofollow" />
+    <link rel="preload" as="image" href="https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png">
+    
+    <script type="application/ld+json">{"@context":"https://schema.org/","@type":"JobPosting","title":"Senior Backend Engineer, Agent Infrastructure","description":"<p style=\"min-height:1.5em\">Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, \"the last ten years were all about structured data. The future is all about context.\" We're now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.</p><h2></h2><p style=\"min-height:1.5em\"></p><h2><strong>The Role:</strong></h2><p style=\"min-height:1.5em\">Airbyte is building the runtime that powers production-grade AI agents.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">This is not an ML research or prompt engineering role. We’re looking for an experienced backend or platform engineer who has built complex production systems and has also worked hands-on with AI agents, orchestration, retrieval, or LLM-powered applications.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our AI Runtime sits between language models and the enterprise systems agents need to understand and act on. It is responsible for assembling the right context, identifying entities across systems, selecting tools and connectors, coordinating execution, validating evidence, enforcing permissions, and handling failures safely.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">A user may ask something simple like:</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">“Investigate this customer and tell me what changed.”</p></li></ul><p style=\"min-height:1.5em\">Behind that request, the runtime may need to identify the customer across multiple systems, retrieve fresh data, determine which tools to call, coordinate multiple steps, validate the result, and return an answer with evidence the user can trust.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">That infrastructure is what you’ll help build.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We’re still early. The architecture is taking shape, but there is significant room to influence how the runtime is designed, how developers interact with it, and how we make agentic systems reliable in production.</p><h2><br /></h2><h2><strong>What You’ll Do:</strong></h2><p style=\"min-height:1.5em\"><strong>Build the Runtime</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Design and implement the orchestration layer that turns natural-language intent into reliable, multi-step execution.</p></li><li><p style=\"min-height:1.5em\">Build systems for routing, state management, retries, failure handling, and long-running agent workflows.</p></li><li><p style=\"min-height:1.5em\">Develop systems for entity resolution, context assembly, connector orchestration, and evidence retrieval.</p></li><li><p style=\"min-height:1.5em\">Build reusable Skills that encapsulate business workflows and domain-specific capabilities.</p></li><li><p style=\"min-height:1.5em\">Coordinate connectors, APIs, tools, deterministic logic, retrieval systems, and multiple language models.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Build Reliable AI Infrastructure</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Design systems that retrieve and assemble the right enterprise context at runtime.</p></li><li><p style=\"min-height:1.5em\">Build evidence-backed reasoning with citations and traceability that users can inspect and verify.</p></li><li><p style=\"min-height:1.5em\">Implement permission models, freshness validation, and action policies for production environments.</p></li><li><p style=\"min-height:1.5em\">Build evaluation, replay, observability, and debugging systems that help us understand why agents succeed or fail.</p></li><li><p style=\"min-height:1.5em\">Improve the reliability of systems where model outputs may be probabilistic, but execution cannot be.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Own Products End to End</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Take ambiguous product ideas from prototype through production.</p></li><li><p style=\"min-height:1.5em\">Own features across architecture, implementation, rollout, and iteration.</p></li><li><p style=\"min-height:1.5em\">Work directly with Product, Design, Sales Engineering, Customer Success, and customers to understand real-world problems.</p></li><li><p style=\"min-height:1.5em\">Write high-leverage code that creates reusable infrastructure for future product areas.</p></li><li><p style=\"min-height:1.5em\">Experiment with new agent architectures while maintaining production-grade reliability.</p></li></ul><p style=\"min-height:1.5em\"></p><h2>What You’ll Need:</h2><p style=\"min-height:1.5em\">You may be a strong fit if you are fundamentally a backend or platform engineer who has also spent meaningful time building production AI systems.</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">7+ years of software engineering experience building and operating production systems.</p></li><li><p style=\"min-height:1.5em\">Strong backend engineering fundamentals and experience designing distributed systems.</p></li><li><p style=\"min-height:1.5em\">Experience building complex systems involving APIs, asynchronous workflows, concurrency, queues, state, retries, or distributed execution.</p></li><li><p style=\"min-height:1.5em\">Hands-on experience building production applications using LLMs, agents, RAG, tool calling, MCP, or similar technologies.</p></li><li><p style=\"min-height:1.5em\">Experience with orchestration systems, workflow engines, developer platforms, or infrastructure products.</p></li><li><p style=\"min-height:1.5em\">Strong system design skills and the ability to reason about reliability, scale, observability, and failure modes.</p></li><li><p style=\"min-height:1.5em\">Ability to move quickly from prototype to production without sacrificing engineering quality.</p></li><li><p style=\"min-height:1.5em\">Strong product instincts and comfort operating in ambiguous, 0-to-1 environments.</p></li><li><p style=\"min-height:1.5em\">Exceptional written communication skills.</p></li><li><p style=\"min-height:1.5em\">A strong bias toward ownership and shipping.</p></li></ul><p style=\"min-height:1.5em\"></p><h2>Nice To Have</h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Experience building agent infrastructure, agent platforms, or evaluation systems.</p></li><li><p style=\"min-height:1.5em\">Familiarity with orchestration technologies such as LangGraph, Temporal, MCP, or similar.</p></li><li><p style=\"min-height:1.5em\">Experience with retrieval systems, vector search, search infrastructure, or knowledge graphs.</p></li><li><p style=\"min-height:1.5em\">Experience building developer tools or platform infrastructure.</p></li><li><p style=\"min-height:1.5em\">Experience with data infrastructure such as Kafka, Iceberg, Postgres, Spark, or modern data warehouses.</p></li><li><p style=\"min-height:1.5em\">Experience working on early-stage products where you helped define architecture and technical direction.</p></li></ul><p style=\"min-height:1.5em\"></p><h2>What Success Looks Like</h2><p style=\"min-height:1.5em\">Success is not measured by the sophistication of the prompts. It is measured by whether the runtime becomes more reliable, observable, and trustworthy over time.</p><p style=\"min-height:1.5em\">You’ll build systems that:</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Assemble the right context and choose the correct connectors, tools, and Skills.</p></li><li><p style=\"min-height:1.5em\">Execute multi-step workflows reliably.</p></li><li><p style=\"min-height:1.5em\">Recover gracefully when something fails.</p></li><li><p style=\"min-height:1.5em\">Produce evidence-backed answers with citations and traceability.</p></li><li><p style=\"min-height:1.5em\">Enforce permissions, freshness guarantees, and action policies.</p></li><li><p style=\"min-height:1.5em\">Learn from failures through replay, evaluation, and observability.</p></li><li><p style=\"min-height:1.5em\">Allow users to focus on outcomes rather than coordinating individual tools themselves.</p></li></ul><p style=\"min-height:1.5em\">As the runtime evolves, developers and users should need to think less about the underlying tools and more about what they want to accomplish. The runtime should handle the complexity underneath.</p><h2><br /></h2><h2>Why This Role Matters</h2><p style=\"min-height:1.5em\">AI agents work impressively in demos. Making them reliable in production is much harder.</p><p style=\"min-height:1.5em\">The difficult problems are often not the model itself. They are retrieving the right context, connecting to real enterprise systems, maintaining permissions, coordinating multiple actions, recovering from failures, and determining whether an answer can actually be trusted.</p><p style=\"min-height:1.5em\">Airbyte already connects to hundreds of business systems. We’re building the runtime that allows agents to use that infrastructure intelligently and safely.</p><p style=\"min-height:1.5em\">If we succeed, developers will not need to rebuild orchestration, retrieval, permissions, evaluation, and enterprise connectivity every time they build a new agent.</p><h2><br /></h2><h2>Location</h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Onsite 4 days/week in San Francisco, CA</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Why You'll Love Working at Airbyte:</strong></h2><p style=\"min-height:1.5em\">At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">• Flexible PTO with a culture that encourages at least 25 days off annually<br /> • 16 weeks fully paid parental leave for all parents<br /> • Comprehensive medical, dental, and vision coverage for employees and dependents<br /> • 401(k) retirement plan<br /> • Professional development budget, conference sponsorship, and book reimbursement<br /> • Commuter benefits and monthly internet reimbursement</p><p style=\"min-height:1.5em\"> •  Breakfast and lunch in our San Francisco office<br /> • A collaborative, in-person culture focused on learning, growth, and impact</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability.</p>","directApply":false,"identifier":{"@type":"PropertyValue","name":"Airbyte","value":"b59bbc91-fb77-4a08-9c47-0fca7f755942"},"datePosted":"2026-10-12","hiringOrganization":{"@type":"Organization","name":"Airbyte","sameAs":"https://airbyte.com/"},"jobLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"San Francisco","addressRegion":"California","addressCountry":"United States"}},"employmentType":"FULL_TIME","baseSalary":{"@type":"MonetaryAmount","currency":"USD","value":{"@type":"QuantitativeValue","minValue":196000,"maxValue":235000,"unitText":"YEAR"}},"jobLocationType":"TELECOMMUTE","applicantLocationRequirements":{"@type":"Country","name":"United States"}}</script>
+  
+  
+
+    <link id="vite-preload" rel="preload" as="fetch" href="https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json" crossorigin>    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Book_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Medium_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="preload" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/woff2/WhitneySSm-Semibold_Web.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.ashbyprd.com/cdn_assets/860ceee3368252383aede38f0562dd8d34f6ca27/fonts/WhitneySSm/WhitneySSm.css" />
+    <style>
+      .grecaptcha-badge {
+        visibility: hidden;
+      }
+
+      body > div > div:not([class]):has(> iframe[src*="/recaptcha/"]) {
+        box-sizing: content-box;
+      }
+    </style>
+
+
+  </head>
+  <body>
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <div id="root">
+      <style>
+        body {
+          overflow: hidden;
+        }
+      
+        .center {
+          align-items: center;
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          justify-content: center;
+          width: 100vw;
+        }
+      
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      
+        .fade-in {
+          animation-delay: 750ms;
+          animation-direction: normal;
+          animation-duration: 500ms;
+          animation-fill-mode: forwards;
+          animation-iteration-count: 1;
+          animation-name: fade-in;
+          animation-timing-function: ease-in-out;
+          opacity: 0;
+        }
+      
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      
+        .spinner {
+          animation-duration: var(--transitionDurationSlow, 600ms);
+          animation-iteration-count: infinite;
+          animation-name: spin;
+          animation-timing-function: linear;
+          border-color: var(--colorNeutral600Transparent, rgba(125, 134, 153, 0.25));
+          border-radius: 100%;
+          border-style: solid;
+          border-top-color: rgba(125, 134, 153, 0.9);
+          border-width: var(--borderWidthHeavy, 3px);
+          display: block;
+          height: var(--spacingXxlarge, 48px);
+          width: var(--spacingXxlarge, 48px);
+        }
+      </style>
+      <div class="center">
+        <div class="fade-in">
+          <div class="spinner"></div>
+        </div>
+      </div>    </div>
+    <script nonce="CzBdq45YyAdvVc80xZ4qLKKFtFsQD6_L7M3DV2DraSo">
+      window.__appData = {"ddRumApplicationId":"80e0bf43-e772-45ac-858b-1e6dc0f1f415","ddRumClientToken":"pub1a87c7036063ee7d4b7914b397e6324e","environment":"production","maintenanceMode":false,"schedulingMaintenanceMode":false,"organization":{"organizationId":"c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2","name":"Airbyte","publicWebsite":"https://airbyte.com/","customJobsPageUrl":null,"hostedJobsPageSlug":"airbyte","allowJobPostIndexing":false,"isDemoOrg":false,"theme":{"colors":{"version":"1","colorPrimary600":"#6059b2","colorPrimary900":"#1d1b3e"},"showJobFilters":true,"showLocationAddress":false,"showTeams":false,"showAutofillApplicationsBox":true,"logoWordmarkImageUrl":"https://app.ashbyhq.com/api/images/org-theme-wordmark/c410bf6e-88b0-4ac8-91a5-e5d8a297c6d2/70d79e97-c56d-4a72-b6ec-0861471b0fbd/ff36ec79-a784-4a7f-9ae0-57dabc217726.png","logoSquareImageUrl":null,"applicationSubmittedSuccessMessage":null,"jobBoardTopDescriptionHtml":null,"jobBoardBottomDescriptionHtml":null,"jobPostingBackUrl":null,"__typename":"Theme"},"appConfirmationTrackingPixelHtml":null,"recruitingPrivacyPolicyUrl":null,"activeFeatureFlags":["AiNotetakerCandidateConsentPolicies","ApplicationForReferrals","ApprovalNotesFromEmail","BookingLinkRescheduleLimits","CanonicalizeSchools","CoreMultipleBrands","CoreMultipleBrandsFeedFiltering","CoreMultipleBrandsLinkedInJobWrappingStreamingFix","DemoOrgBanners","EducationHistoryFormField","ExplicitAutomatedProcessingOptOutConfirmation","JobBoardCookieConsentControls","JobBoardEtagValidation","JobPostingApplicationDeadlines","JobPostingListV2","JobPostingWorkplaceTypeOverrideSecondaryLocationsToo","LinkedInIntegrationRequireCompanyId","LinkedInTOSUpdate","LocationExternalName","MigrateGoogleRecaptchaAutomatedLegal","RejectBase64EncodedResumesFrontEnd","RejectBase64EncodedResumesThrowErrorFrontEnd","RejectInvalidFileTypeOnUpload","RejectUrlsInCandidateName","SchedulingDirectBookingLogDirectBookingEventsJson","SchedulingGCalSendUpdatesForCancelEvents","SchedulingRescheduleAndCancellationReasonsNonUser","SchedulingUseLocaleInTimeFormatting","ShowCountsOnJobBoardFilterOptions","SocialSharingHtmlMetaSettings","UseGlobalQueryScopesOnGlobalApplicationQuestions","UseGoogleRecaptchaUniversalKey","UseJobPostingFiltersOnGlobalApplicationQuestions","UseJobPostingFiltersOnGlobalApplicationQuestionsUI","UseJobPostingFiltersOnSurveys","UseJobPostingFiltersOnSurveysUI","ValidateFileTypeOnUpload"],"timezone":"America/Los_Angeles","candidateScheduleCancellationReasonRequirementStatus":"Off","showCookieBanner":false,"__typename":"Organization"},"posting":{"id":"b59bbc91-fb77-4a08-9c47-0fca7f755942","title":"Senior Backend Engineer, Agent Infrastructure","departmentName":"Engineering","departmentExternalName":"Engineering","locationName":"San Francisco","locationAddress":null,"workplaceType":"Hybrid","employmentType":"FullTime","descriptionHtml":"<p style=\"min-height:1.5em\">Airbyte is the data and action layer for AI agents. We give agents fast, accurate, authenticated access to business data across hundreds of sources, so they can discover the entities that matter, reason over real-time context, and take action in the systems they read from, not just observe them.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We started as the open-source standard for data movement and proved the economics of data integration at scale: hundreds of connectors, thousands of companies, and, since 2020, have raised $181M from leading investors including Benchmark, Accel, Altimeter, Coatue, and Y Combinator. As our CEO Michel Tricot puts it, \"the last ten years were all about structured data. The future is all about context.\" We're now building that context infrastructure for production-grade agents on the same open foundation, as agents become the primary consumers of enterprise data.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our mission is unchanged: make data available and actionable to everyone, everywhere. That everyone now includes AI agents.</p><h2></h2><p style=\"min-height:1.5em\"></p><h2><strong>The Role:</strong></h2><p style=\"min-height:1.5em\">Airbyte is building the runtime that powers production-grade AI agents.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">This is not an ML research or prompt engineering role. We’re looking for an experienced backend or platform engineer who has built complex production systems and has also worked hands-on with AI agents, orchestration, retrieval, or LLM-powered applications.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Our AI Runtime sits between language models and the enterprise systems agents need to understand and act on. It is responsible for assembling the right context, identifying entities across systems, selecting tools and connectors, coordinating execution, validating evidence, enforcing permissions, and handling failures safely.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">A user may ask something simple like:</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">“Investigate this customer and tell me what changed.”</p></li></ul><p style=\"min-height:1.5em\">Behind that request, the runtime may need to identify the customer across multiple systems, retrieve fresh data, determine which tools to call, coordinate multiple steps, validate the result, and return an answer with evidence the user can trust.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">That infrastructure is what you’ll help build.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We’re still early. The architecture is taking shape, but there is significant room to influence how the runtime is designed, how developers interact with it, and how we make agentic systems reliable in production.</p><h2><br /></h2><h2><strong>What You’ll Do:</strong></h2><p style=\"min-height:1.5em\"><strong>Build the Runtime</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Design and implement the orchestration layer that turns natural-language intent into reliable, multi-step execution.</p></li><li><p style=\"min-height:1.5em\">Build systems for routing, state management, retries, failure handling, and long-running agent workflows.</p></li><li><p style=\"min-height:1.5em\">Develop systems for entity resolution, context assembly, connector orchestration, and evidence retrieval.</p></li><li><p style=\"min-height:1.5em\">Build reusable Skills that encapsulate business workflows and domain-specific capabilities.</p></li><li><p style=\"min-height:1.5em\">Coordinate connectors, APIs, tools, deterministic logic, retrieval systems, and multiple language models.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Build Reliable AI Infrastructure</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Design systems that retrieve and assemble the right enterprise context at runtime.</p></li><li><p style=\"min-height:1.5em\">Build evidence-backed reasoning with citations and traceability that users can inspect and verify.</p></li><li><p style=\"min-height:1.5em\">Implement permission models, freshness validation, and action policies for production environments.</p></li><li><p style=\"min-height:1.5em\">Build evaluation, replay, observability, and debugging systems that help us understand why agents succeed or fail.</p></li><li><p style=\"min-height:1.5em\">Improve the reliability of systems where model outputs may be probabilistic, but execution cannot be.</p></li></ul><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\"><strong>Own Products End to End</strong></p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Take ambiguous product ideas from prototype through production.</p></li><li><p style=\"min-height:1.5em\">Own features across architecture, implementation, rollout, and iteration.</p></li><li><p style=\"min-height:1.5em\">Work directly with Product, Design, Sales Engineering, Customer Success, and customers to understand real-world problems.</p></li><li><p style=\"min-height:1.5em\">Write high-leverage code that creates reusable infrastructure for future product areas.</p></li><li><p style=\"min-height:1.5em\">Experiment with new agent architectures while maintaining production-grade reliability.</p></li></ul><p style=\"min-height:1.5em\"></p><h2>What You’ll Need:</h2><p style=\"min-height:1.5em\">You may be a strong fit if you are fundamentally a backend or platform engineer who has also spent meaningful time building production AI systems.</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">7+ years of software engineering experience building and operating production systems.</p></li><li><p style=\"min-height:1.5em\">Strong backend engineering fundamentals and experience designing distributed systems.</p></li><li><p style=\"min-height:1.5em\">Experience building complex systems involving APIs, asynchronous workflows, concurrency, queues, state, retries, or distributed execution.</p></li><li><p style=\"min-height:1.5em\">Hands-on experience building production applications using LLMs, agents, RAG, tool calling, MCP, or similar technologies.</p></li><li><p style=\"min-height:1.5em\">Experience with orchestration systems, workflow engines, developer platforms, or infrastructure products.</p></li><li><p style=\"min-height:1.5em\">Strong system design skills and the ability to reason about reliability, scale, observability, and failure modes.</p></li><li><p style=\"min-height:1.5em\">Ability to move quickly from prototype to production without sacrificing engineering quality.</p></li><li><p style=\"min-height:1.5em\">Strong product instincts and comfort operating in ambiguous, 0-to-1 environments.</p></li><li><p style=\"min-height:1.5em\">Exceptional written communication skills.</p></li><li><p style=\"min-height:1.5em\">A strong bias toward ownership and shipping.</p></li></ul><p style=\"min-height:1.5em\"></p><h2>Nice To Have</h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Experience building agent infrastructure, agent platforms, or evaluation systems.</p></li><li><p style=\"min-height:1.5em\">Familiarity with orchestration technologies such as LangGraph, Temporal, MCP, or similar.</p></li><li><p style=\"min-height:1.5em\">Experience with retrieval systems, vector search, search infrastructure, or knowledge graphs.</p></li><li><p style=\"min-height:1.5em\">Experience building developer tools or platform infrastructure.</p></li><li><p style=\"min-height:1.5em\">Experience with data infrastructure such as Kafka, Iceberg, Postgres, Spark, or modern data warehouses.</p></li><li><p style=\"min-height:1.5em\">Experience working on early-stage products where you helped define architecture and technical direction.</p></li></ul><p style=\"min-height:1.5em\"></p><h2>What Success Looks Like</h2><p style=\"min-height:1.5em\">Success is not measured by the sophistication of the prompts. It is measured by whether the runtime becomes more reliable, observable, and trustworthy over time.</p><p style=\"min-height:1.5em\">You’ll build systems that:</p><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Assemble the right context and choose the correct connectors, tools, and Skills.</p></li><li><p style=\"min-height:1.5em\">Execute multi-step workflows reliably.</p></li><li><p style=\"min-height:1.5em\">Recover gracefully when something fails.</p></li><li><p style=\"min-height:1.5em\">Produce evidence-backed answers with citations and traceability.</p></li><li><p style=\"min-height:1.5em\">Enforce permissions, freshness guarantees, and action policies.</p></li><li><p style=\"min-height:1.5em\">Learn from failures through replay, evaluation, and observability.</p></li><li><p style=\"min-height:1.5em\">Allow users to focus on outcomes rather than coordinating individual tools themselves.</p></li></ul><p style=\"min-height:1.5em\">As the runtime evolves, developers and users should need to think less about the underlying tools and more about what they want to accomplish. The runtime should handle the complexity underneath.</p><h2><br /></h2><h2>Why This Role Matters</h2><p style=\"min-height:1.5em\">AI agents work impressively in demos. Making them reliable in production is much harder.</p><p style=\"min-height:1.5em\">The difficult problems are often not the model itself. They are retrieving the right context, connecting to real enterprise systems, maintaining permissions, coordinating multiple actions, recovering from failures, and determining whether an answer can actually be trusted.</p><p style=\"min-height:1.5em\">Airbyte already connects to hundreds of business systems. We’re building the runtime that allows agents to use that infrastructure intelligently and safely.</p><p style=\"min-height:1.5em\">If we succeed, developers will not need to rebuild orchestration, retrieval, permissions, evaluation, and enterprise connectivity every time they build a new agent.</p><h2><br /></h2><h2>Location</h2><ul style=\"min-height:1.5em\"><li><p style=\"min-height:1.5em\">Onsite 4 days/week in San Francisco, CA</p></li></ul><p style=\"min-height:1.5em\"></p><h2><strong>Why You'll Love Working at Airbyte:</strong></h2><p style=\"min-height:1.5em\">At Airbyte, we believe great work happens when people feel supported, trusted, and empowered to grow. Our market-leading Total Rewards package is designed to help you thrive professionally and personally. Our benefits and perks include:</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">• Flexible PTO with a culture that encourages at least 25 days off annually<br /> • 16 weeks fully paid parental leave for all parents<br /> • Comprehensive medical, dental, and vision coverage for employees and dependents<br /> • 401(k) retirement plan<br /> • Professional development budget, conference sponsorship, and book reimbursement<br /> • Commuter benefits and monthly internet reimbursement</p><p style=\"min-height:1.5em\"> •  Breakfast and lunch in our San Francisco office<br /> • A collaborative, in-person culture focused on learning, growth, and impact</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">If you find this role exciting, we encourage you to apply even if you think you don’t meet all of the requirements!</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">We are not accepting agency submissions or recruiting firm support for this role. Unsolicited resumes will not be considered.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is an equal opportunity employer that does not discriminate on the basis of actual or perceived race, creed, color, religion, national origin, ancestry, age, physical or mental disability, pregnancy, genetic information, sex, sexual orientation, gender identity or expression, marital status, familial status, domestic violence victim status, veteran or military status, or any other legally recognized protected basis under federal, state or local laws. Pursuant to the San Francisco Fair Chance Ordinance, we will consider for employment qualified applicants with arrest and conviction records.</p><p style=\"min-height:1.5em\"></p><p style=\"min-height:1.5em\">Airbyte is committed to providing reasonable accommodations for qualified individuals with disabilities in our job application procedures. Please let us know if you need assistance or accommodations due to a disability.</p>","isListed":true,"isConfidential":false,"teamNames":["Engineering"],"secondaryLocationNames":[],"compensationTierSummary":"$196K – $235K • Offers Equity","compensationTiers":[{"id":"fb558afa-1add-4d2f-900c-aab1b1957e06","title":null,"tierSummary":"$196K – $235K • Offers Equity","__typename":"JobPostingCompensationTiers"}],"applicationDeadline":null,"compensationTierGuideUrl":null,"scrapeableCompensationSalarySummary":"$196K - $235K","compensationPhilosophyHtml":"<p style=\"min-height:1.5em\">The actual compensation package within the stated range will be based on a combination of factors such as an individual's skills, experience level, location, and other relevant job-related considerations.</p>","applicationLimitCalloutHtml":null,"shouldAskForTextingConsent":true,"shouldAskForWhatsAppConsent":false,"candidateTextingPrivacyPolicyUrl":"https://airbyte.com/company/privacy-policy","candidateTextingTermsAndConditionsUrl":null,"legalEntityNameForTextingConsent":"Airbyte, Inc","automatedProcessingLegalNotice":null,"__typename":"JobPostingDetails"},"jobBoard":null,"routerPrefix":"/","recaptchaPublicSiteKey":"6LeFb_YUAAAAALUD5h-BiQEp8JaFChe0e0A6r49Y","recaptchaUniversalPublicSiteKey":"6LezdY0tAAAAAEnollNLCAI0z1VDGwM7AzGrU4XZ"};
+      // A Vite manifest key: the entry's HTML filename relative to the build root.
+      // Single-entry apps leave entryHtml unset.
+      const ENTRY_KEY = "index.html";
+      fetch("https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/.vite/manifest.json").then(function (res) { return res.json() }).then(function (manifest) {
+        const entryData = manifest[ENTRY_KEY];
+        if (entryData == null) {
+          throw new Error("Vite manifest is missing entry: " + ENTRY_KEY);
+        }
+    
+        // Walk the entry's static imports transitively. Both the CSS and the JS a
+        // page needs can sit on shared chunks rather than on the entry record, and
+        // the manifest lists only each chunk's direct imports -- so reading the
+        // entry alone silently drops stylesheets and preloads. Depth-first
+        // post-order puts a dependency's CSS ahead of its importer's, which is the
+        // cascade order Vite uses in the HTML it generates for the same entry.
+        const chunks = [];
+        const visited = {};
+        function collectChunks(key) {
+          if (visited[key] === true) {
+            return;
+          }
+          visited[key] = true;
+          const chunk = manifest[key];
+          if (chunk == null) {
+            return;
+          }
+          (chunk.imports ?? []).forEach(collectChunks);
+          chunks.push(chunk);
+        }
+        collectChunks(ENTRY_KEY);
+    
+        // css[] holds output paths, not digests, but every manifest record carries
+        // an integrity for its own file -- so a stylesheet Vite emitted as its own
+        // record can be matched by path. The entry's CSS has no record and loads
+        // unhashed.
+        const integrityByFile = {};
+        Object.keys(manifest).forEach(function (key) {
+          const record = manifest[key];
+          if (record != null && record.file != null && record.integrity != null) {
+            integrityByFile[record.file] = record.integrity;
+          }
+        });
+    
+        const sheets = [];
+        const seenSheets = {};
+        chunks.forEach(function (chunk) {
+          (chunk.css ?? []).forEach(function (sheet) {
+            if (seenSheets[sheet] === true) {
+              return;
+            }
+            seenSheets[sheet] = true;
+            sheets.push(sheet);
+          });
+        });
+    
+        let bundleLoaded = false;
+        function loadBundle() {
+          if (bundleLoaded === true) {
+            return;
+          }
+    
+          const el = document.createElement("script");
+          el.setAttribute("type", "module");
+          el.setAttribute("crossorigin", "");
+          el.setAttribute("integrity", entryData.integrity);
+          el.setAttribute("src", "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + entryData.file);
+          document.head.appendChild(el);
+          bundleLoaded = true;
+        }
+    
+        chunks.forEach(function (chunk) {
+          const preload = document.createElement("link");
+          preload.rel = "modulepreload";
+          preload.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + chunk.file;
+          // Carry the SRI hash on the preload too: Chrome/Firefox reuse the
+          // preloaded bytes for the integrity-bearing script tag, so an integrity-less
+          // preload silently bypasses the SRI check. Without it here, SRI is never
+          // enforced on the code-split chunks (the bulk of the app), in any browser.
+          preload.setAttribute("integrity", chunk.integrity);
+          preload.setAttribute("crossorigin", "");
+          document.head.appendChild(preload);
+        });
+    
+        if (sheets.length > 0) {
+          const loadedSheets = [];
+          sheets.forEach(function (sheet) {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.type = "text/css";
+            link.href = "https://cdn.ashbyprd.com/frontend_non_user/860ceee3368252383aede38f0562dd8d34f6ca27/" + sheet;
+            link.media = "all";
+            const sheetIntegrity = integrityByFile[sheet];
+            if (sheetIntegrity != null) {
+              link.setAttribute("integrity", sheetIntegrity);
+              // SRI on a cross-origin stylesheet requires CORS mode; the CDN sends
+              // access-control-allow-origin: *.
+              link.setAttribute("crossorigin", "");
+            }
+            link.onload = function () {
+              loadedSheets.push(sheet);
+              if (loadedSheets.length === sheets.length) {
+                loadBundle();
+              }
+            };
+            link.onerror = loadBundle;
+            document.head.insertBefore(link, document.getElementById("vite-preload"));
+          });
+        } else {
+          loadBundle();
+        }
+      });
+    </script>  </body>
+</html>

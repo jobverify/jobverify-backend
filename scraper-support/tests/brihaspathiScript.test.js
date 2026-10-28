@@ -1,130 +1,31 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
-const loadBrihaspathiModule = async () => {
-  try {
-    return await import('../../scraper/brihaspathi/script.js')
-  } catch {
-    assert.fail('Expected Brihaspathi scraper module at ../../scraper/brihaspathi/script.js')
-  }
-}
-
-const officialCareersHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Brihaspathi Careers</title>
-  </head>
-  <body>
-    <main>
-      <p>Careers</p>
-      <h1>Open Vacancies</h1>
-      <p>Browse active HR job postings.</p>
-      <p>Vacancies</p>
-      <p>0</p>
-    </main>
-  </body>
-</html>
-`
-
-const emptyPayload = {
-  data: [],
-  meta: {
-    pagination: {
-      page: 1,
-      pageSize: 100,
-      pageCount: 0,
-      total: 0,
-    },
-  },
-}
-
-const activeCareersHtml = officialCareersHtml.replace('<p>0</p>', '<p>1</p>')
-
-test('Brihaspathi constants stay pinned to the verified first-party careers page and public Strapi job-openings API', async () => {
-  const brihaspathi = await loadBrihaspathiModule()
-
-  assert.equal(brihaspathi.SOURCE, 'brihaspathi')
-  assert.equal(brihaspathi.COMPANY, 'Brihaspathi Technologies Limited')
-  assert.equal(brihaspathi.CAREERS_URL, 'https://www.brihaspathi.com/careers')
-  assert.equal(
-    brihaspathi.JOBS_API_URL,
-    'https://www.brihaspathi.com/strapi/api/job-openings?sort=createdAt:desc&pagination[pageSize]=100&filters[isActive][$eq]=true',
-  )
-  assert.equal(brihaspathi.hasOfficialCareersSignal(officialCareersHtml), true)
+import {readFileSync} from 'node:fs'
+import {createBrihaspathiScraper,extractJobsFromPayload,hasOfficialCareersSignal,hasZeroVacanciesSignal,CAREERS_URL,JOBS_API_URL} from '../../scraper/brihaspathi/script.js'
+import {CLIENT_URL} from '../../scraper/brihaspathi/native.js'
+import {createCatalogScraper,getScraperCatalog} from '../providers/index.js'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const fixture=name=>readFileSync(new URL('../../scraper/brihaspathi/fixtures/'+name,import.meta.url),'utf8')
+const inputs=new Map([[CAREERS_URL,fixture('careers.html')],[CLIENT_URL,fixture('careers-client.js')],[JOBS_API_URL,fixture('jobs.json')]])
+const fetchPage=async url=>({status:200,url:url===CAREERS_URL?'https://brihaspathi.com/careers':url,headers:new Headers(),text:async()=>inputs.get(url)})
+test('native parser does not promote Hyderabad or a CMS date into India job evidence',()=>{
+ assert.deepEqual(extractJobsFromPayload(JSON.parse(fixture('jobs.json'))),[])
+ assert.equal(hasOfficialCareersSignal(fixture('careers.html'),fixture('careers-client.js')),true)
+ assert.equal(hasZeroVacanciesSignal('Vacancies 0'),false)
 })
-
-test('Brihaspathi accepts the current first-party careers-page shell', async () => {
-  const brihaspathi = await loadBrihaspathiModule()
-
-  const careersHtml = `
-    <!doctype html>
-    <html lang="en">
-      <head><title>Brihaspathi technologies limited</title></head>
-      <body>
-        <main>
-          <h1>Careers at Brihaspathi Technologies, Hyderabad</h1>
-          <p>Build what the country runs on.</p>
-        </main>
-      </body>
-    </html>
-  `
-
-  assert.equal(brihaspathi.hasOfficialCareersSignal(careersHtml), true)
+test('registered factory retains the native unknown-country candidate and partial inventory',async()=>{
+ const provider=getScraperCatalog().find(p=>p.source==='brihaspathi')
+ let native
+ const jobs=await createCatalogScraper(provider).run({fetchPage,requestIntervalMs:0,onNativeEvidence:value=>{native=value}})
+ assert.equal(jobs.length,0)
+ assert.equal(native.records[0].jobId,'33')
+ assert.equal(native.records[0].sourceDetailComplete,false)
+ assert.equal(native.unknownCountryRecords,1)
+ assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+ assert.equal(readInventoryEvidence(jobs).status,'coverage-gap')
 })
-
-test('Brihaspathi ignores public API placeholder records', async () => {
-  const brihaspathi = await loadBrihaspathiModule()
-
-  assert.deepEqual(brihaspathi.extractJobsFromPayload({
-    data: [{
-      id: 29,
-      title: 'bwhhbdwhd',
-      location: 'wdbdhbwdbhw',
-    }],
-  }), [])
-})
-
-test('Brihaspathi run returns an honest zero-job result only while the verified official careers page and public API remain empty', async () => {
-  const brihaspathi = await loadBrihaspathiModule()
-  const requested = []
-
-  const jobs = await brihaspathi.createBrihaspathiScraper().run({
-    fetchText: async (url) => {
-      requested.push({ type: 'text', url })
-      return officialCareersHtml
-    },
-    fetchJson: async (url, options = {}) => {
-      requested.push({ type: 'json', url, options })
-      return emptyPayload
-    },
-  })
-
-  assert.deepEqual(requested, [
-    {
-      type: 'text',
-      url: 'https://www.brihaspathi.com/careers',
-    },
-  ])
-  assert.deepEqual(jobs, [])
-})
-
-test('Brihaspathi fails closed when the verified careers page shell or public Strapi payload changes materially', async () => {
-  const brihaspathi = await loadBrihaspathiModule()
-
-  await assert.rejects(
-    brihaspathi.createBrihaspathiScraper().run({
-      fetchText: async () => '<html><body><h1>Jobs</h1></body></html>',
-      fetchJson: async () => emptyPayload,
-    }),
-    /verified official brihaspathi careers surface/i,
-  )
-
-  await assert.rejects(
-    brihaspathi.createBrihaspathiScraper().run({
-      fetchText: async () => activeCareersHtml,
-      fetchJson: async () => ({ data: null }),
-    }),
-    /verified brihaspathi public job-openings api/i,
-  )
+test('source factory merges defaults with caller options without persistence',async()=>{
+ const jobs=await createBrihaspathiScraper({fetchPage,requestIntervalMs:0}).run({maxJobs:0})
+ assert.equal(jobs.length,0)
+ assert.equal(jobs.nativeInventoryEvidence.receipts.length,6)
 })

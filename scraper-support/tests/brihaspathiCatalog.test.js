@@ -14,14 +14,17 @@ test('Brihaspathi is registered on the verified first-party careers page and pub
   assert.equal(provider.companyCareerPage, 'https://www.brihaspathi.com/careers')
   assert.equal(provider.atsPlatform, 'first-party-strapi-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-careers-page-plus-public-strapi-api')
+  assert.equal(provider.paginationStrategy, 'reviewed-native-first-100-ceiling-and-full-closing-snapshot-before-cap')
   assert.equal(
     provider.extractionStrategy,
-    'official-careers-page+public-strapi-job-openings-api',
+    'current-native-react-client+public-strapi-role-cards+native-modal-identity',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'brihaspathi.com')
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
+  assert.equal(provider.verifiedIndiaJobCount, null)
   assert.match(provider.modulePath, /brihaspathi[\\/]script\.js$/i)
   assert.equal(companyAliases.Brihaspathi, 'brihaspathi')
 })

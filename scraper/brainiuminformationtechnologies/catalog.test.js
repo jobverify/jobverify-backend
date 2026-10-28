@@ -14,9 +14,9 @@ test('Brainium Information Technologies provider metadata captures the verified 
   assert.equal(provider.officialCareersPageUrl, 'https://www.brainiuminfotech.com/careers')
   assert.equal(provider.atsPlatform, 'first-party-html-open-roles')
   assert.equal(provider.companyDomain, 'brainiuminfotech.com')
-  assert.equal(provider.verifiedOn, '2026-08-14')
-  assert.match(provider.extractionStrategy, /verified-cloudflare-blocked-empty/i)
-  assert.match(provider.verifiedSurfaceSummary, /Attention Required! \| Cloudflare/i)
+  assert.equal(provider.verifiedOn, '2026-10-27')
+  assert.match(provider.extractionStrategy, /access-denial-is-not-empty/i)
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 403/i)
   assert.equal(companyAliases.Brainium, 'brainiuminformationtechnologies')
 })
 

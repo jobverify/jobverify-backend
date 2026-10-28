@@ -16,9 +16,10 @@ test('getScraperCatalog includes Ather Energy as an official-careers scraper', (
   assert.equal(provider.companyCareerPage, 'https://careers.atherenergy.com/jobs')
   assert.equal(provider.companyDomain, 'careers.atherenergy.com')
   assert.equal(provider.parser, 'custom-script')
-  assert.equal(provider.verifiedOn, '2026-08-13')
-  assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-10-27')
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 403/i)
+  assert.match(provider.verifiedSurfaceSummary, /inventory.*unknown/i)
+  assert.equal(provider.sourceScopeComplete, false)
   assert.match(provider.modulePath, /atherenergy[\\/]script\.js$/i)
 })
 

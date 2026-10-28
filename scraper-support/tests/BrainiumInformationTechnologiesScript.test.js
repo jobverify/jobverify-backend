@@ -157,11 +157,11 @@ test('Brainium Information Technologies run returns structured jobs from the ver
   assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
-test('Brainium Information Technologies returns [] when both first-party routes match the verified Cloudflare-blocked shell', async () => {
+test('Brainium Information Technologies stops at the first blocked careers response with unknown inventory', async () => {
   const brainium = await loadBrainiumModule()
   const requestedUrls = []
 
-  const jobs = await brainium.createBrainiumInformationTechnologiesScraper({
+  await assert.rejects(brainium.createBrainiumInformationTechnologiesScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
     fetchPage: async (url) => {
@@ -180,14 +180,12 @@ test('Brainium Information Technologies returns [] when both first-party routes 
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), /access denied.*HTTP 403.*inventory unknown/i)
 
   assert.equal(brainium.hasCloudflareBlockSignal(blockedPageHtml), true)
   assert.deepEqual(requestedUrls, [
     brainium.OFFICIAL_CAREERS_URL,
-    brainium.OFFICIAL_HOMEPAGE_URL,
   ])
-  assert.deepEqual(jobs, [])
 })
 
 test('Brainium Information Technologies fails closed when the verified careers surface no longer exposes open roles', async () => {
@@ -227,6 +225,6 @@ test('Brainium Information Technologies fails closed when the verified careers s
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /verified public or fully blocked surface/i,
+    /access denied.*HTTP 403.*inventory unknown/i,
   )
 })

@@ -1,4 +1,4 @@
-﻿{
+{
   "source": "talentsprint",
   "companyName": "TalentSprint",
   "adapter": "script",
@@ -9,15 +9,33 @@
   "darwinboxOrigin": "https://talentsprint.darwinbox.in",
   "darwinboxCompanyId": "main",
   "publicAllJobsUrl": "https://talentsprint.darwinbox.in/ms/candidatev2/main/careers/allJobs",
-  "atsPlatform": "darwinbox-public-listing-api-http-500-sentinel",
+  "atsPlatform": "darwinbox",
   "countryFilter": "India",
-  "paginationStrategy": "fail-closed-sentinel",
-  "extractionStrategy": "verified-first-party-careers-page+official-darwinbox-handoff+public-darwinbox-listing-api-http-500-sentinel",
+  "paginationStrategy": "unresolved-current-native-client-and-listing-unavailable",
+  "extractionStrategy": "current-active-first-party-handoff+public-get-health-guard;positive-native-inventory-and-details-unresolved",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
   "companyDomain": "talentsprint.com",
-  "verifiedOn": "2026-08-05",
-  "verifiedSurfaceSummary": "Verified on Wednesday, August 5, 2026 that https://talentsprint.com/careers/ remains the live first-party TalentSprint careers page and exposes View Job Openings to the public TalentSprint Darwinbox handoff at https://talentsprint.darwinbox.in/ms/candidate/careers. The public Darwinbox listing API POST at /ms/candidateapi/job/alljobs?companyId=main returned HTTP 500 in both the August 1 dry run and the August 5 browser-session probe, so this provider is a fail-closed sentinel that returns zero jobs while continuing to validate the first-party page and handoff.",
-  "dryRunFile": "talentsprint/jobs.json"
+  "verifiedOn": null,
+  "verifiedSurfaceSummary": "Current TalentSprint corporate careers page at https://talentsprint.com/careers/ visibly binds https://talentsprint.darwinbox.in/ms/candidate/careers. Fresh strict-TLS anonymous browser observation on 2026-10-26 found the linked handoff and v2 allJobs pages blank with no active client or inventory requests. The known public listing GET returned HTTP 500 with Error while getting tenant info. The source guard now fetches current public surfaces and attaches explicit coverage-gap evidence; this is guard hardening, not implemented or recovered inventory/detail extraction. Public job counts, India counts, original dates and requisitions are unknown. No current client proves a read-only search POST. No absence proof or lifecycle cleanup is authorized.",
+  "dryRunFile": "talentsprint/jobs.json",
+  "publicListingGetUrl": "https://talentsprint.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main",
+  "verifiedAt": null,
+  "verifiedInventoryStatus": "coverage-gap",
+  "zeroResultPolicy": "coverage-gap",
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "sourceScopeComplete": false,
+  "lifecycleCleanupAllowed": false,
+  "sourceExtractionImplemented": false,
+  "sourceGuardHardened": true,
+  "sourceStatus": "partial-unavailable",
+  "backfillMode": "live-guard-only",
+  "bindingEvidence": {
+    "verified": true,
+    "officialURL": "https://talentsprint.com/careers/",
+    "officialCareersHandoffURL": "https://talentsprint.darwinbox.in/ms/candidate/careers",
+    "observedAt": "2026-10-26T19:37:57.775Z",
+    "officialBodySha256": "34145ddde1d455ca5d09f11787d1f342e2a73cc453479d98514bae16cd53e171"
+  }
 }
-

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+        <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <link href="https://cdn.kekastatic.net/shared/icons/1.0.16/keka-icons.css" rel="stylesheet"/>
+                <link href="https://cdn.kekastatic.net/shared/careers-ui/0.0.3/dist/css/careers-ui.min.css" rel="stylesheet"/>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700&family=Montserrat:wght@100;200;300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+                <script>
+                        window.khConfig =
+                            {
+                                identifier: '161570d3-d2be-4e8c-b233-d006f70cd371',domain: 'https://openfinancial.keka.com/careers/',targetContainer: '#khembedjobs'}</script> <script src="https://openfinancial.keka.com/careers/api/embedjobs/js/161570d3-d2be-4e8c-b233-d006f70cd371" defer=""></script>
+          <script>
+            
+        const imageContainers = document.querySelectorAll('.js-closed-slider');
+        imageContainers.forEach(imageContainer => {
+            for (let i = 0; i < 2; i++) {
+                const images = imageContainer.querySelectorAll('.js-closed-slider-wrapper');
+                images.forEach(image => {
+                    const clone = image.cloneNode(true);
+                    imageContainer.appendChild(clone);
+                });
+            }
+        });
+    
+            
+        const imgElements = document.querySelectorAll(".js-image-content");
+        const lastImgElement = imgElements[imgElements.length - 1];
+        imgElements.forEach(imgElement => {
+            imgElement.addEventListener("mouseover", function () {
+                if (imgElement !== lastImgElement) {
+                    imgElement.classList.add("kch-on-hover-image");
+                    lastImgElement.classList.remove("kch-on-hover-image");
+                }
+            });
+
+            imgElement.addEventListener("mouseleave", function () {
+                if (imgElement !== lastImgElement) {
+                    lastImgElement.classList.add("kch-on-hover-image");
+                    imgElement.classList.remove("kch-on-hover-image");
+                }
+            });
+        })
+            
+        const menuToggle = document.querySelector('.kch-menu-toggle');
+        const menu = document.querySelector('.kch-nav-list');
+
+        menuToggle?.addEventListener('click', () => {
+            menu?.classList.toggle('active');
+        });
+
+        const navbarNavigation = document.querySelector('.kch-navbar');
+        navbarNavigation?.addEventListener('click', function(event) {
+            if(event.target.tagName === 'A') {
+              event.preventDefault();
+              if(event.target.href) {
+                  window.open(event.target.href, '_blank');
+              }
+            }
+        });
+
+        const navbarLogoNavigation = document.querySelector('.kch-company-logo');
+        navbarLogoNavigation?.addEventListener('click', function(event) {
+            const href = navbarLogoNavigation.getAttribute('href');
+            if (href) {
+                event.preventDefault();
+                if(href) {
+                    window.open(href, '_blank');
+                }
+            }
+        });
+    
+            
+        let slidePosition = 0;
+        const sliderItem = document.querySelectorAll('.js-slider-item');
+        const totalSlider = sliderItem.length;
+        
+        updatePosition = (previousSlidePosition) => {
+            dots.forEach(dot => dot.classList.remove('js-dot-active', 'kch-dot-active' ));
+            dots[slidePosition]?.classList.add('js-dot-active', 'kch-dot-active' );
+        
+            const sliderImage = document.querySelectorAll('.js-slider-image');
+            sliderImage.forEach(image => {
+                image.classList.remove('js-image-fade-in', 'kch-image-fade-in');
+                image.classList.add('js-image-fade-out', 'kch-image-fade-out');
+            })
+            if(sliderImage[slidePosition]) {
+                sliderImage[slidePosition].classList.remove('js-image-fade-out', 'kch-image-fade-out');
+                sliderImage[slidePosition].classList.add('js-image-fade-in', 'kch-image-fade-in');
+            }
+            positionSlider();
+            slideAnimation(previousSlidePosition);
+        }
+        
+        slideAnimation = (previousSlidePosition) => {
+            sliderItem.forEach((item) => {
+                const classList = item.classList;
+                classList.remove('js-slide-left', 'kch-slide-left', 'js-slide-right', 'kch-slide-right','js-slide-left-to-right', 'kch-slide-left-to-right', 'js-slide-right-to-left', 'kch-slide-right-to-left');
+            })
+            
+            if (previousSlidePosition === slidePosition) return;
+            else if(previousSlidePosition > slidePosition) {
+                sliderItem[slidePosition]?.classList.add('js-slide-left-to-right', 'kch-slide-left-to-right');
+                sliderItem[previousSlidePosition]?.classList.add('js-slide-right', 'kch-slide-right');
+            } else if(previousSlidePosition < slidePosition) {
+                sliderItem[slidePosition]?.classList.add('js-slide-right-to-left', 'kch-slide-right-to-left');
+                sliderItem[previousSlidePosition]?.classList.add('js-slide-left', 'kch-slide-left');
+            }
+        }
+        
+        positionSlider = () => {
+            if (sliderItem.length > 1 ){
+                sliderItem.forEach((item, index) => {
+                    if(slidePosition == index) {
+                        item.style.transform = 'translateX(0%)';
+                    } else {
+                        item.style.transform = index < slidePosition ? 'translateX(-100%)' : 'translateX(100%)';
+                    }
+                });
+            }
+            else if (dotContainer){
+                dotContainer.style.display = 'none';
+            }
+        }
+        
+        const dotContainer = document.querySelector('.js-slider-indicator');
+        
+        sliderItem.forEach((slide) => {
+            const dot = document.createElement('li');
+            dot.classList.add('js-indicator-dot', 'kch-indicator-dot');
+            dotContainer?.appendChild(dot);
+        });
+        
+        const dots = document.querySelectorAll('.js-indicator-dot');
+        dots[slidePosition]?.classList.add('js-dot-active', 'kch-dot-active');
+        
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', function () {
+                let previousSlidePosition = slidePosition;
+                slidePosition = index;
+                updatePosition(previousSlidePosition);
+            });
+        });
+        
+        updatePosition();
+
+        const startCarousel = () => {
+            if (totalSlider > 1) {
+                setInterval(() => {
+                    let previousSlidePosition = slidePosition;
+                    slidePosition = (slidePosition + 1) % totalSlider;
+                    updatePosition(previousSlidePosition);
+                }, 15000);
+            } 
+        };
+          
+        startCarousel();
+        
+            
+        const socialMediaNavigation = document.querySelector('.kch-social-media-block');
+        socialMediaNavigation?.addEventListener('click', function(event) {
+            const socialMediaLink = event.target.closest('a');
+            if (socialMediaLink && socialMediaLink.href) {
+                event.preventDefault();
+                window.open(socialMediaLink.href, '_blank');
+            }
+        });
+    
+            
+        let currentyear = new Date().getFullYear();
+        if (document.getElementById("currentyear")) {
+            document.getElementById("currentyear").innerText = currentyear;
+        }
+    
+          </script>
+          
+                <style>
+                    * { box-sizing: border-box; } body {margin: 0;}body{--font-family:Open sans;--brand-color:#663399;--heading-color:#101828;--description-color:#667085;--background-color:#ffffff;--font-size-increment:8px;--font-size:16px;}
+                    .kch-header-title-max-height {
+                        max-height: 300px;
+                    }
+
+                    .kch-header-min-height {
+                        min-height: 320px;
+                    }
+                
+                    @media(max-width: 650px) {
+                        .kch-header-title-max-height {
+                            max-height: 130px;
+                        }
+                        
+                        .kch-header-min-height {
+                            min-height: 200px;
+                        }
+
+                        .kch-testimony-content-max-height {
+                            height: 150px;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            white-space: normal;
+                            text-align: justify;
+                        }
+                    }
+                </style>
+            </head>
+            <body><div block-name="navbar-block" class="kch-section kch-navbar" style="background-color: ">
+                    <div class="kch-navbar-view">
+                        <div class="kch-min-h-50 kch-min-w-350 kch-d-flex kch-justify-content-between kch-align-items-center">
+                            <div class="kch-my-8">
+                                <a class="kch-company-logo kch-d-flex" href="">
+                                    <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/1421592ed74840ac880388a3e602575a.png" alt="logo" height="50px" attr-name="block-image" class="kch-max-h-400 kch-object-fit-cover">
+                                </a>
+                                <div attr="short-name" class="kch-text-heading kch-heading-color kch-mx-0 kch-d-none">Open Financial Technologies</div>
+                            </div>
+                            <div class="kch-d-none">
+                                <i class="ki ki-menu ki-xl"></i>
+                            </div>
+                        </div>
+                        <nav>
+                            
+        <ul class="kch-d-flex kch-nav-list">
+            
+        </ul>
+        
+                        </nav>
+                    </div>
+                </div>
+            <div style="background-image: url(/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/b45a0feacd144ab8a26dee55d4599904.png); background-size: cover; background-repeat: no-repeat; background-position: center; min-width: 350px; max-height: 480px; ; aspect-ratio: 16/9;" block-name="header-block" attr-name="content-position" position="start" class="kch-section kch-header-section kch-d-flex kch-justify-content-start kch-w-100 kch-mb-30 kch-position-sticky kch-px-32">
+                <div class="kch-mb-8 kch-align-self-center">
+                    <div attr-name="title" class="kch-d-flex kch-justify-content-start kch-mb-12 kch-max-w-400 kch-heading-color kch-text-heading kch-font-weight-700 kch-text-start kch-text-center-sm kch-overflow-hidden kch-header-title-max-height">Come, join us at Open!</div>
+                    <div class="kch-d-flex kch-justify-content-start kch-text-center-sm">
+                        <div class="kch-mb-8 kch-d-flex kch-justify-content-center ">
+                            <p attr-name="btn-link" class="kch-btn kch-btn-primary kch-link" onclick="document.getElementById('kh-jobs-section').scrollIntoView({ behavior: 'smooth' })">Browse all jobs</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <div block-name="analytics-block" class="kch-section kch-analytics-block kch-mb-30 kch-min-w-300 kch-d-flex kch-justify-content-center">
+            <div class="kch-analytics-container kch-p-12 kch-flex-wrap kch-max-w-1280">
+                <div class="kch-justify-content-center kch-flex-wrap kch-order-0">
+                    
+        <div attr-name="statistics-block" class="kch-py-16">
+            <div class="kch-text-center kch-mx-16 kch-heading-color">
+                <h2 attr-name="title" class="kch-text-heading kch-heading-color kch-font-weight-600 kch-my-4 kch-max-w-400 kch-text-center">400+</h2>
+            </div>
+            <div class="kch-text-center kch-mx-16 kch-description-color">
+                <p class="kch-text-description kch-d-flex kch-justify-content-center kch-description-color kch-my-4 kch-mb-8 kch-w-100">Openers</p>
+            </div>
+        </div>
+        
+        <div attr-name="statistics-block" class="kch-py-16">
+            <div class="kch-text-center kch-mx-16 kch-heading-color">
+                <h2 attr-name="title" class="kch-text-heading kch-heading-color kch-font-weight-600 kch-my-4 kch-max-w-400 kch-text-center">15+</h2>
+            </div>
+            <div class="kch-text-center kch-mx-16 kch-description-color">
+                <p class="kch-text-description kch-d-flex kch-justify-content-center kch-description-color kch-my-4 kch-mb-8 kch-w-100">Departments</p>
+            </div>
+        </div>
+        
+        <div attr-name="statistics-block" class="kch-py-16">
+            <div class="kch-text-center kch-mx-16 kch-heading-color">
+                <h2 attr-name="title" class="kch-text-heading kch-heading-color kch-font-weight-600 kch-my-4 kch-max-w-400 kch-text-center">10+</h2>
+            </div>
+            <div class="kch-text-center kch-mx-16 kch-description-color">
+                <p class="kch-text-description kch-d-flex kch-justify-content-center kch-description-color kch-my-4 kch-mb-8 kch-w-100">Locations</p>
+            </div>
+        </div>
+        
+        <div attr-name="statistics-block" class="kch-py-16">
+            <div class="kch-text-center kch-mx-16 kch-heading-color">
+                <h2 attr-name="title" class="kch-text-heading kch-heading-color kch-font-weight-600 kch-my-4 kch-max-w-400 kch-text-center">Bengaluru</h2>
+            </div>
+            <div class="kch-text-center kch-mx-16 kch-description-color">
+                <p class="kch-text-description kch-d-flex kch-justify-content-center kch-description-color kch-my-4 kch-mb-8 kch-w-100">Headquarters</p>
+            </div>
+        </div>
+        
+                </div>
+                <div class="kch-d-none" attr-name="image-position">
+                    <img src="" alt="" width="" attr-name="block-image" class="kch-rounded-20 kch-max-h-400 kch-object-fit-cover">
+                </div>
+            </div>
+        </div>
+        
+            <div block-name="photos-block" display-style="album">
+                <div class="kch-py-40">
+                    <div class="kch-max-h-400 kch-closed-slider js-closed-slider">
+                        <div class="kch-max-h-400 kch-closed-slider-wrapper js-closed-slider-wrapper">
+                            <div class="kch-max-h-400 kch-slider-image-cover js-slider-image-cover">
+                                <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/8f7ad0464db0465380c7863f2ec96ba3.JPG" alt="office 2.JPG" attr-name="block-image" class="kch-rounded-10">
+                            </div>
+                            <div class="kch-max-h-400">
+                                <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/8da07195fee5421f968495e29a08d73c.JPG" alt="Office 1.JPG" attr-name="block-image" class="kch-rounded-10 kch-closed-slider-image js-closed-slider-image">
+                                <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/9421e8c565e14b4381063a581d048ea1.png" alt="Screenshot 2024-08-12 at 5.13.36?PM.png" attr-name="block-image" class="kch-rounded-10 kch-closed-slider-image js-closed-slider-image">
+                            </div>
+                            <div class="kch-max-h-400 kch-slider-image-cover js-slider-image-cover">
+                                <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/d9e8817df25b4b009815be1a41b6add1.jpg" alt="Screenshot 2024-08-12 at 5.14.17?PM.jpg" attr-name="block-image" class="kch-rounded-10">
+                            </div>
+                            <div class="kch-max-h-400">
+                                <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/c5c97806fd7e4a1bb323f96560b91401.jpg" alt="0F9A9208.jpg" attr-name="block-image" class="kch-rounded-10 kch-closed-slider-image js-closed-slider-image">
+                                <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/3f7219346aa2442e8c3c901ef29553fb.png" alt="5 (1).png" attr-name="block-image" class="kch-rounded-10 kch-closed-slider-image js-closed-slider-image">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <div block-name="culture-and-values-block" class="kch-cultures-and-values-block kch-mb-30 kch-min-w-350 kch-d-flex kch-justify-content-center">
+            <div class="kch-culture-value-container kch-p-12 kch-flex-wrap kch-max-w-1280">
+                <div class=" kch-mb-4 kch-order-0">
+                    <h2 attr-name="title" class="kch-text-heading kch-text-center-sm kch-heading-color kch-px-12 kch-font-weight-600 kch-my-4">Our Values</h2>
+                        <small attr-name="description" class="kch-d-flex kch-text-center-sm kch-px-12 kch-justify-content-start kch-my-4 kch-pb-30 kch-max-w-700 kch-text-description">
+                            
+                        </small>
+                    <div class="kch-flex-wrap kch-justify-content-center kch-gap-24">
+                        
+        <div attr-name="culture-value-card" class="kch-max-w-200 kch-p-12 kch-border-radius-6">
+            <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/d7d763947dc74bfea3b8d959a5d7e9ac.png" alt="culture-value-image" attr-name="culture-value-image" width="40" height="40">
+            <p attr-name="culture-value-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Self Starters</p>
+            <small attr-name="culture-value-description">We?re self-starters. We challenge convention &amp; are not afraid to fail.</small>
+        </div>
+        <div attr-name="culture-value-card" class="kch-max-w-200 kch-p-12 kch-border-radius-6">
+            <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/edd79e5a6fdb4c42a5e4a9dfe05a5731.png" alt="culture-value-image" attr-name="culture-value-image" width="40" height="40">
+            <p attr-name="culture-value-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Never Settlers</p>
+            <small attr-name="culture-value-description">We never settle. We?re persistent &amp; will knock down walls if we have to.</small>
+        </div>
+        <div attr-name="culture-value-card" class="kch-max-w-200 kch-p-12 kch-border-radius-6">
+            <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/0981c01b544d4ec0bdba0591d5966e25.png" alt="culture-value-image" attr-name="culture-value-image" width="40" height="40">
+            <p attr-name="culture-value-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Curious Learners</p>
+            <small attr-name="culture-value-description">We're a curious learning bunch,this way we don't have to reinvent the wheel always.</small>
+        </div>
+        <div attr-name="culture-value-card" class="kch-max-w-200 kch-p-12 kch-border-radius-6">
+            <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/a1bdae37e2da489fa05de91df1b781e5.png" alt="culture-value-image" attr-name="culture-value-image" width="40" height="40">
+            <p attr-name="culture-value-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Authentic Self</p>
+            <small attr-name="culture-value-description">We love being our authentic self. And are true to our brand, mission &amp; values.</small>
+        </div>
+        <div attr-name="culture-value-card" class="kch-max-w-200 kch-p-12 kch-border-radius-6">
+            <img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/c0101e70d6304d81b3d2593b8577de0a.png" alt="culture-value-image" attr-name="culture-value-image" width="40" height="40">
+            <p attr-name="culture-value-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">In this Together</p>
+            <small attr-name="culture-value-description">We're in this together And are always on the lookout for one another</small>
+        </div>
+                    </div>
+                </div>
+                <div attr-name="content-position" position="end" class="kch-d-none">
+                    <img src="" alt="" width="" attr-name="block-image" class="kch-rounded-20 kch-max-h-400 kch-object-fit-cover">
+                </div>
+            </div>
+        </div>
+        
+        <div block-name="image-with-text-block" class="kch-mb-30 kch-min-w-350 kch-d-flex kch-justify-content-center">
+            <div class="kch-d-flex kch-max-w-1280 kch-align-items-center kch-p-12 kch-flex-wrap kch-gap-16 kch-justify-content-center">
+                <div class="kch-d-none kch-order-1">
+                    <img src="" alt="default-kcp-image" width="320px" attr-name="block-image" class="kch-rounded-20 kch-max-h-400 kch-object-fit-cover">
+                </div>
+                <div class="kch-d-none kch-order-1">
+                    <div class="ki ki-cloud-arrow-up kch-image-upload kch-mb-12"></div>
+                    <small class="kch-text-primary kch-my-0">Upload Image</small>
+                    <small class="kch-description-color kch-text-center kch-my-8">Supported file formats include PNG, JPG, and SVG (5MB max)</small>
+                </div>
+                <div attr-name="content-position" position="center" class="kch-d-flex kch-flex-column kch-align-items-center kch-p-12 kch-text-center-sm kch-justify-content-center">
+                    <div class="kch-text-center-sm kch-w-100 kch-d-flex kch-justify-content-center">
+                        <h2 attr-name="title" class="kch-text-heading kch-heading-color kch-font-weight-600 kch-my-4 kch-max-w-400 kch-text-center">Meet the Founders</h2>
+                    </div>
+                    <div class="kch-min-w-300 kch-max-w-400 kch-text-content-width kch-d-flex kch-align-items-center kch-justify-content-center">
+                        <p attr-name="description" class="kch-text-description kch-text-center-sm kch-d-flex kch-description-color kch-my-4 kch-mb-8 kch-w-100 kch-justify-content-center"></p>
+                    </div>
+                    <div class="kch-text-center-sm kch-mb-8 kch-d-flex kch-w-100 kch-max-w-350 kch-justify-content-center kch-d-none">
+                        <p attr-name="btn-link" class="kch-btn kch-btn-primary kch-link" onclick="document.getElementById('kh-jobs-section').scrollIntoView({ behavior: 'smooth' })"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+            <div block-name="photos-block" display-style="accordion" class="kch-d-flex kch-justify-content-center">
+                <div class="kch-d-flex kch-flex-wrap kch-max-w-1280 kch-align-items-center kch-justify-content-center kch-gap-16 kch-py-40">
+                    <div class="kch-d-flex kch-align-items-center kch-justify-content-center kch-gap-12 kch-max-h-400 kch-image-hover-container js-image-hover-container">
+                        <div class="kch-image-content js-image-content kch-h-350"><img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/840280df7e014b5585e422b39ad9a8c4.png" alt="Ajeesh_.png" attr-name="block-image" class="kch-rounded-20"></div>
+                        <div class="kch-image-content js-image-content kch-h-350"><img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/b39bc0ef93e24f5f9eed86444b7131b7.png" alt="Deena_.png" attr-name="block-image" class="kch-rounded-20"></div>
+                        <div class="kch-image-content js-image-content kch-h-350"><img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/12a58f1cb1d943298eb6466726f8db43.png" alt="Mabel_.png" attr-name="block-image" class="kch-rounded-20"></div>
+                        <div class="kch-image-content js-image-content kch-h-350"><img src="/ats/documents/161570d3-d2be-4e8c-b233-d006f70cd371/careerportal/7fedfeb097fb47e5a82e24cd9f3eecf0.png" alt="Anish_.png" attr-name="block-image" class="kch-rounded-20"></div>
+                    </div>
+                </div>
+            </div>
+        <div class="kch-section kch-benefits kch-justify-content-center kch-d-flex" block-name="benefits-block">
+            <div class="kch-mb-30 kch-max-w-1280">
+                <div class="kch-mb-30 kch-text-center">
+                    <p attr-name="benefit-title" class="kch-text-heading kch-heading-color kch-font-weight-600 kch-my-0 kch-mb-8">Benefits</p>
+                    <p attr-name="benefit-description" class="kch-text-description kch-description-color kch-font-weight-600 kch-mt-0">Our people make us who we are. We provide what they need</p>
+                </div>
+                <div class="kch-d-flex kch-justify-content-center">
+                    <div class="kch-benefit-container kch-justify-content-center kch-pb-12">
+                        
+        <div attr-name="benefit-card" class="kch-w-150 kch-p-12 kch-bg-secondary kch-border-radius-6">
+            <span attr-name="benefit-icon" class="ki ki-xxl ki-briefcase"></span>
+            <p attr-name="benefit-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Medical Insurance</p>
+            <small attr-name="benefit-description" class="kch-description-color"></small>
+        </div>
+        <div attr-name="benefit-card" class="kch-w-150 kch-p-12 kch-bg-secondary kch-border-radius-6">
+            <span attr-name="benefit-icon" class="ki ki-xxl ki-meditation"></span>
+            <p attr-name="benefit-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Mental wellbeing</p>
+            <small attr-name="benefit-description" class="kch-description-color"></small>
+        </div>
+        <div attr-name="benefit-card" class="kch-w-150 kch-p-12 kch-bg-secondary kch-border-radius-6">
+            <span attr-name="benefit-icon" class="ki ki-xxl ki-baby-carriage"></span>
+            <p attr-name="benefit-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Parental leave</p>
+            <small attr-name="benefit-description" class="kch-description-color"></small>
+        </div>
+        <div attr-name="benefit-card" class="kch-w-150 kch-p-12 kch-bg-secondary kch-border-radius-6">
+            <span attr-name="benefit-icon" class="ki ki-xxl ki-money"></span>
+            <p attr-name="benefit-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Competitive Salary</p>
+            <small attr-name="benefit-description" class="kch-description-color"></small>
+        </div>
+        <div attr-name="benefit-card" class="kch-w-150 kch-p-12 kch-bg-secondary kch-border-radius-6">
+            <span attr-name="benefit-icon" class="ki ki-xxl ki-dumbbell"></span>
+            <p attr-name="benefit-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Fitness Memberships</p>
+            <small attr-name="benefit-description" class="kch-description-color"></small>
+        </div>
+        <div attr-name="benefit-card" class="kch-w-150 kch-p-12 kch-bg-secondary kch-border-radius-6">
+            <span attr-name="benefit-icon" class="ki ki-xxl ki-trophy"></span>
+            <p attr-name="benefit-name" class="kch-text-description kch-heading-color kch-font-weight-600 kch-my-0">Recognition</p>
+            <small attr-name="benefit-description" class="kch-description-color"></small>
+        </div>
+                    </div>
+                </div>
+            </div>
+        </div><div class="kch-jobs-bg-color">
+                        <div id="kh-jobs-section" class="kch-job-container kch-section kch-p-30 kch-max-w-1280 kch-rounded-10">
+                            <div class="kch-d-flex kch-align-items-center kch-justify-content-center">
+                                <h2 attr-name="Job-title" class="kch-text-heading kch-font-weight-700 kch-mt-0 kch-mb-12 kch-text-center">Open Positions</h2>
+                            </div>
+                            <div attr-name="job-description" class="kch-text-description kch-text-secondary kch-font-weight-600 kch-text-center kch-mt-0 kch-mb-16"></div>
+                        <div id="khembedjobs"></div>
+                        </div>
+                    </div>
+        <div block-name="footer-block">
+            <div class="kch-section kch-footer kch-d-flex kch-justify-content-center kch-align-items-center kch-py-8 kch-text-small kch-description-color">
+            <i class="ki ki-copyright ki-sm"></i>    
+            <div><span id="currentyear"></span> Keka Hire. Powered by</div>
+                <div>
+                    <img src="https://d2w2i7rp1a0wob.cloudfront.net/static/images/logos/KekaLogoBlack.svg" alt="footer-logo" width="40" style="max-height: auto" attr-name="block-image" class="kch-max-h-400 kch-px-4">
+                </div>
+            </div>
+        </div>
+        </body>
+        </html>

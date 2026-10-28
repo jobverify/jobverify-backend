@@ -13,14 +13,15 @@ export const ACUVATE_SOFTWARE_CATALOG = {
   applyUrl: 'https://acuvate.com/careers/#fill_the_form',
   atsPlatform: 'official-first-party-role-sections',
   countryFilter: 'India',
-  paginationStrategy: 'single-page',
-  extractionStrategy: 'same-page-role-sections',
+  paginationStrategy: 'runtime-advertised-hiring-scope-and-closing-inventory-recheck',
+  extractionStrategy: 'visible-elementor-role-panels+current-client-reveal-contract+exact-worksites+closing-reconciliation',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'acuvate.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-10-27',
+  zeroResultPolicy: 'evidence-required',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://acuvate.com/careers/ was the live first-party Acuvate careers page for the backlog company Acuvate Software, that it publicly exposed same-page role sections including Project Manager, CUX Designer, and Agentic AI Architect in Hyderabad, and that each role used the shared first-party Apply Now handoff at https://acuvate.com/careers/#fill_the_form.',
+    'Current public Acuvate homepage binds to its first-party careers page. Runtime enumerates visible Elementor role sections, validates the advertised native accordion client and shared application target, matches exact current employer worksites for qualified country inference, and reconciles closing scope, membership and every role field. Advertised unavailable locales, unknown countries, changed criteria and caps prevent authoritative totals and cleanup.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

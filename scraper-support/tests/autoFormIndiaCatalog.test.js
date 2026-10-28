@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+globalThis.fetch=()=>{throw Error('OFFLINE AutoForm catalog network tripwire')}
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
@@ -31,28 +32,29 @@ test('AutoForm India local catalog captures the verified first-party careers RSS
   assert.equal(provider.jobsLandingUrl, 'https://careers.autoform.com/en/jobs/')
   assert.equal(provider.jobsRssUrl, 'https://careers.autoform.com/en/jobs.rss')
   assert.equal(provider.companyDomain, 'autoform.com')
-  assert.equal(provider.atsPlatform, 'official-company-careers-rss-feed')
+  assert.equal(provider.atsPlatform, 'official-typo3-native-listing-rss-and-details')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'official-homepage-plus-first-party-careers-home-plus-job-search-plus-rss-feed',
+    'all-advertised-native-listing-pages-next-links-and-closing-recheck',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-first-party-careers-home+verified-job-search+first-party-rss-feed+india-filter',
+    'current-corporate-handoff+native-listing-rss-reconciliation+full-native-details+explicit-role-countries+closing-recheck',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-10-27')
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
   assert.match(provider.modulePath, /autoformindia[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /autoformindia[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 27, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.autoform\.com\/en\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.autoform\.com\/en\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.autoform\.com\/en\/jobs\/job-search\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.autoform\.com\/en\/jobs\.rss/i)
+  assert.match(provider.verifiedSurfaceSummary, /first-party RSS feeds/i)
   assert.match(provider.verifiedSurfaceSummary, /\bIndia\b/i)
-  assert.match(provider.verifiedSurfaceSummary, /no India roles live right now/i)
+  assert.match(provider.verifiedSurfaceSummary, /India absence remain unknown/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'AutoForm India'), false)
 })
 

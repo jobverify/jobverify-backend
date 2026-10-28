@@ -2,6 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { summarizeScraperRun } from '../scraper-support/utils/scraperRunSummary.js';
 
+test('unfinished database persistence is pending work rather than completed or failed execution', () => {
+  const summary = summarizeScraperRun([
+    { success: false, softFailure: true, persistencePending: true, processingComplete: false },
+    { success: true, inserted: 2 },
+    { success: false, softFailure: true, persistencePending: true, classificationPending: true },
+  ]);
+  assert.equal(summary.pendingEstimate, 2);
+  assert.equal(summary.failed, 0);
+});
+
 test('source task outcomes partition the run independently of overlapping legacy warnings', () => {
   const summary = summarizeScraperRun([
     { success: true, inserted: 2, updated: 3, detailHealth: { complete: true },

@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto'
 import { readNativeDocument, decodeNativeEntities, extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
-import { readVisibleNativeDocument } from '../../scraper-support/utils/visibleNativeHtml.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const C = 'https://magnitglobal.com/about/careers', L = 'https://magnitglobal.com/us/en/company/careers.html'
@@ -61,19 +60,30 @@ const readDayforceContext = (html, culture = 'en-US', postingId = null) => {
     && jobQuery.queryKey[1]?.language === culture && String(jobQuery.queryKey[2]?.id) === String(postingId), 'native full posting query identity conflicts')
   return { info, posting: jobQuery.state?.data }
 }
-const ATS = /(?:^|\.)(?:dayforcehcm\.com|careers-page\.com|workable\.com|greenhouse\.io|lever\.co|ashbyhq\.com|smartrecruiters\.com|icims\.com|jobvite\.com|freshteam\.com|darwinbox\.(?:com|in)|zohorecruit\.(?:com|in)|bamboohr\.com|teamtailor\.com|trakstar\.com)$/i
+const ATS = /(?:^|\.)(?:dayforcehcm\.com|careers-page\.com|manatal\.com|myworkdayjobs\.com|myworkdaysite\.com|oraclecloud\.com|successfactors\.(?:com|eu)|workable\.com|greenhouse\.io|lever\.co|ashbyhq\.com|smartrecruiters\.com|icims\.com|jobvite\.com|freshteam\.com|darwinbox\.(?:com|in)|zohorecruit\.(?:com|in)|bamboohr\.com|teamtailor\.com|trakstar\.com)$/i
 const inspectScope = (html, base, reasons, references) => {
   const doc = readNativeDocument(html)
   const frames = node => node.activeFrame ? [node] : node.inert ? [] : node.children.filter(child => typeof child !== 'string').flatMap(frames)
   for (const frame of doc.nodes(n => n.tag === 'root').flatMap(frames)) {
     let media = false
-    try { const url = new URL(frame.attrs.src); media = !Object.hasOwn(frame.attrs, 'srcdoc') && ['www.youtube.com', 'www.youtube-nocookie.com', 'player.vimeo.com'].includes(url.hostname) && /\/(?:embed|video)\//.test(url.pathname) } catch {}
+    try {
+      const url = new URL(frame.attrs.src, base)
+      media = !Object.hasOwn(frame.attrs, 'srcdoc') && ['www.youtube.com', 'www.youtube-nocookie.com', 'player.vimeo.com'].includes(url.hostname) && /\/(?:embed|video)\//.test(url.pathname)
+      if (!Object.hasOwn(frame.attrs, 'srcdoc') && url.protocol === 'https:' && url.hostname === 'cdn.embedly.com' && url.pathname === '/widgets/media.html'
+        && url.searchParams.get('schema') === 'vimeo' && frame.attrs.title === 'Magnit Brand Anthem') {
+        const source = new URL(url.searchParams.get('src')), publicVideo = new URL(url.searchParams.get('url'))
+        media = source.origin === 'https://player.vimeo.com' && /^\/video\/\d+$/.test(source.pathname)
+          && publicVideo.origin === 'https://vimeo.com' && publicVideo.pathname === source.pathname.replace('/video', '')
+      }
+    } catch {}
     if (!media) reasons.add('additional-active-frame-hiring-scope')
   }
   for (const node of doc.nodes(n => n.tag === 'a' && n.attrs.href || n.tag === 'script' && n.attrs.src
     && /^(?:|module|(?:text|application)\/(?:javascript|ecmascript))$/i.test(n.attrs.type || ''))) {
     let url
     try { url = new URL(node.tag === 'script' ? node.attrs.src : node.attrs.href, base) } catch { continue }
+    if (node.tag === 'script' && url.origin === O && url.pathname.startsWith('/_next/static/')) continue
+    if (node.tag === 'script' && [O, 'https://maps.dayforcehcm.com'].includes(url.origin) && url.pathname === '/maps/api/js') continue
     const posting = url.origin === O && url.pathname.match(/^\/(?:[a-z]{2}-[A-Z]{2}\/)?prounlimited\/CANDIDATEPORTAL\/jobs\/(\d+)$/)
     if (posting) { references.dayforce.add(Number(posting[1])); continue }
     const direct = url.origin === new URL(W).origin && url.pathname.match(/^\/eu\/magnitglobal\/jobs\/(\d+)-[a-z0-9-]+$/)
@@ -88,25 +98,84 @@ const inspectScope = (html, base, reasons, references) => {
     if (!hiring) continue
     if ([C, L, D, E, W, J, W + '/'].includes(url.href.replace(/#$/, ''))) continue
     if (url.origin === O && /^\/(?:[a-z]{2}-[A-Z]{2}\/)?prounlimited\/CANDIDATEPORTAL$/.test(url.pathname) && !url.search) continue
-    reasons.add('additional-public-hiring-scope')
+    reasons.add('additional-public-hiring-scope:' + url.origin + url.pathname)
   }
 }
+const readMagnitVisible = html => {
+  // Match the complete static ancestor chain. Reducing '.anti-flicker *' to '*'
+  // or '.home-page .talent-info-section' to the final class hides unrelated
+  // content. Keep this projection source-local; shared captured consumers retain
+  // their existing runtime hashes. Unsupported hiding selectors fail closed.
+  const doc = readNativeDocument(html), roots = doc.nodes(n => n.tag === 'root'), parents = new Map(), styles = []
+  const walk = (node, inactive = false) => {
+    inactive ||= ['template', 'noscript', 'script', 'object'].includes(node.tag)
+    if (node.tag === 'style' && !inactive) styles.push(node.raw || '')
+    for (const child of node.children.filter(child => typeof child !== 'string')) { parents.set(child, node); walk(child, inactive) }
+  }
+  roots.forEach(root => walk(root))
+  const hiding = value => /(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|content-visibility\s*:\s*hidden|opacity\s*:\s*0(?:\.0+)?)(?:\s*!important)?\s*(?:;|$)/i.test(value)
+  const compound = part => {
+    const checks = [], tag = part.match(/^(?:[a-z][\w-]*|\*)/i)?.[0]
+    if (tag) { if (tag !== '*') checks.push(node => node.tag === tag.toLowerCase()); part = part.slice(tag.length) }
+    while (part) {
+      let match
+      if ((match = part.match(/^\.([\w-]+)/))) { const value = match[1]; checks.push(node => cls(node, value)) }
+      else if ((match = part.match(/^#([\w-]+)/))) { const value = match[1]; checks.push(node => node.attrs.id === value) }
+      else if ((match = part.match(/^\[([\w-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]+)))?\]/))) {
+        const key = match[1].toLowerCase(), value = match[2] ?? match[3] ?? match[4]
+        checks.push(node => Object.hasOwn(node.attrs, key) && (value == null || node.attrs[key] === value))
+      } else throw new MagnitIdentityError('unsupported native visibility selector')
+      part = part.slice(match[0].length)
+    }
+    return node => checks.every(check => check(node))
+  }
+  const selectors = styles.flatMap(css => [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]+)\}/g)]
+    .filter(([, , declarations]) => hiding(declarations)).flatMap(([, list]) => list.split(','))).map(selector => {
+      valid(!/[+~:()]/.test(selector), 'unsupported native visibility selector')
+      const tokens = selector.trim().replace(/\s*>\s*/g, ' > ').split(/\s+/)
+      const tests = tokens.map(token => token === '>' ? null : compound(token))
+      const matches = (node, at = tokens.length - 1) => {
+        if (!node || !tests[at]?.(node)) return false
+        if (at === 0) return true
+        const parent = parents.get(node)
+        if (tokens[at - 1] === '>') return matches(parent, at - 2)
+        for (let ancestor = parent; ancestor; ancestor = parents.get(ancestor)) if (matches(ancestor, at - 1)) return true
+        return false
+      }
+      return matches
+    })
+  const project = (node, active = true) => {
+    if (typeof node === 'string') return node
+    active = active && !node.inert && !hiding(node.attrs.style || '') && !selectors.some(matches => matches(node))
+    return { ...node, inert: !active, children: node.children.map(child => project(child, active)) }
+  }
+  const projected = roots.map(root => project(root))
+  return { ...doc, nodes: predicate => projected.flatMap(root => descendants(root, predicate)) }
+}
+const visibleDescription = html => {
+  if (typeof html !== 'string') return null
+  const doc = readMagnitVisible(html), text = doc.text(one(doc.nodes(n => n.tag === 'root'), 'description root'))
+  return extractActiveDescription(text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'))
+}
 const verifyCorporate = html => {
-  const doc = readVisibleNativeDocument(html), head = readNativeDocument(html)
+  const doc = readMagnitVisible(html), head = readNativeDocument(html)
   valid(one(head.nodes(n => n.tag === 'link' && n.attrs.rel === 'canonical'), 'corporate canonical').attrs.href === C
     && /Magnit/.test(doc.text(one(doc.nodes(n => n.tag === 'body'), 'corporate body'))), 'corporate employer identity changed')
-  const regions = ['North America', 'India', 'EMEA', 'UK, Ireland & Netherlands'], expected = [D, D, E, W], bindings = []
+  const regions = ['North America', 'India', 'EMEA', 'UK, Ireland & Netherlands'], expected = [D, E, W, D], bindings = []
+  const headingsRow = one(doc.nodes(n => cls(n, 'columns-2') && cls(n, 'w-row')), 'country heading row')
+  const linksRow = one(doc.nodes(n => cls(n, 'columns-3') && cls(n, 'w-row')), 'country link row')
   const parents = new Map(), walk = node => { for (const child of node.children.filter(child => typeof child !== 'string')) { parents.set(child, node); walk(child) } }
   doc.nodes(n => n.tag === 'root').forEach(walk)
+  valid(parents.get(headingsRow) === parents.get(linksRow), 'country heading/link rows lost their common layout')
+  const siblings = parents.get(headingsRow).children.filter(child => typeof child !== 'string')
+  valid(siblings.indexOf(linksRow) === siblings.indexOf(headingsRow) + 1, 'country heading/link rows are no longer adjacent')
+  const headings = headingsRow.children.filter(child => typeof child !== 'string' && !child.inert && cls(child, 'w-col-3'))
+  const links = linksRow.children.filter(child => typeof child !== 'string' && !child.inert && cls(child, 'w-col-3'))
+  valid(headings.length === 4 && links.length === 4, 'country column counts do not reconcile')
   for (const [index, label] of regions.entries()) {
-    const heading = one(doc.nodes(n => n.tag === 'h6' && doc.text(n) === label), label + ' region')
-    let parent = parents.get(heading), link
-    while (parent && parent.tag !== 'root') {
-      const links = descendants(parent, n => n.tag === 'a' && /^Learn More$/i.test(doc.text(n)))
-      if (links.length) { link = one(links, label + ' careers handoff'); break }
-      parent = parents.get(parent)
-    }
-    valid(link?.attrs.href === expected[index], label + ' country/employer handoff changed')
+    valid(doc.text(one(descendants(headings[index], n => n.tag === 'h6'), label + ' region')) === label, 'country heading order changed')
+    const link = one(descendants(links[index], n => n.tag === 'a' && /^Learn More$/i.test(doc.text(n))), label + ' careers handoff')
+    valid(link.attrs.href === expected[index], label + ' country/employer handoff changed')
     bindings.push([label, link.attrs.href])
   }
   return bindings
@@ -124,13 +193,17 @@ const directPostingUrl = value => {
   return url.href
 }
 const readDirectList = (html, reasons) => {
-  const doc = readVisibleNativeDocument(html)
+  const doc = readMagnitVisible(html)
   valid(clean(one(doc.nodes(n => n.tag === 'title'), 'DirectSource list title').raw) === 'Magnit Global Talent Network', 'DirectSource employer identity changed')
   for (const id of ['inputCountry', 'inputJobType']) {
     const select = one(doc.nodes(n => n.tag === 'select' && n.attrs.id === id), 'unfiltered ' + id)
     const options = descendants(select, n => n.tag === 'option'), selected = options.filter(n => Object.hasOwn(n.attrs, 'selected'))
     valid(options.length && (selected.length ? selected : [options[0]]).every(option => option.attrs.value === ''), 'DirectSource native inventory is filtered')
   }
+  const industry = one(doc.nodes(n => n.tag === 'select' && n.attrs.id === 'inputIndustry'), 'unfiltered business groups')
+  const groups = descendants(industry, n => n.tag === 'option')
+  valid(Object.hasOwn(industry.attrs, 'multiple') && groups.some(option => option.attrs.value === 'ALLGRP')
+    && groups.every(option => Object.hasOwn(option.attrs, 'selected')), 'DirectSource native business-group inventory is filtered')
   const body = doc.text(one(doc.nodes(n => n.tag === 'body'), 'DirectSource list body')), match = body.match(/\bFound (\d+) Jobs\b/)
   valid(match && Number.isSafeInteger(Number(match[1])), 'DirectSource inventory count unavailable')
   const roles = new Map()
@@ -143,10 +216,17 @@ const readDirectList = (html, reasons) => {
   return { roles, total: Number(match[1]) }
 }
 const readDirectDetail = (html, row, reasons) => {
-  const doc = readVisibleNativeDocument(html), scripts = doc.nodes(n => n.tag === 'script' && n.attrs.type === 'application/ld+json')
+  const doc = readMagnitVisible(html), scripts = readNativeDocument(html).nodes(n => n.tag === 'script' && n.attrs.type === 'application/ld+json')
+  const visible = doc.text(one(doc.nodes(n => n.tag === 'body'), 'DirectSource detail body'))
+  if (/\b(?:(?:this|the)\s+(?:job|position|role|vacancy)\s+(?:(?:is|has been)\s+)?(?:closed|filled|expired)|no longer accepting applications|position (?:is )?no longer available)\b/i.test(visible)) {
+    reasons.add('native-posting-not-active-or-public:directsource:' + row.id)
+    return null
+  }
   const native = one(scripts.map(n => json(n.raw)).filter(value => value?.['@type'] === 'JobPosting'), 'DirectSource JobPosting')
+  const primaryTitles = doc.nodes(n => n.tag === 'h3' && cls(n, 'main-title'))
+  const visibleTitle = one(primaryTitles.length ? primaryTitles : doc.nodes(n => n.tag === 'h1'), 'DirectSource native title')
   valid(String(native.identifier?.value) === row.id && folded(native.title) === folded(row.title)
-    && folded(doc.text(one(doc.nodes(n => n.tag === 'h1'), 'DirectSource native title'))) === folded(row.title), 'DirectSource posting/title identity conflicts')
+    && folded(doc.text(visibleTitle)) === folded(row.title), 'DirectSource posting/title identity conflicts')
   valid(native.hiringOrganization?.name === 'Magnit Global' && native.hiringOrganization.sameAs === 'https://magnitglobal.com/', 'DirectSource native employer identity conflicts')
   const legacy = 'https://magnitglobal.eu.willhire.co/jobs/' + new URL(row.url).pathname.split('/').at(-1)
   valid(native.url === row.url || native.url === legacy && /\bvar\s+requestHost\s*=\s*['"]magnitglobal\.eu\.willhire\.co['"]/.test(html), 'DirectSource canonical posting identity conflicts')
@@ -156,8 +236,13 @@ const readDirectDetail = (html, row, reasons) => {
     && [...applyUrl.searchParams].length === 1 && applyUrl.searchParams.get('id') === row.id, 'DirectSource native application identity conflicts')
   const address = native.jobLocation?.address, code = countryCode(address?.addressCountry)
   if (!code) reasons.add('native-country-unresolved:directsource:' + row.id)
-  const description = extractActiveDescription(native.description), visible = doc.text(one(doc.nodes(n => n.tag === 'body'), 'DirectSource detail body'))
-  const full = description && visible.replace(/\s/g, '').includes(description.replace(/\s/g, ''))
+  const geography = one(doc.nodes(n => n.tag === 'div' && n.children.some(child => typeof child !== 'string'
+    && cls(child, 'info-label') && doc.text(child) === 'Job Location')), 'DirectSource primary geography')
+  const visibleLocation = doc.text(one(descendants(geography, n => cls(n, 'info-text')), 'DirectSource primary location')).replace(/\s*\((?:Remote|On-Site|Hybrid)\)\s*$/i, '')
+  const structuredLocation = [clean(address?.addressLocality), clean(address?.addressRegion)].filter(Boolean).join(', ')
+  valid(structuredLocation && folded(visibleLocation) === folded(structuredLocation), 'DirectSource native country/location geography conflicts')
+  const description = visibleDescription(native.description), content = one(doc.nodes(n => cls(n, 'ck-content')), 'DirectSource primary full description')
+  const full = description && doc.text(content).replace(/\s/g, '') === description.replace(/\s/g, '')
   if (!full) reasons.add('native-description-incomplete:directsource:' + row.id)
   const posted = native.datePosted
   valid(posted == null || typeof posted === 'string' && /^\d{4}-\d{2}-\d{2}(?:[ T]|$)/.test(posted) && Number.isFinite(Date.parse(posted.slice(0, 10))), 'DirectSource native posting date invalid')
@@ -171,7 +256,7 @@ const readDirectDetail = (html, row, reasons) => {
     closingDate: qualifiedClosingDate(native.validThrough), sourcePublicationDateUnavailable: !posted,
     sourceNativeDates: { datePosted: posted ?? null, validThrough: native.validThrough ?? null, postingDatePrecision: 'day', timezoneUnavailable: true },
     remoteStatus: native.jobLocationType === 'TELECOMMUTE' ? 'Remote' : null, employmentType: native.employmentType ?? null,
-    sourceNativeCountryEvidence: { system: 'DirectSource', countryCode: code, nativeAddress: address },
+    sourceNativeCountryEvidence: { system: 'DirectSource', countryCode: code, nativeAddress: address, visibleLocation },
     sourceNativeEmployerEvidence: { brand: 'Magnit Global', companyWebsite: native.hiringOrganization.sameAs, nativePostingId: row.id, legalEmployer: null } }
 }
 const postingState = row => JSON.stringify([row?.jobPostingId, row?.jobReqId, row?.jobTitle, row?.postingStartTimestampUTC, row?.postingExpiryTimestampUTC,
@@ -194,7 +279,7 @@ const readDayforceDetail = (detail, rendered, listing, culture, reasons) => {
   valid(raw && typeof raw === 'object' && !Array.isArray(raw), 'Dayforce full native content unavailable')
   const keys = ['jobDescriptionHeader', 'jobDescription', 'jobDescriptionFooter']
   valid(keys.every(key => raw[key] == null || typeof raw[key] === 'string'), 'Dayforce native content schema changed')
-  const fragments = keys.map(key => extractActiveDescription(raw[key])), full = Boolean(fragments[1])
+  const fragments = keys.map(key => visibleDescription(raw[key])), full = Boolean(fragments[1])
   if (!full) reasons.add('native-description-incomplete:dayforce:' + id)
   const description = full ? fragments.filter(Boolean).join('\n\n') : null
   const india = known ? locations.filter(row => row.country === 'IN') : []
@@ -235,16 +320,16 @@ export const createMagnitNativeInventory = (defaults = {}) => ({
       if (response.status !== 200) { const error = Error('Magnit public native HTTP ' + response.status); error.status = response.status; throw error }
       valid(typeof response.body === 'string' && Buffer.byteLength(response.body) <= 4 * 1024 * 1024
         && /^(?:text\/html|application\/json)\b/i.test(response.contentType || ''), 'native response format changed')
-      if (/^text\/html\b/i.test(response.contentType || '') && url !== L) inspectScope(response.body, url, reasons, references)
+      if (/^text\/html\b/i.test(response.contentType || '') && url !== L) inspectScope(response.body, response.url, reasons, references)
       return response
     }
     const scope = async () => {
       const corporate = await pageAt(C), bindings = verifyCorporate(corporate.body)
       verifyLegacy((await pageAt(L)).body)
       const board = readDayforceContext((await pageAt(D)).body).info
-      const emea = readDayforceContext((await pageAt(E, {}, D)).body).info
-      valid(emea.clientId === board.clientId && emea.jobBoardId === board.jobBoardId && JSON.stringify(emea.isoCultureCodes) === JSON.stringify(board.isoCultureCodes), 'EMEA native board account equivalence changed')
-      const home = readVisibleNativeDocument((await pageAt(W)).body)
+      const india = readDayforceContext((await pageAt(E, {}, D)).body).info
+      valid(india.clientId === board.clientId && india.jobBoardId === board.jobBoardId && JSON.stringify(india.isoCultureCodes) === JSON.stringify(board.isoCultureCodes), 'India legacy native board account equivalence changed')
+      const home = readMagnitVisible((await pageAt(W)).body)
       valid(clean(one(home.nodes(n => n.tag === 'title'), 'DirectSource native employer title').raw) === 'Magnit Global Talent Network'
         && home.nodes(n => n.tag === 'a' && n.attrs.href === '/eu/magnitglobal/jobs' && /Browse Jobs|View all jobs/i.test(home.text(n))).length > 0,
         'DirectSource current employer/jobs handoff changed')
@@ -292,7 +377,7 @@ export const createMagnitNativeInventory = (defaults = {}) => ({
     }
     for (const row of initial.direct.roles.values()) {
       const job = readDirectDetail((await pageAt(row.url)).body, row, reasons)
-      if (job.country === 'India') jobs.set(job.jobId, job)
+      if (job?.country === 'India') jobs.set(job.jobId, job)
     }
     const closing = await scope(), finalNative = await collect(closing.board.isoCultureCodes)
     if (JSON.stringify(initial.bindings) !== JSON.stringify(closing.bindings) || JSON.stringify(initial.board.isoCultureCodes) !== JSON.stringify(closing.board.isoCultureCodes)

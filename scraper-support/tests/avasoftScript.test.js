@@ -22,7 +22,7 @@ const fixturesDir = path.join(
 
 const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
-test('extractJobCards keeps only India roles from the AVASOFT careers page and maps them into the shared listing contract', async () => {
+test('archived extractJobCards keeps only India roles from the AVASOFT careers page and maps them into the shared listing contract', async () => {
   const avasoft = await loadAvasoftModule()
   assert.ok(avasoft)
 
@@ -51,7 +51,7 @@ test('extractJobCards keeps only India roles from the AVASOFT careers page and m
   assert.equal(jobs[2].department, 'HR')
 })
 
-test('extractJobDetail pulls AVASOFT location, apply link, and candidate requirements from a role page', async () => {
+test('archived extractJobDetail pulls AVASOFT location, apply link, and candidate requirements from a role page', async () => {
   const avasoft = await loadAvasoftModule()
   assert.ok(avasoft)
 
@@ -79,7 +79,7 @@ test('extractJobDetail pulls AVASOFT location, apply link, and candidate require
   assert.equal(detail.applyUrl, 'https://avasoft.com/contact-us/')
 })
 
-test('normalizeScrapedJob composes AVASOFT early-career India roles from the detail page contract', async () => {
+test('archived normalizeScrapedJob composes AVASOFT early-career India roles from the detail page contract', async () => {
   const avasoft = await loadAvasoftModule()
   assert.ok(avasoft)
 
@@ -102,42 +102,27 @@ test('normalizeScrapedJob composes AVASOFT early-career India roles from the det
   assert.equal(normalized.jobType, 'Full-time Fresher')
 })
 
-test('run fetches the AVASOFT careers page plus India detail pages and decorates shared runner fields', async () => {
+test('Avasoft exported run excludes current dormant cards and preserves partial evidence', async () => {
   const avasoft = await loadAvasoftModule()
-  assert.ok(avasoft)
+  const { avasoftNativeOptions } = await import('./fixtures/avasoftNativeOptions.js')
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const options = avasoftNativeOptions(), jobs = await avasoft.run(options)
+  assert.equal(jobs.length, 0)
+  assert.equal(options.calls.length, 18)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+})
 
-  const requested = []
-  const scraper = avasoft.createAvasoftScraper()
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requested.push(url)
-
-      if (url === 'https://avasoft.com/career/') return readFixture('career.html')
-      if (url === 'https://avasoft.com/trainee-engineer/') return readFixture('trainee-engineer.html')
-      if (url === 'https://avasoft.com/business-development-executive/') {
-        return readFixture('trainee-engineer.html')
-          .replaceAll('Trainee Engineer', 'Business Development Executive')
-          .replaceAll('Software Engineering', 'Sales')
-          .replaceAll('2025 passing outstudents. We expect individuals who are passionate about working in a challenging next gen software product development environment will be the best fit. We have no criterion for a minimum CGPA or arrears.', '2025 passing outstudents. We expect individuals who are passionate about working in a Sales team will be the best fit. We have no criterion for a minimum CGPA or arrears.')
-          .replaceAll('Technical knowledge with an intent to problem solving would be preferred.', 'Technical knowledge and inclination would be preferred. Expertise is not a must.')
-      }
-      if (url === 'https://avasoft.com/human-resource/') {
-        return readFixture('trainee-engineer.html')
-          .replaceAll('Trainee Engineer', 'Human Resource')
-          .replaceAll('Software Engineering', 'HR')
-          .replaceAll('2025 passing outstudents. We expect individuals who are passionate about working in a challenging next gen software product development environment will be the best fit. We have no criterion for a minimum CGPA or arrears.', 'We expect individuals who are cool with an attitude - straight as an arrow, young leaders with endless curiousness to explore will be the best fit. We have no criterion for a minimum CGPA or arrears.')
-          .replaceAll('Having an attitude of openness, eagerness, and endless possibilities.', 'Highly adaptable and flexible.')
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.equal(requested.length, 4)
+test('Avasoft factory retains the complete native content path when genuine cards become visible', async () => {
+  const avasoft = await loadAvasoftModule()
+  const { avasoftNativeOptions, avasoftVisibleOpenings } = await import('./fixtures/avasoftNativeOptions.js')
+  const jobs = await avasoft.createAvasoftScraper(avasoftNativeOptions(avasoftVisibleOpenings)).run()
   assert.equal(jobs.length, 3)
-  assert.equal(jobs[0].company, 'AVASOFT')
-  assert.equal(jobs[0].source, 'avasoft')
-  assert.equal(jobs[0].link, 'https://avasoft.com/contact-us/')
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
+  assert.equal(jobs[0].requisitionId, null)
+  assert.ok(jobs[0].sourceDescription.length > 1500)
+  assert.equal(jobs[0].applicationMethod, 'career-enquiry')
+})
+
+test('Avasoft rejects obsolete listing-only transport overrides before any implicit network request', async () => {
+  const avasoft = await loadAvasoftModule()
+  await assert.rejects(avasoft.run({ fetchText: async () => readFixture('career.html') }), /current native transport requires fetchPage/)
 })

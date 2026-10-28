@@ -49,7 +49,7 @@ try {
     summary=describeStageCompletion(key,summary,outcome);
     await recordStageResult(run._id,key,{outcome,summary});
     console.log(`Pipeline stage ${key} outcome: ${outcome}; summary: ${redactLog(JSON.stringify(summary))}`);
-    if(outcome!=='completed')process.exitCode=1;
+    if(outcome==='failed'||(outcome!=='completed'&&key!=='scraper'))process.exitCode=1;
   } else if(command==='complete') {
     const event=JSON.parse(await fs.readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
     const remote=event.workflow_run;

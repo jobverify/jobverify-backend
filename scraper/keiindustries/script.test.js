@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import {
+globalThis.fetch = async () => { throw new Error('OFFLINE network tripwire') }
+const {
   JOBS_ARCHIVE_URL,
   defaultFetchPage,
-} from './script.js'
+} = await import('./script.js')
 
 test('KEI Industries default fetch is bounded by a timeout signal', async () => {
   let capturedInit = null

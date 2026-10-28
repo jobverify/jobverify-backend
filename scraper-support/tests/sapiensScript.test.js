@@ -218,39 +218,9 @@ test('extractJobDetail prefers Sapiens embedded title metadata when the visible 
   assert.match(detail.jobDescription || '', /Sapiens is on the lookout/i)
 })
 
-test('run fetches the official Sapiens listing page first, then enriches India results via detail pages', async () => {
-  const {
-    SEARCH_PAGE_URL,
-    createSapiensScraper,
-  } = await loadSapiensModule()
-
-  const requests = []
-  const jobs = await createSapiensScraper().run({
-    maxPages: 1,
-    fetchText: async (url) => {
-      requests.push(url)
-      if (url === SEARCH_PAGE_URL) return searchPageHtml
-      if (url === 'https://careers.sapiens.com/job/Bangalore-L3-Architect/1413083733/') {
-        return detailPageHtml
-      }
-
-      throw new Error(`Unexpected Sapiens URL: ${url}`)
-    },
-    now: () => '2026-07-10T00:00:00.000Z',
-  })
-
-  assert.deepEqual(requests, [
-    SEARCH_PAGE_URL,
-    'https://careers.sapiens.com/job/Bangalore-L3-Architect/1413083733/',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].company, 'Sapiens')
-  assert.equal(jobs[0].source, 'sapiens')
-  assert.equal(jobs[0].jobId, '56618')
-  assert.equal(
-    jobs[0].applyUrl,
-    'https://careers.sapiens.com/talentcommunity/apply/1413083733/?locale=en_US',
-  )
-  assert.equal(jobs[0].publicExperienceChecked, true)
-  assert.equal(jobs[0].scrapedAt, '2026-07-10T00:00:00.000Z')
+test('current sapiens extraction requires transport response identity', async () => {
+  const module = await import('../../scraper/sapiens/script.js')
+  await assert.rejects(module.createSapiensScraper().run({ fetchText: async () => '' }), /transport requires fetchPage/)
+  assert.equal(module.PROVIDER_METADATA.atsPlatform, 'hibob')
+  assert.equal(module.PROVIDER_METADATA.countryFilter, 'India')
 })

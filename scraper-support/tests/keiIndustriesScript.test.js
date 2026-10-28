@@ -1,241 +1,128 @@
-import assert from 'node:assert/strict'
+﻿import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-17T00:00:00.000Z'
+globalThis.fetch = async () => { throw new Error('OFFLINE KEI source-family network tripwire') }
+const kei = await import('../../scraper/keiindustries/script.js')
+const { getScraperCatalog, createCatalogScraper } = await import('../providers/index.js')
 
-const JOBS_ARCHIVE_HTML = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <main>
-      <p>Home / Job</p>
-      <h1>Job Archives</h1>
-      <a href="https://www.kei-ind.com/jobs/executive/">Executive</a>
-      <a href="/jobs/design-engineer/">Design Engineer</a>
-      <a href="/jobs/business-development-marketing/">Business Development (Marketing)</a>
-      <a href="/jobs/our-esg-vision-purpose/">Our ESG Vision/ Purpose</a>
-      <a href="/jobs/design-engineer/">Design Engineer duplicate</a>
-    </main>
-  </body>
-</html>
-`
+const FIXED_SCRAPED_AT = '2026-10-27T00:00:00.000Z'
+const LABELS = {
+  CAND_VACY_lblJbDes: 'Job description~E',
+  CAND_VACY_lblRolRes: 'Roles & responsibilities~E',
+  CAND_VACY_lblDept: 'Department~E',
+  CAND_VACY_lblQual: 'Qualification~E',
+  CAND_VACY_lblSal: 'Salary~E',
+  CAND_VACY_lblSkill: 'Skills~E',
+}
+const NATIVE_RECORD = {
+  JOB_REQUEST_CODE: 'KEI-NATIVE-104',
+  FUNCTION_NAME: 'Native Engineer',
+  COUNTRY_NAME: 'India',
+  LOCATION_NAME: 'Mumbai',
+  EXPERIENCE: '2-5 years',
+  POSTED_ON: '2026-10-25',
+  modified: '2026-10-27T12:00:00Z',
+  FUNCTION_DESC: '<p>Build reliable native systems.</p><div><p>Retain this complete nested qualification.</p></div>',
+  FUNCTION_RESPONSIBILITY: '<ul><li>Own production recovery.</li><li>Review engineering quality.</li></ul>',
+  'CAND_VACY_lblDept~D': 'Engineering',
+  'CAND_VACY_lblQual~D': 'BE / B Tech (Electrical)',
+  'CAND_VACY_lblSal~D': 'As disclosed',
+  'CAND_VACY_lblSkill~D': 'Node.js',
+}
+const LEGACY_ARCHIVE_HTML = '<title>KEI Industries Jobs</title><main><p>Home / Job</p><h1>Job Archives</h1><a href="https://www.kei-ind.com/jobs/executive/">Executive</a><h2>Job Features</h2><p>Locations: Mumbai</p><h2>Apply Online</h2><a href="/jobs/our-esg-vision-purpose/">Our ESG Vision/ Purpose</a></main>'
+const HOMEPAGE_HTML = '<title>KEI Industries</title><a href="' + kei.PUBLIC_PORTAL_URL + '">Current Job Openings</a><a href="' + kei.CAREER_PAGE_URL + '">Life at KEI</a>'
+// Controlled excerpts of the verified anonymous frontend contract; no candidate
+// login, profile, application or other write route is represented by this fixture.
+const PUBLIC_FRONTEND = 'getVacancyInformation(e){return this.http.post(this.AUTH_API+"CPVacancyDetails/GetVacancyInformationWithoutToken",{CompanyID:this.appConfig.CompanyID,Flag:e},this.getHeader())} getLandingPageData(){return this.http.post(this.AUTH_API+"CPLandigPage/GetLandingPage",{CompanyID:this.appConfig.CompanyID},this.getHeader())} getLabelData(){return this.http.post(this.AUTH_API+"CPCommon/GetLabelWithoutToken",{CompanyID:this.appConfig.CompanyID,FormModuleCode:["CAND_JOSK_00_28,CAND_GENR_00_00","CAND_VACY_00_24"]},this.getHeader())} refreshPagedData(){this.pagedData.push(this.filteredData[e])} selectedJobDetail.FUNCTION_DESC;selectedJobDetail.FUNCTION_RESPONSIBILITY; r.includes("~D"); assets/company/ /config.json'
+const registered = () => createCatalogScraper(getScraperCatalog().find(provider => provider.source === 'keiindustries'))
 
-const EXECUTIVE_HTML = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <main>
-      <p>Home / Jobs / Executive</p>
-      <h1>Executive</h1>
-      <h2>Job Features</h2>
-      <ul>
-        <li>Locations : Mumbai</li>
-        <li>Department : Marketing</li>
-        <li>Experience : Fresher OR 1-2 years of experience in Loyalty program</li>
-        <li>Qualification : Graduate</li>
-      </ul>
-      <h2>Apply Online</h2>
-    </main>
-  </body>
-</html>
-`
-
-const DESIGN_ENGINEER_HTML = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <main>
-      <p>Home / Jobs / Design Engineer</p>
-      <h1>Design Engineer</h1>
-      <h2>Job Features</h2>
-      <ul>
-        <li>Locations : Mumbai</li>
-        <li>Department : Marketing</li>
-        <li>Experience : 0-2 years</li>
-        <li>Qualification : BE / B Tech (Electrical)</li>
-      </ul>
-      <h2>Apply Online</h2>
-    </main>
-  </body>
-</html>
-`
-
-const BUSINESS_DEVELOPMENT_HTML = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <main>
-      <p>Home / Jobs / Business Development (Marketing)</p>
-      <h1>Business Development (Marketing)</h1>
-      <h2>Job Description</h2>
-      <p>Help grow channel and project sales for KEI Industries.</p>
-      <h2>Job Features</h2>
-      <ul>
-        <li>Locations : HO</li>
-        <li>Experience : 4-7 Years</li>
-        <li>Qualification : BBA/MBA (MKT)</li>
-      </ul>
-      <h2>Apply Online</h2>
-    </main>
-  </body>
-</html>
-`
-
-const ESG_ARTICLE_HTML = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <main>
-      <h1>Our ESG Vision/ Purpose</h1>
-      <p>At KEI, our ESG vision is rooted in responsible manufacturing.</p>
-    </main>
-  </body>
-</html>
-`
-
-const loadModule = async () => {
-  try {
-    return await import('../../scraper/keiindustries/script.js')
-  } catch {
-    assert.fail('Expected KEI Industries scraper module at ../../scraper/keiindustries/script.js')
+const syntheticTransport = ({ legacySurface = false, redirectPortal = false } = {}) => {
+  const requests = []
+  const fetchPage = async (url, init = {}) => {
+    requests.push({ url, method: init.method || 'GET', body: init.body ? JSON.parse(init.body) : null })
+    let body, contentType = 'text/html'
+    if (url === kei.HOMEPAGE_URL || url === kei.CAREER_PAGE_URL) body = legacySurface ? LEGACY_ARCHIVE_HTML : HOMEPAGE_HTML
+    else if (url === 'https://keihrms.myadrenalin.com/CandidateMAX/') {
+      if (redirectPortal) return { status: 200, url: 'https://jobs.example.invalid/CandidateMAX/', body: '<title>Candidate Portal</title>' }
+      body = '<title>Candidate Portal</title><script src="main.native-contract.js"></script>'
+    } else if (url.endsWith('/main.native-contract.js')) { body = PUBLIC_FRONTEND; contentType = 'application/javascript' }
+    else if (url.endsWith('/assets/company/KEIIND/config.json')) { body = JSON.stringify({ apiURL: 'https://keihrms.myadrenalin.com', apiPath: '/CandidateMAX/' }); contentType = 'application/json' }
+    else if (url.endsWith('/CPLandigPage/GetLandingPage')) { body = JSON.stringify({ IsValid: true, Data: [{ CompanyDetails: [{ LINK_NAME: 'KEI INDUSTRIES LTD', LINK_ADDRESS: kei.HOMEPAGE_URL }] }] }); contentType = 'application/json' }
+    else if (url.endsWith('/CPCommon/GetLabelWithoutToken')) { body = JSON.stringify({ IsValid: true, Data: [LABELS] }); contentType = 'application/json' }
+    else if (url.endsWith('/CPVacancyDetails/GetVacancyInformationWithoutToken')) {
+      body = JSON.stringify({ IsValid: true, Data: [{ VacancyInformation: [NATIVE_RECORD, { ...NATIVE_RECORD, JOB_REQUEST_CODE: 'KEI-NATIVE-FOREIGN', COUNTRY_NAME: 'United Kingdom', LOCATION_NAME: 'London' }] }] })
+      contentType = 'application/json'
+    } else throw new Error('Unexpected current native route; legacy archive is not hiring inventory: ' + url)
+    return { status: 200, url, body, contentType }
   }
+  return { fetchPage, requests }
 }
 
-test('KEI Industries helpers stay pinned to the verified first-party archive and detail-page contract', async () => {
-  const kei = await loadModule()
-
-  assert.equal(kei.SOURCE, 'keiindustries')
-  assert.equal(kei.COMPANY, 'KEI Industries')
-  assert.equal(kei.OFFICIAL_BRAND_NAME, 'KEI Industries')
-  assert.equal(kei.COMPANY_DOMAIN, 'kei-ind.com')
-  assert.equal(kei.VERIFIED_ON, '2026-07-17')
-  assert.equal(kei.JOBS_ARCHIVE_URL, 'https://www.kei-ind.com/jobs/')
-  assert.equal(kei.hasOfficialJobsArchiveSignal(JOBS_ARCHIVE_HTML), true)
-  assert.deepEqual(kei.extractJobDetailUrls(JOBS_ARCHIVE_HTML), [
-    'https://www.kei-ind.com/jobs/business-development-marketing/',
-    'https://www.kei-ind.com/jobs/design-engineer/',
-    'https://www.kei-ind.com/jobs/executive/',
-    'https://www.kei-ind.com/jobs/our-esg-vision-purpose/',
-  ])
-  assert.equal(kei.isValidatedJobDetailPage(EXECUTIVE_HTML), true)
-  assert.equal(kei.isValidatedJobDetailPage(ESG_ARTICLE_HTML), false)
+test('KEI native records retain complete criteria, posting identity and original dates without fabricated defaults', () => {
+  const job = kei.extractNativeJob(NATIVE_RECORD, { labels: LABELS, now: FIXED_SCRAPED_AT })
+  assert.equal(job.jobId, 'KEI-NATIVE-104')
+  assert.equal(job.requisitionId, null)
+  assert.equal(job.title, 'Native Engineer')
+  assert.equal(job.country, 'India')
+  assert.equal(job.city, 'Mumbai')
+  assert.equal(job.department, 'Engineering')
+  assert.equal(job.experienceRequired, '2-5 years')
+  assert.equal(job.minimumQualification, 'BE / B Tech (Electrical)')
+  assert.equal(job.compensation, 'As disclosed')
+  assert.deepEqual(job.requiredSkills, ['Node.js'])
+  assert.equal(job.postingDate, '2026-10-25')
+  assert.equal(job.employmentType, null)
+  assert.equal(job.remoteStatus, null)
+  assert.equal(job.sourceIdentityComplete, true)
+  assert.equal(job.sourceDetailComplete, true)
+  assert.match(job.jobDescription, /Retain this complete nested qualification/)
+  assert.match(job.jobDescription, /Own production recovery/)
+  assert.match(job.jobDescription, /Review engineering quality/)
+  assert.equal(job.applyUrl, kei.PUBLIC_PORTAL_URL)
+  assert.equal(job.applicationPostingContext.nativePostingId, 'KEI-NATIVE-104')
+  assert.equal(job.applicationUrlIsGeneric, true)
+  assert.equal(job.applicationSubmitted, false)
 })
 
-test('KEI Industries extracts validated first-party jobs and ignores non-job archive posts', async () => {
-  const kei = await loadModule()
-
-  assert.deepEqual(
-    kei.extractJobFromDetailPage({
-      url: 'https://www.kei-ind.com/jobs/executive/',
-      html: EXECUTIVE_HTML,
-    }),
-    {
-      title: 'Executive',
-      company: 'KEI Industries',
-      department: 'Marketing',
-      location: 'Mumbai, India',
-      city: 'Mumbai',
-      country: 'India',
-      jobId: 'executive',
-      requisitionId: 'executive',
-      sourceUrl: 'https://www.kei-ind.com/jobs/executive/',
-      applyUrl: 'https://www.kei-ind.com/jobs/executive/',
-      employmentType: null,
-      experienceRequired: 'Fresher OR 1-2 years of experience in Loyalty program',
-      minimumQualification: 'Graduate',
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: 'On-site',
-    },
-  )
-
-  assert.equal(
-    kei.extractJobFromDetailPage({
-      url: 'https://www.kei-ind.com/jobs/our-esg-vision-purpose/',
-      html: ESG_ARTICLE_HTML,
-    }),
-    null,
-  )
+test('KEI incomplete native records keep country, publication and requisition unknown instead of promoting previews', () => {
+  assert.equal(kei.extractNativeJob(LEGACY_ARCHIVE_HTML), null)
+  const job = kei.extractNativeJob({ ...NATIVE_RECORD, JOB_REQUEST_CODE: null, COUNTRY_NAME: null, LOCATION_NAME: 'HO', POSTED_ON: null, FUNCTION_RESPONSIBILITY: null, 'CAND_VACY_lblQual~D': null }, { labels: LABELS })
+  assert.equal(job.jobId, null)
+  assert.equal(job.requisitionId, null)
+  assert.equal(job.country, null)
+  assert.equal(job.postingDate, null)
+  assert.equal(job.sourcePublicationDateUnavailable, true)
+  assert.equal(job.minimumQualification, null)
+  assert.equal(job.remoteStatus, null)
+  assert.equal(job.sourceIdentityComplete, false)
+  assert.equal(job.sourceDetailComplete, false)
+  assert.equal(job.jobDescription, null)
 })
 
-test('KEI Industries run decorates only validated first-party job detail pages for persistence', async () => {
-  const kei = await loadModule()
-  const requestedUrls = []
-
-  const jobs = await kei.createKeiIndustriesScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === kei.JOBS_ARCHIVE_URL) {
-        return { status: 200, url, html: JOBS_ARCHIVE_HTML }
-      }
-
-      if (url === 'https://www.kei-ind.com/jobs/executive/') {
-        return { status: 200, url, html: EXECUTIVE_HTML }
-      }
-
-      if (url === 'https://www.kei-ind.com/jobs/design-engineer/') {
-        return { status: 200, url, html: DESIGN_ENGINEER_HTML }
-      }
-
-      if (url === 'https://www.kei-ind.com/jobs/business-development-marketing/') {
-        return { status: 200, url, html: BUSINESS_DEVELOPMENT_HTML }
-      }
-
-      if (url === 'https://www.kei-ind.com/jobs/our-esg-vision-purpose/') {
-        return { status: 200, url, html: ESG_ARTICLE_HTML }
-      }
-
-      throw new Error(`Unexpected KEI Industries URL: ${url}`)
-    },
-    now: () => FIXED_SCRAPED_AT,
-  })
-
-  assert.deepEqual(requestedUrls, [
-    kei.JOBS_ARCHIVE_URL,
-    'https://www.kei-ind.com/jobs/business-development-marketing/',
-    'https://www.kei-ind.com/jobs/design-engineer/',
-    'https://www.kei-ind.com/jobs/executive/',
-    'https://www.kei-ind.com/jobs/our-esg-vision-purpose/',
-  ])
-  assert.equal(jobs.length, 3)
-  assert.equal(jobs[0].title, 'Business Development (Marketing)')
+test('KEI registered run uses the complete anonymous native feed and never enumerates the legacy archive', async () => {
+  const fixture = syntheticTransport(); let audit
+  const jobs = await registered().run({ fetchPage: fixture.fetchPage, now: () => FIXED_SCRAPED_AT, onAudit: value => { audit = value } })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'KEI-NATIVE-104')
   assert.equal(jobs[0].source, 'keiindustries')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.equal(jobs[0].link, kei.PUBLIC_PORTAL_URL)
+  assert.equal(jobs[0].sourceDetailComplete, true)
+  assert.equal(jobs[0].sourceListingComplete, true)
+  assert.equal(audit.observedGlobalCount, 2)
+  assert.equal(audit.closingReconciled, true)
+  assert.equal(audit.fullHealthyIndia, 1)
+  assert.equal(audit.eligibleCount, 1)
+  assert.equal(fixture.requests.filter(request => request.url.endsWith('/GetVacancyInformationWithoutToken')).length, 2)
+  assert.equal(fixture.requests.some(request => request.url.startsWith(kei.JOBS_ARCHIVE_URL)), false)
+  assert.ok(fixture.requests.filter(request => request.method === 'POST').every(request => request.body.CompanyID === 'KEIIND' && !Object.hasOwn(request.body, 'Token')))
 })
 
-test('KEI Industries scraper fails closed when the verified archive or first-party detail host drifts', async () => {
-  const kei = await loadModule()
-
-  await assert.rejects(
-    kei.createKeiIndustriesScraper().run({
-      fetchPage: async () => ({
-        status: 200,
-        url: kei.JOBS_ARCHIVE_URL,
-        html: '<html><body><h1>Unexpected</h1></body></html>',
-      }),
-    }),
-    /verified jobs archive/i,
-  )
-
-  await assert.rejects(
-    kei.createKeiIndustriesScraper().run({
-      fetchPage: async (url) => {
-        if (url === kei.JOBS_ARCHIVE_URL) {
-          return { status: 200, url, html: JOBS_ARCHIVE_HTML }
-        }
-
-        return {
-          status: 200,
-          url: 'https://jobs.example.com/executive/',
-          html: EXECUTIVE_HTML,
-        }
-      },
-    }),
-    /detail link moved off the verified first-party host/i,
-  )
+test('KEI rejects obsolete archive replacement and off-host current portal redirects before any fallback or native API read', async () => {
+  for (const [options, expected] of [[{ legacySurface: true }, /current openings handoff changed/i], [{ redirectPortal: true }, /employer binding changed/i]]) {
+    const fixture = syntheticTransport(options)
+    await assert.rejects(registered().run({ fetchPage: fixture.fetchPage }), expected)
+    assert.equal(fixture.requests.some(request => request.url.startsWith(kei.JOBS_ARCHIVE_URL)), false)
+    assert.equal(fixture.requests.some(request => request.method === 'POST'), false)
+  }
 })

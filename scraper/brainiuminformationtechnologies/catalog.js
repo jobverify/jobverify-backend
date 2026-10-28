@@ -14,13 +14,13 @@ export const BRAINIUM_INFORMATION_TECHNOLOGIES_CATALOG = {
   companyDomain: 'brainiuminfotech.com',
   atsPlatform: 'first-party-html-open-roles',
   countryFilter: 'India',
-  paginationStrategy: 'single-public-page-or-verified-cloudflare-blocked-empty',
-  extractionStrategy: 'verified-first-party-careers-page+html-open-roles-or-verified-cloudflare-blocked-empty',
+  paginationStrategy: 'legacy-public-page-unverified-stop-on-access-denial',
+  extractionStrategy: 'legacy-first-party-cards-unverified-access-denial-is-not-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-14',
+  verifiedOn: '2026-10-27',
   verifiedSurfaceSummary:
-    'Verified on Friday, August 14, 2026 that both https://www.brainiuminfotech.com/ and https://www.brainiuminfotech.com/careers return the same Cloudflare-backed HTTP 403 page titled "Attention Required! | Cloudflare" from this environment. The previously verified July 18, 2026 Open Positions surface is not fetchable here today, so the scraper returns [] only while those first-party routes remain on that exact blocked shell.',
+    'On October 27, 2026 the current public careers GET returned HTTP 403. No homepage or alternative request followed the denial. Current roles, employer scope, details and India counts remain unverified; access denial throws and cannot establish empty inventory. Legacy card parsers remain unqualified for current extraction.',
   dryRunFile: 'brainiuminformationtechnologies/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

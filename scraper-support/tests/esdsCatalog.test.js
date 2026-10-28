@@ -24,7 +24,7 @@ const loadEsdsModule = async () => {
   }
 }
 
-test('ESDS local catalog captures the verified first-party careers page plus Darwinbox portal handoff', async () => {
+test('ESDS local catalog preserves Darwinbox identity while disclosing the unresolved current public contract', async () => {
   const { ESDS_CATALOG } = await loadCatalogModule()
   const esds = await loadEsdsModule()
 
@@ -57,16 +57,18 @@ test('ESDS local catalog captures the verified first-party careers page plus Dar
   assert.equal(ESDS_CATALOG.countryFilter, 'India')
   assert.equal(
     ESDS_CATALOG.paginationStrategy,
-    'verified-first-party-careers-page-plus-darwinbox-browser-session-pagination',
+    'unresolved-native-inventory+corporate-discovery-and-closing-reconciliation',
   )
   assert.equal(
     ESDS_CATALOG.extractionStrategy,
-    'verified-first-party-careers-page-html+darwinbox-browser-session-listing-api+job-id-intersection',
+    'active-corporate-cards+advertised-public-get-details+fail-closed-incomplete-inventory',
   )
   assert.equal(ESDS_CATALOG.parser, 'custom-script')
   assert.equal(ESDS_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(ESDS_CATALOG.companyDomain, 'esds.co.in')
-  assert.equal(ESDS_CATALOG.verifiedOn, '2026-08-02')
+  assert.equal(ESDS_CATALOG.verifiedOn, '2026-10-26')
+  assert.equal(ESDS_CATALOG.nativeExtractionVerified, false)
+  assert.equal(ESDS_CATALOG.fullInventoryVerified, false)
   assert.match(ESDS_CATALOG.dryRunFile, /esds[\\/]jobs\.json$/i)
   assert.equal(ESDS_CATALOG.modulePath, esdsModulePath)
   assert.match(ESDS_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.esds\.co\.in\/careers\//i)
@@ -79,7 +81,7 @@ test('ESDS local catalog captures the verified first-party careers page plus Dar
     /https:\/\/www\.esds\.co\.in\/career-details\/a688746f77752a/i,
   )
   assert.match(ESDS_CATALOG.verifiedSurfaceSummary, /Data Center Project Manager/i)
-  assert.match(ESDS_CATALOG.verifiedSurfaceSummary, /Compliance Specialist/i)
+  assert.match(ESDS_CATALOG.verifiedSurfaceSummary, /HTTP 403/i)
 
   assert.equal(esds.PROVIDER_METADATA.source, ESDS_CATALOG.source)
   assert.equal(esds.PROVIDER_METADATA.companyName, ESDS_CATALOG.companyName)

@@ -219,14 +219,13 @@ export const createBrainiumInformationTechnologiesScraper = ({
 
     const careersPage = await effectiveFetchPage(OFFICIAL_CAREERS_URL)
 
-    if (isVerifiedCloudflareBlockedPage(careersPage, OFFICIAL_CAREERS_URL)) {
-      const homepagePage = await effectiveFetchPage(OFFICIAL_HOMEPAGE_URL)
-      if (isVerifiedCloudflareBlockedPage(homepagePage, OFFICIAL_HOMEPAGE_URL)) {
-        return []
-      }
-
-      throw new Error('Brainium Information Technologies careers route no longer matches the verified public or fully blocked surface')
+    const status = Number(careersPage.status)
+    if ([401, 403, 429].includes(status) || hasCloudflareBlockSignal(getPageHtml(careersPage))) {
+      const error = new Error(`Brainium Information Technologies careers access denied (HTTP ${status}); inventory unknown`)
+      error.status = status
+      throw error
     }
+    if (status !== 200) throw new Error(`Brainium Information Technologies careers HTTP ${status}; inventory unknown`)
 
     const careersHtml = getPageHtml(careersPage)
 

@@ -1,20 +1,22 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import {
+globalThis.fetch = async () => { throw new Error('OFFLINE NETWORK TRIPWIRE') }
+const {
   buildScrapers,
+  createCatalogScraper,
   getScraperCatalog,
-} from '../providers/index.js'
+} = await import('../providers/index.js')
 
-test('getScraperCatalog includes Excelacom as an Oracle Taleo RSS script provider with official metadata', () => {
+test('getScraperCatalog binds the Excelacom native script to corporate careers metadata', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'excelacom')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'oracle-taleo')
   assert.equal(provider.companyName, 'Excelacom')
-  assert.equal(provider.companyCareerPage, 'https://phg.tbe.taleo.net/phg02/ats/careers/v2/searchResults?org=EXCELACOM&cws=38')
-  assert.equal(provider.companyDomain, 'phg.tbe.taleo.net')
+  assert.equal(provider.companyCareerPage, 'https://www.excelacom.com/careers.html')
+  assert.equal(provider.companyDomain, 'excelacom.com')
   assert.match(provider.modulePath, /excelacom[\\/]script\.js$/i)
 })
 
@@ -26,4 +28,14 @@ test('buildScrapers exposes a runnable Excelacom scraper without changing the ru
   assert.equal(scraper.provider.source, 'excelacom')
   assert.equal(scraper.provider.atsPlatform, 'oracle-taleo')
   assert.match(scraper.dryRunFile, /excelacom[\\/]jobs\.json$/)
+})
+
+test('the selected catalog provider imports and executes the real native scraper with injected offline transport', async () => {
+  const provider = getScraperCatalog().find(item => item.source === 'excelacom')
+  const calls = []
+  await assert.rejects(createCatalogScraper(provider).run({ fetchText: async url => {
+    calls.push(url)
+    return '<h1>Corporate careers with the native binding removed</h1>'
+  } }), /official careers binding/)
+  assert.deepEqual(calls, ['https://www.excelacom.com/careers.html'])
 })

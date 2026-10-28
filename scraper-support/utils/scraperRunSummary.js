@@ -2,7 +2,7 @@ import { isCompleteScraperAttempt, isFreshCompleteInventoryEvidence } from './in
 import { scraperTaskOutcome } from './scraperOutcome.js';
 
 /** Task completion, listing evidence and complete extraction are independent measurements. */
-export const summarizeScraperRun = (rows = [], { interrupted = false } = {}) => {
+export const summarizeScraperRun = (rows = [], { interrupted = false, persistencePending = false } = {}) => {
   const taskOutcomes = { succeeded: 0, skipped: 0, softFailed: 0, hardFailed: 0 };
   let complete = 0, completeExtractions = 0;
   for (const row of rows) {
@@ -18,6 +18,6 @@ export const summarizeScraperRun = (rows = [], { interrupted = false } = {}) => 
     extractionChecks: { complete: completeExtractions, incomplete: rows.length - completeExtractions },
     inserted: rows.reduce((sum, row) => sum + (row.inserted || 0), 0),
     updated: rows.reduce((sum, row) => sum + (row.updated || 0), 0),
-    interrupted, pendingEstimate: rows.filter(row => row.classificationPending).length,
+    interrupted, pendingEstimate: rows.filter(row => row.classificationPending || row.persistencePending).length + Number(Boolean(persistencePending)),
   };
 };

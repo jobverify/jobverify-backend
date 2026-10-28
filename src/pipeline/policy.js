@@ -17,6 +17,7 @@ export const directConfiguration = start => {
 export const createStages = config => config.stages.map(s=>({...s,status:s.enabled?'waiting':'disabled'}));
 export function stageOutcome(key, summary={}, code=0) {
   if (['worker_error','disabled'].includes(summary.reason)) return 'failed';
+  if (key === 'scraper' && code !== 0) return 'failed';
   if (key==='rewrite') {
     // A normal budget stop leaves durable work for a later run. It must not
     // block classification, and it must never conceal an execution failure.

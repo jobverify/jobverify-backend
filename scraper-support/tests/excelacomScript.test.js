@@ -1,125 +1,243 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
 
-const loadExcelacomModule = async () => {
-  try {
-    return await import('../../scraper/excelacom/script.js')
-  } catch {
-    assert.fail('Expected Excelacom scraper module at ../../scraper/excelacom/script.js')
-  }
+globalThis.fetch = async () => { throw new Error('OFFLINE NETWORK TRIPWIRE') }
+const excelacom = await import('../../scraper/excelacom/script.js')
+const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+const { analyzePublishableJobs } = await import('../utils/publishableJobMetrics.js')
+const { readHtml } = await import('../../scraper/excelacom/nativeHtml.js')
+
+const CAREERS = 'https://www.excelacom.com/careers.html'
+const SEARCH = 'https://phg.tbe.taleo.net/phg02/ats/careers/v2/jobSearch?act=redirectCwsV2&cws=38&org=EXCELACOM'
+const BOARD = 'https://phg.tbe.taleo.net/phg02/ats/careers/v2/searchResults?org=EXCELACOM&cws=38'
+const NEXT = `${BOARD}&act=page&page=2`
+const roleUrl = id => `https://phg.tbe.taleo.net/phg02/ats/careers/v2/viewRequisition?org=EXCELACOM&cws=38&rid=${id}`
+const applyUrl = id => `https://phg.tbe.taleo.net/phg02/ats/careers/v2/applyRequisition?org=EXCELACOM&cws=38&rid=${id}`
+const NOW = new Date('2026-10-27T07:00:00Z')
+const careers = extra => `<a href="careers.html">Careers</a><a href="${SEARCH}">BROWSE NEW OPENINGS</a>${extra || ''}`
+const search = `<form id="TBE_theForm" action="${BOARD}" method="post"><input type="hidden" name="act" value="search"><input name="org" value="EXCELACOM"><input name="cws" value="38"></form>`
+const listing = (ids, { total = ids.length, next = null } = {}) => `<div id="oracletaleocwsv2-wrapper"><span class="oracletaleocwsv2-panel-number">${total}</span>${ids.map(id => `<h4><a class="viewJobLink" href="${roleUrl(id)}">Engineer ${id}</a></h4>`).join('')}${next ? `<a rel="next" href="${next}">Next</a>` : ''}</div>`
+const JD = `<p>Role and Responsibilities:</p><ul><li>Build reliable telecom services and maintain production systems.</li></ul><p>Required Qualifications:</p><ul><li>Bachelor&#8217;s degree in Computer Science.</li><li>3+ years of Java experience and SQL expertise.</li></ul><p>Preferred Qualifications:</p><p>Camunda and distributed workflow experience.</p><p>Compensation and Benefits:</p><p>Salary INR 20-30 lakh. Health insurance.</p><p>EEO Statement:</p><p>Excelacom is an equal opportunity employer.</p>`
+const detail = (id, { country = 'IN', state = 'Karnataka', region = 'IN-KA', city = 'Bengaluru', code = `JOB-${id}`, req = null, jd = JD, employer = 'Excelacom', type = 'Full time', posted = '2026-10-19 15:08:55.0', validThrough, title = `Engineer ${id}`, jsonUrl = roleUrl(id), application = applyUrl(id), extra = '', noCountry = false } = {}) => {
+  const metadata = { '@type': 'JobPosting', title, url: jsonUrl, identifier: { '@type': 'PropertyValue', name: 'Excelacom', value: code }, datePosted: posted, employmentType: type, hiringOrganization: { '@type': 'Organization', name: employer }, jobLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressLocality: state, ...(region ? { addressRegion: region } : {}), ...(!noCountry && country ? { addressCountry: { '@type': 'Country', name: country } } : {}) } }, description: jd, ...(validThrough ? { validThrough } : {}) }
+  const field = (label, value) => `<div><span class="small">${label}</span><strong>${value}</strong></div>`
+  return `<div id="oracletaleocwsv2-wrapper"><script type="application/ld+json">${JSON.stringify(metadata).replace(/</g, '\\u003c')}</script><div class="well oracletaleocwsv2-job-description"><strong>${title}</strong><div class="row">${field('Location City', city)}${field('Location', state)}${field('Job Code', code)}${req ? field('Requisition ID', req) : ''}</div></div><div name="cwsJobDescription">${jd}</div><a href="${application}">Apply Now</a>${extra}</div>`
 }
+const transport = ({ pages = new Map([[BOARD, listing(['1'])]]), details = new Map([['1', detail('1')]]), corporate = careers(), mutateClose = null, fail = null } = {}) => {
+  const calls = [], counts = new Map()
+  return { calls, fetchText: async url => {
+    calls.push(url)
+    counts.set(url, (counts.get(url) || 0) + 1)
+    if (fail?.url === url) return { status: fail.status, url, body: fail.body || '<h1>Access denied</h1>' }
+    if (url === CAREERS) return corporate
+    if (url === SEARCH) return search
+    if (pages.has(url)) return mutateClose && counts.get(url) > 1 ? mutateClose(url) : pages.get(url)
+    const id = new URL(url).searchParams.get('rid')
+    if (url === roleUrl(id) && details.has(id)) return details.get(id)
+    throw new Error(`Unexpected offline request: ${url}`)
+  } }
+}
+const run = t => excelacom.createExcelacomScraper().run({ fetchText: t.fetchText, now: () => NOW })
 
-const testDir = path.dirname(fileURLToPath(import.meta.url))
-const rssFixturePath = path.join(testDir, 'fixtures', 'excelacom', 'rss-live.xml')
-const rssXml = readFileSync(rssFixturePath, 'utf8')
-
-const indiaItem = `
-<item>
-<title>Senior Engineer</title>
-<link>https://phg.tbe.taleo.net/phg02/ats/careers/requisition.jsp?org=EXCELACOM&amp;cws=38&amp;rid=9999</link>
-<guid>https://phg.tbe.taleo.net/phg02/ats/careers/requisition.jsp?org=EXCELACOM&amp;cws=38&amp;rid=9999</guid>
-<description>Senior Engineer Bengaluru, India Build telecom systems and ship reliable software.</description>
-<pubDate>Wed, 09 Jul 2026 08:00:00 GMT</pubDate>
-<taleo:reqId>9999</taleo:reqId>
-<taleo:location>Karnataka</taleo:location>
-<taleo:locationCountry>IN</taleo:locationCountry>
-<taleo:locationState>IN-KA</taleo:locationState>
-<taleo:locationCity>Bengaluru</taleo:locationCity>
-<taleo:department>Engineering</taleo:department>
-<taleo:html-description>&lt;p&gt;Build telecom systems and ship reliable software.&lt;/p&gt;</taleo:html-description>
-</item>
-`
-
-const rssWithIndiaItem = rssXml.replace('</channel>', `${indiaItem}\n</channel>`)
-
-test('extractJobsFromFeed parses the official Excelacom Taleo RSS fixture and normalizes links, descriptions, and inferred locations', async () => {
-  const excelacom = await loadExcelacomModule()
-
-  assert.equal(
-    excelacom.RSS_FEED_URL,
-    'https://phg.tbe.taleo.net/phg02/ats/servlet/Rss?org=EXCELACOM&cws=38&WebPage=SRCHR_V2&WebVersion=0&_rss_version=2',
-  )
-
-  const jobs = excelacom.extractJobsFromFeed(rssXml)
-
-  assert.equal(jobs.length, 9)
-  assert.deepEqual(jobs[0], {
-    title: 'Data Scientist',
-    company: 'Excelacom',
-    department: 'Corporate',
-    location: 'Virginia, United States',
-    city: null,
-    state: 'Virginia',
-    country: 'United States',
-    jobId: '3371',
-    requisitionId: '3371',
-    sourceUrl: 'https://phg.tbe.taleo.net/phg02/ats/careers/requisition.jsp?org=EXCELACOM&cws=38&rid=3371',
-    applyUrl: 'https://phg.tbe.taleo.net/phg02/ats/careers/requisition.jsp?org=EXCELACOM&cws=38&rid=3371',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: '2026-07-07T13:26:08.000Z',
-    closingDate: null,
-    jobDescription: 'Data Scientist Reston, VA Who We Are: Excelacom is a global consulting and technology solutions firm solving client\'s complex business and technology challenges through a mix of consulting expertise, telecom-focused software, and managed services within the communications and media industries. Who You Are: At the Consultant-level, you will be expected to independently contribute ideas, recommendations, and solutions toward solving business challenges, construct key components of deliverables/presentations, and contribute to the development of Intellectual Capital (IC) and Marketing Collateral. You will serve as a team leader for individual work streams and acquire a comprehensive understanding of the firm\'s expertise, product set, and capabilities. Most importantly, you will embrace our firm\'s brand and core values. Role and Responsibilities: You may work on various projects throughout your career with Excelacom. The roles and responsibilities noted below pertain to the specific role listed above. Specialize in data driven, advanced analytics approaches to solving client problems Build everything from basic reports to advanced machine learning models, generative AI applications, and AI agent workflows and algorithms to drive improvements to our client\'s operations Deliver advisory services to Excelacom Senior Management on how AI/ML, generative AI, and AI agents can be leveraged to enable business improvements Build solutions from understanding business problems, to collecting datasets, to analyzing data, to modeling, to validating, to delivering models, and producing insights for our clients Ability to quantify the business value of ML projects Design and orchestrate AI agent workflows and multi-agent systems, integrating large language models (LLMs) into client operational processes Map AI/ML and agentic solutions to industry frameworks (e.g., TM Forum eTOM/ODA) to align delivery with telecom client lifecycle domains Prepare solutions and proposals and present to clients Responsible for individual projects in order to determine, define, and deploy machine learning and data analytics technologies to meet business objectives Proactively research data and identify opportunities to drive the product roadmap Leveraging Excelacom\'s domestic and international assets and expertise to bring new ideas to clients Required Qualifications: Master\'s degree or equivalent in Machine learning or Data Science Project experience using Supervised and Unsupervised ML algorithms, NLP and Text Mining, Anomaly Detection 3+ years of experience developing ML solutions using Python, TensorFlow, Scikit-learn, Pandas, and experience integrating Large Language Models (LLMs) via APIs (e.g., OpenAI, Anthropic) and building agentic AI workflows (e.g., LangChain, LangGraph) Prior consulting experience with a leading strategy firm, consulting practice, or consulting technology firm Experience with prompt engineering, retrieval-augmented generation (RAG), and LLM evaluation/observability techniques Familiarity with TM Forum frameworks (eTOM, ODA) or telecom operational processes, and responsible AI/governance considerations for client-facing deployments, is a plus Excellent writing, presentation and communications skills Strong verbal and written communication skills with the ability to interact with technical and non-technical personnel Ability to communicate and build relationships with Directors, VPs, etc. Ability to work in a highly intensive timeline environment with minimal guidance. Demonstrate experience eliciting requirements using interviews, document analysis, business process reviews, and task and workflow analysis. Analyze and de-conflict requirements, data and information from multiple data sources and decompose them into detailed requirements. **Excelacom is currently unable to provide visa sponsorship for this position. All applicants must be authorized to work in the United States on a permanent and ongoing basis without the need for current or future employer sponsorship.** Compensation and Benefits: For individuals assigned to work in Virginia, Excelacom is required to include a reasonable estimated compensation range for this role. However, final salaries will vary based on several factors, such as candidate\'s level, qualifications, skills, competencies and proficiency for the role. An individual may be hired at the Analyst, Consultant, or Manager level for this role with each level requiring an increasing set of responsibilities. For regular full-time employees, the estimated salary range is from $100,000 to $140,000. Our competitive salaries are just one component of Excelacom\'s total compensation package for our regular full-time employees. Other rewards and benefits include: health, vision, and dental insurance, ancillary benefits, Life and AD&D insurance, 401k, and generous paid time off policies. EEO Statement: Excelacom, Inc. is an equal opportunity employer. Any decision affecting employment, compensation, promotion, or transfer will be based solely on personal qualifications and merit, regardless of sex, race, color, religion, gender identity, sexual orientation, marital status, national origin, disability, age, results of genetic testing, service in the military, pregnancy, childbirth or other related medical conditions or any other factor protected under applicable law. #LI-JH1',
-  })
-
-  const texasRole = jobs.find((job) => job.jobId === '3359')
-  assert.ok(texasRole)
-  assert.equal(texasRole.country, 'United States')
-  assert.equal(texasRole.location, 'Texas, United States')
-  assert.equal(jobs.every((job) => !job.applyUrl.includes('&amp;')), true)
+test('native run enumerates pages and full details and closes the same scope before applying maxJobs', async () => {
+  const t = transport({ pages: new Map([[BOARD, listing(['1'], { total: 3, next: NEXT })], [NEXT, listing(['2', '3'], { total: 3 })]]), details: new Map([['1', detail('1')], ['2', detail('2')], ['3', detail('3', { country: 'US', state: 'Colorado', region: 'US-CO', city: 'Denver' })]]) })
+  const jobs = await excelacom.createExcelacomScraper().run({ fetchText: t.fetchText, now: () => NOW, maxJobs: 1 })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, '1')
+  assert.equal(jobs[0].postingId, '1')
+  assert.equal(jobs[0].requisitionId, null)
+  assert.equal(jobs[0].nativeJobCode, 'JOB-1')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].sourceGlobalJobCount, 3)
+  assert.equal(jobs[0].sourceObservedIndiaJobCount, 2)
+  assert.equal(jobs[0].sourceDetailComplete, true)
+  assert.equal(jobs[0].sourceScopeComplete, false)
+  assert.equal(jobs[0].sourceListingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).status, 'coverage-gap')
+  assert.match(readInventoryEvidence(jobs).reason, /output-limit/)
+  assert.deepEqual(t.calls, [CAREERS, SEARCH, BOARD, NEXT, roleUrl('1'), roleUrl('2'), roleUrl('3'), BOARD, NEXT])
 })
 
-test('run filters the verified Excelacom feed down to India roles and keeps India jobs when the Taleo RSS contains them', async () => {
-  const excelacom = await loadExcelacomModule()
-  const requestedUrls = []
-  const scrapedAt = new Date('2026-07-09T12:34:56.000Z')
+test('India roles retain all criteria, genuine source dates and actual application links without invented work type', async () => {
+  const jobs = await run(transport({ details: new Map([['1', detail('1', { req: 'REQ-2026-19', type: 'Any Status' })]]) }))
+  const [job] = jobs
+  assert.equal(job.requisitionId, 'REQ-2026-19')
+  assert.equal(job.postingDate, '2026-10-19')
+  assert.equal(job.sourcePostingDateRaw, '2026-10-19 15:08:55.0')
+  assert.equal(job.closingDate, null)
+  assert.equal(job.employmentType, null)
+  assert.equal(job.nativeEmploymentType, 'Any Status')
+  assert.equal(job.workType, null)
+  assert.equal(job.nativeEmployer, 'Excelacom')
+  assert.equal(job.applyUrl, applyUrl('1'))
+  assert.equal(job.sourceUrl, roleUrl('1'))
+  assert.match(job.jobDescription, /Bachelor’s degree/)
+  assert.match(job.minimumQualification, /3\+ years of Java experience and SQL/)
+  assert.match(job.preferredQualification, /Camunda/)
+  assert.match(job.jobDescription, /Salary INR 20-30 lakh/)
+  assert.match(job.jobDescription, /Health insurance/)
+  assert.equal(job.sourceScopeComplete, true)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(analyzePublishableJobs(jobs, { now: NOW }).eligibleJobs.length, 1)
+})
 
-  const scraper = excelacom.createExcelacomScraper({
-    now: () => scrapedAt,
-  })
+test('unknown country cannot be inferred from corporate HQ, work authorization or a familiar city', async () => {
+  const t = transport({ pages: new Map([[BOARD, listing(['1', '2'])]]), details: new Map([['1', detail('1')], ['2', detail('2', { noCountry: true, state: 'Global', region: null, city: 'Bengaluru', jd: JD + '<p>Headquarters India. Must be authorized to work in the United States.</p>' })]]) })
+  const jobs = await run(t)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].sourceScopeComplete, false)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  assert.match(readInventoryEvidence(jobs).reason, /country-unresolved:2/)
+})
 
-  const noIndiaJobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return rssXml
-    },
-  })
+test('native Missouri worksite and US-TX region qualify with retained official US state evidence', () => {
+  const row = { jobId: '1', title: 'Engineer 1', sourceUrl: roleUrl('1') }
+  const missouri = excelacom.parseNativeDetail(detail('1', { noCountry: true, state: 'Missouri', city: 'St Louis', region: null }), row)
+  assert.equal(missouri.country, 'United States')
+  assert.equal(missouri.sourceCountryEvidence.nativeCountryMissing, true)
+  assert.equal(missouri.sourceCountryEvidence.nativeValue, 'Missouri')
+  assert.match(missouri.sourceCountryEvidence.referenceUrl, /^https:\/\/www\.census\.gov\//)
+  const texas = excelacom.parseNativeDetail(detail('1', { noCountry: true, state: 'Texas', city: '', region: 'US-TX' }), row)
+  assert.equal(texas.country, 'United States')
+  assert.equal(texas.sourceCountryEvidence.nativeValue, 'US-TX')
+})
 
-  assert.deepEqual(requestedUrls, [excelacom.RSS_FEED_URL])
-  assert.deepEqual(noIndiaJobs, [])
+test('contradictory explicit country and officially qualified native worksite cannot publish', async () => {
+  await assert.rejects(run(transport({ details: new Map([['1', detail('1', { country: 'IN', state: 'Missouri', city: 'St Louis', region: 'US-MO' })]]) })), /country|worksite|conflict/i)
+  await assert.rejects(run(transport({ details: new Map([['1', detail('1', { noCountry: true, state: 'Missouri', region: 'US-TX' })]]) })), /country|worksite|conflict/i)
+})
 
-  const indiaJobs = await scraper.run({
-    fetchText: async () => rssWithIndiaItem,
-  })
+test('hidden and inert markup cannot supply criteria and text entities decode once', () => {
+  const hidden = '<template><p>Fake required skill</p></template><object><p>Object fallback</p></object><p hidden>Hidden requirement</p><p style="display:none">Invisible condition</p><p class="ghost">Stylesheet hidden condition</p><script>visibleFake()</script><textarea><p>Raw fallback</p></textarea>'
+  const html = detail('1', { jd: JD + hidden + '<p>Literal &amp;lt;b&amp;gt; &lt;script&gt;literal&lt;/script&gt;.</p>', extra: '<style>.ghost {display: none}</style>' })
+  const job = excelacom.parseNativeDetail(html, { jobId: '1', title: 'Engineer 1', sourceUrl: roleUrl('1') })
+  assert.doesNotMatch(job.jobDescription, /Fake required|Object fallback|Hidden requirement|Invisible condition|Stylesheet hidden|visibleFake|Raw fallback/)
+  assert.match(job.jobDescription, /Literal &lt;b&gt; <script>literal<\/script>/)
+})
 
-  assert.deepEqual(indiaJobs, [{
-    title: 'Senior Engineer',
-    company: 'Excelacom',
-    department: 'Engineering',
-    location: 'Bengaluru, Karnataka, India',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    country: 'India',
-    jobId: '9999',
-    requisitionId: '9999',
-    sourceUrl: 'https://phg.tbe.taleo.net/phg02/ats/careers/requisition.jsp?org=EXCELACOM&cws=38&rid=9999',
-    applyUrl: 'https://phg.tbe.taleo.net/phg02/ats/careers/requisition.jsp?org=EXCELACOM&cws=38&rid=9999',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: '2026-07-09T08:00:00.000Z',
-    closingDate: null,
-    jobDescription: 'Build telecom systems and ship reliable software.',
-    source: 'excelacom',
-    link: 'https://phg.tbe.taleo.net/phg02/ats/careers/requisition.jsp?org=EXCELACOM&cws=38&rid=9999',
-    scrapedAt: '2026-07-09T12:34:56.000Z',
-  }])
+for (const [label, options] of [
+  ['employer', { employer: 'Another Employer' }], ['title', { title: 'Different role' }],
+  ['structured URL', { jsonUrl: roleUrl('9') }], ['application rid', { application: applyUrl('9') }],
+  ['inert-only description', { jd: '<template>' + JD + '</template>' }],
+]) test(`native detail rejects mismatched ${label}`, async () => {
+  await assert.rejects(run(transport({ details: new Map([['1', detail('1', options)]]) })), /Excelacom|native|identity|description/i)
+})
+
+test('anonymous denials stop immediately without another request', async () => {
+  for (const status of [401, 403, 429]) {
+    const t = transport({ fail: { url: BOARD, status } })
+    await assert.rejects(run(t), new RegExp(String(status)))
+    assert.deepEqual(t.calls, [CAREERS, SEARCH, BOARD])
+  }
+  const t = transport({ fail: { url: BOARD, status: 200, body: '<title>Verify you are human</title><h1>Complete the CAPTCHA to continue</h1>' } })
+  await assert.rejects(run(t), /gate|denied|captcha/i)
+  assert.deepEqual(t.calls, [CAREERS, SEARCH, BOARD])
+})
+
+test('closing identity changes, pagination truncation and repeated pages cannot claim complete inventory', async () => {
+  await assert.rejects(run(transport({ mutateClose: () => listing(['2']) })), /changed|closing|inventory/i)
+  await assert.rejects(run(transport({ pages: new Map([[BOARD, listing(['1'], { total: 2 })]]) })), /count|terminal|inventory/i)
+  await assert.rejects(run(transport({ pages: new Map([[BOARD, listing(['1'], { total: 2, next: BOARD })]]) })), /cycle|repeat|pagination/i)
+})
+
+test('additional advertised hiring channels keep healthy India details but mark company scope incomplete', async () => {
+  const jobs = await run(transport({ corporate: careers('<a href="https://another.example/jobs">Other job openings</a>') }))
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].sourceDetailComplete, true)
+  assert.equal(jobs[0].sourceScopeComplete, false)
+  assert.equal(readInventoryEvidence(jobs).status, 'coverage-gap')
+  assert.match(readInventoryEvidence(jobs).reason, /additional-hiring-channel/)
+})
+
+test('an advertised regional careers URL labelled India prevents unreviewed whole-employer absence', async () => {
+  const jobs = await run(transport({ corporate: careers('<section><h2>Regional Careers</h2><a href="https://another.example/careers/india">India</a></section>') }))
+  assert.equal(jobs.length, 1)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(jobs[0].sourceOfficialBinding.extraChannels.length, 1)
+})
+
+test('opaque regional hiring links inherit their own careers heading without treating office footer links as hiring', async () => {
+  const t = transport({ corporate: careers('<section><h2>Regional Careers</h2><a href="https://another.example/in/">India</a></section><footer><h2>Global offices</h2><a href="https://locations.example/in/">India</a></footer>') })
+  const jobs = await run(t)
+  assert.equal(jobs.length, 1)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.deepEqual(jobs[0].sourceOfficialBinding.extraChannels, ['https://another.example/in/'])
+  const footerOnly = await run(transport({ corporate: careers('<footer><h2>Global offices</h2><a href="https://locations.example/in/">India</a></footer>') }))
+  assert.equal(readInventoryEvidence(footerOnly).listingComplete, true)
+  assert.deepEqual(footerOnly[0].sourceOfficialBinding.extraChannels, [])
+})
+
+test('CSS ancestor and child selectors preserve visible native criteria and hide only their actual matches', () => {
+  const jd = JD + '<style>.not-present .review-required {display:none}.actual > .child-only {display:none}</style><p class="review-required">Must have current security clearance.</p><div class="actual"><p class="child-only">Hidden direct-child criterion.</p><div><p class="child-only">Visible nested qualification.</p></div></div>'
+  const job = excelacom.parseNativeDetail(detail('1', { jd }), { jobId: '1', title: 'Engineer 1', sourceUrl: roleUrl('1') })
+  assert.match(job.jobDescription, /Must have current security clearance/)
+  assert.match(job.jobDescription, /Visible nested qualification/)
+  assert.doesNotMatch(job.jobDescription, /Hidden direct-child criterion/)
+  assert.equal(job.sourceDetailComplete, true)
+  const d = readHtml('<style>.not-present p {display:none}</style><div><p>Required qualification visible in browser.</p><div>Other prose.</div></div>')
+  assert.match(d.text(d.root), /Required qualification visible in browser/)
+})
+
+test('unsupported CSS visibility selectors reject incomplete detail claims instead of guessing what is hidden', () => {
+  const jd = JD + '<style>p:has(.child) {display:none}</style><p>Visible requirement without a matching child.</p>'
+  assert.throws(() => excelacom.parseNativeDetail(detail('1', { jd }), { jobId: '1', title: 'Engineer 1', sourceUrl: roleUrl('1') }), /visibility selector|unsupported CSS/i)
+})
+
+test('conditional hiding that could affect native criteria rejects a complete static detail claim', () => {
+  for (const condition of ['@media (min-width:99999px)', '@media (min-width:0px)', '@supports (display:grid)', '@container (min-width:1px)']) {
+    const jd = JD + `<style>${condition} {.review-required {display:none}}</style><p class="review-required">Must have current security clearance.</p>`
+    assert.throws(() => excelacom.parseNativeDetail(detail('1', { jd }), { jobId: '1', title: 'Engineer 1', sourceUrl: roleUrl('1') }), /conditional visibility/i)
+  }
+  const jd = JD + '<style media="(min-width:99999px)">.review-required {display:none}</style><p class="review-required">Must have current security clearance.</p>'
+  assert.throws(() => excelacom.parseNativeDetail(detail('1', { jd }), { jobId: '1', title: 'Engineer 1', sourceUrl: roleUrl('1') }), /conditional visibility/i)
+})
+
+test('unmatched conditional selectors preserve visible criteria and unconditional hiding still hides its real match', () => {
+  const jd = JD + '<style>@media (min-width:99999px) {.not-present .review-required {display:none}}.always-hidden {display:none}</style><p class="review-required">Must have current security clearance.</p><p class="always-hidden">Unconditionally hidden criterion.</p>'
+  const job = excelacom.parseNativeDetail(detail('1', { jd }), { jobId: '1', title: 'Engineer 1', sourceUrl: roleUrl('1') })
+  assert.match(job.jobDescription, /Must have current security clearance/)
+  assert.doesNotMatch(job.jobDescription, /Unconditionally hidden criterion/)
+  assert.equal(job.sourceDetailComplete, true)
+})
+
+test('country contradiction validation covers US-CO and typed Colorado beyond the narrow missing-country inference map', async () => {
+  for (const options of [
+    { country: 'IN', state: 'Colorado', city: 'Greenwood Village', region: 'US-CO' },
+    { country: 'IN', state: 'Colorado', city: 'Greenwood Village', region: null },
+    { country: 'IN', state: 'London', city: 'London', region: 'GB-LND' },
+  ]) await assert.rejects(run(transport({ details: new Map([['1', detail('1', options)]]) })), /conflict|country|worksite/i)
+})
+
+test('missing official binding never falls back to the historical RSS endpoint', async () => {
+  const t = transport({ corporate: '<h1>Excelacom careers</h1>' })
+  await assert.rejects(run(t), /binding|official|careers/i)
+  assert.deepEqual(t.calls, [CAREERS])
+})
+
+test('a truly empty future board uses the native binding and closing contract', async () => {
+  const t = transport({ pages: new Map([[BOARD, listing([])]]) })
+  const jobs = await run(t)
+  assert.deepEqual([...jobs], [])
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.deepEqual(t.calls, [CAREERS, SEARCH, BOARD, BOARD])
+})
+
+test('unknown countries on a non-India board never produce verified India absence', async () => {
+  const jobs = await run(transport({ details: new Map([['1', detail('1', { noCountry: true, state: 'Global', city: 'Delhi', region: null })]]) }))
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).status, 'coverage-gap')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+})
+
+test('placeholder native country codes remain unresolved while recognized foreign countries stay foreign', async () => {
+  const unknown = await run(transport({ details: new Map([['1', detail('1', { country: 'ZZ', state: 'Global', city: 'Delhi', region: null })]]) }))
+  assert.equal(unknown.length, 0)
+  assert.equal(readInventoryEvidence(unknown).listingComplete, false)
+  assert.match(readInventoryEvidence(unknown).reason, /country-unresolved/)
+  const row = { jobId: '1', title: 'Engineer 1', sourceUrl: roleUrl('1') }
+  const france = excelacom.parseNativeDetail(detail('1', { country: 'FR', state: 'Île-de-France', city: 'Paris', region: 'FR-IDF' }), row)
+  assert.equal(france.country, 'France')
 })

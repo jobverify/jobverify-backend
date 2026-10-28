@@ -21,15 +21,21 @@ export const ESDS_CATALOG = {
     'https://esds.darwinbox.in/ms/candidate/candidate/login?redirect=%2Fms%2Fcandidate%2Fcareers%2Fa688746f77752a___apply%3D1',
   atsPlatform: 'darwinbox',
   countryFilter: 'India',
-  paginationStrategy: 'verified-first-party-careers-page-plus-darwinbox-browser-session-pagination',
+  paginationStrategy: 'unresolved-native-inventory+corporate-discovery-and-closing-reconciliation',
   extractionStrategy:
-    'verified-first-party-careers-page-html+darwinbox-browser-session-listing-api+job-id-intersection',
+    'active-corporate-cards+advertised-public-get-details+fail-closed-incomplete-inventory',
+  bindingStrategy: 'current-corporate-click-redirect-to-esds-darwinbox',
+  backfillMode: 'discovery-only',
+  zeroResultPolicy: 'evidence-required',
+  nativeExtractionVerified: false,
+  fullInventoryVerified: false,
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'esds.co.in',
-  verifiedOn: '2026-08-02',
+  verifiedOn: '2026-10-26',
+  currentAdvertisedJobUrl: 'https://www.esds.co.in/career-details/a688b3b568300f',
   verifiedSurfaceSummary:
-    'Verified on Sunday, August 2, 2026 that https://www.esds.co.in/ is the live ESDS homepage, that https://www.esds.co.in/careers/ still exposes the public first-party ESDS job cards, and that those first-party job IDs match the live ESDS Darwinbox public portal at https://esds.darwinbox.in/ms/candidatev2/main/careers/allJobs. First-party detail routes such as https://www.esds.co.in/career-details/a688746f77752a now boot into the Darwinbox candidate surface instead of the older HTML detail table, so this scraper verifies the ESDS careers page and then intersects the visible first-party job IDs with the live Darwinbox browser-session listing results. Verified visible roles included Data Center Project Manager and Compliance Specialist.',
+    'Fresh public checks on 2026-10-26 found one corporate advertised candidate, Data Center Project Manager (a688b3b568300f), at https://www.esds.co.in/careers/ and its canonical WordPress careers route. The current clicked detail redirects to the malformed Darwinbox path /ms/candidatev2/main/careers/allJobsa688b3b568300f/. That path, the established /home handoff and /allJobs board render ESDS metadata only, including in a fresh anonymous Edge context. The public native detail GET returned HTTP 403 and requests stopped. The older example https://www.esds.co.in/career-details/a688746f77752a and established https://esds.darwinbox.in/ms/candidatev2/main/careers/allJobs metadata remain historical identifiers. Current native inventory, full description, role-owned country, original posting date and requisition ID are unverified. The source is a guard-only discovery adapter with incomplete evidence; it proves neither no openings nor no India openings and is not a recovered extraction source.',
   dryRunFile: 'esds/jobs.json',
 }
 

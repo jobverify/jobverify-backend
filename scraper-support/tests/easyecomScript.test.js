@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
+test.before(() => { globalThis.fetch = () => { throw new Error('Unexpected network access in archive tests') } })
 
 const loadEasyEcomModule = async () => {
   try {
@@ -181,7 +184,7 @@ test('extractJobDetail pulls EasyEcom detail fields, mailto apply URL, and descr
   ])
 })
 
-test('run fetches the EasyEcom careers page and detail pages, then decorates runner fields', async () => {
+test('current run rejects archived Webflow cards rather than inferring healthy India jobs', async () => {
   const easyecom = await loadEasyEcomModule()
   assert.ok(easyecom)
 
@@ -191,27 +194,15 @@ test('run fetches the EasyEcom careers page and detail pages, then decorates run
   const jobs = await scraper.run({
     fetchText: async (url) => {
       requested.push(url)
-      if (url === 'https://easyecom.io/careers') return listingHtml
-      if (url === 'https://easyecom.io/career/business-analyst') return detailHtml
-      if (url === 'https://easyecom.io/career/key-account-manager') {
-        return detailHtml
-          .replaceAll('Business Analyst', 'Key Account Manager')
-          .replaceAll('Bengaluru', 'Mumbai/Bengaluru/Hybrid/Remote')
-          .replace('mailto:sapna@easyecom.io', 'mailto:hiring@easyecom.io')
-          .replace('Full time', 'Hybrid')
-      }
+      if (url === 'https://www.easyecom.io/careers') return listingHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
   assert.deepEqual(requested, [
-    'https://easyecom.io/careers',
-    'https://easyecom.io/career/business-analyst',
-    'https://easyecom.io/career/key-account-manager',
+    'https://www.easyecom.io/careers',
   ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].company, 'EasyEcom')
-  assert.equal(jobs[0].source, 'easyecom')
-  assert.equal(jobs[0].link, 'mailto:sapna@easyecom.io')
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).status, 'coverage-gap')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
 })
