@@ -25,7 +25,9 @@ export const run = async ({ fetchJson = (url, options) => fetchJsonWithRetry(url
     // Match each complete scope, rather than treating one familiar country word
     // as proof that every location on a posting has been resolved.
     const india = /^(?:Remote India|(?:[A-Za-z][A-Za-z .'-]*,\s*)?India)$/i.test(location)
-    const foreign = /^(?:Remote (?:US|UK|Canada|Poland|Spain)|(?:New York, New York, United States|San Francisco, California, United States)(?:;\s*(?:New York, New York, United States|San Francisco, California, United States))*)$/i.test(location)
+    const assignedUKOffice = location === 'London' && Array.isArray(job.offices) && job.offices.length > 0
+      && job.offices.every(office => office?.name === 'Remote UK')
+    const foreign = assignedUKOffice || /^(?:Remote (?:US|UK|Canada|Poland|Spain)|(?:New York, New York, United States|San Francisco, California, United States)(?:;\s*(?:New York, New York, United States|San Francisco, California, United States))*)$/i.test(location)
     if (!Number.isSafeInteger(job.id) || job.id <= 0 || identities.has(job.id)
       || job.company_name !== COMPANY || url.origin !== 'https://job-boards.greenhouse.io' || url.username || url.password
       || url.search || url.hash || url.pathname !== `/affirm/jobs/${job.id}` || (!india && !foreign)) {

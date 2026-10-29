@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';import path from 'node:path';import os from 'node:os';import {createHash} from 'node:crypto';import {setTimeout as delay} from 'node:timers/promises';import {fileURLToPath} from 'node:url';
 import {writeFileAtomically} from '../rewriting/atomicFile.js';
+import {rewritePolicyIdentity} from '../rewriting/policyIdentity.js';
 import {REWRITE_MODEL} from '../src/services/jobDescriptionPolicy.js';import {evaluateLocalJobs,archiveJobSnapshot} from '../rewriting/localEvaluation.js';import {createRewriteClient} from '../rewriting/runner.js';import {prepareRewriteRuntime,startRewriteWorker,workerMemoryBytes} from '../rewriting/worker.js';
 const option=name=>{const i=process.argv.indexOf(name);return i<0?null:process.argv[i+1];};
 const runDir=option('--run-dir'),catalogFile=option('--catalog'),output=option('--output');
@@ -8,7 +9,7 @@ const outputDir=path.resolve(output),watch=process.argv.includes('--watch'),budg
 const deadline=Date.now()+budget*1000,controller=new AbortController();for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>controller.abort());
 const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(Math.min(2147483647,Math.ceil(budget*1000)))]);
 const base=fileURLToPath(new URL('../',import.meta.url));
-const policyIdentity=createHash('sha256').update(JSON.stringify(REWRITE_MODEL)).update(await fs.readFile(new URL('../src/services/jobDescriptionPolicy.js',import.meta.url))).update(await fs.readFile(new URL('../rewriting/factPlan.js',import.meta.url))).update(await fs.readFile(new URL('../rewriting/sectionProtocol.js',import.meta.url))).update(await fs.readFile(new URL('../rewriting/editProtocol.js',import.meta.url))).update(await fs.readFile(new URL('../rewriting/runner.js',import.meta.url))).digest('hex');
+const policyIdentity=await rewritePolicyIdentity();
 const catalog=JSON.parse(await fs.readFile(catalogFile,'utf8')).catalog;await fs.mkdir(outputDir,{recursive:true});await fs.mkdir(path.join(outputDir,'snapshots'),{recursive:true});
 const catalogIdentity=createHash('sha256').update(JSON.stringify(catalog)).digest('hex');
 const initialState=JSON.parse(await fs.readFile(path.join(runDir,'run-state.json'),'utf8'));

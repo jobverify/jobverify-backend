@@ -37,7 +37,12 @@ const companyOnly='<h2>Creating Peace of Mind by Pioneering Safety and Security<
 for(const description of [companyOnly,'<p>Click Apply Now to view the full job description.</p>'+companyOnly])test('company promotion is retained as a rejected native row, not a full job description: '+description.slice(0,35),async()=>{
  const{jobs}=await replay(p=>{if(p.url.includes('/job/')){const d=JSON.parse(p.body);if(d.jobPostingInfo.jobReqId==='JR37232')d.jobPostingInfo.jobDescription=description;p.body=JSON.stringify(d)}})
  assert.equal(jobs.length,14);const row=jobs.find(j=>j.jobId==='JR37232');assert.equal(row.sourceDetailComplete,false);assert.equal(row.jobDescription,null);assert.equal(row.sourceDescription,null)
- const a=analyzePublishableJobs(jobs,{now:'2026-10-21T15:24:09.832Z'});assert.equal(a.eligibleJobs.length,11);assert.equal(a.filterCounts.emptyDescription,1);assert.equal(a.indiaJobs.length,14)
+ assert.equal(row.sourceDetailFailureKind,'unqualified-role-content');assert.equal(row.sourceRejectedNativeDescription,description)
+ // Missing content remains eligible for later enrichment under the publishing
+ // policy; it must still never become a complete native role description.
+ const a=analyzePublishableJobs(jobs,{now:'2026-10-21T15:24:09.832Z'});assert.equal(a.eligibleJobs.length,12);assert.equal(a.filterCounts.emptyDescription,0);assert.equal(a.indiaJobs.length,14)
+ assert.deepEqual(a.filterCounts,{nonIndia:0,old:2,closed:0,invalidUrl:0,nonJob:0,emptyDescription:0})
+ assert.equal(a.eligibleJobs.find(job=>job.jobId==='JR37232').sourceDetailComplete,false)
 })
 for(const[name,change]of[
  ['duplicate posting UID',(d)=>{d.jobPostingInfo.id='686e59a8dd4f1001938c90fdb0120000'}],

@@ -106,7 +106,11 @@ export const reconcileActiveJobs = (text, rows, { now = new Date() } = {}) => {
     if (!job || typeof job !== 'object' || Object.keys(job).some(key => !allowed.includes(key))
       || !Number.isSafeInteger(job.id) || matched.has(String(job.id))) fail('invalid, duplicate or unreviewed active API role')
     const row = rows.find(row => row.id === String(job.id))
-    if (!row || norm(job.title) !== norm(row.title) || norm(job.departmentName) !== norm(row.department)
+    // Corporate pages can lag the native active feed. Keep the unadvertised
+    // identity in the reconciliation count, but never fetch or publish it from
+    // API evidence alone. The caller must retain incomplete inventory scope.
+    if (!row) { matched.set(String(job.id), { unlisted: true }); continue }
+    if (norm(job.title) !== norm(row.title) || norm(job.departmentName) !== norm(row.department)
       || !Array.isArray(job.jobLocations) || !job.jobLocations.length) fail('active API/listing identity mismatch')
     for (const location of job.jobLocations) {
       if (!location || typeof location !== 'object' || Object.keys(location).some(key => !['id', 'name', 'city', 'state', 'countryCode', 'countryName'].includes(key))

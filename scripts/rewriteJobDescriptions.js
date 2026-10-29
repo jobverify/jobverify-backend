@@ -6,8 +6,8 @@ import '../loadEnv.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
 import Job from '../src/models/Job.js';
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
-import { rewriteDeadline, rewriteStopDetails, rewriteQueueQuery, rewriteQueuePages, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient, rewriteProgress } from '../rewriting/runner.js';
-import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration } from '../rewriting/worker.js';
+import { rewriteDeadline, rewriteStopDetails, rewriteQueueQuery, rewriteQueuePages, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient, rewriteWhenReady, rewriteProgress } from '../rewriting/runner.js';
+import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration, rewriteGpuLayers } from '../rewriting/worker.js';
 import { createRewriteDiagnostics } from '../rewriting/diagnostics.js';
 import { createProgressLogger } from './lib/progressLogger.js';
 
@@ -15,11 +15,15 @@ const apply = process.argv.includes('--apply');
 const mode = process.env.JOB_DESCRIPTION_REWRITE_MODE || 'off';
 const workerConfig = rewriteWorkerConfiguration({ threads: process.env.JOB_DESCRIPTION_REWRITE_CPU_THREADS || REWRITE_MODEL.cpuThreads,
   parallelism: process.env.JOB_DESCRIPTION_REWRITE_CONCURRENCY || 1 });
+const gpuLayers = rewriteGpuLayers(process.env.JOB_DESCRIPTION_REWRITE_GPU_LAYERS || 0);
+const binaryOverride = process.env.JOB_DESCRIPTION_REWRITE_BINARY;
+const binarySha256 = process.env.JOB_DESCRIPTION_REWRITE_BINARY_SHA256;
+if (gpuLayers !== 0 && (!binaryOverride || !binarySha256)) throw new TypeError('GPU rewriting requires a compatible binary and its SHA-256 checksum');
 if (!['off', 'publish'].includes(mode)) throw new Error('JOB_DESCRIPTION_REWRITE_MODE must be off or publish');
 const summary = { mode: apply ? mode : 'preview', modelId: REWRITE_MODEL.modelId, modelFile: REWRITE_MODEL.file,
   modelRevision: REWRITE_MODEL.revision, policyVersion: REWRITE_MODEL.policyVersion, outputFormat: REWRITE_MODEL.outputFormat,
   startedAt: new Date().toISOString(), environment: { platform: os.platform(), cpu: os.cpus()[0]?.model,
-    availableCpus: os.availableParallelism(), cpuThreads: workerConfig.threads, parallelism: workerConfig.parallelism,
+    availableCpus: os.availableParallelism(), cpuThreads: workerConfig.threads, parallelism: workerConfig.parallelism, gpuLayers,
     contextTokensPerRequest: REWRITE_MODEL.contextTokens, maxOutputTokens: REWRITE_MODEL.maxOutputTokens,
     maxRetryOutputTokens: REWRITE_MODEL.maxRetryOutputTokens, maxModelEdits: REWRITE_MODEL.maxModelEdits,
     maxPromptCandidates: REWRITE_MODEL.maxPromptCandidates, maxEditCharacters: REWRITE_MODEL.maxEditCharacters, queuePageSize: 8,
@@ -61,21 +65,23 @@ try {
     else {
         signal.throwIfAborted();
         setPhase('prepare_runtime');
-        const runtime = await prepareRewriteRuntime({ signal });
+        const runtime = await prepareRewriteRuntime({ signal, binaryOverride, binarySha256 });
         setPhase('start_worker');
         worker = await startRewriteWorker({ ...runtime, signal, deadline,
-          threads: workerConfig.threads, parallelism: workerConfig.parallelism });
+          threads: workerConfig.threads, parallelism: workerConfig.parallelism, gpuLayers });
         setPhase('probe_worker');
         summary.workerProbe = await probeRewriteClient(createRewriteClient(worker), { concurrency: worker.parallelism, deadline, signal, onRejection });
+        summary.results = [];
+        Object.assign(summary, await rewriteWhenReady(summary.workerProbe, async () => {
         setPhase('process_queue');
         jobs = rewriteQueuePages(Job, query, { pageSize: 8, deadline, signal });
-        summary.results = [];
-        Object.assign(summary, await rewriteCandidates(jobs, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-rewrites' }), deadline, signal, concurrency: worker.parallelism, onRejection,
+        return rewriteCandidates(jobs, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-rewrites' }), deadline, signal, concurrency: worker.parallelism, onRejection,
           update: async (filter, update) => {
             try { return await Job.updateOne(filter, update, { runValidators: true, maxTimeMS: 15000 }); }
             catch (error) { error.rewritePhase = 'update_job'; throw error; }
           },
           onResult: result => { summary.results.push(result); console.log(JSON.stringify(result)); },
+        });
         }));
     }
   }

@@ -23,6 +23,7 @@ export function stageOutcome(key, summary={}, code=0) {
     // block classification, and it must never conceal an execution failure.
     if (code!==0 || summary.errorType || summary.stale>0) return 'failed';
     if (summary.cancelled || summary.stopReason==='cancelled') return 'incomplete';
+    if (summary.qualityStopped && summary.reason==='model_quality_unavailable') return 'completed';
     if (summary.stopReason==='budget_exhausted' || summary.budgetExhausted || summary.reason==='workflow_budget_exhausted') return 'completed';
   }
   if (summary.interrupted || summary.budgetExhausted || summary.pendingEstimate>0 || summary.leased>0 || ['interrupted','workflow_budget_exhausted'].includes(summary.reason)) return 'incomplete';
@@ -36,7 +37,7 @@ export const isTerminal = status => ['completed','failed','incomplete','cancelle
 export const describeStageCompletion = (key, summary = {}, outcome) => ({
   ...summary,
   handoffReady: outcome === 'completed',
-  processingComplete: outcome === 'completed' && !summary.interrupted && !summary.budgetExhausted
+  processingComplete: outcome === 'completed' && !summary.interrupted && !summary.budgetExhausted && !summary.qualityStopped
     && summary.stopReason !== 'budget_exhausted' && summary.reason !== 'workflow_budget_exhausted'
     && !(summary.pendingEstimate > 0) && !(summary.leased > 0),
   ...(key === 'rewrite' && Number.isFinite(summary.queued) ? {

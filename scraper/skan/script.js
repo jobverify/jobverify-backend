@@ -78,7 +78,7 @@ export const createSkanScraper = () => ({
           details.push(...results)
         }
         const jobs = details.filter(job => job.locations.length)
-        const listingAgrees = activeRows.length === rows.length
+        const listingAgrees = activeRows.length === rows.length && active.size === rows.length
         const scopeComplete = listingAgrees && details.every(job => job.scopeComplete && !job.nativeCountryConflict), complete = scopeComplete && jobs.every(job => job.sourceDetailComplete)
         for (const job of jobs) { delete job.scopeComplete; job.sourceListingComplete = complete }
         checkBudget()

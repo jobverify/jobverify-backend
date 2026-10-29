@@ -1,4 +1,4 @@
-import { buildRewriteInput } from '../src/services/jobDescriptionPolicy.js';
+import { buildRewriteInput, REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
 
 const snapshotFields = [
   'title', 'originalTitle', 'company', 'sourceDescription', 'jobDescription', 'description',
@@ -6,6 +6,7 @@ const snapshotFields = [
   'sourceExperienceRequired', 'location', 'salary', 'sourceContentHashVersion',
   'descriptionRewrite.status', 'descriptionRewrite.inputHash', 'descriptionRewrite.attempts',
   'descriptionRewrite.queuedAt', 'descriptionRewrite.nextAttemptAt',
+  'descriptionRewrite.policyVersion',
 ];
 
 // Also guard the actual inputs: a concurrent writer may change a field before its hash.
@@ -25,13 +26,16 @@ export const reconcileRewriteCandidate = async (job, { update, now = new Date() 
   const input = buildRewriteInput(job);
   if (job.status !== 'active' || !['pending', 'failed'].includes(job.descriptionRewrite?.status)
     || input.inputHash !== job.sourceContentHash) return { kind: 'stale' };
-  if (input.eligible && job.descriptionRewrite.inputHash === input.inputHash) {
+  const changedPolicy = job.descriptionRewrite.status === 'failed'
+    && typeof job.descriptionRewrite.policyVersion === 'string'
+    && job.descriptionRewrite.policyVersion !== REWRITE_MODEL.policyVersion;
+  if (input.eligible && job.descriptionRewrite.inputHash === input.inputHash && !changedPolicy) {
     return { kind: 'ready', job, input, repaired: false };
   }
 
   const reason = input.eligible ? undefined : 'insufficient_source';
   const descriptionRewrite = { status: input.eligible ? 'pending' : 'skipped',
-    inputHash: input.inputHash, queuedAt: now, attempts: 0,
+    inputHash: input.inputHash, queuedAt: now, attempts: 0, policyVersion: REWRITE_MODEL.policyVersion,
     ...(reason ? { reason, attemptedAt: now } : {}),
   };
   const saved = await update(rewriteSnapshotFilter(job), { $set: { descriptionRewrite } });

@@ -24,6 +24,17 @@ const defaultFetchText = async (url, { signal } = {}) => {
 export const createMoEVingScraper = () => ({
   async run({ fetchText = defaultFetchText, signal, timeoutMs = 20000, now = () => new Date().toISOString() } = {}) {
     signal?.throwIfAborted()
+    let pagesFetched = 0
+    const gap = (message, reason, cause) => Object.assign(new Error(message, { cause }), {
+      name: 'MoEVingCoverageGapError', code: 'MOEVING_COVERAGE_GAP',
+      softFailure: true, upstreamOutage: false, failureKind: 'coverage_gap', abortRetries: true,
+      partial: true, sourceListingComplete: false, lifecycleCleanupAllowed: false,
+      inventoryEvidence: normalizeInventoryEvidence({
+        status: 'coverage-gap', surface: FIRST_PARTY_ATS_URL, firstParty: false,
+        listingComplete: false, pagesFetched, reportedTotal: null, indiaFacetCount: null,
+        verifiedAt: now(), reason,
+      }),
+    })
     const controller = new AbortController()
     let timer
     let onAbort
@@ -46,17 +57,17 @@ export const createMoEVingScraper = () => ({
         interrupted,
       ])
       signal?.throwIfAborted()
+      pagesFetched++
       if (/invalid-domain-wrapper/.test(html) && /class=["']no-ats["']/.test(html)
         && /We couldn't find/.test(html) && /You can claim it now at/.test(html)) {
-        const error = new Error('MoEVing native inventory unavailable: inactive Freshteam tenant')
-        error.inventoryEvidence = normalizeInventoryEvidence({
-          status: 'coverage-gap', surface: FIRST_PARTY_ATS_URL, firstParty: false,
-          listingComplete: false, pagesFetched: 1, reportedTotal: null, indiaFacetCount: null,
-          verifiedAt: now(), reason: 'inactive-freshteam-tenant',
-        })
-        throw error
+        throw gap('MoEVing native inventory unavailable: inactive Freshteam tenant', 'inactive-freshteam-tenant')
       }
-      throw new Error('MoEVing native inventory unverified: no current enumerable listing contract established')
+      throw gap('MoEVing native inventory unverified: no current enumerable listing contract established',
+        'native-listing-contract-unverified')
+    } catch (error) {
+      signal?.throwIfAborted()
+      if (error?.code === 'MOEVING_COVERAGE_GAP') throw error
+      throw gap(error.message || 'MoEVing native inventory unavailable', 'native-inventory-unavailable', error)
     } finally {
       clearTimeout(timer)
       signal?.removeEventListener('abort', onAbort)
