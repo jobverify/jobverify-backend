@@ -64,6 +64,39 @@ test('contradictory primary country labels cannot create an India vacancy', asyn
   await assert.rejects(run({ jobs: [{ ...job, location: { name: 'India / United States' } }], meta: { total: 1 } }), /contradictory country\/location/)
 })
 
+test('Greenhouse semicolon office inventories select proven India locations independently', async () => {
+  for (const [name, expected] of [
+    ['Berlin, Germany; Bulgaria; India, Bengaluru; India, Delhi NCR; India, Hyderabad; Lithuania; Serbia; United Kingdom', 'India, Bengaluru'],
+    ['Bangalore, India; Remote, Australia; Remote, Canada; Remote, Israel; Remote, United States', 'Bangalore, India'],
+    ['Remote Ireland; Remote, Australia; Remote, Canada; Remote, India; Remote, Mexico; Remote, Poland; Remote, United Kingdom; Remote, United States', 'Remote, India'],
+  ]) {
+    const jobs = await run({ jobs: [{ ...job, location: { name } }], meta: { total: 1 } })
+    assert.equal(jobs.length, 1, name)
+    assert.equal(jobs[0].location, expected)
+    assert.equal(jobs[0].country, 'India')
+    assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  }
+})
+
+test('Greenhouse semicolon parsing retains unresolved and contradictory segment validation', async () => {
+  const jobs = await run({ jobs: [{ ...job, location: { name: 'Bangalore, India; Worldwide' } }], meta: { total: 1 } })
+  assert.equal(jobs.length, 1)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  await assert.rejects(run({ jobs: [{ ...job, location: { name: 'Bangalore, India, United States; Berlin, Germany' } }], meta: { total: 1 } }), /contradictory country\/location/)
+})
+
+test('Greenhouse primary India segment stays more precise than country-only office metadata', async () => {
+  const jobs = await run({ jobs: [{ ...job, location: { name: 'Bangalore, India; Remote, Poland' }, offices: [{ name: 'India', location: null }] }], meta: { total: 1 } })
+  assert.equal(jobs[0].location, 'Bangalore, India')
+  assert.equal(jobs[0].city, 'Bangalore')
+})
+
+test('Greenhouse native country-first location derives its city without publishing India as a city', async () => {
+  const jobs = await run({ jobs: [{ ...job, location: { name: 'Berlin, Germany; India, Bengaluru; India, Hyderabad' } }], meta: { total: 1 } })
+  assert.equal(jobs[0].location, 'India, Bengaluru')
+  assert.equal(jobs[0].city, 'Bangalore')
+})
+
 test('Lever country and allLocations map proven India roles while preserving unresolved scope', async () => {
   const record = { id: 'x', text: 'Engineer', categories: { location: 'Remote' }, hostedUrl: 'https://jobs.lever.co/example/x', applyUrl: 'https://jobs.lever.co/example/x/apply', descriptionPlain: 'Build software' }
   for (const row of [record, { ...record, country: 'US', categories: { location: 'Boston, US', allLocations: ['Boston, US', 'Worldwide'] } }]) {

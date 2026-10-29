@@ -58,11 +58,30 @@ test('rewrite progress counts deferred records as warnings and detects unvisited
   assert.deepEqual(runner.rewriteProgress({ queued: 2, published: 1, workerProbe: { warnings: 4 } }), { warnings: 4, pendingEstimate: 1 });
 });
 
-test('rejected model output from startup probes is non-blocking', async () => {
+test('rejected readiness prevents production attempts and still permits classification handoff', async () => {
   const result = await runner.probeRewriteClient({ generate: async () => ({ value: null, finishReason: 'length' }) },
     { concurrency: 4, deadline: Date.now() + 10000 });
   assert.equal(result.warnings, 4);
-  assert.equal(stageOutcome('rewrite', { workerProbe: result, ...runner.rewriteProgress({ queued: 0, workerProbe: result }) }, 0), 'completed');
+  assert.equal(result.ready, false);
+  let scheduled = 0;
+  const stopped = await runner.rewriteWhenReady(result, async () => { scheduled++; });
+  assert.equal(scheduled, 0);
+  assert.equal(stopped.reason, 'model_quality_unavailable');
+  assert.equal(stopped.qualityStopped, true);
+  const summary = { queued: 100, workerProbe: result, ...stopped, ...runner.rewriteProgress({ queued: 100, workerProbe: result }) };
+  assert.equal(stageOutcome('rewrite', summary, 0), 'completed');
+  const { describeStageCompletion } = await import('../src/pipeline/policy.js');
+  assert.equal(describeStageCompletion('rewrite', summary, 'completed').processingComplete, false);
+  assert.equal(describeStageCompletion('rewrite', summary, 'completed').handoffReady, true);
+  assert.equal(stageOutcome('rewrite', { ...summary, errorType: 'TypeError' }, 1), 'failed');
+  assert.equal(stageOutcome('rewrite', { ...summary, cancelled: true }, 0), 'incomplete');
+});
+
+test('successful readiness runs the production callback exactly once', async () => {
+  let scheduled = 0;
+  const result = await runner.rewriteWhenReady({ ready: true, requests: 4 }, async () => { scheduled++; return { published: 2 }; });
+  assert.equal(scheduled, 1);
+  assert.equal(result.published, 2);
 });
 
 test('a warning in one startup probe cannot hide a code failure in another', async () => {

@@ -22,7 +22,8 @@ const serverFor = async (t, { tokens = () => 300, complete, stream = false } = {
       res.setHeader('Content-Type', 'text/event-stream');
       return res.end('data: ' + JSON.stringify({ choices: [{ delta: { content: JSON.stringify({ text: result.text }) }, finish_reason: result.reason || 'stop' }] }) + '\n\ndata: [DONE]\n\n');
     }
-    res.end(JSON.stringify({ choices: [{ finish_reason: result.reason || 'stop', message: { content: JSON.stringify({ text: result.text }) } }] }));
+    res.end(JSON.stringify({ choices: [{ finish_reason: result.reason || 'stop', message: { content: JSON.stringify({ text: result.text }) } }],
+      usage: { prompt_tokens: 300, completion_tokens: 40, total_tokens: 340 }, timings: { predicted_ms: 25 } }));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => { server.closeAllConnections(); return new Promise(resolve => server.close(resolve)); });
@@ -75,6 +76,28 @@ test('changed factual numbers cannot be published', async t => {
   const server = await serverFor(t, { complete: data => ({ text: data.source.replace('2 years', '10 years') }) });
   const response = await createRewriteClient(server).generate(inputFor(source));
   assert.equal(response.validationFailure?.reason, 'numeric_relationship_changed');
+});
+
+test('rejected prose retains its actual completion and failing source fragment', async t => {
+  const server = await serverFor(t, { complete: data => ({ text: data.source.replace('2 years', '10 years') }) });
+  const response = await createRewriteClient(server).generate(inputFor(source));
+  assert.match(response.rawText, /10 years/);
+  assert.equal(response.validationFailure.diagnostic.evidence, 'At least 2 years of experience is required.');
+  assert.match(response.validationFailure.diagnostic.text, /10 years/);
+  assert.equal(response.validationFailure.diagnostic.code, 'numeric_relationship_changed');
+});
+
+test('malformed prose JSON retains the received completion on the error', async t => {
+  const server = http.createServer(async (req, res) => {
+    let body = ''; for await (const part of req) body += part;
+    if (req.url === '/apply-template') return res.end(JSON.stringify({ prompt: 'source prompt' }));
+    if (req.url === '/tokenize') return res.end(JSON.stringify({ tokens: [1, 2] }));
+    res.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: '{"text":"unfinished' } }] }));
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  await assert.rejects(createRewriteClient({ endpoint: `http://127.0.0.1:${server.address().port}` }).generate(inputFor(source)),
+    error => error.rawText === '{"text":"unfinished');
 });
 
 test('all chunks share cancellation and cannot return partial success', async t => {
@@ -163,4 +186,212 @@ test('prose streaming has no application character ceiling', async t => {
   const response = await createRewriteClient(server).generate(inputFor('Build reliable services. '.repeat(5000)));
   assert.equal(response.finishReason, 'stop');
   assert.ok(response.value.parts[0].text.length > 100000);
+});
+
+test('prose reports per-generation tokens, timings and source offsets on failures', async t => {
+  const server = await serverFor(t, { complete: data => ({ text: data.source.replace('2 years', '10 years') }) });
+  const response = await createRewriteClient(server).generate(inputFor(source));
+  assert.equal(response.usage.completion_tokens, 40);
+  assert.equal(response.timings.predicted_ms, 25);
+  assert.equal(response.generations.length, 1);
+  assert.equal(response.generations[0].sourceOffset, 0);
+  assert.equal(response.generations[0].finishReason, 'stop');
+  assert.ok(response.generations[0].durationMs >= 0);
+});
+
+test('validated source chunks survive client restart without publishing partial work', async t => {
+  const fs = await import('node:fs/promises'), os = await import('node:os'), path = await import('node:path');
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'prose-partial-cache-'));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  let rejectSecond = true;
+  const server = await serverFor(t, { tokens: prompt => prompt.length > 5000 ? 7500 : 1000,
+    complete: (data, _request, count) => {
+      if (rejectSecond && count === 2) return { text: '' };
+      return { text: data.source.replaceAll('Build reliable', 'Develop reliable') };
+    } });
+  const input = inputFor('Responsibilities:\n' + 'Build reliable Python services. '.repeat(200));
+  const first = await createRewriteClient({ ...server, planCacheDir: dir }).generate(input);
+  assert.equal(first.value, null);
+  assert.equal(first.validationFailure.reason, 'empty_output');
+  const firstChunk = JSON.parse(server.requests[0].messages.at(-1).content).source;
+  const previous = server.requests.length;
+  rejectSecond = false;
+  const resumed = await createRewriteClient({ ...server, planCacheDir: dir }).generate(input);
+  assert.equal(resumed.finishReason, 'stop');
+  assert.equal(validateProseRewrite(resumed.value, input, 'stop').ok, true);
+  assert.equal(resumed.value.parts.map(part => part.source).join(''), proseSource(input));
+  assert.ok(server.requests.slice(previous).every(request => JSON.parse(request.messages.at(-1).content).source !== firstChunk));
+  assert.ok(resumed.reusedChunks > 0);
+});
+
+test('malformed text types are generation rejections with useful diagnostics', async t => {
+  const server = await serverFor(t, { complete: () => ({ text: 42 }) });
+  const response = await createRewriteClient(server).generate(inputFor(source));
+  assert.equal(response.validationFailure.reason, 'empty_output');
+  assert.equal(response.validationFailure.diagnostic.code, 'empty_output');
+  assert.match(response.rawText, /42/);
+});
+
+test('runaway repetitive streams stop with a preview and cannot publish', async t => {
+  const server = await serverFor(t, { stream: true,
+    complete: () => ({ text: 'Build reliable services and maintain automated tests. '.repeat(300) }) });
+  const input = inputFor('Build reliable services and maintain automated tests.');
+  const response = await createRewriteClient(server).generate(input);
+  assert.equal(response.value, null);
+  assert.equal(response.validationFailure.reason, 'repetitive_output');
+  assert.match(response.rawText, /Build reliable services/);
+  assert.equal(response.generationRequests, 1);
+  assert.equal(response.generations[0].finishReason, 'repetitive_output');
+});
+
+test('physical context splitting inside a sentence does not create false source omissions', () => {
+  const source = 'Develop Python services and maintain reliable automated tests for customers across global systems without compromising reliability.';
+  const input = inputFor(source);
+  const pieces = splitProseSource(source);
+  const result = validateProseRewrite({ inputHash: input.inputHash, parts: pieces.map(source => ({ source, text: source })) }, input, 'stop');
+  assert.equal(result.ok, true);
+});
+
+test('an explicit request timeout retains the partial stream completion', async t => {
+  const server = http.createServer(async (req, res) => {
+    for await (const chunk of req) { /* drain the local request */ }
+    if (req.url === '/apply-template') return res.end(JSON.stringify({ prompt: 'source' }));
+    if (req.url === '/tokenize') return res.end(JSON.stringify({ tokens: [1, 2] }));
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.write('data: ' + JSON.stringify({ choices: [{ delta: { content: '{"text":"partial' } }] }) + '\n\n');
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => { server.closeAllConnections(); return new Promise(resolve => server.close(resolve)); });
+  await assert.rejects(createRewriteClient({ endpoint: `http://127.0.0.1:${server.address().port}`, requestMs: 250 }).generate(inputFor(source)),
+    error => error.name === 'TimeoutError' && error.rawText === '{"text":"partial');
+});
+
+test('persistent prose cache survives a random worker alias change', async t => {
+  const fs = await import('node:fs/promises'), os = await import('node:os'), path = await import('node:path');
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'prose-stable-alias-'));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  const server = await serverFor(t);
+  const input = inputFor(source);
+  await createRewriteClient({ ...server, model: 'worker-alias-one', planCacheDir: dir }).generate(input);
+  const result = await createRewriteClient({ ...server, model: 'worker-alias-two', planCacheDir: dir }).generate(input);
+  assert.equal(result.cachedModelPlan, true);
+  assert.equal(result.generationRequests, 0);
+  assert.equal(server.requests.length, 1);
+});
+
+test('identical effective source reuses cache while binding the current job input hash', async t => {
+  const server = await serverFor(t);
+  const client = createRewriteClient(server);
+  const first = inputFor(source);
+  const second = buildRewriteInput({ title: 'Senior Engineer', company: 'Another employer', sourceDescription: source });
+  assert.notEqual(first.inputHash, second.inputHash);
+  await client.generate(first);
+  const result = await client.generate(second);
+  assert.equal(result.cachedModelPlan, true);
+  assert.equal(result.value.inputHash, second.inputHash);
+  assert.equal(validateProseRewrite(result.value, second, 'stop').ok, true);
+  assert.equal(validateProseRewrite(result.value, first, 'stop').ok, false);
+  assert.equal(server.requests.length, 1);
+});
+
+test('source facts added to the effective prompt cannot reuse a different location cache', async t => {
+  const server = await serverFor(t), client = createRewriteClient(server);
+  await client.generate(buildRewriteInput({ title: 'Engineer', sourceDescription: source, location: 'Pune' }));
+  const result = await client.generate(buildRewriteInput({ title: 'Engineer', sourceDescription: source, location: 'Mumbai' }));
+  assert.equal(server.requests.length, 2);
+  assert.equal(result.cachedModelPlan, undefined);
+});
+
+test('simultaneous identical sources share one inference and preserve every job hash', async t => {
+  const server = await serverFor(t, { complete: async data => {
+    await new Promise(resolve => setTimeout(resolve, 30));
+    return { text: data.source.replace('Build reliable', 'Develop reliable') };
+  } });
+  const client = createRewriteClient(server);
+  const inputs = Array.from({ length: 4 }, (_v, index) => buildRewriteInput({ title: 'Engineer ' + index, sourceDescription: source }));
+  const results = await Promise.all(inputs.map(input => client.generate(input)));
+  assert.equal(server.requests.length, 1);
+  assert.equal(results.reduce((sum, result) => sum + result.generationRequests, 0), 1);
+  assert.equal(results.filter(result => result.sharedGeneration).length, 3);
+  for (const [index, result] of results.entries()) assert.equal(validateProseRewrite(result.value, inputs[index], 'stop').ok, true);
+});
+
+test('one cancelled duplicate cannot abort another job waiting for the same inference', async t => {
+  let began;
+  const started = new Promise(resolve => { began = resolve; });
+  const server = await serverFor(t, { complete: async data => {
+    began(); await new Promise(resolve => setTimeout(resolve, 50));
+    return { text: data.source };
+  } });
+  const client = createRewriteClient(server), controller = new AbortController();
+  const first = client.generate(inputFor(source), { signal: controller.signal });
+  const rejected = assert.rejects(first, error => error.name === 'AbortError');
+  await started;
+  const second = client.generate(inputFor(source));
+  controller.abort();
+  await rejected;
+  const result = await second;
+  assert.equal(result.finishReason, 'stop');
+  assert.equal(server.requests.length, 1);
+  assert.equal(result.generationRequests, 1);
+});
+
+test('refresh mode measures fresh inference even when an accepted rewrite is cached', async t => {
+  const server = await serverFor(t), client = createRewriteClient(server), input = inputFor(source);
+  await client.generate(input);
+  const fresh = await client.generate(input, { cacheMode: 'refresh' });
+  assert.equal(fresh.generationRequests, 1);
+  assert.equal(fresh.cachedModelPlan, undefined);
+  assert.equal(server.requests.length, 2);
+  const cached = await client.generate(input);
+  assert.equal(cached.generationRequests, 0);
+  assert.equal(server.requests.length, 2);
+});
+
+test('cancelling every duplicate removes the abandoned work and permits a fresh request', async t => {
+  let began;
+  const started = new Promise(resolve => { began = resolve; });
+  const server = await serverFor(t, { complete: async data => {
+    began(); await new Promise(resolve => setTimeout(resolve, 50)); return { text: data.source };
+  } });
+  const client = createRewriteClient(server), first = new AbortController(), second = new AbortController();
+  const a = client.generate(inputFor(source), { signal: first.signal });
+  const b = client.generate(inputFor(source), { signal: second.signal });
+  const rejected = Promise.all([assert.rejects(a, error => error.name === 'AbortError'), assert.rejects(b, error => error.name === 'AbortError')]);
+  await started; first.abort(); second.abort(); await rejected;
+  const result = await client.generate(inputFor(source));
+  assert.equal(validateProseRewrite(result.value, inputFor(source), 'stop').ok, true);
+  assert.equal(server.requests.length, 2);
+});
+
+test('a corrupt persistent cache is revalidated instead of publishing altered content', async t => {
+  const fs = await import('node:fs/promises'), os = await import('node:os'), path = await import('node:path');
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'prose-corrupt-cache-'));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  const server = await serverFor(t), input = inputFor(source);
+  await createRewriteClient({ ...server, planCacheDir: dir }).generate(input);
+  const name = (await fs.readdir(dir)).find(name => name.endsWith('.json'));
+  const file = path.join(dir, name), value = JSON.parse(await fs.readFile(file, 'utf8'));
+  value.parts[0].text = 'Invented Java responsibilities.';
+  await fs.writeFile(file, JSON.stringify(value));
+  const result = await createRewriteClient({ ...server, planCacheDir: dir }).generate(input);
+  assert.equal(server.requests.length, 2);
+  assert.equal(result.cachedModelPlan, undefined);
+  assert.equal(validateProseRewrite(result.value, input, 'stop').ok, true);
+});
+
+test('a duplicate timeout before the first response frame does not double-count inference', async t => {
+  const server = await serverFor(t, { complete: async data => {
+    await new Promise(resolve => setTimeout(resolve, 150)); return { text: data.source };
+  } });
+  const client = createRewriteClient(server), input = inputFor(source);
+  let timeout;
+  const first = client.generate(input, { remainingMs: 80 });
+  const rejected = assert.rejects(first, error => { timeout = error; return error.name === 'TimeoutError'; });
+  const survivor = client.generate(input, { remainingMs: 1000 });
+  await rejected;
+  const result = await survivor;
+  assert.equal(timeout.generationRequests, 0);
+  assert.equal(result.generationRequests, 1);
+  assert.equal(server.requests.length, 1);
 });

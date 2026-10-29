@@ -84,7 +84,7 @@ const NATIVE_EXTERNALS = new Set([
 
 export function corporateContract(html,css='') {
  const doc=document(html,css),execution=executableDocument(html),reasons=[]
- check(sameStyles(surfaceStyles(html,doc,CAREER_PAGE_URL),reviewedSurfaces.corporate),'unreviewed corporate stylesheet visibility')
+ check([reviewedSurfaces.corporate,...(reviewedSurfaces.corporateStyleVersions||[])].some(reviewed=>sameStyles(surfaceStyles(html,doc,CAREER_PAGE_URL),reviewed)),'unreviewed corporate stylesheet visibility')
  const title=/<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1]||''
  check(/Careers/i.test(title)&&/Monocept/i.test(title),'official careers identity changed')
  const canonicalLinks=doc.nodes(n=>n.tag==='link'&&n.attrs.rel==='canonical')

@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
+test.beforeEach(t => t.mock.method(globalThis, 'fetch', async () => { throw Error('Unexpected network in hermetic Skyscanner tests') }))
 
 const loadSkyscannerModule = async () => {
   try {
@@ -101,24 +104,37 @@ test('Skyscanner recognizes both the verified jobs shell and the current first-p
   assert.equal(skyscanner.hasEnumerableJobsSignal(challengeShellHtml), false)
 })
 
-test('Skyscanner returns an empty list while the official page is either the verified shell or the current challenge gate', async () => {
+test('Skyscanner returns empty only after the current employer bundle and native empty inventory are verified', async () => {
   const skyscanner = await loadSkyscannerModule()
   assert.ok(skyscanner, 'Expected Skyscanner scraper module at ./script.js')
 
+  await assert.rejects(skyscanner.createSkyscannerScraper().run({
+    fetchPage: async url => ({ status: 200, url, html: verifiedShellHtml }),
+  }), /current employer page identity unavailable/)
+
+  const bundleUrl = 'https://js.skyscnr.com/sttc/hamilton/falcon/static/js/skyscanner-internal-landing-pages-shared-ui-src-components-JobsApp.abc123.chunk.js'
+  const currentPage = verifiedShellHtml.replace('Current jobs | Skyscanner Careers', 'Skyscanner Jobs')
+    + `<script src="${bundleUrl}"></script>`
   const shellJobs = await skyscanner.createSkyscannerScraper().run({
-    fetchText: async () => verifiedShellHtml,
+    fetchPage: async url => ({ status: 200, url, html: url === bundleUrl
+      ? `async function load(){const response=await fetch("${skyscanner.ASHBY_JOB_BOARD_URL}");return response.json()}` : currentPage }),
+    fetchJson: async url => { assert.equal(url, skyscanner.ASHBY_JOB_BOARD_URL); return { apiVersion: '1', jobs: [] } },
   })
   assert.deepEqual(shellJobs, [])
+  assert.equal(readInventoryEvidence(shellJobs).status, 'verified-empty')
+  assert.equal(readInventoryEvidence(shellJobs).listingComplete, true)
+})
 
-  const challengeJobs = await skyscanner.createSkyscannerScraper().run({
-    fetchText: async () => challengeGateHtml,
-  })
-  assert.deepEqual(challengeJobs, [])
-
-  const challengeShellJobs = await skyscanner.createSkyscannerScraper().run({
-    fetchText: async () => challengeShellHtml,
-  })
-  assert.deepEqual(challengeShellJobs, [])
+test('Skyscanner rejects both current challenge representations as denied public access', async () => {
+  const skyscanner = await loadSkyscannerModule()
+  let nativeCalls = 0
+  for (const html of [challengeGateHtml, challengeShellHtml]) {
+    await assert.rejects(skyscanner.createSkyscannerScraper().run({
+      fetchPage: async url => ({ status: 200, url, html }),
+      fetchJson: async () => { nativeCalls++; throw Error('Challenge cannot bind the native board') },
+    }), error => error.failureKind === 'public_access_denied' && error.abortRetries === true && error.softFailure === true)
+  }
+  assert.equal(nativeCalls, 0)
 })
 
 test('Skyscanner still fails closed when the surface turns enumerable or drifts beyond the verified challenge-aware contract', async () => {
@@ -127,15 +143,15 @@ test('Skyscanner still fails closed when the surface turns enumerable or drifts 
 
   await assert.rejects(
     skyscanner.createSkyscannerScraper().run({
-      fetchText: async () => enumerableJobsHtml,
+      fetchPage: async url => ({ status: 200, url, html: enumerableJobsHtml }),
     }),
-    /enumerable public jobs/i,
+    /current employer page identity unavailable/i,
   )
 
   await assert.rejects(
     skyscanner.createSkyscannerScraper().run({
-      fetchText: async () => '<html><head><title>Skyscanner</title></head><body><main><h1>Careers</h1></main></body></html>',
+      fetchPage: async url => ({ status: 200, url, html: '<html><head><title>Skyscanner</title></head><body><main><h1>Careers</h1></main></body></html>' }),
     }),
-    /trusted filter shell/i,
+    /current employer page identity unavailable/i,
   )
 })

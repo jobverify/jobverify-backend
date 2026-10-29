@@ -5,7 +5,8 @@ import { fetchJsonWithRetry } from './fetch.js'
 import { filterIndiaJobs } from './indiaLocationFilter.js'
 import { attachInventoryEvidence, readInventoryEvidence, isFreshCompleteInventoryEvidence } from './inventoryEvidence.js'
 import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
-import { greenhouseLocationLabels, greenhouseCountryLabels, hasUnhandledGreenhouseGeography, selectGreenhouseLocation, NATIVE_INDIA_LOCATION } from './greenhouseLocations.js'
+import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
+import { greenhouseLocationLabels, greenhouseLocationSegments, greenhouseCountryLabels, hasUnhandledGreenhouseGeography, selectGreenhouseLocation, NATIVE_INDIA_LOCATION } from './greenhouseLocations.js'
 import { selectLeverLocation, selectLeverCountry } from './leverLocations.js'
 
 // Generic remote work is not evidence that an employer accepts applicants in India.
@@ -73,7 +74,8 @@ export const validatePublicPostingScope = (records, kind, provider) => {
         if (!office || typeof office !== 'object' || Array.isArray(office)
           || (office.name != null && typeof office.name !== 'string')
           || (office.location != null && typeof office.location !== 'string')) fail('invalid native office')
-        candidates.push({ label: office?.location || office?.name })
+        const officeLabel = office?.location || office?.name
+        candidates.push(...(officeLabel ? greenhouseLocationSegments(officeLabel).map(label => ({ label })) : [{ label: officeLabel }]))
         // A descriptive office name need not repeat its explicit address. But
         // alternate India/global evidence in that name must remain visible.
         if (office?.location && typeof office.name === 'string'
@@ -198,6 +200,7 @@ export const createPublishingGapAtsScraper = (provider) => ({
       || (['ashby', 'lever'].includes(kind) && /^(?:india|in|ind)$/i.test(job.country || '')))
     const jobs = located.filter((job) => !TALENT_POOL.test(job.title)).map((job) => ({
       ...job,
+      ...(kind === 'greenhouse' && /^india$/i.test(job.city || '') ? { city: getValidIndiaCityForJob({ ...job, city: null }) } : {}),
       source: provider.source,
       company: provider.companyName,
       link: job.applyUrl,

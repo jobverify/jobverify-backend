@@ -2,19 +2,65 @@ import assert from'node:assert/strict'
 import fs from'node:fs'
 import path from'node:path'
 import os from'node:os'
-import{fileURLToPath}from'node:url'
-import test from'node:test'
+import{fileURLToPath,pathToFileURL}from'node:url'
+import test,{after} from'node:test'
 import{gunzipSync}from'node:zlib'
 import{createHash}from'node:crypto'
-import{verifyPartialPublishingTrial,buildPartialAttempt}from'../scripts/partialPublishingGapEvidence.js'
+import{buildPartialAttempt}from'../scripts/partialPublishingGapEvidence.js'
 import{isSuccessfulPublishingGapTrial}from'../scripts/publishPublishingGapRepairs.js'
 const now=new Date('2026-10-21T04:00:00Z'),hash=x=>createHash('sha256').update(x).digest('hex')
 const fixture=(source='blackrock',historical=false)=>{
  const raw=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/workdayPartial/'+source+(historical?'-reviewed-004':'-current-code-rereview-002')+'.json.gz',import.meta.url)))),files=new Map(Object.entries(raw.files).map(([key,value])=>[key,Buffer.from(value,'base64')]))
  return {source,httpEvidence:raw.httpEvidence,files,readEvidence:async file=>files.get(file),now}
 }
+// Historical positives run against every exact source/config/dependency byte
+// attested by their immutable review. Current production code keeps its strict
+// source-drift gate and is tested separately below.
+const backend=fileURLToPath(new URL('..',import.meta.url)),reviewedRoot=fs.mkdtempSync(path.join(os.tmpdir(),'workday-reviewed-code-')),reviewedBackend=path.join(reviewedRoot,'jobverify-backend')
+fs.mkdirSync(reviewedBackend)
+fs.writeFileSync(path.join(reviewedBackend,'package.json'),'{"type":"module"}')
+const copyRuntimeDirectory=relative=>{
+ const target=path.join(reviewedBackend,relative);fs.mkdirSync(target,{recursive:true})
+ for(const entry of fs.readdirSync(path.join(backend,relative),{withFileTypes:true}))if(entry.isFile()&&/\.(?:js|json)$/.test(entry.name))fs.copyFileSync(path.join(backend,relative,entry.name),path.join(target,entry.name))
+}
+for(const relative of ['scraper-support','scraper-support/utils','scraper-support/myworkday','scraper-support/shared','scraper-support/detailExtractors','scraper-support/providers','scraper-support/apiPortal','src/utils','src/constants'])copyRuntimeDirectory(relative)
+fs.mkdirSync(path.join(reviewedBackend,'scripts'))
+const localProofs=new Set(['partialPublishingGapEvidence.js','workdayPartialPublishingEvidence.js','workdayPartialRereviewEvidence.js','freezeWorkdayPartialRereviewTrial.js'])
+for(const entry of fs.readdirSync(path.join(backend,'scripts'),{withFileTypes:true}))if(entry.isFile()&&entry.name.endsWith('.js')){
+ const target=path.join(reviewedBackend,'scripts',entry.name),original=path.join(backend,'scripts',entry.name)
+ if(localProofs.has(entry.name))fs.copyFileSync(original,target)
+ else fs.writeFileSync(target,'export * from '+JSON.stringify(pathToFileURL(original).href)+';')
+}
+const restoredHashes=new Map()
+for(const source of ['blackrock','blackstone']){
+ const f=fixture(source)
+ for(const receipt of f.httpEvidence.receipts.filter(r=>r.kind==='current-code')){
+  const bytes=f.files.get(receipt.file),target=path.resolve(reviewedRoot,receipt.sourcePath),relative=path.relative(reviewedBackend,target)
+  assert.ok(relative&&!relative.startsWith('..')&&!path.isAbsolute(relative),'Reviewed runtime must stay inside its temporary backend')
+  assert.equal(hash(bytes),receipt.sha256)
+  if(restoredHashes.has(receipt.sourcePath))assert.equal(restoredHashes.get(receipt.sourcePath),receipt.sha256)
+  restoredHashes.set(receipt.sourcePath,receipt.sha256)
+  fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,bytes)
+  assert.equal(hash(fs.readFileSync(target)),receipt.sha256)
+ }
+}
+// Exact scraper-support/utils/publishableJobMetrics.js from historical commit
+// 7ebb487d0a22e53f3a5a3967e9a32cb5e921c812: the reviewed capture predates the
+// later one-calendar-month publication cutoff. Keep archived clocks/jobs and
+// that historical policy together; production continues using today's policy.
+const historicalMetrics=gunzipSync(fs.readFileSync(new URL('./fixtures/workdayPartial/reviewed-publishableJobMetrics.js.gz',import.meta.url)))
+assert.equal(hash(historicalMetrics),'f7d4baf7d52d6f3efd0fe23e5adbfff820f53194f3a3ddfbe7a0982d385b0621')
+fs.writeFileSync(path.join(reviewedBackend,'scraper-support/utils/publishableJobMetrics.js'),historicalMetrics)
+const dependencyLink=path.join(reviewedBackend,'node_modules');fs.symlinkSync(path.join(backend,'node_modules'),dependencyLink,'junction')
+after(()=>{
+ assert.equal(path.dirname(reviewedRoot),fs.realpathSync(os.tmpdir()));assert.ok(path.basename(reviewedRoot).startsWith('workday-reviewed-code-'))
+ assert.ok(fs.lstatSync(dependencyLink).isSymbolicLink());fs.unlinkSync(dependencyLink)
+ fs.rmSync(reviewedRoot,{recursive:true})
+})
+const reviewedModule=name=>import(pathToFileURL(path.join(reviewedBackend,'scripts',name)))
+const{verifyPartialPublishingTrial}=await reviewedModule('partialPublishingGapEvidence.js')
 async function trialFor(f){
- const {deriveWorkdayPartialEvidence}=await import('../scripts/workdayPartialPublishingEvidence.js')
+ const {deriveWorkdayPartialEvidence}=await reviewedModule('workdayPartialPublishingEvidence.js')
  const proof=await deriveWorkdayPartialEvidence(f)
  const trial={schemaVersion:1,source:f.source,mode:'native-http-partial-positive-trial',outcome:'positive-extraction-incomplete-evidence',productionWrites:false,
   attemptedAt:proof.startedAt,completedAt:proof.capturedAt,httpEvidence:f.httpEvidence,originalCapture:proof.originalCapture,
@@ -48,7 +94,7 @@ test('partial Workday dispatcher rejects complete, wrong source, truncation, fal
 })
 
 test('missing, duplicate, mismatched, stale, unreviewed or changed raw native evidence cannot qualify',async()=>{
- const {deriveWorkdayPartialEvidence}=await import('../scripts/workdayPartialPublishingEvidence.js')
+ const {deriveWorkdayPartialEvidence}=await reviewedModule('workdayPartialPublishingEvidence.js')
  for(const mutate of [
   f=>{f.httpEvidence.receipts.pop()},f=>{f.httpEvidence.receipts.push({...f.httpEvidence.receipts[0]})},
   ...['capture-manifest.json','capture-trial.json','independent-review.json','discovery.json'].map(name=>f=>{const r=f.httpEvidence.receipts.find(r=>r.originalFile==='evidence/'+name);f.files.set(r.file,Buffer.from('{}'))}),
@@ -60,7 +106,7 @@ test('missing, duplicate, mismatched, stale, unreviewed or changed raw native ev
 })
 
 test('changing approved native packet fields and updating caller receipt hashes still fails immutable reviewed capture binding',async()=>{
- const {deriveWorkdayPartialEvidence}=await import('../scripts/workdayPartialPublishingEvidence.js')
+ const {deriveWorkdayPartialEvidence}=await reviewedModule('workdayPartialPublishingEvidence.js')
  for(const field of ['status','url','body']){const f=fixture(),old=JSON.parse(f.files.get('evidence/original-partial-trial.json')),native=old.httpEvidence.receipts.find(r=>r.kind==='native'),r=f.httpEvidence.receipts.find(r=>r.originalFile===native.file),p=JSON.parse(f.files.get(r.file));p[field]=field==='status'?202:field==='url'?'https://example.com/wrong':'invented native response';const bytes=Buffer.from(JSON.stringify(p));f.files.set(r.file,bytes);Object.assign(r,{bytes:bytes.length,sha256:hash(bytes)});await assert.rejects(deriveWorkdayPartialEvidence(f))}
 })
 
@@ -70,7 +116,7 @@ test('historical004 contracts remain fail-closed after shared hardening; relabel
 })
 
 test('new current-code review, every added dependency and unchanged historical trial bytes are mandatory',async()=>{
- const{deriveWorkdayPartialEvidence}=await import('../scripts/workdayPartialPublishingEvidence.js')
+ const{deriveWorkdayPartialEvidence}=await reviewedModule('workdayPartialPublishingEvidence.js')
  for(const kind of ['original-partial-trial','current-code-review','historical-gate-review','historical-release','current-code']){const f=fixture(),r=f.httpEvidence.receipts.find(r=>r.kind===kind),b=Buffer.from('{}');f.files.set(r.file,b);r.bytes=b.length;r.sha256=hash(b);await assert.rejects(deriveWorkdayPartialEvidence(f))}
  const f=fixture();f.httpEvidence.receipts=f.httpEvidence.receipts.filter(r=>!r.sourcePath?.endsWith('/activeNativeHtml.js'));await assert.rejects(deriveWorkdayPartialEvidence(f))
 })
@@ -82,8 +128,17 @@ test('new Workday version retains null counts and original clocks and rejects su
 })
 
 test('current-code Workday freezer preserves all original proof bytes and refuses replacement or escaped output',async()=>{
- const url=new URL('../scripts/freezeWorkdayPartialRereviewTrial.js',import.meta.url);assert.ok(fs.existsSync(url),'Versioned Workday freezer required');const{freezeWorkdayPartialRereviewTrial}=await import(url),parent=fs.mkdtempSync(path.join(os.tmpdir(),'workday-rereview-')),outputDirectory=path.join(parent,'release')
+ const url=pathToFileURL(path.join(reviewedBackend,'scripts/freezeWorkdayPartialRereviewTrial.js'));assert.ok(fs.existsSync(url),'Versioned Workday freezer required');const{freezeWorkdayPartialRereviewTrial}=await import(url),parent=fs.mkdtempSync(path.join(os.tmpdir(),'workday-rereview-')),outputDirectory=path.join(parent,'release')
  try{const f=fixture('blackstone'),r=await freezeWorkdayPartialRereviewTrial({...f,outputDirectory}),bytes=fs.readFileSync(path.join(outputDirectory,'blackstone.json')),trial=JSON.parse(bytes),old=JSON.parse(f.files.get('evidence/original-partial-trial.json'));assert.equal(r.trialByteHash,hash(bytes));assert.equal(r.eligibleJobs,4);assert.equal(r.rawJobs,null);assert.equal(r.indiaJobs,null);assert.deepEqual(trial.jobs,old.jobs);assert.equal(trial.attemptedAt,old.attemptedAt);assert.equal(trial.completedAt,old.completedAt);for(const[file,body]of f.files)assert.deepEqual(fs.readFileSync(path.join(outputDirectory,file)),body);await assert.rejects(freezeWorkdayPartialRereviewTrial({...f,outputDirectory}));const bad=fixture('blackstone');bad.httpEvidence.receipts[0].file='../escape.json';const badOutput=path.join(parent,'bad');await assert.rejects(freezeWorkdayPartialRereviewTrial({...bad,outputDirectory:badOutput}));assert.equal(fs.existsSync(badOutput),false)}finally{assert.equal(path.dirname(parent),fs.realpathSync(os.tmpdir()));assert.ok(path.basename(parent).startsWith('workday-rereview-'));fs.rmSync(parent,{recursive:true})}
+})
+
+test('current Workday derive and dispatcher reject both historical rereview002 proofs after engine source drift',async()=>{
+ const {deriveWorkdayPartialEvidence}=await import('../scripts/workdayPartialPublishingEvidence.js'),{verifyPartialPublishingTrial:verifyCurrent}=await import('../scripts/partialPublishingGapEvidence.js')
+ for(const source of ['blackrock','blackstone']){
+  const f=fixture(source),args=await trialFor(f)
+  await assert.rejects(deriveWorkdayPartialEvidence(f),/current source\/config\/dependency differs from independent rereview/)
+  await assert.rejects(verifyCurrent(args),/current source\/config\/dependency differs from independent rereview/)
+ }
 })
 
 test('historical Workday022 report facts survive current code drift and staleness without publication qualification or new gate reads',async t=>{

@@ -68,6 +68,25 @@ test('durable pipeline claims, handoffs, failures and configuration snapshots', 
   await recordStageResult(run._id,'classification',{outcome:'completed',summary:{}});
   await completeWorkflow(914,'success',async()=>assert.fail('No more stages'));
  });
+ await t.test('rejected rewrite readiness hands off unchanged source work to classification',async()=>{
+  const {rewriteWhenReady}=await import('../rewriting/runner.js');
+  const configuration={stages:[{key:'scraper',enabled:false},{key:'rewrite',enabled:true},{key:'classification',enabled:true}]};
+  const run=await createPipeline({configuration,target:'github',origin:'admin'});
+  await dispatchNext(run._id,async()=>{});
+  const queued=await PipelineRun.findById(run._id).lean();
+  await claimStage(run._id,'rewrite',{runId:9193,token:queued.stages[1].dispatchToken});
+  const summary={queued:100,pendingEstimate:100,...await rewriteWhenReady({ready:false},()=>assert.fail('No production attempts'))};
+  await recordStageResult(run._id,'rewrite',{outcome:stageOutcome('rewrite',summary,0),summary});
+  let nextStage;
+  await completeWorkflow(9193,'success',async(_row,stage)=>{nextStage=stage.key;});
+  const next=await PipelineRun.findById(run._id).lean();
+  assert.equal(nextStage,'classification');assert.equal(next.stages[1].status,'completed');
+  assert.equal(next.stages[1].summary.reason,'model_quality_unavailable');
+  assert.equal(next.stages[1].summary.attempted,0);assert.equal(next.stages[2].status,'queued');
+  await claimStage(run._id,'classification',{runId:9194,token:next.stages[2].dispatchToken});
+  await recordStageResult(run._id,'classification',{outcome:'completed',summary:{}});
+  await completeWorkflow(9194,'success',async()=>assert.fail('No more stages'));
+ });
  await t.test('failed dispatch is terminal and releases the database slot',async()=>{
   const run=await createPipeline({configuration:defaultConfiguration(),target:'github',origin:'admin'});
   await assert.rejects(dispatchNext(run._id,async()=>{throw new Error('denied');}));

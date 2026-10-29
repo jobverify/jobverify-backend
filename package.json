@@ -60,6 +60,7 @@
     "descriptions:preview": "node scripts/rewriteJobDescriptions.js",
     "descriptions:rewrite": "node scripts/rewriteJobDescriptions.js --apply",
     "descriptions:benchmark": "node scripts/benchmarkJobDescriptions.js",
+    "descriptions:latency": "node scripts/benchmarkDescriptionLatency.js",
     "descriptions:evaluate:dry": "node --use-system-ca scripts/evaluateDryRunDescriptions.js"
   },
   "repository": {

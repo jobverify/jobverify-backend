@@ -1,3 +1,4 @@
+import { extractLinkedinJobCards } from '../../scraper-support/utils/linkedinJobCards.js'
 export const SOURCE = 'trell'
 export const COMPANY = 'Trell'
 export const LINKEDIN_COMPANY_PAGE_URL = 'https://www.linkedin.com/company/trell/'
@@ -99,12 +100,8 @@ export const hasVerifiedLinkedInJobsPageSignal = (html = '') => {
     )
 }
 
-export const extractSearchResults = (html = '') =>
-  [...String(html).matchAll(
-    /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"/gi,
-  )]
-    .map((match) => {
-      const [, jobId, rawHref, rawTitle, rawCompany, rawLocation, postingDate] = match
+export const extractSearchResults = (html = '') => extractLinkedinJobCards(html)
+  .map(({ id: jobId, href: rawHref, title: rawTitle, company: rawCompany, location: rawLocation, datetime: postingDate }) => {
       const title = stripTags(rawTitle)
       const company = stripTags(rawCompany)
       const sourceUrl = normalizeWhitespace(rawHref)?.replace(/&amp;/g, '&')

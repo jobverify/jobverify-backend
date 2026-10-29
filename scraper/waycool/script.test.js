@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { gunzipSync } from 'node:zlib'
 import { createHash } from 'node:crypto'
 import { createWayCoolScraper } from './script.js'
+import { classifyScraperError } from '../../scraper-support/utils/failureClassification.js'
 
 const gap = error => error.code === 'WAYCOOL_COVERAGE_GAP'
   && error.sourceListingComplete === false && error.lifecycleCleanupAllowed === false
@@ -70,7 +71,16 @@ test('aggregate deadline also bounds an uncooperative response body', async () =
 })
 
 test('unavailable official inventory rejects with a typed gap instead of reporting zero jobs', async () => {
-  await assert.rejects(createWayCoolScraper().run({fetchImpl: async () => { throw Error('offline') }}), gap)
+  await assert.rejects(createWayCoolScraper().run({fetchImpl: async () => { throw Error('offline') }}), error => {
+    assert.ok(gap(error))
+    assert.equal(error.abortRetries, true)
+    assert.deepEqual(classifyScraperError(error), {
+      softFailure: true, upstreamOutage: false, failureKind: 'coverage_gap',
+    })
+    assert.equal(error.inventoryEvidence.reportedTotal, null)
+    assert.equal(error.inventoryEvidence.indiaFacetCount, null)
+    return true
+  })
 })
 
 test('caller cancellation preserves the exact reason', async () => {

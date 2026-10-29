@@ -9,3 +9,24 @@ test('policy changes cannot reuse an older model judgment',async t=>{const outpu
 test('interruption leaves the in-flight source uncached for the next run',async t=>{const outputDir=await setup(t),controller=new AbortController();const result=await evaluateLocalJobs([job],{outputDir,policyIdentity:'a',signal:controller.signal,deadline:Date.now()+10000,client:{generate:async()=>{controller.abort();throw new DOMException('stop','AbortError');}}});assert.equal(result.interrupted,true);assert.equal((await fs.readdir(outputDir)).filter(n=>n.endsWith('.json')).length,0);const resumed=await evaluateLocalJobs([job],{outputDir,policyIdentity:'a',client:client(),deadline:Date.now()+10000});assert.equal(resumed.generated,1);});
 
 test('corrupted interrupted snapshot is rebuilt atomically from the completed source file',async t=>{const dir=await setup(t),source=path.join(dir,'source.json'),snapshot=path.join(dir,'snapshot.json');await fs.writeFile(source,JSON.stringify([job]));await fs.writeFile(snapshot,'[{"title":');const jobs=await archiveJobSnapshot(source,snapshot);assert.equal(jobs[0].title,'Engineer');assert.deepEqual(JSON.parse(await fs.readFile(snapshot,'utf8')),jobs);assert.equal((await fs.readdir(dir)).filter(n=>n.endsWith('.tmp')).length,0);});
+
+test('local prose reports preserve the actual validation failure and completion preview', async t => {
+ const outputDir = await setup(t);
+ let row;
+ await evaluateLocalJobs([job], { outputDir, policyIdentity: 'prose-failure', deadline: Date.now() + 10000,
+  client: { format: 'prose', generate: async () => ({ format: 'prose', value: null, finishReason: 'stop',
+   rawText: '{"text":"At least 10 years."}', validationFailure: { ok: false, reason: 'numeric_relationship_changed' } }) },
+  onResult: result => { row = result; } });
+ assert.equal(row.reason, 'numeric_relationship_changed');
+ assert.match(row.completionPreview, /10 years/);
+ assert.equal(row.accepted, false);
+});
+
+test('local reports preserve partial stream previews from thrown generation errors', async t => {
+ const outputDir=await setup(t); let row;
+ await evaluateLocalJobs([job], {outputDir,policyIdentity:'broken-stream',deadline:Date.now()+10000,
+  client:{generate:async()=>{throw Object.assign(new Error('incomplete stream'),{rawText:'{"text":"partial output',usage:{completion_tokens:4}});}},
+  onResult:result=>{row=result;}});
+ assert.equal(row.completionPreview,'{"text":"partial output');
+ assert.equal(row.usage.completion_tokens,4);
+});

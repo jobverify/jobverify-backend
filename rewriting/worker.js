@@ -17,8 +17,9 @@ export const sha256File = async file => {
   for await (const chunk of createReadStream(file)) hash.update(chunk);
   return hash.digest('hex');
 };
-export const ensureArtifact = async ({ file, url, sha256, signal }) => {
+export const ensureArtifact = async ({ file, url, sha256, signal, allowDownload = true }) => {
   try { if (await sha256File(file) === sha256) return file; } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  if (!allowDownload) throw Object.assign(new Error('Verified rewrite asset unavailable: ' + path.basename(file)), { code: 'REWRITE_ASSETS_UNAVAILABLE' });
   await fs.mkdir(path.dirname(file), { recursive: true });
   const temporary = file + '.' + randomUUID() + '.part';
   try {
@@ -39,16 +40,33 @@ const findServer = async (directory, platform, depth = 0) => {
   }
   return null;
 };
-export const prepareRewriteRuntime = async ({ directory = path.join(root, '.cache/description-rewriter'), signal, platform = process.platform } = {}) => {
+export const verifyRewriteBinary = async (binary, sha256) => {
+  if (typeof binary !== 'string' || typeof sha256 !== 'string' || !/^[0-9a-f]{64}$/i.test(sha256)) throw new TypeError('A custom rewrite binary requires its SHA-256 checksum');
+  const resolved = path.resolve(binary);
+  if (await sha256File(resolved) !== sha256.toLowerCase()) throw new Error('Custom rewrite binary checksum mismatch');
+  return resolved;
+};
+
+export const rewriteGpuLayers = (value = 0) => {
+  if (value === 'all' || value === 'auto') return value;
+  if (!['number', 'string'].includes(typeof value) || String(value).trim() === ''
+    || !Number.isSafeInteger(Number(value)) || Number(value) < 0) throw new TypeError('GPU layers must be a nonnegative integer, all or auto');
+  return Number(value);
+};
+
+export const prepareRewriteRuntime = async ({ directory = path.join(root, '.cache/description-rewriter'), signal, platform = process.platform,
+  allowDownload = true, binaryOverride, binarySha256 } = {}) => {
+  const customBinary = binaryOverride ? await verifyRewriteBinary(binaryOverride, binarySha256) : null;
   const asset = REWRITE_MODEL.runtimeAssets[platform];
   if (!asset || process.arch !== 'x64') throw new Error('Pinned rewriting runtime supports Linux/Windows x64');
-  await fs.mkdir(directory, { recursive: true });
+  if (allowDownload) await fs.mkdir(directory, { recursive: true });
   const modelFile = await ensureArtifact({ file: path.join(directory, REWRITE_MODEL.file),
     url: 'https://huggingface.co/' + REWRITE_MODEL.modelId + '/resolve/' + REWRITE_MODEL.revision + '/' + REWRITE_MODEL.file,
-    sha256: REWRITE_MODEL.sha256, signal });
+    sha256: REWRITE_MODEL.sha256, signal, allowDownload });
+  if (customBinary) return { modelFile, binary: customBinary, binarySha256: binarySha256.toLowerCase(), runtimeKind: 'custom' };
   const archive = await ensureArtifact({ file: path.join(directory, asset.file),
     url: 'https://github.com/ggml-org/llama.cpp/releases/download/' + REWRITE_MODEL.runtimeTag + '/' + asset.file,
-    sha256: asset.sha256, signal });
+    sha256: asset.sha256, signal, allowDownload });
   const runtime = path.join(directory, 'runtime'), marker = path.join(directory, 'runtime-identity.json');
   const identity = JSON.stringify({ tag: REWRITE_MODEL.runtimeTag, sha256: asset.sha256, platform });
   let installed = false;
@@ -62,7 +80,7 @@ export const prepareRewriteRuntime = async ({ directory = path.join(root, '.cach
   }
   const binary = await findServer(runtime, platform);
   if (!binary) throw new Error('Pinned CPU server executable missing');
-  return { modelFile, binary };
+  return { modelFile, binary, runtimeArchiveSha256: asset.sha256, runtimeKind: 'pinned-cpu' };
 };
 
 export function rewriteWorkerConfiguration({ threads = REWRITE_MODEL.cpuThreads, parallelism = 1, availableCpus = os.availableParallelism() } = {}) {
@@ -82,8 +100,9 @@ export class RewriteWorkerError extends Error {
   }
 }
 
-export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threads = REWRITE_MODEL.cpuThreads, parallelism = 1, deadline = Date.now() + 120000, signal, logFile = path.join(root, '.cache/scraper-actions/description-worker.log'), spawnProcess = spawn, fetchImpl = fetch }) => {
+export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threads = REWRITE_MODEL.cpuThreads, parallelism = 1, gpuLayers = 0, deadline = Date.now() + 120000, signal, logFile = path.join(root, '.cache/scraper-actions/description-worker.log'), spawnProcess = spawn, fetchImpl = fetch }) => {
   const config = rewriteWorkerConfiguration({ threads, parallelism });
+  const requestedGpuLayers = rewriteGpuLayers(gpuLayers);
   const model = 'job-description-' + randomUUID();
   await fs.mkdir(path.dirname(logFile), { recursive: true });
   const log = await fs.open(logFile, 'w');
@@ -91,7 +110,7 @@ export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threa
   try {
     child = spawnProcess(binary, ['-m', modelFile, '--host', '127.0.0.1', '--port', String(port),
       '--alias', model, '-c', String(config.contextTokens), '-np', String(config.parallelism), '-t', String(config.threads), '-tb', String(config.threads),
-      '-ngl', '0', '--jinja', '--no-context-shift', '--no-webui', '--log-verbosity', '2',
+      '-ngl', String(requestedGpuLayers), '--sleep-idle-seconds', '-1', '--jinja', '--no-context-shift', '--no-webui', '--log-verbosity', '2',
       '--chat-template-kwargs', JSON.stringify({ enable_thinking: REWRITE_MODEL.enableThinking === true }),
       '--reasoning', 'off', '--no-reasoning-preserve',
       '--cache-ram', '128'], { cwd: path.dirname(binary), windowsHide: true,
@@ -128,7 +147,7 @@ export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threa
         const health = response.ok ? await response.json() : null;
         if (health?.data?.some(row => row.id === model)) {
           assertAlive();
-          return { endpoint, model, pid: child.pid, stop, assertAlive, diagnostics, parallelism: config.parallelism };
+          return { endpoint, model, pid: child.pid, stop, assertAlive, diagnostics, parallelism: config.parallelism, gpuLayers: requestedGpuLayers };
         }
       } catch { /* bounded readiness poll */ }
       await delay(200, undefined, { signal });

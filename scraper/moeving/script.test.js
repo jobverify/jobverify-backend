@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process'
 import { readFileSync, statSync } from 'node:fs'
 import { gunzipSync } from 'node:zlib'
 import { run } from './script.js'
+import { classifyScraperError } from '../../scraper-support/utils/failureClassification.js'
 
 test('MoEVing captured inactive Freshteam tenant is an explicit coverage gap with unknown counts', async () => {
   const capture = JSON.parse(readFileSync(new URL('./fixtures/board-response.json', import.meta.url)))
@@ -12,6 +13,13 @@ test('MoEVing captured inactive Freshteam tenant is an explicit coverage gap wit
     return capture.body
   }, now: () => '2026-10-23T04:22:07.272Z' }), error => {
     assert.match(error.message, /inactive Freshteam tenant/)
+    assert.equal(error.code, 'MOEVING_COVERAGE_GAP')
+    assert.equal(error.abortRetries, true)
+    assert.equal(error.sourceListingComplete, false)
+    assert.equal(error.lifecycleCleanupAllowed, false)
+    assert.deepEqual(classifyScraperError(error), {
+      softFailure: true, upstreamOutage: false, failureKind: 'coverage_gap',
+    })
     assert.deepEqual(error.inventoryEvidence, {
       status: 'coverage-gap', surface: 'https://moeving.freshteam.com/jobs', firstParty: false,
       listingComplete: false, pagesFetched: 1, reportedTotal: null, indiaFacetCount: null,
@@ -19,6 +27,25 @@ test('MoEVing captured inactive Freshteam tenant is an explicit coverage gap wit
     })
     return true
   })
+})
+
+test('MoEVing unknown shells and inaccessible inventories remain typed gaps with unknown vacancy counts', async () => {
+  for (const fetchText of [async () => '<html>New recruiting widget</html>',
+    async () => { throw new Error('transport unavailable') }]) {
+    await assert.rejects(run({ fetchText }), error => {
+      assert.equal(error.code, 'MOEVING_COVERAGE_GAP')
+      assert.equal(error.abortRetries, true)
+      assert.deepEqual(classifyScraperError(error), {
+        softFailure: true, upstreamOutage: false, failureKind: 'coverage_gap',
+      })
+      assert.equal(error.inventoryEvidence.status, 'coverage-gap')
+      assert.equal(error.inventoryEvidence.listingComplete, false)
+      assert.equal(error.inventoryEvidence.reportedTotal, null)
+      assert.equal(error.inventoryEvidence.indiaFacetCount, null)
+      assert.equal(error.lifecycleCleanupAllowed, false)
+      return true
+    })
+  }
 })
 
 test('MoEVing captured branded Join Us rental shell cannot certify an empty job inventory', async () => {

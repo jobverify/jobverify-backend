@@ -22,6 +22,10 @@ export const hasNativeIndiaLocation = label => typeof label === 'string'
     ...(/\bindia\b/i.test(label) ? { country: 'India' } : {}),
   })
 
+// Native boards use semicolons between separate offices. Other separators may
+// describe eligibility or a conflicting single address and remain intact.
+export const greenhouseLocationSegments = label => label.split(';').map(value => value.trim()).filter(Boolean)
+
 export const greenhouseLocationLabels = (record = {}) => {
   const labels = []
   if (record.metadata != null && !Array.isArray(record.metadata)) fail()
@@ -45,11 +49,13 @@ export const greenhouseLocationLabels = (record = {}) => {
   // A workplace arrangement is not another geographic location. Keep it as
   // unknown only when the feed supplies no real native location at all.
   if (primary?.trim() && (!WORK_MODE.test(primary.trim()) || !labels.length)) labels.push(primary.trim())
-  return [...new Set(labels)]
+  return [...new Set(labels.flatMap(greenhouseLocationSegments))]
 }
 
 export const selectGreenhouseLocation = record => {
   const labels = greenhouseLocationLabels(record)
-  if (hasNativeIndiaLocation(record?.location?.name)) return record.location.name.trim()
+  const primaryIndia = typeof record?.location?.name === 'string'
+    ? greenhouseLocationSegments(record.location.name).find(hasNativeIndiaLocation) : null
+  if (primaryIndia) return primaryIndia
   return labels.find(hasNativeIndiaLocation) || labels[0] || null
 }

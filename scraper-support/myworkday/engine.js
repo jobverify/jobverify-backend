@@ -822,7 +822,8 @@ const getSafeWorkdayUrl = (value, baseUrl) => {
 }
 
 // Workday's native external URL can omit the listing's leading locale. Only
-// that segment is optional; the exact origin, board and role path still bind it.
+// that segment is optional. Workday also canonicalizes the board's casing;
+// the exact origin and remaining role path must still bind the response.
 const matchesWorkdayNativeRoleUrl = (value, canonicalLink) => {
   if (typeof value !== 'string') return false
   try {
@@ -831,6 +832,7 @@ const matchesWorkdayNativeRoleUrl = (value, canonicalLink) => {
       || native.origin !== listing.origin || native.username || native.password
       || native.search || native.hash || listing.search || listing.hash) return false
     const rolePath = url => url.pathname.replace(/^\/[a-z]{2}-[a-z]{2}(?=\/)/i, '')
+      .replace(/^\/([^/]+)(?=\/job\/)/, (_match, board) => '/' + board.toLowerCase())
     return rolePath(native) === rolePath(listing)
   } catch { return false }
 }
@@ -1960,7 +1962,10 @@ const runWorkdayJobsApiScraper = async ({
       }
       pagesFetched += 1
       const jobs = payload.jobPostings
-      if (countryProof && pagesFetched > 1 && payload.total !== reportedTotal) {
+      // CXS can return total: 0 on later nonempty pages (e.g. Temenos).
+      // Keep the first-page count; exact row counts and the closing snapshot
+      // still have to reconcile before a complete-board proof is issued.
+      if (countryProof && pagesFetched > 1 && payload.total !== 0 && payload.total !== reportedTotal) {
         throw buildWorkdayIncompleteListingError(source, 'complete-board total changed during enumeration')
       }
       reportedTotal = Math.max(reportedTotal, Number(payload.total) || 0)
@@ -2050,20 +2055,31 @@ const runWorkdayJobsApiScraper = async ({
     const scopeCandidates = allCandidates.filter(({ location }) => countryProof
       ? explicitWorkdayCountryScope(location) !== 'india'
       : !isWorkdayJobInPublicIndiaScope({ location, city: extractCity(location) }))
-    const matchesNativeRole = (payload, candidate) => {
-      const info = payload?.jobPostingInfo
-      const listingUrl = new URL(candidate.canonicalLink)
-      const postingPath = listingUrl.pathname
-      const nativeId = postingPath.match(/_([^/]+)$/)?.[1]
+    const nativeRoleIdentity = (info, candidate) => {
+      const posting = new URL(candidate.canonicalLink).pathname.split('/').at(-1)
       const reqId = typeof info?.jobReqId === 'string' ? info.jobReqId.trim() : null
       const canonicalMatches = typeof info?.externalUrl === 'string'
         && matchesWorkdayNativeRoleUrl(info.externalUrl, candidate.canonicalLink)
-      const nativePostingMatches = info?.jobPostingId === postingPath.split('/').at(-1)
-      const repeatedPosting = reqId && nativeId?.startsWith(reqId + '-')
-        && /^\d+$/.test(nativeId.slice(reqId.length + 1)) && (canonicalMatches || nativePostingMatches)
-      return Boolean(info && nativeId && reqId && (reqId === nativeId || repeatedPosting)
+      const nativePostingMatches = info?.jobPostingId === posting
+      // Requisitions can contain underscores. Match the complete supplied ID,
+      // including Workday's numeric suffix for a repeated public posting.
+      const reqSuffix = reqId && posting.slice(posting.lastIndexOf('_' + reqId))
+      const repeatedPosting = reqId && reqSuffix?.startsWith('_' + reqId + '-')
+        && /^\d+$/.test(reqSuffix.slice(reqId.length + 2))
+      const reqMatches = Boolean(reqId && (posting.endsWith('_' + reqId)
+        || repeatedPosting && (canonicalMatches || nativePostingMatches)))
+      // Some boards intentionally expose an empty requisition. Accept that
+      // native contract only when both independent public posting fields bind it.
+      const postingIdentityMatches = reqId === '' && canonicalMatches && nativePostingMatches
+      return { reqId, reqMatches, canonicalMatches, postingIdentityMatches }
+    }
+    const matchesNativeRole = (payload, candidate) => {
+      const info = payload?.jobPostingInfo
+      const { reqMatches, canonicalMatches, postingIdentityMatches } = nativeRoleIdentity(info, candidate)
+      return Boolean(info && (reqMatches || !countryProof && postingIdentityMatches)
         && (info.externalUrl == null || canonicalMatches)
-        && (!countryProof || canonicalMatches && info.jobPostingSiteId === new URL(jobsApiUrl).pathname.split('/').at(-2))
+        && (!countryProof || canonicalMatches && typeof info.jobPostingSiteId === 'string'
+          && info.jobPostingSiteId.toLowerCase() === new URL(jobsApiUrl).pathname.split('/').at(-2).toLowerCase())
         && typeof info.title === 'string' && typeof candidate.job.title === 'string'
         && info.title.trim() === candidate.job.title.trim())
     }
@@ -2079,11 +2095,8 @@ const runWorkdayJobsApiScraper = async ({
           new Error('Native Workday country fields are unrecognized or conflicting'))
       }
       if (!info) return
-      const nativeId = new URL(candidate.canonicalLink).pathname.match(/_([^/]+)$/)?.[1]
-      const reqId = typeof info.jobReqId === 'string' ? info.jobReqId.trim() : null
-      const reqMatches = reqId && (reqId === nativeId || nativeId?.startsWith(reqId + '-')
-        && /^\d+$/.test(nativeId.slice(reqId.length + 1)))
-      if (info.jobReqId != null && !reqMatches
+      const { reqMatches, postingIdentityMatches } = nativeRoleIdentity(info, candidate)
+      if (info.jobReqId != null && !reqMatches && !postingIdentityMatches
         || info.title != null && (typeof info.title !== 'string' || info.title.trim() !== candidate.job.title?.trim())
         || info.externalUrl != null && !matchesWorkdayNativeRoleUrl(info.externalUrl, candidate.canonicalLink)) {
         throw Object.assign(new Error(`[${source}] Native Workday detail identity conflicts with ${candidate.canonicalLink}`), {
@@ -2322,7 +2335,8 @@ const runWorkdayJobsApiScraper = async ({
           requestTimeoutMs, retryBaseDelayMs, circuitBreaker, requestScheduler, requireProofResponse: true })
         closingPages++
         if (closingTotal == null) closingTotal = payload.total
-        if (payload.total !== reportedTotal || payload.total !== closingTotal) {
+        const pageTotal = pageNum > 1 && payload.total === 0 ? closingTotal : payload.total
+        if (pageTotal !== reportedTotal || pageTotal !== closingTotal) {
           throw buildWorkdayIncompleteListingError(source, 'closing complete-board count changed')
         }
         for (const job of payload.jobPostings) {
