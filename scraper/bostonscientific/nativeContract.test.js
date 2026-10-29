@@ -11,6 +11,13 @@ for(const [name,mutate]of [['wrong ID',p=>p.data.id++],['wrong title',p=>p.data.
 test('hidden or placeholder-only source descriptions retain missing detail health',()=>{for(const text of ['<p>NA</p>','<div hidden>Build technology</div>','<script>Build software</script>']){const row=f.indiaRows[0],p=structuredClone(f.details[row.id]);p.data.jobDescription=text;assert.equal(validateDetail(p,row,{now}).sourceDetailComplete,false)}})
 test('known native absent secondary marker does not invent an unresolved location',()=>{const row=structuredClone(f.foreignRows[0]);row.locations[0]='Arden Hills US-MN, United States | US-MN-Arden Hills, N/A';assert.equal(validateRow(row,{now}).india,false)})
 test('native US state CA is corroborated by standardized state and country rather than treated as Canada',()=>{const row=structuredClone(f.foreignRows[0]);row.locations=['Modesto, CA, USA'];row.standardizedLocations=['Modesto, CA, US'];assert.equal(validateRow(row,{now}).india,false)})
+test('native India state and comma city continuation must corroborate the primary and standardized city',()=>{
+ const row=structuredClone(f.indiaRows[0]);row.locations=['Gurgaon, India | India-Haryana, Gurgaon'];row.standardizedLocations=['Gurugram, HR, IN']
+ const scope=validateRow(row,{now});assert.equal(scope.india,true);assert.deepEqual(scope.indiaLocations,[{location:'Gurgaon, India',city:'Gurgaon'}])
+ for(const [raw,standard]of[['Gurgaon, India | India-Haryana, Pune','Gurugram, HR, IN'],['Gurgaon, India | India-Haryana, Gurgaon','Gurugram, MH, IN'],['Gurgaon, India | India-Haryana, Gurgaon, Remote','Gurugram, HR, IN']]){
+  assert.throws(()=>validateRow({...row,locations:[raw],standardizedLocations:[standard]},{now}))
+ }
+})
 test('native named secondary Turkey remains a known foreign country',()=>{const row=structuredClone(f.foreignRows[0]);row.locations=['Dubai AE-DU, United Arab Emirates | Turkey-Istanbul, United Arab Emirates-Dubai'];row.standardizedLocations=['Dubai, Dubai, AE'];assert.equal(validateRow(row,{now}).india,false)})
 test('unbounded composite location cannot be certified foreign by an appended country',()=>{for(const location of ['Global Remote, United States | N/A','Worldwide, United States | N/A']){const row=structuredClone(f.foreignRows[0]);row.locations=[location];assert.throws(()=>validateRow(row,{now}),/unbounded/i)}})
 

@@ -73,6 +73,22 @@
   },
   "cssSHA256": {
     "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.6a01eb9f1a479fcac0481c05.d9e7abae8.opt.min.css": "818041ebe4ea8077c36512005327b0a4f4e0b78ed0102adc1ad993ac462fb22b",
-    "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.shared.986c02e95.min.css": "28e64b56d5456cb53130f52c539cfbaeaa31dff1c0af16797baad1765b5d2b6a"
-  }
+    "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.shared.986c02e95.min.css": "28e64b56d5456cb53130f52c539cfbaeaa31dff1c0af16797baad1765b5d2b6a",
+    "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.6a01eb9f1a479fcac0481c05.682938860.opt.min.css": "11b6198b76b25c4342360e69ee729e22f145700b33babd584eb54d55c6a33ad2"
+  },
+  "corporateStyleVersions": [
+    {
+      "reviewedAt": "2026-10-28T17:46:13.109Z",
+      "reviewSummary": "Webflow navigation-only styling revision; the visible TurboHire employer handoff is unchanged.",
+      "inlineStyleSHA256": [
+        "1c18e1ed650efd17ebfdd300c9f06955fb829f24595d023c8eb67523e249ee0c",
+        "44a0106f2665a336620352adba113f19e239d6b2062c49f4c20e62804cf0c5e0",
+        "cf74a8431814cc9fe05cb17c6f31669bb80d2c1546d5607a74a6e8fae3ed87d5"
+      ],
+      "stylesheets": [
+        "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.6a01eb9f1a479fcac0481c05.682938860.opt.min.css",
+        "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.shared.986c02e95.min.css"
+      ]
+    }
+  ]
 }

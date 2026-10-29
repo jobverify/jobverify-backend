@@ -50,3 +50,15 @@ test('partial output is preserved and repeated truncations leave room for other 
   assert.equal(result.samples[0].completionPreview, '{"edits":[{"source":0');
   assert.ok(Buffer.byteLength(JSON.stringify(result)) <= 65536);
 });
+
+test('startup probe samples cannot occupy the production numeric rejection samples', () => {
+  const diagnostics = createRewriteDiagnostics();
+  for (const id of ['worker-probe-0', 'worker-probe-1', 'worker-probe-2', 'worker-probe-3', 'real-job']) {
+    diagnostics.record({ id, reason: 'numeric_relationship_changed', input: { sourceDescription: 'At least 2 years.' },
+      response: { rawText: 'At least 10 years.' } });
+  }
+  const result = diagnostics.snapshot();
+  assert.equal(result.totalRejected, 5);
+  assert.ok(result.samples.some(sample => sample.id === 'real-job'));
+  assert.ok(result.samples.length <= 10);
+});

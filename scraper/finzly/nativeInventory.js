@@ -12,7 +12,13 @@ const PARENT_PAGE_ID = 7713
 const CLIENT_PATH = '/wp-content/themes/salient-child/assets/js/app.js'
 // This currently advertised client filters existing role cards locally. Unknown
 // revisions cannot establish the same enumeration contract. Never execute it.
-const CLIENT_SHA256 = 'e726b4b859cc70c204b4c3da1548552ddbc16159fb26a311bc619201d35b6720'
+const REVIEWED_CLIENTS = new Map([
+  [CLIENT_PATH, 'e726b4b859cc70c204b4c3da1548552ddbc16159fb26a311bc619201d35b6720'],
+  // SiteGround concatenates the same local role filter into the advertised
+  // bundle. Validate the whole reviewed response, without executing it.
+  ['/wp-content/uploads/siteground-optimizer-assets/siteground-optimizer-combined-js-8f29d20962e24ab18283de5299e449c4.js',
+    '5315697a3cc04890633705a8994fd6d00f06f24487fe37fb7516b0c95cc1d619'],
+])
 const hash = value => createHash('sha256').update(value).digest('hex')
 const clean = value => typeof value === 'string' ? decodeNativeEntities(value).replace(/\s+/g, ' ').trim() : ''
 const folded = value => clean(value).replace(/[\u2010-\u2015]/g, '-').replace(/\s*-\s*/g, '-').toLowerCase()
@@ -91,7 +97,7 @@ const parseBoard = (html, reasons) => {
   }
   const clients = visible.nodes(n => n.tag === 'script' && n.attrs.src && !Object.hasOwn(n.attrs, 'nomodule')
     && /^(?:|module|text\/javascript|application\/javascript)$/i.test(n.attrs.type || ''))
-    .map(n => new URL(n.attrs.src, CAREERS_URL)).filter(url => url.origin === 'https://finzly.com' && url.pathname === CLIENT_PATH)
+    .map(n => new URL(n.attrs.src, CAREERS_URL)).filter(url => url.origin === 'https://finzly.com' && REVIEWED_CLIENTS.has(url.pathname))
   const client = one(clients, 'current filtering client')
   requireIdentity(!client.hash && !client.username && !client.password && [...client.searchParams].every(([key, value]) => key === 'ver' && /^\d+$/.test(value)), 'current filtering client URL changed')
   for (const node of active.nodes(n => n.tag === 'a' && n.attrs.href)) {
@@ -221,7 +227,7 @@ export const createFinzlyNativeInventory = (defaults = {}) => ({
       } catch (error) { signal?.throwIfAborted(); reasons.add('current-native-office-country-proof-unavailable') }
     }
     const initialPages = await collectOptionalPages()
-    requireIdentity(hash(await pageAt(initial.clientUrl, 'client')) === CLIENT_SHA256, 'current filtering client contract changed')
+    requireIdentity(hash(await pageAt(initial.clientUrl, 'client')) === REVIEWED_CLIENTS.get(new URL(initial.clientUrl).pathname), 'current filtering client contract changed')
     const jobs = new Map(), pageIds = new Set(), detailStates = new Map()
     for (const row of initial.roles.values()) {
       let html, raw

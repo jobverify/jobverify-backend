@@ -1,3 +1,4 @@
+import { extractLinkedinJobCards } from '../../scraper-support/utils/linkedinJobCards.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -222,29 +223,13 @@ const parseJobPostingJsonLd = (html = '') => {
   return null
 }
 
-export const extractSearchResults = (html = '') => [...String(html ?? '').matchAll(
-  /<div class="base-card[\s\S]*?job-search-card[\s\S]*?(?=<div class="base-card|\s*<\/body>)/gi,
-)]
-  .map((match) => {
-    const block = match[0]
-    const jobId = normalizeWhitespace(
-      block.match(/data-entity-urn="urn:li:jobPosting:([0-9]+)"/i)?.[1] || null,
-    )
-    const sourceUrl = normalizeWhitespace(
-      block.match(/<a class="base-card__full-link[^"]*" href="([^"]+)"/i)?.[1] || null,
-    )?.replace(/&amp;/g, '&')
-    const title = stripTags(
-      block.match(/<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>/i)?.[1] || null,
-    )
-    const company = stripTags(
-      block.match(/<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>/i)?.[1] || null,
-    )
-    const locationData = parseLocation(stripTags(
-      block.match(/<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>/i)?.[1] || null,
-    ))
-    const postingDate = normalizeWhitespace(
-      block.match(/<time class="job-search-card__listdate" datetime="([^"]+)"/i)?.[1] || null,
-    )
+export const extractSearchResults = (html = '') => extractLinkedinJobCards(html)
+  .map(({ id: jobId, href: rawHref, title: rawTitle, company: rawCompany, location: rawLocation, datetime }) => {
+    const sourceUrl = normalizeWhitespace(rawHref)?.replace(/&amp;/g, '&')
+    const title = stripTags(rawTitle)
+    const company = stripTags(rawCompany)
+    const locationData = parseLocation(stripTags(rawLocation))
+    const postingDate = normalizeWhitespace(datetime)
 
     if (
       !title

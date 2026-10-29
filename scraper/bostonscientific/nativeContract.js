@@ -11,7 +11,14 @@ function rawLocation(value,standard){
  const parts=value.split('|').map(s=>s.trim());proof(parts.length<=2,'Unknown native location separator')
  const primaryParts=parts[0].split(',').map(s=>s.trim()),primary=country(primaryParts.at(-1));proof(primary,'Unknown native primary country')
  for(const segment of primaryParts.slice(0,-1)){const explicit=country(segment),stateCorroborated=primary==='US'&&segment==='CA'&&typeof standard==='string'&&/,\s*CA,\s*US$/.test(standard);proof(stateCorroborated||!explicit||explicit===primary,'Conflicting explicit native country');for(const m of segment.matchAll(/\b([A-Z]{2})-[A-Z0-9]+\b/g))proof(names.has(m[1])&&m[1]===primary,'Native country/state prefix conflict')}
- const extras=parts[1]&&parts[1]!=='N/A'?parts[1].split(',').map(s=>s.trim()).filter(s=>s!=='N/A'):[]
+ // The current feed also emits "India-Haryana, Gurgaon" as a single
+ // state/locality address. Only collapse that comma when both the primary
+ // locality and the independent standardized HR/IN address corroborate it.
+ const stateCity=/^India-Haryana,\s*([^,]+)$/.exec(parts[1]||'')
+ const secondary=stateCity&&primary==='IN'&&city(stateCity[1])===city(primaryParts[0])
+  &&typeof standard==='string'&&/,\s*HR,\s*IN$/.test(standard)&&city(standard.split(',')[0])===city(stateCity[1])
+  ?'India-'+stateCity[1]:parts[1]
+ const extras=secondary&&secondary!=='N/A'?secondary.split(',').map(s=>s.trim()).filter(s=>s!=='N/A'):[]
  const extra=extras.map(label=>{const prefix=[...names.keys()].sort((a,b)=>b.length-a.length).find(n=>label.startsWith(n+'-'));proof(prefix,'Unknown secondary country');const code=names.get(prefix),local=label.slice(prefix.length+1).replace(/^[A-Z0-9]{1,3}-/,'');proof(local&&!/\b(?:global|worldwide|anywhere|distributed)\b/i.test(local),'Unknown secondary location');return{code,city:city(local),label}})
  return{primary,primaryCity:city(primaryParts[0]),extra,codes:[primary,...extra.map(e=>e.code)]}
 }

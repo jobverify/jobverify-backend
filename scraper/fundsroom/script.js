@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractLinkedinJobCards } from '../../scraper-support/utils/linkedinJobCards.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -112,19 +113,22 @@ export const pageIndicatesFundsroomCompany = (html) => {
   )
 }
 
-export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
-  /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"/gi,
-)]
-  .map((match) => {
-    const [, jobId, rawHref, rawTitle, rawCompany, rawLocation, postingDate] = match
-    const sourceUrl = normalizeWhitespace(rawHref)?.replace(/&amp;/g, '&')
-    const title = stripTags(rawTitle)
-    const company = stripTags(rawCompany)
-    const locationData = parseLocation(stripTags(rawLocation))
+export const extractSearchResults = (html) => extractLinkedinJobCards(html)
+  .map(({ id: jobId, href, title: rawTitle, company: rawCompany, location, datetime }) => {
+      const sourceUrl = normalizeWhitespace(href)
+      const title = normalizeWhitespace(rawTitle)
+      const company = normalizeWhitespace(rawCompany)
+      const locationData = parseLocation(location)
+      const postingDate = datetime
+      if (!title || !jobId || !sourceUrl || company?.toLowerCase() !== 'fundsroom'
+        || locationData.country !== 'India') return null
+      try {
+        const url = new URL(sourceUrl)
+        if (url.protocol !== 'https:' || !/(^|\.)linkedin\.com$/i.test(url.hostname)
+          || !new RegExp(`/jobs/view/(?:[^/]+-)?${jobId}/?$`).test(url.pathname)) return null
+      } catch { return null }
 
-    if (!title || !jobId || !sourceUrl || locationData.country !== 'India') return null
-
-    return {
+      return {
       title,
       company,
       department: null,
@@ -143,9 +147,9 @@ export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
       postingDate: normalizeWhitespace(postingDate),
       closingDate: null,
       jobDescription: null,
-    }
-  })
-  .filter(Boolean)
+      }
+    })
+    .filter(Boolean)
 
 export const extractJobDetail = (html) => {
   const jobPosting = parseJobPostingJsonLd(html)
@@ -164,8 +168,10 @@ export const extractJobDetail = (html) => {
   }
 }
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
+  const timeout = AbortSignal.timeout(20000)
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
     headers: {
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
@@ -184,20 +190,26 @@ export const createFundsroomScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
+    const { signal } = options
+    signal?.throwIfAborted()
     const fetchText = options.fetchText || defaultFetchText
-    const companyHtml = await fetchText(LINKEDIN_COMPANY_PAGE_URL)
+    const companyHtml = await fetchText(LINKEDIN_COMPANY_PAGE_URL, { signal })
+    signal?.throwIfAborted()
 
     if (!pageIndicatesFundsroomCompany(companyHtml)) {
       throw new Error('Fundsroom LinkedIn company page no longer matches the expected public organization page')
     }
 
-    const searchHtml = await fetchText(LINKEDIN_INDIA_JOBS_URL)
+    const searchHtml = await fetchText(LINKEDIN_INDIA_JOBS_URL, { signal })
+    signal?.throwIfAborted()
     const listings = extractSearchResults(searchHtml)
     const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
     const enrichedJobs = []
 
     for (const listing of selectedJobs) {
-      const detailHtml = await fetchText(listing.sourceUrl)
+      signal?.throwIfAborted()
+      const detailHtml = await fetchText(listing.sourceUrl, { signal })
+      signal?.throwIfAborted()
       const detail = extractJobDetail(detailHtml)
 
       enrichedJobs.push({
@@ -217,7 +229,7 @@ export const createFundsroomScraper = ({
   },
 })
 
-export const run = async () => createFundsroomScraper().run()
+export const run = async (options = {}) => createFundsroomScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

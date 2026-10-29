@@ -29,7 +29,7 @@ jobs:
       JOB_DESCRIPTION_REWRITE_MODE: 'publish'
       JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS: ${{ vars.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || '19800' }}
       JOB_DESCRIPTION_REWRITE_CPU_THREADS: '4'
-      JOB_DESCRIPTION_REWRITE_CONCURRENCY: '4'
+      JOB_DESCRIPTION_REWRITE_CONCURRENCY: ${{ vars.JOB_DESCRIPTION_REWRITE_CONCURRENCY || '4' }}
       JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS: '21000'
       NODE_OPTIONS: '--use-system-ca'
       PIPELINE_STAGE: rewrite
@@ -75,9 +75,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .cache/description-rewrites
-          key: description-lfm12b-rewrites-${{ runner.os }}-v17-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-rewrites-${{ runner.os }}-v18-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            description-lfm12b-rewrites-${{ runner.os }}-v17-${{ github.ref }}-
+            description-lfm12b-rewrites-${{ runner.os }}-v18-${{ github.ref }}-
       - name: Drain the durable source-hash queue
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
         timeout-minutes: 345
@@ -89,7 +89,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .cache/description-rewrites
-          key: description-lfm12b-rewrites-${{ runner.os }}-v17-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-rewrites-${{ runner.os }}-v18-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload generation quality and capacity diagnostics
         if: always()
         uses: actions/upload-artifact@v7

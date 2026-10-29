@@ -38,8 +38,8 @@ export async function runNativeMonocept(options={}){
   return json?JSON.parse(text):text
  }
  const surface=async()=>{
-  const html=await get(CAREER_PAGE_URL),styles=[]
-  for(const[url,hash]of Object.entries(reviewed.cssSHA256)){const css=await get(url);check(sha256(css)===hash,'unreviewed current corporate CSS bytes');styles.push(css)}
+  const html=await get(CAREER_PAGE_URL),styles=[],advertised=corporateContract(html).styles.stylesheets
+  for(const url of advertised){const hash=reviewed.cssSHA256[url];check(hash,'unreviewed current corporate CSS URL');const css=await get(url);check(sha256(css)===hash,'unreviewed current corporate CSS bytes');styles.push(css)}
   const corporate=corporateContract(html,styles.join('\n')),shells=[]
   for(const url of [BOARD_URL,DASHBOARD_URL]){const shell=nativeShellContract(await get(url));shells.push({url,hiringLinks:shell.hiringLinks,frames:shell.frames})}
   const clients={};for(const url of Object.keys(reviewed.clientSHA256))clients[url]=clientContract(url,await get(url))

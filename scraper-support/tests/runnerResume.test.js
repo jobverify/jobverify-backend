@@ -144,6 +144,18 @@ test('resolveScraperTimeoutMs keeps a bounded default and accepts explicit value
   assert.equal(resolveScraperTimeoutMs('-1'), 300000)
 })
 
+test('Persistent can finish its paced full inventory before the source deadline', () => {
+  const scraper = buildScrapers().find(item => item.name === 'persistent')
+  // The current native inventory has 630 roles, nine per listing page. Each
+  // role needs a detail and requisition read, plus initial/closing pagination.
+  const minimumPacedDuration = (630 * 2 + 70 * 2 - 1) * 1000
+  const sourceTimeout = resolveScraperTimeoutMs(null, scraper, null)
+  assert.ok(sourceTimeout > minimumPacedDuration,
+    `Persistent needs at least ${minimumPacedDuration}ms at its default public request spacing; got ${sourceTimeout}ms`)
+  assert.ok(sourceTimeout < resolveSourceLifecycleTimeoutMs(null, scraper),
+    'the lifecycle must retain time for persistence after extraction')
+})
+
 test('resolveScraperTimeoutMs gives Workday adapters a shorter default budget', () => {
   const workdayScraper = {
     name: 'airbus',

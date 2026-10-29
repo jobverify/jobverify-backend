@@ -18,7 +18,7 @@ test('rewrite parallelism stays inside a single GitHub job',()=>{
  const jobs=workflow.split('\njobs:\n')[1].match(/^  [a-z_]+:\s*$/gm)||[];
  assert.deepEqual(jobs.map(value=>value.trim()),['rewrite_descriptions:']);
  assert.doesNotMatch(workflow,/matrix:|max-parallel:|JOB_DESCRIPTION_REWRITE_SHARD/);
- assert.match(workflow,/JOB_DESCRIPTION_REWRITE_CONCURRENCY: '4'/);
+ assert.match(workflow,/JOB_DESCRIPTION_REWRITE_CONCURRENCY: \$\{\{ vars\.JOB_DESCRIPTION_REWRITE_CONCURRENCY \|\| '4' \}\}/);
  assert.match(workflow,/JOB_DESCRIPTION_REWRITE_CPU_THREADS: '4'/);
  assert.equal((workflow.match(/pipelineGithub.js register/g)||[]).length,1);
  assert.equal((workflow.match(/pipelineGithub.js report/g)||[]).length,1);

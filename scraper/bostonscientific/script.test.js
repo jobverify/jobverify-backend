@@ -12,6 +12,17 @@ function fixture(rows=f.indiaRows){return {now,fetchText:async u=>u.includes('bo
 }}}
 test('validated current native pagination and full details map through shared Eightfold adapter',async()=>{const jobs=await run(fixture());assert.equal(jobs.length,4);assert.ok(jobs.every(j=>j.sourceDetailComplete&&j.sourceListingComplete));assert.equal(readInventoryEvidence(jobs).reportedTotal,4)})
 test('unresolved global secondary Remote preserves verified subset with partial source health',async()=>{const unknown=structuredClone(f.foreignRows[0]);unknown.locations[0]+=', Remote';const jobs=await run(fixture([...f.indiaRows,unknown]));assert.equal(jobs.length,4);assert.ok(jobs.every(j=>j.sourceListingComplete===false));assert.equal(readInventoryEvidence(jobs).listingComplete,false);assert.equal(readBostonScientificDiagnostics(jobs).unresolvedScopes.length,1)})
+test('India country facet reconciles a corroborated Haryana comma-city address without promoting unresolved global scope',async()=>{
+ const rows=structuredClone(f.indiaRows),row=rows[0],base=fixture(rows),unknown=structuredClone(f.foreignRows[0])
+ row.locations=['Gurgaon, India | India-Haryana, Gurgaon'];row.standardizedLocations=['Gurugram, HR, IN'];unknown.locations[0]+=', Remote'
+ const transport=fixture([...rows,unknown]),jobs=await run({...base,fetchJson:async(u,o)=>{
+  const p=await transport.fetchJson(u,o)
+  if(u.includes('position_details')&&p.data.id===row.id){p.data.locations=row.locations;p.data.standardizedLocations=row.standardizedLocations}
+  return p
+ }})
+ assert.equal(jobs.length,4);assert.equal(jobs.find(j=>j.jobId===row.id).location,'Gurgaon, India')
+ assert.equal(readInventoryEvidence(jobs).listingComplete,false);assert.equal(readBostonScientificDiagnostics(jobs).unresolvedScopes.length,1)
+})
 test('explicit zero cap cannot certify zero or completeness',async()=>{const jobs=await run({...fixture(),maxJobs:0});assert.equal(jobs.length,0);assert.equal(readInventoryEvidence(jobs).listingComplete,false)})
 test('caller abort settles hanging native transport',async()=>{const c=new AbortController(),p=run({...fixture(),signal:c.signal,fetchText:()=>new Promise(()=>{})});c.abort();await assert.rejects(p)})
 test('detail identity failures propagate past optional shared detail fallback',async()=>{const base=fixture();await assert.rejects(run({...base,fetchJson:async(u,o)=>{const p=await base.fetchJson(u,o);if(u.includes('position_details'))p.data.id++;return p}}),/mismatch/)})

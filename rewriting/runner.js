@@ -48,9 +48,10 @@ export const validateDescriptionRewrite = (value, input, finishReason, format) =
     ? validateFactPlan(value, input, finishReason) : validateRewrite(value, input, finishReason);
 
 /** Read SSE incrementally; a closed socket without a finish frame is not a completion. */
-const readCompletionStream = async (response, { maxCharacters = 100000 } = {}) => {
+const readCompletionStream = async (response, { maxCharacters = 100000, repetitionSource, onProgress } = {}) => {
   if (!response.body || typeof response.body[Symbol.asyncIterator] !== 'function') throw new RewriteGenerationError('Local generator stream missing');
-  const decoder=new TextDecoder();let buffer='',content='',finishReason=null,done=false,usage,timings;
+  const decoder=new TextDecoder();let buffer='',content='',finishReason=null,done=false,usage,timings,nextRepetitionCheck=1024;
+  const repetitionBudget = typeof repetitionSource === 'string' ? JSON.stringify(repetitionSource).length + 512 : Infinity;
   const frame=line=>{
     if(!line.startsWith('data:'))return;
     const data=line.slice(5).trim();if(!data)return;
@@ -60,7 +61,16 @@ const readCompletionStream = async (response, { maxCharacters = 100000 } = {}) =
     if(value.error)throw new RewriteGenerationError('Local generator stream error');
     const choice=value.choices?.[0];
     if(typeof choice?.delta?.content==='string')content+=choice.delta.content;
+    onProgress?.(content.slice(0,2400));
     if(content.length>maxCharacters)throw new RewriteGenerationError('Malformed oversized generator stream');
+    // Only stop an unsupported repeated run, never ordinary long output. The
+    // allowance derives from this source chunk, so repeated employer text fits.
+    if(repetitionBudget<16384 && content.length>=nextRepetitionCheck){
+      nextRepetitionCheck=content.length+512;
+      const tail=content.slice(-Math.max(2048,repetitionBudget+512)).replace(/["}\s]+$/,'');
+      const repeated=tail.match(/(.{32,256}?)\1{3,}$/s);
+      if(repeated && repeated[0].length>repetitionBudget)throw Object.assign(new RewriteGenerationError('Repetitive generator output'),{reason:'repetitive_output'});
+    }
     if(choice?.finish_reason)finishReason=choice.finish_reason;
     usage=value.usage||usage;timings=value.timings||timings;
   };
@@ -85,7 +95,7 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
   const url = new URL(endpoint);
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error('Generation must run on unauthenticated http://127.0.0.1');
   if (format === 'prose') return createProseRewriteClient({ endpoint, model, requestMs, planCacheDir, assertAlive, GenerationError: RewriteGenerationError,
-    readCompletion: response => readCompletionStream(response, { maxCharacters: Infinity }) });
+    readCompletion: (response, source, onProgress) => readCompletionStream(response, { maxCharacters: Infinity, repetitionSource: source, onProgress }) });
   requestMs ??= REWRITE_MODEL.requestSeconds * 1000;
   const cache = new Map();
   const compact = format === 'fact-plan', boundedEdits = format === 'source-edits', referenced = boundedEdits || format === 'source-sections';
@@ -271,15 +281,28 @@ export const probeRewriteClient = async (client, { concurrency = 1, deadline = D
     throw new RewriteWorkerError('generation_probe');
   }
   signal?.throwIfAborted();
-  return { requests: concurrency, durationMs: Date.now() - started, ...(rejections.length ? { warnings: rejections.length } : {}) };
+  return { requests: concurrency, durationMs: Date.now() - started, ready: rejections.length === 0,
+    ...(rejections.length ? { warnings: rejections.length } : {}) };
+};
+
+/** Quality rejection leaves the queue untouched; execution failures still throw in the probe. */
+export const rewriteWhenReady = async (probe, processQueue) => probe?.ready === true ? processQueue() : {
+  attempted: 0, published: 0, failed: 0, skipped: 0, interrupted: true,
+  qualityStopped: true, stopReason: 'readiness_rejected', reason: 'model_quality_unavailable',
 };
 
 export const rewriteQueueQuery = (now = new Date()) => ({ status: 'active', sourceContentHash: { $type: 'string' },
-  'descriptionRewrite.attempts': { $lt: 3 }, $or: [
-    { 'descriptionRewrite.status': 'pending' },
-    { 'descriptionRewrite.status': 'failed', 'descriptionRewrite.nextAttemptAt': { $lte: now } },
+  $or: [
+    { 'descriptionRewrite.status': 'pending', 'descriptionRewrite.attempts': { $lt: 3 } },
+    { 'descriptionRewrite.status': 'failed', 'descriptionRewrite.attempts': { $lt: 3 },
+      'descriptionRewrite.nextAttemptAt': { $type: 'date', $lte: now } },
+    { 'descriptionRewrite.status': 'failed', 'descriptionRewrite.policyVersion': { $type: 'string', $ne: REWRITE_MODEL.policyVersion } },
   ],
 });
+
+const deterministicRejections = new Set(['numeric_relationship_changed', 'required_scope_changed', 'preferred_scope_changed',
+  'negation_changed', 'application_url_changed', 'source_details_changed', 'unsupported_claim', 'unsafe_output',
+  'incomplete_source', 'empty_output', 'repetitive_output']);
 
 // The built-in _id index streams a stable order without sorting full descriptions in memory.
 // Queue timestamps are not indexed, and small Atlas clusters cannot spill that sort to disk.
@@ -360,7 +383,8 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       const expectedAbort = ['TimeoutError', 'AbortError'].includes(error.name) || error === signal?.reason;
       if (!(error instanceof RewriteGenerationError) && !expectedAbort) throw error;
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
-      if (Number.isInteger(error.generationRequests) || error.rawText) response = { generationRequests: error.generationRequests, rawText: error.rawText };
+      if (Number.isInteger(error.generationRequests) || error.rawText) response = { generationRequests: error.generationRequests,
+        rawText: error.rawText, usage: error.usage, timings: error.timings, generations: error.generations };
       result = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout'
         : error.reason === 'model_context_budget' ? 'model_context_budget' : 'generation_error' };
     }
@@ -374,6 +398,7 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       ...(result.ok ? { description: result.description, descriptionFormat: 'markdown', 'descriptionRewrite.publishedAt': now,
         'descriptionRewrite.wordCount': result.wordCount, 'descriptionRewrite.quality': result.quality || null } : { 'descriptionRewrite.nextAttemptAt': new Date(now.getTime() + 3600000) }),
     }, $inc: { 'descriptionRewrite.attempts': 1 } };
+    if (!result.ok && deterministicRejections.has(result.reason)) values.$set['descriptionRewrite.nextAttemptAt'] = null;
     const saved = await update(filter, values);
     if (saved.matchedCount === 0) stats.concurrentChanges++;
     else if (result.ok) stats.published++;
@@ -381,7 +406,9 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
     else stats.failed++;
     await onResult({ id: String(job._id), inputHash: input.inputHash, ok: result.ok, reason: result.reason, durationMs, wordCount: result.wordCount, generated: assessment.ok, modelPlanCached: response?.cachedModelPlan || false,
       generationRequests: response?.generationRequests ?? (assessment.ok && !response?.cachedModelPlan ? 1 : 0), renderedWithoutInference: response?.renderedWithoutInference,
-      retrySkipped: response?.retrySkipped, quality: result.quality, usage: response?.usage, timings: response?.timings });
+      retrySkipped: response?.retrySkipped, quality: result.quality, usage: response?.usage, timings: response?.timings,
+      generations: response?.generations, reusedChunks: response?.reusedChunks,
+      cacheSource: response?.cacheSource, sharedGeneration: response?.sharedGeneration });
   };
   const pending = new Set();
   let failure;

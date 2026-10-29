@@ -2,14 +2,46 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import test,{after} from 'node:test'
+import {fileURLToPath,pathToFileURL} from 'node:url'
 import {gunzipSync} from 'node:zlib'
 import {createHash} from 'node:crypto'
 import {buildPartialAttempt,recordPartialPublishingStatus} from '../scripts/partialPublishingGapEvidence.js'
 import {isSuccessfulPublishingGapTrial} from '../scripts/publishPublishingGapRepairs.js'
 const now=new Date('2026-10-21T00:35:00Z'),sha=b=>createHash('sha256').update(b).digest('hex'),url=new URL('../scripts/bostonScientificPartialPublishingEvidence.js',import.meta.url)
-const load=async()=>{assert.ok(fs.existsSync(url),'Boston Scientific exact partial proof implementation is required');return import(url)}
+const load=async()=>{assert.ok(fs.existsSync(url),'Boston Scientific exact partial proof implementation is required');return import(pathToFileURL(path.join(reviewedRoot,'scripts/bostonScientificPartialPublishingEvidence.js')))}
 const fixture=(version='002')=>{const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/bostonScientificPartial/reviewed-native-'+version+'.json.gz',import.meta.url)))),files=new Map(Object.entries(f.files).map(([k,v])=>[k,Buffer.from(v,'base64')]));return{source:'bostonscientific',httpEvidence:f.httpEvidence,files,readEvidence:async file=>files.get(file),now}}
+// Positive historical proofs require their exact reviewed runtime, while the
+// production verifier must continue rejecting those proofs after source drift.
+// Restore only the three attested source files in a disposable offline tree;
+// the immutable receipt bundle and the live checkout are never rewritten.
+const backendRoot=fileURLToPath(new URL('..',import.meta.url)),reviewedRoot=fs.mkdtempSync(path.join(os.tmpdir(),'boston-reviewed-code-')),junctions=[]
+fs.mkdirSync(path.join(reviewedRoot,'scripts'));fs.mkdirSync(path.join(reviewedRoot,'scraper/bostonscientific'),{recursive:true});fs.mkdirSync(path.join(reviewedRoot,'scraper-support/providers'),{recursive:true})
+fs.writeFileSync(path.join(reviewedRoot,'package.json'),'{"type":"module"}')
+for(const name of ['bostonScientificPartialPublishingEvidence.js','freezeBostonScientificPartialPublishingTrial.js','officialRecruitmentLinks.js']){
+ fs.copyFileSync(path.join(backendRoot,'scripts',name),path.join(reviewedRoot,'scripts',name))
+}
+for(const name of ['src','scraper-support/utils','scraper-support/apiPortal','scraper-support/providers/providerExtensions']){
+ const link=path.join(reviewedRoot,name);fs.symlinkSync(path.join(backendRoot,name),link,'junction');junctions.push(link)
+}
+for(const name of ['scripts/partialPublishingGapEvidence.js','scraper-support/providers/index.js']){
+ fs.writeFileSync(path.join(reviewedRoot,name),'export * from '+JSON.stringify(pathToFileURL(path.join(backendRoot,name)).href)+';')
+}
+// Unchanged bytes archived with the reviewed October21 runtime. Its Eightfold
+// template predates the later sort_by default, which changes receipt URLs.
+const reviewedTemplate=gunzipSync(fs.readFileSync(new URL('./fixtures/bostonScientificPartial/reviewed-apiPortalTemplates.js.gz',import.meta.url)))
+assert.equal(sha(reviewedTemplate),'2e6634a4a09f96cc27dcf89d0ec3a7b019ba418c3ad2971fc02dc8174304f16c')
+fs.writeFileSync(path.join(reviewedRoot,'scraper-support/providers/apiPortalTemplates.js'),reviewedTemplate)
+const reviewed=fixture()
+for(const receipt of reviewed.httpEvidence.receipts.filter(r=>r.kind==='current-code')){
+ assert.ok(['scraper/bostonscientific/script.js','scraper/bostonscientific/nativeContract.js','scraper/bostonscientific/nativeContent.js'].includes(receipt.sourcePath))
+ fs.writeFileSync(path.join(reviewedRoot,receipt.sourcePath),reviewed.files.get(receipt.file))
+}
+after(()=>{
+ assert.equal(path.dirname(reviewedRoot),fs.realpathSync(os.tmpdir()));assert.ok(path.basename(reviewedRoot).startsWith('boston-reviewed-code-'))
+ for(const link of junctions)fs.unlinkSync(link)
+ fs.rmSync(reviewedRoot,{recursive:true})
+})
 async function makeTrial(f=fixture()){
  const{deriveBostonScientificPartialEvidence}=await load(),p=await deriveBostonScientificPartialEvidence(f)
  const trial={schemaVersion:1,source:'bostonscientific',mode:'native-http-partial-positive-trial',outcome:'positive-extraction-incomplete-evidence',productionWrites:false,
@@ -64,7 +96,7 @@ test('caller-updated hashes cannot replace actual Boston paging, detail, officia
 })
 
 test('Boston freezer preserves four exact original jobs, dates and all receipts in an unused confined output',async()=>{
- const url=new URL('../scripts/freezeBostonScientificPartialPublishingTrial.js',import.meta.url);assert.ok(fs.existsSync(url),'Boston Scientific exact immutable freezer is required')
+ const url=pathToFileURL(path.join(reviewedRoot,'scripts/freezeBostonScientificPartialPublishingTrial.js'));assert.ok(fs.existsSync(url),'Boston Scientific exact immutable freezer is required')
  const{freezeBostonScientificPartialTrial}=await import(url),parent=fs.mkdtempSync(path.join(os.tmpdir(),'bostonscientific-proof-')),outputDirectory=path.join(parent,'release')
  try{
   const f=fixture(),result=await freezeBostonScientificPartialTrial({...f,outputDirectory}),bytes=fs.readFileSync(path.join(outputDirectory,'bostonscientific.json')),trial=JSON.parse(bytes)
@@ -74,6 +106,11 @@ test('Boston freezer preserves four exact original jobs, dates and all receipts 
   await assert.rejects(freezeBostonScientificPartialTrial({...f,outputDirectory}))
   const bad=fixture();bad.httpEvidence.receipts[0].file='../escape.json';const badOutput=path.join(parent,'bad');await assert.rejects(freezeBostonScientificPartialTrial({...bad,outputDirectory:badOutput}));assert.equal(fs.existsSync(badOutput),false)
  }finally{assert.equal(path.dirname(parent),fs.realpathSync(os.tmpdir()));assert.ok(path.basename(parent).startsWith('bostonscientific-proof-'));fs.rmSync(parent,{recursive:true})}
+})
+
+test('reviewed Boston002 proof cannot authorize publication after the live runtime geography contract changes',async()=>{
+ const {deriveBostonScientificPartialEvidence}=await import(url)
+ await assert.rejects(deriveBostonScientificPartialEvidence(fixture()),/current source differs from independently reviewed code/)
 })
 
 test('historical Boston001 bytes remain readable but cannot qualify future publication after the reviewed template correction',async()=>{

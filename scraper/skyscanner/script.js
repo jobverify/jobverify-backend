@@ -77,6 +77,13 @@ export const createSkyscannerScraper = ({ maxJobs = null } = {}) => ({
       signal?.throwIfAborted()
       const page = await fetchPage(url, { signal })
       signal?.throwIfAborted()
+      let challengeRedirect = false
+      try { const target = new URL(page?.url); challengeRedirect = target.origin === new URL(CAREERS_URL).origin && target.pathname === '/sttc/px/captcha-v2/index.html' } catch {}
+      if ([401, 403, 429].includes(page?.status) || challengeRedirect || hasChallengeGateSignal(page?.html)) {
+        throw Object.assign(new Error('Skyscanner current employer page denied public access; current board binding unavailable'), {
+          softFailure: true, upstreamOutage: true, abortRetries: true, failureKind: 'public_access_denied', status: page?.status,
+        })
+      }
       if (page?.status !== 200 || String(page.url || '').replace(/\/+$/, '') !== url.replace(/\/+$/, '')
         || typeof page.html !== 'string' || page.html.length > 3000000) throw new Error('Skyscanner current employer page/bundle binding unavailable')
       return page.html

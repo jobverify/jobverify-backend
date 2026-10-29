@@ -718,8 +718,9 @@ export const createPhenomScraper = ({
   const resolveWidgetRequest = html => {
     const searchUrl = new URL(searchPath, baseUrl)
     // Preserve supported keyword scope; arbitrary filters still use their original HTML route.
-    if ([...searchUrl.searchParams.keys()].some(key => key !== 'keywords')
+    if ([...searchUrl.searchParams.keys()].some(key => key !== 'keywords' && key !== 's')
       || searchUrl.searchParams.getAll('keywords').length > 1
+      || searchUrl.searchParams.has('s') && (searchUrl.searchParams.getAll('s').length !== 1 || searchUrl.searchParams.get('s') !== '1')
       || searchUrl.hash || !searchUrl.pathname.endsWith('/search-results')) return null
     const app = extractNativeModel(html, 'app')
     if (!app?.widgetApiEndpoint || !app.locale || !app.deviceType || !app.country || app.pageName !== 'search-results') return null

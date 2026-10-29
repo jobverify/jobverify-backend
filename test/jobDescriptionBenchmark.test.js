@@ -36,3 +36,18 @@ test('benchmark resume rejects changed source jobs before starting any model', a
   await fs.writeFile(output, JSON.stringify(checkpoint()));
   await assert.rejects(exec(process.execPath, [script, '--input', input, '--output', output, '--resume'], { cwd, windowsHide: true }), error => /changed or reordered/.test(error.stderr));
 });
+
+test('completed prose checkpoints replay the prose validator without loading the model', async t => {
+  const cwd = await fs.mkdtemp(path.join(tmpdir(), 'description-prose-benchmark-'));
+  t.after(() => fs.rm(cwd, { recursive: true, force: true }));
+  const input = path.join(cwd, 'input.json'), output = path.join(cwd, 'report.json');
+  const previous = checkpoint();
+  previous.cases[0] = { ...previous.cases[0], format: 'prose', finishReason: 'stop',
+    generatedPlan: { inputHash: buildRewriteInput(jobs[0]).inputHash, parts: [{ source: job.sourceDescription,
+      text: job.sourceDescription.replace('Build and maintain', 'Develop and maintain') }] } };
+  await fs.writeFile(input, JSON.stringify(jobs)); await fs.writeFile(output, JSON.stringify(previous));
+  await exec(process.execPath, [script, '--input', input, '--output', output, '--resume'], { cwd, windowsHide: true });
+  const result = JSON.parse(await fs.readFile(output, 'utf8'));
+  assert.equal(result.cases[0].accepted, true);
+  assert.match(result.cases[0].description, /Develop and maintain/);
+});

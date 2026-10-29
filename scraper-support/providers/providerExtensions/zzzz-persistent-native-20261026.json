@@ -3,6 +3,7 @@
     "source": "persistent",
     "companyName": "Persistent Systems",
     "adapter": "script",
+    "scraperTimeoutMs": 1620000,
     "modulePath": "../persistent/script.js",
     "catalogOverride": true,
     "companyCareerPage": "https://careers.persistent.com/explore-opportunities",

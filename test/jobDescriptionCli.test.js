@@ -44,3 +44,13 @@ test('disabled or exhausted CLI runs do not connect to MongoDB or start a model'
     assert.equal(summary.handoffReady, mode !== 'off');
   }
 });
+
+test('production GPU settings require an explicit compatible binary and checksum before database access', async t => {
+  const cwd = await fs.mkdtemp(path.join(tmpdir(), 'rewrite-gpu-config-'));
+  t.after(() => fs.rm(cwd, { recursive: true, force: true }));
+  const result = await exec(process.execPath, [script, '--apply'], { cwd, windowsHide: true,
+    env: { ...process.env, MONGO_URI: '', JOB_DESCRIPTION_REWRITE_MODE: 'off', JOB_DESCRIPTION_REWRITE_GPU_LAYERS: 'all',
+      JOB_DESCRIPTION_REWRITE_BINARY: '', JOB_DESCRIPTION_REWRITE_BINARY_SHA256: '' } }).catch(error => error);
+  assert.match(result.stderr, /compatible binary.*checksum/i);
+  assert.equal(result.code, 1);
+});

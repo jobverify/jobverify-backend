@@ -85,6 +85,16 @@ test('Phenom honors cancellation during optional detail work',async()=>{
 })
 
 const widgetBootstrap = page([],0).replace('phApp.ddo =', 'var phApp = phApp || {"widgetApiEndpoint":"https://careers.example.com/widgets","locale":"en_global","deviceType":"desktop","country":"global","pageName":"search-results"}; phApp.ddo =')
+test('Phenom neutral s=1 search flag still uses the complete country widget inventory', async()=>{
+ const flagged=createPhenomScraper({companyName:'Example',source:'flagged',baseUrl:'https://careers.example.com',searchPath:'/global/en/search-results?s=1',scraperDir:fileURLToPath(new URL('.',import.meta.url))})
+ const jobs=await flagged.run({detailEnrichmentBudgetMs:0,fetchText:async()=>widgetBootstrap,fetchJson:async()=>({refineSearch:{status:200,totalHits:1,hits:1,data:{jobs:[job(1)],aggregations:[{field:'country',value:{India:1}}]}}})})
+ assert.equal(jobs.length,1);assert.equal(jobs[0].jobId,'1');assert.notEqual(jobs[0].sourceListingComplete,false)
+})
+for(const query of ['s=2','s=1&s=1','s=1&category=Division'])test('Phenom preserves unsupported search scope '+query,async()=>{
+ const scoped=createPhenomScraper({companyName:'Example',source:'scoped-flag',baseUrl:'https://careers.example.com',searchPath:'/global/en/search-results?'+query,scraperDir:fileURLToPath(new URL('.',import.meta.url))})
+ const jobs=await scoped.run({detailEnrichmentBudgetMs:0,fetchText:async()=>widgetBootstrap,fetchJson:async()=>{throw new Error('Unsupported search scope was lost')}})
+ assert.equal(jobs.length,0)
+})
 test('Phenom uses the verified same-origin widget for complete larger listing pages', async()=>{
  const requests=[]
  const jobs=await scraper.run({detailEnrichmentBudgetMs:0,fetchText:async url=>{requests.push(['html',url]);return widgetBootstrap},fetchJson:async(url,options)=>{

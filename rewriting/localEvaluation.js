@@ -18,11 +18,11 @@ export const evaluateLocalJobs = async (jobs,{outputDir,policyIdentity,client,de
    stats.generated++;
    try{response=await client.generate(input,{signal,remainingMs:deadline-Date.now()});
     if(signal?.aborted||Date.now()>=deadline){stats.interrupted=true;break;}
-    result=validateDescriptionRewrite(response.value,input,response.finishReason,response.format||client.format);
-   }catch(error){if(signal?.aborted||Date.now()>=deadline){stats.interrupted=true;break;}result={ok:false,reason:error.name==='TimeoutError'?'timeout':'generation_error'};}
+    result=response.finishReason==='stop'&&response.validationFailure?response.validationFailure:validateDescriptionRewrite(response.value,input,response.finishReason,response.format||client.format);
+   }catch(error){if(signal?.aborted||Date.now()>=deadline){stats.interrupted=true;break;}response={rawText:error.rawText?.slice(0,2400),usage:error.usage,timings:error.timings,generations:error.generations};result={ok:false,reason:error.name==='TimeoutError'?'timeout':'generation_error'};}
    if(result.ok)stats.accepted++;else stats.failed++;
   }
-  const row={policyIdentity,inputHash:input.inputHash,title:input.facts.title,company:input.facts.company,sourceWords:input.sourceWords,sourceDescription:input.sourceDescription,sourceFacts:assessment.facts,durationMs:Date.now()-started,generated:assessment.ok,modelPlanCached:response?.cachedModelPlan||false,accepted:result.ok,reason:result.reason,description:result.description,wordCount:result.wordCount,quality:result.quality,completion:response?.value,finishReason:response?.finishReason,usage:response?.usage,timings:response?.timings,completedAt:new Date().toISOString()};
+  const row={policyIdentity,inputHash:input.inputHash,title:input.facts.title,company:input.facts.company,sourceWords:input.sourceWords,sourceDescription:input.sourceDescription,sourceFacts:assessment.facts,durationMs:Date.now()-started,generated:assessment.ok,modelPlanCached:response?.cachedModelPlan||false,accepted:result.ok,reason:result.reason,description:result.description,wordCount:result.wordCount,quality:result.quality,completion:response?.value,completionPreview:response?.rawText,validation:result.diagnostic,finishReason:response?.finishReason,usage:response?.usage,timings:response?.timings,generations:response?.generations,completedAt:new Date().toISOString()};
   await writeFileAtomically(file,JSON.stringify(row,null,2)+'\n');await onResult({...row,file});
  }
  return stats;

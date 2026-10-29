@@ -30,6 +30,7 @@ export const createWayCoolScraper = () => ({
     let surface = OFFICIAL_CAREERS_URL, firstParty = false, pagesFetched = 0
     const gap = (reason, cause) => Object.assign(new Error(`WayCool coverage gap: ${reason}`, {cause}), {
       code:'WAYCOOL_COVERAGE_GAP', partial:true, sourceListingComplete:false, lifecycleCleanupAllowed:false,
+      softFailure:true, upstreamOutage:false, failureKind:'coverage_gap', abortRetries:true,
       retainedResponses, nativeAttempts:attempts,
       inventoryEvidence:normalizeInventoryEvidence({status:'coverage-gap', surface, firstParty,
         listingComplete:false, pagesFetched, reportedTotal:null, indiaFacetCount:null,
