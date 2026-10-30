@@ -2,7 +2,7 @@ name: Jobverify Scraper Cron
 run-name: 'Scraper #${{ github.run_number }}'
 on:
   schedule:
-    - cron: '0 17 * * *' # Every day at 10:30 PM IST
+    - cron: '42 8 * * *' # Every day at 14:12 IST
   workflow_dispatch:
     inputs:
       pipeline_id:
