@@ -15,13 +15,13 @@ export const telegramAlertScheduleValidation = [
   body("weeklyDay").isString().bail().isIn(ALERT_WEEKDAYS).withMessage("Choose a valid weekday."),
 ];
 
-const telegramSetupComplete = (user) => canUseTelegramAlerts(user)
+const telegramSetupComplete = (user, siteSettings) => canUseTelegramAlerts(user, new Date(), siteSettings)
   && hasSavedFilters(normalizeProfilePreferenceFilters(user?.profile?.telegramAlertFilters));
 const setupRequired = (res) => res.status(409).json({ success: false, code: "TELEGRAM_SETUP_REQUIRED",
   message: "Link Telegram, enable alerts and save matching filters before changing its schedule." });
 
 export const getUserTelegramAlertSchedule = async (req, res) => {
-  if (!telegramSetupComplete(req.user)) return setupRequired(res);
+  if (!telegramSetupComplete(req.user, req.siteSettings)) return setupRequired(res);
   try {
     const subscription = await loadAlertSchedule(req.user._id);
     return res.status(200).json({ success: true, data: toPublicAlertSchedule(subscription, new Date()) });
@@ -36,7 +36,7 @@ export const updateUserTelegramAlertSchedule = async (req, res) => {
     || typeof deliveryTime !== "string" || !ALERT_TIME_PATTERN.test(deliveryTime) || !ALERT_WEEKDAYS.includes(weeklyDay)) {
     return res.status(400).json({ success: false, message: "Choose a valid frequency, time, weekday and enabled state." });
   }
-  if (!telegramSetupComplete(req.user)) return setupRequired(res);
+  if (!telegramSetupComplete(req.user, req.siteSettings)) return setupRequired(res);
   try {
     const subscription = await updateAlertSchedule(req.user._id, { frequency, isActive, deliveryTime, weeklyDay }, new Date());
     return res.status(200).json({ success: true, message: "Telegram schedule saved.", data: toPublicAlertSchedule(subscription, new Date()) });

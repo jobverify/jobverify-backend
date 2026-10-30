@@ -6,6 +6,9 @@ import {
   fetchTextWithRetry,
 } from '../../scraper-support/utils/fetch.js'
 import { inferExperienceFromPublicPageHtml } from '../../scraper-support/utils/publicExperienceEnrichment.js'
+import { extractActiveDescription, readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
+import { isExactPublicJobUrl } from '../../rewriting/publicPostingDescription.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { AURIGO_CATALOG } from './catalog.js'
 
@@ -41,7 +44,8 @@ const parseSlashDate = (value) => {
   const day = String(Number.parseInt(match[2], 10)).padStart(2, '0')
   const rawYear = Number.parseInt(match[3], 10)
   const year = rawYear < 100 ? 2000 + rawYear : rawYear
-  return `${year}-${month}-${day}`
+  const date = `${year}-${month}-${day}`
+  return Number.isFinite(Date.parse(date)) && new Date(date).toISOString().slice(0, 10) === date ? date : null
 }
 
 const normalizeArrayValues = (value) => (
@@ -50,11 +54,13 @@ const normalizeArrayValues = (value) => (
     : []
 )
 
-const buildJobUrl = (urlTitle, id) => {
+const buildJobUrl = (urlTitle, id, locale = DEFAULT_LOCALE) => {
   const normalizedTitle = normalizeWhitespace(urlTitle)
   const normalizedId = normalizeWhitespace(id)
-  if (!normalizedTitle || !normalizedId) return null
-  return `https://careers.aurigo.com/job/${normalizedTitle}/${normalizedId}/`
+  if (!normalizedTitle || !/^\d+$/.test(normalizedId) || !/^[a-z]{2}_[A-Z]{2}$/.test(locale)) return null
+  // The public client and canonical links include the locale after the ID.
+  // Omitting it redirects otherwise valid jobs to the employer error page.
+  return `https://careers.aurigo.com/job/${normalizedTitle}/${normalizedId}-${locale}/`
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
@@ -98,7 +104,7 @@ export const hasExpectedJobsApiSignal = (payload = {}) => (
   && Array.isArray(payload?.jobSearchResult)
 )
 
-export const extractJobsFromApiPayload = (payload = {}) => (
+export const extractJobsFromApiPayload = (payload = {}, { locale = DEFAULT_LOCALE } = {}) => (
   Array.isArray(payload?.jobSearchResult) ? payload.jobSearchResult : []
 )
   .map((entry) => entry?.response || null)
@@ -106,16 +112,18 @@ export const extractJobsFromApiPayload = (payload = {}) => (
     if (!job) return null
 
     const locations = normalizeArrayValues(job.filter1)
-    if (!locations.some((location) => /india/i.test(location))) return null
+    if (!locations.length || !locations.every((location) => /^India$/i.test(location))) return null
 
     const title = normalizeWhitespace(job.unifiedStandardTitle || job.title)
     const jobId = normalizeWhitespace(job.id)
-    const sourceUrl = buildJobUrl(job.unifiedUrlTitle || job.urlTitle, jobId)
+    const sourceUrl = buildJobUrl(job.unifiedUrlTitle || job.urlTitle, jobId, locale)
 
     if (!title || !jobId || !sourceUrl) return null
 
     const department = normalizeArrayValues(job.division_obj)[0] || null
     const location = locations[0] || 'India'
+    const postingDate = parseSlashDate(job.unifiedStandardStart)
+    const closingDate = parseSlashDate(job.unifiedStandardEnd)
 
     return {
       title,
@@ -133,21 +141,24 @@ export const extractJobsFromApiPayload = (payload = {}) => (
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: parseSlashDate(job.unifiedStandardStart),
-      closingDate: parseSlashDate(job.unifiedStandardEnd),
+      postingDate,
+      closingDate,
+      ...(postingDate || closingDate ? { sourceDatePrecision: 'day' } : {}),
+      ...(closingDate ? { sourceClosingDateIsExact: false } : {}),
       jobDescription: null,
       remoteStatus: 'On-site',
     }
   })
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  signal,
 })
 
 const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
@@ -156,27 +167,83 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  const page = await fetchTextWithRetry(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    attempts: 1,
+    label: SOURCE,
+    timeoutMs: 15000,
+    includeResponseMetadata: true,
+    signal,
   })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return {
-    finalUrl: response.url,
-    html: await response.text(),
-  }
+  return { ...page, finalUrl: page.url }
 }
 
 export const pageRedirectsToAurigoError = (value = '') => {
   const normalized = normalizeWhitespace(value)
   return normalized === AURIGO_ERROR_PAGE_URL
+}
+
+// Employer-rendered JobPosting microdata is present on the canonical locale
+// route even though the older numeric-only route returns an exception page.
+export const extractAurigoNativeDetail = (job, page = {}, nativeListingRecord) => {
+  if (page.status !== 200 || job.company !== COMPANY) return null
+  try {
+    const source = new URL(job.sourceUrl)
+    const route = source.pathname.match(/^\/job\/([^/]+)\/(\d+)(?:-en_US)?\/?$/)
+    if (source.origin !== 'https://careers.aurigo.com' || source.search || source.hash || !route || route[2] !== job.jobId) return null
+    const canonicalUrl = `${source.origin}/job/${route[1]}/${job.jobId}-en_US/`
+    if (!isExactPublicJobUrl(canonicalUrl, page.finalUrl || page.url)) return null
+    const document = readNativeDocument(page.html)
+    const canonicals = document.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical')
+    const headTitles = document.nodes(node => node.tag === 'title')
+    const shells = document.nodes(node => document.hasClass(node, 'jobDisplayShell') && node.attrs.itemtype === 'http://schema.org/JobPosting')
+    const titles = document.nodes(node => node.attrs.itemprop === 'title')
+    const descriptions = document.nodes(node => node.attrs.itemprop === 'description')
+    const contains = (parent, child) => parent === child || parent.children.some(node => typeof node !== 'string' && contains(node, child))
+    if (canonicals.length !== 1 || !isExactPublicJobUrl(canonicalUrl, canonicals[0].attrs.href)
+      || headTitles.length !== 1 || normalizeWhitespace(headTitles[0].raw) !== `${normalizeWhitespace(job.title)} Job Details | ${COMPANY}`
+      || shells.length !== 1 || titles.length !== 1 || descriptions.length !== 1
+      || !contains(shells[0], titles[0]) || !contains(shells[0], descriptions[0])
+      || document.text(titles[0]) !== normalizeWhitespace(job.title)) return null
+    const tokens = document.nodes(node => document.hasClass(node, 'joblayouttoken') && contains(shells[0], node)).map(document.text)
+    const values = label => tokens.filter(value => value.startsWith(label)).map(value => value.slice(label.length).trim())
+    const starts = values('Posting Start Date:'), locations = values('Posting Location:')
+    if (starts.length !== 1 || locations.length !== 1) return null
+    const postingDate = parseSlashDate(starts[0])
+    if (!postingDate) return null
+    let closingDate = null, listingIndia = false
+    if (nativeListingRecord) {
+      const countries = normalizeArrayValues(nativeListingRecord.filter1)
+      if (normalizeWhitespace(nativeListingRecord.id) !== job.jobId
+        || normalizeWhitespace(nativeListingRecord.unifiedStandardTitle || nativeListingRecord.title) !== normalizeWhitespace(job.title)
+        || !countries.length || !countries.every(value => /^India$/i.test(value))
+        || parseSlashDate(nativeListingRecord.unifiedStandardStart) !== postingDate) return null
+      closingDate = parseSlashDate(nativeListingRecord.unifiedStandardEnd)
+      if (nativeListingRecord.unifiedStandardEnd && !closingDate) return null
+      listingIndia = true
+    }
+    if (locations[0] ? !/(?:^|,\s*)India$/i.test(locations[0]) : !listingIndia) return null
+    const nativeLocation = locations[0] || 'India'
+    const nativeCity = locations[0].split(',').map(value => value.trim()).find(value => value && !/^India$/i.test(value))
+    const description = extractActiveDescription(document.text(descriptions[0]))
+    return {
+      sourceDescription: description, jobDescription: description,
+      location: nativeLocation, locations: [nativeLocation], city: nativeCity ? normalizeCity(nativeCity) : null,
+      sourceLocationEvidence: locations[0] ? 'aurigo-native-visible-posting-location-v1' : 'aurigo-native-listing-country-only-v1',
+      sourceDetailComplete: Boolean(description),
+      ...(description ? {} : { sourceDetailFailureKind: 'missing-content' }),
+      sourceDetailEvidence: 'aurigo-native-canonical-role-microdata-v1', sourceCanonicalUrl: canonicalUrl,
+      postingDate, sourcePostingDate: postingDate, sourceDatePrecision: 'day', sourceDateEvidence: 'aurigo-native-posting-dates-v1',
+      ...(closingDate ? { closingDate, sourceClosingDate: closingDate, sourceClosingDateIsExact: false } : {}),
+      publicExperienceChecked: true,
+    }
+  } catch {
+    return null
+  }
 }
 
 export const createAurigoScraper = ({ maxPages = 10, maxJobs = null } = {}) => ({
@@ -185,8 +252,11 @@ export const createAurigoScraper = ({ maxPages = 10, maxJobs = null } = {}) => (
     fetchJson = defaultFetchJson,
     fetchPage = defaultFetchPage,
     now = () => new Date().toISOString(),
+    signal,
   } = {}) {
-    const searchShell = await fetchText(SEARCH_PAGE_URL)
+    signal?.throwIfAborted()
+    const searchShell = await fetchText(SEARCH_PAGE_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialCareersSignal(searchShell)) {
       throw new Error('The verified Aurigo search shell no longer matches the trusted first-party jobs surface')
     }
@@ -199,6 +269,7 @@ export const createAurigoScraper = ({ maxPages = 10, maxJobs = null } = {}) => (
     const locale = extractSearchLocale(searchShell)
     const jobs = []
     const seenJobIds = new Set()
+    const nativeRecords = new Map()
     let accumulatedRawResults = 0
 
     for (let pageNumber = 0; pageNumber < maxPages; pageNumber += 1) {
@@ -214,14 +285,17 @@ export const createAurigoScraper = ({ maxPages = 10, maxJobs = null } = {}) => (
           Accept: 'application/json,text/plain,*/*',
         },
         body: JSON.stringify(payload),
+        signal,
       })
+      signal?.throwIfAborted()
 
       if (!hasExpectedJobsApiSignal(response)) {
         throw new Error('The verified Aurigo jobs API no longer matches the trusted first-party jobs surface')
       }
 
       const rawResults = Array.isArray(response.jobSearchResult) ? response.jobSearchResult : []
-      const pageJobs = extractJobsFromApiPayload(response)
+      const pageJobs = extractJobsFromApiPayload(response, { locale })
+      for (const entry of rawResults) if (entry?.response?.id != null) nativeRecords.set(String(entry.response.id), entry.response)
       accumulatedRawResults += rawResults.length
 
       for (const job of pageJobs) {
@@ -243,10 +317,13 @@ export const createAurigoScraper = ({ maxPages = 10, maxJobs = null } = {}) => (
         ...job,
         source: SOURCE,
         link: job.applyUrl || job.sourceUrl,
+        sourceListingComplete: false,
       }
 
       try {
-        const publicPage = await fetchPage(job.sourceUrl)
+        signal?.throwIfAborted()
+        const publicPage = await fetchPage(job.sourceUrl, { signal })
+        signal?.throwIfAborted()
         if (pageRedirectsToAurigoError(publicPage.finalUrl)) {
           return {
             ...publicJob,
@@ -254,8 +331,18 @@ export const createAurigoScraper = ({ maxPages = 10, maxJobs = null } = {}) => (
           }
         }
 
-        return inferExperienceFromPublicPageHtml(publicJob, publicPage.html)
+        const nativeDetail = extractAurigoNativeDetail(publicJob, publicPage, nativeRecords.get(job.jobId))
+        if (nativeDetail) return { ...publicJob, ...nativeDetail }
+
+        // Canonical source recovery requires a successful response at the exact
+        // role URL. Passing only HTML loses that proof and keeps the role private.
+        return inferExperienceFromPublicPageHtml(publicJob, {
+          html: publicPage.html,
+          status: publicPage.status,
+          url: publicPage.finalUrl || publicPage.url,
+        })
       } catch {
+        signal?.throwIfAborted()
         return publicJob
       }
     }))

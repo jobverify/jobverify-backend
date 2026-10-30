@@ -24,11 +24,11 @@ test('native API recovery retains lifecycle dates through Mongo public visibilit
   const now = new Date('2026-10-24T10:00:00Z')
   const native = JSON.parse(readFileSync(new URL('./fixtures/public-provider-content/oracle-detail.json', import.meta.url)))
   const expected = native.items[0]
-  const input = { title: expected.Title, company: 'Zensar', source: 'zensar', jobId: expected.Id,
+  const input = normalizeScrapedJob({ title: expected.Title, company: 'Zensar', source: 'zensar', jobId: expected.Id,
     sourceUrl: `https://fa-etvl-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/${expected.Id}`,
     country: 'India', location: expected.PrimaryLocation, sourceDescription: null,
-    scrapedAt: now.toISOString(), postingDate: now.toISOString(), postedAt: now,
-  }
+    scrapedAt: now.toISOString(),
+  })
   for (const [name, changes] of [
     ['active', {}], ['expired', { ExternalPostedEndDate: '2020-01-01T00:00:00Z' }],
     ['future', { ExternalPostedStartDate: '2030-01-01T00:00:00Z', ExternalPostedEndDate: '2031-01-01T00:00:00Z' }],

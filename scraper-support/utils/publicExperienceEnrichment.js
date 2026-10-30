@@ -421,6 +421,11 @@ const buildExistingPublicEvidence = (job = {}) => {
 }
 
 const shouldRefreshPublicJobEvidence = (job = {}) => {
+  // A display summary or experience label cannot supply the immutable employer
+  // description required by public visibility. Keep trying verified role-page
+  // and provider recovery even when earlier enrichment produced display text.
+  if (!hasSourceDescription(job)) return true
+
   const {
     experienceText,
     descriptionText,
@@ -1106,7 +1111,7 @@ const nativeDateConflicts = (suppliedValue, nativeDate, exactness) => {
     : supplied.getTime() !== nativeDate.getTime()
 }
 
-const enrichJobWithOracleCandidateExperienceDetail = async (job = {}, {
+export const enrichJobWithOracleCandidateExperienceDetail = async (job = {}, {
   fetchJson = defaultFetchJson,
   cache = new Map(),
   signal = null,

@@ -8,6 +8,7 @@ import {
   buildSearchUrl,
   extractPaginationSummary,
   extractSearchResults,
+  run,
 } from '../../scraper/synopsys/script.js'
 
 const fixturesDir = path.join(
@@ -64,4 +65,24 @@ test('extractPaginationSummary reads Synopsys result counts and next-page availa
     totalPages: 13,
     totalJobCount: 192,
   })
+})
+
+test('run fetches exact Synopsys job descriptions, including when maxJobs ends listing enumeration', async () => {
+  const listing = readFixture('search-india-page-1.html')
+  const role = extractSearchResults(listing)[0]
+  const description = '<p>Design and maintain security engineering services for Synopsys.</p>'
+  const requests = []
+  const jobs = await run({ maxJobs: 1, fetchText: async (url, { signal }) => {
+    requests.push(url)
+    if (url === buildSearchUrl()) return listing
+    assert.equal(url, role.sourceUrl)
+    assert.ok(signal)
+    return { status: 200, url, html: '<script type="application/ld+json">' + JSON.stringify({
+      '@type': 'JobPosting', title: role.title, hiringOrganization: { name: 'Synopsys' },
+      identifier: { value: role.jobId }, url, description,
+    }) + '</script>' }
+  } })
+  assert.deepEqual(requests, [buildSearchUrl(), role.sourceUrl])
+  assert.equal(jobs[0].sourceDescription, description)
+  assert.equal(jobs[0].sourceDetailComplete, true)
 })

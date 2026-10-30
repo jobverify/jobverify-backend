@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { runReviewedDarwinboxInventory } from './nativeInventory.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -58,26 +60,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createKeyenceScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+const nativeSpec = {
+  "source": "keyence",
+  "company": "Keyence",
+  "brand": "Keyence India",
+  "tenant": "keyence",
+  "tenantId": "373",
+  "origin": "https://keyence.darwinbox.in",
+  "handoff": "https://keyence.darwinbox.in/ms/candidatev2/main/careers/allJobs"
+}
+nativeSpec.review = JSON.parse(readFileSync(new URL('./reviewedNativeScope.json', import.meta.url), 'utf8'))
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Keyence careers page no longer matches the verified official public surface')
-    }
-
-    const recruitmentUrl = extractRecruitmentUrl(careersHtml)
-    if (recruitmentUrl !== RECRUITMENT_URL) {
-      throw new Error('Keyence careers page no longer links to the verified official recruitment surface')
-    }
-
-    const recruitmentHtml = await fetchText(RECRUITMENT_URL)
-    if (!hasApplyOnlyZeroJobsSignal(recruitmentHtml)) {
-      throw new Error('Keyence public recruitment surface now appears to expose jobs or changed shape')
-    }
-
-    return []
-  },
+export const createKeyenceScraper = (defaults = {}) => ({
+  run: (options = {}) => runReviewedDarwinboxInventory(nativeSpec, { ...defaults, ...options }),
 })
 
 export const run = async (options = {}) => createKeyenceScraper().run(options)

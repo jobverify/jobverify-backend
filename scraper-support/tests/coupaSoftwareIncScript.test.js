@@ -79,6 +79,7 @@ test('Coupa returns [] when the verified jobs page matches the live Cloudflare c
   const requestedPages = []
 
   const jobs = await coupa.createCoupaSoftwareIncScraper().run({
+    detailEnrichmentBudgetMs: 0,
     fetchText: async (url) => {
       throw new Error(`HTTP 403 for ${url}`)
     },
@@ -116,6 +117,7 @@ test('Coupa returns [] when the fallback probe resolves to the same Cloudflare c
   const requestedPages = []
 
   const jobs = await coupa.createCoupaSoftwareIncScraper().run({
+    detailEnrichmentBudgetMs: 0,
     fetchText: async (url) => {
       throw new Error(`HTTP 403 for ${url}`)
     },
@@ -155,6 +157,7 @@ test('Coupa recovers when the fallback probe resolves to the verified official j
   const jobs = await coupa.createCoupaSoftwareIncScraper({
     now: () => '2026-08-14T02:30:00.000Z',
   }).run({
+    detailEnrichmentBudgetMs: 0,
     fetchText: async (url) => {
       if (url === coupa.JOBS_PAGE_URL) {
         throw new Error(`HTTP 403 for ${url}`)
@@ -189,6 +192,7 @@ test('Coupa continues pagination when page 2 only becomes available through the 
   const jobs = await coupa.createCoupaSoftwareIncScraper({
     now: () => '2026-08-14T03:00:00.000Z',
   }).run({
+    detailEnrichmentBudgetMs: 0,
     fetchText: async (url) => {
       if (url === coupa.JOBS_PAGE_URL) {
         return verifiedLegacyJobsHtml

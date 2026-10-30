@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { hydrateSourceDescriptions } from '../../scraper-support/utils/sourceDescriptionHydration.js'
+import { createDarwinboxScraper } from '../darwinbox/script.js'
 import SCRIPBOX_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -225,31 +227,51 @@ export const extractIndiaJobsFromCareersPage = (
   return jobs
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'scripbox-html',
   timeoutMs: 15000,
+  signal,
 })
 
-export const createScripboxScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+export const createScripboxScraper = () => {
+  const native = createDarwinboxScraper({ source: SOURCE, companyName: COMPANY, origin: 'https://scripbox.darwinbox.in' })
+  return {
+    async run({
+      fetchText = defaultFetchText,
+      fetchJobDetail = native.fetchJobDetailFromApi,
+      detailEnrichmentBudgetMs,
+      signal,
+      now = () => new Date().toISOString(),
+    } = {}) {
+      signal?.throwIfAborted()
+      const careersHtml = await fetchText(CAREERS_URL, { signal })
+      signal?.throwIfAborted()
 
-    if (!hasVerifiedCareersPageSignal(careersHtml)) {
-      throw new Error('Scripbox verified first-party careers page no longer matches the trusted public jobs surface')
-    }
+      if (!hasVerifiedCareersPageSignal(careersHtml)) {
+        throw new Error('Scripbox verified first-party careers page no longer matches the trusted public jobs surface')
+      }
 
-    return extractIndiaJobsFromCareersPage(careersHtml, {
-      scrapedAt: now(),
-    })
-  },
-})
+      const jobs = extractIndiaJobsFromCareersPage(careersHtml, {
+        scrapedAt: now(),
+      })
+      const detailFacts = new Map()
+      const hydrated = await hydrateSourceDescriptions(jobs.map(job => ({ ...job, sourceListingComplete: false })), {
+        signal, detailEnrichmentBudgetMs,
+        fetchDetail: async (job, { signal: detailSignal }) => {
+          const payload = await fetchJobDetail({ jobId: job.jobId, companyId: 'main', signal: detailSignal })
+          detailSignal.throwIfAborted()
+          detailFacts.set(job.jobId, native.extractJobDetailFacts(payload, job))
+          return { sourceDescription: native.validateJobDetail(payload, job) }
+        },
+      })
+      return hydrated.map(job => ({ ...job, ...detailFacts.get(job.jobId) }))
+    },
+  }
+}
 
 export const run = async (options = {}) => createScripboxScraper(options).run(options)
 

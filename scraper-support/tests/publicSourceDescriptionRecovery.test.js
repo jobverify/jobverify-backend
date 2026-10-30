@@ -39,6 +39,38 @@ test('exact schema recovery preserves original employer HTML over generated disp
   assert.equal(normalizeScrapedJob(enriched).sourceDescription, description)
 })
 
+test('rich checked display text cannot short-circuit recovery of a missing employer description', async () => {
+  for (const sourceDescription of [null, '', '<p>&nbsp;</p>']) {
+    const input = { ...job, sourceDescription, publicExperienceChecked: true,
+      description: 'A generated display summary. '.repeat(15),
+      jobDescription: 'A generated display summary. '.repeat(15),
+      experienceRequired: '5 years' }
+    const before = structuredClone(input)
+    let requests = 0
+    const enriched = await enrichJobWithPublicExperience(input, { fetchText: async () => {
+      requests += 1
+      return response(page(posting))
+    } })
+    assert.equal(requests, 1)
+    assert.equal(enriched.sourceDescription, description)
+    assert.equal(hasSourceDescription(normalizeScrapedJob(enriched)), true)
+    assert.deepEqual(input, before)
+  }
+})
+
+test('failed recovery retains the missing source despite a rich checked display summary', async () => {
+  const input = { ...job, sourceDescription: '', publicExperienceChecked: true,
+    description: 'A generated display summary. '.repeat(15),
+    jobDescription: 'A generated display summary. '.repeat(15), experienceRequired: '5 years' }
+  let requests = 0
+  const enriched = await enrichJobWithPublicExperience(input, { fetchText: async () => {
+    requests += 1
+    return response(page({ ...posting, hiringOrganization: { name: 'Other employer' } }))
+  } })
+  assert.equal(requests, 1)
+  assert.equal(hasSourceDescription(normalizeScrapedJob(enriched)), false)
+})
+
 test('a matching role schema retains its exact role title despite overlapping page chrome', async () => {
   const enriched = await enrichJobWithPublicExperience(job, {
     fetchText: async () => response(page(posting).replace('<h1>Platform Engineer</h1>', '<h1>Platform Engineer Talent Community</h1>')),

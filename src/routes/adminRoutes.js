@@ -4,6 +4,7 @@
  */
 
 import express from "express";
+import { getPipelineSchedule, savePipelineSchedule } from '../controllers/pipelineController.js';
 import { updateSiteSettings } from "../controllers/siteSettingsController.js";
 import { getPipelineStatus, savePipelineConfiguration, getPipelineCapabilities, triggerPipeline, getPipelineRuns, getPipelineRun, getPipelineLog, downloadPipeline, retiredPipelineControl } from '../controllers/pipelineController.js';
 import { getUserSuggestions } from "../controllers/userSuggestionController.js";
@@ -124,6 +125,8 @@ router.get("/audit", getAuditLog);
 // Crawler Health Status and Pipeline Triggers
 router.get("/scrape/status", getScrapeStatus);
 router.get('/pipeline/status', getPipelineStatus);
+router.get('/pipeline/schedule', getPipelineSchedule);
+router.put('/pipeline/schedule', savePipelineSchedule);
 router.get('/pipeline/capabilities', getPipelineCapabilities);
 router.put('/pipeline/configuration', savePipelineConfiguration);
 router.post('/pipeline/trigger', scrapeTriggerLimiter, triggerPipeline);

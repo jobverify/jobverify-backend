@@ -1,18 +1,18 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { runNativeAqua, CAREERS } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "aquasecurity"
 export const COMPANY = "Aqua Security"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-08"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 10 exact-name sentinel for Aqua Security added on Saturday, August 8, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = CAREERS
+export const DISPOSITION = 'current-first-party-Comeet-native-details'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Current first-party listed roles, explicit native country, visible full descriptions, public application identity and closing listed inventory are checked each run. Whole-company scope remains unknown.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runNativeAqua(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {thirdWaveTransport} from '../../test/helpers/darwinboxThirdWaveFixture.js'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
 
 const careersPageHtml = `
 <!doctype html>
@@ -114,98 +116,24 @@ test('StanPlus scraper constants stay pinned to the verified RED.Health careers 
   )
 })
 
-test('StanPlus returns no jobs while the verified careers handoff stays fixed and Darwinbox only exposes blank shells plus a blocked API', async () => {
+test('StanPlus traverses the actual current public inventory while preserving native detail gaps', async () => {
   const stanPlus = await loadStanPlusModule()
-  const requestedUrls = []
-
-  const jobs = await stanPlus.createStanPlusScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === stanPlus.CAREERS_URL) {
-        return { status: 200, url, finalUrl: url, html: careersPageHtml, errorKind: null }
-      }
-
-      if (url === stanPlus.DARWINBOX_LISTING_API_URL) {
-        return { status: 403, url, finalUrl: url, html: blockedListingApiHtml, errorKind: null }
-      }
-
-      if (url === 'https://redhealth.darwinbox.in/ms/candidate/careers') {
-        return { status: 200, url, finalUrl: url, html: darwinboxCandidateShellHtml, errorKind: null }
-      }
-
-      if (stanPlus.DARWINBOX_TIMEOUT_ROUTE_URLS.includes(url)) {
-        return {
-          status: 200,
-          url,
-          finalUrl: url === 'https://redhealth.darwinbox.in/jobs'
-            ? 'https://redhealth.darwinbox.in/ms/candidatev2/main/careers/home'
-            : url,
-          html: darwinboxCandidateV2ShellHtml,
-          errorKind: null,
-        }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    stanPlus.CAREERS_URL,
-    ...stanPlus.DARWINBOX_TIMEOUT_ROUTE_URLS,
-  ])
-  assert.deepEqual(jobs, [])
+  const http = thirdWaveTransport('stanplus')
+  const jobs = await stanPlus.createStanPlusScraper().run(http)
+  assert.equal(jobs.length, 20)
+  assert.equal(jobs.filter(job => job.sourceDetailComplete).length, 18)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.ok(jobs.every(job => job.sourceListingComplete === false && job.lifecycleCleanupAllowed === false))
 })
 
-test('StanPlus fails closed when the careers handoff drifts or a public Darwinbox jobs surface becomes reachable', async () => {
+test('StanPlus fails closed when the careers handoff drifts or the declared public API is blocked', async () => {
   const stanPlus = await loadStanPlusModule()
-
-  await assert.rejects(
-    stanPlus.createStanPlusScraper().run({
-      fetchPage: async (url) => {
-        if (url === stanPlus.CAREERS_URL) {
-          return {
-            status: 200,
-            url,
-            finalUrl: url,
-            html: careersPageHtml.replace(
-              'https://redhealth.darwinbox.in/ms/candidatev2/main',
-              'https://example.com/jobs',
-            ),
-            errorKind: null,
-          }
-        }
-
-        return { status: 200, url, finalUrl: url, html: darwinboxCandidateV2ShellHtml, errorKind: null }
-      },
-    }),
-    /verified Darwinbox handoff/i,
-  )
-
-  await assert.rejects(
-    stanPlus.createStanPlusScraper().run({
-      fetchPage: async (url) => {
-        if (url === stanPlus.CAREERS_URL) {
-          return { status: 200, url, finalUrl: url, html: careersPageHtml, errorKind: null }
-        }
-
-        if (url === 'https://redhealth.darwinbox.in/ms/candidatev2/main/careers/allJobs') {
-          return {
-            status: 200,
-            url,
-            finalUrl: url,
-            html: '<html><body><h1>Current Openings</h1><button>Search Jobs</button><a href="/apply">Apply</a></body></html>',
-            errorKind: null,
-          }
-        }
-
-        if (url === stanPlus.DARWINBOX_LISTING_API_URL) {
-          return { status: 403, url, finalUrl: url, html: blockedListingApiHtml, errorKind: null }
-        }
-
-        return { status: 200, url, finalUrl: url, html: darwinboxCandidateV2ShellHtml, errorKind: null }
-      },
-    }),
-    /public Darwinbox jobs surface/i,
-  )
+  const drift = thirdWaveTransport('stanplus', row => {
+    if (row.url === stanPlus.CAREERS_URL) row.body = row.body.replaceAll(stanPlus.OFFICIAL_CAREERS_HANDOFF_URL, 'https://example.com/jobs')
+  })
+  await assert.rejects(stanPlus.createStanPlusScraper().run(drift), /current active first-party native handoff missing/)
+  const blocked = thirdWaveTransport('stanplus', row => {
+    if (row.url.includes('/ms/candidateapi/job?page=')) row.status = 403
+  })
+  await assert.rejects(stanPlus.createStanPlusScraper().run(blocked), /native API HTTP status\/content type changed: job\?page=1/)
 })

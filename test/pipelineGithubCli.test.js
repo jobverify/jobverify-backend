@@ -9,6 +9,7 @@ import { promisify } from 'node:util';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import PipelineRun from '../src/models/PipelineRun.js';
+import { failPipeline } from '../src/pipeline/execution.js';
 
 test('GitHub CLI registers direct roots, reports work and dispatches separate correlated stages',{timeout:300000},async t=>{
  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'pipeline-github-cli-'));
@@ -19,6 +20,13 @@ test('GitHub CLI registers direct roots, reports work and dispatches separate co
  const hook=path.join(directory,'mock-github.mjs'),eventFile=path.join(directory,'event.json'),dispatchFile=path.join(directory,'dispatches.jsonl');
  await fs.writeFile(hook,`import fs from 'node:fs';
  globalThis.fetch=async(url,options={})=>{
+  if(url.endsWith('/repos/owner/jobs'))return Response.json({default_branch:'main'});
+  if(url.includes('/contents/.github/workflows/scraper.yml')) {
+   const settings={hours:11,startAt:process.env.TEST_SCHEDULE_START};
+   const minute=new Date(settings.startAt).getUTCMinutes();
+   const source="on:\\n  schedule:\\n    - cron: '"+minute+" * * * *' # jobverify-interval "+JSON.stringify(settings)+"\\n  workflow_dispatch:\\n";
+   return Response.json({sha:'b'.repeat(40),encoding:'base64',content:Buffer.from(source).toString('base64')});
+  }
   if(url.includes('/actions/runs/'))return Response.json({id:Number(process.env.TEST_REMOTE_RUN_ID),status:'completed',conclusion:'success'});
   if(url.endsWith('/dispatches')){fs.appendFileSync(process.env.TEST_DISPATCH_LOG,JSON.stringify({url,body:JSON.parse(options.body)})+'\\n');return new Response(null,{status:204});}
   throw new Error('Unexpected mocked GitHub request');
@@ -60,4 +68,27 @@ test('GitHub CLI registers direct roots, reports work and dispatches separate co
  const replacement=await PipelineRun.findOne({activeKey:'database'}).lean();
  assert.equal(recovered.status,'completed');assert.equal(recovered.activeKey,undefined);
  assert.equal(replacement.stages[2].githubRunId,1104);
+ await failPipeline(replacement._id,'cancelled','Scheduled CLI checks');
+ const future='2099-01-01T00:00:00.000Z';
+ await fs.writeFile(eventFile,JSON.stringify({schedule:'0 * * * *'}));
+ const before=await PipelineRun.countDocuments();
+ await run('register','scraper',1200,{GITHUB_EVENT_NAME:'schedule',TEST_SCHEDULE_START:future});
+ assert.equal(await PipelineRun.countDocuments(),before);
+ assert.match(await fs.readFile(path.join(directory,'outputs'),'utf8'),/should_run=false/);
+ const dueDate=new Date(Date.now()-3600000);dueDate.setUTCMinutes(8,0,0);
+ const due=dueDate.toISOString();
+ const cron=new Date(due).getUTCMinutes()+' * * * *';
+ // An old tick queued before a schedule change cannot start a pipeline.
+ await run('register','scraper',1201,{GITHUB_EVENT_NAME:'schedule',TEST_SCHEDULE_START:due});
+ assert.equal(await PipelineRun.countDocuments(),before);
+ await fs.writeFile(eventFile,JSON.stringify({schedule:cron}));
+ await run('register','scraper',1202,{GITHUB_EVENT_NAME:'schedule',TEST_SCHEDULE_START:due});
+ const scheduled=await PipelineRun.findOne({scheduleSlot:{$exists:true}}).lean();
+ assert.ok(scheduled);assert.equal(scheduled.stages[0].githubRunId,1202);
+ await failPipeline(scheduled._id,'cancelled','Test duplicate tick');
+ await run('register','scraper',1203,{GITHUB_EVENT_NAME:'schedule',TEST_SCHEDULE_START:due});
+ assert.equal(await PipelineRun.countDocuments({scheduleSlot:{$exists:true}}),1);
+ await run('register','scraper',1204,{GITHUB_EVENT_NAME:'workflow_dispatch'});
+ const manual=await PipelineRun.findOne({activeKey:'database'}).lean();
+ assert.equal(manual.stages[0].githubRunId,1204);assert.equal(manual.scheduleSlot,undefined);
 });

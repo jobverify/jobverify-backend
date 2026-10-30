@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeScrapedJob } from '../../scraper-support/utils/normalizeScrapedJob.js'
+import { hydrateSourceDescriptions } from '../../scraper-support/utils/sourceDescriptionHydration.js'
+import { isExactPublicJobUrl } from '../../rewriting/publicPostingDescription.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -188,8 +190,40 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const publicPdfUrl = value => {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && url.hostname === 'cdn.prod.website-files.com'
+      && url.pathname.startsWith('/66a9e20e39727c40cabc8902/') && /\.pdf$/i.test(url.pathname)
+  } catch { return false }
+}
+const identityText = value => String(value || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
+
+export const recoverNashPdfDescription = (job, response) => {
+  if (!publicPdfUrl(job.sourceUrl) || !(response?.status >= 200 && response.status < 300)
+    || !isExactPublicJobUrl(response.url, job.sourceUrl) || typeof response.text !== 'string') return null
+  const text = identityText(response.text)
+  if (!text.includes('nashtechlabs') || !identityText(job.title) || !identityText(job.department)
+    || !text.includes(identityText(job.title)) || !text.includes(identityText(job.department))) return null
+  return { sourceDescription: response.text }
+}
+
+const defaultFetchPdfText = async (job, { signal } = {}) => {
+  if (!publicPdfUrl(job.sourceUrl)) return null
+  const response = await fetch(job.sourceUrl, { signal: signal
+    ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+    headers: { 'User-Agent': USER_AGENT, Accept: 'application/pdf' } })
+  if (!response.ok || !/application\/pdf/i.test(response.headers.get('content-type') || '')
+    || !isExactPublicJobUrl(response.url, job.sourceUrl)) return null
+  const { extractTextFromPdfBuffer } = await import('../../scraper-support/shared/pdfText.js')
+  const text = await extractTextFromPdfBuffer(Buffer.from(await response.arrayBuffer()), { signal, timeoutMs: 30000 })
+  return { status: response.status, url: response.url, text }
+}
+
 export const createNashTechLabsScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
+  async run({ fetchText = defaultFetchText, fetchPdfText, now: overrideNow, signal,
+    detailEnrichmentBudgetMs } = {}) {
+    signal?.throwIfAborted()
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Nash Tech Labs verified official homepage no longer matches the known first-party surface')
@@ -197,9 +231,17 @@ export const createNashTechLabsScraper = ({ now = () => new Date().toISOString()
 
     const careersHtml = await fetchText(CAREERS_URL)
     const jobs = extractPublicJobs(careersHtml)
+    // Injected page-only transports do not authorize unrelated real requests.
+    // Production reads only PDFs linked by the freshly verified careers page.
+    const pdfReader = fetchPdfText || (fetchText === defaultFetchText ? defaultFetchPdfText : null)
+    const hydrated = pdfReader ? await hydrateSourceDescriptions(jobs, { signal, detailEnrichmentBudgetMs,
+      fetchDetail: async (job, options) => recoverNashPdfDescription(job, await pdfReader(job, options)),
+    }) : jobs
 
-    return jobs.map((job) => normalizeScrapedJob({
+    return hydrated.map((job) => normalizeScrapedJob({
       ...job,
+      ...(job.sourceDescription ? { sourceDetailComplete: false,
+        sourceDetailFailureKind: 'pdf-completeness-unverified' } : {}),
       source: SOURCE,
       companyCareerPage: CAREERS_URL,
       companyDomain: COMPANY_DOMAIN,

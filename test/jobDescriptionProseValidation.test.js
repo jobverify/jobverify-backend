@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateProsePart } from '../rewriting/prose.js';
+import { checkProseStatements } from '../rewriting/proseValidation.js';
 
 for (const [name, source, output] of [
   ['number spelling', 'At least 2 years of Python experience is required.', 'At least two years of Python experience is required.'],
@@ -58,4 +59,58 @@ test('equivalent lower-bound notation and ordinary collaboration phrasing are ac
 
 test('coordinated duties can become separate bullets without losing either duty', () => {
   assert.equal(validateProsePart('Build Python services and maintain automated tests.', '- Build Python services.\n- Maintain automated tests.'), null);
+});
+
+test('neutral role framing preserves the numeric subject without hiding changed actors or duties', () => {
+  const source = 'Build Python services for customer group 1.';
+  assert.equal(validateProsePart(source, 'The role involves building Python services for customer group 1.'), null);
+  assert.equal(validateProsePart(source, 'The role focuses on developing Python services for customer group 1.'), null);
+  assert.equal(validateProsePart(source, 'The role involves building Python services for customer group 2.'), 'numeric_relationship_changed');
+  assert.notEqual(validateProsePart('You support customers.', 'The role involves customers supporting you.'), null);
+  assert.notEqual(validateProsePart(source, 'The role involves building Python services for customer group 1 and maintaining Java services.'), null);
+});
+
+test('preserved group numbers do not conceal a duty becoming an experience requirement', () => {
+  const result = checkProseStatements('Build Python services for customer group 1.',
+    'The role focuses on building Python services for customer group 1, requiring experience in API design and service upkeep.');
+  assert.equal(result.reason, 'required_scope_changed');
+  assert.equal(result.diagnostic.evidence, 'Build Python services for customer group 1.');
+  assert.equal(validateProsePart('Build Python services for customer group 2.',
+    'The role focuses on building Python services for a particular customer group, requiring strong API design skills and ongoing service upkeep.'), 'numeric_relationship_changed');
+});
+
+test('hyphenated preference wording retains preferred scope and still rejects promotion', () => {
+  for (const phrase of ['nice-to-have', 'good-to-have']) {
+    assert.equal(validateProsePart(`AWS experience is ${phrase.replaceAll('-', ' ')}.`, `AWS experience is ${phrase}.`), null);
+    assert.equal(validateProsePart('Preferred qualifications:\nAWS experience.', `## ${phrase}\nAWS experience.`), null);
+    assert.equal(validateProsePart(`AWS experience is ${phrase}.`, 'AWS experience is required.'), 'preferred_scope_changed');
+  }
+});
+
+test('a title separated from its unchanged first duty by a line break preserves the source', () => {
+  const source = 'Position: Python Automation Engineer Job Description: Design automated test frameworks for embedded devices.';
+  const output = 'Position: Python Automation Engineer\nJob Description: Design automated test frameworks for embedded devices.';
+  assert.equal(validateProsePart(source, output), null);
+});
+
+test('a generated trailing qualification heading cannot change the scope of the next source block', () => {
+  assert.equal(validateProsePart('Build Python services.', 'Develop Python services.\n## Required qualifications'), 'required_scope_changed');
+});
+
+test('layout changes cannot move a duty between actors or transfer years between technologies', () => {
+  assert.equal(validateProsePart('Support engineers and managers. Build services.',
+    'Support engineers. And managers build services.'), 'source_details_changed');
+  assert.equal(validateProsePart('Required qualifications:\nPython experience.\n3 years of Java experience.',
+    'Required qualifications:\nPython experience 3 years.\nJava experience.'), 'numeric_relationship_changed');
+});
+
+test('missing spaces after full stops cannot hide changed actor relationships', () => {
+  assert.notEqual(validateProsePart('Support engineers and managers.Build services.',
+    'Support engineers.And managers build services.'), null);
+});
+
+test('bold and bulleted trailing headings cannot escape the fragment scope guard', () => {
+  for (const title of ['**Required qualifications**', '- **Required qualifications**', '## **Required qualifications**', '__Required qualifications__']) {
+    assert.equal(validateProsePart('Build Python services.', 'Develop Python services.\n' + title), 'required_scope_changed');
+  }
 });

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { buildRewriteInput, REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
-import { createRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
+import { createRewriteClient, rewriteCandidates, probeRewriteClient } from '../rewriting/runner.js';
 import { proseSource, splitProseSource, validateProseRewrite } from '../rewriting/prose.js';
 
 const source = 'Responsibilities:\nBuild reliable Python applications for customers and maintain automated tests.\nRequirements:\nAt least 2 years of experience is required. AWS experience is preferred.';
@@ -16,7 +16,7 @@ const serverFor = async (t, { tokens = () => 300, complete, stream = false } = {
     if (req.url === '/apply-template') return res.end(JSON.stringify({ prompt: JSON.stringify(request.messages) }));
     if (req.url === '/tokenize') return res.end(JSON.stringify({ tokens: Array(tokens(request.content)).fill(1) }));
     requests.push(request);
-    const data = JSON.parse(request.messages.at(-1).content);
+    const data = { source: request.messages.at(-1).content };
     const result = await complete?.(data, request, requests.length) || { text: data.source.replace('Build reliable', 'Develop reliable'), reason: 'stop' };
     if (stream) {
       res.setHeader('Content-Type', 'text/event-stream');
@@ -29,6 +29,62 @@ const serverFor = async (t, { tokens = () => 300, complete, stream = false } = {
   t.after(() => { server.closeAllConnections(); return new Promise(resolve => server.close(resolve)); });
   return { endpoint: `http://127.0.0.1:${server.address().port}`, requests };
 };
+
+test('inline employer metadata is preserved without depending on model inference', async t => {
+  const original = 'Position: DFT Engineer Job Description: Location: IN-KA-Bangalore, India Time Type: Full time Job Category: Engineering Services';
+  const server = await serverFor(t);
+  const input = inputFor(original);
+  const response = await createRewriteClient(server).generate(input);
+  const checked = validateProseRewrite(response.value, input, 'stop');
+  assert.equal(response.generationRequests, 0);
+  assert.equal(server.requests.length, 0);
+  assert.equal(checked.ok, true);
+  assert.match(checked.description, /Location: IN-KA-Bangalore, India/);
+  assert.match(checked.description, /Time Type: Full time/);
+  assert.match(checked.description, /Job Category: Engineering Services/);
+  assert.equal(checked.quality.modelEditedBlocks, 0);
+  assert.ok(checked.quality.protectedSourceBlocks > 0);
+});
+
+test('long descriptions are generated in bounded sections with metadata kept outside the prompt', async t => {
+  const original = 'Responsibilities:\n' + 'Build reliable customer services. '.repeat(28)
+    + '\nRequired qualifications:\nAt least 2 years of Python experience is required.\nLocation: Mumbai\nTime Type: Full time';
+  const server = await serverFor(t);
+  const input = inputFor(original);
+  const response = await createRewriteClient(server).generate(input);
+  assert.ok(server.requests.length > 1);
+  assert.ok(server.requests.every(request => request.messages.at(-1).content.length <= 900));
+  assert.ok(server.requests.every(request => !/Location:|Time Type:/.test(request.messages.at(-1).content)));
+  assert.equal(response.value.parts.map(part => part.source).join(''), original);
+  assert.equal(validateProseRewrite(response.value, input, 'stop').ok, true);
+});
+
+test('production retains the original failed block and reports it separately from model edits', async t => {
+  const original = 'Role overview:\nSupport customer integrations.\nResponsibilities:\n' + 'Build reliable Python services. '.repeat(25)
+    + '\nLocation: Mumbai';
+  const server = await serverFor(t, { complete: data => ({ text: data.source.includes('Support customer')
+    ? 'Invented Kotlin duties.' : data.source.replaceAll('Build reliable', 'Develop reliable') }) });
+  const input = inputFor(original);
+  let saved;
+  const client = createRewriteClient(server);
+  const stats = await rewriteCandidates([{ _id: 'complete-blocks', status: 'active', title: 'Engineer', company: 'Example',
+    sourceDescription: original, sourceContentHash: input.inputHash,
+    descriptionRewrite: { status: 'pending', inputHash: input.inputHash } }], {
+    client, deadline: Date.now() + 10000,
+    update: async (_filter, update) => { saved = update; return { matchedCount: 1 }; },
+  });
+  assert.equal(stats.published, 1);
+  assert.match(saved.$set.description, /Develop reliable Python services/);
+  assert.match(saved.$set.description, /Support customer integrations/);
+  assert.doesNotMatch(saved.$set.description, /Kotlin/);
+  const quality = saved.$set['descriptionRewrite.quality'];
+  assert.ok(quality.modelEditedBlocks > 0);
+  assert.ok(quality.sourcePreservedBlocks > 0);
+  assert.equal(quality.sourceFallbackBlocks, 1);
+  const strict = await client.generate(input, { allowSourceFallback: false });
+  assert.equal(strict.value, null);
+  assert.equal(strict.validationFailure.reason, 'source_details_changed');
+});
 
 test('production accepts short and large source text without text-size eligibility ceilings', () => {
   assert.equal(inputFor('Build services.').eligible, true);
@@ -53,6 +109,18 @@ test('production rephrases source prose and publishes through the existing guard
   assert.equal(server.requests[0].max_tokens, REWRITE_MODEL.contextTokens - 300 - 64);
 });
 
+test('generation and correction prompts contain only the current employer source facts', async t => {
+  const server = await serverFor(t, { complete: (data, _request, count) => ({ text: count === 1 ? data.source.replace('2 years', '10 years') : data.source }) });
+  const response = await createRewriteClient(server).generate(inputFor(source), { allowSourceFallback: false });
+  assert.equal(response.generationRequests, 2);
+  for (const request of server.requests) {
+    const suppliedSources = request.messages.filter(message => message.role === 'user').map(message => message.content);
+    assert.deepEqual(suppliedSources, [source]);
+    assert.equal(request.messages.some(message => message.role === 'assistant'), false);
+    assert.doesNotMatch(JSON.stringify(request.messages), /At least 3 years/);
+  }
+});
+
 test('dense and oversized source is chunked without losing text or imposing an aggregate output cap', async t => {
   const server = await serverFor(t, { tokens: prompt => prompt.length > 4500 ? 7500 : 1000 });
   const input = inputFor('Responsibilities:\n' + 'Build reliable customer services and maintain automated tests. '.repeat(600));
@@ -75,12 +143,78 @@ test('token-truncated output splits and retries the complete source rather than 
 test('changed factual numbers cannot be published', async t => {
   const server = await serverFor(t, { complete: data => ({ text: data.source.replace('2 years', '10 years') }) });
   const response = await createRewriteClient(server).generate(inputFor(source));
-  assert.equal(response.validationFailure?.reason, 'numeric_relationship_changed');
+  const checked = validateProseRewrite(response.value, inputFor(source), 'stop');
+  assert.equal(checked.ok, true);
+  assert.match(checked.description, /2 years/);
+  assert.doesNotMatch(checked.description, /10 years/);
+  assert.equal(checked.quality.sourceFallbackBlocks, 0);
+  assert.ok(checked.quality.protectedSourceBlocks > 0);
+});
+
+test('a rejected rewrite gets one source-grounded correction before publication', async t => {
+  const source = 'Role overview: Build Python services for customer group 2. Responsibilities: Design reliable APIs and maintain Python services. Required qualifications: At least 2 years of software development experience is required. Preferred qualifications: AWS experience is nice to have.';
+  const recorded = 'The role focuses on building Python services for a particular customer group, requiring strong API design skills and ongoing service upkeep. Candidates should have at least two years of software development experience, with AWS experience being a nice-to-have.';
+  const server = await serverFor(t, { complete: (data, _request, count) => ({ text: count === 1 ? recorded : data.source.replace('Build Python', 'Develop Python') }) });
+  const input = inputFor(source);
+  const response = await createRewriteClient(server).generate(input, { allowSourceFallback: false });
+  assert.equal(validateProseRewrite(response.value, input, 'stop').ok, true);
+  assert.equal(response.generationRequests, 2);
+  assert.equal(server.requests.length, 2);
+  const repair = server.requests[1].messages.at(-1).content;
+  assert.equal(repair, source);
+  assert.match(server.requests[1].messages[0].content, /previous attempt failed numeric_relationship_changed/);
+  assert.doesNotMatch(repair, /validationFeedback/);
+  assert.match(response.value.parts[0].text, /customer group 2/);
+});
+
+test('strict inference rejects an unsuccessful correction without caching it', async t => {
+  let corrected = false;
+  const server = await serverFor(t, { complete: data => ({ text: corrected ? data.source : data.source.replace('2 years', '10 years') }) });
+  const client = createRewriteClient(server), input = inputFor(source);
+  const rejected = await client.generate(input, { allowSourceFallback: false });
+  assert.equal(rejected.value, null);
+  assert.equal(rejected.validationFailure.reason, 'numeric_relationship_changed');
+  assert.equal(rejected.generationRequests, 2);
+  assert.equal(server.requests.length, 2);
+  corrected = true;
+  const accepted = await client.generate(input, { allowSourceFallback: false });
+  assert.equal(validateProseRewrite(accepted.value, input, 'stop').ok, true);
+  assert.equal(accepted.cachedModelPlan, undefined);
+  assert.equal(server.requests.length, 3);
+});
+
+test('every readiness slot must pass fresh validation after its corrective generation', async t => {
+  const calls = new Map();
+  const server = await serverFor(t, { complete: data => {
+    const count = (calls.get(data.source) || 0) + 1;
+    calls.set(data.source, count);
+    return { text: count === 1 ? data.source.replace(/customer group \d+/, 'a particular customer group') : data.source.replace('Build Python', 'Develop Python') };
+  } });
+  const client = createRewriteClient(server);
+  const probe = await probeRewriteClient(client, { concurrency: 4, deadline: Date.now() + 10000 });
+  assert.equal(probe.ready, true);
+  assert.equal(probe.requests, 4);
+  assert.equal(server.requests.length, 8);
+  assert.equal(calls.size, 4);
+  assert.ok([...calls.values()].every(count => count === 2));
+  const fresh = await probeRewriteClient(client, { concurrency: 4, deadline: Date.now() + 10000 });
+  assert.equal(fresh.ready, true);
+  assert.equal(server.requests.length, 12);
+});
+
+test('cancellation during a corrective generation cannot return a rewritten description', async t => {
+  const controller = new AbortController();
+  const server = await serverFor(t, { complete: (data, _request, count) => {
+    if (count === 2) controller.abort();
+    return { text: count === 1 ? data.source.replace('2 years', '10 years') : data.source };
+  } });
+  await assert.rejects(createRewriteClient(server).generate(inputFor(source), { signal: controller.signal, allowSourceFallback: false }), error => error.name === 'AbortError');
+  assert.equal(server.requests.length, 2);
 });
 
 test('rejected prose retains its actual completion and failing source fragment', async t => {
   const server = await serverFor(t, { complete: data => ({ text: data.source.replace('2 years', '10 years') }) });
-  const response = await createRewriteClient(server).generate(inputFor(source));
+  const response = await createRewriteClient(server).generate(inputFor(source), { allowSourceFallback: false });
   assert.match(response.rawText, /10 years/);
   assert.equal(response.validationFailure.diagnostic.evidence, 'At least 2 years of experience is required.');
   assert.match(response.validationFailure.diagnostic.text, /10 years/);
@@ -154,7 +288,7 @@ test('required, preferred, negated statements and application URLs retain their 
     ['Apply at https://example.com/job', 'Apply at https://other.example/job', 'application_url_changed'],
   ]) {
     const server = await serverFor(t, { complete: () => ({ text: rewrite }) });
-    const response = await createRewriteClient(server).generate(inputFor(original));
+    const response = await createRewriteClient(server).generate(inputFor(original), { allowSourceFallback: false });
     assert.equal(response.validationFailure?.reason, reason);
   }
 });
@@ -179,23 +313,23 @@ test('explicit timeouts never return partial success', async t => {
   await assert.rejects(createRewriteClient({ ...server, requestMs: 20 }).generate(inputFor(source)), error => error.name === 'TimeoutError');
 });
 
-test('prose streaming has no application character ceiling', async t => {
-  // The fake tokenizer deliberately lets a large frame through, independently
-  // testing parser ceilings rather than asserting native context capacity.
+test('streamed prose has no aggregate output character ceiling across source blocks', async t => {
   const server = await serverFor(t, { stream: true });
   const response = await createRewriteClient(server).generate(inputFor('Build reliable services. '.repeat(5000)));
   assert.equal(response.finishReason, 'stop');
-  assert.ok(response.value.parts[0].text.length > 100000);
+  assert.ok(response.value.parts.map(part => part.text).join('').length > 100000);
 });
 
 test('prose reports per-generation tokens, timings and source offsets on failures', async t => {
   const server = await serverFor(t, { complete: data => ({ text: data.source.replace('2 years', '10 years') }) });
-  const response = await createRewriteClient(server).generate(inputFor(source));
-  assert.equal(response.usage.completion_tokens, 40);
-  assert.equal(response.timings.predicted_ms, 25);
-  assert.equal(response.generations.length, 1);
+  const response = await createRewriteClient(server).generate(inputFor(source), { allowSourceFallback: false });
+  assert.equal(response.usage.completion_tokens, 80);
+  assert.equal(response.timings.predicted_ms, 50);
+  assert.equal(response.generations.length, 2);
   assert.equal(response.generations[0].sourceOffset, 0);
   assert.equal(response.generations[0].finishReason, 'stop');
+  assert.equal(response.generations[0].validationReason, 'numeric_relationship_changed');
+  assert.equal(response.generations[1].corrective, true);
   assert.ok(response.generations[0].durationMs >= 0);
 });
 
@@ -213,14 +347,14 @@ test('validated source chunks survive client restart without publishing partial 
   const first = await createRewriteClient({ ...server, planCacheDir: dir }).generate(input);
   assert.equal(first.value, null);
   assert.equal(first.validationFailure.reason, 'empty_output');
-  const firstChunk = JSON.parse(server.requests[0].messages.at(-1).content).source;
+  const firstChunk = server.requests[0].messages.at(-1).content;
   const previous = server.requests.length;
   rejectSecond = false;
   const resumed = await createRewriteClient({ ...server, planCacheDir: dir }).generate(input);
   assert.equal(resumed.finishReason, 'stop');
   assert.equal(validateProseRewrite(resumed.value, input, 'stop').ok, true);
   assert.equal(resumed.value.parts.map(part => part.source).join(''), proseSource(input));
-  assert.ok(server.requests.slice(previous).every(request => JSON.parse(request.messages.at(-1).content).source !== firstChunk));
+  assert.ok(server.requests.slice(previous).every(request => request.messages.at(-1).content !== firstChunk));
   assert.ok(resumed.reusedChunks > 0);
 });
 
@@ -297,9 +431,11 @@ test('identical effective source reuses cache while binding the current job inpu
 test('source facts added to the effective prompt cannot reuse a different location cache', async t => {
   const server = await serverFor(t), client = createRewriteClient(server);
   await client.generate(buildRewriteInput({ title: 'Engineer', sourceDescription: source, location: 'Pune' }));
+  const previous = server.requests.length;
   const result = await client.generate(buildRewriteInput({ title: 'Engineer', sourceDescription: source, location: 'Mumbai' }));
-  assert.equal(server.requests.length, 2);
+  assert.ok(server.requests.length > previous);
   assert.equal(result.cachedModelPlan, undefined);
+  assert.match(validateProseRewrite(result.value, buildRewriteInput({ title: 'Engineer', sourceDescription: source, location: 'Mumbai' }), 'stop').description, /Location: Mumbai/);
 });
 
 test('simultaneous identical sources share one inference and preserve every job hash', async t => {
@@ -378,6 +514,35 @@ test('a corrupt persistent cache is revalidated instead of publishing altered co
   assert.equal(server.requests.length, 2);
   assert.equal(result.cachedModelPlan, undefined);
   assert.equal(validateProseRewrite(result.value, input, 'stop').ok, true);
+});
+
+test('a malformed cached parts container is ignored so fresh generation can recover', async t => {
+  const fs = await import('node:fs/promises'), os = await import('node:os'), path = await import('node:path');
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'prose-invalid-parts-'));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  const server = await serverFor(t), input = inputFor('Build reliable Python services.');
+  await createRewriteClient({ ...server, planCacheDir: dir }).generate(input);
+  const file = path.join(dir, (await fs.readdir(dir)).find(name => name.endsWith('.json')));
+  const value = JSON.parse(await fs.readFile(file, 'utf8'));
+  value.parts = {};
+  await fs.writeFile(file, JSON.stringify(value));
+  const response = await createRewriteClient({ ...server, planCacheDir: dir }).generate(input);
+  assert.equal(validateProseRewrite(response.value, input, 'stop').ok, true);
+  assert.equal(response.cachedModelPlan, undefined);
+  assert.equal(server.requests.length, 2);
+});
+
+test('a bold trailing heading is retained as original source and cannot poison partial reuse', async t => {
+  const server = await serverFor(t, { complete: data => ({ text: data.source + '\n**Required qualifications**' }) });
+  const client = createRewriteClient(server), input = inputFor('Build Python services.\nLocation: Pune');
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const response = await client.generate(input);
+    const checked = validateProseRewrite(response.value, input, 'stop');
+    assert.equal(checked.ok, true);
+    assert.equal(checked.quality.sourceFallbackBlocks, 1);
+    assert.doesNotMatch(checked.description, /Required qualifications/);
+    assert.equal(response.generationRequests, 2);
+  }
 });
 
 test('a duplicate timeout before the first response frame does not double-count inference', async t => {

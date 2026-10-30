@@ -1,27 +1,26 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { runNativeFaire } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const provider = {
+  "source": "faire",
+  "companyName": "Faire",
+  "companyDomain": "faire.com",
+  "companyCareerPage": "https://www.faire.com/careers/openings",
+  "officialHomepageUrl": "https://www.faire.com/",
+  "sourceScopeComplete": false
+}
 
-export const SOURCE = "faire"
-export const COMPANY = "Faire"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Faire added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
-
-export const run = async () => createFailClosedSentinelScraper().run()
+export const SOURCE = provider.source
+export const COMPANY = provider.companyName
+export const CAREERS_URL = provider.companyCareerPage
+export const DISPOSITION = 'current-official-native-employee-and-consultant-feeds'
+export const run = options => runNativeFaire(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
-  }
+  if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  else await saveToDB(jobs, SOURCE)
 }

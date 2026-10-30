@@ -27,11 +27,8 @@ test('Technotreon parses all six redesigned cards using primary headings despite
   assert.deepEqual(listings.map(job => job.applyUrl), urls.map(value => 'https://forms.gle/' + value))
   assert.equal(listings[3].department, 'Hardware Innovation Engineer')
   assert.ok(listings.every((job, index) => job.description === 'Role ' + (index + 1) + ' responsibilities. Work with our team.'))
-  const jobs = await run({ fetchText: fetchPage })
-  assert.equal(jobs.length, 6)
-  assert.ok(jobs.every(job => job.location === 'Pune, India' && job.city === 'Pune'))
-  assert.equal(new Set(jobs.map(job => job.jobId)).size, 6)
-  assert.ok(jobs.every(job => job.country === 'India' && job.sourceUrl === 'https://technotreon.in/careers'))
+  assert.ok(listings.every(observation => observation.location === 'Pune' && observation.city === 'Pune'))
+  await assert.rejects(run({ fetchText: fetchPage }), /native HTTP response metadata required/)
 })
 
 test('Technotreon refuses a partial card inventory instead of borrowing the next role or generic apply form', async () => {
@@ -40,29 +37,15 @@ test('Technotreon refuses a partial card inventory instead of borrowing the next
     page.replace('Talent Strategy &amp; HR Operations Aptitude Test', 'Talent Strategy &amp; HR Operations'),
     page.replace('https://forms.gle/hr', 'javascript:bad()'),
     page.replace('<p><span>Role 6 responsibilities.</span></p><p>Work with our team.</p>', ''),
-  ]) await assert.rejects(run({ fetchText: async url => { if (url.endsWith('/')) throw homepageUnavailable; return changed } }), /incomplete.*card/i)
+  ]) assert.throws(() => extractListings(changed), /incomplete.*card/i)
 })
 
-test('Technotreon records careers transport errors as discovery evidence and still propagates cancellation', async () => {
-  const failure = Object.assign(new Error('Connect timeout'), { code: 'UND_ERR_CONNECT_TIMEOUT' })
-  const jobs = await run({
-    fetchText: async () => { throw failure },
-    now: () => '2026-09-14T00:00:00.000Z',
-  })
-  assert.deepEqual(jobs, [])
-  const evidence = readInventoryEvidence(jobs)
-  assert.equal(evidence?.status, 'discovery-only')
-  assert.equal(evidence?.surface, 'https://technotreon.in/careers')
-  assert.equal(evidence?.listingComplete, false)
-
+test('Technotreon refuses body-only transport failures and propagates pre-aborted source cancellation', async () => {
+  await assert.rejects(run({ fetchText: async () => { throw Object.assign(new Error('Connect timeout'), { code: 'UND_ERR_CONNECT_TIMEOUT' }) } }), /native HTTP response metadata required/)
   const reason = new Error('Source stopped')
   let requests = 0
   await assert.rejects(run({ signal: AbortSignal.abort(reason), fetchText: async () => { requests++; return page } }), error => error === reason)
   assert.equal(requests, 0)
-  const controller = new AbortController()
-  await assert.rejects(run({ signal: controller.signal, fetchText: async (url, options) => {
-    assert.equal(options.signal, controller.signal)
-    controller.abort(reason)
-    return page
-  } }), error => error === reason)
+  await assert.rejects(run({ fetchText: async () => { requests++; return page } }), /native HTTP response metadata required/)
+  assert.equal(requests, 0)
 })

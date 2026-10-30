@@ -8,6 +8,8 @@ import { directConfiguration, stageOutcome, describeStageCompletion, WORKFLOWS, 
 import { createDirectGithubPipeline, dispatchGithubStage, githubRequest, matchesGithubStage } from '../src/pipeline/github.js';
 import { redactLog } from '../src/pipeline/local.js';
 import { aggregateClassificationSummaries } from '../classification/reporting.js';
+import { getScraperSchedule } from '../src/pipeline/schedule.js';
+import { startScheduledPipeline } from '../src/pipeline/scheduled.js';
 
 const command=process.argv[2],key=process.env.PIPELINE_STAGE;
 const token=process.env.GH_TOKEN;
@@ -19,16 +21,29 @@ try {
     if(process.env.GITHUB_REF_NAME!==process.env.PIPELINE_DEFAULT_BRANCH)throw new Error('Production pipelines run only on the repository default branch.');
     let id=process.env.PIPELINE_ID,dispatchToken=process.env.PIPELINE_DISPATCH_TOKEN;
     if(!id) {
-      const run=await createDirectGithubPipeline({configuration:directConfiguration(key),target:'github',origin:'github',
-        repo:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF_NAME,sha:process.env.GITHUB_SHA,initialRunId:Number(process.env.GITHUB_RUN_ID)},{token});
-      id=run._id;
+      const options={configuration:directConfiguration(key),target:'github',origin:'github',
+        repo:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF_NAME,sha:process.env.GITHUB_SHA,initialRunId:Number(process.env.GITHUB_RUN_ID)};
+      let run;
+      if(key==='scraper'&&process.env.GITHUB_EVENT_NAME==='schedule') {
+        const schedule=await getScraperSchedule({request:(_repo,endpoint,opts)=>githubRequest(options.repo,endpoint,{...opts,token})});
+        const event=JSON.parse(await fs.readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
+        // Ignore ticks queued before a schedule change. Manual/admin runs bypass the gate.
+        if(event.schedule===schedule.cron)run=await startScheduledPipeline(schedule,options,{token});
+        if(!run) {
+          await fs.appendFile(process.env.GITHUB_OUTPUT,'should_run=false\n');
+          console.log('Scheduled scraper skipped: not due, already started, schedule changed, or another pipeline is active.');
+        }
+      } else run=await createDirectGithubPipeline(options,{token});
+      if(run)id=run._id;
     } else {
       const expected=await PipelineRun.findById(id).lean();
       if(expected?.repo!==process.env.GITHUB_REPOSITORY||expected.target!=='github')throw new Error('Repository identity mismatch.');
       await claimStage(id,key,{runId:Number(process.env.GITHUB_RUN_ID),token:dispatchToken});
     }
-    await fs.appendFile(process.env.GITHUB_OUTPUT,`pipeline_id=${id}\n`);
-    await updateStage(id,key,{status:'running'});
+    if(id) {
+      await fs.appendFile(process.env.GITHUB_OUTPUT,`pipeline_id=${id}\nshould_run=true\n`);
+      await updateStage(id,key,{status:'running'});
+    }
   } else if(command==='report') {
     const run=await PipelineRun.findOne({'stages.githubRunId':Number(process.env.GITHUB_RUN_ID)}).lean();
     if(!run)throw new Error('Unregistered workflow cannot report results.');

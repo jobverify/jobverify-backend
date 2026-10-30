@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { getSourceDescription, hasSourceDescription } from '../utils/jobSourceContent.js';
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js';
 
 export const REWRITE_MODEL = JSON.parse(readFileSync(new URL('../../rewriting/model.json', import.meta.url), 'utf8'));
 export const SECTION_TITLES = {
@@ -18,6 +19,11 @@ export const structuredRewriteSource = value => String(value ?? '')
   .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\r\n?/g, '\n')
   .replace(/[^\S\n]+/g, ' ').replace(/\n\s*\n/g, '\n').trim();
 const words = text => String(text).trim().split(/\s+/).filter(Boolean);
+const sourceDisplayText = value => {
+  if (!/<(?:div|p|br|span|li|ul|ol|h[1-6]|section|table|tr|td|b|strong|em|script|style)\b/i.test(value)) return value;
+  const document = readNativeDocument(value);
+  return document.text(document.nodes(node => node.tag === 'root')[0]) || null;
+};
 
 export const buildRewriteInput = (job = {}) => {
   const sourceDescription = getSourceDescription(job).trim();
@@ -50,7 +56,7 @@ export const buildDescriptionSourceUpdate = (job, existing, { mode = 'off', now 
   const sourceFields = { sourceDescription: input.sourceDescription || null, sourceContentHash: input.inputHash, sourceContentHashVersion: 2 };
   if (!changed) return { ...sourceFields, ...(!existing.descriptionRewrite ? { descriptionRewrite: { status: 'baseline', inputHash: input.inputHash, queuedAt: now } } : existing.descriptionRewrite.inputHash !== input.inputHash ? { 'descriptionRewrite.inputHash': input.inputHash } : {}) };
   return {
-    ...sourceFields, ...(input.sourceDescription && { description: input.sourceDescription }), descriptionFormat: 'plain',
+    ...sourceFields, ...(input.sourceDescription && { description: sourceDisplayText(input.sourceDescription) }), descriptionFormat: 'plain',
     descriptionRewrite: { status: mode === 'publish' && input.eligible ? 'pending' : 'skipped', inputHash: input.inputHash,
       reason: !input.eligible ? 'insufficient_source' : mode === 'publish' ? null : 'disabled', queuedAt: now, attempts: 0 },
   };

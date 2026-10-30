@@ -11,7 +11,7 @@ for(const [source,official,shell,identifier,employer] of configs) {
     const provider=getScraperCatalog().find(row=>row.source===source)
     const module=await import('../../scraper/'+source+'/script.js')
     const factory=source==='acciojob'?module.createAcciojobScraper:module.createOpenFinancialTechnologiesScraper
-    await assert.rejects(factory().run({requestIntervalMs:0,fetchText:async url=>{calls.push(url);return '<a href="https://unrelated.keka.com/careers/">Jobs</a>'},fetchImpl:async url=>{calls.push(url);return new Response('<a href="https://unrelated.keka.com/careers/">Jobs</a>',{status:200,headers:{'content-type':'text/html'}})}}),/delegation|handoff|corporate/i)
+    await assert.rejects(factory().run({requestIntervalMs:0,fetchImpl:async url=>{calls.push(url);const response=new Response('<a href="https://unrelated.keka.com/careers/">Jobs</a>',{status:200,headers:{'content-type':'text/html'}});Object.defineProperty(response,'url',{value:url});return response}}),/delegation|handoff|corporate/i)
     assert.deepEqual(calls,[official])
   })
   test(source+' stops on first public access denial without retry or private requests',async()=>{
@@ -44,6 +44,13 @@ test('native projection excludes unknown geography and never manufactures a requ
   assert.throws(()=>projectNativeRole({...row,eligibilityRequirements:'Never omit this'},detail,c,info,'2026-10-27T00:00:00.000Z'),/field|criteria/i)
 })
 
+// Preserve unit coverage of the exported legacy adapter separately from the
+// registered current protocol, whose real captured regressions live in current.test.js.
+async function legacyScraper(source){
+ const config=(await import('../../scraper/'+source+'/nativeConfig.js')).default
+ const {runNativeKeka}=await import('../../scraper/acciojob/nativeKeka.js')
+ return {run:options=>runNativeKeka(config,options)}
+}
 async function transportFixture(source,{rows,closingRows=rows,changeDetail=false,infoChange=false,groupLinked=false}={}) {
   const config=(await import('../../scraper/'+source+'/nativeConfig.js')).default
   const portal=await readFile(new URL('../../scraper/'+source+'/test-fixtures/reviewed-portal.html',import.meta.url),'utf8')
@@ -74,29 +81,29 @@ async function transportFixture(source,{rows,closingRows=rows,changeDetail=false
 }
 const syntheticRow=(id,countryCode='IN',countryName='India')=>({id,title:'Engineer '+id,description:'<h2>Requirements</h2><p>Build APIs with JavaScript. Bachelor qualification or equivalent experience.</p><h2>Responsibilities</h2><ul><li>Own services</li></ul>',departmentName:'Engineering',jobLocations:[{id:1,name:'Bengaluru',city:'Bengaluru',countryCode,countryName}],jobType:2,experience:'2 to 4 years',salaryRangeFormat:'INR 100000',publishedOn:'2026-10-26T00:00:00Z',skillNames:['JavaScript']})
 for(const [source] of configs) {
-  test(source+' empty current-native receipt leaves whole-company cleanup disabled',async()=>{
-    const t=await transportFixture(source,{rows:[]}),jobs=await createCatalogScraper(getScraperCatalog().find(r=>r.source===source)).run({...t,requestIntervalMs:0,now:'2026-10-27T00:00:00Z'})
+  test(source+' legacy adapter empty current-native receipt leaves whole-company cleanup disabled',async()=>{
+    const t=await transportFixture(source,{rows:[]}),jobs=await (await legacyScraper(source)).run({...t,requestIntervalMs:0,now:'2026-10-27T00:00:00Z'})
     assert.equal(jobs.length,0);assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(readInventoryEvidence(jobs).listingComplete,false)
     assert.equal(t.calls.filter(c=>c.url.includes('/active/')).length,2);assert.equal(t.calls.filter(c=>c.url.includes('/grouplinkstatus/')).length,2)
   })
-  test(source+' reconciles all India and foreign details before caller cap',async()=>{
-    const t=await transportFixture(source,{rows:[syntheticRow(1),syntheticRow(2),syntheticRow(3,'US','United States')]}),jobs=await createCatalogScraper(getScraperCatalog().find(r=>r.source===source)).run({...t,maxJobs:1,requestIntervalMs:0,now:'2026-10-27T00:00:00Z'})
+  test(source+' legacy adapter reconciles all India and foreign details before caller cap',async()=>{
+    const t=await transportFixture(source,{rows:[syntheticRow(1),syntheticRow(2),syntheticRow(3,'US','United States')]}),jobs=await (await legacyScraper(source)).run({...t,maxJobs:1,requestIntervalMs:0,now:'2026-10-27T00:00:00Z'})
     assert.deepEqual(t.requestedDetails,['1','2','3','1','2','3']);assert.equal(jobs.length,1)
     assert.equal(jobs[0].sourceObservedGlobalJobCount,3);assert.equal(jobs[0].sourceObservedIndiaJobCount,2);assert.equal(jobs[0].sourceListingComplete,false);assert.equal(jobs[0].lifecycleCleanupAllowed,false)
     assert.equal(jobs[0].postingDate,'2026-10-26T00:00:00Z');assert.equal(jobs[0].closingDate,null);assert.equal(jobs[0].requisitionId,null);assert.equal(jobs[0].remoteStatus,null)
     assert.match(jobs[0].jobDescription,/Bachelor qualification/);assert.match(jobs[0].sourceDescription,/Own services/)
     assert.equal(jobs[0].nativeCollectionEvidence.confirmedForeignRecords,1)
   })
-  test(source+' retains healthy India records while unknown country and detail drift keep inventory partial',async()=>{
+  test(source+' legacy adapter retains healthy India records while unknown country and detail drift keep inventory partial',async()=>{
     const unknown=syntheticRow(2);delete unknown.jobLocations[0].countryCode;delete unknown.jobLocations[0].countryName
-    const t=await transportFixture(source,{rows:[syntheticRow(1),unknown]}),jobs=await createCatalogScraper(getScraperCatalog().find(r=>r.source===source)).run({...t,requestIntervalMs:0,now:'2026-10-27T00:00:00Z'})
+    const t=await transportFixture(source,{rows:[syntheticRow(1),unknown]}),jobs=await (await legacyScraper(source)).run({...t,requestIntervalMs:0,now:'2026-10-27T00:00:00Z'})
     assert.equal(jobs.length,1);assert.equal(jobs[0].nativeCollectionEvidence.countryUnknownRecords,1);assert.equal(jobs[0].sourceScopeComplete,false)
-    const changed=await transportFixture(source,{rows:[syntheticRow(1)],changeDetail:true}),drift=await createCatalogScraper(getScraperCatalog().find(r=>r.source===source)).run({...changed,requestIntervalMs:0,now:'2026-10-27T00:00:00Z'})
+    const changed=await transportFixture(source,{rows:[syntheticRow(1)],changeDetail:true}),drift=await (await legacyScraper(source)).run({...changed,requestIntervalMs:0,now:'2026-10-27T00:00:00Z'})
     assert.equal(drift.length,0);assert.equal(readInventoryEvidence(drift).listingComplete,false)
   })
-  test(source+' group-linked client change fails closed before unrelated organization queries',async()=>{
+  test(source+' legacy adapter group-linked client change fails closed before unrelated organization queries',async()=>{
     const t=await transportFixture(source,{rows:[syntheticRow(1)],groupLinked:true})
-    await assert.rejects(createCatalogScraper(getScraperCatalog().find(r=>r.source===source)).run({...t,requestIntervalMs:0}),/all-groups/)
+    await assert.rejects((await legacyScraper(source)).run({...t,requestIntervalMs:0}),/all-groups/)
     assert.equal(t.calls.some(c=>c.url.includes('/active/')),false)
   })
 }

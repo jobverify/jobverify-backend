@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { runReviewedThirdWaveDarwinboxInventory } from './nativeInventory.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -185,41 +187,20 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-export const createStanPlusScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
+const nativeSpec = {
+  "source": "stanplus",
+  "company": "StanPlus",
+  "brand": "StanPlus Technologies  Private Limited",
+  "tenant": "redhealth",
+  "tenantId": "232",
+  "origin": "https://redhealth.darwinbox.in",
+  "corporateHandoff": "https://redhealth.darwinbox.in/ms/candidatev2/main",
+  "handoff": "https://redhealth.darwinbox.in/ms/candidatev2/main"
+}
+nativeSpec.review = JSON.parse(readFileSync(new URL('./reviewedNativeScope.json', import.meta.url), 'utf8'))
 
-    if (careersPage.errorKind || careersPage.status !== 200 || !hasOfficialCareersPageSignal(careersPage.html)) {
-      throw new Error('StanPlus verified RED.Health careers page no longer matches the trusted first-party surface')
-    }
-
-    const handoffUrl = extractOfficialDarwinboxUrl(careersPage.html)
-    if (handoffUrl !== OFFICIAL_CAREERS_HANDOFF_URL) {
-      throw new Error('StanPlus verified Darwinbox handoff changed materially')
-    }
-
-    for (const url of DARWINBOX_TIMEOUT_ROUTE_URLS) {
-      const surface = await fetchPage(url)
-
-      if (isExpectedTimedOutSurface(surface)) continue
-
-      if (url === DARWINBOX_LISTING_API_URL) {
-        if (hasBlockedDarwinboxListingApiSignal(surface)) continue
-      } else if (surface.status === 200 && hasBlankDarwinboxShellSignal(surface.html)) {
-        continue
-      }
-
-      if (hasUnexpectedPublicJobSurface(surface)) {
-        throw new Error(
-          `${COMPANY} public Darwinbox jobs surface now appears reachable: ${surface.finalUrl || surface.url}`,
-        )
-      }
-
-      throw new Error(`${COMPANY} verified unavailable Darwinbox surface changed materially: ${surface.finalUrl || surface.url}`)
-    }
-
-    return []
-  },
+export const createStanPlusScraper = (defaults = {}) => ({
+  run: (options = {}) => runReviewedThirdWaveDarwinboxInventory(nativeSpec, { ...defaults, ...options }),
 })
 
 export const run = async (options = {}) => createStanPlusScraper().run(options)

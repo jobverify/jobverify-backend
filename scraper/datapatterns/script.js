@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { runReviewedDarwinboxInventory } from '../keyence/nativeInventory.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -120,28 +122,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createDataPatternsScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const listingHtml = await fetchText(CAREER_PAGE_URL)
-    const listings = extractListings(listingHtml)
-    const selectedListings = maxJobs ? listings.slice(0, maxJobs) : listings
-    const jobs = []
+const nativeSpec = {
+  "source": "datapatterns",
+  "company": "Data Patterns",
+  "brand": "Data Patterns",
+  "tenant": "datapatterns",
+  "tenantId": "94",
+  "origin": "https://datapatterns.darwinbox.in",
+  "handoff": "https://datapatterns.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a0ffa8c7aafd?from=all"
+}
+nativeSpec.review = JSON.parse(readFileSync(new URL('./reviewedNativeScope.json', import.meta.url), 'utf8'))
 
-    for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.detailUrl)
-      jobs.push(extractDataPatternsJob(detailHtml, listing))
-    }
-
-    return jobs.map((job) => ({
-      ...job,
-      source: 'datapatterns',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
+export const createDataPatternsScraper = (defaults = {}) => ({
+  run: (options = {}) => runReviewedDarwinboxInventory(nativeSpec, { ...defaults, ...options }),
 })
 
-export const run = async () => createDataPatternsScraper().run()
+export const run = async (options = {}) => createDataPatternsScraper().run(options)

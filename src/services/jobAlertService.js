@@ -12,6 +12,7 @@ import { normalizeProfilePreferenceFilters } from "../utils/profilePreferenceFil
 import { alertScheduleService } from "./alertScheduleService.js";
 import { getTelegramProvider, isTelegramDeliveryEnabled } from "./telegramProvider.js";
 import { resolveFrontendOrigin } from "../utils/runtimeConfig.js";
+import { getSiteSettings } from "./siteSettingsService.js";
 
 const MAX_JOBS_PER_MESSAGE = 5;
 const CLAIM_TTL_MS = 5 * 60 * 1000;
@@ -121,7 +122,7 @@ const processRecords = async (user, records) => {
       await JobAlertDelivery.updateMany(owned, { $set: { status: "skipped", reason: "missing_delivery_context", claimToken: null, claimExpiresAt: null } });
       continue;
     }
-    if (currentUser.deactivated || !canUseTelegramAlerts(currentUser)) {
+    if (currentUser.deactivated || !canUseTelegramAlerts(currentUser, new Date(), await getSiteSettings())) {
       await JobAlertDelivery.updateMany(owned, { $set: retryUpdate("user_ineligible", 60 * 60_000) });
       continue;
     }
@@ -181,18 +182,19 @@ const processRecords = async (user, records) => {
 
 export const stageJobAlertDeliveries = async (jobs = [], { session } = {}) => {
   if (!Array.isArray(jobs) || !jobs.length) return [];
+  const siteSettings = await getSiteSettings();
   const query = User.find({
     deactivated: false,
     outreachDeletingAt: null,
     "premium.telegramAlertsEnabled": true,
-    $or: [{ role: "admin" }, { "premium.status": "active" }],
+    ...(siteSettings.billingEnabled ? { $or: [{ role: "admin" }, { "premium.status": "active" }] } : {}),
   });
   if (session) query.session(session);
   const users = await query.lean().exec();
   const batches = [];
   // MongoDB sessions do not support parallel operations within a transaction.
   for (const user of users) {
-    if (!canUseTelegramAlerts(user)) continue;
+    if (!canUseTelegramAlerts(user, new Date(), siteSettings)) continue;
     const filters = normalizeProfilePreferenceFilters(user.profile?.telegramAlertFilters);
     if (!hasSavedFilters(filters)) continue;
     const matching = jobs.filter((job) => !isAggregateHiringSignalJob(job)

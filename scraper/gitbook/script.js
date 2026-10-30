@@ -1,8 +1,9 @@
 ﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { extractAshbyExperienceRequired } from '../../scraper-support/utils/ashbyExperience.js'
+import { runCurrentGitBook } from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -88,23 +89,43 @@ const inferRemoteStatus = (job = {}) => {
   return null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+// Retain the native status/final URL and bounded HTML for the source validator.
+// In particular a removed, advertised role's 404 is evidence to inspect.
+const defaultFetchText = async (url, { signal } = {}) => {
+ const requestSignal=AbortSignal.any([...(signal?[signal]:[]),AbortSignal.timeout(15000)])
+ requestSignal.throwIfAborted()
+ const response=await fetch(url,{signal:requestSignal,headers:{'User-Agent':USER_AGENT,Accept:'text/html,application/xhtml+xml'}})
+ requestSignal.throwIfAborted()
+ if(!/^(?:text\/html|application\/xhtml\+xml)(?:\s*;|$)/i.test(response.headers.get('content-type')||'')
+  ||Number(response.headers.get('content-length'))>3000000)throw new Error('[gitbook] employer/native HTTP body identity unavailable')
+ const reader=response.body.getReader(),chunks=[];let bytes=0
+ try{
+  for(;;){
+   requestSignal.throwIfAborted()
+   const part=await reader.read();if(part.done)break
+   bytes+=part.value.length
+   if(bytes>3000000)throw new Error('[gitbook] employer/native response exceeds byte cap')
+   chunks.push(Buffer.from(part.value))
+  }
+ }finally{await reader.cancel().catch(()=>{})}
+ requestSignal.throwIfAborted()
+ return{status:response.status,url:response.url,html:new TextDecoder().decode(Buffer.concat(chunks))}
+}
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = async (url, { signal } = {}) => {
+ const response=await fetchJsonWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  signal,
+  includeResponseMetadata: true,
 })
+ if(response.status!==200||response.url!==ASHBY_JOB_BOARD_URL)throw new Error('[gitbook] native-inventory-response final URL unavailable')
+ return response.payload
+}
 
 export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
@@ -181,33 +202,11 @@ export const createGitBookScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    fetchPage = fetchText,
+    signal,
+    onAudit,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Verified GitBook official careers page changed materially')
-    }
-
-    const verifiedPublicBoardUrl = extractVerifiedAshbyPublicBoardUrl(careersHtml)
-    if (verifiedPublicBoardUrl !== ASHBY_PUBLIC_BOARD_URL) {
-      throw new Error('Verified Ashby public board handoff changed materially')
-    }
-
-    const verifiedJobBoardUrl = buildAshbyJobBoardUrl(verifiedPublicBoardUrl)
-    if (verifiedJobBoardUrl !== ASHBY_JOB_BOARD_URL) {
-      throw new Error('Verified Ashby public board handoff changed materially')
-    }
-
-    const payload = await fetchJson(ASHBY_JOB_BOARD_URL)
-    if (!Array.isArray(payload?.jobs)) {
-      throw new Error('Verified Ashby payload changed materially')
-    }
-
-    return extractAshbyJobs(payload).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: now(),
-    }))
+    return runCurrentGitBook({fetchPage,fetchJson,mapJobs:extractAshbyJobs,now,signal,onAudit})
   },
 })
 

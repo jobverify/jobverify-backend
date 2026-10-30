@@ -11,6 +11,20 @@ import {
   shouldShowAds,
 } from "../src/utils/accessControl.js";
 
+test("free site mode permits opted-in linked users without a paid plan", () => {
+  const settings = { billingEnabled: false };
+  const user = {
+    accessRole: ACCESS_ROLES.FREE,
+    premium: { planId: PLAN_IDS.FREE, status: "inactive", telegramAlertsEnabled: true },
+    telegram: { chatId: "123", linkedAt: new Date("2026-08-01") },
+  };
+  assert.equal(canUseTelegramAlerts(user, new Date(), settings), true);
+  assert.equal(canUseTelegramAlerts(user, new Date(), { billingEnabled: true }), false);
+  assert.equal(canUseTelegramAlerts({ ...user, premium: { ...user.premium, telegramAlertsEnabled: false } }, new Date(), settings), false);
+  assert.equal(canUseTelegramAlerts({ ...user, telegram: {} }, new Date(), settings), false);
+  assert.equal(canUseTelegramAlerts({ ...user, telegram: { ...user.telegram, optedOutAt: new Date("2026-08-02") } }, new Date(), settings), false);
+});
+
 test("User model defaults new accounts to Telegram alerts disabled", () => {
   const user = new User({ email: "student@example.com", password: "hashed-password" });
   assert.equal(user.accessRole, ACCESS_ROLES.FREE);

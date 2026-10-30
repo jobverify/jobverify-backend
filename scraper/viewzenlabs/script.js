@@ -1,5 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -100,21 +101,48 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+// Preserve the actual role-specific requirements published on each card. The
+// page separately offers a full JD by email, so these remain partial details.
+export const extractPublishedRoleDescription = (html, job) => {
+  const document = readNativeDocument(html)
+  const matches = document.nodes(node => node.tag === 'div' && document.hasClass(node, 'icon-box'))
+    .map(card => {
+      const children = card.children.filter(node => typeof node !== 'string' && !node.inert)
+      const headings = children.filter(node => node.tag === 'h4')
+      const paragraphs = children.filter(node => node.tag === 'p')
+      const lists = children.filter(node => node.tag === 'ul' && document.hasClass(node, 'text-start'))
+      if (headings.length !== 1 || paragraphs.length !== 2 || lists.length !== 1
+        || document.text(headings[0]) !== job.title) return null
+      const skills = lists[0].children.filter(node => typeof node !== 'string' && node.tag === 'li' && !node.inert)
+        .map(node => document.text(node)).filter(Boolean)
+      if (!skills.length || document.text(paragraphs[1]) !== job.minimumQualification
+        || JSON.stringify(skills) !== JSON.stringify(job.requiredSkills)) return null
+      return [document.text(paragraphs[0]), document.text(paragraphs[1]), ...skills].join('\n')
+    }).filter(Boolean)
+  return matches.length === 1 ? matches[0] : null
+}
+
 export const createViewZenLabsScraper = ({ fetchText = defaultFetchText } = {}) => ({
-  run: async ({ fetchText: overrideFetchText } = {}) => {
+  run: async ({ fetchText: overrideFetchText, now = () => new Date().toISOString() } = {}) => {
     const fetchImpl = overrideFetchText || fetchText
     const html = await fetchImpl(CAREERS_URL)
     const jobs = extractJobListings(html)
 
-    return jobs.map((job) => ({
+    return jobs.map((job) => {
+      const description = extractPublishedRoleDescription(html, job)
+      return {
       ...job,
       company: 'ViewZen Labs',
       link: job.applyUrl || job.sourceUrl,
       source: 'viewzenlabs',
       preferredQualification: null,
-      jobDescription: null,
-      scrapedAt: new Date().toISOString(),
-    }))
+      jobDescription: description,
+      sourceDescription: description,
+      sourceDetailComplete: false,
+      sourceDetailFailureKind: description ? 'full-description-not-published' : 'missing-content',
+      scrapedAt: now(),
+    }
+    })
   },
 })
 

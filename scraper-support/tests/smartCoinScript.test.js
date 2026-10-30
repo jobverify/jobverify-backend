@@ -101,57 +101,18 @@ test('SmartCoin sentinel helpers stay pinned to the verified Olyv page, Keka han
   )
 })
 
-test('SmartCoin returns [] only while the verified Olyv page still hands off to an opaque Keka shell', async () => {
+// Olyv now exposes a verifiable native inventory, superseding the opaque-shell sentinel.
+test('SmartCoin recovers the current independently proven India roles and retains unknown geography', async () => {
   const smartcoin = await loadModule()
-  const requestedPages = []
-
-  const jobs = await smartcoin.createSmartCoinScraper().run({
-    fetchPage: async (url) => {
-      requestedPages.push(url)
-
-      if (url === smartcoin.CAREERS_PAGE_URL) {
-        return { status: 200, url, html: OFFICIAL_ABOUT_HTML }
-      }
-
-      if (url === smartcoin.OFFICIAL_CAREERS_HANDOFF_URL) {
-        return { status: 200, url, html: EMPTY_KEKA_SHELL_HTML }
-      }
-
-      throw new Error(`Unexpected SmartCoin page URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedPages, [
-    smartcoin.CAREERS_PAGE_URL,
-    smartcoin.OFFICIAL_CAREERS_HANDOFF_URL,
-  ])
-  assert.deepEqual(jobs, [])
+  const { transport } = await import('../../scraper/smartcoin/native.fixture.js')
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const jobs = await smartcoin.createSmartCoinScraper().run({ fetchImpl: transport() })
+  assert.equal(jobs.length, 36)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 37)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.deepEqual(jobs[0].sourceCountryCoverageGapIds, ['143507'])
 })
-
-test('SmartCoin fails closed when the verified Olyv page or Keka root drift materially', async () => {
+test('SmartCoin rejects legacy page transport instead of silently using the network', async () => {
   const smartcoin = await loadModule()
-
-  await assert.rejects(
-    smartcoin.createSmartCoinScraper().run({
-      fetchPage: async (url) => ({
-        status: 200,
-        url,
-        html: '<html><body><h1>Unexpected</h1></body></html>',
-      }),
-    }),
-    /verified smartcoin\/olyv about page/i,
-  )
-
-  await assert.rejects(
-    smartcoin.createSmartCoinScraper().run({
-      fetchPage: async (url) => {
-        if (url === smartcoin.CAREERS_PAGE_URL) {
-          return { status: 200, url, html: OFFICIAL_ABOUT_HTML }
-        }
-
-        return { status: 200, url, html: PUBLIC_JOBS_HTML }
-      },
-    }),
-    /keka handoff state changed materially|appears to expose public jobs/i,
-  )
+  await assert.rejects(smartcoin.createSmartCoinScraper().run({ fetchPage: async () => ({status:200,url:smartcoin.CAREERS_PAGE_URL,html:OFFICIAL_ABOUT_HTML}) }), /unsupported legacy transport/)
 })

@@ -264,9 +264,9 @@ export const probeRewriteClient = async (client, { concurrency = 1, deadline = D
     signal?.throwIfAborted();
     const input = buildRewriteInput({ title: 'Software Engineer', company: 'Worker health check',
       sourceDescription: `Role overview: Build Python services for customer group ${slot + 1}. Responsibilities: Design reliable APIs and maintain Python services. Required qualifications: At least 2 years of software development experience is required. Preferred qualifications: AWS experience is nice to have.` });
-    const response = await client.generate(input, { signal, remainingMs: Math.max(1, deadline - Date.now()) });
+    const response = await client.generate(input, { signal, remainingMs: Math.max(1, deadline - Date.now()), cacheMode: 'refresh', allowSourceFallback: false });
     signal?.throwIfAborted();
-    if (response.cachedModelPlan) throw new RewriteWorkerError('generation_probe');
+    if (response.cachedModelPlan || response.renderedWithoutInference) throw new RewriteWorkerError('generation_probe');
     const checked = response.finishReason === 'stop' && response.validationFailure
       ? response.validationFailure : validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
     if (!checked.ok) {
@@ -341,14 +341,15 @@ export const rewriteFailureDetails = (error, phase) => ({
 
 export const rewriteProgress = summary => {
   const jobWarnings = (summary.failed || 0) + (summary.staleSources || 0) + (summary.concurrentChanges || 0);
-  return { warnings: jobWarnings + (summary.workerProbe?.warnings || 0),
+  return { warnings: jobWarnings + (summary.workerProbe?.warnings || 0) + (summary.sourceFallbackDescriptions || 0),
     pendingEstimate: Math.max(0, (summary.queued || 0) - (summary.published || 0) - (summary.skipped || 0) - jobWarnings) };
 };
 
 /** The caller supplies a Mongo update boundary; source/filter fields never enter these updates. */
 export const rewriteCandidates = async (jobs, { client, update, deadline, signal, concurrency = 1, onResult = () => {}, onRejection = () => {} } = {}) => {
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw new Error('Rewrite concurrency must be between one and four');
-  const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, queueRepairs: 0, staleSources: 0, concurrentChanges: 0, interrupted: false, peakConcurrency: 0 };
+  const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, queueRepairs: 0, staleSources: 0, concurrentChanges: 0,
+    sourceFallbackDescriptions: 0, sourceFallbackBlocks: 0, interrupted: false, peakConcurrency: 0 };
   const processJob = async job => {
     if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
     const reconciled = await reconcileRewriteCandidate(job, { update });
@@ -401,7 +402,11 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
     if (!result.ok && deterministicRejections.has(result.reason)) values.$set['descriptionRewrite.nextAttemptAt'] = null;
     const saved = await update(filter, values);
     if (saved.matchedCount === 0) stats.concurrentChanges++;
-    else if (result.ok) stats.published++;
+    else if (result.ok) {
+      stats.published++;
+      const fallbackBlocks = result.quality?.sourceFallbackBlocks || 0;
+      if (fallbackBlocks) { stats.sourceFallbackDescriptions++; stats.sourceFallbackBlocks += fallbackBlocks; }
+    }
     else if (!assessment.ok || ['not_improved','already_structured','dense_source','uncertain_section_assignment','model_context_budget'].includes(result.reason)) stats.skipped++;
     else stats.failed++;
     await onResult({ id: String(job._id), inputHash: input.inputHash, ok: result.ok, reason: result.reason, durationMs, wordCount: result.wordCount, generated: assessment.ok, modelPlanCached: response?.cachedModelPlan || false,

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import ALGOWORKS_TECHNOLOGIES_CATALOG from './catalog.js'
+import { runNativeInventory } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -49,7 +50,9 @@ export const hasFirstPartyJobsSignal = (html = '') => /https?:\/\/(?:www\.)?algo
 )
 
 export const createAlgoworksTechnologiesScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText, fetchImpl = fetch, signal, ...options } = {}) {
+    signal?.throwIfAborted()
+    if (!fetchText) return runNativeInventory({ fetchImpl, signal, ...options })
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Algoworks careers page no longer matches the trusted first-party surface')
@@ -57,6 +60,10 @@ export const createAlgoworksTechnologiesScraper = () => ({
 
     if (hasFirstPartyJobsSignal(careersHtml)) {
       throw new Error('Algoworks now exposes a public first-party jobs surface')
+    }
+
+    if (/algoworks\.keka\.com/i.test(careersHtml)) {
+      return runNativeInventory({ fetchImpl, signal, ...options })
     }
 
     return []

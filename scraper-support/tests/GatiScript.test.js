@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {gatiFixtureTransport} from '../../test/helpers/gatiFixture.js'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
 
 const verifiedHomepageHtml = `
   <html>
@@ -71,118 +73,26 @@ test('Gati scraper pins the verified redirecting homepage, parent careers page, 
   assert.equal(gati.hasBrokenDarwinboxTenantSignal(brokenTenantResponse), true)
 })
 
-test('Gati run returns no jobs while the verified public surface still lands on the broken Darwinbox tenant', async () => {
+// Runtime now requires observed current HTTP metadata; historical pure helpers
+// above continue to describe the old public sentinel without certifying it.
+test('Gati runtime reconciles the explicit current alias and current native GET inventory', async () => {
   const gati = await loadGatiModule()
-  const requestedUrls = []
-  const probedUrls = []
-
-  const jobs = await gati.createGatiScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === gati.HOMEPAGE_URL) {
-        return {
-          status: 200,
-          url: gati.REDIRECT_HOMEPAGE_URL,
-          html: verifiedHomepageHtml,
-        }
-      }
-
-      if (url === gati.CAREERS_PAGE_URL) {
-        return {
-          status: 200,
-          url,
-          html: verifiedCareersHtml,
-        }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-    probeListingApi: async (url) => {
-      probedUrls.push(url)
-      return brokenTenantResponse
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    gati.HOMEPAGE_URL,
-    gati.CAREERS_PAGE_URL,
-  ])
-  assert.deepEqual(probedUrls, [gati.LISTING_API_URL])
-  assert.deepEqual(jobs, [])
+  const {fetchImpl,calls}=gatiFixtureTransport()
+  const jobs=await gati.createGatiScraper().run({fetchImpl})
+  assert.equal(readInventoryEvidence(jobs).status,'verified-empty')
+  assert.equal(readInventoryEvidence(jobs).reportedTotal,0)
+  assert.ok(calls.some(row=>row.url==='https://www.gati.com/'))
+  assert.ok(calls.some(row=>row.url.includes('job?page=1&companyId=main')))
+  assert.ok(!calls.some(row=>row.url.includes('gatikwe')))
 })
 
-test('Gati fails closed when the verified homepage, careers shell, or Darwinbox tenant drifts', async () => {
-  const gati = await loadGatiModule()
-
-  await assert.rejects(
-    gati.createGatiScraper().run({
-      fetchPage: async (url) => {
-        if (url === gati.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: '<html><body><h1>Unexpected</h1></body></html>',
-          }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /verified gati homepage/i,
-  )
-
-  await assert.rejects(
-    gati.createGatiScraper().run({
-      fetchPage: async (url) => {
-        if (url === gati.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url: gati.REDIRECT_HOMEPAGE_URL,
-            html: verifiedHomepageHtml,
-          }
-        }
-
-        if (url === gati.CAREERS_PAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: verifiedCareersHtml.replace(gati.DARWINBOX_HANDOFF_URL, 'https://example.com/jobs'),
-          }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /verified parent careers page/i,
-  )
-
-  await assert.rejects(
-    gati.createGatiScraper().run({
-      fetchPage: async (url) => {
-        if (url === gati.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url: gati.REDIRECT_HOMEPAGE_URL,
-            html: verifiedHomepageHtml,
-          }
-        }
-
-        if (url === gati.CAREERS_PAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: verifiedCareersHtml,
-          }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-      probeListingApi: async () => ({
-        status: 200,
-        body: '{"data":[]}',
-      }),
-    }),
-    /broken darwinbox tenant state/i,
-  )
+test('Gati fails closed for current ownership, handoff and native identity drift', async () => {
+  const gati=await loadGatiModule()
+  await assert.rejects(gati.run({fetchPage:async()=>({status:200,html:verifiedHomepageHtml})}),/HTTP metadata/i)
+  for(const target of ['https://www.allcargologistics.com/','https://www.allcargologistics.com/about-us/careers','https://allcargologistics.darwinbox.in/ms/candidateapi/getCompanyConfig?is_preview=false&companyId=main']){
+    const {fetchImpl}=gatiFixtureTransport(row=>{if(row.url===target)row.body=row.body.replaceAll('Allcargo','Other Employer')})
+    const jobs=await gati.run({fetchImpl})
+    assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+    assert.equal(jobs.sourceAudit.lifecycleCleanupAllowed,false)
+  }
 })

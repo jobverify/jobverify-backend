@@ -2,6 +2,9 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
+import {kidventoFixtureTransport} from '../../test/helpers/kidventoFixture.js'
+import {getScraperCatalog,createCatalogScraper} from '../../scraper-support/providers/index.js'
+import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import { fileURLToPath } from 'node:url'
 
 const loadKidventoModule = async () => {
@@ -48,85 +51,29 @@ test('Kidvento scraper validates the verified first-party homepage and careers z
   assert.deepEqual(kidvento.extractSuspiciousPublicJobLinks(careersHtml), [])
 })
 
-test('Kidvento scraper returns no jobs while the verified homepage and careers page remain stable', async () => {
-  const kidvento = await loadKidventoModule()
-  const requestedUrls = []
-
-  const jobs = await kidvento.createKidventoScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === kidvento.HOMEPAGE_URL) {
-        return { status: 200, url, headers: {}, html: homepageHtml }
-      }
-
-      if (url === kidvento.CAREERS_URL) {
-        return { status: 200, url, headers: {}, html: careersHtml }
-      }
-
-      throw new Error(`Unexpected page URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [kidvento.HOMEPAGE_URL, kidvento.CAREERS_URL])
-  assert.deepEqual(jobs, [])
+test('registered Kidvento runtime preserves current native roles and honest partial coverage', async () => {
+  const row=getScraperCatalog().find(row=>row.source==='kidvento')
+  assert.equal(row.atsPlatform,'keka')
+  assert.match(row.modulePath,/kidvento[\\/]script\.js$/)
+  const {fetchImpl,calls}=kidventoFixtureTransport()
+  const jobs=await createCatalogScraper(row).run({fetchImpl})
+  assert.equal(jobs.length,29)
+  assert.equal(jobs.filter(job=>job.sourceDetailComplete).length,17)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
+  assert.ok(jobs.every(job=>job.atsPlatform==='keka'&&job.lifecycleCleanupAllowed===false))
+  assert.equal(calls.filter(url=>url.includes('/jobdetails/')).length,70)
 })
 
-test('Kidvento scraper fails closed when the homepage or careers zero-job surface drifts', async () => {
-  const kidvento = await loadKidventoModule()
-
-  await assert.rejects(
-    kidvento.createKidventoScraper().run({
-      fetchPage: async (url) => {
-        if (url === kidvento.HOMEPAGE_URL) {
-          return { status: 200, url, headers: {}, html: '<html><title>Unexpected</title></html>' }
-        }
-
-        return { status: 200, url, headers: {}, html: careersHtml }
-      },
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    kidvento.createKidventoScraper().run({
-      fetchPage: async (url) => {
-        if (url === kidvento.HOMEPAGE_URL) {
-          return { status: 200, url, headers: {}, html: homepageHtml }
-        }
-
-        return {
-          status: 200,
-          url,
-          headers: {},
-          html: careersHtml.replace(
-            '</body>',
-            '<a href="https://jobs.lever.co/kidvento">Current openings</a></body>',
-          ),
-        }
-      },
-    }),
-    /public job links|public jobs surface/i,
-  )
-
-  await assert.rejects(
-    kidvento.createKidventoScraper().run({
-      fetchPage: async (url) => {
-        if (url === kidvento.HOMEPAGE_URL) {
-          return { status: 200, url, headers: {}, html: homepageHtml }
-        }
-
-        return {
-          status: 200,
-          url,
-          headers: {},
-          html: careersHtml.replace(
-            'aria-selected="true" href="/careers"',
-            'href="/careers/openings"',
-          ),
-        }
-      },
-    }),
-    /verified official careers page|public job links|public jobs surface/i,
-  )
+test('Kidvento runtime fails closed for metadata/owner errors and retains criteria drift as partial', async () => {
+  const kidvento=await loadKidventoModule()
+  await assert.rejects(kidvento.run({fetchPage:async()=>({status:200,html:careersHtml})}),/HTTP metadata transport/)
+  const foreign=kidventoFixtureTransport(row=>{if(row.url.includes('/api/jobs/'))row.responseUrl='https://other.keka.com/careers/api/jobs/default/active'})
+  await assert.rejects(kidvento.run({fetchImpl:foreign.fetchImpl}),/HTTP status or response identity/)
+  const drift=kidventoFixtureTransport((row,n)=>{if(row.url.endsWith('/jobdetails/167753')&&n===2)row.body=row.body.replace('Key Responsibilities','New required certification')})
+  const jobs=await kidvento.run({fetchImpl:drift.fetchImpl})
+  assert.equal(jobs.find(job=>job.jobId==='167753').sourceDetailComplete,false)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+  assert.equal(jobs.find(job=>job.jobId==='167753').lifecycleCleanupAllowed,false)
 })

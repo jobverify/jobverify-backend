@@ -390,6 +390,9 @@ export const createPhenomScraper = ({
   defaultDetailConcurrency = 1,
   nativeConcatenatedStateCountry = false,
   nativeBangaloreLocationAlias = false,
+  nativeUnspecifiedState = false,
+  useJobSequenceForDetailUrl = false,
+  numberedOfficeLocations = null,
 }) => {
   const config = loadConfig(scraperDir)
 
@@ -461,7 +464,15 @@ export const createPhenomScraper = ({
     if (city && !/^not location specific$/i.test(city) && city.normalize('NFC').toLowerCase() !== complete[0]) return {consistent:false,target:false}
     const region = isStateOnlyLocation(value, full) ? fullPrefix : complete.slice(1,-1)
     const state=normalizeWhitespace(value.state)
-    if (state && !/^not location specific$/i.test(state) && !prefixAgrees(locationParts(state),region)) return {consistent:false,target:false}
+    // Orange's current native country/city-only offices use this exact marker
+    // for an absent state. Accept it only with mutually consistent explicit
+    // India, city and country-only stateCountry fields; real regions still bind.
+    const unspecifiedState = nativeUnspecifiedState && state === 'UN SPECIFIED'
+      && countryCode(country) === 'IN' && fullCountry === 'IN' && region.length === 0
+      && fullPrefix.length === 1 && city?.normalize('NFC').toLowerCase() === fullPrefix[0]
+      && locationParts(value.cityState).length === 1 && prefixAgrees(locationParts(value.cityState), fullPrefix)
+      && locationParts(value.stateCountry).length === 1 && countryCode(value.stateCountry) === 'IN'
+    if (state && !/^not location specific$/i.test(state) && !unspecifiedState && !prefixAgrees(locationParts(state),region)) return {consistent:false,target:false}
     if (normalizeWhitespace(value.cityState) && !prefixAgrees(locationParts(value.cityState),fullPrefix)) return {consistent:false,target:false}
     for(const [fieldName,expected] of [['cityCountry',fullPrefix],['stateCountry',region]]) {
       const field = value[fieldName]
@@ -498,7 +509,20 @@ export const createPhenomScraper = ({
       && normalizeWhitespace(value.cityStateCountry) && (normalizeWhitespace(value.state) || city)
       && typeof value.locationName === 'string' && typeof value.locationId === 'string' && value.locationId.trim()
       && normalizeWhitespace(value.locationName) === normalizeWhitespace(value.location)
-    if (postalLabel || namedOffice) return { consistent: true, target: fullCountry === countryCode(targetCountry) }
+    // Lowe's names a numbered office as "Bengaluru 1499" while its location ID
+    // and name are "LWS1499" and "LWS_IND_Bengaluru 1499". The source opts in
+    // with exact prefixes; city, country and all other office fields above must
+    // still agree. A bare number or an unverified office label cannot add scope.
+    const numbered = normalizeWhitespace(value.location)?.match(/^(.+) (\d{3,8})$/)
+    const numberedOffice = numberedOfficeLocations && !shortCountry && city
+      && countryCode(country) === fullCountry && fullPrefix.length > 0
+      && numbered && (numbered[1] === city || Array.isArray(numberedOfficeLocations.buildingLabels)
+        && numberedOfficeLocations.buildingLabels.includes(numbered[1]))
+      && typeof numberedOfficeLocations.idPrefix === 'string' && numberedOfficeLocations.idPrefix
+      && typeof numberedOfficeLocations.namePrefix === 'string' && numberedOfficeLocations.namePrefix
+      && value.locationId === numberedOfficeLocations.idPrefix + numbered[2]
+      && value.locationName === numberedOfficeLocations.namePrefix + numbered[0]
+    if (postalLabel || namedOffice || numberedOffice) return { consistent: true, target: fullCountry === countryCode(targetCountry) }
     const shortPrefix = shortCountry ? short.slice(0,-1) : short
     // An abbreviated native label is usable only alongside the same office's
     // explicit country and full label, with every short component equal.
@@ -550,9 +574,11 @@ export const createPhenomScraper = ({
     return url.toString()
   }
 
-  const buildJobDetailUrl = (listing = {}) => toAbsoluteUrl(
-    `${resolveJobPathPrefix()}/job/${listing.reqId || listing.jobId}/${slugifyTitle(listing.title)}`,
-  )
+  const buildJobDetailUrl = (listing = {}) => {
+    const sequence = useJobSequenceForDetailUrl ? normalizeWhitespace(listing.jobSeqNo) : null
+    if (sequence && !/^[A-Za-z0-9_-]{1,160}$/.test(sequence)) throw incompleteSnapshot('invalid native detail URL sequence')
+    return toAbsoluteUrl(`${resolveJobPathPrefix()}/job/${sequence || listing.reqId || listing.jobId}/${slugifyTitle(listing.title)}`)
+  }
 
   const extractSearchPayload = (html) => {
     const ddo = extractPhAppDdo(html)
@@ -901,15 +927,16 @@ export const createPhenomScraper = ({
           const index = nextDetail++
           if (index >= jobs.length) return
           const listing = selected[index]
+          const receiptKey = nativeDetailReceiptKey('phenom', source, baseUrl, listing,
+            nativeListingSequences.get(listing), nativeListingCountries.get(listing))
           try {
-            const receiptKey = nativeDetailReceiptKey('phenom', source, baseUrl, listing,
-              nativeListingSequences.get(listing), nativeListingCountries.get(listing))
             const cached = readNativeDetailReceipt(recovery, receiptKey)
             // A continuation must advance past already inspected, unchanged
             // roles. Keep terminal failures bound to the same exact listing
             // and the existing short-lived recovery session; they never
-            // certify content, and transport failures remain uncached.
-            if (['identity-mismatch', 'missing-content'].includes(cached?.payload?.failureKind)) {
+            // certify content. Exhausted transport failures are observations,
+            // too; they must not abandon or repeatedly block an unvisited tail.
+            if (['identity-mismatch', 'missing-content', 'upstream'].includes(cached?.payload?.failureKind)) {
               jobs[index].sourceDetailFailureKind = cached.payload.failureKind
               continue
             }
@@ -1027,6 +1054,7 @@ export const createPhenomScraper = ({
             signal?.throwIfAborted()
             if (detailSignal.aborted) break
             jobs[index].sourceDetailFailureKind = 'upstream'
+            rememberNativeDetailReceipt(recovery, receiptKey, { failureKind: 'upstream' })
             // Listing collection is complete independently of optional detail availability.
           }
         }
@@ -1037,7 +1065,6 @@ export const createPhenomScraper = ({
     signal?.throwIfAborted()
     if (recovery) {
       recovery.pending += jobs.filter(job => job.sourceDetailFailureKind === 'budget-exhausted').length
-      recovery.unrecoverable ||= jobs.some(job => job.sourceDetailFailureKind === 'upstream')
       if (recovery.verifiedAt) attachInventoryEvidence(jobs, {
         ...readInventoryEvidence(jobs), verifiedAt: new Date(recovery.verifiedAt).toISOString(),
       })

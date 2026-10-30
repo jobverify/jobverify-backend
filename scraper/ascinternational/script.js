@@ -2,6 +2,8 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { hasAscStructuredCareers, assertAscCareersResponse, inspectAscCareers } from './nativeCareers.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -140,7 +142,7 @@ export const hasLegacyJobPostingSignal = (html) => {
     && text?.includes('Mail resume to: ATTN:HR, ASC International, Inc 830 Tower Drive Suite 200 Medina, MN 55340')
 }
 
-export const extractSearchResults = (html) => extractJobBlocks(html)
+const extractLegacySearchResults = (html) => extractJobBlocks(html)
   .map((match) => {
     const title = normalizeWhitespace(match[1])
     const blockHtml = match[2]
@@ -172,6 +174,8 @@ export const extractSearchResults = (html) => extractJobBlocks(html)
     }
   })
   .filter(Boolean)
+
+export const extractSearchResults = html => hasAscStructuredCareers(html) ? inspectAscCareers(html).jobs : extractLegacySearchResults(html)
 
 const isTimeoutError = (error) => {
   if (error?.name === 'AbortError') return true
@@ -248,6 +252,7 @@ export const createAscInternationalScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
+    options.signal?.throwIfAborted()
     const fetchPage = options.fetchPage
       || (options.fetchText
         ? async (url) => ({
@@ -258,6 +263,7 @@ export const createAscInternationalScraper = ({
         })
         : defaultFetchPage)
     const careersPage = await fetchPage(buildSearchUrl())
+    options.signal?.throwIfAborted()
 
     if (careersPage.status === 200) {
       if (!hasOfficialCareersPageSignal(careersPage.html)) {
@@ -265,6 +271,31 @@ export const createAscInternationalScraper = ({
       }
 
       const html = careersPage.html
+      if (hasAscStructuredCareers(html)) {
+        assertAscCareersResponse(careersPage)
+        const opening = inspectAscCareers(html)
+        const closingPage = await fetchPage(buildSearchUrl())
+        options.signal?.throwIfAborted()
+        assertAscCareersResponse(closingPage)
+        const closing = inspectAscCareers(closingPage.html)
+        const india = opening.jobs.filter(job => job.country === 'India')
+        const selected = maxJobs ? india.slice(0, maxJobs) : india
+        const reasons = [...opening.reasons, ...closing.reasons]
+        if (opening.signature !== closing.signature) reasons.push('closing-inventory-changed')
+        if (selected.length !== india.length) reasons.push('selected-role-cap')
+        if (options.fetchText && !options.fetchPage) reasons.push('native-response-metadata-unavailable')
+        const listingComplete = reasons.length === 0
+        const jobs = selected.map(job => ({ ...job, source: SOURCE, link: job.applyUrl,
+          sourceListingComplete: listingComplete, scrapedAt: new Date().toISOString() }))
+        return attachInventoryEvidence(jobs, { status: listingComplete ? 'complete-inventory' : 'discovery-only',
+          surface: CAREER_PAGE_URL, firstParty: true, listingComplete, pagesFetched: 2,
+          reportedTotal: opening.nativeCount,
+          indiaFacetCount: reasons.some(reason => /country|location|hiring-surface|closing/.test(reason)) ? null : india.length,
+          verifiedAt: new Date().toISOString(),
+          reason: listingComplete ? `asc-native-visible-and-structured-roles-reconciled:${opening.signature}`
+            : `asc-native-incomplete:${[...new Set(reasons)].join(';')}`,
+        })
+      }
       const jobs = extractSearchResults(html)
       const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
@@ -305,7 +336,7 @@ export const createAscInternationalScraper = ({
   },
 })
 
-export const run = async () => createAscInternationalScraper().run()
+export const run = async (options = {}) => createAscInternationalScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

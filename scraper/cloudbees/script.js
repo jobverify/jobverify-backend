@@ -1,18 +1,18 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { runNativeCloudBees, CAREERS } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "cloudbees"
 export const COMPANY = "CloudBees"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for CloudBees added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = CAREERS
+export const DISPOSITION = 'current-official-Paylocity-native-feed-and-public-details'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Current official feed binding, native employer/account, public visibility, explicit country, full native API content and native publication dates are reconciled. Whole-company scope remains unknown.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runNativeCloudBees(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

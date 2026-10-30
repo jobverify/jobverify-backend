@@ -1,4 +1,4 @@
-import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
+import { runCurrentLexmarkInventory } from './nativeCurrent.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -240,93 +240,8 @@ export const mapIndiaJob = (payload = {}, jobPosting = {}) => {
   }
 }
 
-export const createLexmarkInternationalScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Lexmark International verified first-party careers page no longer matches the trusted surface')
-    }
-
-    const verifiedWorkdayHandoffUrl = extractVerifiedWorkdayHandoffUrl(careersHtml)
-    if (verifiedWorkdayHandoffUrl !== WORKDAY_BASE_URL) {
-      throw new Error('Lexmark International verified Workday handoff changed; refusing to guess the public jobs source')
-    }
-
-    const workdayBoardHtml = await fetchText(WORKDAY_BASE_URL)
-    assertWorkdayPageAvailable({ status: 200, html: workdayBoardHtml, url: WORKDAY_BASE_URL }, { source: SOURCE, url: WORKDAY_BASE_URL })
-    if (!hasWorkdayBoardBootstrapSignal(workdayBoardHtml)) {
-      throw new Error('Lexmark International verified Workday Candidate Experience shell no longer matches the trusted surface')
-    }
-
-    const firstPagePayload = await fetchJson(WORKDAY_JOBS_API_URL, {
-      method: 'POST',
-      body: buildJobsRequestBody(),
-    })
-
-    if (!isWorkdayJobsApiPayload(firstPagePayload)) {
-      throw new Error('Lexmark International Workday jobs API no longer matches the verified public payload')
-    }
-
-    const total = firstPagePayload.total
-    const offsets = []
-    for (let offset = PAGE_SIZE; offset < total; offset += PAGE_SIZE) {
-      offsets.push(offset)
-    }
-
-    const jobPostings = [...firstPagePayload.jobPostings]
-    for (const offset of offsets) {
-      const payload = await fetchJson(WORKDAY_JOBS_API_URL, {
-        method: 'POST',
-        body: buildJobsRequestBody({ offset }),
-      })
-
-      if (!isWorkdayJobsApiPayload(payload)) {
-        throw new Error('Lexmark International Workday jobs API no longer matches the verified public payload')
-      }
-
-      jobPostings.push(...payload.jobPostings)
-    }
-
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (const jobPosting of jobPostings) {
-      const detailUrl = buildJobDetailApiUrl(jobPosting.externalPath)
-      if (!detailUrl) {
-        throw new Error('Lexmark International encountered a Workday posting without a stable external path')
-      }
-
-      const detailPayload = await fetchJson(detailUrl, { method: 'GET' })
-      if (!hasWorkdayJobDetailSignal(detailPayload)) {
-        throw new Error('Lexmark International Workday job detail payload no longer matches the verified public surface')
-      }
-
-      if (!isIndiaJobDetail(detailPayload)) {
-        continue
-      }
-
-      const job = mapIndiaJob(detailPayload, jobPosting)
-      if (!job || seenJobIds.has(job.jobId)) {
-        continue
-      }
-
-      seenJobIds.add(job.jobId)
-      jobs.push({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: now(),
-      })
-    }
-
-    return jobs
-  },
+export const createLexmarkInternationalScraper = (defaults = {}) => ({
+  run: (options = {}) => runCurrentLexmarkInventory({ ...defaults, ...options }),
 })
 
 export const run = async (options = {}) => createLexmarkInternationalScraper(options).run(options)

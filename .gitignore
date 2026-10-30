@@ -1,6 +1,10 @@
 # Dependencies
 node_modules
 
+# Saved scraper and test fixtures
+**/fixtures/
+**/test-fixtures/
+
 # Environment
 .env
 .env.*

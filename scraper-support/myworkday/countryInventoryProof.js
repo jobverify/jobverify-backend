@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
-import { decodeNativeEntities, readNativeDocument } from '../utils/activeNativeHtml.js'
+import { decodeNativeEntities } from '../utils/activeNativeHtml.js'
+import { readVisibleNativeDocument } from '../utils/visibleNativeHtml.js'
 
 export const WORKDAY_COUNTRY_INVENTORY_PROOF = Symbol.for('jobverify.workday.country-inventory-proof')
 export const hashWorkdayProof = body => createHash('sha256').update(body).digest('hex')
@@ -28,22 +29,7 @@ export const currentWorkdayBoardReceipt = ({ officialCareersUrl, boardUrl, respo
   }
   const expected = boardKey(boardUrl)
   if (!expected) throw new Error('Expected Workday board identity is invalid')
-  const inactiveStyle = /(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|content-visibility\s*:\s*hidden|opacity\s*:\s*0(?:\D|$))/i
-  const hiddenSelectors = [...String(html).matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)]
-    .flatMap(([, css]) => [...css.matchAll(/([^{}]+)\{([^{}]+)\}/g)]
-      .filter(([, , declarations]) => inactiveStyle.test(declarations))
-      .flatMap(([, selectors]) => selectors.split(',')))
-  const hiddenByStylesheet = (tag, attrs) => hiddenSelectors.some(selector => {
-    // Conservatively reject any element named by a hiding selector, including
-    // conditional and descendant selectors; proof can tolerate false negatives.
-    const ids = [...selector.matchAll(/#([\w-]+)/g)].map(([, id]) => id)
-    const classes = [...selector.matchAll(/\.([\w-]+)/g)].map(([, name]) => name)
-    const ownClasses = (attrs.class || '').split(/\s+/)
-    return ids.includes(attrs.id) || classes.some(name => ownClasses.includes(name))
-      || new RegExp('(?:^|[\\s>+~])' + tag + '(?=[\\s.#:[>+~]|$)', 'i').test(selector.trim())
-      || selector.trim() === '*'
-  })
-  const document = readNativeDocument(html)
+  const document = readVisibleNativeDocument(String(html), { strict: true })
   const anchorUrls = []
   const visibleText = node => {
     if (typeof node === 'string') return decodeNativeEntities(node)
@@ -52,8 +38,6 @@ export const currentWorkdayBoardReceipt = ({ officialCareersUrl, boardUrl, respo
       || ['hidden', 'inert', 'disabled'].some(key => Object.hasOwn(attrs, key))
       || ['aria-hidden', 'aria-disabled'].some(key => Object.hasOwn(attrs, key) && attrs[key].toLowerCase() !== 'false')
       || /(?:^|\s)(?:hidden|invisible|sr-only)(?:\s|$)/i.test(attrs.class || '')
-      || inactiveStyle.test((attrs.style || '').replace(/\/\*[\s\S]*?\*\//g, ''))
-      || hiddenByStylesheet(tag, attrs)
     if (blocked) return ''
     const text = node.children.map(visibleText).join(' ')
     if (tag === 'a' && attrs.href && text.trim()) {
@@ -71,31 +55,40 @@ export const currentWorkdayBoardReceipt = ({ officialCareersUrl, boardUrl, respo
     sha256: hashWorkdayProof(html), fetchedAt: new Date().toISOString() }
 }
 
-const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
+const regionNames = ['long', 'short'].map(style => new Intl.DisplayNames(['en'], { type: 'region', style }))
 const countries = new Map()
 for (let a = 65; a <= 90; a++) for (let b = 65; b <= 90; b++) {
-  const code = String.fromCharCode(a, b), name = regionNames.of(code)
-  if (name && name !== code && !['ZZ', 'EU', 'UN', 'XA', 'XB', 'QO'].includes(code)) {
+  const code = String.fromCharCode(a, b), names = regionNames.map(formatter => formatter.of(code)).filter(name => name && name !== code)
+  if (names.length && !['ZZ', 'EU', 'UN', 'XA', 'XB', 'QO'].includes(code)) {
     // DisplayNames accepts aliases such as UK. Compare their canonical region
     // codes so the alias cannot overwrite United Kingdom with a spurious UK/GB
     // disagreement in an otherwise consistent native country object.
     const canonicalCode = new Intl.Locale('und-' + code).region
     countries.set(code.toLowerCase(), canonicalCode)
-    countries.set(name.toLowerCase(), canonicalCode)
+    for (const name of names) countries.set(name.toLowerCase(), canonicalCode)
   }
 }
-for (const [name, code] of Object.entries({ IND: 'IN', USA: 'US', 'United States of America': 'US', UK: 'GB', UAE: 'AE' })) countries.set(name.toLowerCase(), code)
+for (const [name, code] of Object.entries({ IND: 'IN', USA: 'US', 'United States of America': 'US', 'Russian Federation': 'RU', 'Korea, Republic of': 'KR', UK: 'GB', UAE: 'AE' })) countries.set(name.toLowerCase(), code)
+// A comma-delimited state abbreviation is not an explicit country token.
+// Native country fields can still prove the office's country independently.
+const ambiguousStateCodes = new Set(('AN AP AR AS BR CG CH DD DL DN GA GJ HP HR JH JK KA KL LA LD MH ML MN MP MZ NL OD OR PB PY RJ SK TN TR TS UK UP UT WB '
+  + 'AL AK AZ CA CO CT DE DC FL HI ID IL IN IA KS KY ME MD MA MI MS MO MT NE NV NH NJ NM NY NC ND OH OK PA RI SC SD TX VT VA WA WV WI WY FM GU PR PW VI').split(' '))
 
 // Only an explicit country token proves scope here. City names and punctuation
 // alone never prove a foreign country, nor do broad regional/remote labels.
 export const explicitWorkdayCountryScope = value => {
   const label = String(value || '').trim()
   if (!label || /[;/|+&]|\b(?:or|and|global|worldwide|anywhere|APAC|EMEA|LATAM)\b/i.test(label)) return null
-  const prefix = label.match(/^([A-Z]{2,3})[.\-,]\s*/)?.[1]
+  const prefix = label.match(/^([A-Z]{2,3})\s*[.\-,]\s*/)?.[1]
   const suffix = label.match(/,\s*([^,]+)$/)?.[1]
+  const prefixCountry = prefix && countries.get(prefix.toLowerCase())
+  const suffixCountry = suffix && countries.get(suffix.toLowerCase())
+  // Conflicting tokens still require native detail evidence, even when one
+  // token could also name a state. Removing ambiguity must not invent certainty.
+  if (prefixCountry && suffixCountry && prefixCountry !== suffixCountry) return null
   const explicitCountries = [countries.get(label.toLowerCase()),
-    countries.get(label.replace(/\s+remote$/i, '').toLowerCase()),
-    prefix && countries.get(prefix.toLowerCase()), suffix && countries.get(suffix.toLowerCase())].filter(Boolean)
+    countries.get(label.replace(/\s+(?:[-–—]\s*)?remote$/i, '').toLowerCase()),
+    prefixCountry, suffix && !ambiguousStateCodes.has(suffix.toUpperCase()) && suffixCountry].filter(Boolean)
   if (new Set(explicitCountries).size !== 1) return null
   const country = explicitCountries[0]
   if (/\bindia\b/i.test(label) && country !== 'IN') return null
@@ -106,7 +99,13 @@ export const hasRecognizedWorkdayCountry = country => {
   const values = (typeof country === 'string' ? [country] : [country?.descriptor, country?.alpha2Code])
     .filter(value => typeof value === 'string' && value.trim())
   const codes = values.map(value => countries.get(value.trim().toLowerCase()))
-  return codes.length > 0 && codes.every(Boolean) && new Set(codes).size === 1
+  if (!codes.length || codes.some(code => !code)) return false
+  // The CXS resolver recognizes the native India country ID. It cannot override
+  // a different explicit country descriptor or code in the same object.
+  const nativeId = typeof country?.id === 'string' ? country.id.trim().toLowerCase() : null
+  const idCountry = nativeId === 'c4f78be1a8f14da0ab49ce1162348a5e' ? 'IN' : countries.get(nativeId)
+  if (idCountry) codes.push(idCountry)
+  return new Set(codes).size === 1
 }
 
 export const workdayInventoryIdentity = job => JSON.stringify([

@@ -17,6 +17,45 @@ preserved; new Actions requests use a separate discovery and email cache policy.
 
 Express and MongoDB backend for Jobverify, with a separate scraper runtime that collects public job listings and writes normalized jobs into MongoDB.
 
+## Admin scraper schedule
+
+Admins can change the scraper schedule under **Scrapers → Scraper schedule →
+Change schedule**. Choose **Daily at a set time** or **Every N hours** (1–168).
+Interval mode takes a first run date/time in IST and previews the next three
+planned starts. For every 11 hours, choose interval mode and enter `11`.
+The time picker uses IST; the backend converts it to UTC and
+commits only the schedule entry in `.github/workflows/scraper.yml` on the configured
+repository's default branch. The current workflow is read from GitHub each time
+the schedule loads, so external edits are reflected and stale saves are rejected.
+Active pipelines continue unchanged. GitHub scheduled runs can be delayed.
+
+Interval mode uses an hourly GitHub check at the first run's UTC minute. It
+calculates due slots from the original timestamp rather than resetting at
+midnight or adding hours to a delayed start. Each scheduled pipeline atomically
+claims a unique `scheduleSlot` alongside the existing database execution lock.
+Repeated checks cannot start the same slot twice, including after a failed run.
+An active pipeline defers the start until a later hourly check. Missed periods
+are collapsed into the latest due slot, so downtime does not create a backlog.
+Manual and admin triggers bypass interval timing and retain the shared lock.
+Hourly checks use GitHub runner minutes even when no scrape is due.
+
+Deploy the updated `.github/workflows/scraper.yml`, scripts and backend together
+before enabling intervals; the save endpoint rejects workflows lacking the skip
+gate. The deployment retains the current daily schedule until an admin saves a
+different setting. No new secrets or always-running backend scheduler are needed.
+
+This uses the existing `GITHUB_REPO` and backend-only `GITHUB_PAT`. In addition to
+Actions access for pipeline controls, the token needs **Contents: write** and
+**Workflows: write**, or `repo` and `workflow` scopes for a classic PAT, as described
+in the [GitHub contents API documentation](https://docs.github.com/en/rest/repos/contents#create-or-update-file-contents).
+Branch protection must permit that token to commit to the default branch.
+Failed writes show an error and a reload action; they do not report success.
+The authenticated admin endpoints are `GET` and `PUT /api/admin/pipeline/schedule`;
+PUT takes `{ "mode": "daily", "time": "22:30", "sha": "<loaded workflow blob SHA>" }`
+or `{ "mode": "interval", "hours": 11, "startAt": "2026-10-31T17:00:00.000Z", "sha": "<loaded workflow blob SHA>" }`.
+The response includes the mode and UTC cron; interval responses also include
+the anchor timestamp and next planned timestamp. The UI displays these in IST.
+
 ## Tech Stack
 
 - Node.js 24 (see .node-version)

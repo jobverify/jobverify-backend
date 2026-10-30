@@ -50,7 +50,7 @@ export const applyExpiredAccessDowngrade = (user, now = new Date()) => {
   return true;
 };
 
-export const getEffectiveAccess = (user, now = new Date()) => {
+export const getEffectiveAccess = (user, now = new Date(), siteSettings) => {
   const safeUser = user ?? {};
   const isAdmin = safeUser.role === "admin";
   const expired = isAccessExpired(safeUser, now);
@@ -70,7 +70,7 @@ export const getEffectiveAccess = (user, now = new Date()) => {
       || new Date(telegramLinkedAt).getTime() > new Date(telegramOptedOutAt).getTime()),
   );
   const canUseTelegram =
-    (isAdmin || (!expired && planConfig.hasTelegramAlerts && safeUser?.premium?.status === "active"))
+    (siteSettings?.billingEnabled === false || isAdmin || (!expired && planConfig.hasTelegramAlerts && safeUser?.premium?.status === "active"))
     && Boolean(safeUser?.premium?.telegramAlertsEnabled)
     && hasLinkedTelegram;
 
@@ -95,8 +95,8 @@ export const canUsePremiumFilters = (user, now = new Date(), siteSettings) =>
 export const shouldShowAds = (user, now = new Date()) =>
   getEffectiveAccess(user, now).shouldShowAds;
 
-export const canUseTelegramAlerts = (user, now = new Date()) =>
-  getEffectiveAccess(user, now).canUseTelegramAlerts;
+export const canUseTelegramAlerts = (user, now = new Date(), siteSettings) =>
+  getEffectiveAccess(user, now, siteSettings).canUseTelegramAlerts;
 
 export const buildAccessSummary = (user, now = new Date()) => {
   const access = getEffectiveAccess(user, now);

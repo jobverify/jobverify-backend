@@ -2,6 +2,7 @@ import {readHtml,norm,hasClass,within} from './nativeHtml.js'
 export const CORPORATE='https://www.brillio.com/'
 export const CAREERS='https://www.brillio.com/careers/'
 export const BOARD='https://careers.brillio.com/job-listing/'
+export const BOARD_ROOT='https://careers.brillio.com/'
 export const API='https://careers.brillio.com/wp-admin/admin-ajax.php'
 export const absolute=value=>{try{const u=new URL(value,BOARD);return u.protocol==='https:'?u.href:null}catch{return null}}
 export const jobIdFromUrl=value=>{try{const u=new URL(value);return u.hostname==='careers.brillio.com'&&/^\/job-details\/?$/.test(u.pathname)&&/^\d+$/.test(u.searchParams.get('job-id')||'')?u.searchParams.get('job-id'):null}catch{return null}}
@@ -28,8 +29,18 @@ export const pagination=(html,page)=>{
  return{page,lastPage:Math.max(...pages),hasNext:pages.some(n=>n===page+1)}
 }
 export const searchBody=page=>new URLSearchParams({action:'filter_jobs',job_title:'',country:'',jobpost:'all',hybrid:'0',onsite:'0',remote:'0',paged:String(page)}).toString()
-export const validateCorporate=(html,expected)=>{
- const d=readHtml(html);if(!d.find(n=>{if(n.tag!=='a'||!n.attrs.href)return false;try{return new URL(n.attrs.href,expected).href===expected}catch{return false}}).length)throw Error('Brillio current corporate careers handoff missing')
+export const isExactNativeHandoff=(value,expected,base=expected)=>{
+ try{
+  const url=new URL(value,base),target=new URL(expected)
+  return !url.username&&!url.password&&!url.search&&!url.hash&&url.origin===target.origin&&url.pathname.replace(/\/$/,'')===target.pathname.replace(/\/$/,'')
+ }catch{return false}
+}
+export const validateCorporate=(html,expected,alternatives=[])=>{
+ const d=readHtml(html),targets=[expected,...alternatives]
+ for(const target of targets){
+  if(d.find(n=>n.tag==='a'&&n.attrs.href&&isExactNativeHandoff(n.attrs.href,target,expected)).length)return target
+ }
+ throw Error('Brillio current corporate careers handoff missing')
 }
 export const validateClient=html=>{
  const d=readHtml(html),scripts=d.find(n=>n.tag==='script'&&!n.attrs.src).map(n=>n.raw||'').join('\n')

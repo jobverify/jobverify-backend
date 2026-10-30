@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { extractAshbyExperienceRequired } from '../utils/ashbyExperience.js'
 
@@ -220,7 +221,11 @@ function detail(row,brief,opening,body,spec){
 }
 const defaultGet=async(url,{signal,json=false}={})=>{
   const response=await fetch(url,{method:'GET',signal:signal||AbortSignal.timeout(30000),headers:{Accept:json?'application/json':'text/html'}})
-  if(!response.ok)throw Object.assign(new Error(`HTTP ${response.status} for ${url}`),{status:response.status,abortRetries:true})
+  if(!response.ok){
+    const publicResponse=response.status===404&&!json?{requestedUrl:url,responseUrl:response.url,status:response.status,body:await response.text()}:undefined
+    if(signal?.aborted)throw signal.reason||new Error('Public careers request cancelled')
+    throw Object.assign(new Error(`HTTP ${response.status} for ${url}`),{status:response.status,abortRetries:true,publicResponse})
+  }
   const body=await response.text();if(botGate.test(body))throw Object.assign(new Error(`Public careers access denied for ${url}`),{abortRetries:true});return json?JSON.parse(body):body
 }
 export function createAshbyPairNativeScraper(spec,defaults={}){
@@ -233,15 +238,25 @@ export function createAshbyPairNativeScraper(spec,defaults={}){
     const inspectCorporate=async(phase,known=null)=>{
       const queue=[spec.careersUrl],seen=new Set(),surfaces={}
       while(queue.length){const url=queue.shift();if(seen.has(url))continue;seen.add(url);let body
+        let terminal404=null
         try{body=await getText(url)}catch(e){
           if(denied(e)||signal?.aborted||url===spec.careersUrl)throw e
+          const receipt=e?.publicResponse,pin=spec.source==='checkoutcom'&&spec.terminalCorporate404?.[url]
+          if(pin&&e.status===404&&receipt?.status===404&&receipt.requestedUrl===url&&receipt.responseUrl===url&&typeof receipt.body==='string'&&Buffer.byteLength(receipt.body)<=2000000&&new URL(url).origin===new URL(spec.careersUrl).origin){
+            const sha256=createHash('sha256').update(receipt.body).digest('hex')
+            // Exact retained renderer bytes bind its active404 and every hiring
+            // link. Any changed/inert body or redirected request stays unknown.
+            if(sha256===pin){body=receipt.body;terminal404={status:404,requestedUrl:url,responseUrl:receipt.responseUrl,sha256};channelChecks.push({phase,url,outcome:'verified-terminal-corporate-404',...terminal404})}
+          }
+          if(!terminal404){
           issues.push(`unresolved-corporate-hiring-route:${url}`);unresolvedCorporateRoutes.push(url);channelChecks.push({phase,url,outcome:'unresolved-corporate-route',reason:e.message});surfaces[url]={unresolved:true};continue
+          }
         }
         if(!/<html\b|<a\b/i.test(body)||!new RegExp(spec.company.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(visibleText(body))){
           if(url===spec.careersUrl)fail('current-corporate-employer-signal-missing')
           issues.push(`unverified-corporate-hiring-route:${url}`);unresolvedCorporateRoutes.push(url);surfaces[url]={unresolved:true};continue
         }
-        const channels=advertisedChannels(body,url,spec);surfaces[url]=channels
+        const channels=advertisedChannels(body,url,spec);surfaces[url]=terminal404?{...channels,terminal404}:channels
         for(const internal of channels.internal)if(!seen.has(internal))queue.push(internal)
         for(const internal of channels.clientDerivedInternal)if(!seen.has(internal))queue.push(internal)
         for(const reason of channels.clientIssues)issues.push(`${reason}:${url}`)

@@ -16,7 +16,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Accelya Solutions India Limited catalog captures the verified careers handoff plus Workday API failure state', async () => {
+test('Accelya Solutions India Limited catalog captures the current complete native Workday contract', async () => {
   const { ACCELYA_SOLUTIONS_INDIA_LIMITED_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(ACCELYA_SOLUTIONS_INDIA_LIMITED_CATALOG)
 
@@ -33,20 +33,20 @@ test('Accelya Solutions India Limited catalog captures the verified careers hand
     'https://accelya.wd103.myworkdayjobs.com/wday/cxs/accelya/Careers/jobs',
   )
   assert.equal(provider.companyDomain, 'w3.accelya.com')
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-handoff-workday-api-failure')
+  assert.equal(provider.atsPlatform, 'officially-linked-workday-cxs')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'careers-handoff-plus-workday-api-failure-validation')
+  assert.equal(provider.paginationStrategy, 'complete-unfiltered-workday-country-proof')
   assert.equal(
     provider.extractionStrategy,
-    'verified-careers-page+verified-workday-handoff+verified-workday-http-400-or-500-error-payload+return-empty',
+    'current-first-party-handoff+complete-native-board+native-country+full-details+closing-reconciliation',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-10-29')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /accelyasolutionsindialimited[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /2026-10-29/i)
   assert.match(provider.verifiedSurfaceSummary, /View all jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /HTTP_400 or HTTP_500/i)
-  assert.match(provider.verifiedSurfaceSummary, /public Workday detail pages/i)
+  assert.match(provider.verifiedSurfaceSummary, /unfiltered Workday CXS inventory/i)
+  assert.match(provider.verifiedSurfaceSummary, /closing inventory/i)
 })

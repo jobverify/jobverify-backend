@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { hydrateSourceDescriptions, sourceDescriptionFromPosting } from '../../scraper-support/utils/sourceDescriptionHydration.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -135,8 +136,9 @@ export const extractPaginationSummary = (html) => {
   }
 }
 
-const fetchText = async (url) => {
+const fetchText = async (url, { signal, includeResponseMetadata = false } = {}) => {
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -147,17 +149,25 @@ const fetchText = async (url) => {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return response.text()
+  const html = await response.text()
+  return includeResponseMetadata ? { html, status: response.status, url: response.url } : html
 }
 
-export const run = async () => {
+export const run = async (options = {}) => {
   const jobs = []
   const seenJobIds = new Set()
-  const maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY
-  const maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null
+  const maxPages = options.maxPages ?? (Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY)
+  const maxJobs = options.maxJobs ?? (Number.isInteger(config.maxJobs) ? config.maxJobs : null)
+  const getPage = options.fetchText || fetchText
+  const finish = () => hydrateSourceDescriptions(jobs, {
+    signal: options.signal, detailEnrichmentBudgetMs: options.detailEnrichmentBudgetMs,
+    fetchDetail: async (job, { signal }) => sourceDescriptionFromPosting(job,
+      await getPage(job.sourceUrl, { signal, includeResponseMetadata: true })),
+  })
 
   for (let page = 1; page <= maxPages; page += 1) {
-    const html = await fetchText(buildSearchUrl({ page }))
+    options.signal?.throwIfAborted()
+    const html = await getPage(buildSearchUrl({ page }), { signal: options.signal })
     const listings = extractSearchResults(html)
     const summary = extractPaginationSummary(html)
 
@@ -172,7 +182,7 @@ export const run = async () => {
       })
 
       if (maxJobs && jobs.length >= maxJobs) {
-        return jobs
+        return finish()
       }
     }
 
@@ -181,7 +191,7 @@ export const run = async () => {
     }
   }
 
-  return jobs
+  return finish()
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

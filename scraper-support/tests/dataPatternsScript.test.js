@@ -55,25 +55,6 @@ test('extractDataPatternsJob maps official detail-page fields into a normalized 
   })
 })
 
-test('run fetches official Data Patterns listing and detail pages then decorates jobs', async () => {
-  const dataPatterns = await loadDataPatternsModule()
-  const requestedUrls = []
-  const scraper = dataPatterns.createDataPatternsScraper({ maxJobs: 1 })
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === dataPatterns.CAREER_PAGE_URL) return listingHtml
-      if (url === 'https://www.datapatternsindia.com/careers/openings.php?id=788') return detailHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    dataPatterns.CAREER_PAGE_URL,
-    'https://www.datapatternsindia.com/careers/openings.php?id=788',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'datapatterns')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-})
+// Pure archived parsers remain covered above. Current native HTTP protocol,
+// country alternatives and closing proof are covered by darwinboxSecondWaveNative.test.js.
+test('Data Patterns runtime rejects obsolete body-only legacy HTML overrides',async()=>{const dataPatterns=await loadDataPatternsModule();await assert.rejects(dataPatterns.run({fetchText:async()=>listingHtml}),/native HTTP metadata required/)})

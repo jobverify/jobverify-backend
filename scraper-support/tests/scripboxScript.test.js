@@ -197,6 +197,7 @@ test('Scripbox run validates the verified careers page before returning India ro
   const requestedUrls = []
 
   const jobs = await scripbox.createScripboxScraper().run({
+    detailEnrichmentBudgetMs: 0,
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === scripbox.CAREERS_URL) return VERIFIED_CAREERS_HTML
@@ -216,6 +217,7 @@ test('Scripbox fails closed when the verified careers shell drifts or the public
 
   await assert.rejects(
     scripbox.createScripboxScraper().run({
+    detailEnrichmentBudgetMs: 0,
       fetchText: async () => DRIFTED_CAREERS_HTML,
     }),
     /verified first-party careers page/i,
@@ -223,8 +225,63 @@ test('Scripbox fails closed when the verified careers shell drifts or the public
 
   await assert.rejects(
     scripbox.createScripboxScraper().run({
+    detailEnrichmentBudgetMs: 0,
       fetchText: async () => INVALID_DETAIL_LINKS_HTML,
     }),
     /verified first-party careers page|darwinbox detail links/i,
   )
+})
+
+// Captured anonymous first-party job API response, 2026-10-29. Removing
+// native hydration must fail this source-content regression.
+test('Scripbox hydrates authoritative native descriptions without granting listing cleanup authority', async () => {
+  const { readFileSync } = await import('node:fs')
+  const provider = await loadScripboxModule()
+  const payload = JSON.parse(readFileSync(new URL('./fixtures/darwinbox/scripbox-native-detail.json', import.meta.url), 'utf8'))
+  const careersHtml = VERIFIED_CAREERS_HTML.replaceAll('Associate', 'Associate Relationship manager')
+  const jobs = await provider.createScripboxScraper().run({
+    fetchText: async () => careersHtml,
+    fetchJobDetail: async ({ jobId }) => {
+      if (jobId !== 'a6a560cbbba247') throw new Error('Fixture role unavailable')
+      return payload
+    },
+  })
+  const hydrated = jobs.find(job => job.jobId === 'a6a560cbbba247')
+  assert.equal(hydrated.sourceDetailComplete, true)
+  assert.equal(hydrated.sourcePostingDate, '2026-07-13T18:30:00.000Z')
+  assert.equal(hydrated.postingDate, '2026-07-13T18:30:00.000Z')
+  assert.equal(hydrated.sourceDateEvidence, 'darwinbox-native-posted-on-v1')
+  assert.ok(hydrated.sourceDescription.length > 6000)
+  assert.equal(hydrated.jobDescription, hydrated.sourceDescription)
+  assert.ok(jobs.every(job => job.sourceListingComplete === false))
+  assert.ok(jobs.filter(job => job !== hydrated).every(job => job.sourceDetailComplete === false && !job.sourceDescription))
+
+  const empty = structuredClone(payload)
+  empty.message.job[0].jd = ''
+  const dateOnlyJobs = await provider.createScripboxScraper().run({
+    fetchText: async () => careersHtml, fetchJobDetail: async () => empty,
+  })
+  const dateOnly = dateOnlyJobs.find(job => job.jobId === 'a6a560cbbba247')
+  assert.equal(dateOnly.sourceDetailComplete, false)
+  assert.equal(dateOnly.postingDate, '2026-07-13T18:30:00.000Z')
+  assert.ok(!dateOnly.sourceDescription)
+
+  const mismatch = structuredClone(payload)
+  mismatch.message.job[0].title = 'A different employer role'
+  const rejected = await provider.createScripboxScraper().run({
+    fetchText: async () => careersHtml, fetchJobDetail: async () => mismatch,
+  })
+  assert.ok(rejected.every(job => job.sourceDetailComplete === false && !job.sourceDescription))
+})
+
+test('Scripbox cancellation stops before requesting listing or native details', async () => {
+  const provider = await loadScripboxModule()
+  const controller = new AbortController()
+  controller.abort(new Error('Caller cancelled'))
+  let requested = false
+  await assert.rejects(provider.createScripboxScraper().run({
+    signal: controller.signal, fetchText: async () => { requested = true; return VERIFIED_CAREERS_HTML },
+    fetchJobDetail: async () => { requested = true },
+  }), /Caller cancelled/)
+  assert.equal(requested, false)
 })

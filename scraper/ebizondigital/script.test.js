@@ -118,11 +118,19 @@ test('run validates both verified surfaces before decorating extracted jobs', as
       requestedUrls.push(url)
       if (url === CAREERS_URL) return officialCareersHtml
       if (url === BOARD_URL) return boardHtml
+      if (url.includes('/apply/ByksQiOipi/')) return {
+        status: 200, url, html: '<script type="application/ld+json">' + JSON.stringify({
+          '@type': 'JobPosting', title: 'Associate Consultant - Business Development ll Noida',
+          hiringOrganization: { name: 'EbizON' }, identifier: { value: 'ByksQiOipi' }, url,
+          description: '<p>Develop new business opportunities with the EbizON team.</p>',
+        }) + '</script>',
+      }
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [CAREERS_URL, BOARD_URL])
+  assert.deepEqual(requestedUrls, [CAREERS_URL, BOARD_URL,
+    'https://ebizon.applytojob.com/apply/ByksQiOipi/Associate-Consultant-Business-Development-II-Noida'])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'ebizondigital')
   assert.equal(
@@ -130,6 +138,8 @@ test('run validates both verified surfaces before decorating extracted jobs', as
     'https://ebizon.applytojob.com/apply/ByksQiOipi/Associate-Consultant-Business-Development-II-Noida',
   )
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
+  assert.equal(jobs[0].sourceDetailComplete, true)
+  assert.match(jobs[0].sourceDescription, /Develop new business opportunities/)
 })
 
 test('run fails closed when the official EbizON careers page no longer matches the verified surface', async () => {
@@ -148,4 +158,22 @@ test('run fails closed when the public board no longer matches the verified Ebiz
     }),
     /verified EbizON ApplyToJob board/i,
   )
+})
+
+test('production EbizON transport keeps the final detail URL and verified employer content', async t => {
+  const role = extractBoardJobs(boardHtml)[0]
+  const description = '<p>Develop new business opportunities with the EbizON team.</p>'
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    const html = url === CAREERS_URL ? officialCareersHtml : url === BOARD_URL ? boardHtml
+      : '<script type="application/ld+json">' + JSON.stringify({
+        '@type': 'JobPosting', title: role.title, hiringOrganization: { name: 'EbizON' },
+        identifier: { value: role.jobId }, url, description,
+      }) + '</script>'
+    const response = new Response(html, { status: 200 })
+    Object.defineProperty(response, 'url', { value: url })
+    return response
+  })
+  const jobs = await createEbizOnDigitalScraper({ maxJobs: 1 }).run()
+  assert.equal(jobs[0].sourceDescription, description)
+  assert.equal(jobs[0].sourceDetailComplete, true)
 })

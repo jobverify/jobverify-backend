@@ -9,6 +9,7 @@
     "e2e:local-stack": "node scripts/startLocalE2EStack.js",
     "clean:workspace": "node scripts/cleanWorkspace.js",
     "lint": "node scripts/lintSyntax.js",
+    "audit:dependencies": "node scripts/auditDependencies.js",
     "test": "node --test --test-concurrency=4 \"test/**/*.test.js\" \"scraper/**/*.test.js\" \"scraper-support/**/*.test.js\"",
     "classify:jobs": "node scripts/classifySavedJobs.js",
     "scrape": "node --use-system-ca scraper-support/runner.js",
@@ -89,12 +90,12 @@
     "jszip": "^3.10.2",
     "mammoth": "^1.13.0",
     "mongoose": "^8.24.4",
-    "nodemailer": "^9.1.1",
+    "nodemailer": "^10.3.1",
     "pdfjs-dist": "^6.2.108",
+    "playwright": "1.60.0",
     "razorpay": "^2.9.8",
     "tesseract.js": "^7.0.0",
-    "word-extractor": "^1.0.4",
-    "playwright": "1.60.0"
+    "word-extractor": "^1.0.4"
   },
   "devDependencies": {
     "mongodb-memory-server": "^11.2.0",

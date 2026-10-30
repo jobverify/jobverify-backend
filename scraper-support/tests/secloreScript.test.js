@@ -179,6 +179,7 @@ test('Seclore run validates the official careers page before returning India rol
   const requestedUrls = []
 
   const jobs = await seclore.createSecloreScraper().run({
+    detailEnrichmentBudgetMs: 0,
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === seclore.CAREERS_URL) return VERIFIED_CAREERS_HTML
@@ -197,6 +198,7 @@ test('Seclore fails closed when the verified careers shell drifts or the public 
 
   await assert.rejects(
     seclore.createSecloreScraper().run({
+    detailEnrichmentBudgetMs: 0,
       fetchText: async () => DRIFTED_CAREERS_HTML,
     }),
     /verified first-party careers page/i,
@@ -204,8 +206,63 @@ test('Seclore fails closed when the verified careers shell drifts or the public 
 
   await assert.rejects(
     seclore.createSecloreScraper().run({
+    detailEnrichmentBudgetMs: 0,
       fetchText: async () => INVALID_JOB_LINKS_HTML,
     }),
     /darwinbox links/i,
   )
+})
+
+// Captured anonymous first-party job API response, 2026-10-29. Removing
+// native hydration must fail this source-content regression.
+test('Seclore hydrates authoritative native descriptions without granting listing cleanup authority', async () => {
+  const { readFileSync } = await import('node:fs')
+  const provider = await loadSecloreModule()
+  const payload = JSON.parse(readFileSync(new URL('./fixtures/darwinbox/seclore-native-detail.json', import.meta.url), 'utf8'))
+  const careersHtml = VERIFIED_CAREERS_HTML
+  const jobs = await provider.createSecloreScraper().run({
+    fetchText: async () => careersHtml,
+    fetchJobDetail: async ({ jobId }) => {
+      if (jobId !== 'a6a212138f41d8') throw new Error('Fixture role unavailable')
+      return payload
+    },
+  })
+  const hydrated = jobs.find(job => job.jobId === 'a6a212138f41d8')
+  assert.equal(hydrated.sourceDetailComplete, true)
+  assert.equal(hydrated.sourcePostingDate, '2026-06-03T18:30:00.000Z')
+  assert.equal(hydrated.postingDate, '2026-06-03T18:30:00.000Z')
+  assert.equal(hydrated.sourceDateEvidence, 'darwinbox-native-posted-on-v1')
+  assert.ok(hydrated.sourceDescription.length > 11000)
+  assert.equal(hydrated.jobDescription, hydrated.sourceDescription)
+  assert.ok(jobs.every(job => job.sourceListingComplete === false))
+  assert.ok(jobs.filter(job => job !== hydrated).every(job => job.sourceDetailComplete === false && !job.sourceDescription))
+
+  const empty = structuredClone(payload)
+  empty.message.job[0].jd = ''
+  const dateOnlyJobs = await provider.createSecloreScraper().run({
+    fetchText: async () => careersHtml, fetchJobDetail: async () => empty,
+  })
+  const dateOnly = dateOnlyJobs.find(job => job.jobId === 'a6a212138f41d8')
+  assert.equal(dateOnly.sourceDetailComplete, false)
+  assert.equal(dateOnly.postingDate, '2026-06-03T18:30:00.000Z')
+  assert.ok(!dateOnly.sourceDescription)
+
+  const mismatch = structuredClone(payload)
+  mismatch.message.job[0].title = 'A different employer role'
+  const rejected = await provider.createSecloreScraper().run({
+    fetchText: async () => careersHtml, fetchJobDetail: async () => mismatch,
+  })
+  assert.ok(rejected.every(job => job.sourceDetailComplete === false && !job.sourceDescription))
+})
+
+test('Seclore cancellation stops before requesting listing or native details', async () => {
+  const provider = await loadSecloreModule()
+  const controller = new AbortController()
+  controller.abort(new Error('Caller cancelled'))
+  let requested = false
+  await assert.rejects(provider.createSecloreScraper().run({
+    signal: controller.signal, fetchText: async () => { requested = true; return VERIFIED_CAREERS_HTML },
+    fetchJobDetail: async () => { requested = true },
+  }), /Caller cancelled/)
+  assert.equal(requested, false)
 })

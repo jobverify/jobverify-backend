@@ -10,7 +10,10 @@ const job = { id: 1, title: 'Engineer', location: { name: 'Bangalore, India' }, 
 const run = (payload, overrides = {}) => createPublishingGapAtsScraper({ ...provider, ...overrides }).run({ fetchJson: async () => payload })
 
 test('Greenhouse retains proven India jobs while generic remote scope prevents completeness', async () => {
-  const jobs = await run({ jobs: [job, { ...job, id: 2, location: { name: 'Remote' } }, { ...job, id: 3, location: { name: 'Boston, US' } }], meta: { total: 3 } })
+  const jobs = await run({ jobs: [job,
+    { ...job, id: 2, absolute_url: 'https://job-boards.greenhouse.io/example/jobs/2', location: { name: 'Remote' } },
+    { ...job, id: 3, absolute_url: 'https://job-boards.greenhouse.io/example/jobs/3', location: { name: 'Boston, US' } }
+  ], meta: { total: 3 } })
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].company, 'Example')
   assert.equal(jobs[0].link, job.absolute_url)
@@ -178,17 +181,17 @@ test('missing native Greenhouse total remains unknown through the wrapper, inclu
   }
 })
 
+test('the ATS wrapper rejects duplicate Greenhouse identities before mapping source content', async () => {
+  await assert.rejects(run({ jobs: [job, { ...job, title: 'Duplicate ID' }], meta: { total: 2 } }), /duplicate native identity/)
+})
+
 test('the ATS wrapper preserves inner incomplete evidence and lifecycle guards', async () => {
-  for (const [payload, overrides, reason] of [
-    [{ jobs: [job, { ...job, title: 'Duplicate ID' }], meta: { total: 2 } }, {}, /repeated-vacancy-identity/],
-    [{ jobs: [job], meta: { total: 1 } }, { config: { pagination: { hasMorePath: 'configuredContinuation' } } }, /configured-continuation-unavailable/],
-  ]) {
-    const jobs = await run(payload, overrides)
-    assert.equal(readInventoryEvidence(jobs).listingComplete, false)
-    assert.equal(readInventoryEvidence(jobs).status, 'discovery-only')
-    assert.match(readInventoryEvidence(jobs).reason, reason)
-    assert.ok(jobs.every(row => row.sourceListingComplete === false))
-  }
+  const jobs = await run({ jobs: [job], meta: { total: 1 } },
+    { config: { pagination: { hasMorePath: 'configuredContinuation' } } })
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).status, 'discovery-only')
+  assert.match(readInventoryEvidence(jobs).reason, /configured-continuation-unavailable/)
+  assert.ok(jobs.every(row => row.sourceListingComplete === false))
 })
 
 test('selected roles without employer descriptions cannot authorize complete inventory', async () => {
@@ -207,6 +210,30 @@ test('selected roles without employer descriptions cannot authorize complete inv
 test('Ashby country metadata cannot resolve an alternate worldwide scope', async () => {
   const jobs = await run({ apiVersion: '1', jobs: [{ id: 'a', title: 'Engineer', location: 'Remote US or APAC', address: { postalAddress: { addressCountry: 'US' } }, isListed: true,
     jobUrl: 'https://jobs.ashbyhq.com/example/a', applyUrl: 'https://jobs.ashbyhq.com/example/a/application', descriptionHtml: '<p>Build software.</p>' }] }, { atsPlatform: 'ashby' })
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+})
+
+test('one native Ashby postal country scopes multiple city alternatives in the same location field', async () => {
+  const record = { id: 'a', title: 'Research Engineer', location: 'Redwood City or New York City',
+    address: { postalAddress: { addressCountry: 'United States' } }, secondaryLocations: [], isListed: true,
+    jobUrl: 'https://jobs.ashbyhq.com/example/a', applyUrl: 'https://jobs.ashbyhq.com/example/a/application',
+    descriptionPlain: 'Build and evaluate production research systems.' }
+  const jobs = await run({ apiVersion: '1', jobs: [record] }, { atsPlatform: 'ashby' })
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 1)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
+})
+
+test('a postal country does not extend to separate native secondary-location entries', async () => {
+  const record = { id: 'a', title: 'Nursing Executive', location: 'Remote - Tier 1',
+    address: { postalAddress: { addressCountry: 'USA' } },
+    secondaryLocations: [{ location: 'Remote - Tier 2', address: { postalAddress: {} } }], isListed: true,
+    jobUrl: 'https://jobs.ashbyhq.com/example/a', applyUrl: 'https://jobs.ashbyhq.com/example/a/application',
+    descriptionPlain: 'Lead and support clinical nursing teams.' }
+  const jobs = await run({ apiVersion: '1', jobs: [record] }, { atsPlatform: 'ashby' })
   assert.equal(jobs.length, 0)
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
   assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)

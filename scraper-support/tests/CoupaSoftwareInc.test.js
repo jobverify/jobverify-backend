@@ -238,6 +238,7 @@ test('Coupa Software Inc run paginates the verified first-party jobs pages and r
   const jobs = await coupa.createCoupaSoftwareIncScraper({
     now: () => '2026-07-18T00:00:00.000Z',
   }).run({
+    detailEnrichmentBudgetMs: 0,
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === coupa.JOBS_PAGE_URL) return jobsPageOneHtml
@@ -276,6 +277,7 @@ test('Coupa Software Inc returns [] when direct requests fall back to the verifi
   `
 
   const jobs = await coupa.createCoupaSoftwareIncScraper().run({
+    detailEnrichmentBudgetMs: 0,
       fetchText: async (url) => {
         throw new Error(`HTTP 403 for ${url}`)
       },
@@ -299,6 +301,7 @@ test('Coupa Software Inc fails closed when the verified jobs shell changes mater
 
   await assert.rejects(
     coupa.createCoupaSoftwareIncScraper().run({
+    detailEnrichmentBudgetMs: 0,
       fetchText: async () => '<html><body><h1>Jobs</h1></body></html>',
     }),
     /verified Coupa jobs page/i,

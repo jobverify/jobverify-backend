@@ -62,3 +62,14 @@ test('startup probe samples cannot occupy the production numeric rejection sampl
   assert.ok(result.samples.some(sample => sample.id === 'real-job'));
   assert.ok(result.samples.length <= 10);
 });
+
+test('readiness diagnostics retain the full synthetic source separately from the failing statement', () => {
+  const diagnostics = createRewriteDiagnostics();
+  const sourceDescription = 'Role overview: Build Python services for customer group 2. Required qualifications: At least 2 years is required. Preferred qualifications: AWS is nice to have.';
+  for (const id of ['worker-probe-1', 'production-job']) diagnostics.record({ id, reason: 'numeric_relationship_changed',
+    input: { sourceDescription }, diagnostic: { evidence: 'Build Python services for customer group 2.' } });
+  const [probe, production] = diagnostics.snapshot().samples;
+  assert.equal(probe.probeSource, sourceDescription);
+  assert.equal(probe.sourceContext, 'Build Python services for customer group 2.');
+  assert.equal(production.probeSource, undefined);
+});

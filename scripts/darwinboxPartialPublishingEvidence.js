@@ -256,7 +256,11 @@ export async function deriveDarwinboxPartialEvidence({ source, bindingEvidence: 
   // calendar days, while public visibility correctly closes roles immediately.
   const openJobs = analysis.eligibleJobs.filter(job => !job.closingDate || Date.parse(job.closingDate) > +now)
   analysis.filterCounts.closed += analysis.eligibleJobs.length - openJobs.length
-  analysis.eligibleJobs = openJobs
+  // Ingestion retains contentless rows privately for later recovery. A public
+  // repair trial selects described roles, while its full native detail-health
+  // evidence continues to account for every missing or unavailable description.
+  analysis.eligibleJobs = openJobs.filter(job => hasSourceDescription(job))
+  analysis.filterCounts.emptyDescription += openJobs.length - analysis.eligibleJobs.length
   requireProof(analysis.eligibleJobs.length > 0, 'No eligible positive jobs; failure is never zero inventory proof')
   return { jobs: analysis.eligibleJobs, rawTotal: total, publicTotal: records.length, indiaTotal: inspectedJobs,
     pagesFetched: listings.length, capturedAt: archive.capturedAt,
