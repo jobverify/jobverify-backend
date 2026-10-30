@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import vm from 'node:vm'
 
 import { extractEmbeddedJobListings } from '../../scraper/avantel/script.js'
 import { parseJobsBundle } from '../../scraper/celebaltechnologies/script.js'
@@ -51,48 +50,14 @@ test('Nous Infosystems jobs asset parser rejects executable expressions as data'
   })
 })
 
-test('Onward Sucuri challenge evaluation supplies a hard vm timeout', () => {
-  const originalRunInContext = vm.runInContext
-  let receivedOptions = null
-
-  vm.runInContext = (_source, context, options) => {
-    receivedOptions = options
-    context.document.cookie = 'sucuri_cloudproxy_uuid_test=value'
-  }
-
-  try {
-    assert.equal(
-      extractSucuriCookie('<script>document.cookie="sucuri_cloudproxy_uuid_test=value"</script>'),
-      'sucuri_cloudproxy_uuid_test=value',
-    )
-    assert.equal(receivedOptions?.timeout, 1000)
-  } finally {
-    vm.runInContext = originalRunInContext
-  }
+test('Onward Sucuri cookie parser rejects host constructor escape without execution', () => {
+  withGlobalFlag('__jobverifySucuriHostExecuted', flag => {
+    assert.throws(() => extractSucuriCookie(`<script>String.constructor("return globalThis")().${flag}=true;document.cookie="sucuri_cloudproxy_uuid_test=value"</script>`))
+  })
 })
 
-test('Avantel embedded listings evaluation supplies a hard vm timeout', () => {
-  const originalRunInNewContext = vm.runInNewContext
-  let receivedOptions = null
-
-  vm.runInNewContext = (_source, _sandbox, options) => {
-    receivedOptions = options
-    return [{
-      id: 1,
-      role: 'Embedded Senior Engineer',
-      location: 'Hyderabad',
-      city: 'Hyderabad',
-      skills: [],
-      responsibilities: [],
-      preferable: [],
-    }]
-  }
-
-  try {
-    const listings = extractEmbeddedJobListings('jobListings:[{id:1,role:"Embedded Senior Engineer",location:"Hyderabad",city:"Hyderabad"}]')
-    assert.equal(listings.length, 1)
-    assert.equal(receivedOptions?.timeout, 1000)
-  } finally {
-    vm.runInNewContext = originalRunInNewContext
+test('Avantel embedded listings reject executable getters and expressions as data', () => {
+  for (const record of ['{get role(){return "Engineer"},id:1}', '{id:1,role:(()=>"Engineer")()}', '{id:1,role:"Engineer",__proto__:{}}']) {
+    assert.deepEqual(extractEmbeddedJobListings(`jobListings:[${record}]`), [])
   }
 })

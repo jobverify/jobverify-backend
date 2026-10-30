@@ -1,18 +1,26 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { createCurrentClientGreenhouseScraper } from '../../scraper-support/utils/currentClientGreenhouseInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "auvik"
 export const COMPANY = "Auvik"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Auvik added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://www.auvik.com/careers/'
+export const DISPOSITION = 'current-primary-native-loader-and-public-Greenhouse-inventory'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Revalidate the current primary openings container, top-level native embed registration and all full native postings in two snapshots. Preserve original dates and unknown country scope. Whole-company coverage, legal employer, application access, eligibility and publication remain unknown.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+const config = {
+  source: SOURCE, companyName: COMPANY, companyDomain: 'auvik.com', careersURL: CAREERS_URL,
+  mode: 'nitro-greenhouse', boardToken: 'auviknetworks', nativeEmployerNames: ['Auvik Networks'],
+  embedURL: 'https://boards.greenhouse.io/embed/job_board/js?for=auviknetworks',
+  dutiesPattern: /what\s+will\s+(?:I|you)\s+be\s+doing/i,
+  requirementsPattern: /what\s+are\s+we\s+looking\s+for/i,
+  sectionStopPattern: /are\s+there\s+bonus\s+points|about\s+auvik|compensation\s+details/i,
+}
+export const run = options => createCurrentClientGreenhouseScraper(config).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

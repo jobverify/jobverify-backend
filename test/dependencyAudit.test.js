@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { interpretDependencyAudit, dependencyAuditExitCode } from '../scripts/auditDependencies.js';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { interpretDependencyAudit, dependencyAuditExitCode, runDependencyAudit } from '../scripts/auditDependencies.js';
 
 const response = (severity = null) => ({
   auditReportVersion: 2,
@@ -54,5 +57,32 @@ test('mismatched totals and incomplete advisory findings invalidate an audit', (
     const value = response('critical');
     change(value);
     assert.equal(interpretDependencyAudit({ stdout: JSON.stringify(value), status: 1 }).status, 'unavailable');
+  }
+});
+
+test('unexpected JSON shapes and malformed advisory arrays remain unavailable without crashing', () => {
+  const malformed = [null, [], 'unexpected', { ...response('high'), vulnerabilities: { dependency: { ...response('high').vulnerabilities.dependency, via: {} } } },
+    { ...response('high'), vulnerabilities: { dependency: { ...response('high').vulnerabilities.dependency, via: [null] } } }];
+  for (const value of malformed) {
+    const result = interpretDependencyAudit({ stdout: JSON.stringify(value), status: 1 });
+    assert.equal(result.status, 'unavailable');
+    assert.equal(result.vulnerabilityCounts, null);
+    assert.equal(dependencyAuditExitCode(result), 2);
+  }
+});
+
+test('lockfile audit explicitly includes development findings even in production', () => {
+  const tempRoot = path.resolve(tmpdir());
+  const directory = mkdtempSync(path.join(tempRoot, 'backend-security-audit-'));
+  const npmCli = path.join(directory, 'npm-fixture.cjs');
+  try {
+    writeFileSync(npmCli, `const args=process.argv.slice(2); if(!args.includes('--include=dev') || !args.includes('--package-lock-only')) process.exit(3); console.log(${JSON.stringify(JSON.stringify(response('moderate')))}); process.exitCode=1;`);
+    const result = runDependencyAudit({ npmCli });
+    assert.equal(result.status, 'vulnerable');
+    assert.equal(dependencyAuditExitCode(result), 1);
+  } finally {
+    const relative = path.relative(tempRoot, path.resolve(directory));
+    if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) throw new Error('Unsafe audit fixture cleanup');
+    rmSync(directory, { recursive: true, force: true });
   }
 });

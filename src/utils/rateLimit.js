@@ -8,7 +8,6 @@ const EXPENSIVE_JOB_READ_PATHS = new Set([
   "/api/jobs/search",
   "/api/jobs/meta",
   "/api/jobs/meta/companies",
-  '/api/publishing/build-feed',
 ]);
 
 const normalizeEnvValue = (value) => String(value ?? "").trim().toLowerCase();
@@ -30,6 +29,10 @@ export const getApiRateLimitProfile = (req = {}) => {
 
   if (path.startsWith("/api/auth")) {
     return "auth";
+  }
+
+  if (path === '/api/publishing/build-feed' && isReadOnlyRequest(req)) {
+    return 'publishing';
   }
 
   if (EXPENSIVE_JOB_READ_PATHS.has(path)) {
@@ -104,5 +107,16 @@ export const createRateLimiter = (options, env = process.env) => {
 
   return rateLimit(options);
 };
+
+// A build may paginate up to 500 times. Keep that traffic out of the search
+// quota, with room for retries while still bounding public feed requests.
+export const createPublishingRateLimiter = (env = process.env) => createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 600,
+  skip: req => getApiRateLimitProfile(req) !== 'publishing',
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: createApiRateLimitHandler({ message: 'Too many publishing feed requests from this IP' }),
+}, env);
 
 export { ipKeyGenerator };

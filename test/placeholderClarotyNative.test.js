@@ -112,6 +112,14 @@ test('synthetic Claroty India output preserves all original HTML and unknown ori
   assert.equal(job.applicationSubmitted, false)
 })
 
+test('Claroty preserves an absent native employment type rather than inventing full-time status', async t => {
+  replay(t, row => syntheticIndia(row, [SECOND]))
+  const jobs = await run()
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, SECOND)
+  assert.equal(jobs[0].employmentType, null)
+})
+
 test('Claroty requires the current visible corporate openings handoff', async t => {
   const calls = replay(t, row => row.requestedURL === CAREERS ? replace(row, 'href="/open-positions"', 'href="/retired-openings"') : row)
   await assert.rejects(run(), /handoff|binding|careers/i)
@@ -258,4 +266,107 @@ test('Claroty observes caller cancellation before any HTTP', async t => {
 test('Claroty bounds response bytes before processing source content', async t => {
   replay(t, row => row.requestedURL === CAREERS ? { ...row, body: Buffer.alloc(3 * 1024 * 1024 + 1, 65) } : row)
   await assert.rejects(run(), /byte bound/i)
+})
+
+test('Claroty rejects a shared native office UID resolving to conflicting explicit countries', async t => {
+  replay(t, row => {
+    row = syntheticIndia(row)
+    return row.requestedURL === FIRST_API ? json(row, post => { post.location.location_uid = originalDetail.location.location_uid }) : row
+  })
+  await assert.rejects(run(), /location UID|conflicting country/i)
+})
+
+test('Claroty accepts a valid US Georgia location without confusing the state with a country', async t => {
+  replay(t, row => {
+    if (row.requestedURL === API + 'positions') return json(row, groups => { groups[0].positions[0].location = 'United States' })
+    return row.requestedURL === FIRST_API ? json(row, post => {
+      post.location = { ...post.location, name: 'United States', country: 'US', city: 'Atlanta', state: 'GA', location_uid: 'US.999' }
+    }) : row
+  })
+  const jobs = await run()
+  assert.equal(jobs.length, 0)
+  assert.equal(jobs[PROOF].nativeInventory.fullContentRoles, 26)
+})
+
+test('Claroty keeps an empty served API inventory as a coverage gap without a verified-empty claim', async t => {
+  const calls = replay(t, row => [API + 'positions', API + 'departments', API + 'locations', API + 'types'].includes(row.requestedURL)
+    ? json(row, () => []) : row)
+  const jobs = await run(), evidence = readInventoryEvidence(jobs)
+  assert.equal(calls.length, 14)
+  assert.equal(jobs.length, 0)
+  assert.equal(jobs[PROOF].nativeInventory.observedNativeRoles, 0)
+  assert.equal(evidence.status, 'coverage-gap')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+})
+
+test('Claroty rejects a changed final HTTP origin rather than accepting a redirect as first-party evidence', async t => {
+  replay(t, row => row.requestedURL === CAREERS ? { ...row, finalURL: 'https://other.example/careers' } : row)
+  await assert.rejects(run(), /redirect|identity/i)
+})
+
+test('Claroty cannot qualify its primary client from an inert template', async t => {
+  replay(t, row => {
+    if (row.requestedURL !== LISTING) return row
+    let matches = 0
+    const html = row.body.toString().replace(/<script\b[^>]*\bsrc=(["'])https:\/\/claroty\.com\/build\/assets\/claroty-9xsMoeZ-\.js\1[^>]*>[\s\S]*?<\/script\s*>/g, element => {
+      matches++; return '<template>' + element + '</template>'
+    })
+    assert.equal(matches, 1)
+    return { ...row, body: Buffer.from(html) }
+  })
+  await assert.rejects(run(), /client|module|executable/i)
+})
+
+for (const hidden of ['', ' hidden']) {
+  test('Claroty review rejects an external corporate document base' + hidden, async t => {
+    const calls = replay(t, row => row.requestedURL === CAREERS
+      ? replace(row, '</head>', '<base' + hidden + ' href="https://other.example/" /></head>') : row)
+    await assert.rejects(run(), /base|handoff|binding/i)
+    assert.deepEqual(calls, [CAREERS])
+  })
+}
+
+for (const [city, state] of [['Atlanta', 'GA'], ['London', 'Greater London']]) {
+  test('Claroty review rejects India country contradicting the qualified foreign pair ' + city + '/' + state, async t => {
+    replay(t, row => {
+      row = syntheticIndia(row)
+      return row.requestedURL === FIRST_API ? json(row, post => {
+        post.location = { ...post.location, city, state, location_uid: 'IN.999' }
+      }) : row
+    })
+    await assert.rejects(run(), /country|city|state|geography/i)
+  })
+}
+
+test('Claroty review rejects an explicit foreign subdivision prefix under India country', async t => {
+  replay(t, row => {
+    row = syntheticIndia(row)
+    return row.requestedURL === FIRST_API ? json(row, post => {
+      post.location = { ...post.location, city: 'Atlanta', state: 'US-GA', location_uid: 'IN.999' }
+    }) : row
+  })
+  await assert.rejects(run(), /country|state|geography/i)
+})
+
+test('Claroty accepts a valid India Goa GA pair without mistaking its code for US Georgia', async t => {
+  replay(t, row => {
+    row = syntheticIndia(row)
+    return row.requestedURL === FIRST_API ? json(row, post => {
+      post.location = { ...post.location, city: 'Panaji', state: 'GA' }
+    }) : row
+  })
+  const jobs = await run()
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].city, 'Panaji')
+  assert.equal(jobs[0].state, 'GA')
+})
+
+test('Claroty does not activate a base URL inside an inert corporate template', async t => {
+  replay(t, row => row.requestedURL === CAREERS
+    ? replace(row, '</head>', '<template><base href="https://other.example/" /></template></head>') : row)
+  const jobs = await run()
+  assert.equal(jobs.length, 0)
+  assert.equal(jobs[PROOF].nativeInventory.observedNativeRoles, 26)
 })

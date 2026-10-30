@@ -1,5 +1,5 @@
 import path from 'node:path'
-import vm from 'node:vm'
+import { extractSucuriCookieData } from '../../scraper-support/utils/remoteScriptData.js'
 import { fileURLToPath } from 'node:url'
 
 import { ONWARD_TECHNOLOGIES_CATALOG } from './catalog.js'
@@ -99,16 +99,7 @@ export const extractSucuriCookie = (html) => {
   const scriptMatch = String(html ?? '').match(/<script>([\s\S]*?)<\/script>/i)
   if (!scriptMatch) throw new Error('Onward Technologies Sucuri challenge script not found')
 
-  const context = {
-    document: { cookie: '' },
-    location: { reload() {} },
-    String,
-  }
-
-  vm.createContext(context)
-  vm.runInContext(scriptMatch[1], context, { timeout: 1000 })
-
-  const cookie = String(context.document.cookie ?? '').split(';')[0]
+  const cookie = extractSucuriCookieData(String(html ?? ''))
   if (!/^sucuri_cloudproxy_uuid_[a-z0-9]+=.+$/i.test(cookie)) {
     throw new Error('Onward Technologies Sucuri challenge did not yield the expected cookie')
   }

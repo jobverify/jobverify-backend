@@ -2,6 +2,8 @@ name: Dependency security
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '30 5 * * 1'
   pull_request:
     paths:
       - package.json

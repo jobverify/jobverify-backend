@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import BlacklistedToken from "../models/BlacklistedToken.js";
 import Subscription from "../models/Subscription.js";
-import { getRequestAuthToken } from "../utils/authCookies.js";
+import { getRequestAuthToken, clearAuthCookie } from "../utils/authCookies.js";
 import { applyExpiredAccessDowngrade } from "../utils/accessControl.js";
 
 if (!process.env.JWT_SECRET) {
@@ -16,7 +16,7 @@ if (!process.env.JWT_SECRET) {
 }
 
 // Verifies the Bearer JWT token and requires authorization to proceed.
-export const protect = async (req, res, next) => {
+const requireSession = async (req, res, next, storageFailureStatus = 401) => {
   const token = getRequestAuthToken(req);
 
   if (!token) {
@@ -56,9 +56,23 @@ export const protect = async (req, res, next) => {
 
     next();
   } catch (err) {
-    console.log(err.message);
-    res.status(401).json({ message: "Not authorized, token failed" });
+    // Driver errors can contain the token-bearing query. Keep logs categorical.
+    const invalidToken = err instanceof jwt.JsonWebTokenError
+      || err instanceof jwt.TokenExpiredError || err instanceof jwt.NotBeforeError;
+    const status = invalidToken ? 401 : storageFailureStatus;
+    if (!invalidToken) console.error("Session verification storage failed.");
+    res.status(status).json({ message: status === 401
+      ? "Not authorized, token failed" : "Unable to verify session. Please try again." });
   }
+};
+
+export const protect = (req, res, next) => requireSession(req, res, next);
+
+// Even an expired token or unavailable revocation store must clear this browser.
+// A genuine storage failure must remain distinguishable from expired-session401.
+export const protectLogout = (req, res, next) => {
+  clearAuthCookie(res);
+  return requireSession(req, res, next, 500);
 };
 
 // Optionally extracts the authenticated user from JWT without blocking if absent.
@@ -86,8 +100,8 @@ export const optionalProtect = async (req, res, next) => {
           req.user = user;
         }
       }
-    } catch (err) {
-      console.log("Optional auth failed:", err.message);
+    } catch {
+      console.error("Optional authentication failed.");
     }
   }
   next();

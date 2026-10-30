@@ -13,13 +13,14 @@ export function interpretDependencyAudit({ stdout, status, error } = {}) {
   let report;
   try { report = JSON.parse(String(stdout || '')); } catch { return unavailable('invalid_audit_response'); }
   const counts = report?.metadata?.vulnerabilities;
-  if (report.error || report.auditReportVersion !== 2 || !counts
+  if (!report || report.error || report.auditReportVersion !== 2 || !counts
     || !severities.every(level => Number.isInteger(counts[level]) && counts[level] >= 0)
     || !Number.isInteger(counts.total) || counts.total !== severities.reduce((sum, level) => sum + counts[level], 0)
     || !report.vulnerabilities || typeof report.vulnerabilities !== 'object' || Array.isArray(report.vulnerabilities)
     || ![0, 1].includes(status)) return unavailable('advisory_registry_unavailable');
   const entries = Object.entries(report.vulnerabilities);
-  if (entries.length !== counts.total || entries.some(([, value]) => !value || !severities.includes(value.severity))
+  if (entries.length !== counts.total || entries.some(([, value]) => !value || !severities.includes(value.severity)
+      || !Array.isArray(value.via) || value.via.some(via => typeof via !== 'string' && (!via || typeof via !== 'object' || Array.isArray(via))))
     || severities.some(level => entries.filter(([, value]) => value.severity === level).length !== counts[level])) {
     return unavailable('incomplete_audit_response');
   }
@@ -45,7 +46,7 @@ export function runDependencyAudit({ npmCli = process.env.npm_execpath } = {}) {
     path.resolve(path.dirname(process.execPath), '../lib/node_modules/npm/bin/npm-cli.js')];
   const cli = candidates.find(candidate => candidate && fs.existsSync(candidate));
   if (!cli) return unavailable('npm_cli_unavailable');
-  const execution = spawnSync(process.execPath, [cli, 'audit', '--package-lock-only', '--json',
+  const execution = spawnSync(process.execPath, [cli, 'audit', '--package-lock-only', '--include=dev', '--json',
     '--audit-level=moderate', '--fetch-retries=0', '--fetch-timeout=15000', '--cache=.cache/npm-audit'], {
     encoding: 'utf8', windowsHide: true, timeout: 45000, maxBuffer: 8 * 1024 * 1024,
   });

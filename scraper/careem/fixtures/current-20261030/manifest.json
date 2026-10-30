@@ -1,0 +1,98 @@
+{
+  "source": "careem",
+  "capturedAt": "2026-10-30T05:41:43.707Z",
+  "purpose": "Full saved anonymous research responses for regression replay; these are not live runtime validation.",
+  "syntheticData": false,
+  "requests": [
+    {
+      "source": "careem",
+      "url": "https://www.careem.com/en-AE/careers/",
+      "companyDomain": "careem.com",
+      "companyName": "Careem",
+      "purpose": "Current catalog primary careers URL; research only, no current native binding assumed",
+      "index": 5,
+      "requestedURL": "https://www.careem.com/en-AE/careers/",
+      "finalURL": "https://www.careem.com/en-AE/careers/",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "text/html",
+        "location": null
+      },
+      "bodySHA256": "e170bf74e5e97dcac6a416a86a53fe85c48071eab8fa26035113ce7438a7c98f",
+      "bodyBytes": 413218,
+      "filename": "01-e170bf74e5e97dcac6a416a86a53fe85c48071eab8fa26035113ce7438a7c98f.txt.gz",
+      "requestedAt": "2026-10-30T04:55:11.166Z",
+      "completedAt": "2026-10-30T04:55:11.958Z",
+      "provenance": "native-batch13-primary-research-v1/005-careem-e170bf74e5e97dcac6a416a86a53fe85c48071eab8fa26035113ce7438a7c98f.txt.gz"
+    },
+    {
+      "source": "careem",
+      "url": "https://jobs.careem.com/",
+      "companyDomain": "careem.com",
+      "companyName": "Careem",
+      "observedOn": "https://www.careem.com/en-AE/careers/",
+      "purpose": "Exact current primary public handoff or listed role link",
+      "index": 2,
+      "requestedURL": "https://jobs.careem.com/",
+      "finalURL": "https://jobs.careem.com/",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "text/html; charset=UTF-8",
+        "location": null
+      },
+      "bodySHA256": "a72abeaf335d86f58d8b852bf7ae05f1232bdd65c02aba1ba66f3cbc878892ca",
+      "bodyBytes": 8790,
+      "filename": "02-a72abeaf335d86f58d8b852bf7ae05f1232bdd65c02aba1ba66f3cbc878892ca.txt.gz",
+      "requestedAt": "2026-10-30T05:04:18.785Z",
+      "completedAt": "2026-10-30T05:04:20.900Z",
+      "provenance": "native-batch13-observed-research-v1/002-careem-a72abeaf335d86f58d8b852bf7ae05f1232bdd65c02aba1ba66f3cbc878892ca.txt.gz"
+    },
+    {
+      "source": "careem",
+      "url": "https://jobs.careem.com/_next/static/chunks/pages/_app-2676366f2f21b502.js",
+      "companyDomain": "careem.com",
+      "companyName": "Careem",
+      "observedOn": "https://jobs.careem.com/",
+      "purpose": "Current explicitly advertised recruiting client asset; inspect as data only",
+      "index": 10,
+      "requestedURL": "https://jobs.careem.com/_next/static/chunks/pages/_app-2676366f2f21b502.js",
+      "finalURL": "https://jobs.careem.com/_next/static/chunks/pages/_app-2676366f2f21b502.js",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "text/javascript",
+        "location": null
+      },
+      "bodySHA256": "c2e96bea2ce7c3977f431abe19354a288b796d571c75d201a5123fdf992fd247",
+      "bodyBytes": 22309,
+      "filename": "03-c2e96bea2ce7c3977f431abe19354a288b796d571c75d201a5123fdf992fd247.txt.gz",
+      "requestedAt": "2026-10-30T05:12:44.072Z",
+      "completedAt": "2026-10-30T05:12:44.783Z",
+      "provenance": "native-batch13-client-research-v1/010-careem-c2e96bea2ce7c3977f431abe19354a288b796d571c75d201a5123fdf992fd247.txt.gz"
+    },
+    {
+      "source": "careem",
+      "url": "https://boards-api.greenhouse.io/v1/boards/careem/jobs?content=true",
+      "companyDomain": "greenhouse.io",
+      "observedOn": "https://jobs.careem.com/_next/static/chunks/pages/_app-2676366f2f21b502.js",
+      "purpose": "Documented full-content expansion of the exact current public board; same established API used by existing parser",
+      "index": 1,
+      "requestedURL": "https://boards-api.greenhouse.io/v1/boards/careem/jobs?content=true",
+      "finalURL": "https://boards-api.greenhouse.io/v1/boards/careem/jobs?content=true",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "location": null
+      },
+      "bodySHA256": "3636d6cd01341ef91b3b15a6c2644444da53ba78393508c1daca76319686f118",
+      "bodyBytes": 107257,
+      "filename": "04-3636d6cd01341ef91b3b15a6c2644444da53ba78393508c1daca76319686f118.txt.gz",
+      "requestedAt": "2026-10-30T05:33:15.327Z",
+      "completedAt": "2026-10-30T05:33:16.823Z",
+      "provenance": "native-batch13-greenhouse-research-v1/001-careem-3636d6cd01341ef91b3b15a6c2644444da53ba78393508c1daca76319686f118.txt.gz"
+    }
+  ]
+}

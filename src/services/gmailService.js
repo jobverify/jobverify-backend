@@ -5,6 +5,7 @@ import GmailOAuthState from '../models/GmailOAuthState.js';
 import Campaign from '../models/Campaign.js';
 import User from '../models/User.js';
 import { APIError } from '../middleware/errorHandler.js';
+import { isProductionEnvironment } from '../utils/runtimeConfig.js';
 
 const SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send';
 const hash = value => createHash('sha256').update(String(value)).digest('hex');
@@ -34,7 +35,7 @@ export function createGmailClient() {
   const { GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REDIRECT_URI } = process.env;
   if (!GMAIL_CLIENT_ID || !GMAIL_CLIENT_SECRET || !GMAIL_REDIRECT_URI) throw new APIError(503, 'Gmail OAuth configuration is not available.');
   const redirect = new URL(GMAIL_REDIRECT_URI);
-  if (redirect.protocol !== 'https:' && !(process.env.NODE_ENV !== 'production' && ['localhost', '127.0.0.1'].includes(redirect.hostname))) throw new APIError(503, 'Gmail OAuth redirect configuration is invalid.');
+  if (redirect.protocol !== 'https:' && !(!isProductionEnvironment() && ['localhost', '127.0.0.1'].includes(redirect.hostname))) throw new APIError(503, 'Gmail OAuth redirect configuration is invalid.');
   encryptionKey();
   return new OAuth2Client(GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REDIRECT_URI);
 }

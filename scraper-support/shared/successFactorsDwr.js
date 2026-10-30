@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import vm from 'node:vm'
+import { parseDwrData } from '../utils/remoteScriptData.js'
 
 import { withRetry } from '../utils/retry.js'
 
@@ -262,20 +262,10 @@ export const extractDwrPayload = (
   const rawText = String(responseText ?? '')
   if (!hasSuccessFactorsDwrResponseSignal(rawText)) return null
 
-  let callbackValue = null
+  let callbackValue
   const executable = rawText.replace(/^\s*throw 'allowScriptTagRemoting is false\.';\s*/i, '')
-  const sandbox = {
-    dwr: {
-      engine: {
-        _remoteHandleCallback(_batchId, _callId, value) {
-          callbackValue = value
-        },
-      },
-    },
-  }
-
   try {
-    vm.runInNewContext(executable, sandbox, { timeout: 1000 })
+    callbackValue = parseDwrData(executable)
   } catch (error) {
     throw new Error(parseErrorMessage, { cause: error })
   }
