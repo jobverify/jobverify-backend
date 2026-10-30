@@ -4,6 +4,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { isProductionEnvironment } from "../utils/runtimeConfig.js";
 import { isDeepStrictEqual } from "node:util";
 import mongoose from "mongoose";
 import Job from "../models/Job.js";
@@ -831,7 +832,7 @@ const scheduleWorkdayApplicationAvailabilityRefresh = (job = {}) => {
     try {
       await persistWorkdayApplicationAvailability(job, nextState);
     } catch (error) {
-      if (process.env.NODE_ENV !== "production") {
+      if (!isProductionEnvironment()) {
         console.warn("Unable to persist Workday application availability", error);
       }
     }
@@ -1695,7 +1696,7 @@ export const getJobSearch = async (req, res) => {
       : null;
 
     res.set("Server-Timing", `total;dur=${queryMs}`);
-    if (process.env.NODE_ENV !== "production") {
+    if (!isProductionEnvironment()) {
       console.info(JSON.stringify({
         event: "job_search",
         requestId,

@@ -12,6 +12,7 @@ import { greenhouseUsWorksiteScope } from './greenhouseWorksiteCountry.js'
 import { identifyPublicAtsBoard } from './publicAtsIdentity.js'
 import { reconcileGreenhouseOfficeCountries, greenhouseOfficeCountryForRole, withGreenhouseOfficeCountries, greenhouseOfficeProofReason } from './greenhouseOfficeCountry.js'
 import { isGreenhouseProspectPost, greenhouseProspectPostIds, withGreenhousePostingKind, excludeGreenhouseProspects, greenhouseProspectReason } from './greenhouseProspects.js'
+import { decodeNativeEntities } from './activeNativeHtml.js'
 
 // Generic remote work is not evidence that an employer accepts applicants in India.
 const INDIA_LOCATION = NATIVE_INDIA_LOCATION
@@ -255,7 +256,16 @@ export const createPublishingGapAtsScraper = (provider) => ({
         const nativeById = new Map(records.map(record => [String(record.id), record]))
         mapped = mapJobsWithInventoryEvidence(mapped, job => {
           const native = nativeById.get(String(job.jobId))
-          return { ...job, sourceDescription: native?.content ?? job.sourceDescription }
+          const raw = native?.content
+          if (typeof raw !== 'string') return { ...job, nativeDescriptionRaw: raw ?? null,
+            nativeSourceRecord: native ? structuredClone(native) : null }
+          // The public API commonly wraps HTML in one entity-encoding layer.
+          // Existing HTML must keep its inner literal entities (e.g. examples).
+          const alreadyHTML = /<\/?[a-z][a-z\d:-]*(?:\s[^<>]*|\/?)>/i.test(raw)
+          const encodedHTML = /(?:&lt;|&#0*60;|&#x0*3c;)\/?[a-z][a-z\d:-]*(?:\s|&gt;|&#0*62;|&#x0*3e;)/i.test(raw)
+          const description = !alreadyHTML && encodedHTML ? decodeNativeEntities(raw) : raw
+          return { ...job, sourceDescription: description, jobDescription: description,
+            nativeDescriptionHTML: description, nativeDescriptionRaw: raw, nativeSourceRecord: structuredClone(native) }
         })
       }
     }

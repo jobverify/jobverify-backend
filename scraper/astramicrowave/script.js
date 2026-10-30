@@ -2,7 +2,7 @@ import http from 'node:http'
 import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { runInNewContext } from 'node:vm'
+import { extractSucuriCookieData } from '../../scraper-support/utils/remoteScriptData.js'
 
 import { ASTRA_MICROWAVE_CATALOG } from './catalog.js'
 
@@ -132,10 +132,17 @@ export const isSucuriJavascriptGatePage = (page = {}) => {
   const html = String(page.html ?? '')
   const normalized = normalizeWhitespace(html)
 
-  return Number(page.status) === 307
+  const gated = Number(page.status) === 307
     && /<title>\s*You are being redirected\.\.\.\s*<\/title>/i.test(html)
     && normalized.includes('Javascript is required. Please enable javascript before you are allowed to see this page.')
     && !pageExposesPublicJobListings(html)
+  if (gated) {
+    const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)]
+    // Preserve the captured non-executable gate marker. An actual challenge
+    // must match the bounded supported format before it can be classified.
+    if (scripts.length !== 1 || scripts[0][1].trim() !== 'Sucuri CloudProxy') extractSucuriCookieData(html)
+  }
+  return gated
 }
 
 const isKnownBlockedOrGatedPage = (page = {}) =>
@@ -299,26 +306,7 @@ const extractSucuriChallengeCookie = (html = '') => {
   const match = String(html ?? '').match(/\bS='([^']+)'/)
   if (!match) return null
 
-  try {
-    const decoded = Buffer.from(match[1], 'base64').toString('utf8')
-    const sandbox = {
-      document: { cookie: '' },
-      location: { reload() {} },
-      navigator: {},
-      window: {},
-      self: {},
-      String,
-    }
-
-    sandbox.window = sandbox
-    sandbox.self = sandbox
-
-    runInNewContext(decoded, sandbox, { timeout: 1000 })
-
-    return String(sandbox.document.cookie ?? '').split(';', 1)[0]?.trim() || null
-  } catch {
-    return null
-  }
+  return extractSucuriCookieData(String(html ?? ''))
 }
 
 const fetchPageWithFirewallHandling = async (url) => {

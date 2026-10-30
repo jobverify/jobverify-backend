@@ -17,7 +17,7 @@ import {
   verifyEmail,
   resendVerification,
 } from "../controllers/authController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, protectLogout } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
 import { requireTurnstileCaptcha } from "../middleware/turnstileCaptcha.js";
 import { createRateLimiter } from "../utils/rateLimit.js";
@@ -103,7 +103,7 @@ router.post(
   requireTurnstileCaptcha(),
   login,
 );
-router.post("/logout", protect, logout);
+router.post("/logout", protectLogout, logout);
 router.post('/change-password', protect, loginLimiter, changePasswordValidation, validateRequest, changePassword);
 router.get("/verify-email", redirectVerifyEmail);
 router.post("/verify-email", verifyEmailValidation, validateRequest, verifyEmail);

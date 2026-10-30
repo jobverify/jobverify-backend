@@ -44,6 +44,11 @@ test('Gmail read consent, acknowledgement deduplication, ambiguous review and di
   const receipt = raw('receipt-1', 'We have received your application for Backend Engineer at Example Corp.');
   await mailbox.ingestApplicationMessage(connection, receipt);
   await mailbox.ingestApplicationMessage(connection, receipt);
+  assert.equal((await Application.findById(application._id)).status, 'opened', 'Unsigned display headers and matching text must not confirm an application');
+  const unverified = await Message.findOne({ messageId: 'receipt-1' }).lean();
+  assert.equal(unverified.application, null, 'Suggestions must not bind pending mail');
+  assert.equal(unverified.status, 'pending');
+  await mailbox.resolveApplicationMail(user._id, unverified._id, { applicationId: String(application._id) });
   const confirmed = await Application.findById(application._id).lean();
   assert.equal(confirmed.status, 'applied'); assert.equal(confirmed.confirmationSource, 'email'); assert.equal(confirmed.evidence.length, 1);
   assert.equal(await Message.countDocuments({ user: user._id }), 1);
@@ -67,6 +72,7 @@ test('Gmail read consent, acknowledgement deduplication, ambiguous review and di
         assert.equal(url.searchParams.get('pageToken'), 'page-two');
         return new Response(JSON.stringify({ messages: [] }));
       }
+      assert.equal(url.searchParams.get('format'), 'raw', 'Verification must fetch original RFC5322 bytes');
       return new Response(JSON.stringify(receipt));
     },
   };
@@ -75,6 +81,15 @@ test('Gmail read consent, acknowledgement deduplication, ambiguous review and di
   assert.equal((await mailbox.processApplicationMailboxQueue({ ...syncOptions, now: new Date(scanStart.getTime() + 2000) })).hasMore, false);
   assert.equal((await Mailbox.findById(connection._id)).lastSyncedAt.toISOString(), scanStart.toISOString());
   assert.equal(await Message.countDocuments({ user: user._id }), 2, 'Paging and overlap must not duplicate acknowledgements');
+  await Mailbox.updateOne({ _id: connection._id }, { $set: { nextSyncAt: new Date(0) } });
+  const bounded = await mailbox.processApplicationMailboxQueue({ ...syncOptions, now: new Date(scanStart.getTime() + 3000), request: async address => {
+    const url = new URL(address);
+    if (url.pathname.endsWith('/messages')) return new Response(JSON.stringify({ messages: [{ id: 'oversized' }, { id: 'bounded-receipt' }] }));
+    if (url.pathname.endsWith('/oversized')) return new Response(new Uint8Array(1000000));
+    return new Response(JSON.stringify({ ...receipt, id: 'bounded-receipt' }));
+  } });
+  assert.equal(bounded.failed, undefined, 'An oversized message must not permanently block the mailbox cursor');
+  assert.ok(await Message.exists({ messageId: 'bounded-receipt' }));
   await mailbox.disconnectApplicationMailbox(user._id);
   await assert.rejects(mailbox.ingestApplicationMessage(connection, raw('after-disconnect', 'Thank you for applying to Example Corp.')));
   assert.equal(await Message.countDocuments({ messageId: 'after-disconnect' }), 0);

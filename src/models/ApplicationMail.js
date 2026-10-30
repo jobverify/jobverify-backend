@@ -13,6 +13,11 @@ const schema = new Schema({
   application: { type: Schema.Types.ObjectId, ref: 'Application', default: null },
   candidates: [{ type: Schema.Types.ObjectId, ref: 'Application' }],
   matchReason: { type: String, default: '' },
+  // Internal evidence only; persisted trust is never authorization for a retry.
+  trust: { type: new Schema({
+    status: { type: String, enum: ['pending', 'authenticated'] }, reason: { type: String, maxlength: 80 },
+    proof: { type: String, maxlength: 64 }, receipt: { type: String, maxlength: 64 }, verifiedAt: Date,
+  }, { _id: false }), select: false },
 }, { timestamps: true });
 // Reconnecting the same mailbox must not replay old evidence.
 schema.index({ user: 1, mailboxEmail: 1, messageId: 1 }, { unique: true });

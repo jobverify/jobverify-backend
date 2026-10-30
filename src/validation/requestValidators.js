@@ -3,7 +3,7 @@ import {
   isAllowedAccountEmail,
   isStrongPassword,
   normalizeEmailAddress,
-  PASSWORD_MIN_LENGTH,
+  PASSWORD_POLICY_MESSAGE,
 } from "../utils/authSecurity.js";
 import { PREFERRED_JOB_TYPES } from "../constants/preferredJobTypes.js";
 import { ACCESS_ROLES, PLAN_IDS } from "../constants/accessPlans.js";
@@ -286,7 +286,7 @@ export const registerValidation = [
     }
     if (!isStrongPassword(value)) {
       throw new Error(
-        `Password must be at least ${PASSWORD_MIN_LENGTH} characters and include uppercase, lowercase, and a number.`,
+        PASSWORD_POLICY_MESSAGE,
       );
     }
     return true;
@@ -338,7 +338,7 @@ export const verifyEmailValidation = [
     }
     if (!isStrongPassword(value)) {
       throw new Error(
-        `Password must be at least ${PASSWORD_MIN_LENGTH} characters and include uppercase, lowercase, and a number.`,
+        PASSWORD_POLICY_MESSAGE,
       );
     }
     return true;
@@ -357,7 +357,7 @@ export const resetPasswordValidation = [
     }
     if (!isStrongPassword(value)) {
       throw new Error(
-        `Password must be at least ${PASSWORD_MIN_LENGTH} characters and include uppercase, lowercase, and a number.`,
+        PASSWORD_POLICY_MESSAGE,
       );
     }
     return true;
@@ -368,7 +368,7 @@ export const changePasswordValidation = [
   body('oldPassword').isString().bail().notEmpty().withMessage('Old password is required.'),
   body('newPassword').custom((value) => {
     if (typeof value !== 'string' || !isStrongPassword(value)) {
-      throw new Error(`Password must be at least ${PASSWORD_MIN_LENGTH} characters and include uppercase, lowercase, and a number.`);
+      throw new Error(PASSWORD_POLICY_MESSAGE);
     }
     return true;
   }),

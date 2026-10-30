@@ -8,6 +8,7 @@ import User from '../models/User.js';
 import { APIError } from '../middleware/errorHandler.js';
 import { createGmailClient, encryptRefreshToken, decryptRefreshToken, validEmail } from './gmailService.js';
 import { currentMessageText, matchAcknowledgement } from './applicationMailMatching.js';
+import { authenticateApplicationMessage, inspectApplicationRaw, MAX_APPLICATION_RAW_BYTES } from './applicationMailAuthentication.js';
 import { recordApplicationEvidence } from './applicationService.js';
 
 const READ_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
@@ -98,20 +99,41 @@ export function parseApplicationMessage(raw) {
   return { subject: header('subject').slice(0, 500), sender: header('from').slice(0, 500), text, links, receivedAt: new Date(Number(raw.internalDate)) };
 }
 
-export async function ingestApplicationMessage(connection, raw) {
+export async function ingestApplicationMessage(connection, raw, authenticationOptions) {
   await requireConnection(connection);
   if (typeof raw.id !== 'string' || !raw.id || raw.id.length > 200 || raw.labelIds?.some(label => ['SENT', 'DRAFT', 'SPAM', 'TRASH'].includes(label))) return null;
-  const message = parseApplicationMessage(raw);
-  if (!Number.isFinite(message.receivedAt.getTime()) || message.receivedAt > new Date(Date.now() + 300000)
-    || message.sender.toLowerCase().includes(connection.email.toLowerCase())) return null;
+  // FULL payloads remain usable as owner-review suggestions for legacy callers,
+  // but only original RAW bytes can authorize an automatic mutation.
+  let message; let reviewReason = '';
+  if (raw.raw !== undefined) {
+    try {
+      const inspected = inspectApplicationRaw(raw);
+      message = inspected.message;
+      if (inspected.reviewRequired) reviewReason = inspected.reason;
+    } catch { return null; }
+  } else message = parseApplicationMessage(raw);
+  if (!Number.isFinite(message.receivedAt.getTime()) || message.receivedAt > new Date(Date.now() + 300000)) {
+    // Gmail's timestamp can retain a pending review when the sender's signed
+    // Date is unusable. It must never repair a failed authentication decision.
+    if (raw.raw === undefined || typeof raw.internalDate !== 'string' || !/^\d{1,16}$/.test(raw.internalDate)) return null;
+    const providerDate = new Date(Number(raw.internalDate));
+    if (!Number.isFinite(providerDate.getTime()) || providerDate > new Date(Date.now() + 300000)) return null;
+    message = { ...message, receivedAt: providerDate };
+    reviewReason = 'message_date_review';
+  }
+  if (message.sender.toLowerCase().includes(connection.email.toLowerCase())) return null;
   const applications = await Application.find({ user: connection.user, firstOpenedAt: { $lte: new Date(message.receivedAt.getTime() + 86400000) } }).select('jobSnapshot firstOpenedAt').lean();
-  const match = matchAcknowledgement(message, applications);
+  let match = matchAcknowledgement(message, applications);
+  if (!match.acknowledgement && reviewReason) match = { acknowledgement: true, applicationId: null, candidates: [], reason: 'needs_review' };
   if (!match.acknowledgement) return null;
+  const authentication = reviewReason ? { message, applicationId: null, trust: { status: 'pending', reason: reviewReason } }
+    : await authenticateApplicationMessage(raw, connection.email, applications, authenticationOptions);
+  await requireConnection(connection);
   const filter = { user: connection.user, mailboxEmail: connection.email, messageId: raw.id };
   let row;
   try { row = await ApplicationMail.findOneAndUpdate(filter, { $setOnInsert: { ...filter, connectionVersion: connection.connectionVersion,
     threadId: String(raw.threadId || '').slice(0, 200), subject: message.subject, sender: message.sender, excerpt: message.text.slice(0, 500), receivedAt: message.receivedAt,
-    status: 'pending', application: match.applicationId, candidates: match.candidates, matchReason: match.reason,
+    status: 'pending', application: null, candidates: match.candidates, matchReason: match.reason, trust: authentication.trust,
   } }, { upsert: true, new: true, runValidators: true }); }
   catch (error) { if (error.code !== 11000) throw error; row = await ApplicationMail.findOne(filter); }
   try { await requireConnection(connection); }
@@ -119,22 +141,47 @@ export async function ingestApplicationMessage(connection, raw) {
     if (!await User.exists({ _id: connection.user, outreachDeletingAt: null })) await ApplicationMail.deleteMany({ user: connection.user });
     throw error;
   }
-  if (row.status === 'pending' && row.application) await linkMessage(row, row.application, connection);
+  // A legacy guessed binding is a suggestion, not authority. All new links are
+  // transactional, so this conditional write cannot undo an explicit owner link.
+  if (row.status === 'pending') {
+    row = await ApplicationMail.findOneAndUpdate({ _id: row._id, status: 'pending', application: row.application }, {
+      $set: { application: null, trust: authentication.trust }, ...(row.application ? { $addToSet: { candidates: row.application } } : {}),
+    }, { new: true }) || await ApplicationMail.findById(row._id);
+  }
+  if (row?.status === 'pending' && authentication.applicationId) await linkMessage(row, authentication.applicationId, connection, authentication);
   return row;
 }
 
-async function linkMessage(row, applicationId, connection) {
+async function linkMessage(row, applicationId, connection, authentication) {
   await requireConnection(connection);
-  if (!await Application.exists({ _id: applicationId, user: row.user })) throw new APIError(404, 'Application not found.');
-  const bound = await ApplicationMail.findOneAndUpdate({ _id: row._id, user: row.user, status: 'pending',
-    $or: [{ application: null }, { application: applicationId }],
-  }, { $set: { application: applicationId } }, { new: true });
-  if (!bound) throw new APIError(409, 'This acknowledgement has already been handled.');
-  const application = await recordApplicationEvidence(row.user, applicationId, { key: `gmail:${row._id}`, source: 'email', observedAt: row.receivedAt,
-    summary: row.subject || row.excerpt, reference: String(row._id) });
-  if (!application) throw new APIError(404, 'Application not found.');
-  await ApplicationMail.updateOne({ _id: row._id, user: row.user, status: 'pending' }, { $set: { status: 'linked', application: applicationId } });
-  return application;
+  const session = await ApplicationMail.db.startSession();
+  try {
+    return await session.withTransaction(async () => {
+      // Write fence conflicts with disconnect/reconnect, including after slow
+      // DNS/crypto work, and commits atomically with application evidence.
+      const live = await ApplicationMailbox.updateOne(liveFilter(connection), { $inc: { __v: 1 } }, { session });
+      if (!live.matchedCount) throw new APIError(409, 'Mailbox connection changed. Reconnect to continue.');
+      if (authentication && (authentication.applicationId !== String(applicationId) || authentication.trust.status !== 'authenticated'
+        || !(authentication.trust.verifiedAt instanceof Date) || Date.now() - authentication.trust.verifiedAt.getTime() > 10000)) {
+        throw new APIError(409, 'Email authentication expired. Sync this mailbox again.');
+      }
+      if (!await Application.exists({ _id: applicationId, user: row.user }).session(session)) throw new APIError(404, 'Application not found.');
+      const bound = await ApplicationMail.findOneAndUpdate({ _id: row._id, user: row.user, status: 'pending' }, {
+        $set: { application: applicationId, ...(authentication ? { trust: authentication.trust, subject: authentication.message.subject,
+          sender: authentication.message.sender, excerpt: authentication.message.text.slice(0, 500), receivedAt: authentication.message.receivedAt } : {}) },
+      }, { new: true, session });
+      if (!bound) throw new APIError(409, 'This acknowledgement has already been handled.');
+      // Reuse an earlier receipt's existing evidence key, preserving legacy keys.
+      const prior = authentication && await ApplicationMail.findOne({ user: row.user, mailboxEmail: row.mailboxEmail,
+        status: 'linked', application: applicationId, 'trust.receipt': authentication.trust.receipt }).session(session).lean();
+      const evidenceRow = prior || row;
+      const application = await recordApplicationEvidence(row.user, applicationId, { key: `gmail:${evidenceRow._id}`, source: 'email', observedAt: bound.receivedAt,
+        summary: bound.subject || bound.excerpt, reference: String(evidenceRow._id) }, { session });
+      if (!application) throw new APIError(404, 'Application not found.');
+      await ApplicationMail.updateOne({ _id: row._id, user: row.user, status: 'pending' }, { $set: { status: 'linked', application: applicationId } }, { session });
+      return application;
+    });
+  } finally { await session.endSession(); }
 }
 
 export async function resolveApplicationMail(user, id, { applicationId, dismiss = false } = {}) {
@@ -142,7 +189,9 @@ export async function resolveApplicationMail(user, id, { applicationId, dismiss 
   const row = await ApplicationMail.findOne({ _id: id, user, status: 'pending' });
   if (!row) throw new APIError(404, 'Pending acknowledgement not found.');
   if (dismiss) {
-    const result = await ApplicationMail.updateOne({ _id: id, user, status: 'pending', application: null }, { $set: { status: 'dismissed' } });
+    // Legacy pending rows may contain a guess. A concurrent explicit Link uses a
+    // transaction on this row, so it cannot be overwritten by this dismissal.
+    const result = await ApplicationMail.updateOne({ _id: id, user, status: 'pending' }, { $set: { status: 'dismissed', application: null } });
     if (!result.matchedCount) throw new APIError(409, 'This acknowledgement is already being linked.');
     return { dismissed: true };
   }
@@ -192,14 +241,36 @@ export async function processApplicationMailboxQueue({ clientFactory = createGma
       for (const [key, value] of Object.entries(params)) if (value !== '') url.searchParams.set(key, value);
       const response = await request(url.href, { headers: { Authorization: `Bearer ${token}` }, redirect: 'error', signal: AbortSignal.timeout(15000) });
       if (!response.ok) throw Object.assign(new Error('Mailbox sync failed.'), { status: response.status });
-      return response.json();
+      // Bound JSON before parsing: Gmail RAW contains base64 plus small metadata.
+      const limit = Math.ceil(MAX_APPLICATION_RAW_BYTES * 4 / 3) + 32768;
+      const exceedsLimit = () => Object.assign(new Error('Mailbox response exceeds limit.'), { code: 'MAILBOX_RESPONSE_LIMIT' });
+      if (Number(response.headers.get('content-length')) > limit) { await response.body?.cancel().catch(() => {}); throw exceedsLimit(); }
+      const chunks = []; let size = 0;
+      if (!response.body) throw new Error('Mailbox response missing.');
+      const reader = response.body.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          size += value.byteLength;
+          if (size > limit) throw exceedsLimit();
+          chunks.push(Buffer.from(value));
+        }
+      } finally { await reader.cancel().catch(() => {}); }
+      return JSON.parse(Buffer.concat(chunks, size).toString('utf8'));
     }
     const list = await get('messages', { maxResults: '20', pageToken: connection.pageToken || '',
       q: `after:${scanAfter} -in:sent -in:drafts -in:spam -in:trash {"thank you for applying" "thanks for applying" "thank you for your application" "received your application" "application received" "application submitted" "application has been received" "application has been submitted"}` });
     for (const item of (list.messages || []).slice(0, 20)) {
       if (typeof item.id !== 'string' || !/^[a-zA-Z0-9_-]{1,200}$/.test(item.id)) continue;
-      const raw = await get(`messages/${encodeURIComponent(item.id)}`, { format: 'full' });
-      await ingestApplicationMessage(connection, raw);
+      try {
+        const raw = await get(`messages/${encodeURIComponent(item.id)}`, { format: 'raw' });
+        await ingestApplicationMessage(connection, raw);
+      } catch (error) {
+        // One oversized message must not poison the cursor and indefinitely
+        // prevent later receipts from being considered. Other failures retry.
+        if (error.code !== 'MAILBOX_RESPONSE_LIMIT') throw error;
+      }
     }
     const more = typeof list.nextPageToken === 'string' && list.nextPageToken.length < 4096 ? list.nextPageToken : '';
     await ApplicationMailbox.updateOne(lease, { $set: { pageToken: more, error: '', leaseToken: '', leaseUntil: new Date(0),

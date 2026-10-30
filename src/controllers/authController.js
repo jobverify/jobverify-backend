@@ -61,6 +61,10 @@ const RESEND_COOLDOWN_MS = 60 * 1000;
 const RESEND_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const RESEND_LIMIT_REACHED_MESSAGE = "You have used both verification resends. Please try again tomorrow.";
 
+// No account uses this hash. Keep failed unknown/passwordless-account requests
+// on the same bcrypt work path as ordinary failed password authentication.
+const LOGIN_DUMMY_HASH = "$2b$10$kj5DU.NpJDPidelRRzK.suchJqPe/5RuUp7/pqT1YqT4GEopVVpje";
+
 // Generates a JWT token valid for 7 days.
 const generateToken = (id, role, sessionVersion = 0) => {
   return jwt.sign({ id, role, sessionVersion }, process.env.JWT_SECRET, {
@@ -103,6 +107,14 @@ const buildGoogleMetadata = (identity, currentGoogle = {}) => ({
 });
 
 const issueAuthenticatedSession = async (user, res, successMessage = "Logged in successfully") => {
+  if (!user.isNew) {
+    const sessionVersion = user.sessionVersion ?? 0;
+    // Mongoose merges Document.$where into the save filter. Only the credential
+    // state that was authenticated may complete this sign-in.
+    user.$where = { ...user.$where, password: user.password ?? null,
+      sessionVersion: sessionVersion === 0 ? { $in: [0, null] } : sessionVersion,
+      deactivated: { $ne: true } };
+  }
   const accessChanged = applyExpiredAccessDowngrade(user);
   if (accessChanged) {
     await Subscription.updateOne(
@@ -112,7 +124,12 @@ const issueAuthenticatedSession = async (user, res, successMessage = "Logged in 
   }
 
   user.lastLoginAt = new Date();
-  await user.save();
+  try {
+    await user.save();
+  } catch (error) {
+    if (!['DocumentNotFoundError', 'VersionError'].includes(error.name)) throw error;
+    return res.status(401).json({ code: 401, success: false, message: 'Invalid credentials' });
+  }
 
   const token = generateToken(user._id, user.role, user.sessionVersion ?? 0);
   setAuthCookie(res, token);
@@ -458,12 +475,32 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    user.password = await bcrypt.hash(password, 10);
-    user.passwordChangedAt = new Date();
-    user.sessionVersion = (user.sessionVersion ?? 0) + 1;
-    user.resetPasswordTokenHash = null;
-    user.resetPasswordExpiresAt = null;
-    await user.save();
+    const sessionVersion = user.sessionVersion ?? 0;
+    const passwordHash = await bcrypt.hash(password, 10);
+    // Consume the still-live token with the credentials we read. A reset,
+    // password change or token rotation during hashing must win atomically.
+    const updated = await User.findOneAndUpdate({
+      _id: user._id,
+      resetPasswordTokenHash: hashVerificationToken(token),
+      resetPasswordExpiresAt: { $gt: new Date() },
+      password: user.password ?? null,
+      sessionVersion: sessionVersion === 0 ? { $in: [0, null] } : sessionVersion,
+    }, {
+      $set: {
+        password: passwordHash,
+        passwordChangedAt: new Date(),
+        sessionVersion: sessionVersion + 1,
+        resetPasswordTokenHash: null,
+        resetPasswordExpiresAt: null,
+      },
+    }, { new: true });
+    if (!updated) {
+      return res.status(400).json({
+        code: 400,
+        success: false,
+        message: "Password reset link is invalid or has expired.",
+      });
+    }
 
     return res.status(200).json({
       code: 200,
@@ -542,8 +579,8 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       const pendingUser = await PendingUser.findOne({ email: normalizedEmail });
+      const pendingPasswordMatches = await bcrypt.compare(password, pendingUser?.password || LOGIN_DUMMY_HASH);
       if (pendingUser?.password) {
-        const pendingPasswordMatches = await bcrypt.compare(password, pendingUser.password);
         if (pendingPasswordMatches) {
           return res.status(401).json({
             code: 401,
@@ -560,6 +597,7 @@ export const login = async (req, res) => {
     }
 
     if (!user.password) {
+      await bcrypt.compare(password, LOGIN_DUMMY_HASH);
       return res.status(401).json({
         code: 401,
         success: false,
@@ -700,20 +738,29 @@ export const authenticateWithGoogle = async (req, res) => {
 
 // Invalidates the current user token by adding it to a blacklist.
 export const logout = async (req, res) => {
+  // Clear this browser even when persistence fails; report that failure so a
+  // copied bearer token is never falsely described as durably revoked.
+  clearAuthCookie(res);
   try {
     const token = getRequestAuthToken(req);
     if (token) {
-      await BlacklistedToken.create({ token, expiresAt: getTokenExpiresAt(token) }).catch(() => null);
+      try {
+        await BlacklistedToken.create({ token, expiresAt: getTokenExpiresAt(token) });
+      } catch (error) {
+        // The token is the model's only unique value; repeated revocation is
+        // idempotent. All other storage failures must reach the error response.
+        if (error.code !== 11000) throw error;
+      }
     }
-    clearAuthCookie(res);
 
     res.status(200).json({
       code: 200,
       success: true,
       message: "Logged out successfully!",
     });
-  } catch (error) {
-    console.log("Error in Logging out!", error.message);
+  } catch {
+    // Database errors can contain duplicate-key/token data; log no raw error.
+    console.error("Logout revocation failed.");
     res.status(500).json({
       code: 500,
       success: false,

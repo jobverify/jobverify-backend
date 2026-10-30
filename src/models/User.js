@@ -198,6 +198,13 @@ const UserSchema = new Schema(
   },
 );
 
+// Mongoose includes hydrated defaults in an existing document's save. A stale
+// legacy document must not write its absent-version default over a concurrent
+// password reset. Explicit increments and defaults on new accounts still save.
+UserSchema.pre('save', function preserveSessionRevocation() {
+  if (!this.isNew && this.$isDefault('sessionVersion')) this.$ignore('sessionVersion');
+});
+
 UserSchema.index({ role: 1 });
 UserSchema.index({ accessRole: 1 });
 UserSchema.index({ createdAt: -1 });

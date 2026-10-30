@@ -1,11 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import provider from './catalog.js'
-import { createPublicAtsCatalogScraper } from '../../scraper-support/providers/index.js'
+import {runCurrentBasetenInventory} from './currentNative.js'
 export const SOURCE = provider.source
 export const COMPANY = provider.companyName
 export const CAREERS_URL = provider.companyCareerPage
-export const run = options => createPublicAtsCatalogScraper(provider).run(options)
+export const run = options => runCurrentBasetenInventory(options)
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
