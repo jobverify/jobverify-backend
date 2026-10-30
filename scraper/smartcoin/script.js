@@ -2,11 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import SMARTCOIN_CATALOG from './catalog.js'
+import { runNativeInventory } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const PUBLIC_JOB_PATTERNS = [
   /\bcurrent openings\b/i,
@@ -53,21 +51,6 @@ const matchesExpectedUrl = (value, expected) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
-
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
-}
 
 export const pageExposesPublicJobListings = (html = '') =>
   PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
@@ -109,34 +92,8 @@ export const matchesVerifiedOpaqueKekaState = ({ status, url, html } = {}) =>
   && !pageExposesPublicJobListings(html)
 
 export const createSmartCoinScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const careersPage = await fetchPage(CAREERS_PAGE_URL)
-
-    if (
-      Number(careersPage?.status) !== 200
-      || !matchesExpectedUrl(careersPage?.url, CAREERS_PAGE_URL)
-      || !hasOfficialCareersSignal(careersPage?.html)
-    ) {
-      throw new Error('The verified SmartCoin/Olyv About page changed materially')
-    }
-
-    if (extractOfficialKekaHandoffUrl(careersPage?.html) !== OFFICIAL_CAREERS_HANDOFF_URL) {
-      throw new Error('The verified SmartCoin Keka handoff changed materially')
-    }
-
-    const handoffPage = await fetchPage(OFFICIAL_CAREERS_HANDOFF_URL)
-
-    if (pageExposesPublicJobListings(handoffPage?.html)) {
-      throw new Error(
-        'The verified SmartCoin Keka handoff state changed materially and now appears to expose public jobs',
-      )
-    }
-
-    if (matchesVerifiedOpaqueKekaState(handoffPage)) {
-      return []
-    }
-
-    throw new Error('The verified SmartCoin Keka handoff state changed materially')
+  async run(options = {}) {
+    return runNativeInventory(options)
   },
 })
 

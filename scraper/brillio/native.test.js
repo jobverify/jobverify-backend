@@ -23,7 +23,9 @@ const fixture=(overrides={})=>{
   const id=new URL(url).searchParams.get('job-id');if(id)body=detail(id,'',id==='3'?'Boston':'Bangalore, India')
   const override=overrides[String(url)];if(override!==undefined)body=typeof override==='function'?override(init):override
   assert.notEqual(body,null,'unexpected fixture request '+url)
-  return new Response(body,{status:overrides.status||200})
+  const response=new Response(body,{status:overrides.status||200})
+  if(overrides.finalUrls?.[String(url)])Object.defineProperty(response,'url',{value:overrides.finalUrls[String(url)]})
+  return response
  };return{fetch,requests}
 }
 test('current native cards preserve posting ID separately from requisition and infer no work mode from LTR',()=>{
@@ -79,6 +81,70 @@ test('careers denial stops immediately without retry or subsequent discovery',as
  const f=fixture({status:403}),jobs=await registered().run(f)
  assert.equal(jobs.length,0);assert.equal(f.requests.length,1);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
+test('the current corporate homepage can bind directly to the exact native job board',async()=>{
+ const f=fixture({'https://www.brillio.com/':'<main><a href="https://careers.brillio.com/job-listing/">Explore Careers</a></main>'})
+ const jobs=await registered().run(f)
+ assert.equal(jobs.length,1)
+ assert.equal(readInventoryEvidence(jobs).firstParty,true)
+ assert.equal(f.requests.some(r=>r.url==='https://www.brillio.com/careers/'),false)
+ assert.equal(f.requests.filter(r=>r.method==='POST').length,4)
+ assert.equal(jobs[0].sourceListingComplete,false,'unresolved role geography must still remain partial')
+})
+test('the advertised native board root must redirect to the exact verified listing page',async()=>{
+ for(const href of ['https://careers.brillio.com','https://careers.brillio.com/']){
+  const f=fixture({
+   'https://www.brillio.com/':`<main><a href="${href}">Explore Careers</a></main>`,
+   'https://careers.brillio.com/':board,
+   finalUrls:{'https://careers.brillio.com/':'https://careers.brillio.com/job-listing/'},
+  })
+  const jobs=await registered().run(f)
+  assert.equal(jobs.length,1)
+  assert.equal(readInventoryEvidence(jobs).firstParty,true)
+  assert.equal(f.requests.some(r=>r.url==='https://www.brillio.com/careers/'),false)
+  assert.equal(f.requests.filter(r=>r.method==='POST').length,4)
+ }
+})
+test('a native board root redirect to another route cannot authorize search requests',async()=>{
+ const f=fixture({
+  'https://www.brillio.com/':'<a href="https://careers.brillio.com/">Careers</a>',
+  'https://careers.brillio.com/':board,
+  finalUrls:{'https://careers.brillio.com/':'https://careers.brillio.com/other-board/'},
+ })
+ const jobs=await registered().run(f)
+ assert.equal(jobs.length,0)
+ assert.equal(readInventoryEvidence(jobs).firstParty,false)
+ assert.equal(f.requests.filter(r=>r.method==='POST').length,0)
+ assert.match(readInventoryEvidence(jobs).reason,/redirect mismatch/)
+})
+test('the current native careers landing page binds its slashless listing link before fetching jobs',async()=>{
+ const f=fixture({
+  'https://www.brillio.com/':'<a href="http://[">Unrelated malformed link</a><a href="https://careers.brillio.com">Explore Careers</a>',
+  'https://careers.brillio.com/':'<h1>Brillio Careers</h1><a href="https://careers.brillio.com/job-listing">Explore all jobs</a>',
+ })
+ const jobs=await registered().run(f)
+ assert.equal(jobs.length,1)
+ assert.equal(readInventoryEvidence(jobs).firstParty,true)
+ assert.equal(f.requests.some(r=>r.url==='https://careers.brillio.com/job-listing/'),true)
+ assert.equal(f.requests.some(r=>r.url==='https://www.brillio.com/careers/'),false)
+})
+test('hidden, inert, and foreign direct board links cannot establish the employer handoff',async()=>{
+ for(const html of [
+  '<template><a href="https://careers.brillio.com/job-listing/">Careers</a></template>',
+  '<a hidden href="https://careers.brillio.com/job-listing/">Careers</a>',
+  '<a href="https://careers.brillio.com.evil.invalid/job-listing/">Careers</a>',
+  '<a href="https://careers.brillio.com/job-listing/?employer=other">Careers</a>',
+ ]){
+  const f=fixture({'https://www.brillio.com/':html}),jobs=await registered().run(f)
+  assert.equal(jobs.length,0)
+  assert.equal(readInventoryEvidence(jobs).firstParty,false)
+  assert.equal(f.requests.length,1)
+ }
+})
+test('a failed employer handoff retains the actual diagnostic on the empty result',async()=>{
+ const f=fixture({'https://www.brillio.com/':'<main>Website changed</main>'}),jobs=await registered().run(f)
+ assert.equal(jobs.length,0)
+ assert.match(readInventoryEvidence(jobs).reason,/corporate careers handoff missing/)
+})
 test('detail failure keeps an explicitly partial preview with no fabricated application identity',async()=>{
  const f=fixture({'https://careers.brillio.com/job-details?job-id=1':()=>{throw Error('network failure')}}),jobs=await registered().run(f)
  assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(jobs[0].applyUrl,null);assert.equal(jobs[0].sourceListingComplete,false)
@@ -108,6 +174,30 @@ test('an explicit Minneapolis Minnesota role worksite resolves foreign without u
  assert.equal(audit.foreignCount,2);assert.equal(audit.countryUnknownCount,0);assert.equal(audit.scopeComplete,true)
  assert.equal(audit.contextualCountryEvidence[0].country,'United States')
  assert.ok(audit.contextualCountryEvidence[0].alternatives.every(x=>x.referenceUrls.some(url=>url.startsWith('https://www.census.gov/'))))
+})
+test('a Fort Lauderdale header is corroborated by the role-owned South Florida worksite alternative',async()=>{
+ const context='Location: Hybrid 3 days for these locations Madison, NJ/Manhattan, | Greater Boston Area |South Florida Area | Greater Seattle Area , WA As a consultant within the DE team, you will deliver software.'
+ const f=fixture({
+  'https://careers.brillio.com/wp-admin/admin-ajax.php':init=>{const page=Number(new URLSearchParams(init.body).get('paged'));return JSON.stringify({success:true,data:{html:page===1?card('1')+card('2','Dallas, United States'):card('3','Fort Lauderdale'),pagination:pagination(page)}})},
+  'https://careers.brillio.com/job-details?job-id=3':detail('3',`<p>${context}</p>`,'Fort Lauderdale'),
+ })
+ const jobs=await registered().run(f),audit=jobs[0].sourceNativeInventory
+ assert.equal(audit.foreignCount,2)
+ assert.equal(audit.countryUnknownCount,0)
+ assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+ assert.ok(audit.contextualCountryEvidence[0].alternatives.some(a=>a.worksite==='South Florida Area'&&a.referenceUrls.some(url=>url.startsWith('https://www.fortlauderdale.gov/'))))
+})
+test('Fort Lauderdale requires matching role-owned regional context and every alternative must remain verified',()=>{
+ for(const statement of [
+  'Our headquarters is in South Florida Area.',
+  'Client Location: South Florida Area',
+  'Location: Greater Boston Area',
+  'Location: South Florida Area | Unverified Harbor',
+  'Location: South Florida Area | Bangalore, India',
+ ]){
+  const result=resolveWorksiteCountry({location:'Fort Lauderdale',description:statement,complete:true})
+  assert.equal(result.country,null,statement)
+ }
 })
 test('unknown or conflicting worksite alternatives and client or headquarters mentions do not resolve a city-only posting',async()=>{
  for(const context of [

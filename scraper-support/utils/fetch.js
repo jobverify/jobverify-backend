@@ -132,6 +132,7 @@ const isNonRetriableTransportError = (error) => {
 
 const fetchWithRetry = async (url, {
   parse = 'json',
+  includeResponseMetadata = false,
   fetchImpl = fetch,
   attempts = 3,
   baseDelayMs = 2000,
@@ -171,7 +172,8 @@ const fetchWithRetry = async (url, {
         }
 
         if (parse === 'text') {
-          return await response.text()
+          const html = await response.text()
+          return includeResponseMetadata ? { html, status: response.status, url: response.url } : html
         }
 
         const contentType = response.headers?.get?.('content-type') || ''
@@ -179,7 +181,8 @@ const fetchWithRetry = async (url, {
           throw buildHtmlInsteadOfJsonError(url, await response.text().catch(() => ''))
         }
 
-        return await response.json()
+        const payload = await response.json()
+        return includeResponseMetadata ? { payload, status: response.status, url: response.url } : payload
       } catch (error) {
         if (callerSignal?.aborted) {
           throwCallerAbort()

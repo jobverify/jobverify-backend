@@ -37,6 +37,10 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+// Employer handoffs may render typographic dashes while the native API uses
+// ASCII hyphens. Preserve all title words, case and punctuation beyond dashes.
+const normalizeDetailTitle = (value) => normalizeWhitespace(value)?.replace(/\s*[-\u2010-\u2015]\s*/g, '-')
+
 const normalizeOrigin = (value) =>
   (normalizeWhitespace(value) || DEFAULT_ORIGIN).replace(/\/+$/g, '')
 
@@ -364,7 +368,8 @@ export const createDarwinboxScraper = ({
     if (!record || typeof record !== 'object' || Array.isArray(record)
       || (payload.status != null && !['success', true, 200].includes(payload.status))
       || normalizeWhitespace(record.id) !== job.jobId
-      || normalizeWhitespace(record.title) !== job.title
+      || !normalizeDetailTitle(record.title) || !normalizeDetailTitle(job.title)
+      || normalizeDetailTitle(record.title) !== normalizeDetailTitle(job.title)
       || typeof record.officelocation_show_arr !== 'string' || !validPrimaryLocation || invalidAddressList
       || (locationList != null && (!Array.isArray(locationList)
         || locationList.some((value) => !isExplicitIndiaLocation(value) && !(groupedLocation && isGroupedLocation(value)))))
@@ -378,6 +383,27 @@ export const createDarwinboxScraper = ({
       throw error
     }
     return normalizeWhitespace(record.jd)
+  }
+
+  const extractJobDetailFacts = (payload, job) => {
+    validateJobDetail(payload, job)
+    const record = payload.message.job[0]
+    const posted = record.posted_on
+    const careersFrom = record.job_posting?.careers?.from
+    // created_on is a different event and cannot replace the native public
+    // posting instant. Older bodies remain useful without becoming new jobs.
+    if (posted == null && careersFrom == null) return {}
+    const date = new Date(posted * 1000)
+    if (typeof posted !== 'number' || !Number.isSafeInteger(posted) || posted <= 0
+      || typeof careersFrom !== 'number' || careersFrom !== posted
+      || !Number.isSafeInteger(posted * 1000) || !Number.isFinite(date.getTime())) {
+      const error = new Error(`[${source}] Darwinbox native publication epochs are malformed or inconsistent for ${job.jobId}`)
+      error.name = 'DarwinboxDetailContractError'
+      error.abortRetries = true
+      error.failureKind = 'parser_or_contract_error'
+      throw error
+    }
+    return { postingDate: date.toISOString(), sourcePostingDate: date.toISOString(), sourceDateEvidence: 'darwinbox-native-posted-on-v1' }
   }
 
   const run = async ({
@@ -420,6 +446,7 @@ export const createDarwinboxScraper = ({
           continue
         }
         const description = validateJobDetail(payload, job)
+        Object.assign(job, extractJobDetailFacts(payload, job))
         if (hasSourceDescription({ jobDescription: description })) {
           job.jobDescription = description
           job.sourceDetailComplete = true
@@ -501,6 +528,8 @@ export const createDarwinboxScraper = ({
     extractSearchResults,
     fetchListingPageFromApi,
     fetchJobDetailFromApi,
+    validateJobDetail,
+    extractJobDetailFacts,
     run,
   }
 }

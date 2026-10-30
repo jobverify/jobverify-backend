@@ -85,8 +85,8 @@ router.post(
 );
 
 router.route("/telegram-alerts/schedule")
-  .get(protect, getUserTelegramAlertSchedule)
-  .put(protect, profileUpdateLimiter, telegramAlertScheduleValidation, validateRequest, updateUserTelegramAlertSchedule);
+  .get(protect, loadSiteSettings, getUserTelegramAlertSchedule)
+  .put(protect, profileUpdateLimiter, telegramAlertScheduleValidation, validateRequest, loadSiteSettings, updateUserTelegramAlertSchedule);
 
 router
   .route("/saved-jobs")
@@ -109,17 +109,18 @@ router
     removeSavedJob,
   );
 
-router.post("/telegram-alerts/link", protect, createTelegramAlertLink);
+router.post("/telegram-alerts/link", protect, loadSiteSettings, createTelegramAlertLink);
 
 router
   .route("/telegram-alerts")
-  .get(protect, getTelegramAlertSettings)
+  .get(protect, loadSiteSettings, getTelegramAlertSettings)
   .put(
     protect,
     telegramAlertsValidation,
     validateRequest,
+    loadSiteSettings,
     updateTelegramAlertSettings,
   )
-  .delete(protect, deleteTelegramAlertSettings);
+  .delete(protect, loadSiteSettings, deleteTelegramAlertSettings);
 
 export default router;

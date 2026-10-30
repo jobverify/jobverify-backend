@@ -1,4 +1,5 @@
 import os from 'node:os';
+import { getScraperSchedule, updateScraperSchedule } from '../pipeline/schedule.js';
 import { pipeline } from 'node:stream/promises';
 import { createPipelineBundle } from '../pipeline/download.js';
 import PipelineRun from '../models/PipelineRun.js';
@@ -27,6 +28,12 @@ export const savePipelineConfiguration=endpoint(async(req,res)=>{
   await audit(req,'configurePipeline',JSON.stringify(config));res.json({success:true,data:config});
 });
 export const getPipelineCapabilities=endpoint(async(_req,res)=>res.json({success:true,data:capabilities()}));
+export const getPipelineSchedule=endpoint(async(_req,res)=>res.json({success:true,data:await getScraperSchedule()}));
+export const savePipelineSchedule=endpoint(async(req,res)=>{
+  const data=await updateScraperSchedule(req.body);
+  await audit(req,'configureScraperSchedule',JSON.stringify(data));
+  res.json({success:true,data});
+});
 export const triggerPipeline=endpoint(async(req,res)=>{
   const target=req.body?.target;
   if(!['github','local'].includes(target))throw pipelineError('Choose github or local execution.',400);

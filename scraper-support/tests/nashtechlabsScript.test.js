@@ -358,3 +358,31 @@ test('Nash Tech Labs fails closed when the verified homepage or careers surface 
     /verified first-party careers page/i,
   )
 })
+
+test('Nash PDF recovery requires the linked document, native employer, role and department', async () => {
+  const nash = await loadNashTechLabsModule()
+  const job = nash.extractPublicJobs(verifiedCareersHtml)[0]
+  const text = 'Nash Tech Labs — Power Electronics — Senior/Lead Engineer. Design power converters, review circuits, and validate engineering designs.'
+  const response = { status: 200, url: job.sourceUrl, text }
+  assert.deepEqual(nash.recoverNashPdfDescription(job, response), { sourceDescription: text })
+  for (const change of [
+    { status: 403 }, { url: 'https://www.nashtechlabs.com/careers' },
+    { text: text.replace('Nash Tech Labs', 'Another Employer') },
+    { text: text.replace('Senior/Lead Engineer', 'Another Role') },
+    { text: text.replace('Power Electronics', 'Other Department') },
+  ]) assert.equal(nash.recoverNashPdfDescription(job, { ...response, ...change }), null)
+  assert.equal(nash.recoverNashPdfDescription({ ...job, sourceUrl: 'https://unrelated.example/role.pdf' }, response), null)
+})
+
+test('Nash preserves verified PDF source content without claiming that a separate full inventory is complete', async () => {
+  const nash = await loadNashTechLabsModule()
+  const jobs = await nash.createNashTechLabsScraper().run({
+    fetchText: async url => url === nash.HOMEPAGE_URL ? verifiedHomepageHtml : verifiedCareersHtml,
+    fetchPdfText: async job => ({ status: 200, url: job.sourceUrl,
+      text: `Nash Tech Labs ${job.department} ${job.title}. Design reliable products, review technical work and collaborate with the team.` }),
+    now: () => '2026-10-29T14:00:00.000Z',
+  })
+  assert.ok(jobs.slice(0, 3).every(job => job.sourceDescription && job.sourceDescription.includes('Nash Tech Labs')))
+  assert.ok(jobs.slice(0, 3).every(job => job.sourceDetailComplete === false))
+  assert.ok(jobs.slice(3).every(job => !job.sourceDescription), 'Generic careers URLs are not per-role PDF proof')
+})

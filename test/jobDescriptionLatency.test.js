@@ -15,7 +15,7 @@ const serverFor = async (t, { reject = false, httpError = false } = {}) => {
     requests++; active++; peak = Math.max(peak, active);
     await new Promise(resolve => setTimeout(resolve, 25)); active--;
     if (httpError) { res.statusCode = 500; return res.end(); }
-    const input = JSON.parse(data.messages.at(-1).content).source;
+    const input = data.messages.at(-1).content;
     res.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ text: reject ? 'Invented Java duties.' : input.replace('Build reliable', 'Develop reliable') }) } }] }));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));

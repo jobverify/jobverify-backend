@@ -51,60 +51,13 @@ test('Accelya Solutions India Limited helpers stay pinned to the verified career
   assert.equal(accelya.isVerifiedWorkdayApiFailure(workdayApiBadRequestPayload), true)
 })
 
-test('Accelya Solutions India Limited run validates the verified Workday API failure and stays fail-closed', async () => {
+// The old body-only transport could turn HTTP400/500 into an unexplained [].
+// Complete native proof now requires observed HTTP responses, exercised with
+// current captured responses in test/accelyaNativeInventory.test.js.
+test('Accelya Solutions India Limited rejects body-only overrides before requesting live HTTP', async () => {
   const accelya = await loadModule()
-  const jobs = await accelya.createAccelyaSolutionsIndiaLimitedScraper().run({
-    fetchText: async (url) => {
-      assert.equal(url, accelya.CAREERS_URL)
-      return careersHtml
-    },
-    fetchJson: async (url, body) => {
-      assert.equal(url, accelya.JOBS_API_URL)
-      assert.equal(
-        body,
-        JSON.stringify({
-          appliedFacets: {
-            Location_Country: ['c4f78be1a8f14da0ab49ce1162348a5e'],
-          },
-          limit: 20,
-          offset: 0,
-          searchText: '',
-        }),
-      )
-      return workdayApiFailurePayload
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-})
-
-test('Accelya Solutions India Limited run treats live Workday HTTP 400 as the verified non-enumerable API state', async () => {
-  const accelya = await loadModule()
-  const jobs = await accelya.createAccelyaSolutionsIndiaLimitedScraper().run({
-    fetchText: async (url) => {
-      assert.equal(url, accelya.CAREERS_URL)
-      return careersHtml
-    },
-    fetchJson: async (url) => {
-      assert.equal(url, accelya.JOBS_API_URL)
-      throw new Error(`HTTP 400 for ${url}`)
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-})
-
-test('Accelya Solutions India Limited fails closed when the verified jobs API starts returning listings', async () => {
-  const accelya = await loadModule()
-
-  await assert.rejects(
-    accelya.createAccelyaSolutionsIndiaLimitedScraper().run({
-      fetchText: async () => careersHtml,
-      fetchJson: async () => ({
-        total: 1,
-        jobPostings: [{ title: 'Engineer II - Software Development' }],
-      }),
-    }),
-    /now returns public jobs api listings/i,
-  )
+  await assert.rejects(accelya.createAccelyaSolutionsIndiaLimitedScraper().run({
+    fetchText: async () => assert.fail('Body-only careers override must not run'),
+    fetchJson: async () => assert.fail('Body-only API override must not run'),
+  }), /native HTTP response metadata|transport overrides/i)
 })

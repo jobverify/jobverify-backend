@@ -1,4 +1,4 @@
-// Reviewed 2026-10-27 against the government geography references below.
+// Reviewed 2026-10-27; Fort Lauderdale/South Florida corroboration added 2026-10-29.
 // These aliases apply only inside explicit role-owned worksite clauses. A city
 // label, headquarters, client geography, salary currency or visa statement is
 // never sufficient. Every alternative in the clause must resolve consistently.
@@ -9,6 +9,7 @@ export const US_GEOGRAPHY_REFERENCES={
  manhattan:'https://portal.311.nyc.gov/article/?kanumber=KA-02877',
  boston:'https://www.mass.gov/info-details/greater-boston-region-housing-snapshot',
  southFlorida:'https://www.weather.gov/mfl/',
+ fortLauderdale:'https://www.fortlauderdale.gov/Government/Departments/Community-Services/Economic-Development',
  seattle:'https://www.census.gov/quickfacts/fact/table/seattlecitywashington/PST045225',
 }
 const aliases=[
@@ -44,10 +45,14 @@ export const resolveWorksiteCountry=({location,description,roleWorksiteStatement
    alternatives.push({worksite,resolvedWorksite,country:'United States',referenceUrls:[US_GEOGRAPHY_REFERENCES[key],US_GEOGRAPHY_REFERENCES.states]})
   }
  }
- // The two currently reviewed city-only headers are corroborated by the role
+ // Reviewed city-only headers must be corroborated by a matching role-owned
  // clause. Different headers or an explicit India header remain unresolved.
  const corroborated=/^Minneapolis$/i.test(location||'')&&alternatives.some(a=>/^Minneapolis,/.test(a.worksite))
   ||/^Boston$/i.test(location||'')&&alternatives.some(a=>a.worksite==='Greater Boston Area')
+  ||/^Fort Lauderdale$/i.test(location||'')&&alternatives.some(a=>a.worksite==='South Florida Area')
  if(!corroborated)return{...unknown,alternatives,reason:'native-header-and-worksite-context-not-corroborated'}
+ if(/^Fort Lauderdale$/i.test(location||''))for(const alternative of alternatives){
+  if(alternative.worksite==='South Florida Area')alternative.referenceUrls.push(US_GEOGRAPHY_REFERENCES.fortLauderdale)
+ }
  return{country:'United States',method:'role-worksite-government-geography',contexts,alternatives,reason:null}
 }

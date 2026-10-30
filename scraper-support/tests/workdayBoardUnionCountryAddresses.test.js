@@ -8,6 +8,26 @@ import { runVerifiedWorkdayBoardUnion } from '../shared/workdayBoardUnion.js'
 const sourceDir = fileURLToPath(new URL('../../scraper/cmegroup.workday/', import.meta.url))
 const fixture = () => JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/cmegroup.workday/fixtures/native-20261021.json.gz', import.meta.url))))
 
+for (const changed of ['top-level code', 'nested code', 'nested descriptor', 'top-level India ID']) {
+  test('a final foreign-primary detail read rejects a contradictory ' + changed, async t => {
+    const reads = new Map()
+    await assert.rejects(runWithAddress(t, 'Remote-Philippines', info => {
+      const country = { descriptor: 'Philippines', id: 'e56f1daf83e04bacae794ba5c5593560', alpha2Code: 'PH' }
+      info.country = { descriptor: country.descriptor, id: country.id }
+      info.jobRequisitionLocation.country = { ...country }
+      info.additionalLocations = ['Bangalore, India']
+      const count = (reads.get(info.jobReqId) || 0) + 1
+      reads.set(info.jobReqId, count)
+      if (count < 2) return
+      if (changed === 'top-level code') info.country.alpha2Code = 'IN'
+      else if (changed === 'nested code') info.jobRequisitionLocation.country.alpha2Code = 'US'
+      else if (changed === 'nested descriptor') info.jobRequisitionLocation.country.descriptor = 'India'
+      else info.country.id = 'c4f78be1a8f14da0ab49ce1162348a5e'
+    }), /country/i)
+    assert.ok([...reads.values()].some(count => count >= 2), 'The contradiction must appear only in the fresh final detail read')
+  })
+}
+
 async function runWithAddress(t, label, transform = () => {}) {
   const { packets, checkedAt } = fixture()
   t.mock.method(globalThis, 'fetch', async (url, init = {}) => {

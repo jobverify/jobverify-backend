@@ -128,4 +128,41 @@ test('run fetches the ViewZen Labs careers page and decorates shared runner fiel
   assert.equal(jobs[0].source, 'viewzenlabs')
   assert.equal(jobs[0].link, 'https://www.viewzenlabs.com/careers')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
+  assert.match(jobs[0].sourceDescription, /BE \/ B.Tech \/ BSc/)
+  assert.match(jobs[0].sourceDescription, /Angular 16\+ Components\/Services/)
+  assert.doesNotMatch(jobs[0].sourceDescription, /Lead Gen|NoSQL|Copyright/)
+  assert.equal(jobs[0].sourceDetailComplete, false, 'A published role card does not establish the separate full JD')
+})
+
+test('ViewZen source content must come from one active role card matching its exact qualification and skills', async () => {
+  const source = await loadViewZenLabsModule(), html = readFixture('careers.html')
+  const job = source.extractJobListings(html)[0]
+  const valid = source.extractPublishedRoleDescription(html, job)
+  assert.match(valid, /Async REST Web Services/)
+  assert.equal(source.extractPublishedRoleDescription('<template>'+html+'</template>', job), null)
+  assert.equal(source.extractPublishedRoleDescription('<div hidden>'+html+'</div>', job), null)
+  assert.equal(source.extractPublishedRoleDescription(html+html, job), null)
+  assert.equal(source.extractPublishedRoleDescription(html, {...job, title:'Another role'}), null)
+  assert.equal(source.extractPublishedRoleDescription(html, {...job, minimumQualification:'Invented qualification'}), null)
+  assert.equal(source.extractPublishedRoleDescription(html, {...job, requiredSkills:['Another skill']}), null)
+})
+
+test('actual employer card content makes ViewZen roles visible while preserving partial detail status', {timeout:60000}, async t => {
+  const [{default:mongoose},{MongoMemoryServer},{saveToDB},{applyPublicJobVisibility}] = await Promise.all([
+    import('mongoose'),import('mongodb-memory-server'),import('../utils/saveToDB.js'),
+    import('../../src/utils/publicJobVisibility.js'),
+  ])
+  assert.equal(mongoose.connection.readyState,0)
+  const mongo=await MongoMemoryServer.create({instance:{ip:'127.0.0.1'},binary:{version:'8.2.6',
+    downloadDir:fileURLToPath(new URL('../../.cache/mongodb-binaries/',import.meta.url))}})
+  t.after(async()=>{await mongoose.disconnect();await mongo.stop()})
+  assert.match(mongo.getUri(),/^mongodb:\/\/127\.0\.0\.1:/)
+  await mongoose.connect(mongo.getUri(),{autoIndex:false,autoCreate:false})
+  const source=await loadViewZenLabsModule(),now=new Date('2026-10-29T14:00:00Z')
+  const jobs=await source.run({fetchText:async()=>readFixture('careers.html'),now:()=>now.toISOString()})
+  await saveToDB(jobs,'viewzenlabs',{now,enrichPublicExperience:false,enqueueAlerts:false,
+    descriptionRewriteMode:'off',replaceExisting:false,refreshDatasetSummary:false})
+  const visible=await mongoose.connection.db.collection('jobs').find(applyPublicJobVisibility({source:'viewzenlabs',status:'active'},{},now)).toArray()
+  assert.equal(visible.length,5)
+  assert.ok(visible.every(job=>job.sourceDescription))
 })

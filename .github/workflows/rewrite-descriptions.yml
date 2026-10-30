@@ -75,9 +75,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .cache/description-rewrites
-          key: description-lfm12b-rewrites-${{ runner.os }}-v18-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-rewrites-${{ runner.os }}-v23-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            description-lfm12b-rewrites-${{ runner.os }}-v18-${{ github.ref }}-
+            description-lfm12b-rewrites-${{ runner.os }}-v23-${{ github.ref }}-
       - name: Drain the durable source-hash queue
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
         timeout-minutes: 345
@@ -85,11 +85,11 @@ jobs:
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
       - name: Save validated source-grounded rewrites for the next batch
-        if: always() && steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
+        if: always() && steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0' && hashFiles('.cache/description-rewrites/**') != ''
         uses: actions/cache/save@v4
         with:
           path: .cache/description-rewrites
-          key: description-lfm12b-rewrites-${{ runner.os }}-v18-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-rewrites-${{ runner.os }}-v23-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload generation quality and capacity diagnostics
         if: always()
         uses: actions/upload-artifact@v7

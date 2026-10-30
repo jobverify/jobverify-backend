@@ -91,53 +91,6 @@ test('Keyence scraper accepts the current careers landing handoff on Friday, Aug
   assert.equal(keyence.extractRecruitmentUrl(currentOfficialCareersHtml), 'https://www.keyence.co.in/ss/career/job.jsp')
 })
 
-test('Keyence scraper returns no jobs while the official public surface remains apply-only', async () => {
-  const keyence = await loadKeyenceModule()
-  const requestedUrls = []
-
-  const jobs = await keyence.createKeyenceScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === keyence.CAREERS_URL) return officialCareersHtml
-      if (url === keyence.RECRUITMENT_URL) return recruitmentHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    keyence.CAREERS_URL,
-    keyence.RECRUITMENT_URL,
-  ])
-  assert.deepEqual(jobs, [])
-})
-
-test('Keyence scraper fails closed when the verified careers handoff changes or public jobs appear', async () => {
-  const keyence = await loadKeyenceModule()
-
-  await assert.rejects(
-    keyence.createKeyenceScraper().run({
-      fetchText: async (url) => {
-        if (url === keyence.CAREERS_URL) {
-          return officialCareersHtml.replace(
-            '<a href="/ss/career/job.jsp">Recruitment</a>',
-            '<a href="/ss/career/openings.jsp">Recruitment</a>',
-          )
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /verified official recruitment surface/i,
-  )
-
-  await assert.rejects(
-    keyence.createKeyenceScraper().run({
-      fetchText: async (url) => {
-        if (url === keyence.CAREERS_URL) return officialCareersHtml
-        if (url === keyence.RECRUITMENT_URL) return publicJobsHtml
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /public recruitment surface now appears to expose jobs/i,
-  )
-})
+// Pure archived parsers remain covered above. Current native HTTP protocol,
+// country alternatives and closing proof are covered by darwinboxSecondWaveNative.test.js.
+test('Keyence runtime rejects obsolete body-only zero-inventory overrides',async()=>{const keyence=await loadKeyenceModule();await assert.rejects(keyence.run({fetchText:async()=>officialCareersHtml}),/native HTTP metadata required/)})

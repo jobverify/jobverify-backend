@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
 
 const loadCloudAmbassadorsModule = async () => {
   try {
@@ -51,6 +53,44 @@ const applyPageHtml = `
     </body>
   </html>
 `
+
+const capturedRoles = () => gunzipSync(readFileSync(new URL('./fixtures/cloudambassadors/native-role-data-20261029.js.gz', import.meta.url))).toString()
+
+test('Cloud Ambassadors exact static native data supplies complete role-specific descriptions', async () => {
+  const module = await loadCloudAmbassadorsModule()
+  const jobs = module.extractCareerListings(careersHtml)
+  const roles = module.extractStaticRoleDescriptions(capturedRoles(), jobs)
+  assert.equal(roles.length, 5)
+  assert.match(roles[0].description, /lead discovery workshops/)
+  assert.match(roles[1].description, /Proficiency in Terraform/)
+  assert.doesNotMatch(roles[1].description, /You own the relationship/)
+  assert.equal(module.extractStaticRoleDescriptions(capturedRoles(), jobs.slice(1)), null)
+})
+
+test('Cloud Ambassadors parses literals without executing application code and rejects ambiguous data', async () => {
+  const module = await loadCloudAmbassadorsModule()
+  const jobs = [{ title: 'Cloud Engineer' }]
+  const literal = JSON.stringify([{ name: 'Cloud Engineer', title: 'Build reliable cloud services.',
+    bio: 'A'.repeat(100), arr: ['Experience with Google Cloud Platform and Terraform.'] }])
+  assert.equal(module.extractStaticRoleDescriptions('throw new Error("must never execute"); const roles=' + literal, jobs).length, 1)
+  assert.equal(module.extractStaticRoleDescriptions('const first=' + literal + '; const second=' + literal, jobs), null)
+  assert.equal(module.extractStaticRoleDescriptions('const roles=' + literal.replace(JSON.stringify('A'.repeat(100)), 'loadDescription()'), jobs), null)
+  assert.deepEqual(module.linkedCareerAssets('<script src="https://foreign.example/_next/static/chunks/roles.js"></script>'), [])
+})
+
+test('Cloud Ambassadors run reads the role bundle linked by the verified page', async () => {
+  const module = await loadCloudAmbassadorsModule()
+  const assetUrl = 'https://cloudambassadors.com/_next/static/chunks/current-roles.js'
+  const html = careersHtml + '<script src="/_next/static/chunks/current-roles.js"></script>'
+  const options = { fetchText: async url => url === module.CAREERS_URL ? html : applyPageHtml,
+    fetchAsset: async url => ({ status: 200, url, html: capturedRoles() }) }
+  const jobs = await module.run(options)
+  assert.equal(jobs.length, 5)
+  assert.ok(jobs.every(job => job.sourceDetailComplete && job.sourceDescription.length > 1000))
+  assert.equal(jobs[0].applyUrl, module.APPLICATION_URL)
+  const denied = await module.run({ ...options, fetchAsset: async () => ({ status: 403, url: assetUrl, html: capturedRoles() }) })
+  assert.ok(denied.every(job => job.sourceDescription === null && !job.sourceDetailComplete))
+})
 
 test('extractCareerListings maps the official published roles to application-ready jobs', async () => {
   const cloudAmbassadors = await loadCloudAmbassadorsModule()

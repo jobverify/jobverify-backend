@@ -14,6 +14,7 @@ const scraper = createPhenomScraper({
   baseUrl: 'https://orange.jobs',
   searchPath: '/gb/en/search-results?companyName=Orange%20Business',
   listingPredicate: isOrangeBusinessJob,
+  nativeUnspecifiedState: true,
   scraperDir: currentDir,
 })
 

@@ -25,6 +25,7 @@ export const createRewriteDiagnostics = ({ maxSamples = 10, maxBytes = 65536 } =
     const raw = response?.rawValue ?? response?.value;
     const sample = { id: clip(id, 64), inputHash: clip(input?.inputHash, 64), reason: key, phase,
       sourceContext: clip(diagnostic?.evidence || input?.sourceDescription, 1800),
+      ...(phase === 'probe' && { probeSource: clip(input?.sourceDescription, 1800) }),
       completionPreview: typeof response?.rawText === 'string' && response.rawText
         ? clip(response.rawText, 2400) : raw === undefined || raw === null ? undefined : clip(JSON.stringify(raw), 2400),
       validation: diagnostic ? { code: clip(diagnostic.code, 64), sourceId: Number.isInteger(diagnostic.sourceId) ? diagnostic.sourceId : undefined,

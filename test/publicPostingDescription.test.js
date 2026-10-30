@@ -9,6 +9,12 @@ const html=value=>`<script type="application/ld+json">${JSON.stringify(value)}</
 test('recovers an exact employer-authored role in a schema graph',()=>{
   assert.equal(publicPostingDescription(job,html({'@graph':[posting]}),job.sourceUrl)?.description,posting.description);
 });
+test('source-local employer aliases are opt-in and never change the URL or role identity requirement',()=>{
+  const branded={...posting,hiringOrganization:{name:'Verified employer brand'}};
+  assert.equal(publicPostingDescription(job,html(branded),job.sourceUrl),null);
+  assert.equal(publicPostingDescription(job,html(branded),job.sourceUrl,{employerAliases:['Verified employer brand']})?.description,posting.description);
+  assert.equal(publicPostingDescription(job,html({...branded,identifier:{value:'wrong-role'}}),job.sourceUrl,{employerAliases:['Verified employer brand']}),null);
+});
 test('rejects another role, employer or generic career page even when a description exists',()=>{
   for(const change of [{title:'Another role'},{hiringOrganization:{name:'Another employer'}},{identifier:{value:'9999'}},{url:'https://careers.synopsys.com/search-jobs'}])
     assert.equal(publicPostingDescription(job,html({...posting,...change}),job.sourceUrl),null);

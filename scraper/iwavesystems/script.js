@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { runIWaveNativeDiscovery } from './nativeDiscovery.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -165,14 +166,14 @@ const parseLocation = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) {
     return {
-      location: 'India',
+      location: null,
       city: null,
     }
   }
 
   const city = normalizeCity(normalized.split(',')[0]?.trim() || null)
   return {
-    location: normalized.toLowerCase().endsWith(', india') ? normalized : `${normalized}, India`,
+    location: normalized,
     city,
   }
 }
@@ -202,7 +203,7 @@ const parseJobBlock = (html, blockLines) => {
     department: null,
     location,
     city,
-    country: 'India',
+    country: null,
     jobId,
     requisitionId: jobId,
     sourceUrl: `${CAREERS_URL}#${slugify(title)}`,
@@ -286,7 +287,7 @@ const defaultFetchText = async (url) => {
   }
 }
 
-export const createIWaveSystemsScraper = () => ({
+const createLegacyIWaveSystemsParser = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
     let homepageHtml = null
     try {
@@ -328,7 +329,8 @@ export const createIWaveSystemsScraper = () => ({
   },
 })
 
-export const run = async (options = {}) => createIWaveSystemsScraper().run(options)
+export const createIWaveSystemsScraper = () => ({ run: runIWaveNativeDiscovery })
+export const run = runIWaveNativeDiscovery
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

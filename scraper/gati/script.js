@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { GATI_CATALOG } from './catalog.js'
+import { runCurrentGatiInventory } from './nativeInventory.js'
 import { hasBrokenDarwinboxTenantSignal as hasBrokenDarwinboxTenantSignalShared } from '../allcargologistics/script.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -121,37 +122,7 @@ export const hasOfficialCareersSignal = (html = '') => {
 }
 
 export const createGatiScraper = () => ({
-  async run({
-    fetchPage = defaultFetchPage,
-    probeListingApi = defaultProbeListingApi,
-  } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-
-    if (!hasOfficialHomepageSignal(homepage)) {
-      throw new Error('Gati verified Gati homepage redirect surface changed materially')
-    }
-
-    if (extractCareersPageUrl(homepage.html) !== CAREERS_PAGE_URL) {
-      throw new Error('Gati verified Gati homepage careers handoff changed materially')
-    }
-
-    const careersPage = await fetchPage(CAREERS_PAGE_URL)
-
-    if (
-      Number(careersPage.status) !== 200
-      || normalizeUrl(careersPage.url) !== normalizeUrl(CAREERS_PAGE_URL)
-      || !hasOfficialCareersSignal(careersPage.html)
-    ) {
-      throw new Error('Gati verified parent careers page changed materially')
-    }
-
-    const probeResult = await probeListingApi(LISTING_API_URL)
-    if (hasBrokenDarwinboxTenantSignal(probeResult)) {
-      return []
-    }
-
-    throw new Error('Gati broken Darwinbox tenant state changed materially')
-  },
+  async run(options = {}) { return runCurrentGatiInventory(options) },
 })
 
 export const run = async (options = {}) => createGatiScraper().run(options)

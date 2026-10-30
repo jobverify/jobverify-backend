@@ -40,7 +40,7 @@ test('iWave Systems validates the official homepage and careers surface', async 
   assert.equal(iwave.hasOfficialCareersSignal(CAREERS_HTML), true)
 })
 
-test('iWave Systems extracts the verified first-party job listing', async () => {
+test('iWave Systems parses full known role text while preserving unknown country', async () => {
   const iwave = await loadIWaveSystemsModule()
 
   const jobs = iwave.extractPublicListings(CAREERS_HTML)
@@ -50,9 +50,9 @@ test('iWave Systems extracts the verified first-party job listing', async () => 
     title: 'Junior Accountant',
     company: 'iWave Systems',
     department: null,
-    location: 'Bangalore, India',
+    location: 'Bangalore',
     city: 'Bangalore',
-    country: 'India',
+    country: null,
     jobId: 'iwavesystems-junior-accountant',
     requisitionId: 'iwavesystems-junior-accountant',
     sourceUrl: 'https://www.iwavesystems.com/career/#junior-accountant',
@@ -68,30 +68,25 @@ test('iWave Systems extracts the verified first-party job listing', async () => 
   })
 })
 
-test('iWave Systems run fetches the verified homepage and careers page, then decorates jobs', async () => {
+test('iWave Systems run rejects body-only transport before treating page text as native response proof', async () => {
   const iwave = await loadIWaveSystemsModule()
   const requestedUrls = []
 
-  const jobs = await iwave.createIWaveSystemsScraper().run({
+  await assert.rejects(iwave.createIWaveSystemsScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === iwave.HOMEPAGE_URL) return HOMEPAGE_HTML
       if (url === iwave.CAREERS_URL) return CAREERS_HTML
       throw new Error(`Unexpected fixture URL: ${url}`)
     },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    'https://www.iwavesystems.com/',
-    'https://www.iwavesystems.com/career/',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'iwavesystems')
-  assert.equal(jobs[0].link, 'mailto:career@iwavesystems.com')
+  }), /native HTTP response metadata required/)
+  assert.deepEqual(requestedUrls, [])
 })
 
 test('iWave Systems scraper fails closed when the official surface changes materially', async () => {
   const iwave = await loadIWaveSystemsModule()
+  assert.equal(iwave.hasOfficialHomepageSignal('<html><head><title>Unexpected</title></head><body></body></html>'), false)
+  assert.equal(iwave.hasOfficialCareersSignal('<html><body><h1>Career - iWave Systems</h1></body></html>'), false)
 
   await assert.rejects(
     iwave.createIWaveSystemsScraper().run({
@@ -102,7 +97,7 @@ test('iWave Systems scraper fails closed when the official surface changes mater
         return CAREERS_HTML
       },
     }),
-    /verified iWave Systems homepage/i,
+    /native HTTP response metadata required/,
   )
 
   await assert.rejects(
@@ -112,11 +107,11 @@ test('iWave Systems scraper fails closed when the official surface changes mater
         return '<html><body><h1>Career - iWave Systems</h1></body></html>'
       },
     }),
-    /verified iWave Systems careers surface/i,
+    /native HTTP response metadata required/,
   )
 })
 
-test('iWave Systems tolerates the verified homepage interstitial when the careers page still matches the trusted public surface', async () => {
+test('iWave Systems homepage interstitial body cannot prove native role or country scope', async () => {
   const iwave = await loadIWaveSystemsModule()
 
   const blockedHomepageError = new Error(`HTTP 307 for ${iwave.HOMEPAGE_URL}`)
@@ -129,7 +124,8 @@ test('iWave Systems tolerates the verified homepage interstitial when the career
   retryWrappedError.abortRetries = true
   retryWrappedError.cause = blockedHomepageError
 
-  const jobs = await iwave.createIWaveSystemsScraper().run({
+  assert.equal(iwave.hasBlockedHomepageSignal(BLOCKED_HOMEPAGE_HTML), true)
+  await assert.rejects(iwave.createIWaveSystemsScraper().run({
     fetchText: async (url) => {
       if (url === iwave.HOMEPAGE_URL) {
         throw retryWrappedError
@@ -139,14 +135,10 @@ test('iWave Systems tolerates the verified homepage interstitial when the career
       }
       throw new Error(`Unexpected fixture URL: ${url}`)
     },
-  })
-
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'iwavesystems')
-  assert.equal(jobs[0].title, 'Junior Accountant')
+  }), /native HTTP response metadata required/)
 })
 
-test('iWave Systems returns [] when the careers page is currently blocked by the verified Sucuri interstitial', async () => {
+test('iWave Systems blocked careers body cannot be converted into a verified empty inventory', async () => {
   const iwave = await loadIWaveSystemsModule()
 
   const blockedCareersError = new Error(`HTTP 307 for ${iwave.CAREERS_URL}`)
@@ -159,7 +151,7 @@ test('iWave Systems returns [] when the careers page is currently blocked by the
   retryWrappedError.abortRetries = true
   retryWrappedError.cause = blockedCareersError
 
-  const jobs = await iwave.createIWaveSystemsScraper().run({
+  await assert.rejects(iwave.createIWaveSystemsScraper().run({
     fetchText: async (url) => {
       if (url === iwave.HOMEPAGE_URL) {
         return HOMEPAGE_HTML
@@ -169,7 +161,5 @@ test('iWave Systems returns [] when the careers page is currently blocked by the
       }
       throw new Error(`Unexpected fixture URL: ${url}`)
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), /native HTTP response metadata required/)
 })

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { getScraperCatalog, createCatalogScraper } from '../providers/index.js'
 import { isFreshCompleteInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { createDataikuScraper } from '../../scraper/dataiku/script.js'
 
 const catalog = getScraperCatalog()
 const careersHtml = {
@@ -15,11 +16,17 @@ const record = (board, id, location = 'Bengaluru, India') => ({
 })
 
 for (const source of ['tripadvisor', 'dataiku', 'sigmacomputing', 'buildkite']) {
-  const run = payload => createCatalogScraper(catalog.find(p => p.source === source)).run({
+  // Dataiku's registered adapter now requires real HTTP response metadata and
+  // opening/closing employer proof. Its separate registered fixture suite
+  // covers that path; these synthetic payload cases retain coverage of the
+  // exported payload mapper and shared source-evidence validation.
+  const provider = catalog.find(p => p.source === source)
+  const scraper = source === 'dataiku' ? createDataikuScraper() : createCatalogScraper(provider)
+  const run = payload => scraper.run({
     fetchJson: async () => structuredClone(payload), fetchText: async () => careersHtml[source],
   })
 
-  test(`${source} retains current inventory evidence through registered source decoration`, async () => {
+  test(`${source} retains current inventory evidence through ${source === 'dataiku' ? 'shared native mapping' : 'registered source decoration'}`, async () => {
     const jobs = await run({ jobs: [record(source, 1)], meta: { total: 1 } })
     assert.equal(jobs.length, 1)
     assert.equal(jobs[0].source, source)
@@ -57,9 +64,11 @@ for (const source of ['tripadvisor', 'dataiku', 'sigmacomputing', 'buildkite']) 
   })
 
   test(`${source} foreign employer and mismatched role URLs are rejected`, async () => {
-    for (const absolute_url of [`https://job-boards.greenhouse.io/other/jobs/1`,
-      `https://job-boards.greenhouse.io/${source}/jobs/999`]) {
-      await assert.rejects(run({ jobs: [{ ...record(source, 1), absolute_url }], meta: { total: 1 } }), /identity|board|URL|detail route/i)
+    for (const [absolute_url, expectedError] of [
+      ['https://job-boards.greenhouse.io/other/jobs/1', /foreign native posting account|identity|board|URL|detail route/i],
+      [`https://job-boards.greenhouse.io/${source}/jobs/999`, /identity|board|URL|detail route/i],
+    ]) {
+      await assert.rejects(run({ jobs: [{ ...record(source, 1), absolute_url }], meta: { total: 1 } }), expectedError)
     }
   })
 

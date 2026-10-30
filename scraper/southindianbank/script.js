@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { hydrateSourceDescriptions } from '../../scraper-support/utils/sourceDescriptionHydration.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -101,8 +102,75 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const successfulExactResponse = (response, expectedUrl) => response?.status >= 200
+  && response.status < 300 && response.url === expectedUrl
+
+const notificationScriptUrl = html => {
+  const scripts = [...String(html).matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)]
+  for (const [, src] of scripts) {
+    const url = new URL(src, CAREERS_URL)
+    if (url.origin === new URL(CAREERS_URL).origin && url.pathname === '/RDC/js/index.js') return url.href
+  }
+  return null
+}
+
+// The document path is accepted only when the live board's script binds this
+// card's notification control to callpdf and exposes its verified URL template.
+export const resolveNotificationUrl = (job, html, response) => {
+  const scriptUrl = notificationScriptUrl(html)
+  if (!scriptUrl || !successfulExactResponse(response, scriptUrl) || !/^\d+$/.test(job.jobId)) return null
+  const card = (String(html).match(/<article class="job-card">[\s\S]*?<\/article>/gi) ?? [])
+    .find(value => new RegExp(`id=["']pdf_${job.jobId}["']`).test(value))
+  if (!card || normalizeWhitespace(card.match(/data-job-title=["']([^"']+)["']/i)?.[1]) !== job.title) return null
+  const script = String(response.html ?? '')
+  const handler = new RegExp(`\\$\\(['"]#pdf_${job.jobId}['"]\\)\\.on\\(\\s*['"]click['"]\\s*,\\s*function\\s*\\(\\s*\\)\\s*\\{\\s*callpdf\\(\\s*['"]${job.jobId}['"]\\s*\\)\\s*;?\\s*\\}\\s*\\)`)
+  const body = script.match(/function\s+callpdf\s*\(appid\)\s*\{([^}]+)\}/)?.[1] ?? ''
+  if (!handler.test(script) || !/url\s*=\s*["']Notification\/Notification_["']\s*\+\s*appid\s*\+\s*["']\.PDF["']\s*;\s*window\.open\(url\s*,/.test(body)) return null
+  return new URL(`Notification/Notification_${job.jobId}.PDF`, CAREERS_URL).href
+}
+
+const notificationDate = value => {
+  const match = String(value ?? '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/)
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : null
+}
+
+export const recoverNotificationDescription = (job, url, response) => {
+  if (!url || !successfulExactResponse(response, url) || typeof response.text !== 'string') return null
+  const text = normalizeWhitespace(response.text)
+  const documentTitle = text.match(/\b(RECRUITMENT OF.*?)\s+IMPORTANT NOTICE:/i)?.[1]
+  if (!/\bThe South Indian Bank (?:Ltd\.?|Limited)\b/i.test(text)
+    || documentTitle?.toUpperCase() !== normalizeWhitespace(job.title).toUpperCase()) return null
+  const postingDate = notificationDate(text.match(/Online Application\s*-\s*Start Date\s+(\d{2}\.\d{2}\.\d{4})/i)?.[1])
+  const closingDate = notificationDate(text.match(/Online Application\s*-\s*End Date\s+(\d{2}\.\d{2}\.\d{4})/i)?.[1])
+  // A matching campaign start is required: a reused role title is insufficient.
+  if (!postingDate || postingDate !== job.postingDate || !closingDate) return null
+  return { sourceDescription: response.text, sourceNotificationDescription: response.text, sourceNotificationUrl: url,
+    sourceNotificationDates: { postingDate, closingDate },
+    sourceDateConflict: closingDate !== job.closingDate }
+}
+
+const defaultFetchNotificationScript = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal, attempts: 1, timeoutMs: 15000, includeResponseMetadata: true,
+  headers: { 'User-Agent': USER_AGENT, Accept: 'text/javascript' }, label: SOURCE,
+})
+
+export const fetchNotificationPdfText = async (url, { signal, fetchImpl = fetch, timeoutMs = 15000 } = {}) => {
+  const boundedSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs)
+  boundedSignal.throwIfAborted()
+  const response = await fetchImpl(url, { signal: boundedSignal,
+    headers: { 'User-Agent': USER_AGENT, Accept: 'application/pdf' } })
+  if (!successfulExactResponse(response, url) || !/application\/pdf/i.test(response.headers.get('content-type') ?? '')) return null
+  const bytes = Buffer.from(await response.arrayBuffer())
+  if (bytes.length > 10 * 1024 * 1024 || bytes.subarray(0, 5).toString() !== '%PDF-') return null
+  const { extractTextFromPdfBuffer } = await import('../../scraper-support/shared/pdfText.js')
+  const text = await extractTextFromPdfBuffer(bytes, { signal: boundedSignal, timeoutMs: 30000 })
+  return { status: response.status, url: response.url, text }
+}
+
 export const createSouthIndianBankScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
+  async run({ fetchText = defaultFetchText, fetchNotificationScript, fetchPdfText,
+    signal, detailEnrichmentBudgetMs, now = () => new Date().toISOString() } = {}) {
+    signal?.throwIfAborted()
     const html = await fetchText(CAREERS_URL)
 
     if (!hasOfficialCareersSignal(html)) {
@@ -110,7 +178,34 @@ export const createSouthIndianBankScraper = () => ({
     }
 
     const jobs = extractOpenings(html, { now })
-    if (jobs.length > 0) return jobs
+    if (jobs.length > 0) {
+      // Page-only injected transports retain their existing offline contract.
+      const scriptReader = fetchNotificationScript || (fetchText === defaultFetchText ? defaultFetchNotificationScript : null)
+      const pdfReader = fetchPdfText || (fetchText === defaultFetchText ? fetchNotificationPdfText : null)
+      if (!scriptReader || !pdfReader) return jobs
+      const scriptUrl = notificationScriptUrl(html)
+      let scriptPromise
+      const details = new Map()
+      const hydrated = await hydrateSourceDescriptions(jobs, { signal, detailEnrichmentBudgetMs,
+        fetchDetail: async (job, options) => {
+          if (!scriptUrl) return null
+          scriptPromise ??= scriptReader(scriptUrl, options)
+          const url = resolveNotificationUrl(job, html, await scriptPromise)
+          if (!url) return null
+          const detail = recoverNotificationDescription(job, url, await pdfReader(url, options))
+          if (detail) details.set(job.jobId, detail)
+          return detail
+        },
+      })
+      return hydrated.map(job => job.sourceDescription && details.has(job.jobId) ? { ...job, ...details.get(job.jobId),
+        // Public visibility checks canonical source content, independently of
+        // detail diagnostics. Keep contradictory notification text as evidence
+        // until applicability is established, without making it public content.
+        ...(details.get(job.jobId).sourceDateConflict ? { sourceDescription: null, jobDescription: null } : {}),
+        sourceDetailComplete: false,
+        sourceDetailFailureKind: details.get(job.jobId).sourceDateConflict
+          ? 'notification-date-conflict' : 'pdf-completeness-unverified' } : job)
+    }
 
     if (hasEmptyOpeningsSignal(html)) return []
 

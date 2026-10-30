@@ -6,6 +6,7 @@ import { createDarwinboxScraper } from '../darwinbox/script.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { hydrateSourceDescriptions } from '../../scraper-support/utils/sourceDescriptionHydration.js'
 
 import { AGROSTAR_CATALOG } from './catalog.js'
 
@@ -68,13 +69,14 @@ export const hasOfficialAgroStarCareersSignals = (html = '') => {
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'agrostar-official',
   timeoutMs: 15000,
+  signal,
 })
 
 const normalizeDarwinboxJobUrl = (value) => {
@@ -178,8 +180,13 @@ export const createAgroStarScraper = ({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
     fetchListingPage,
+    fetchJobDetail = darwinboxScraper.fetchJobDetailFromApi,
+    detailEnrichmentBudgetMs = config.detailEnrichmentBudgetMs,
+    signal,
   } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL, { signal })
+    signal?.throwIfAborted()
 
     if (!hasOfficialAgroStarCareersSignals(careersHtml)) {
       throw new Error('AgroStar verified official careers page no longer matches the verified public surface')
@@ -189,16 +196,31 @@ export const createAgroStarScraper = ({
       ? extractInlineJobsFromOfficialCareersPage(careersHtml)
       : []
     const jobs = inlineJobs.length > 0
-      ? (maxJobs ? inlineJobs.slice(0, maxJobs) : inlineJobs)
+      ? await hydrateSourceDescriptions(
+        (maxJobs ? inlineJobs.slice(0, maxJobs) : inlineJobs).map(job => ({ ...job, sourceListingComplete: false })),
+        { signal, detailEnrichmentBudgetMs, fetchDetail: async (job, { signal: detailSignal }) => {
+          const payload = await fetchJobDetail({ jobId: job.jobId, companyId: DARWINBOX_COMPANY_ID, signal: detailSignal })
+          // Official inline links prove the selected roles, not their full
+          // descriptions or a complete board. Reuse the native detail guard.
+          return { sourceDescription: darwinboxScraper.validateJobDetail(payload, job) }
+        } },
+      )
       : await darwinboxScraper.run({
         maxPages,
         maxJobs,
         fetchListingPage,
+        fetchJobDetail,
+        detailEnrichmentBudgetMs,
+        signal,
       })
     const scrapedAt = now()
 
     return mapJobsWithInventoryEvidence(jobs, (job) => ({
       ...job,
+      // The native detail guard requires explicit India addresses before it
+      // accepts source content. Retain that stronger location evidence for
+      // cities that are absent from the public city-name allowlist.
+      ...(inlineJobs.length > 0 && job.sourceDetailComplete === true ? { country: 'India' } : {}),
       scrapedAt,
     }))
   },

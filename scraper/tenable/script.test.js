@@ -259,27 +259,9 @@ test('Tenable rejects India country metadata with a foreign-only location', asyn
   assert.equal(deduplicated.length, 1)
 })
 
-test('Tenable run validates the first-party handoff before reading the complete Greenhouse feed', async () => {
+test('Tenable registered run rejects legacy body-only transports', async () => {
   const tenable = await loadTenableModule()
-  const requested = []
-
-  const jobs = await tenable.createTenableScraper().run({
-    fetchText: async (url) => {
-      requested.push({ type: 'text', url })
-      return officialCareersHtml
-    },
-    fetchJson: async (url, options) => {
-      requested.push({ type: 'json', url, options })
-      return greenhousePayload
-    },
-    now: () => '2026-07-23T12:00:00.000Z',
-  })
-
-  assert.equal(jobs.length, 4)
-  assert.deepEqual(requested, [
-    { type: 'text', url: tenable.CAREERS_URL },
-    { type: 'json', url: tenable.buildGreenhouseJobsApiUrl(), options: { method: 'GET' } },
-  ])
+  await assert.rejects(tenable.createTenableScraper().run({fetchText: async () => officialCareersHtml, fetchJson: async () => greenhousePayload}), /body-only transport is unsupported/)
 })
 
 test('Tenable fails closed on first-party, payload, company, and job-URL drift', async () => {
@@ -290,7 +272,7 @@ test('Tenable fails closed on first-party, payload, company, and job-URL drift',
       fetchText: async () => '<html><title>Careers</title></html>',
       fetchJson: async () => greenhousePayload,
     }),
-    /verified official Tenable careers surface/i,
+    /body-only transport is unsupported/i,
   )
 
   assert.throws(

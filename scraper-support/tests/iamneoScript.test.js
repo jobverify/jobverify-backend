@@ -32,42 +32,17 @@ test('iamneo validates the verified first-party careers shell and external Keka 
   assert.deepEqual(iamneo.extractFirstPartyJobRecordUrls(careersShellHtml), [])
 })
 
-test('iamneo returns no jobs while the verified first-party careers page only exposes the external Keka handoff', async () => {
+// The current first-party Keka handoff has an enumerable SSR/API inventory.
+test('iamneo traverses the current native board instead of treating its handoff as empty', async () => {
   const iamneo = await loadIamneoModule()
-  const requestedUrls = []
-
-  const jobs = await iamneo.createIamneoScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === iamneo.CAREERS_URL) {
-        return careersShellHtml
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [iamneo.CAREERS_URL])
-  assert.deepEqual(jobs, [])
+  const { transport } = await import('../../scraper/iamneo/native.fixture.js')
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const jobs = await iamneo.createIamneoScraper().run({ fetchImpl: transport() })
+  assert.equal(jobs.length, 9)
+  assert.equal(readInventoryEvidence(jobs).status, 'complete-inventory')
+  assert.ok(jobs.every(job => job.sourceDetailComplete))
 })
-
-test('iamneo fails closed when the first-party careers handoff changes or first-party job records appear', async () => {
+test('iamneo rejects legacy text transport without HTTP metadata', async () => {
   const iamneo = await loadIamneoModule()
-
-  await assert.rejects(
-    iamneo.createIamneoScraper().run({
-      fetchText: async () => careersShellHtml.replace(
-        'https://iamneo.keka.com/careers',
-        'https://iamneo.ai/jobs',
-      ),
-    }),
-    /verified first-party careers shell/i,
-  )
-
-  await assert.rejects(
-    iamneo.createIamneoScraper().run({
-      fetchText: async () => careersWithFirstPartyJobRecordHtml,
-    }),
-    /first-party careers page now exposes public job records/i,
-  )
+  await assert.rejects(iamneo.createIamneoScraper().run({ fetchText: async () => careersShellHtml }), /unsupported legacy transport/)
 })

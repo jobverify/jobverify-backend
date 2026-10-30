@@ -54,6 +54,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Restore source checkpoint on rerun
+        if: steps.register.outputs.should_run == 'true'
         uses: actions/cache/restore@v4
         with:
           path: .cache/scraper-actions/run-state.json
@@ -61,6 +62,7 @@ jobs:
           restore-keys: |
             scraper-state-${{ github.run_id }}-
       - name: Run Scraper
+        if: steps.register.outputs.should_run == 'true'
         id: scraper_run
         run: timeout --signal=TERM --kill-after=60s 310m node --use-system-ca scraper-support/runner.js --parallel
         env:
@@ -93,7 +95,7 @@ jobs:
             node scripts/analyzeCoverageJobGaps.js --publishing --mongo --output .cache/scraper-actions/publishing-coverage
           fi
       - name: Upload scraper diagnostics
-        if: always()
+        if: always() && steps.register.outputs.should_run == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: scraper-run-${{ github.run_id }}-${{ github.run_attempt }}
@@ -105,7 +107,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Record stage outcome
-        if: always() && steps.register.outcome == 'success'
+        if: always() && steps.register.outputs.should_run == 'true'
         run: node scripts/pipelineGithub.js report
         env:
           PIPELINE_JOB_RESULT: ${{ job.status }}

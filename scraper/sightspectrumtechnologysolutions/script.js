@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { inspectSightSpectrumCareers, runCurrentSightSpectrum } from './nativeCareers.js'
 
 import SIGHTSPECTRUM_TECHNOLOGY_SOLUTIONS_CATALOG from './catalog.js'
 
@@ -12,9 +12,6 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<br\s*\/?>/gi, '\n')
@@ -29,15 +26,6 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
 const extractListItems = (html = '') => [...String(html ?? '').matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
   .map((match) => normalizeWhitespace(match[1]))
   .filter(Boolean)
@@ -48,8 +36,9 @@ const inferRemoteStatus = (location) => {
 }
 
 const inferCountry = (location) => {
-  if (/\bdallas|usa|united states\b/i.test(location)) return null
-  return 'India'
+  if (/^India$/i.test(normalizeWhitespace(location))) return 'India'
+  if (/^(?:USA|United States)$/i.test(normalizeWhitespace(location))) return 'United States'
+  return null
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
@@ -58,7 +47,9 @@ export const hasOfficialCareersSignal = (html = '') => {
     && normalized.includes('positions currently open at SightSpectrum')
   }
 
-export const extractJobs = (html = '') => [...String(html ?? '').matchAll(
+export const extractJobs = (html = '') => /type=["']application\/ld\+json["']/i.test(html)
+  ? inspectSightSpectrumCareers(html).jobs
+  : [...String(html ?? '').matchAll(
   /<section[^>]*class=["'][^"']*job-opening[^"']*["'][^>]*>([\s\S]*?)<\/section>/gi,
 )]
   .map((match) => {
@@ -68,12 +59,11 @@ export const extractJobs = (html = '') => [...String(html ?? '').matchAll(
       .map((paragraph) => normalizeWhitespace(paragraph[1]))
       .filter(Boolean)
     const location = paragraphs[0] || null
-    const rawDescription = paragraphs[1] || null
-    const jobDescription = rawDescription?.replace(/^Role Summary:\s*/i, '') || rawDescription
+    const jobDescription = normalizeWhitespace(block) || null
     const requiredSkills = extractListItems(block.match(/<h3[^>]*>\s*Requirements\s*<\/h3>([\s\S]*?)<\/ul>/i)?.[1])
     const country = inferCountry(location || '')
 
-    if (!title || !location || country !== 'India') return null
+    if (!title || !location) return null
 
     return {
       title,
@@ -84,10 +74,10 @@ export const extractJobs = (html = '') => [...String(html ?? '').matchAll(
       country,
       jobId: slugify(title),
       requisitionId: slugify(title),
-      sourceUrl: `${CAREERS_URL}#${slugify(title)}`,
-      applyUrl: `${CAREERS_URL}#${slugify(title)}`,
+      sourceUrl: CAREERS_URL,
+      applyUrl: null,
       employmentType: null,
-      experienceRequired: /\bdata engineer\b/i.test(title) ? '2+ years' : null,
+      experienceRequired: jobDescription?.match(/\b\d+(?:\s*[-–]\s*\d+)?\+?\s+years?\b/i)?.[0] || null,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills,
@@ -95,24 +85,14 @@ export const extractJobs = (html = '') => [...String(html ?? '').matchAll(
       closingDate: null,
       jobDescription,
       remoteStatus: inferRemoteStatus(location),
+      sourceDetailComplete: false,
+      sourceListingComplete: false,
     }
   })
   .filter(Boolean)
 
 export const createSightSpectrumTechnologySolutionsScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('The verified SightSpectrum Technology Solutions careers surface changed materially')
-    }
-
-    return extractJobs(careersHtml).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: now(),
-    }))
-  },
+  run: (options = {}) => runCurrentSightSpectrum({ ...options, now }),
 })
 
 export const run = async (options = {}) => createSightSpectrumTechnologySolutionsScraper().run(options)

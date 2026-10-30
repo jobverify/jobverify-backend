@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { setImmediate } from 'node:timers/promises'
 import { createPhenomScraper } from '../phenom/engine.js'
-import { createNativeDetailRecovery } from '../utils/nativeDetailRecovery.js'
+import { createNativeDetailRecovery, runWithNativeDetailRecovery } from '../utils/nativeDetailRecovery.js'
 
 const scraper = createPhenomScraper({
   source: 'phenom-recovery-progress', companyName: 'Phenom Recovery Progress',
@@ -82,4 +83,40 @@ test('a new recovery session fetches a previously mismatched native role again',
   const next = await scraper.run({ fetchText, nativeDetailRecovery: createNativeDetailRecovery() })
   assert.equal(next[0].sourceDetailComplete, true)
   assert.equal(reads, 2)
+})
+
+test('an exhausted upstream detail does not abandon unvisited roles in the recovery lifecycle', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.parse('2026-10-29T00:00:00Z') })
+  const rows = [row('1'), row('2'), row('3')]
+  const reads = new Map()
+  let outcome
+  const operation = runWithNativeDetailRecovery(recovery => scraper.run({
+    nativeDetailRecovery: recovery,
+    detailEnrichmentBudgetMs: 100,
+    fetchText: async (url, { signal }) => {
+      if (url.endsWith('/search-results')) return page(rows)
+      const id = url.match(/\/job\/([^/]+)/)[1]
+      reads.set(id, (reads.get(id) || 0) + 1)
+      if (id === '1') throw new Error('HTTP 503 after transport retries')
+      if (id === '2' && reads.get(id) === 1) {
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(resolve, 200)
+          signal.addEventListener('abort', () => { clearTimeout(timer); reject(signal.reason) }, { once: true })
+        })
+      }
+      return detail(rows.find(job => job.jobId === id))
+    },
+  })).then(value => { outcome = { value } }, error => { outcome = { error } })
+  for (let step = 0; !outcome && step < 100; step++) {
+    await setImmediate()
+    t.mock.timers.tick(25)
+  }
+  await operation
+  assert.ifError(outcome.error)
+  assert.equal(outcome.value[0].sourceDetailFailureKind, 'upstream')
+  assert.equal(outcome.value[0].sourceDetailComplete, false)
+  assert.ok(outcome.value.slice(1).every(job => job.sourceDetailComplete === true))
+  assert.equal(reads.get('1'), 1, 'A settled transport failure must not consume every continuation')
+  assert.equal(reads.get('2'), 2)
+  assert.equal(reads.get('3'), 1)
 })

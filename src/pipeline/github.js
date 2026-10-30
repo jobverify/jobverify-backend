@@ -26,7 +26,12 @@ export async function githubRequest(repo,endpoint,{token=process.env.GITHUB_PAT,
     headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},
     ...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(15000)}); }
   catch { throw pipelineError('GitHub could not be reached. Refresh status to reconcile the run.',502); }
-  if(!response.ok)throw pipelineError(`GitHub returned ${response.status}. Check workflow deployment and repository Actions permissions.`,502);
+  if(!response.ok) {
+    const details=await response.json().catch(()=>null);
+    throw pipelineError(`GitHub returned ${response.status}. Check workflow deployment and repository Actions permissions.`,502,{
+      githubStatus:response.status,githubMessage:typeof details?.message==='string'?details.message.slice(0,1000):'',
+    });
+  }
   return response.status===204?null:response.json();
 }
 export const dispatchGithubStage=(run,stage,token=process.env.GITHUB_PAT)=>githubRequest(run.repo,`/actions/workflows/${WORKFLOWS[stage.key]}/dispatches`,{

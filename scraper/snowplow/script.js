@@ -1,8 +1,8 @@
 ﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createHiBobNativeInventory } from '../../scraper-support/hibob/nativeInventory.js'
-import CATALOG, { NATIVE_CONFIG } from './catalog.js'
+import { createCurrentSnowplowScraper } from './currentNative.js'
+import CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -136,7 +136,7 @@ export const extractHiBobJobs = (payload = {}) =>
     })
     .filter(Boolean)
 
-export const createSnowplowScraper = (options = {}) => createHiBobNativeInventory(NATIVE_CONFIG, options)
+export const createSnowplowScraper = (options = {}) => createCurrentSnowplowScraper(options)
 
 export const run = async (options = {}) => createSnowplowScraper(options).run(options)
 

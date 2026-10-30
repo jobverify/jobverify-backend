@@ -28,6 +28,10 @@ test('pipeline API authorizes configuration, exact dispatch, tracking and confli
   if(!String(url).startsWith('https://api.github.com/'))return nativeFetch(url,options);
   const pathname=new URL(url).pathname;calls.push({pathname,body:options.body?JSON.parse(options.body):null});
   if(pathname.endsWith('/owner/repository'))return Response.json({default_branch:'main'});
+  if(pathname.endsWith('/contents/.github/workflows/scraper.yml')) {
+   if(options.method==='PUT')return Response.json({content:{sha:'b'.repeat(40)}});
+   return Response.json({sha:'a'.repeat(40),encoding:'base64',content:Buffer.from("on:\n  schedule:\n    - cron: '0 17 * * *'\n  workflow_dispatch:\njobs:\n").toString('base64')});
+  }
   if(pathname.endsWith('/commits/main'))return Response.json({sha:'a'.repeat(40)});
   if(pathname.endsWith('/dispatches'))return new Response(null,{status:204});
   if(pathname.endsWith('/runs'))return Response.json({workflow_runs:[]});
@@ -43,6 +47,14 @@ test('pipeline API authorizes configuration, exact dispatch, tracking and confli
  };
  assert.equal((await request('pipeline/status',{id:null})).status,401);
  assert.equal((await request('pipeline/status',{id:'member'})).status,403);
+ for(const method of ['GET','PUT']) {
+  assert.equal((await request('pipeline/schedule',{method,id:null})).status,401);
+  assert.equal((await request('pipeline/schedule',{method,id:'member'})).status,403);
+ }
+ assert.equal((await request('pipeline/schedule')).body.data.time,'22:30');
+ assert.equal((await request('pipeline/schedule',{method:'PUT',body:{time:'24:00',sha:'a'.repeat(40)}})).status,400);
+ const schedule=await request('pipeline/schedule',{method:'PUT',body:{time:'02:08',sha:'a'.repeat(40)}});
+ assert.equal(schedule.status,200);assert.equal(schedule.body.data.cron,'38 20 * * *');
  assert.equal((await request('pipeline/runs/missing/download',{id:null})).status,401);
  assert.equal((await request('pipeline/runs/missing/download',{id:'member'})).status,403);
  assert.equal((await request('pipeline/runs/missing/download')).status,404);

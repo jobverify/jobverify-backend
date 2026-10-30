@@ -3,15 +3,17 @@ import PipelineRun from '../models/PipelineRun.js';
 import { createStages, validateConfiguration, isTerminal, describeStageCompletion } from './policy.js';
 
 export const pipelineError=(message,status=409,extra={})=>Object.assign(new Error(message),{status,...extra});
-export async function createPipeline({configuration,target,origin,repo,ref,sha,requestedBy,localOwner,initialRunId}) {
+export async function createPipeline({configuration,target,origin,repo,ref,sha,requestedBy,localOwner,initialRunId,scheduleSlot}) {
   validateConfiguration(configuration);
   await PipelineRun.init();
   await PipelineRun.collection.createIndex({activeKey:1},{unique:true,sparse:true});
+  if(scheduleSlot)await PipelineRun.collection.createIndex({scheduleSlot:1},{unique:true,sparse:true});
   const stages=createStages(configuration);
   if(initialRunId)Object.assign(stages.find(s=>s.enabled),{status:'preparing',startedAt:new Date(),githubRunId:Number(initialRunId)});
   try { return (await PipelineRun.create({_id:randomUUID(),activeKey:'database',origin,target,repo,ref,sha,requestedBy,localOwner,
-    heartbeatAt:new Date(),startedAt:new Date(),stages})).toObject(); }
+    ...(scheduleSlot?{scheduleSlot}:{}),heartbeatAt:new Date(),startedAt:new Date(),stages})).toObject(); }
   catch(error) {
+    if(error.code===11000&&scheduleSlot&&await PipelineRun.exists({scheduleSlot}))throw pipelineError('This scheduled interval already started.',409,{scheduleAlreadyClaimed:true});
     if(error.code===11000)throw pipelineError('A pipeline is already active.',409,{activeRun:await PipelineRun.findOne({activeKey:'database'}).lean()});
     throw error;
   }

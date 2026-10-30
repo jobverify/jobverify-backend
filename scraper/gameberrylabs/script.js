@@ -1,3 +1,6 @@
+import currentConfig from './currentConfig.json' with {type:'json'}
+import currentScope from './current.scope.json' with {type:'json'}
+import {runCurrentKeka} from '../acciojob/currentKeka.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -153,30 +156,8 @@ export const isExpectedCareersRedirect = (page = {}) =>
   && String(page?.url || '') === CAREERS_URL
   && String(page?.location || '') === EXTERNAL_HANDOFF_URL
 
-export const createGameberryLabsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    const firstPartyJobRecordUrls = extractFirstPartyJobRecordUrls(homepage.text)
-
-    if (firstPartyJobRecordUrls.length > 0) {
-      throw new Error('Gameberry Labs first-party homepage now exposes public job records')
-    }
-
-    if (!homepage.ok || !hasOfficialHomepageSignal(homepage.text) || extractCareersRouteUrl(homepage.text) !== CAREERS_URL) {
-      throw new Error('Gameberry Labs verified official homepage no longer matches the trusted careers handoff')
-    }
-
-    if (hasPublicJobsSignal(homepage.text)) {
-      throw new Error('Gameberry Labs homepage now appears to expose public jobs')
-    }
-
-    const careersRedirect = await fetchPage(CAREERS_URL, { redirectMode: 'manual' })
-    if (!isExpectedCareersRedirect(careersRedirect)) {
-      throw new Error('Gameberry Labs verified careers redirect no longer matches the pinned external handoff')
-    }
-
-    return []
-  },
+export const createGameberryLabsScraper = (defaults={}) => ({
+  run: (options={}) => runCurrentKeka(currentConfig,currentScope,{...defaults,...options}),
 })
 
 export const run = async (options = {}) => createGameberryLabsScraper().run(options)

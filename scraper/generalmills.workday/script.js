@@ -1,27 +1,37 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { runVerifiedWorkdayBoardUnion } from '../../scraper-support/shared/workdayBoardUnion.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
 export const SOURCE = "generalmills"
 export const COMPANY = "General Mills"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-01"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 09 exact-name sentinel for General Mills added on Saturday, August 1, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = "https://www.careers.generalmills.com/career-areas"
+export const VERIFIED_SURFACE_SUMMARY = 'Read the current corporate-bound public Workday board, reconcile its full native listing and verify country evidence. Unresolved geography and other company recruitment surfaces remain incomplete.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = async (options = {}) => {
+  const signal = AbortSignal.any([...(options.signal ? [options.signal] : []), AbortSignal.timeout(600000)])
+  signal.throwIfAborted()
+  let jobs
+  try {
+    jobs = await runVerifiedWorkdayBoardUnion({ source: SOURCE, company: COMPANY,
+      boards: [{ tenant: "genmills", site: "GMI_External_Careers", baseUrl: "https://genmills.wd1.myworkdayjobs.com/GMI_External_Careers", scraperDir: currentDir }],
+      // This board omits the legal employer on some public roles. Keep that
+      // native field null; every nonempty employer must still match this source.
+      employerPattern: /\b(?:general|genl)\s+mills\b/i, requireEmployer: false,
+      completeSourceScope: false, allowUnresolvedCountryScope: true,
+      scopeReason: 'current-corporate-bound-Workday-board;proven-India-roles-only;unresolved-geography-and-other-recruitment-surfaces-unverified',
+    }, { ...options, signal, nativeDetailRecovery: false })
+  } catch (error) { signal.throwIfAborted(); throw error }
+  signal.throwIfAborted()
+  for (const job of jobs) Object.assign(job, {
+    sourceScopeComplete: false, sourceListingComplete: false, lifecycleCleanupAllowed: false,
+  })
+  return jobs
+}
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
-  }
+  if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  else await saveToDB(jobs, SOURCE)
 }

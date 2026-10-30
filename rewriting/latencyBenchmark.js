@@ -15,7 +15,7 @@ const summarize = (rows, targetMs) => {
 export const measureRewriteWarmup = async (input, { client, signal, deadline = Date.now() + 600000, onResult = () => {} } = {}) => {
   const began = performance.now();
   let response, error;
-  try { response = await client.generate(input, { signal, remainingMs: deadline - Date.now(), cacheMode: 'refresh' }); }
+  try { response = await client.generate(input, { signal, remainingMs: deadline - Date.now(), cacheMode: 'refresh', allowSourceFallback: false }); }
   catch (failure) { error = failure; response = failure; }
   const checked = error ? { ok: false, reason: error.name === 'TimeoutError' ? 'timeout' : 'generation_error' }
     : response.validationFailure || validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
@@ -49,7 +49,7 @@ export const benchmarkRewriteLatency = async (jobs, { client, concurrency = 1, c
         if (!assessment.ok) checked = assessment;
         else {
           try {
-            response = await client.generate(input, { signal, remainingMs: deadline - Date.now(), cacheMode });
+            response = await client.generate(input, { signal, remainingMs: deadline - Date.now(), cacheMode, allowSourceFallback: false });
             signal?.throwIfAborted();
             checked = response.finishReason === 'stop' && response.validationFailure ? response.validationFailure
               : validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);

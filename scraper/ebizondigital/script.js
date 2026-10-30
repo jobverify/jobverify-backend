@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { hydrateSourceDescriptions, sourceDescriptionFromPosting } from '../../scraper-support/utils/sourceDescriptionHydration.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -173,26 +174,30 @@ export const extractBoardJobs = (html) => {
   return jobs
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal, includeResponseMetadata = false } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  signal,
+  includeResponseMetadata,
 })
 
 export const createEbizOnDigitalScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, signal, detailEnrichmentBudgetMs } = {}) {
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The official EbizON careers page no longer matches the verified public surface')
     }
 
-    const boardHtml = await fetchText(BOARD_URL)
+    signal?.throwIfAborted()
+    const boardHtml = await fetchText(BOARD_URL, { signal })
 
     if (!hasVerifiedBoardSignal(boardHtml)) {
       throw new Error('The verified EbizON ApplyToJob board no longer matches the expected public surface')
@@ -201,12 +206,18 @@ export const createEbizOnDigitalScraper = ({
     const jobs = extractBoardJobs(boardHtml)
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
-    return selectedJobs.map((job) => ({
+    const decorated = selectedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: new Date().toISOString(),
     }))
+    return hydrateSourceDescriptions(decorated, {
+      signal, detailEnrichmentBudgetMs,
+      fetchDetail: async (job, { signal }) => sourceDescriptionFromPosting(job,
+        await fetchText(job.sourceUrl, { signal, includeResponseMetadata: true }),
+        { employerAliases: ['EbizON', 'Ebizon'], normalizeTitle }),
+    })
   },
 })
 

@@ -313,6 +313,7 @@ test('Cognus Technology helper extraction stays pinned to the live official home
   const liveJobs = await cognus.createCognusTechnologyScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
+    fetchDetail: async () => { throw new Error('Detail unavailable in legacy listing fixture') },
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === cognus.HOMEPAGE_URL) return cognusHomepageHtml
