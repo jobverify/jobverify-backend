@@ -37,6 +37,7 @@
     "backfill:job-types": "node scripts/backfillJobTypes.js",
     "db:clear": "node scripts/clearJobs.js",
     "db:purge-retired-companies": "node scripts/purgeRetiredCompanyJobs.js",
+    "db:repair-unspecified-job-types": "node scripts/repairUnspecifiedPublicJobTypes.js",
     "db:purge-expired": "node scripts/purgeExpiredJobs.js",
     "db:clean-non-india": "node scripts/removeNonIndiaJobs.js",
     "db:delete-user": "node scripts/sweepDeleteUser.js",

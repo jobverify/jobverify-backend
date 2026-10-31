@@ -3,6 +3,7 @@ import test from 'node:test'
 import { getScraperCatalog, createCatalogScraper } from '../providers/index.js'
 import { isFreshCompleteInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { createDataikuScraper } from '../../scraper/dataiku/script.js'
+import { createPublishingGapAtsScraper } from '../utils/publishingGapAts.js'
 
 const catalog = getScraperCatalog()
 const careersHtml = {
@@ -16,17 +17,19 @@ const record = (board, id, location = 'Bengaluru, India') => ({
 })
 
 for (const source of ['tripadvisor', 'dataiku', 'sigmacomputing', 'buildkite']) {
-  // Dataiku's registered adapter now requires real HTTP response metadata and
-  // opening/closing employer proof. Its separate registered fixture suite
-  // covers that path; these synthetic payload cases retain coverage of the
-  // exported payload mapper and shared source-evidence validation.
+  // Dataiku and Sigma have separate authentic registered-source fixture tests.
+  // These existing synthetic cases exercise their inner native mappers. Their
+  // mapper evidence does not qualify a current employer or its whole inventory.
   const provider = catalog.find(p => p.source === source)
-  const scraper = source === 'dataiku' ? createDataikuScraper() : createCatalogScraper(provider)
+  const sharedMapping = source === 'dataiku' || source === 'sigmacomputing'
+  const scraper = source === 'dataiku' ? createDataikuScraper()
+    : source === 'sigmacomputing' ? createPublishingGapAtsScraper({ ...provider, boardToken: source })
+      : createCatalogScraper(provider)
   const run = payload => scraper.run({
     fetchJson: async () => structuredClone(payload), fetchText: async () => careersHtml[source],
   })
 
-  test(`${source} retains current inventory evidence through ${source === 'dataiku' ? 'shared native mapping' : 'registered source decoration'}`, async () => {
+  test(`${source} retains native inventory evidence through ${sharedMapping ? 'shared native mapping' : 'registered source decoration'}`, async () => {
     const jobs = await run({ jobs: [record(source, 1)], meta: { total: 1 } })
     assert.equal(jobs.length, 1)
     assert.equal(jobs[0].source, source)
@@ -43,14 +46,18 @@ for (const source of ['tripadvisor', 'dataiku', 'sigmacomputing', 'buildkite']) 
 
   test(`${source} explicit empty native inventory has fresh verified-empty evidence`, async () => {
     const jobs = await run({ jobs: [], meta: { total: 0 } })
-    // Sigma's official fixture still advertises role 1, which contradicts an empty feed.
-    assert.equal(readInventoryEvidence(jobs)?.status, source === 'sigmacomputing' ? 'discovery-only' : 'verified-empty')
-    assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(jobs)), source !== 'sigmacomputing')
+    // Sigma's registered-source advertisement mismatch is covered separately below.
+    assert.equal(readInventoryEvidence(jobs)?.status, 'verified-empty')
+    assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(jobs)), true)
   })
 
   test(`${source} missing or truncated totals and missing descriptions remain incomplete`, async () => {
     for (const payload of [{ jobs: [] }, { jobs: [record(source, 1)], meta: { total: 2 } },
       { jobs: [{ ...record(source, 1), content: '' }], meta: { total: 1 } }]) {
+      if (source === 'sigmacomputing' && payload.meta?.total === 2) {
+        await assert.rejects(run(payload), /Incomplete greenhouse inventory/i)
+        continue
+      }
       const jobs = await run(payload)
       assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
       assert.ok(jobs.every(job => job.sourceListingComplete === false))
@@ -79,14 +86,24 @@ for (const source of ['tripadvisor', 'dataiku', 'sigmacomputing', 'buildkite']) 
     assert.equal(jobs.length, 1)
     assert.equal(jobs[0].applyUrl, absolute_url)
     assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+    // The inner mapper delegates company-host validation to the source. Keep
+    // testing Sigma's actual source URL guard without fabricating native identity fields.
+    const normalizeSourceUrl = source === 'sigmacomputing'
+      ? (await import('../../scraper/sigmacomputing/script.js')).normalizeGreenhouseJobUrl : null
+    if (normalizeSourceUrl) assert.equal(normalizeSourceUrl(absolute_url, 1), absolute_url)
     for (const badUrl of [`${official.origin}/careers/detail/?gh_jid=999`,
       `${official.origin}/careers/detail/?gh_jid=1&gh_jid=999`,
       'https://unrelated.example/careers/detail/?gh_jid=1']) {
-      await assert.rejects(run({ jobs: [{ ...record(source, 1), absolute_url: badUrl }], meta: { total: 1 } }), /identity|board|URL|detail route/i)
+      if (normalizeSourceUrl) assert.equal(normalizeSourceUrl(badUrl, 1), null)
+      else await assert.rejects(run({ jobs: [{ ...record(source, 1), absolute_url: badUrl }], meta: { total: 1 } }), /identity|board|URL|detail route/i)
     }
   })
 
   test(`${source} duplicate native IDs cannot establish complete inventory`, async () => {
+    if (source === 'sigmacomputing') {
+      await assert.rejects(run({ jobs: [record(source, 1), record(source, 1)], meta: { total: 2 } }), /duplicate native identity/i)
+      return
+    }
     const jobs = await run({ jobs: [record(source, 1), record(source, 1)], meta: { total: 2 } })
     assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
   })

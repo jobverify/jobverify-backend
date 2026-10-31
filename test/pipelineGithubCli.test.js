@@ -48,9 +48,28 @@ test('GitHub CLI registers direct roots, reports work and dispatches separate co
  await run('register','rewrite',1101,{PIPELINE_ID:record._id,PIPELINE_DISPATCH_TOKEN:record.stages[1].dispatchToken});
  await fs.writeFile(path.join(directory,'.cache/scraper-actions/description-summary.json'),JSON.stringify({queued:3103,published:2793,skipped:309,failed:1,warnings:1,pendingEstimate:0}));
  await run('report','rewrite',1101,{PIPELINE_JOB_RESULT:'success'});
+ record=await PipelineRun.findById(record._id).lean();assert.equal(record.stages[1].summary.failed,1);assert.equal(record.stages[1].summary.warnings,1);
+ // The matrix reporter must combine four independent artifacts before handoff.
+ for(let shard=0;shard<4;shard++)await fs.writeFile(path.join(directory,`.cache/scraper-actions/description-summary-${shard}.json`),JSON.stringify({shard,shardCount:4,mode:'publish',outcome:'completed',queued:10,published:9,failed:1,warnings:1,pendingEstimate:0}));
+ await run('report','rewrite',1101,{PIPELINE_JOB_RESULT:'success',JOB_DESCRIPTION_REWRITE_SHARD_COUNT:'4'});
+ record=await PipelineRun.findById(record._id).lean();
+ assert.equal(record.stages[1].summary.queued,40);assert.equal(record.stages[1].summary.published,36);
+ assert.equal(record.stages[1].summary.failed,4);assert.equal(record.stages[1].summary.workers.length,4);
+ // A one-partition plan still uses a suffixed artifact; larger dynamic plans
+ // must be aggregated in the same registered workflow before classification.
+ for(const shardCount of [1,32]) {
+  for(let shard=0;shard<shardCount;shard++)await fs.writeFile(path.join(directory,`.cache/scraper-actions/description-summary-${shard}.json`),JSON.stringify({shard,shardCount,mode:'publish',outcome:'completed',queued:2,published:2,failed:0,warnings:0,pendingEstimate:0}));
+  await run('report','rewrite',1101,{PIPELINE_JOB_RESULT:'success',JOB_DESCRIPTION_REWRITE_SHARD_COUNT:String(shardCount)});
+  record=await PipelineRun.findById(record._id).lean();
+  assert.equal(record.stages[1].summary.queued,shardCount*2);
+  assert.equal(record.stages[1].summary.published,shardCount*2);
+  assert.equal(record.stages[1].summary.workers.length,shardCount);
+  const artifact=JSON.parse(await fs.readFile(path.join(directory,'.cache/scraper-actions/description-summary.json'),'utf8'));
+  assert.equal(artifact.shardCount,shardCount);assert.equal(artifact.processingComplete,true);
+ }
  await complete('rewrite','Jobverify Description Rewrite',1101);
  record=await PipelineRun.findById(record._id).lean();assert.equal(record.stages[2].status,'queued');
- assert.equal(record.stages[1].status,'completed');assert.equal(record.stages[1].summary.failed,1);assert.equal(record.stages[1].summary.warnings,1);
+ assert.equal(record.stages[1].status,'completed');
  await run('register','classification',1102,{PIPELINE_ID:record._id,PIPELINE_DISPATCH_TOKEN:record.stages[2].dispatchToken});
  for(let shard=0;shard<4;shard++)await fs.writeFile(path.join(directory,`.cache/scraper-actions/classification-${shard}.json`),JSON.stringify({shard,shardCount:4,assigned:1,scanned:4,completed:1,failed:0}));
  await run('report','classification',1102,{PIPELINE_JOB_RESULT:'success'});

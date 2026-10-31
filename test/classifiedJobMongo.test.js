@@ -41,7 +41,7 @@ test('persisted authoritative categories and experience filters agree with Mongo
     const job = stored.find(candidate => candidate.fingerprint === row.fingerprint);
     assert.equal(row.category, normalizeJobListResponseJob(job).jobType);
     assert.equal(row.category, job.jobType);
-    if (job.classification.resolved.jobType === 'Unspecified') assert.equal(job.jobType, 'Full-time Experienced');
+    if (job.classification.resolved.jobType === 'Unspecified') assert.equal(job.jobType, 'Unspecified');
   }
   for (const experienceYear of ['0', '1', '3', 'unspecified']) {
     const matched = await Job.find(buildJobFilterConditions({ experienceYear })).select('fingerprint').lean().exec();
@@ -52,7 +52,7 @@ test('persisted authoritative categories and experience filters agree with Mongo
   assert.deepEqual((await Job.find(buildJobFilterConditions({ experienceYear: 'unspecified' })).lean().exec()).map(job => job.jobType), ['Full-time Experienced']);
 
   await t.test('uncertain source experience excludes stale numeric years in Mongo and saved filters', async () => {
-    const unknown = stored.find(job => job.classification.resolved.jobType === 'Unspecified');
+    const unknown = stored.find(job => job.classification.decisionSource === 'model_fallback');
     assert.ok(unknown);
     await Job.updateOne({ _id: unknown._id }, { $set: { experienceYears: [3, 5] } });
     const stale = await Job.findById(unknown._id).lean();
@@ -166,6 +166,65 @@ test('persisted authoritative categories and experience filters agree with Mongo
     assert.equal(saved.jobType, 'Full-time Experienced');
     assert.equal(saved.experienceProfile.minimumYears, 5);
     assert.equal(saved.sourceExperienceRequired, '5');
+  });
+
+  await t.test('listing-only rescrapes preserve source categories and the model fallback', async t => {
+    const options = { now, enrichPublicExperience: false, replaceExisting: false, enqueueAlerts: false, refreshDatasetSummary: false };
+    for (const [source, sourceEmploymentType, expectedType] of [
+      ['partial-contract', 'Contract', 'Contract'],
+      ['partial-intern', 'Internship', 'Intern'],
+      ['partial-unknown', null, 'Full-time Experienced'],
+    ]) {
+      await t.test(expectedType, async () => {
+        const listing = { title: 'Engineer', company: 'Partial Detail Company', source,
+          location: 'Bangalore, India', city: 'Bangalore', country: 'India',
+          applyUrl: `https://example.com/jobs/${source}`, sourceUrl: `https://example.com/jobs/${source}` };
+        await saveToDB([{ ...listing, sourceEmploymentType, minimumQualification: 'A degree in engineering.',
+          description: 'Develop reliable product services and collaborate with the engineering team.' }], source, options);
+        await classifyPending(now);
+        const prior = await Job.findOne({ source }).lean();
+        assert.equal(prior.jobType, expectedType);
+        await saveToDB([{ ...listing, preserveExistingSourceContent: true }], source, options);
+        const retained = await Job.findById(prior._id).lean();
+        assert.equal(retained.jobType, expectedType);
+        assert.equal(retained.employmentType, prior.employmentType);
+        assert.equal(retained.sourceEmploymentType, prior.sourceEmploymentType);
+        assert.equal(retained.sourceExperienceRequired, prior.sourceExperienceRequired);
+        assert.equal(retained.minimumQualification, prior.minimumQualification);
+        assert.equal(retained.sourceDescription, prior.sourceDescription);
+        assert.equal(retained.sourceContentHash, prior.sourceContentHash);
+        assert.deepEqual(retained.experienceYears, prior.experienceYears);
+
+        // A successful new detail fetch must replace the retained source and
+        // queue a decision for the changed facts, even if the fallback flag is stale.
+        const updatedDescription = 'Permanent full-time work requiring 5 years of professional experience.';
+        await saveToDB([{ ...listing, preserveExistingSourceContent: true,
+          sourceEmploymentType: 'Full-time', sourceExperienceRequired: '5', description: updatedDescription }], source, options);
+        const changed = await Job.findById(prior._id).lean();
+        assert.equal(changed.sourceDescription, updatedDescription);
+        assert.notEqual(changed.sourceContentHash, prior.sourceContentHash);
+        assert.equal(changed.sourceEmploymentType, 'Full-time');
+        assert.equal(changed.sourceExperienceRequired, '5');
+        assert.equal(changed.jobType, 'Unspecified');
+        assert.equal(changed.classification, undefined);
+        assert.equal(changed.postClassification.status, 'pending');
+        await classifyPending(now);
+        assert.equal((await Job.findById(prior._id).lean()).jobType, 'Full-time Experienced');
+      });
+    }
+  });
+
+  await t.test('fresh detail on a new role clears a stale preservation flag before insertion', async () => {
+    const source = 'new-recovered-detail';
+    const description = 'Develop reliable product services and collaborate with the engineering team.';
+    await saveToDB([{ title: 'Engineer', company: 'Recovered Detail Company', source,
+      city: 'Bangalore', country: 'India', location: 'Bangalore, India',
+      applyUrl: 'https://example.com/jobs/recovered-detail', preserveExistingSourceContent: true,
+      description }], source, { now, enrichPublicExperience: false, replaceExisting: false,
+      enqueueAlerts: false, refreshDatasetSummary: false });
+    const stored = await Job.findOne({ source }).lean();
+    assert.equal(stored.sourceDescription, description);
+    assert.equal(stored.postClassification.status, 'pending');
   });
 
   await t.test('a classifier outage leaves saved jobs queued for a later retry', async () => {

@@ -3,6 +3,7 @@ import test from 'node:test'
 import { createCatalogScraper, getScraperCatalog } from '../providers/index.js'
 import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { createPrefectScraper } from '../../scraper/prefect/script.js'
+import { createAshbyApiScraper } from '../utils/ashbyApi.js'
 
 const catalog = getScraperCatalog()
 const sources = ['zapier', 'sisense', 'cartesia', 'certifyos', 'ema', 'prefect']
@@ -17,7 +18,12 @@ const row = (board, id = 'native-role', location = 'Bengaluru, India', country =
 })
 
 for (const source of sources) {
-  const run = (payload, options = {}) => createCatalogScraper(catalog.find(p => p.source === source)).run({
+  // Zapier now has independent current-corporate/public-role source tests.
+  // Retain these original synthetic payloads as unchanged shared API controls.
+  const adapter = () => source === 'zapier' ? createAshbyApiScraper({ source, companyName: 'Zapier',
+    ashbyJobBoardUrl: 'https://api.ashbyhq.com/posting-api/job-board/zapier' }) : createCatalogScraper(catalog.find(p => p.source === source))
+  const label = source === 'zapier' ? 'zapier shared API compatibility' : source
+  const run = (payload, options = {}) => adapter().run({
     fetchText: async () => prefectPage,
     fetchJson: async url => {
       assert.equal(url, `https://api.ashbyhq.com/posting-api/job-board/${source}`)
@@ -25,7 +31,7 @@ for (const source of sources) {
     }, ...options,
   })
 
-  test(`${source} retains complete native Ashby inventory through registered source decoration`, async () => {
+  test(`${label} retains complete native Ashby inventory through its adapter decoration`, async () => {
     const jobs = await run({ apiVersion: '1', jobs: [row(source), row(source, 'foreign-role', 'Boston, United States', 'US')] })
     assert.equal(jobs.length, 1)
     assert.equal(jobs[0].jobId, 'native-role')
@@ -35,7 +41,7 @@ for (const source of sources) {
     assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(jobs)), true)
   })
 
-  test(`${source} checked foreign-only and globally empty Ashby feeds remain distinct`, async () => {
+  test(`${label} checked foreign-only and globally empty Ashby feeds remain distinct`, async () => {
     for (const [records, status] of [[[], 'verified-empty'], [[row(source, 'foreign-role', 'Boston, United States', 'US')], 'complete-inventory']]) {
       const jobs = await run({ apiVersion: '1', jobs: records })
       assert.equal(jobs.length, 0)
@@ -44,7 +50,7 @@ for (const source of sources) {
     }
   })
 
-  test(`${source} includes a proven secondary India location without relabeling the foreign primary`, async () => {
+  test(`${label} includes a proven secondary India location without relabeling the foreign primary`, async () => {
     const record = row(source, 'secondary-role', 'Boston, United States', 'US')
     record.secondaryLocations = [{ location: 'Kochi, India', address: { addressCountry: 'India', addressLocality: 'Kochi' } }]
     const jobs = await run({ apiVersion: '1', jobs: [record] })
@@ -54,7 +60,7 @@ for (const source of sources) {
     assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(jobs)), true)
   })
 
-  test(`${source} unknown native location and missing descriptions cannot authorize cleanup`, async () => {
+  test(`${label} unknown native location and missing descriptions cannot authorize cleanup`, async () => {
     for (const record of [row(source, 'unlocated', 'Remote', ''),
       { ...row(source), descriptionHtml: '', descriptionPlain: '' }]) {
       const jobs = await run({ apiVersion: '1', jobs: [record] })
@@ -63,7 +69,7 @@ for (const source of sources) {
     }
   })
 
-  test(`${source} native errors, unsupported schemas and foreign employer roles fail before persistence`, async () => {
+  test(`${label} native errors, unsupported schemas and foreign employer roles fail before persistence`, async () => {
     for (const payload of [{ apiVersion: '1', jobs: [], error: 'denied' }, {},
       { apiVersion: '2', jobs: [] }, { apiVersion: '1', jobs: [row('other-employer')] },
       { apiVersion: '1', jobs: [row(source), row(source)] }]) {
@@ -71,7 +77,7 @@ for (const source of sources) {
     }
   })
 
-  test(`${source} cancellation before a native fetch is propagated`, async () => {
+  test(`${label} cancellation before a native fetch is propagated`, async () => {
     const reason = new Error('source cancelled')
     await assert.rejects(run({ apiVersion: '1', jobs: [] }, { signal: AbortSignal.abort(reason),
       fetchJson: async () => assert.fail('fetch after cancellation'),
@@ -80,7 +86,8 @@ for (const source of sources) {
 }
 
 test('Ashby preserves native plain content when the HTML variant contains only empty markup', async () => {
-  const jobs = await createCatalogScraper(catalog.find(p => p.source === 'zapier')).run({
+  const jobs = await createAshbyApiScraper({ source: 'zapier', companyName: 'Zapier',
+    ashbyJobBoardUrl: 'https://api.ashbyhq.com/posting-api/job-board/zapier' }).run({
     fetchJson: async () => ({ apiVersion: '1', jobs: [{ ...row('zapier'),
       descriptionHtml: '<p>&nbsp;</p>', descriptionPlain: 'Actual native employer responsibilities.',
     }] }),
@@ -156,8 +163,9 @@ test('Sisense forwards caller cancellation to the actual native fetch', async t 
   await assert.rejects(createCatalogScraper(catalog.find(p => p.source === 'sisense')).run({ signal: controller.signal }), error => error === reason)
 })
 
-test('decorating partial Ashby jobs retains the actual unresolved-native-scope diagnostic', async () => {
-  const jobs = await createCatalogScraper(catalog.find(p => p.source === 'zapier')).run({
+test('shared Ashby API compatibility retains the actual unresolved-native-scope diagnostic', async () => {
+  const jobs = await createAshbyApiScraper({ source: 'zapier', companyName: 'Zapier',
+    ashbyJobBoardUrl: 'https://api.ashbyhq.com/posting-api/job-board/zapier' }).run({
     fetchJson: async () => ({ apiVersion: '1', jobs: [row('zapier'), row('zapier', 'unknown', 'Worldwide', '')] }),
   })
   assert.equal(jobs.length, 1)

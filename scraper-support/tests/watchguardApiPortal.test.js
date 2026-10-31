@@ -4,7 +4,10 @@ import test from 'node:test'
 import { runApiPortalScraper } from '../apiPortal/engine.js'
 import { getScraperCatalog } from '../providers/index.js'
 
-test('runApiPortalScraper filters WatchGuard Lever jobs to India-facing locations', async () => {
+test('the inner WatchGuard Lever mapper retains its legacy explicit-India unit contract', async () => {
+  // These existing unit records exercise the inner API mapper, including raw
+  // creation metadata. The registered source's publication proof is covered by
+  // the separate authentic role-page tests; this is not live source evidence.
   const provider = getScraperCatalog().find((item) => item.source === 'watchguard')
   assert.ok(provider)
 

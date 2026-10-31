@@ -1,8 +1,8 @@
 {
   "coverageLabel": "Catalog registration coverage",
-  "totalRows": 4563,
-  "candidateRows": 4563,
-  "matchedCount": 4563,
+  "totalRows": 4560,
+  "candidateRows": 4560,
+  "matchedCount": 4560,
   "unmatchedCount": 0,
   "matched": [
     {
@@ -36283,29 +36283,6 @@
       }
     },
     {
-      "row": "1232",
-      "companyName": "Detroit Engineered Products",
-      "normalizedCompanyName": "detroit engineered products",
-      "source": "detroitengineeredproducts",
-      "provider": {
-        "atsPlatform": "ceipal-widget",
-        "countryFilter": "India",
-        "paginationStrategy": "single-first-party-widget-feed",
-        "extractionStrategy": "official-homepage+careers-landing+india-careers-ceipal-widget",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "detroitengineeredproducts",
-        "companyName": "Detroit Engineered Products",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\detroitengineeredproducts\\script.js",
-        "companyCareerPage": "https://depusa.com/careers-india",
-        "companyDomain": "depusa.com",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\detroitengineeredproducts\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\detroitengineeredproducts"
-      }
-    },
-    {
       "row": "1233",
       "companyName": "Deutsche Bank",
       "normalizedCompanyName": "deutsche bank",
@@ -59915,31 +59892,6 @@
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\iberdrola.workday",
         "companyDomain": null
-      }
-    },
-    {
-      "row": "2022",
-      "companyName": "IBM",
-      "normalizedCompanyName": "ibm",
-      "source": "ibm",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "offset-body",
-        "extractionStrategy": "json-search-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "ibm",
-        "companyName": "IBM",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\ibm\\script.js",
-        "companyCareerPage": "https://www.ibm.com/careers/search",
-        "enrichPublicExperience": false,
-        "dryRunEnrichPublicExperience": false,
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\ibm\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\ibm",
-        "companyDomain": "ibm.com"
       }
     },
     {
@@ -91846,31 +91798,6 @@
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\orange.workday",
         "companyDomain": null
-      }
-    },
-    {
-      "row": "3111",
-      "companyName": "Orange Business",
-      "normalizedCompanyName": "orange business",
-      "source": "orangebusiness",
-      "provider": {
-        "atsPlatform": "phenom",
-        "countryFilter": "India",
-        "paginationStrategy": "scoped-public-widget-offset",
-        "extractionStrategy": "phenom-company-country-widget+detail-enrichment",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "orangebusiness",
-        "companyName": "Orange Business",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\orangebusiness\\script.js",
-        "companyCareerPage": "https://orange.jobs/gb/en/search-results?companyName=Orange%20Business",
-        "companyDomain": "orange-business.com",
-        "verifiedAt": "2026-09-13",
-        "verificationSummary": "Official Orange widget companyName Orange Business and uppercase INDIA facets return 49 unique roles, including two with explicit India secondary locations; raw totals and exact company scope remain mandatory.",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\orangebusiness\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\orangebusiness"
       }
     },
     {

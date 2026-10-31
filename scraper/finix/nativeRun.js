@@ -3,6 +3,7 @@ import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { isIndiaJob } from '../../scraper-support/utils/indiaLocationFilter.js'
 import { extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
+import { isDeepStrictEqual } from 'node:util'
 
 export const FINIX_API = 'https://api.lever.co/v0/postings/finix?mode=json'
 const provider = {
@@ -82,12 +83,13 @@ const substantiveRole = record => {
 export async function runNativeFinix({
   fetchJson = (url, options) => fetchJsonWithRetry(url, {
     ...options, attempts: 1, timeoutMs: 20000, label: 'finix',
-  }), signal,
+  }), signal, onAudit = () => {},
 } = {}) {
   signal?.throwIfAborted()
   const records = await fetchJson(FINIX_API, { signal })
   signal?.throwIfAborted()
   if (!Array.isArray(records)) throw new Error('[finix] Invalid or failed Lever inventory envelope/pagination')
+  const opening = structuredClone(records)
   const identities = new Set(), originals = new Map(), unknownReasons = new Set()
   const publication = new Map(), missingRoleDescriptions = new Set()
   const prepared = records.map(record => {
@@ -160,6 +162,16 @@ export async function runNativeFinix({
     }
   })
   const mapped = await createPublicAtsCatalogScraper(provider).run({ signal, fetchJson: async () => prepared })
+  signal?.throwIfAborted()
+  const closing = await fetchJson(FINIX_API, { signal })
+  signal?.throwIfAborted()
+  // Compare every native field, including unknown nested criteria. Only array
+  // ordering may change; the original opening/closing arrays remain intact.
+  if (!Array.isArray(closing) || closing.length !== opening.length
+    || !isDeepStrictEqual(new Map(opening.map(record => [record.id, record])),
+      new Map(closing.map(record => [record?.id, record])))) {
+    throw new Error('[finix] Closing native inventory identity, schema or criteria changed')
+  }
   const evidence = readInventoryEvidence(mapped)
   const incomplete = unknownReasons.size > 0 || evidence?.listingComplete !== true
   const jobs = mapped.filter(job => !missingRoleDescriptions.has(job.jobId)).map(job => {
@@ -167,9 +179,20 @@ export async function runNativeFinix({
     return {
       ...job, postingDate: publication.get(job.jobId) ?? null, nativeCreatedAt: native?.createdAt ?? null, nativeRecord: native,
       remoteStatus: ({ remote: 'Remote', onsite: 'On-site', 'on-site': 'On-site', hybrid: 'Hybrid' })[native?.workplaceType] ?? null,
-      ...(incomplete ? { sourceListingComplete: false } : {}),
+      ...(incomplete ? { sourceListingComplete: false, sourceScopeComplete: false, lifecycleCleanupAllowed: false } : {}),
     }
   })
+  const audit = {
+    opening, closing: structuredClone(closing), reconciled: true,
+    observedNativeCount: opening.length,
+    companyGlobalTotal: null, companyIndiaTotal: null,
+    lifecycleCleanupAllowed: false,
+  }
+  Object.defineProperty(jobs, 'nativeClosingEvidence', { value: audit })
+  // Registered provider decoration creates a new array. This callback preserves
+  // source-native proof access without changing that shared decorator.
+  await onAudit(structuredClone(audit))
+  signal?.throwIfAborted()
   return attachInventoryEvidence(jobs, {
     ...evidence, status: incomplete ? 'coverage-gap' : evidence.status, listingComplete: !incomplete,
     reportedTotal: records.length, indiaFacetCount: unknownReasons.size ? null : jobs.length,

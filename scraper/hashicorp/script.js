@@ -2,12 +2,12 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { runIbmSearch } from '../ibm/searchApi.js'
+import { runSearch } from './searchApi.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-export const runHashiCorpSearch = async (options = {}) => runIbmSearch({
+export const runHashiCorpSearch = async (options = {}) => runSearch({
   source: 'hashicorp',
   companyName: 'HashiCorp',
   query: 'hashicorp',

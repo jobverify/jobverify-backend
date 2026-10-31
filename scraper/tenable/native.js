@@ -177,7 +177,8 @@ export async function run({fetchImpl=fetch,signal,onAudit,fetchText,fetchJson,fe
     if(hash(projection)!==config.reviewedFirstPartyProjection[String(row.id)])unknown.push('unreviewed-first-party-visible-projection')
     const geography={nativeLocationLabels:greenhouseLocationLabels(row),nativeCountryLabels:greenhouseCountryLabels(row),
       officeIds:row.offices.map(office=>office.id),criteriaSha256:hash(row.content)}
-    if(!equal(geography,config.reviewedRoleGeography[String(row.id)]))unknown.push('unreviewed-native-role-geography-or-criteria-contract')
+    const reviewedGeography=config.reviewedRoleGeography[String(row.id)]
+    if(!reviewedGeography||!equal(geography,reviewedGeography))unknown.push('unreviewed-native-role-geography-or-criteria-contract')
     criteriaById.set(String(row.id),full);roleReasons.set(String(row.id),unknown)
     if(unknown.length)reasons.push('unreviewed-native-role-schema-or-criteria:'+row.id)
   }

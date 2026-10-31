@@ -1,4 +1,7 @@
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {readNativeDocument} from '../../scraper-support/utils/activeNativeHtml.js'
+import {readVisibleNativeDocument} from '../../scraper-support/utils/visibleNativeHtml.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
 export const SOURCE = 'buzzboard'
 export const COMPANY = 'BuzzBoard'
@@ -23,8 +26,6 @@ const GENERIC_CONTEXT_PATTERNS = [
 const LOCATION_PATTERN =
   /\b(?:remote|india|bangalore|bengaluru|hyderabad|chennai|mumbai|pune|gurugram|gurgaon|noida|delhi|kolkata|ahmedabad)\b/i
 const EMPLOYMENT_TYPE_PATTERN = /\b(full[\s-]*time|part[\s-]*time|contract|internship)\b/i
-const DETAIL_INDIA_SIGNAL_PATTERN =
-  /\b(?:Current|Expected)\s+(?:Annual\s+)?CTC\b|\bNotice Period\b/i
 
 const decodeEntities = (value = '') =>
   String(value)
@@ -115,16 +116,15 @@ const extractEmploymentTypeFromLine = (value = '') =>
 const extractLocationFromLine = (value = '') => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
-  if (/^remote(?:\s*[-|/]\s*india)?$/i.test(normalized)) return 'Remote, India'
-  if (/^remote\b/i.test(normalized)) return 'Remote, India'
-  if (/\bindia\b/i.test(normalized)) return normalized
-  if (LOCATION_PATTERN.test(normalized)) return `${normalized}, India`
+  if (/\b(?:CTC|Notice Period|headquarters|head office|HQ)\b/i.test(normalized)) return null
+  const location=normalized.replace(/(?:\s*[-|/\u2022\u00b7]\s*)?(?:full[\s-]*time|part[\s-]*time|contract|internship)\b.*$/i,'').replace(/\s*[-|/\u2022\u00b7]\s*$/,'').trim()
+  if (LOCATION_PATTERN.test(location)) return location || null
   return null
 }
 
 const extractCityFromLocation = (value) => {
   const normalized = normalizeWhitespace(value)
-  if (!normalized || /^remote\b/i.test(normalized)) return null
+  if (!normalized || /^remote\b|^india$/i.test(normalized)) return null
   return normalizeWhitespace(normalized.split(',')[0]) || null
 }
 
@@ -251,23 +251,34 @@ const buildListingContext = (lines = []) => {
 export const extractOfficialOpenings = (html = '') => {
   const jobs = []
   const seen = new Set()
-
-  for (const match of String(html).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
-    const applyUrl = toAbsoluteBoardUrl(match[1], CAREERS_URL)
-    const anchorText = normalizeText(match[2])
-
+  const document=readNativeDocument(html),parents=new Map(),root=document.nodes(node=>node.tag==='root')[0]
+  const visit=node=>{for(const child of node.children||[])if(typeof child!=='string'){parents.set(child,node);visit(child)}}
+  visit(root)
+  const descendants=(node,predicate)=>node.inert?[]:[...(predicate(node)?[node]:[]),...(node.children||[]).filter(child=>typeof child!=='string').flatMap(child=>descendants(child,predicate))]
+  const hasClass=(node,name)=>String(node.attrs.class||'').split(/\s+/).includes(name)
+  const visible=readVisibleNativeDocument(html,{strict:true})
+  const visibleUrls=new Set(visible.nodes(node=>node.tag==='a'&&node.attrs.href).map(node=>toAbsoluteBoardUrl(node.attrs.href,CAREERS_URL)).filter(Boolean))
+  for (const anchor of document.nodes(node=>node.tag==='a'&&node.attrs.href)) {
+    const applyUrl = toAbsoluteBoardUrl(anchor.attrs.href, CAREERS_URL)
+    const anchorText = document.text(anchor)
     if (!applyUrl || !/\bapply\b/i.test(anchorText || '')) continue
-
     const jobId = extractJobId(applyUrl)
     if (!jobId || seen.has(jobId)) continue
-
-    const windowStart = Math.max(0, (match.index || 0) - 900)
-    const contextLines = stripToLines(String(html).slice(windowStart, match.index || 0))
-      .slice(-12)
-    const { title, location, employmentType } = buildListingContext(contextLines)
-
-    if (!title || !location) continue
-
+    // Each observation belongs to its own card/article. Corporate HQ text and
+    // neighbouring jobs cannot establish this role's title or country.
+    let card=anchor
+    while(card&&card.tag!=='article'&&!hasClass(card,'job-card'))card=parents.get(card)
+    if(!card)continue
+    const dedicated=descendants(card,node=>hasClass(node,'job-title'))
+    const headings=dedicated.length?dedicated:descendants(card,node=>/^h[1-4]$/.test(node.tag))
+    if(headings.length!==1)continue
+    const title=normalizeWhitespace(document.text(headings[0]))
+    const details=descendants(card,node=>hasClass(node,'job-details'))
+    const paragraphs=descendants(card,node=>node.tag==='p')
+    const locationLine=document.text(details[0]||paragraphs[0]||{inert:true})
+    const location=extractLocationFromLine(locationLine)
+    const employmentType=extractEmploymentTypeFromLine(locationLine)
+    if(!title)continue
     seen.add(jobId)
     jobs.push({
       title,
@@ -275,9 +286,11 @@ export const extractOfficialOpenings = (html = '') => {
       department: null,
       location,
       city: extractCityFromLocation(location),
-      country: 'India',
+      // Closed affirmative grammar only. An unreviewed phrase (including an
+      // exclusion ending in India) remains raw location text, not country proof.
+      country: /^(?:India|Remote,\s*India)$/i.test(location || '') ? 'India' : null,
       jobId,
-      requisitionId: jobId,
+      requisitionId: null,
       sourceUrl: applyUrl,
       applyUrl,
       employmentType,
@@ -289,6 +302,15 @@ export const extractOfficialOpenings = (html = '') => {
       closingDate: null,
       jobDescription: null,
       remoteStatus: getRemoteStatus(location),
+      sourcePublisher: COMPANY,
+      legalHiringEmployer: null,
+      sourceNativeLocationLine: locationLine||null,
+      sourceNativeListingContext: document.text(card),
+      sourceVisibilityVerified: visibleUrls.has(applyUrl),
+      sourceDetailComplete: false,
+      sourceListingComplete: false,
+      sourceScopeComplete: false,
+      lifecycleCleanupAllowed: false,
     })
   }
 
@@ -330,8 +352,6 @@ const extractExperienceRequired = (html = '') => {
   )
 }
 
-const detailHasIndiaSignal = (html = '') => DETAIL_INDIA_SIGNAL_PATTERN.test(normalizeText(html))
-
 export const extractJobDetail = (html = '', listing = {}) => {
   if (!hasVerifiedJobDetailSignal(html, listing)) {
     throw new Error(
@@ -343,22 +363,25 @@ export const extractJobDetail = (html = '', listing = {}) => {
     company: COMPANY,
     location: listing.location,
     city: listing.city,
-    country: detailHasIndiaSignal(html) ? 'India' : listing.country,
+    country: listing.country ?? null,
     employmentType:
       extractEmploymentTypeFromLine(normalizeText(html))
       || listing.employmentType,
     experienceRequired: extractExperienceRequired(html) || listing.experienceRequired,
     jobDescription: buildJobDescription(html) || null,
+    sourceNativeDetailHTML: html,
+    sourceDetailComplete: false,
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, {signal} = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: `${SOURCE}-html`,
   timeoutMs: 15000,
+  signal,
 })
 
 const mergeListingWithDetail = (listing, detail = {}) => ({
@@ -369,8 +392,17 @@ const mergeListingWithDetail = (listing, detail = {}) => ({
 })
 
 export const createBuzzBoardScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString(), signal, onAudit=()=>{} } = {}) {
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL,{signal})
+    signal?.throwIfAborted()
+    const observations=extractOfficialOpenings(careersHtml)
+    const audit={source:SOURCE,originalCareersHTML:careersHtml,observations:structuredClone(observations),unknownCountryRoleIds:observations.filter(row=>row.country===null).map(row=>row.jobId),
+      originalBoardHTML:null,details:[],noNativeDetailProof:true,sourceScopeComplete:false,lifecycleCleanupAllowed:false,authoritativeSourceTotal:null,authoritativeIndiaFacetCount:null,currentLiveQualification:false,noClosingProof:true,
+      reasons:['role countries unresolved when not explicitly supplied','native board/detail/application criteria and current corporate scope unverified']}
+    const emit=async stage=>{audit.stage=stage;await onAudit(structuredClone(audit));signal?.throwIfAborted()}
+    await emit('careers-observations-unresolved')
+    try {
 
     if (
       !hasOfficialCareersPageSignal(careersHtml)
@@ -380,39 +412,43 @@ export const createBuzzBoardScraper = ({ maxJobs = null } = {}) => ({
       throw new Error('BuzzBoard verified official careers page changed materially')
     }
 
-    const boardHtml = await fetchText(BOARD_URL)
+    const boardHtml = await fetchText(BOARD_URL,{signal})
+    signal?.throwIfAborted()
+    audit.originalBoardHTML=boardHtml
     if (!hasVerifiedBoardSignal(boardHtml)) {
       throw new Error('BuzzBoard verified public JazzHR board changed materially')
     }
 
     const verifiedBoardJobIds = new Set(extractVerifiedBoardJobIds(boardHtml))
-    const listings = extractOfficialOpenings(careersHtml)
+    const listings = observations
       .filter((listing) => verifiedBoardJobIds.size === 0 || verifiedBoardJobIds.has(listing.jobId))
     const selectedJobs = Number.isInteger(maxJobs) ? listings.slice(0, maxJobs) : listings
     const jobs = []
 
     for (const listing of selectedJobs) {
-      try {
-        const detailHtml = await fetchText(listing.sourceUrl)
+        signal?.throwIfAborted()
+        const detailHtml = await fetchText(listing.sourceUrl,{signal})
+        signal?.throwIfAborted()
+        audit.details.push({jobId:listing.jobId,sourceUrl:listing.sourceUrl,originalHTML:detailHtml,fullCriteriaVerified:false})
         if (hasGenericBoardListingSignal(detailHtml)) {
-          continue
+          throw new Error('BuzzBoard native detail returned a generic listing instead of role criteria')
         }
-
-        jobs.push(mergeListingWithDetail(listing, extractJobDetail(detailHtml, listing)))
-      } catch (error) {
-        console.warn(
-          `  [${SOURCE}] Failed to enrich JazzHR detail for ${listing.sourceUrl}: ${error.message}`,
-        )
-        jobs.push(listing)
-      }
+        const job=mergeListingWithDetail(listing, extractJobDetail(detailHtml, listing))
+        if(job.country==='India'&&job.sourceVisibilityVerified)jobs.push(job)
     }
-
-    return jobs.map((job) => ({
+    await emit('native-observations-retained-source-still-unresolved')
+    const result=jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
     }))
+    return attachInventoryEvidence(result,{status:'discovery-only',surface:CAREERS_URL,firstParty:false,listingComplete:false,pagesFetched:2+audit.details.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason:'buzzboard-country-board-details-and-source-scope-unresolved'})
+    } catch(error) {
+      audit.failure={name:error.name,message:error.message}
+      await emit('native-verification-failed')
+      throw error
+    }
   },
 })
 

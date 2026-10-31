@@ -5,6 +5,13 @@ node_modules
 **/fixtures/
 **/test-fixtures/
 
+# Keep the shared HashiCorp search contract fixture with its tests.
+!/scraper-support/tests/fixtures/
+/scraper-support/tests/fixtures/*
+!/scraper-support/tests/fixtures/hashicorp/
+/scraper-support/tests/fixtures/hashicorp/*
+!/scraper-support/tests/fixtures/hashicorp/hashicorp-india-search.json
+
 # Environment
 .env
 .env.*

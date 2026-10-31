@@ -6,7 +6,7 @@ import { PUBLIC_JOB_TYPE_EXPRESSION } from '../utils/publicJobType.js';
 import { PUBLIC_WORK_ARRANGEMENT_EXPRESSION } from '../utils/publicWorkArrangement.js';
 import { applyPublicJobVisibility } from '../utils/publicJobVisibility.js';
 
-export const OBSERVATION_VERSION = 1;
+export const OBSERVATION_VERSION = 3;
 export const observationScope = settings => `india-v${OBSERVATION_VERSION}-${settings?.experiencedJobsEnabled === false ? 'early-career' : 'all-types'}`;
 export const indiaDay = date => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 const label = field => ({ $trim: { input: { $ifNull: [field === 'jobType' ? PUBLIC_JOB_TYPE_EXPRESSION

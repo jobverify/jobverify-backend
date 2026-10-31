@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
+import { createHash } from 'node:crypto'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const loadCodemonkModule = async () => {
   try {
@@ -73,22 +77,49 @@ test('extractCareerListings maps official Codemonk career cards to India job lis
   assert.equal(jobs[3].experienceRequired, 'mid-senior-level')
 })
 
-test('run fetches the official Codemonk careers page and decorates its listings for the runner', async () => {
+test('run recovers eight retained native India records while keeping source coverage incomplete', async () => {
   const codemonk = await loadCodemonkModule()
   assert.ok(codemonk)
 
-  const requestedUrls = []
-  const jobs = await codemonk.createCodemonkScraper().run({
-    fetchText: async (url) => {
+  const archive = JSON.parse(gunzipSync(readFileSync(
+    new URL('../../scraper/codemonk/fixtures/retained-http-20261029.json.gz', import.meta.url),
+  )))
+  const bytes = Buffer.from(archive.bodyBase64, 'base64')
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), archive.receipt.sha256)
+  const html = bytes.toString('utf8'), requestedUrls = [], audits = []
+  const controller = new AbortController()
+  const jobs = await codemonk.run({
+    signal: controller.signal,
+    fetchText: async (url, { signal }) => {
+      assert.equal(signal, controller.signal)
       requestedUrls.push(url)
-      return careersHtml
+      if (url !== archive.receipt.url) throw Error('Native application not retained in this listing-only archive')
+      return html
     },
+    onAudit: audit => audits.push(audit),
   })
 
-  assert.deepEqual(requestedUrls, ['https://codemonk.io/careers'])
-  assert.equal(jobs.length, 4)
+  assert.equal(requestedUrls[0], 'https://codemonk.io/careers')
+  assert.equal(requestedUrls.length, 9)
+  assert.equal(jobs.length, 8)
+  assert.ok(jobs.every(job => job.country === 'India' && job.sourceDetailComplete === false))
+  assert.ok(jobs.every(job => job.sourceListingDescriptionComplete === true && job.sourceDeclaredCriteriaCopyComplete === false))
+  assert.deepEqual(new Set(requestedUrls.slice(1)), new Set(jobs.map(job => job.sourceNativeRecord.apply_link)))
+  assert.ok(jobs.every(job => job.jobDescription && job.sourceNativeDescription && job.sourceNativeRecord))
+  assert.ok(jobs.every(job => job.postingDate === null && job.legalHiringEmployer === null))
   assert.equal(jobs[0].source, 'codemonk')
-  assert.equal(jobs[0].link, 'https://codemonk.io/careers/qa-intern-E3A2655F70')
+  assert.equal(jobs[0].link, jobs[0].sourceNativeRecord.apply_link)
   assert.equal(jobs[0].company, 'Codemonk')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
+  assert.equal(audits.length, 1)
+  assert.equal(audits[0].originalNativeHTML, html)
+  assert.equal(audits[0].observedIndiaRecords, 8)
+  assert.equal(audits[0].renderedRoleIds.length, 2)
+  assert.equal(audits[0].unrenderedNativeRoleIds.length, 6)
+  assert.equal(audits[0].currentLiveQualification, false)
+  assert.equal(audits[0].lifecycleCleanupAllowed, false)
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
 })

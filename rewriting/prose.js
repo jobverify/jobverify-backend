@@ -57,7 +57,7 @@ export const splitProseSource = source => {
 };
 
 export const validateProsePart = (source, text, options) => {
-  if (typeof text !== 'string' || !text.trim()) return 'empty_output';
+  if (typeof text !== 'string' || (!text.trim() && source.trim())) return 'empty_output';
   if (htmlTag.test(text)) return 'unsafe_output';
   for (const url of source.match(/https?:\/\/[^\s<>]+/g) || []) if (!text.includes(url)) return 'application_url_changed';
   const reason = checkProseStatements(source, text, options).reason;
@@ -81,17 +81,23 @@ export const validateProseRewrite = (value, input, finishReason) => {
     if ((part.protected || part.fallbackReason) && part.text !== part.source) return { ok: false, reason: 'source_details_changed' };
     const sectionContext = headings.findLast(heading => heading.start < offset)?.title || null;
     const reason = validateProsePart(part.source, part.text, { sectionContext });
-    if (reason) return { ok: false, reason };
+    if (reason) return { ok: false, reason, diagnostic: {
+      ...checkProseStatements(part.source, typeof part.text === 'string' ? part.text : '', { sectionContext }).diagnostic,
+      code: reason, phase: 'fragment', sourceOffset: offset, sectionContext,
+      evidence: part.source.slice(0, 1800), text: typeof part.text === 'string' ? part.text.slice(0, 1200) : undefined,
+    } };
     offset += part.source.length;
   }
-  const description = value.parts.map((part, index) => {
-    if (!index) return part.text.trim();
-    const before = value.parts[index - 1].source;
-    const separator = /\n\s*$|[.!?]\s*$/.test(before) || /^\s*\n/.test(part.source) ? '\n\n' : ' ';
-    return separator + part.text.trim();
-  }).join('');
+  // Spans may end inside a word or contain layout only. Keep source boundaries.
+  const description = value.parts.map(part => part.text === part.source ? part.source
+    : (part.source.match(/^\s*/)?.[0] || '') + part.text.trim() + (part.source.match(/\s*$/)?.[0] || '')).join('');
   const combinedReason = validateProsePart(proseSource(input), description);
-  if (combinedReason) return { ok: false, reason: combinedReason };
+  if (combinedReason) {
+    const mismatch = checkProseStatements(source, description).diagnostic;
+    return { ok: false, reason: combinedReason, diagnostic: {
+      ...mismatch, text: mismatch?.text || description.slice(0, 1200), code: combinedReason, phase: 'assembly',
+    } };
+  }
   const modelEditedChunks = value.parts.filter(part => part.text.trim() !== part.source.trim()).length;
   return { ok: true, description, wordCount: description.split(/\s+/).filter(Boolean).length,
     quality: { method: 'source_preserving_prose', sourceChunks: value.parts.length,
@@ -162,6 +168,7 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
     };
     const process = async (fragment, offset, validationFeedback) => {
       combined.throwIfAborted();
+      if (!fragment.trim()) return acceptPart({ source: fragment, text: fragment, sourceOffset: offset, protected: 'layout' });
       rawText = undefined;
       diagnostic = undefined;
       activeFragment = fragment;
@@ -183,15 +190,22 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       // Reserve enough room to rewrite instead of squeezing a long source into
       // a context almost entirely occupied by its prompt.
       if (headroom < 256 || counted.tokens.length > REWRITE_MODEL.contextTokens / 4) return split('model_context_budget');
+      // Count the complete source-shaped response, including JSON escaping.
+      // Formatting room scales with this source, never with unused context.
+      const sourceCounted = await (await post('/tokenize', { content: JSON.stringify({ text: fragment }),
+        add_special: false, parse_special: false })).json();
+      if (!Array.isArray(sourceCounted.tokens) || !sourceCounted.tokens.length
+        || sourceCounted.tokens.some(token => !Number.isInteger(token))) throw new GenerationError('Malformed generator token count');
+      const outputAllowance = Math.min(headroom, Math.max(128, Math.ceil(sourceCounted.tokens.length * 1.5) + 64));
       generationRequests++;
       onProgress?.({ generationRequests });
       const started = Date.now();
       currentGeneration = { started, detail: { sourceOffset: offset, sourceCharacters: fragment.length,
-        promptTokens: counted.tokens.length, outputAllowance: headroom, durationMs: 0,
+        promptTokens: counted.tokens.length, sourceTokens: sourceCounted.tokens.length, outputAllowance, durationMs: 0,
         ...(validationFeedback && { corrective: true }) } };
       if (generations.length < 32) generations.push(currentGeneration.detail);
       const response = await post('/v1/chat/completions', { model, messages: promptMessages,
-        temperature: 0, top_p: .8, seed: validationFeedback ? 42 : 41, max_tokens: headroom,
+        temperature: 0, top_p: .8, seed: validationFeedback ? 42 : 41, max_tokens: outputAllowance,
         chat_template_kwargs: { enable_thinking: false }, cache_prompt: true, stream: true, stream_options: { include_usage: true },
         response_format: { type: 'json_schema', json_schema: { name: 'job_description_prose', strict: true, schema } } });
       const result = response.headers.get('content-type')?.includes('text/event-stream')
@@ -210,17 +224,22 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
         ...(choice?.finish_reason === 'length' && { splitReason: 'truncated' }) });
       if (choice?.finish_reason === 'length') return split('truncated');
       if (choice?.finish_reason !== 'stop' || typeof choice.message?.content !== 'string') throw new GenerationError('Incomplete generator response');
-      let value; try { value = JSON.parse(choice.message.content); } catch { throw new GenerationError('Malformed generator response'); }
-      if (!value || Object.keys(value).some(key => key !== 'text')) throw new GenerationError('Malformed generator response');
+      let value;
+      try { value = JSON.parse(choice.message.content); } catch { /* one correction below */ }
+      if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => key !== 'text')) {
+        currentGeneration.detail.validationReason = 'malformed_output';
+        if (!validationFeedback) return process(fragment, offset, { reason: 'malformed_output' });
+        throw new GenerationError('Malformed generator response');
+      }
       const reason = validateProsePart(fragment, value.text, { sectionContext });
       if (reason) {
         const mismatch = typeof value.text === 'string' ? checkProseStatements(fragment, value.text, { sectionContext }).diagnostic : null;
         diagnostic = { evidence: fragment.slice(0, 1800), text: typeof value.text === 'string' ? value.text.slice(0, 1200) : undefined,
-          ...mismatch, code: reason, sourceOffset: offset };
+          ...mismatch, code: reason, phase: 'fragment', sourceOffset: offset, sectionContext };
         currentGeneration.detail.validationReason = reason;
         // One fresh corrective generation shares the original abort/deadline.
         // Invalid output never becomes a chunk, a cache entry or a fallback.
-        if (!validationFeedback && correctionReasons.has(reason)) return process(fragment, offset,
+        if (!validationFeedback && (correctionReasons.has(reason) || reason === 'empty_output')) return process(fragment, offset,
           { reason, sourceStatement: diagnostic.evidence });
         if (allowSourceFallback && correctionReasons.has(reason)) {
           currentGeneration.detail.sourcePreserved = true;
@@ -278,6 +297,7 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
         // pin that rejected combination in a partial cache indefinitely.
         partialCache.delete(cacheKey);
         if (partialFile) await fs.rm(partialFile, { force: true }).catch(() => {});
+        diagnostic = finalCheck.diagnostic || { code: finalCheck.reason, phase: 'assembly' };
         throw Object.assign(new GenerationError('Incomplete source rewrite'), { reason: finalCheck.reason });
       }
       // A preserved failed block is safe to publish, but not an accepted model

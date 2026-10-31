@@ -322,10 +322,10 @@ test('enrichJobWithPublicExperience recovers Fountain descriptions and experienc
 test('enrichJobWithPublicExperience recovers CEIPAL descriptions and experience from the public career portal API', async () => {
   const job = {
     title: 'Embedded Systems Engineer II',
-    company: 'Detroit Engineered Products',
-    source: 'detroitengineeredproducts',
+    company: 'Example Engineering',
+    source: 'exampleengineering',
     atsPlatform: 'ceipal-widget',
-    companyCareerPage: 'https://depusa.com/index.php/careers-india',
+    companyCareerPage: 'https://engineering.example/careers-india',
     jobId: '241',
     sourceUrl: 'https://candidateportal.ceipal.com/job-details/nkzeTD_pVxOyfXBv3ZSrqQxNFSQYc65xfDJfQ7Rg18A',
     applyUrl: 'https://candidateportal.ceipal.com/jobs/career/nfS0lik6V2Gzg4omK9_WOTOoh5Qmp2u7D1haLtzQS7c/xNNBs3JmqLhRnG7dg2BWOhObGvuHKqxCb9rK8eOqrA8/JAPW0VMTXcklssI6raPVWZhU-E9LDKYeefhizfTCNwg',
@@ -1000,7 +1000,7 @@ test('enrichJobWithPublicExperience falls back to browser-rendered page content 
 test('enrichJobWithPublicExperience retries transient Avature browser shells before giving up on public evidence', async () => {
   const job = {
     title: 'Application Developer-Cloud FullStack',
-    company: 'IBM',
+    company: 'HashiCorp',
     applyUrl: 'https://careers.ibm.com/en_US/careers/JobDetail?jobId=121628',
     sourceUrl: 'https://careers.ibm.com/en_US/careers/JobDetail?jobId=121628',
     experienceRequired: null,
@@ -1020,7 +1020,7 @@ test('enrichJobWithPublicExperience retries transient Avature browser shells bef
               <meta name="avature.portal.page" content="JobDetail">
               <meta property="og:title" content="Application Developer-Cloud FullStack">
               <meta property="og:url" content="https://careers.ibm.com/en_US/careers/JobDetail/Application-Developer-Cloud-FullStack/121628">
-              <title>Application Developer-Cloud FullStack - 121628 - IBM</title>
+              <title>Application Developer-Cloud FullStack - 121628 - HashiCorp</title>
             </head>
             <body></body>
           </html>
@@ -1031,7 +1031,7 @@ test('enrichJobWithPublicExperience retries transient Avature browser shells bef
         <html>
           <head>
             <meta name="avature.portal.page" content="JobDetail">
-            <title>Application Developer-Cloud FullStack - 121628 - IBM</title>
+            <title>Application Developer-Cloud FullStack - 121628 - HashiCorp</title>
           </head>
           <body>
             <div>Skip to content</div>

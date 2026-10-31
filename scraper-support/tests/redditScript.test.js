@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const FIXED_SCRAPED_AT = '2026-07-17T00:00:00.000Z'
 
@@ -130,7 +131,7 @@ test('Reddit extracts only India jobs from the verified Greenhouse payload shape
     { scrapedAt: FIXED_SCRAPED_AT },
   )
 
-  assert.deepEqual(jobs, [
+  const expectedJobs = [
     {
       title: 'Software Engineer, Ads Measurement',
       company: 'Reddit',
@@ -147,7 +148,7 @@ test('Reddit extracts only India jobs from the verified Greenhouse payload shape
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: '2026-07-16T09:00:00-04:00',
+      postingDate: '2026-07-12T09:00:00-04:00',
       closingDate: null,
       jobDescription: '<p>Build measurement systems for Reddit Ads.</p>',
       remoteStatus: 'On-site',
@@ -171,7 +172,7 @@ test('Reddit extracts only India jobs from the verified Greenhouse payload shape
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: '2026-07-16T11:30:00-04:00',
+      postingDate: '2026-07-13T11:30:00-04:00',
       closingDate: null,
       jobDescription: '<p>Support Reddit advertisers remotely from India.</p>',
       remoteStatus: 'Remote',
@@ -179,10 +180,26 @@ test('Reddit extracts only India jobs from the verified Greenhouse payload shape
       link: 'https://job-boards.greenhouse.io/reddit/jobs/7669373',
       scrapedAt: FIXED_SCRAPED_AT,
     },
-  ])
+  ]
+  // Preserve the legacy unit examples and all original mapped-field assertions.
+  // Real current-source evidence is covered by the retained-native fixture tests.
+  assert.deepEqual(jobs.map((job, index) => Object.fromEntries(
+    Object.keys(expectedJobs[index]).map((key) => [key, job[key]]),
+  )), expectedJobs)
+  for (const job of jobs) {
+    const original = GREENHOUSE_PAYLOAD_WITH_INDIA.jobs.find((row) => String(row.id) === job.jobId)
+    assert.deepEqual(job.sourceNativeRecord, original)
+    assert.notEqual(job.sourceNativeRecord, original)
+    assert.equal(job.sourceNativeContent, original.content)
+    assert.equal(job.sourceFirstPublished, original.first_published)
+    assert.equal(job.sourceUpdatedAt, original.updated_at)
+    assert.equal(job.sourceNativeMetadata, null)
+    assert.equal(job.legalHiringEmployer, null)
+    assert.equal(job.sourceCriteriaReviewComplete, false)
+  }
 })
 
-test('Reddit run returns an honest zero-job India slice when the verified live board has no India roles', async () => {
+test('Reddit keeps an empty India slice incomplete when the legacy unit payload has no India roles', async () => {
   const reddit = await loadModule()
   const requestedTextUrls = []
   const requestedJsonUrls = []
@@ -203,6 +220,10 @@ test('Reddit run returns an honest zero-job India slice when the verified live b
   assert.deepEqual(requestedTextUrls, [reddit.CAREERS_PAGE_URL])
   assert.deepEqual(requestedJsonUrls, [reddit.GREENHOUSE_JOBS_API_URL])
   assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
 })
 
 test('Reddit fails closed when the official careers page or Greenhouse payload drifts away from the verified contract', async () => {
@@ -231,6 +252,6 @@ test('Reddit fails closed when the official careers page or Greenhouse payload d
         ],
       }),
     }),
-    /verified reddit greenhouse payload/i,
+    /verified reddit native URL changed materially/i,
   )
 })

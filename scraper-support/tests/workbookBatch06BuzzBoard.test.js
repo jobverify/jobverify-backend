@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
+// Legacy synthetic contracts below are compatibility fixtures, not native source evidence.
 
 const VERIFIED_CAREERS_HTML = `
   <html>
@@ -176,11 +179,11 @@ test('BuzzBoard validates the verified first-party careers surface and extracts 
       title: 'Associate Product Manager / Product Manager',
       company: 'BuzzBoard',
       department: null,
-      location: 'Remote, India',
+      location: 'Remote',
       city: null,
-      country: 'India',
+      country: null,
       jobId: 'KHFbeOLhcc',
-      requisitionId: 'KHFbeOLhcc',
+      requisitionId: null,
       sourceUrl: 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&',
       applyUrl: 'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&',
       employmentType: 'Full-time',
@@ -192,13 +195,23 @@ test('BuzzBoard validates the verified first-party careers surface and extracts 
       closingDate: null,
       jobDescription: "At BuzzBoard, we are growing and building AI-driven products. Job Description: As a Product Manager at BuzzBoard, you will own one or more product lines and collaborate across engineering and design. Experience: 4+ years",
       remoteStatus: 'Remote',
+      sourcePublisher: 'BuzzBoard',
+      legalHiringEmployer: null,
+      sourceNativeLocationLine: 'Remote - Full Time',
+      sourceNativeListingContext: 'Associate Product Manager / Product Manager Remote - Full Time Apply',
+      sourceVisibilityVerified: true,
+      sourceNativeDetailHTML: VERIFIED_PRODUCT_MANAGER_DETAIL_HTML,
+      sourceDetailComplete: false,
+      sourceListingComplete: false,
+      sourceScopeComplete: false,
+      lifecycleCleanupAllowed: false,
     },
   )
 })
 
-test('BuzzBoard run validates the official careers handoff and returns public openings', async () => {
+test('BuzzBoard run keeps remote roles with unknown countries in its audit after handoff validation', async () => {
   const buzzboard = await loadModule()
-  const requestedUrls = []
+  const requestedUrls = [], audits = []
 
   const jobs = await buzzboard.createBuzzBoardScraper({ maxJobs: 1 }).run({
     fetchText: async (url) => {
@@ -213,6 +226,7 @@ test('BuzzBoard run validates the official careers handoff and returns public op
       throw new Error(`Unexpected URL: ${url}`)
     },
     now: () => '2026-08-01T00:00:00.000Z',
+    onAudit: audit => audits.push(audit),
   })
 
   assert.deepEqual(
@@ -223,21 +237,25 @@ test('BuzzBoard run validates the official careers handoff and returns public op
       'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&',
     ],
   )
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'buzzboard')
-  assert.equal(jobs[0].company, 'BuzzBoard')
-  assert.equal(jobs[0].location, 'Remote, India')
-  assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].experienceRequired, '4+ years')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].scrapedAt, '2026-08-01T00:00:00.000Z')
+  assert.equal(jobs.length, 0)
+  const audit = audits.at(-1)
+  assert.equal(audit.observations.length, 2)
+  assert.deepEqual(audit.unknownCountryRoleIds, ['KHFbeOLhcc', 'zZ5VZq3ojD'])
+  assert.ok(audit.observations.every(job => job.country === null && job.location === 'Remote'))
+  assert.equal(audit.details[0].originalHTML, VERIFIED_PRODUCT_MANAGER_DETAIL_HTML)
+  assert.equal(audit.lifecycleCleanupAllowed, false)
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'discovery-only')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
 })
 
-test('BuzzBoard run keeps conservative listing data when JazzHR detail enrichment fails', async () => {
+test('BuzzBoard run propagates detail failures while retaining unresolved observations', async () => {
   const buzzboard = await loadModule()
-  const requestedUrls = []
+  const requestedUrls = [], audits = []
 
-  const jobs = await buzzboard.createBuzzBoardScraper({ maxJobs: 1 }).run({
+  await assert.rejects(buzzboard.createBuzzBoardScraper({ maxJobs: 1 }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
 
@@ -250,7 +268,8 @@ test('BuzzBoard run keeps conservative listing data when JazzHR detail enrichmen
       throw new Error(`Unexpected URL: ${url}`)
     },
     now: () => '2026-08-01T00:00:00.000Z',
-  })
+    onAudit: audit => audits.push(audit),
+  }), /HTTP 429/)
 
   assert.deepEqual(
     requestedUrls,
@@ -260,12 +279,10 @@ test('BuzzBoard run keeps conservative listing data when JazzHR detail enrichmen
       'https://buzzboard.applytojob.com/apply/jobs/details/KHFbeOLhcc?&',
     ],
   )
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Associate Product Manager / Product Manager')
-  assert.equal(jobs[0].location, 'Remote, India')
-  assert.equal(jobs[0].jobDescription, null)
-  assert.equal(jobs[0].experienceRequired, null)
-  assert.equal(jobs[0].source, 'buzzboard')
+  assert.equal(audits.at(-1).observations.length, 2)
+  assert.equal(audits.at(-1).stage, 'native-verification-failed')
+  assert.match(audits.at(-1).failure.message, /HTTP 429/)
+  assert.equal(audits.at(-1).lifecycleCleanupAllowed, false)
 })
 
 test('BuzzBoard drops stale careers-page listings when the live JazzHR board exposes different job ids', async () => {
@@ -292,10 +309,10 @@ test('BuzzBoard drops stale careers-page listings when the live JazzHR board exp
   assert.deepEqual(jobs, [])
 })
 
-test('BuzzBoard skips careers-page listings whose detail url now resolves to the generic JazzHR listings page', async () => {
+test('BuzzBoard rejects a role detail URL that resolves to generic JazzHR listings', async () => {
   const buzzboard = await loadModule()
 
-  const jobs = await buzzboard.createBuzzBoardScraper({ maxJobs: 1 }).run({
+  await assert.rejects(buzzboard.createBuzzBoardScraper({ maxJobs: 1 }).run({
     fetchText: async (url) => {
       if (url === buzzboard.CAREERS_URL) return VERIFIED_CAREERS_HTML
       if (url === buzzboard.BOARD_URL) return VERIFIED_BOARD_HTML
@@ -306,9 +323,7 @@ test('BuzzBoard skips careers-page listings whose detail url now resolves to the
       throw new Error(`Unexpected URL: ${url}`)
     },
     now: () => '2026-08-01T00:00:00.000Z',
-  })
-
-  assert.deepEqual(jobs, [])
+  }), /generic listing instead of role criteria/)
 })
 
 test('BuzzBoard fails closed when the official careers surface or JazzHR board drifts', async () => {

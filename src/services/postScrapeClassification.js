@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { buildClassificationInput, hashClassificationInput, resolveClassification, RUNTIME_HASH, CLASSIFICATION_FIELDS } from './jobClassificationPolicy.js'
+import { buildClassificationInput, hashClassificationInput, resolveClassification, getAuthoritativeClassification, RUNTIME_HASH, CLASSIFICATION_FIELDS } from './jobClassificationPolicy.js'
 import { recoverClassificationSourceTitle } from './classificationSourceTitle.js'
 import { normalizePublicJobType } from '../utils/publicJobTypeLabel.js'
 
@@ -15,8 +15,8 @@ export const GLICLASS_IDENTITY = {
   runtimeHash, calibrationHash: 'uncalibrated',
 }
 
-export const postScrapeInput = (job, { now = new Date() } = {}) => {
-  const input = buildClassificationInput(job, { now, identity: GLICLASS_IDENTITY })
+export const postScrapeInput = (job, { now = new Date(), identity = GLICLASS_IDENTITY } = {}) => {
+  const input = buildClassificationInput(job, { now, identity })
   const sourceTitleRecovery = recoverClassificationSourceTitle(job)
   if (!sourceTitleRecovery) return input
   const recovered = { ...input, title: sourceTitleRecovery.recoveredTitle, sourceTitleRecovery }
@@ -51,6 +51,46 @@ export const sourceSnapshotFilter = job => ({ _id: job._id, $and: SOURCE_INPUT_F
 
 export const alreadyClassified = (job, input, mode) => job.postClassification?.inputHash === input.inputHash
   && job.postClassification?.status === 'completed' && job.postClassification?.mode === mode
+
+// Refresh an unresolved saved decision using its cached prediction, without model inference.
+// Rebuild the original input under its recorded identity so a runtime upgrade is
+// distinguishable from a changed employer source or graduation cohort.
+export function buildUnspecifiedPublicTypeRepair(job = {}) {
+  const saved = job.classification
+  const cache = job.postClassification
+  const cached = cache?.result?.classification
+  if (saved?.resolved?.jobType !== 'Unspecified' || !getAuthoritativeClassification(job)
+    || saved.mode !== 'policy' || saved.complete !== true || cache?.mode !== 'policy' || cache.status !== 'completed'
+    || !saved.inputHash || cache.inputHash !== saved.inputHash || cached?.inputHash !== saved.inputHash
+    || cached.resolved?.jobType !== 'Unspecified' || !Number.isInteger(saved.referenceYear)
+    || saved.referenceYear < 1990 || saved.referenceYear > 9999) return null
+  const identity = Object.fromEntries(['modelRevision', 'runtimeVersion', 'runtimeHash', 'policyHash', 'calibrationHash']
+    .map(key => [key, saved[key]]))
+  if (Object.values(identity).some(value => typeof value !== 'string' || !value)) return null
+  const referenceDate = new Date(`${saved.referenceYear}-07-01T00:00:00Z`)
+  if (postScrapeInput(job, { now: referenceDate, identity }).inputHash !== saved.inputHash) return null
+  let refreshed
+  try {
+    refreshed = resolvePostScrapeClassification(job, cache.result.prediction, { now: referenceDate, mode: 'policy' })
+  } catch { return null }
+  if (!GLICLASS_CONFIG.labels.includes(refreshed.resolved.jobType)) return null
+  return {
+    filter: { ...sourceSnapshotFilter(job), jobType: job.jobType,
+      'classification.inputHash': saved.inputHash, 'classification.policyVersion': saved.policyVersion,
+      'classification.authoritative': true, 'classification.mode': 'policy', 'classification.complete': true,
+      'classification.status': saved.status, 'classification.resolved.jobType': 'Unspecified',
+      'postClassification.mode': 'policy', 'postClassification.status': 'completed',
+      'postClassification.inputHash': saved.inputHash,
+      'postClassification.result.classification.inputHash': saved.inputHash,
+      'postClassification.result.classification.resolved.jobType': 'Unspecified',
+      'postClassification.result.prediction': cache.result.prediction },
+    update: { $set: { classification: refreshed,
+      ...Object.fromEntries(CLASSIFICATION_FIELDS.map(field => [field, refreshed.resolved[field] ?? null])),
+      'postClassification.inputHash': refreshed.inputHash,
+      'postClassification.result.classification': refreshed,
+    } },
+  }
+}
 
 export function postScrapePersistencePatch(job, previous, { now = new Date(), mode = 'shadow' } = {}) {
   const input = postScrapeInput(job, { now })
@@ -167,12 +207,15 @@ export function resolvePostScrapeClassification(job, prediction, { now = new Dat
   const input = postScrapeInput(job, { now })
   if (input.incomplete) throw new Error('Missing or oversized source description')
   const resolved = { ...base.resolved }
+  const modelFallback = resolved.jobType === 'Unspecified' && !base.sourceQualityIssues.length
+  if (modelFallback) resolved.jobType = prediction.modelLabel
   // Source-backed rules guard numeric eligibility, contract roles, and internships.
-  // A zero-shot score is recorded as a comparison, not a calibrated probability.
+  // The model supplies a category only when usable source text leaves it unresolved;
+  // its uncalibrated score never establishes numeric experience or repairs bad input.
   return { ...base, resolved, complete: true, windows: prediction.windows,
-    decisionSource: 'source_policy', reason: base.sourceQualityIssues.length ? base.reason : 'zero_shot_uncalibrated',
-    comparison: { modelJobType: prediction.modelLabel, logicJobType: resolved.jobType,
-      agreement: prediction.modelLabel === resolved.jobType },
+    decisionSource: modelFallback ? 'model_fallback' : 'source_policy', reason: base.sourceQualityIssues.length ? base.reason : 'zero_shot_uncalibrated',
+    comparison: { modelJobType: prediction.modelLabel, logicJobType: base.resolved.jobType,
+      agreement: prediction.modelLabel === base.resolved.jobType },
     decisions: { jobType: { label: prediction.modelLabel, probability: ranked[0][1],
       probabilities: prediction.scores, margin: ranked[0][1] - ranked[1][1] } },
   }

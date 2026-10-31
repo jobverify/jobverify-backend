@@ -106,7 +106,93 @@ test('production rephrases source prose and publishes through the existing guard
   assert.match(saved.$set.description, /Develop reliable Python/);
   assert.match(saved.$set.description, /2 years/);
   assert.equal(saved.$set.sourceDescription, undefined);
-  assert.equal(server.requests[0].max_tokens, REWRITE_MODEL.contextTokens - 300 - 64);
+  assert.ok(server.requests[0].max_tokens <= REWRITE_MODEL.contextTokens - 300 - 64);
+});
+
+test('short fragments cannot consume an entire context window of output', async t => {
+  const server = await serverFor(t);
+  const input = inputFor('Build Python services.');
+  const response = await createRewriteClient(server).generate(input);
+  assert.equal(validateProseRewrite(response.value, input, 'stop').ok, true);
+  assert.ok(server.requests[0].max_tokens < 1024, 'source-sized allowance must prevent a tiny fragment generating 8K tokens');
+});
+
+test('whitespace-only source spans preserve their layout without an empty-output rejection', () => {
+  const original = 'Build Python services.\n   \nMaintain tests.';
+  const input = inputFor(original);
+  const parts = ['Build Python services.', '\n   \n', 'Maintain tests.'].map(source => ({ source, text: source }));
+  const checked = validateProseRewrite({ inputHash: input.inputHash, parts }, input, 'stop');
+  assert.equal(checked.ok, true);
+  assert.equal(checked.description, original);
+});
+
+test('physical splits inside an identifier reconstruct its exact source boundary', () => {
+  const original = 'CustomerIntegrationService';
+  const input = inputFor(original);
+  const parts = ['CustomerIntegr', 'ationService'].map(source => ({ source, text: source }));
+  const checked = validateProseRewrite({ inputHash: input.inputHash, parts }, input, 'stop');
+  assert.equal(checked.ok, true);
+  assert.equal(checked.description, original);
+});
+
+test('empty model text gets one full-source correction without accepting empty fallback', async t => {
+  const server = await serverFor(t, { complete: (data, _request, count) => ({ text: count === 1 ? '' : data.source }) });
+  const input = inputFor('Build Python services.');
+  const response = await createRewriteClient(server).generate(input);
+  assert.equal(validateProseRewrite(response.value, input, 'stop').ok, true);
+  assert.equal(server.requests.length, 2);
+  assert.equal(response.generations[1].corrective, true);
+  assert.equal(server.requests[1].messages.at(-1).content, 'Build Python services.');
+});
+
+test('a fragment rejection identifies its failing phase and source offset', () => {
+  const original = 'Build Python services.\nMaintain tests.';
+  const input = inputFor(original);
+  const checked = validateProseRewrite({ inputHash: input.inputHash, parts: [
+    { source: 'Build Python services.\n', text: 'Build Python services.\n', sourceOffset: 0 },
+    { source: 'Maintain tests.', text: 'Invented Kubernetes skills.', sourceOffset: 23 },
+  ] }, input, 'stop');
+  assert.equal(checked.ok, false);
+  assert.equal(checked.diagnostic?.phase, 'fragment');
+  assert.equal(checked.diagnostic?.sourceOffset, 23);
+  assert.equal(checked.diagnostic?.evidence, 'Maintain tests.');
+});
+
+test('individually valid fragments cannot conceal a changed identifier after assembly', () => {
+  const input = inputFor('buildingService');
+  const checked = validateProseRewrite({ inputHash: input.inputHash, parts: [
+    { source: 'build', text: 'develop', sourceOffset: 0 },
+    { source: 'ingService', text: 'ingService', sourceOffset: 5 },
+  ] }, input, 'stop');
+  assert.equal(checked.ok, false);
+  assert.equal(checked.reason, 'source_details_changed');
+  assert.equal(checked.diagnostic?.phase, 'assembly');
+  assert.equal(checked.diagnostic?.evidence, 'buildingService');
+  assert.equal(checked.diagnostic?.text, 'developingService');
+});
+
+test('malformed JSON gets one fresh correction and preserves strict source validation', async t => {
+  let completions = 0;
+  const server = http.createServer(async (req, res) => {
+    let body = ''; for await (const part of req) body += part;
+    const request = JSON.parse(body);
+    if (req.url === '/apply-template') return res.end(JSON.stringify({ prompt: 'source' }));
+    if (req.url === '/tokenize') return res.end(JSON.stringify({ tokens: [1, 2, 3] }));
+    completions++;
+    res.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: {
+      content: completions === 1 ? '{"text":' : JSON.stringify({ text: request.messages.at(-1).content }),
+    } }] }));
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => { server.closeAllConnections(); return new Promise(resolve => server.close(resolve)); });
+  const input = inputFor('Build Python services.');
+  let response;
+  await assert.doesNotReject(async () => {
+    response = await createRewriteClient({ endpoint: `http://127.0.0.1:${server.address().port}` }).generate(input, { allowSourceFallback: false });
+  });
+  assert.equal(validateProseRewrite(response.value, input, 'stop').ok, true);
+  assert.equal(response.generationRequests, 2);
+  assert.equal(response.generations[1].corrective, true);
 });
 
 test('generation and correction prompts contain only the current employer source facts', async t => {
@@ -340,7 +426,7 @@ test('validated source chunks survive client restart without publishing partial 
   let rejectSecond = true;
   const server = await serverFor(t, { tokens: prompt => prompt.length > 5000 ? 7500 : 1000,
     complete: (data, _request, count) => {
-      if (rejectSecond && count === 2) return { text: '' };
+      if (rejectSecond && (count === 2 || count === 3)) return { text: '' };
       return { text: data.source.replaceAll('Build reliable', 'Develop reliable') };
     } });
   const input = inputFor('Responsibilities:\n' + 'Build reliable Python services. '.repeat(200));

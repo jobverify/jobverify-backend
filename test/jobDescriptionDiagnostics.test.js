@@ -73,3 +73,17 @@ test('readiness diagnostics retain the full synthetic source separately from the
   assert.equal(probe.sourceContext, 'Build Python services for customer group 2.');
   assert.equal(production.probeSource, undefined);
 });
+
+test('assembly failure evidence uses the actual failing candidate and context rather than a stale completion', () => {
+  const diagnostics = createRewriteDiagnostics();
+  diagnostics.record({ id: 'assembly-job', reason: 'source_details_changed',
+    input: { sourceDescription: 'Build services. Maintain tests.' },
+    response: { rawText: '{"text":"last unrelated fragment"}' },
+    diagnostic: { phase: 'assembly', code: 'source_details_changed', scope: 'required',
+      evidence: 'Maintain tests.', text: 'Invented skills.', sectionContext: 'Requirements' } });
+  const sample = diagnostics.snapshot().samples[0];
+  assert.equal(sample.validation.phase, 'assembly');
+  assert.equal(sample.validation.sectionContext, 'Requirements');
+  assert.equal(JSON.parse(sample.completionPreview).text, 'Invented skills.');
+  assert.equal(sample.sourceContext, 'Maintain tests.');
+});

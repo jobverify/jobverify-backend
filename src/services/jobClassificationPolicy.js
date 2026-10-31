@@ -4,7 +4,7 @@ import { extractJobFilterSignals } from '../utils/jobFilterSignals.js';
 import { selectClassificationDescription } from './classificationDescription.js';
 import { JOB_CLASSIFICATION_POLICY_VERSION } from '../utils/jobClassificationVersion.js';
 import { resolveRecruitmentPolicy } from './jobRecruitmentPolicy.js';
-import { normalizePublicJobType } from '../utils/publicJobTypeLabel.js';
+import { normalizePublicJobType, PUBLIC_JOB_TYPES } from '../utils/publicJobTypeLabel.js';
 import { resolveJobPublicationDate } from '../utils/jobPublicationDate.js';
 
 const normalizedBytes = relative => readFileSync(new URL(`../../${relative}`, import.meta.url)).toString('utf8').replace(/\r\n/g, '\n');
@@ -16,6 +16,7 @@ export const POLICY_HASH = createHash('sha256').update(policyBytes).digest('hex'
 export const RUNTIME_HASH = createHash('sha256').update(JSON.stringify([
   'classification/gliclass/model.json', 'classification/gliclass/requirements.txt', 'classification/gliclass/worker.py', 'classification/gliclass/runtime.py',
   'src/services/jobClassificationPolicy.js', 'src/services/classificationDescription.js', 'src/services/jobRecruitmentPolicy.js', 'src/utils/jobClassificationVersion.js', 'src/utils/jobFilterSignals.js', 'src/utils/jobSourceContent.js', 'src/utils/jobPublicationDate.js',
+  'src/utils/publicJobTypeLabel.js', 'src/constants/preferredJobTypes.js',
 ].map(relative => [relative, createHash('sha256').update(normalizedBytes(relative)).digest('hex')]))).digest('hex');
 const PUBLIC_TYPES = ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract', 'Others', 'Unspecified'];
 export const CLASSIFICATION_FIELDS = ['jobType', 'employmentType', 'experienceLevel', 'seniority', 'experienceYears', 'experienceBucket', 'experienceProfile', 'experienceRequired', 'experienceBasis'];
@@ -237,7 +238,9 @@ export const getAuthoritativeClassification = (job = {}) => {
   const result = job.classification;
   return result?.authoritative === true && ['enforce', 'policy'].includes(result.mode) && result.policyVersion === CLASSIFICATION_POLICY.version
     && ['accepted', 'uncertain', 'fallback'].includes(result.status) && PUBLIC_TYPES.includes(result.resolved?.jobType)
-    ? { ...result.resolved, jobType: normalizePublicJobType(result.resolved.jobType) } : null;
+    ? { ...result.resolved, jobType: result.resolved.jobType === 'Unspecified' && result.complete === true && !result.sourceQualityIssues?.length
+      && PUBLIC_JOB_TYPES.includes(result.decisions?.jobType?.label)
+      ? result.decisions.jobType.label : normalizePublicJobType(result.resolved.jobType) } : null;
 };
 
 export const applyClassification = job => {

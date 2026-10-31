@@ -44,7 +44,10 @@ function inspectNative(payload){
    locationProofs.push({index,label:location?.location,rawAddress:address,country:postal?.addressCountry??null,countryCode:code??null,provenance:'native-role-assigned-postal-address'})
   }
   try{const text=extractActiveDescription(row.descriptionHtml),doc=readVisibleNativeDocument(row.descriptionHtml,{strict:true}),visible=doc.text(doc.nodes(n=>n.tag==='root')[0]);note(Boolean(text)&&text===visible&&norm(row.descriptionPlain).length>0,'native-full-visible-criteria-unavailable')}catch{issues.push('native-criteria-visibility-unresolved')}
-  proofs.push({jobId:row.id,rawRole:row,rawRoleSha256:sha(stable(row)),countryProofs:locationProofs,fullDetailComplete:issues.length===0,reasons:issues})
+  const fullCriteriaCopyComplete=issues.length===0
+  const assignedDescriptionGap=review.roleOwnedDescriptionLocationGaps.find(gap=>gap.jobId===row.id)
+  if(assignedDescriptionGap)issues.push('role-owned-description-geography-unresolved')
+  proofs.push({jobId:row.id,rawRole:row,rawRoleSha256:sha(stable(row)),countryProofs:locationProofs,fullCriteriaCopyComplete,geographyComplete:issues.length===0,assignedDescriptionGap:assignedDescriptionGap??null,fullDetailComplete:issues.length===0,reasons:issues})
   reasons.push(...issues.map(reason=>reason+':'+row.id))
  }
  if(sha(stable(payload))!==review.nativePayloadSha256)reasons.push('unreviewed-native-complete-cohort')
@@ -59,13 +62,15 @@ export async function runCurrentBasetenInventory(options={}){
   signal?.throwIfAborted();const receipt={url,method:'GET',observedAt:new Date().toISOString(),kind};receipts.push(receipt)
   try{
    const response=await fetchImpl(url,{method:'GET',redirect:'manual',headers:{Accept:kind==='json'?'application/json':'*/*','User-Agent':'Mozilla/5.0 (compatible; Jobverify source verification)'},signal:signal?AbortSignal.any([signal,AbortSignal.timeout(30000)]):AbortSignal.timeout(30000)})
+   signal?.throwIfAborted()
    const raw=Buffer.from(await response.clone().arrayBuffer()),body=await response.text()
+   signal?.throwIfAborted()
    Object.assign(receipt,{status:response.status,finalUrl:response.url,contentType:response.headers.get('content-type'),sha256:sha(raw),nativeTextSha256:sha(body),bytes:raw.length})
    if(response.status!==status||response.url!==url||!raw.length||raw.length>12000000)fail('native HTTP identity/status/size changed: '+url)
    const mime=receipt.contentType||''
    if(kind==='html'&&!/^text\/html\b/i.test(mime)||kind==='json'&&!/^application\/json\b/i.test(mime)||kind==='script'&&!/^(?:text|application)\/(?:java|ecma)script\b/i.test(mime)||kind==='stylesheet'&&!/^text\/css\b/i.test(mime))fail('native response content type changed: '+url)
    return {body,receipt,response}
-  }catch(error){receipt.error=error.message;throw error}
+  }catch(error){receipt.error=error.message;signal?.throwIfAborted();throw error}
  }
  async function snapshot(phase){
   const official=await request(review.official,'html');let publisher=null
@@ -92,7 +97,7 @@ export async function runCurrentBasetenInventory(options={}){
     note(proof.verified,'declared-asset-program-style-or-metadata-changed:'+asset.url)
     for(const expected of review.modules.filter(m=>m.url===asset.url)){const actual=moduleProof(result.body,expected.id);note(actual.sha256===expected.sha256,'reviewed-renderer-module-dataflow-changed:'+expected.id);proof.moduleProof={id:actual.id,sha256:actual.sha256,reviewedDataflow:expected.reviewedDataflow}}
     assets.push(proof)
-   }catch(error){reasons.add('declared-asset-unavailable:'+asset.url);assets.push({...asset,verified:false,error:error.message})}
+   }catch(error){signal?.throwIfAborted();reasons.add('declared-asset-unavailable:'+asset.url);assets.push({...asset,verified:false,error:error.message})}
   }
   const cms=publisher?.departments.flatMap(d=>d.jobs)||[],cmsIds=[...new Set(cms.map(j=>j.applicationId))],nativeIds=new Set(native.ids)
   if(publisher){
@@ -116,18 +121,22 @@ export async function runCurrentBasetenInventory(options={}){
      const checked=suffix?{proofs:state.app.environment==='production'&&state.app.maintenanceMode===false&&state.app.schedulingMaintenanceMode===false&&state.app.organization===null&&state.app.posting===null&&state.app.jobBoard===null&&!/verify you are human|checking your browser|access denied|cf-chl-/i.test(result.body)?[{jobId:missing.id,url,status:404,method:'native-ashby-unavailable-role-state',sha256:result.receipt.nativeTextSha256}]:[],failures:[]}:await verifyUnavailableAshbyRoles([missing.id],{boardToken:'baseten'},{fetchPage:async canonical=>({status:result.receipt.status,url:result.receipt.finalUrl,html:result.body}),signal})
      note(checked.proofs.length===1&&checked.failures.length===0,'advertised-role-unavailability-unproved:'+missing.id)
      unavailable.push({...result.receipt,jobId:missing.id,method:'native-ashby-unavailable-role-state',canonicalValidatorProof:checked.proofs[0]??null,rawNativeApp:state.app})
-    }catch(error){reasons.add('advertised-role-terminal-state-unavailable:'+missing.id);unavailable.push({jobId:missing.id,url,error:error.message})}
+    }catch(error){signal?.throwIfAborted();reasons.add('advertised-role-terminal-state-unavailable:'+missing.id);unavailable.push({jobId:missing.id,url,error:error.message})}
    }
   }
   return {phase,officialBody:official.body,publisher,payload,native,board,strongestEvidence,strongestJobs,assets,cms,cmsIds,unavailable}
  }
  const opening=await snapshot('opening'),closing=await snapshot('closing')
+ signal?.throwIfAborted()
  note(same(opening.payload,closing.payload),'native-closing-cohort-or-full-criteria-changed')
  note(opening.publisher?.domSha256===closing.publisher?.domSha256&&opening.publisher?.streamSha256===closing.publisher?.streamSha256,'publisher-closing-scope-changed')
  note(same(opening.board,closing.board),'native-board-closing-state-changed')
  const complete=reasons.size===0,healthy=new Map(opening.native.proofs.map(p=>[p.jobId,p.fullDetailComplete&&closing.native.proofs.some(c=>c.jobId===p.jobId&&c.fullDetailComplete&&c.rawRoleSha256===p.rawRoleSha256)]))
  const jobs=opening.strongestJobs.map(job=>({...job,companyCareerPage:review.official,sourceScopeComplete:complete,sourceListingComplete:complete,lifecycleCleanupAllowed:complete,sourceDetailComplete:healthy.get(job.jobId)===true}))
- const audit={source:'baseten',productionWrites:false,complete,sourceScopeComplete:complete,lifecycleCleanupAllowed:complete,nativeCount:opening.payload.jobs.length,closingNativeCount:closing.payload.jobs.length,fullNativeDetails:opening.native.proofs.filter(p=>healthy.get(p.jobId)).length,reasons:[...reasons],opening,closing,receipts,originalNativePayloadPreserved:true,publisherJavaScriptExecuted:false}
+ const nativeCountryScopeUnresolvedRoleIds=[...new Set([...opening.native.proofs,...closing.native.proofs].filter(p=>!p.geographyComplete).map(p=>p.jobId))].sort()
+ const fullNativeCriteriaCopies=opening.native.proofs.filter(p=>p.fullCriteriaCopyComplete&&closing.native.proofs.some(c=>c.jobId===p.jobId&&c.fullCriteriaCopyComplete&&c.rawRoleSha256===p.rawRoleSha256)).length
+ const audit={source:'baseten',productionWrites:false,complete,sourceScopeComplete:complete,lifecycleCleanupAllowed:complete,nativeCount:opening.payload.jobs.length,closingNativeCount:closing.payload.jobs.length,fullNativeCriteriaCopies,fullNativeDetails:opening.native.proofs.filter(p=>healthy.get(p.jobId)).length,nativeCountryScopeUnresolvedRoleIds,reasons:[...reasons],opening,closing,receipts,originalNativePayloadPreserved:true,publisherJavaScriptExecuted:false}
  Object.defineProperty(jobs,'sourceAudit',{value:audit});onAudit?.(structuredClone(audit))
+ signal?.throwIfAborted()
  return attachInventoryEvidence(jobs,{status:complete?'complete-inventory':'discovery-only',firstParty:true,listingComplete:complete,surface:review.feed,pagesFetched:receipts.length,reportedTotal:opening.payload.jobs.length,indiaFacetCount:complete?opening.strongestEvidence.indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason:complete?'baseten-native-and-actual-publisher-complete-closed-cohort':'baseten-source-scope-unresolved:'+audit.reasons.join(';')})
 }

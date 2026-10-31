@@ -5,6 +5,8 @@ import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/ut
 import { filterIndiaJobs } from '../../scraper-support/utils/indiaLocationFilter.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { extractAshbyExperienceRequired } from '../../scraper-support/utils/ashbyExperience.js'
+import { createPublishingGapAtsScraper } from '../../scraper-support/utils/publishingGapAts.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -176,12 +178,20 @@ export const extractAshbyJobs = (payload = {}) =>
 export const createSupabaseScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
-} = {}) => ({
+} = {}) => {
+  if (maxJobs !== null && (!Number.isSafeInteger(maxJobs) || maxJobs < 0)) {
+    throw new Error('Invalid Supabase output limit')
+  }
+  return {
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    signal,
+    onAudit,
   } = {}) {
+    signal?.throwIfAborted()
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    signal?.throwIfAborted()
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Verified Supabase official careers page changed materially')
     }
@@ -197,21 +207,56 @@ export const createSupabaseScraper = ({
     }
 
     const payload = await fetchJson(ASHBY_JOB_BOARD_URL)
+    signal?.throwIfAborted()
     if (!Array.isArray(payload?.jobs)) {
       throw new Error('Verified Ashby payload changed materially')
     }
 
-    const jobs = extractAshbyJobs(payload)
-    const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
+    // The complete original response reaches the existing strongest native
+    // schema, identity and location checks before any India or output slice.
+    const nativeJobs = await createPublishingGapAtsScraper({
+      source: SOURCE, companyName: COMPANY, atsPlatform: 'ashby', boardToken: 'supabase',
+      companyCareerPage: CAREERS_PAGE_URL, sourceScopeComplete: false,
+      lifecycleCleanupAllowed: false,
+    }).run({ signal, fetchJson: async (url) => {
+      if (url !== ASHBY_JOB_BOARD_URL) throw new Error('Unexpected Supabase native endpoint')
+      return payload
+    } })
+    signal?.throwIfAborted()
+    const strongestEngineEvidence = readInventoryEvidence(nativeJobs)
+    const nativeById = new Map(payload.jobs.map((record) => [String(record.id), record]))
+    const selectedJobs = maxJobs === null ? nativeJobs : nativeJobs.slice(0, maxJobs)
+    const jobs = selectedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl,
       scrapedAt: now(),
+      sourceNativeRecord: structuredClone(nativeById.get(String(job.jobId))),
+      sourceScopeComplete: false,
+      lifecycleCleanupAllowed: false,
     }))
+    const audit = {
+      source: SOURCE, observedNativeBoardCount: payload.jobs.length,
+      originalNativePayload: structuredClone(payload), nativeRecords: structuredClone(payload.jobs),
+      strongestEngineEvidence, sourceScopeComplete: false, lifecycleCleanupAllowed: false,
+      authoritativeSourceTotal: null, authoritativeIndiaFacetCount: null,
+      outputLimitApplied: selectedJobs.length < nativeJobs.length,
+      currentLiveQualification: false, noClosingCaptureClaimed: true,
+      missingProofs: ['current corporate activation and all recruiting channels',
+        'native country alternatives and complete detail scope', 'fresh global opening/closing inventory'],
+    }
+    Object.defineProperty(jobs, 'sourceAudit', { value: audit })
+    onAudit?.(structuredClone(audit))
+    signal?.throwIfAborted()
+    return attachInventoryEvidence(jobs, {
+      ...strongestEngineEvidence, status: 'discovery-only', listingComplete: false,
+      reportedTotal: null, indiaFacetCount: null,
+      reason: 'supabase-source-scope-unresolved:' + strongestEngineEvidence.reason
+        + (audit.outputLimitApplied ? ';source-output-limit-applied' : ''),
+    })
   },
-})
+  }
+}
 
 export const run = async (options = {}) => createSupabaseScraper(options).run(options)
 
