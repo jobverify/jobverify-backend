@@ -39,7 +39,7 @@ test("managed index planning includes the user suggestion quota indexes", () => 
   assert.match(source, /\["UserSuggestion", UserSuggestion\]/);
 });
 
-test('index planning discovers application mailbox, receipt, OAuth expiry and submission queue indexes without mutating data', async t => {
+test('index planning discovers submission queue indexes without mutating data', async t => {
   const { default: dotenv } = await import('dotenv');
   t.mock.method(dotenv, 'config', () => ({ parsed: {} }));
   const { runIndexManagement } = await import('../scripts/indexes.js');
@@ -53,9 +53,6 @@ test('index planning discovers application mailbox, receipt, OAuth expiry and su
     log: () => {}, errorLog: (...args) => assert.fail(args.join(' ')) });
   const plans = new Map(result.results.map(item => [item.name, item.diff.toCreate]));
   for (const [name, key] of [
-    ['ApplicationMailbox', { user: 1 }],
-    ['ApplicationMailboxAuth', { expiresAt: 1 }],
-    ['ApplicationMail', { user: 1, mailboxEmail: 1, messageId: 1 }],
     ['AutoApplyAttempt', { status: 1, leaseUntil: 1, createdAt: 1 }],
   ]) assert.ok(plans.get(name)?.some(index => JSON.stringify(index) === JSON.stringify(key)), `${name} index missing from managed plan`);
 });

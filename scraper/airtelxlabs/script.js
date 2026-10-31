@@ -34,14 +34,17 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
   })
+  signal?.throwIfAborted()
 
   return {
     status: response.status,
@@ -88,37 +91,49 @@ const isGenericAirtelCareersHandoff = (page, fallbackUrl) =>
   && hasGenericAirtelCareersSignal(page?.html)
 
 export const createAirtelXLabsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
+  async run({ fetchPage = defaultFetchPage, fetchBrowserPage, signal } = {}) {
+    signal?.throwIfAborted()
     let browserSession = null
 
     const getBrowserSession = async () => {
+      signal?.throwIfAborted()
       if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT, signal })
       }
 
+      signal?.throwIfAborted()
       return browserSession
     }
 
-    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+    const browserPageFetcher = fetchBrowserPage || (async (url, options = {}) => {
       const session = await getBrowserSession()
-      return session.fetchPage(url)
+      return session.fetchPage(url, { ...options, signal })
     })
 
-    const fetchVerifiedPage = async (url) => {
+    const readBrowser = async url => {
+      signal?.throwIfAborted()
       try {
-        const page = await fetchPage(url)
-        if ([403, 429].includes(Number(page?.status))) {
-          return browserPageFetcher(url)
-        }
-
-        return page
+        const value = await browserPageFetcher(url, { signal })
+        signal?.throwIfAborted()
+        return value
       } catch (error) {
-        if (!shouldUseBrowserFallback(error)) {
-          throw error
-        }
-
-        return browserPageFetcher(url)
+        signal?.throwIfAborted()
+        throw error
       }
+    }
+    const fetchVerifiedPage = async (url) => {
+      signal?.throwIfAborted()
+      let value
+      try {
+        value = await fetchPage(url, { signal })
+        signal?.throwIfAborted()
+      } catch (error) {
+        signal?.throwIfAborted()
+        if (!shouldUseBrowserFallback(error)) throw error
+        return readBrowser(url)
+      }
+      if ([403, 429].includes(Number(value?.status))) return readBrowser(url)
+      return value
     }
 
     try {
@@ -148,9 +163,9 @@ export const createAirtelXLabsScraper = () => ({
 
       return []
     } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
+      try {
+        if (browserSession) await browserSession.close()
+      } finally { signal?.throwIfAborted() }
     }
   },
 })

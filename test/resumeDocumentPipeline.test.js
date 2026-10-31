@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { processResumeDocument } from '../outreach/resumePipeline.js';
+import { processResumeDocument } from '../resume-tailoring/resumePipeline.js';
 
 const source = { text: 'Alex Example\nalex@example.com\nEXPERIENCE\nExample Corp\nSoftware Engineer | Jan 2022 - Present\nDeveloped Java services and automated tests.\nEDUCATION\nExample University\nBSc Computer Science | 2018 - 2022', links: ['mailto:alex@example.com'] };
 const latex = '\\documentclass[11pt]{article}\n\\begin{document}\nAlex Example\\end{document}';

@@ -10,6 +10,7 @@ import mongoose from 'mongoose'
 import Job from '../src/models/Job.js'
 import JobDatasetSummary from '../src/models/JobDatasetSummary.js'
 import { PUBLIC_JOB_TYPE_EXPRESSION } from '../src/utils/publicJobType.js'
+import { PUBLIC_JOB_TYPES } from '../src/utils/publicJobTypeLabel.js'
 import { JOB_DATASET_LIFECYCLE_VERSION } from '../src/services/jobDatasetSummaryService.js'
 import { buildPublishableJobPostedAtCutoff } from '../src/utils/jobLifecycle.js'
 import { buildAggregateHiringSignalFilter } from '../src/utils/jobListingEvidence.js'
@@ -115,14 +116,21 @@ const assertHasPublishedDateScope = (scope) => {
   })
 }
 
-const assertMatchesPublicJobScope = (scope, expectedFilters = {}) => {
+const assertMatchesPublicJobScope = (scope, expectedFilters = {}, { publicVisibility = true } = {}) => {
   assert.ok(scope)
   assert.deepEqual(stripPublishedDateScope(scope), {
     ...expectedFilters,
     isPublicIndia: true,
     $nor: [buildAggregateHiringSignalFilter(), buildMissingSourceDescriptionFilter()],
   })
-  assertHasPublishedDateScope(scope)
+  if (publicVisibility) {
+    const [dates, category] = scope.$expr?.$and || []
+    assert.deepEqual(category, { $in: [PUBLIC_JOB_TYPE_EXPRESSION, PUBLIC_JOB_TYPES] })
+    assert.equal(scope.$expr.$and.length, 2)
+    assertHasPublishedDateScope({ ...scope, $expr: dates })
+  } else {
+    assertHasPublishedDateScope(scope)
+  }
 }
 
 const setConnectionReadyState = (readyState) => {
@@ -189,7 +197,7 @@ test('buildPublicJobLocationScope excludes jobs older than one month, future and
   const now = new Date('2026-07-25T12:00:00.000Z')
   const scope = buildPublicJobLocationScope(now)
 
-  assertMatchesPublicJobScope(scope)
+  assertMatchesPublicJobScope(scope, {}, { publicVisibility: false })
   assert.equal(
     scope.$expr.$and[0].$lte[1].toISOString(),
     '2026-07-25T12:00:00.000Z',

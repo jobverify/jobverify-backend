@@ -94,7 +94,8 @@ test('hiring wording about an experienced intern cannot promote the vacancy to e
 test('an explicitly preferred experience section cannot become a required minimum', () => {
   const job = classify({ title: 'Engineer', description:
     'Full-time role. Minimum qualifications: Bachelors degree. Preferred Experience: 3 years of professional experience.' });
-  assert.equal(job.jobType, 'Full-time Experienced');
+  assert.equal(job.jobType, 'Unspecified');
+  assert.deepEqual(job.experienceYears, []);
   assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, null);
   assert.equal(job.experienceProfile.preferredMinimumYears, 3);
 });
@@ -147,7 +148,8 @@ test('inline optional modifiers on numeric experience cannot become a required m
   for (const modifier of ['desired', 'good to have', 'optional', 'a bonus', 'desirable', 'nice-to-have']) await t.test(modifier, () => {
     const job = classify({ title: 'Engineer', description:
       `Full-time role. Preferred qualifications: Certification is preferred. Experience: 3 years of professional experience is ${modifier}.` });
-    assert.equal(job.jobType, 'Full-time Experienced');
+    assert.equal(job.jobType, 'Unspecified');
+    assert.deepEqual(job.experienceYears, []);
     assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, null);
     assert.equal(job.experienceProfile.preferredMinimumYears, 3);
   });
@@ -184,7 +186,12 @@ test('optional ideal-candidate experience and company history remain distinct fr
     'About the ideal candidate: University degree required. Our company has experience in travel technology.',
     'About the ideal candidate: University degree required. Experience in data modeling is desired.',
     'About the ideal candidate: University degree required. Experience in software delivery is good to have.',
-  ]) await t.test(description, () => assert.equal(classify({ title: 'Product Definition Analyst', description }).jobType, 'Full-time Experienced'));
+  ]) await t.test(description, () => {
+    const job = classify({ title: 'Product Definition Analyst', description });
+    assert.equal(job.jobType, 'Unspecified');
+    assert.equal(job.experienceProfile.minimumYears, null);
+    assert.deepEqual(job.experienceYears, []);
+  });
 });
 
 test('a flattened education-and-experience section requires experience without inventing employer years', () => {
@@ -200,7 +207,12 @@ test('preferred voice experience and company experience do not require applicant
   for (const description of [
     'Education and Experience Bachelors degree or equivalent experience. Experience in voice process is preferred. Functional Skills Communicate with customers.',
     'About us Our company has experience in voice process operations. Responsibilities Support customers and develop your skills.',
-  ]) assert.equal(classify({ title: 'Customer Service Associate', description }).jobType, 'Full-time Experienced');
+  ]) {
+    const job = classify({ title: 'Customer Service Associate', description });
+    assert.equal(job.jobType, 'Unspecified');
+    assert.equal(job.experienceProfile.minimumYears, null);
+    assert.deepEqual(job.experienceYears, []);
+  }
 });
 
 test('required education-and-experience requirements reset a preceding preferred section', () => {
@@ -214,7 +226,9 @@ test('restored education-and-experience headings retain their optional modifiers
   for (const modifier of ['Preferred', 'Desirable', 'Optional', 'Desired', 'Nice to have', 'Good to have', 'Bonus']) {
     const result = classify({ title: 'Customer Service Associate', description:
       `${modifier} Education and Experience: Bachelors degree or equivalent experience. Experience in voice process. Functional Skills Communicate clearly.` });
-    assert.equal(result.jobType, 'Full-time Experienced', modifier);
+    assert.equal(result.jobType, 'Unspecified', modifier);
+    assert.equal(result.experienceProfile.minimumYears, null, modifier);
+    assert.deepEqual(result.experienceYears, [], modifier);
   }
 });
 
@@ -267,27 +281,39 @@ test('incidental intern/student words, founding dates and education duration can
   assert.equal(recent.jobType, 'Full-time Fresher');
   assert.deepEqual(recent.experienceYears, [0]);
   const staff = classify({ title: 'Engineer', description: 'Our staff are currently pursuing masters through employer support. Develop software.' });
-  assert.equal(staff.jobType, 'Full-time Experienced');
+  assert.equal(staff.jobType, 'Unspecified');
+  assert.deepEqual(staff.experienceYears, []);
 });
 
-test('policy publishing does not accept an uncalibrated model guess as fact', async () => {
-  const input = buildClassificationInput({ title: 'Engineer', description: 'Develop software.' }, { now });
-  const identity = Object.fromEntries(['modelRevision', 'runtimeVersion', 'runtimeHash', 'policyHash', 'calibrationHash'].map(key => [key, input[key]]));
+test('complete model fallback supplies a public label while source facts remain unresolved and quality gates still apply', () => {
   const choices = { jobType: 'Intern' };
   const answers = Object.fromEntries(Object.entries(CLASSIFICATION_POLICY.questions).map(([key, question]) => {
     const labels = Object.keys(question.criteria), choice = choices[key];
     return [key, { choice, probabilities: Object.fromEntries(labels.map(label => [label, label === choice ? .999 : .001 / (labels.length - 1)])) }];
   }));
   const source = { title: 'Engineer', description: 'Develop software.' };
-  const result = resolveClassification(source, { complete: true, windows: 1, answers }, { mode: 'policy', now });
+  const prediction = { complete: true, windows: 1, answers };
+  const result = resolveClassification(source, prediction, { mode: 'policy', now });
   assert.notEqual(result.status, 'accepted');
-  assert.equal(applyClassification({ ...source, classification: result }).jobType, 'Full-time Experienced');
+  assert.equal(result.reason, 'model_unvalidated');
+  assert.equal(result.resolved.jobType, 'Unspecified');
+  assert.equal(result.comparison.logicJobType, 'Unspecified');
+  assert.equal(applyClassification({ ...source, classification: result }).jobType, 'Intern');
+  assert.deepEqual(applyClassification({ ...source, classification: result }).experienceYears, []);
+  for (const blocked of [{ ...result, complete: false }, { ...result, sourceQualityIssues: ['unqualified source content'] }]) {
+    assert.equal(applyClassification({ ...source, classification: blocked }).jobType, 'Unspecified');
+  }
+  const required = { title: 'Engineer', description: 'Full-time role. Minimum 3 years of professional experience required.' };
+  const classified = applyClassification({ ...required, classification: resolveClassification(required, prediction, { mode: 'policy', now }) });
+  assert.equal(classified.jobType, 'Full-time Experienced');
+  assert.equal(classified.experienceProfile.minimumYears, 3);
 });
 
 test('source rules cannot turn a missing description into a complete model scan', () => {
   const job = classify({ title: 'Intern' });
   assert.equal(job.classification.complete, false);
-  assert.equal(job.jobType, 'Full-time Experienced');
+  assert.equal(job.jobType, 'Unspecified');
+  assert.deepEqual(job.experienceYears, []);
 });
 
 test('optional or mixed student eligibility cannot override an experienced employee role', () => {
@@ -350,7 +376,8 @@ test('prior experience without a number uses a positive range rather than a care
 
 test('ordinary words and optional skills do not imply completed degrees or required experience', () => {
   const assembly = classify({ title: 'Assembler', description: 'You will be mainly accountable for semi-finished products.' });
-  assert.equal(assembly.jobType, 'Full-time Experienced');
+  assert.equal(assembly.jobType, 'Unspecified');
+  assert.deepEqual(assembly.experienceYears, []);
   const graduate = classify({ title: 'Engineer', description: "Must have completed a bachelor's degree. Qualifications for the role. Experience in networking is preferred." });
   assert.equal(graduate.jobType, 'Full-time Fresher');
   assert.deepEqual(graduate.experienceYears, [0]);
@@ -360,7 +387,8 @@ test('ordinary words and optional skills do not imply completed degrees or requi
     assert.deepEqual(job.experienceYears, [0]);
   }
   const template = classify({ title: '00', description: 'Qualifications for the role. Experience in {insert relevant field} required.' });
-  assert.equal(template.jobType, 'Full-time Experienced');
+  assert.equal(template.jobType, 'Unspecified');
+  assert.deepEqual(template.experienceYears, []);
 });
 
 test('experienced filter years remain within the product bracket while employer years are preserved', () => {

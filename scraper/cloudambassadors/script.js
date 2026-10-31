@@ -1,3 +1,4 @@
+import {readRoles,advertisedAssets,rendererProof,evaluateRendering,finish,nativeFetch} from './native.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parse } from 'acorn'
@@ -45,51 +46,9 @@ export const hasSharedApplicationSignal = (html) => {
     && /\bEmail\b/i.test(text)
 }
 
-export const extractCareerListings = (html) => {
-  const roleSection = extractOpenRolesSection(html)
-  const titles = [...roleSection.matchAll(
-    /<button\b[^>]*class=["'][^"']*\bcursor-pointer\b[^"']*["'][^>]*>([\s\S]*?)<\/button>/gi,
-  )]
-    .map((match) => normalizeWhitespace(match[1]))
-    .filter(Boolean)
+export const extractCareerListings = readRoles
 
-  return titles.map((title) => {
-    const jobId = toJobId(title)
-
-    return {
-      title,
-      company: 'Cloud Ambassadors',
-      department: null,
-      location: null,
-      city: null,
-      state: null,
-      country: 'India',
-      jobId,
-      requisitionId: jobId,
-      sourceUrl: CAREERS_URL,
-      applyUrl: APPLICATION_URL,
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      publicExperienceChecked: true,
-      remoteStatus: null,
-    }
-  })
-}
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'cloudambassadors',
-  timeoutMs: 15000,
-})
+const defaultFetchText = nativeFetch
 
 // Read literal employer data, never evaluate a downloaded application bundle.
 export const extractStaticRoleDescriptions = (javascript, jobs) => {
@@ -116,7 +75,7 @@ export const extractStaticRoleDescriptions = (javascript, jobs) => {
           || !requirements.elements.length || requirements.elements.length > 50) return null
         const items = requirements.elements.map(string)
         if (items.some(item => !item?.trim())) return null
-        return { title: name, description: [title, bio, ...items].join('\n\n') }
+        return { title: name, description: [title, bio, ...items].join('\n\n'), nativeFields:{name,title,bio,arr:items} }
       })
       if (roles.every(Boolean) && new Set(roles.map(role => role.title)).size === expected.size) matches.push(roles)
     }
@@ -129,67 +88,20 @@ export const extractStaticRoleDescriptions = (javascript, jobs) => {
   return matches.length === 1 ? matches[0] : null
 }
 
-export const linkedCareerAssets = (html) => [...new Set(Array.from(String(html).matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi), match => {
-  try {
-    const url = new URL(match[1], CAREERS_URL)
-    return url.origin === 'https://cloudambassadors.com' && !url.username && !url.password && !url.search && !url.hash
-      && /^\/_next\/static\/chunks\/[a-z0-9._-]+\.js$/i.test(url.pathname) ? url.href : null
-  } catch { return null }
-}).filter(Boolean))].slice(0, 16)
+export const linkedCareerAssets = advertisedAssets
 
-const defaultFetchAsset = (url, { signal }) => fetchTextWithRetry(url, {
-  signal, attempts: 1, timeoutMs: 10000, includeResponseMetadata: true,
-})
+const defaultFetchAsset = (url,{signal})=>nativeFetch(url,{signal,metadata:true})
 
 export const createCloudAmbassadorsScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchAsset = defaultFetchAsset, signal,
-    detailEnrichmentBudgetMs = 45000, now = () => new Date().toISOString() } = {}) {
-    signal?.throwIfAborted()
-    const careersHtml = await fetchText(CAREERS_URL)
-    const applicationHtml = await fetchText(APPLICATION_URL)
-
-    if (!hasSharedApplicationSignal(applicationHtml)) {
-      throw new Error('Cloud Ambassadors shared apply page no longer matches the verified public application surface')
-    }
-
-    const jobs = extractCareerListings(careersHtml)
-    const assets = linkedCareerAssets(careersHtml), candidates = []
-    const requested = Number(detailEnrichmentBudgetMs)
-    const budget = Number.isFinite(requested) ? Math.min(120000, Math.max(0, requested)) : 45000
-    if (assets.length && jobs.length && budget > 0) {
-      const controller = new AbortController()
-      const assetSignal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal
-      const timer = setTimeout(() => controller.abort(), budget)
-      let cursor = 0
-      try {
-        await Promise.all(Array.from({ length: Math.min(4, assets.length) }, async () => {
-          while (!assetSignal.aborted && cursor < assets.length) {
-            const url = assets[cursor++]
-            try {
-              const response = await fetchAsset(url, { signal: assetSignal })
-              assetSignal.throwIfAborted()
-              if (response?.status !== 200 || response?.url !== url) continue
-              const roles = extractStaticRoleDescriptions(response.html, jobs)
-              if (roles) candidates.push(roles)
-            } catch { signal?.throwIfAborted() }
-          }
-        }))
-      } finally { clearTimeout(timer) }
-    }
-    signal?.throwIfAborted()
-    const roles = candidates.length === 1 ? new Map(candidates[0].map(role => [role.title, role.description])) : new Map()
-    return jobs.map((job) => ({
-      ...job,
-      jobDescription: roles.get(job.title) || null,
-      sourceDescription: roles.get(job.title) || null,
-      sourceDetailComplete: roles.has(job.title),
-      ...(roles.has(job.title) ? { sourceDetailVerifiedAt: now() }
-        : { sourceDetailFailureKind: 'missing-authoritative-jobposting' }),
-      source: 'cloudambassadors',
-      link: job.applyUrl,
-      scrapedAt: now(),
-    }))
-  },
+ async run({fetchText=defaultFetchText,fetchAsset=defaultFetchAsset,signal,detailEnrichmentBudgetMs=45000,now=()=>new Date().toISOString()}={}){
+  signal?.throwIfAborted();const careersHtml=await fetchText(CAREERS_URL,{signal}),jobs=readRoles(careersHtml),rawCandidates=jobs.nativeRoleCandidates,assets=advertisedAssets(careersHtml),candidates=[],failures=[]
+  if(jobs.some(job=>job.applyUrl)){const application=await fetchText(APPLICATION_URL,{signal});if(!hasSharedApplicationSignal(application))throw Object.assign(Error('Cloud Ambassadors native application landing changed'),{abortRetries:true})}
+  const requested=Number(detailEnrichmentBudgetMs),budget=Number.isFinite(requested)?Math.max(0,Math.min(120000,requested)):45000,controller=new AbortController(),assetSignal=signal?AbortSignal.any([signal,controller.signal]):controller.signal,timer=budget>0?setTimeout(()=>controller.abort(),budget):null
+  let acquiredAssets=0
+  try{if(budget>0)for(const url of assets){if(assetSignal.aborted)break;try{const response=await fetchAsset(url,{signal:assetSignal});signal?.throwIfAborted();assetSignal.throwIfAborted();if(response?.status!==200||response?.url!==url){failures.push({kind:'native-role-client-unavailable',url,status:response?.status??null});break}acquiredAssets++;const roles=extractStaticRoleDescriptions(response.html,rawCandidates);if(roles)candidates.push({url,roles,proof:rendererProof(response.html)})}catch(error){signal?.throwIfAborted();failures.push({kind:error.code||'native-role-client-unavailable',url,status:error.status??null,message:error.message});break}}}finally{if(timer)clearTimeout(timer)}
+  signal?.throwIfAborted();const candidate=candidates.length===1?candidates[0]:null,roles=new Map((candidate?.roles||[]).map(role=>[role.title,role])),rendering=evaluateRendering(careersHtml,jobs,candidate?.proof),result=jobs.filter(job=>rendering.visible.has(job.title)).map(job=>{const role=roles.get(job.title),qualified=Boolean(role)&&rendering.qualified.has(job.title);return {...job,jobDescription:qualified?role.description:null,sourceDescription:qualified?role.description:null,source:SOURCE,link:job.applyUrl||job.sourceUrl,scrapedAt:now(),rawNativeRoleEvidence:{...job.rawNativeRoleEvidence,nativeRendererQualified:qualified,renderingQualification:rendering.reason,nativeDescriptionClient:candidate?.url||null,nativeDescriptionFields:role?.nativeFields||null,unqualifiedNativeDescription:qualified?null:role?.description||null,jobSpecificApplicationIdentityQualified:false}}})
+  return finish(result,{recordKind:result.length===rawCandidates.length?'vacancy-rows':result.length?'mixed':'hiring-signals',observedRecordCount:rawCandidates.length,observedVacancyCount:result.length,unqualifiedRoleCandidates:rawCandidates.filter(row=>!result.some(job=>job.title===row.title&&job.jobDescription)).map(row=>({...row,description:roles.get(row.title)?.description||null,renderingQualified:false})),nativeDiscoveryFailures:failures,pagesFetched:1+(jobs.some(job=>job.applyUrl)?1:0)+acquiredAssets,now})
+ }
 })
 
 export const run = async (options = {}) => createCloudAmbassadorsScraper().run(options)

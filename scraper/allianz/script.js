@@ -11,6 +11,7 @@ const scraper = createPhenomScraper({
   baseUrl: 'https://careers.allianz.com',
   searchPath: '/global/en/search-results',
   scraperDir: currentDir,
+  nativeCountryBeforePostalCode: true,
 })
 
 export const {

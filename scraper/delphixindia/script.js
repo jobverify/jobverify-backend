@@ -1,3 +1,4 @@
+import { createDeclaredJobFeedScraper, DECLARED_JOB_FEED_PROFILES } from '../../scraper-support/native-sources/declaredJobFeeds/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -225,72 +226,7 @@ export const extractDelphixIndiaJobs = (leverJobs = []) => {
     })
 }
 
-export const createDelphixIndiaScraper = ({
-  now: defaultNow = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchPage = defaultFetchPage,
-    fetchJson = defaultFetchJson,
-    now = defaultNow,
-  } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (
-      homepage.status !== 200
-      || !sameUrl(homepage.url, RESOLVED_HOMEPAGE_URL)
-      || !hasOfficialHomepageSignal(homepage.html)
-    ) {
-      throw new Error('Delphix India verified official homepage changed materially')
-    }
-
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (
-      careersPage.status !== 200
-      || !sameUrl(careersPage.url, CAREERS_URL)
-      || !hasOfficialCareersSignal(careersPage.html)
-    ) {
-      throw new Error('Delphix India verified official careers surface changed materially')
-    }
-
-    const leverBoardUrl = extractLeverBoardUrl(careersPage.html)
-    if (!sameUrl(leverBoardUrl, LEVER_BOARD_URL)) {
-      throw new Error('Delphix India verified official careers surface no longer links to the verified public Lever board')
-    }
-
-    const leverBoardPage = await fetchPage(LEVER_BOARD_URL)
-    if (
-      leverBoardPage.status !== 200
-      || !sameUrl(leverBoardPage.url, LEVER_BOARD_URL)
-      || !hasOfficialLeverBoardSignal(leverBoardPage.html)
-    ) {
-      throw new Error('Delphix India verified public Lever board changed materially')
-    }
-
-    const leverJobs = await fetchJson(LEVER_API_URL)
-    if (!Array.isArray(leverJobs)) {
-      throw new Error('Delphix India Lever postings payload no longer returns an array')
-    }
-
-    const delphixJobs = leverJobs.filter(isDelphixBrandedJob)
-    if (delphixJobs.length === 0 && (
-      leverJobs.length === 0
-      || !leverJobs.every((job) => job?.hostedUrl && leverBoardPage.html.includes(job.hostedUrl))
-    )) {
-      throw new Error('Delphix India verified public Lever board no longer agrees with API postings for zero Delphix-branded roles')
-    }
-
-    const scrapedAt = now()
-
-    return extractDelphixIndiaJobs(leverJobs).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-      companyCareerPage: CAREERS_URL,
-      companyDomain: PROVIDER_METADATA.companyDomain,
-      atsPlatform: PROVIDER_METADATA.atsPlatform,
-    }))
-  },
-})
+export const createDelphixIndiaScraper = (options = {}) => createDeclaredJobFeedScraper(DECLARED_JOB_FEED_PROFILES.delphixindia, options)
 
 export const run = async (options = {}) => createDelphixIndiaScraper(options).run(options)
 

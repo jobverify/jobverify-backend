@@ -123,7 +123,7 @@ export async function mutateCandidateEvidence(userId, { collection, action, id, 
   // after cleanup, and rejects writes from a session revoked in the meantime.
   const sessionFilter = sessionVersion === undefined ? {} : sessionVersion === 0
     ? { $or: [{ sessionVersion: 0 }, { sessionVersion: { $exists: false } }, { sessionVersion: null }] } : { sessionVersion };
-  const owner = await User.updateOne({ _id: userId, deactivated: { $ne: true }, outreachDeletingAt: null,
+  const owner = await User.updateOne({ _id: userId, deactivated: { $ne: true }, accountDeletingAt: null,
     ...sessionFilter }, { $inc: { __v: 1 } }, { session });
   if (!owner.matchedCount) throw evidenceError(401, 'Your account or session is no longer active. Please sign in again.', 'EVIDENCE_ACCOUNT_UNAVAILABLE');
   const existing = await CandidateEvidence.findById(userId).session(session || null).lean();

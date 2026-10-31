@@ -1,3 +1,4 @@
+import { createDeclaredJobFeedScraper, DECLARED_JOB_FEED_PROFILES } from '../../scraper-support/native-sources/declaredJobFeeds/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -204,91 +205,7 @@ export const extractAshbyJobs = (payload = {}) =>
     })
     .filter(Boolean)
 
-export const createPrefectScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    signal,
-  } = {}) {
-    signal?.throwIfAborted()
-    const companyHtml = await fetchText(COMPANY_PAGE_URL, { signal })
-    signal?.throwIfAborted()
-    if (!hasVerifiedCompanyPageSignal(companyHtml)) {
-      throw new Error('Verified Prefect company page changed materially')
-    }
-
-    let verifiedPublicBoardUrl = extractVerifiedAshbyPublicBoardUrl(companyHtml)
-    let currentBindingVerified = Boolean(verifiedPublicBoardUrl)
-    let currentBindingHtml = companyHtml
-    const detectedPublicBoardUrl = extractAnyAshbyPublicBoardUrl(companyHtml)
-
-    if (detectedPublicBoardUrl && detectedPublicBoardUrl !== ASHBY_PUBLIC_BOARD_URL) {
-      throw new Error('Verified Ashby public board handoff changed materially')
-    }
-
-    if (!verifiedPublicBoardUrl) {
-      const verifiedCareersPageUrl = extractVerifiedCareersPageUrl(companyHtml)
-      if (verifiedCareersPageUrl !== CAREERS_PAGE_URL) {
-        throw new Error('Verified Ashby public board handoff changed materially')
-      }
-
-      const careersHtml = await fetchText(verifiedCareersPageUrl, { signal })
-      signal?.throwIfAborted()
-      if (!hasVerifiedCareersPageSignal(careersHtml)) {
-        throw new Error('Verified Prefect careers page changed materially')
-      }
-
-      const careersDetectedPublicBoardUrl = extractAnyAshbyPublicBoardUrl(careersHtml)
-      if (careersDetectedPublicBoardUrl && careersDetectedPublicBoardUrl !== ASHBY_PUBLIC_BOARD_URL) {
-        throw new Error('Verified Ashby public board handoff changed materially')
-      }
-
-      verifiedPublicBoardUrl = careersDetectedPublicBoardUrl || ASHBY_PUBLIC_BOARD_URL
-      currentBindingVerified = careersDetectedPublicBoardUrl === ASHBY_PUBLIC_BOARD_URL
-      currentBindingHtml = careersHtml
-    }
-
-    if (verifiedPublicBoardUrl !== ASHBY_PUBLIC_BOARD_URL) {
-      throw new Error('Verified Ashby public board handoff changed materially')
-    }
-
-    const verifiedJobBoardUrl = buildAshbyJobBoardUrl(verifiedPublicBoardUrl)
-    if (verifiedJobBoardUrl !== ASHBY_JOB_BOARD_URL) {
-      throw new Error('Verified Ashby public board handoff changed materially')
-    }
-
-    const payload = await fetchJson(ASHBY_JOB_BOARD_URL, { signal })
-    signal?.throwIfAborted()
-    if (!Array.isArray(payload?.jobs)) {
-      throw new Error('Verified Ashby payload changed materially')
-    }
-
-    const nativeIds = new Set(payload.jobs.map(job => job?.id))
-    for (const href of activeLinks(currentBindingHtml)) {
-      let url
-      try { url = new URL(href, COMPANY_PAGE_URL) } catch { continue }
-      if (url.origin === 'https://jobs.ashbyhq.com' && !url.username && !url.password) {
-        const parts = url.pathname.split('/').filter(Boolean)
-        if (parts[0] === 'prefect' && parts[1] && !nativeIds.has(parts[1])) currentBindingVerified = false
-      }
-    }
-
-    const checked = await createAshbyApiScraper({ source: SOURCE, companyName: COMPANY,
-      ashbyJobBoardUrl: ASHBY_JOB_BOARD_URL, sourceScopeComplete: currentBindingVerified, now,
-    }).run({ fetchJson: async () => payload, signal })
-    const details = new Map(extractAshbyJobs(payload).map(job => [job.jobId, job]))
-    const jobs = mapJobsWithInventoryEvidence(checked, job => ({ ...details.get(job.jobId), ...job,
-      experienceRequired: extractAshbyExperienceRequired({ title: job.title, jobDescription: job.jobDescription }),
-    }))
-    if (!Number.isInteger(maxJobs) || maxJobs >= jobs.length) return jobs
-    const selected = jobs.slice(0, Math.max(0, maxJobs)).map(job => ({ ...job, sourceListingComplete: false }))
-    return attachInventoryEvidence(selected, { ...readInventoryEvidence(jobs), status: 'discovery-only',
-      listingComplete: false, reason: 'prefect-source-job-limit-reached' })
-  },
-})
+export const createPrefectScraper = (options = {}) => createDeclaredJobFeedScraper(DECLARED_JOB_FEED_PROFILES.prefect, options)
 
 export const run = async (options = {}) => createPrefectScraper(options).run(options)
 

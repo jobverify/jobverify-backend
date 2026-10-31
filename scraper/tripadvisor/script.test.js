@@ -1,3 +1,4 @@
+import { checkCurrentFactory,checkChangedPublisher } from '../../scraper-support/native-sources/declaredGreenhouse/replayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -52,16 +53,6 @@ test('Tripadvisor maps only valid India jobs from the official Greenhouse feed',
   }])
 })
 
-test('Tripadvisor scraper requests the official Greenhouse API and adds run metadata', async () => {
-  const jobs = await createTripadvisorScraper().run({
-    fetchJson: async (url) => {
-      assert.equal(url, GREENHOUSE_API_URL)
-      return { jobs: [{ id: 1, title: 'India role', location: { name: 'India' }, absolute_url: 'https://job-boards.greenhouse.io/tripadvisor/jobs/1' }] }
-    },
-    now: () => '2026-07-25T12:00:00.000Z',
-  })
-
-  assert.equal(jobs[0].source, 'tripadvisor')
-  assert.equal(jobs[0].link, 'https://job-boards.greenhouse.io/tripadvisor/jobs/1')
-  assert.equal(jobs[0].scrapedAt, '2026-07-25T12:00:00.000Z')
+test('tripadvisor actual factory retains complete original native models before selection',async()=>{
+ await checkCurrentFactory('tripadvisor',createTripadvisorScraper)
 })

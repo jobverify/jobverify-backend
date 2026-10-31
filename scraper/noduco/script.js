@@ -2,6 +2,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
+import { extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
+import { readNoducoRoleWorksite, visibleNoducoRoleIds } from './roleWorksite.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -178,6 +182,7 @@ export const extractCareerJobCards = (html) => {
     throw new Error('Noduco verified official careers page no longer matches the known public job shell')
   }
 
+  const visibleIds = visibleNoducoRoleIds(html)
   const jobs = extractCardSegments(html).map((segmentHtml) => {
     const detailPath = segmentHtml.match(/href=["'](\/careers\/(\d+)\/)["']/i)
     const title = extractText(/<h3 class="type-title-lg job-title">([\s\S]*?)<\/h3>/i, segmentHtml)
@@ -189,7 +194,8 @@ export const extractCareerJobCards = (html) => {
       .filter(Boolean)
       .filter((value) => !value.startsWith('+'))
 
-    if (!title || !department || !employmentType || !experienceRequired || !detailPath?.[1] || !detailPath?.[2]) {
+    if (!title || !department || !employmentType || !experienceRequired || !detailPath?.[1] || !detailPath?.[2]
+      || !visibleIds.has(detailPath[2])) {
       return null
     }
 
@@ -201,7 +207,7 @@ export const extractCareerJobCards = (html) => {
       department,
       location: null,
       city: null,
-      country: 'India',
+      country: null,
       sourceUrl: buildAbsoluteUrl(detailPath[1], HOMEPAGE_URL),
       applyUrl: null,
       employmentType,
@@ -231,6 +237,9 @@ export const extractJobDetail = (html, listing) => {
   const summary = extractText(/<p class="job-section-text"[^>]*>([\s\S]*?)<\/p>/i, html)
   const sections = extractSectionItems(html)
   const applyUrl = extractApplyUrl(html)
+  const { visibleCriteria, visibleContent, ...worksite } = readNoducoRoleWorksite(html, listing, summary)
+  const visibleDescription = buildJobDescription(visibleContent)
+  const complete = visibleCriteria && Boolean(extractActiveDescription(visibleDescription))
 
   if (!title) {
     throw new Error(`Noduco detail page no longer exposes a job title for ${listing?.sourceUrl || 'unknown job'}`)
@@ -252,35 +261,43 @@ export const extractJobDetail = (html, listing) => {
     experienceRequired,
     applyUrl,
     minimumQualification: null,
-    preferredQualification: extractPreferredQualification(sections),
-    jobDescription: buildJobDescription({ summary, sections }),
+    preferredQualification: extractPreferredQualification(visibleContent.sections),
+    jobDescription: visibleDescription,
+    rawNativeRoleEvidence: { contentJobDescription: buildJobDescription({ summary, sections }), contentHtml: String(html) },
+    ...worksite,
+    sourceDetailComplete: complete,
+    publicExperienceChecked: complete,
+    ...(!complete ? { sourceDetailFailureKind: 'missing-content' } : {}),
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  attempts: 1,
+  signal: options.signal,
 })
 
 export const createNoducoScraper = ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => ({
-  run: async ({ fetchText: overrideFetchText, now: overrideNow } = {}) => {
+  run: async ({ fetchText: overrideFetchText, now: overrideNow, signal } = {}) => {
     const fetchImpl = overrideFetchText || fetchText
+    const read = async url => { signal?.throwIfAborted(); const html = await fetchImpl(url, { signal }); signal?.throwIfAborted(); return html }
 
-    const homepageHtml = await fetchImpl(HOMEPAGE_URL)
+    const homepageHtml = await read(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Noduco verified official homepage no longer matches the known first-party surface')
     }
 
-    const careersHtml = await fetchImpl(CAREERS_URL)
+    const careersHtml = await read(CAREERS_URL)
     const listings = extractCareerJobCards(careersHtml)
     const jobs = []
 
     for (const listing of listings) {
-      const detailHtml = await fetchImpl(listing.sourceUrl)
+      const detailHtml = await read(listing.sourceUrl)
       const detail = extractJobDetail(detailHtml, listing)
 
       jobs.push({
@@ -295,7 +312,11 @@ export const createNoducoScraper = ({ fetchText = defaultFetchText, now = () => 
       })
     }
 
-    return jobs
+    attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows', observedRecordCount: listings.length,
+      observedVacancyCount: listings.length, sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null })
+    return attachInventoryEvidence(jobs, { status: 'discovery-only', surface: CAREERS_URL, firstParty: true,
+      listingComplete: false, pagesFetched: 2 + jobs.length, reportedTotal: null, indiaFacetCount: null,
+      verifiedAt: null, reason: 'noduco-native-vacancy-observations-company-scope-unconfirmed;closing-not-read' })
   },
 })
 

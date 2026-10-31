@@ -169,3 +169,17 @@ test('Mudrex falls back to the board listing when a detail page transiently rate
   assert.equal(jobs[0].publicExperienceChecked, false)
   assert.equal(jobs[0].source, 'mudrex')
 })
+
+test('Mudrex detail fallback cannot turn caller cancellation into a successful listing', async () => {
+  const mudrex = await loadMudrexModule(), controller = new AbortController()
+  const reason = Object.freeze(Error('caller cancelled Mudrex detail'))
+  await assert.rejects(mudrex.createMudrexScraper({ maxJobs: 1 }).run({
+    signal: controller.signal,
+    fetchText: async url => {
+      if (url === mudrex.ABOUT_URL) return officialAboutHtml
+      if (url === mudrex.CAREERS_BOARD_URL) return boardHtml
+      controller.abort(reason)
+      throw reason
+    },
+  }), error => error === reason)
+})

@@ -66,6 +66,7 @@ export const fetchBioconFirstPartyText = async (url, {
   execFile: runExecFile = execFile,
   signal,
 } = {}) => {
+  signal?.throwIfAborted()
   const fetchOptions = {
     headers: {
       'User-Agent': USER_AGENT,
@@ -79,32 +80,41 @@ export const fetchBioconFirstPartyText = async (url, {
   }
 
   try {
-    return await fetchText(url, fetchOptions)
+    const text = await fetchText(url, fetchOptions)
+    signal?.throwIfAborted()
+    return text
   } catch (error) {
+    signal?.throwIfAborted()
     if (!isBioconFirstPartyUrl(url) || !isLeafSignatureError(error)) throw error
 
-    const { stdout } = await runExecFile(process.platform === 'win32' ? 'curl.exe' : 'curl', [
-      '--disable',
-      '--fail-with-body',
-      '--silent',
-      '--show-error',
-      '--location',
-      '--max-redirs', '5',
-      '--connect-timeout', '10',
-      '--max-time', '30',
-      '--user-agent', USER_AGENT,
-      '--header', `Accept: ${fetchOptions.headers.Accept}`,
-      '--proto', '=https',
-      '--proto-redir', '=https',
-      url,
-    ], {
-      encoding: 'utf8',
-      maxBuffer: 10 * 1024 * 1024,
-      signal,
-      windowsHide: true,
-    })
+    try {
+      const { stdout } = await runExecFile(process.platform === 'win32' ? 'curl.exe' : 'curl', [
+        '--disable',
+        '--fail-with-body',
+        '--silent',
+        '--show-error',
+        '--location',
+        '--max-redirs', '5',
+        '--connect-timeout', '10',
+        '--max-time', '30',
+        '--user-agent', USER_AGENT,
+        '--header', `Accept: ${fetchOptions.headers.Accept}`,
+        '--proto', '=https',
+        '--proto-redir', '=https',
+        url,
+      ], {
+        encoding: 'utf8',
+        maxBuffer: 10 * 1024 * 1024,
+        signal,
+        windowsHide: true,
+      })
 
-    return stdout
+      signal?.throwIfAborted()
+      return stdout
+    } catch (fallbackError) {
+      signal?.throwIfAborted()
+      throw fallbackError
+    }
   }
 }
 
@@ -390,8 +400,20 @@ export const getLiveSearchPages = async ({
   searchUrl = SUCCESSFACTORS_SEARCH_URL,
   fetchSearchSession = (options = {}) => fetchSuccessFactorsSearchSession(options),
   fetchDwrText = (options = {}) => postSuccessFactorsDwr(options),
+  signal,
 } = {}) => {
-  const html = await fetchText(searchUrl)
+  const read = async operation => {
+    signal?.throwIfAborted()
+    try {
+      const result = await operation()
+      signal?.throwIfAborted()
+      return result
+    } catch (error) {
+      signal?.throwIfAborted()
+      throw error
+    }
+  }
+  const html = await read(() => fetchText(searchUrl, { signal }))
 
   if (hasStaticSuccessFactorsSearchPageSignal(html)) {
     if (hasNextPage(html)) {
@@ -407,20 +429,22 @@ export const getLiveSearchPages = async ({
     return [html]
   }
 
-  const session = await fetchSearchSession({
+  const session = await read(() => fetchSearchSession({
+    signal,
     searchUrl,
     userAgent: USER_AGENT,
     label: `${SOURCE}-successfactors-bootstrap`,
     missingAjaxTokenErrorMessage:
       'Biocon verified SuccessFactors search bootstrap no longer exposes an ajaxSecKey token',
-  })
+  }))
 
   if (!hasSuccessFactorsDwrBootstrapSignal(session.html)) {
     throw new Error('Biocon verified public SuccessFactors search surface no longer matches the known page')
   }
 
   const scriptSessionId = createSuccessFactorsScriptSessionId()
-  const initialResponse = await fetchDwrText({
+  const initialResponse = await read(() => fetchDwrText({
+    signal,
     searchUrl,
     endpoint: 'getInitialJobSearchData',
     body: buildInitialSearchDwrBody({ searchUrl, scriptSessionId }),
@@ -432,7 +456,7 @@ export const getLiveSearchPages = async ({
     responseContractErrorMessage:
       'Biocon verified SuccessFactors getInitialJobSearchData response no longer matches the expected DWR contract',
     subaction: 0,
-  })
+  }))
   const initialPayload = extractDwrPayload(initialResponse, {
     parseErrorMessage: 'Biocon verified SuccessFactors DWR search payload could not be parsed',
     missingResultsErrorMessage: 'Biocon verified SuccessFactors DWR payload no longer exposes postings',
@@ -454,7 +478,8 @@ export const getLiveSearchPages = async ({
   const pages = [initialResponse]
 
   for (let currentPage = 2; currentPage <= totalPages; currentPage += 1) {
-    pages.push(await fetchDwrText({
+    pages.push(await read(() => fetchDwrText({
+      signal,
       searchUrl,
       endpoint: 'search',
       body: buildPaginatedSearchDwrBody({
@@ -475,7 +500,7 @@ export const getLiveSearchPages = async ({
       responseContractErrorMessage:
         'Biocon verified SuccessFactors search response no longer matches the expected DWR contract',
       subaction: currentPage - 1,
-    }))
+    })))
   }
 
   return pages
@@ -511,8 +536,20 @@ export const createBioconScraper = ({
   getSearchPages = (options = {}) => getLiveSearchPages({ ...options, fetchText }),
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run() {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+  async run({ signal } = {}) {
+    const read = async operation => {
+      signal?.throwIfAborted()
+      try {
+        const result = await operation()
+        signal?.throwIfAborted()
+        return result
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
+    const readText = (url, options = {}) => read(() => fetchText(url, { ...options, signal: signal || options.signal }))
+    const careersHtml = await readText(CAREERS_PAGE_URL)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Biocon verified official careers page no longer matches the known public surface')
     }
@@ -522,12 +559,12 @@ export const createBioconScraper = ({
       throw new Error('Biocon verified Biocon careers page no longer exposes the known SuccessFactors handoff')
     }
 
-    const searchPages = await getSearchPages({ searchUrl: SUCCESSFACTORS_SEARCH_URL, fetchText })
+    const searchPages = await read(() => getSearchPages({ searchUrl: SUCCESSFACTORS_SEARCH_URL, fetchText: readText, signal }))
     const listings = collectSummaryPages(searchPages)
     const jobs = []
 
     for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
+      const detailHtml = await readText(listing.sourceUrl)
       const detail = extractJobDetail(detailHtml, listing)
 
       jobs.push({
@@ -548,7 +585,7 @@ export const createBioconScraper = ({
   },
 })
 
-export const run = async (options = {}) => createBioconScraper(options).run()
+export const run = async (options = {}) => createBioconScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

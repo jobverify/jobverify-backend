@@ -4,6 +4,7 @@ import { getScraperCatalog, createCatalogScraper } from '../providers/index.js'
 import { isFreshCompleteInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { createDataikuScraper } from '../../scraper/dataiku/script.js'
 import { createPublishingGapAtsScraper } from '../utils/publishingGapAts.js'
+import { normalizeGreenhouseSourceRoleUrl } from '../utils/greenhouseSourceEvidence.js'
 
 const catalog = getScraperCatalog()
 const careersHtml = {
@@ -17,19 +18,21 @@ const record = (board, id, location = 'Bengaluru, India') => ({
 })
 
 for (const source of ['tripadvisor', 'dataiku', 'sigmacomputing', 'buildkite']) {
-  // Dataiku and Sigma have separate authentic registered-source fixture tests.
+  // These four sources have separate authentic registered-source fixture tests.
   // These existing synthetic cases exercise their inner native mappers. Their
   // mapper evidence does not qualify a current employer or its whole inventory.
-  const provider = catalog.find(p => p.source === source)
-  const sharedMapping = source === 'dataiku' || source === 'sigmacomputing'
+  const currentProvider = catalog.find(p => p.source === source)
+  // Synthetic inner-mapper controls do not inherit the current source hold.
+  // Current registered source behavior is covered by original HTTP fixtures.
+  const provider = ['tripadvisor','buildkite'].includes(source) ? {...currentProvider,sourceScopeComplete:undefined} : currentProvider
+  const sharedMapping = true
   const scraper = source === 'dataiku' ? createDataikuScraper()
-    : source === 'sigmacomputing' ? createPublishingGapAtsScraper({ ...provider, boardToken: source })
-      : createCatalogScraper(provider)
+    : createPublishingGapAtsScraper({ ...provider, boardToken: source })
   const run = payload => scraper.run({
     fetchJson: async () => structuredClone(payload), fetchText: async () => careersHtml[source],
   })
 
-  test(`${source} retains native inventory evidence through ${sharedMapping ? 'shared native mapping' : 'registered source decoration'}`, async () => {
+  test(`${source} retains native inventory evidence through ${sharedMapping ? 'legacy inner native mapping; no current-source authority' : 'registered source decoration'}`, async () => {
     const jobs = await run({ jobs: [record(source, 1)], meta: { total: 1 } })
     assert.equal(jobs.length, 1)
     assert.equal(jobs[0].source, source)
@@ -54,7 +57,7 @@ for (const source of ['tripadvisor', 'dataiku', 'sigmacomputing', 'buildkite']) 
   test(`${source} missing or truncated totals and missing descriptions remain incomplete`, async () => {
     for (const payload of [{ jobs: [] }, { jobs: [record(source, 1)], meta: { total: 2 } },
       { jobs: [{ ...record(source, 1), content: '' }], meta: { total: 1 } }]) {
-      if (source === 'sigmacomputing' && payload.meta?.total === 2) {
+      if (source !== 'dataiku' && payload.meta?.total === 2) {
         await assert.rejects(run(payload), /Incomplete greenhouse inventory/i)
         continue
       }
@@ -89,7 +92,8 @@ for (const source of ['tripadvisor', 'dataiku', 'sigmacomputing', 'buildkite']) 
     // The inner mapper delegates company-host validation to the source. Keep
     // testing Sigma's actual source URL guard without fabricating native identity fields.
     const normalizeSourceUrl = source === 'sigmacomputing'
-      ? (await import('../../scraper/sigmacomputing/script.js')).normalizeGreenhouseJobUrl : null
+      ? (await import('../../scraper/sigmacomputing/script.js')).normalizeGreenhouseJobUrl
+      : ['tripadvisor','buildkite'].includes(source) ? value=>normalizeGreenhouseSourceRoleUrl(value,{jobId:1,boardToken:source,companyCareerPage:provider.companyCareerPage}) : null
     if (normalizeSourceUrl) assert.equal(normalizeSourceUrl(absolute_url, 1), absolute_url)
     for (const badUrl of [`${official.origin}/careers/detail/?gh_jid=999`,
       `${official.origin}/careers/detail/?gh_jid=1&gh_jid=999`,
@@ -100,7 +104,7 @@ for (const source of ['tripadvisor', 'dataiku', 'sigmacomputing', 'buildkite']) 
   })
 
   test(`${source} duplicate native IDs cannot establish complete inventory`, async () => {
-    if (source === 'sigmacomputing') {
+    if (source !== 'dataiku') {
       await assert.rejects(run({ jobs: [record(source, 1), record(source, 1)], meta: { total: 2 } }), /duplicate native identity/i)
       return
     }
@@ -169,9 +173,9 @@ test('Sigma advertised native role identities must reconcile before empty invent
   assert.match(readInventoryEvidence(jobs).reason, /role.*reconcil|reconcil.*role/i)
 })
 
-test('Tripadvisor does not treat Indiana or Indianapolis as India', async () => {
+test('Tripadvisor legacy inner mapper does not treat Indiana or Indianapolis as India', async () => {
   const provider = catalog.find(p => p.source === 'tripadvisor')
-  const jobs = await createCatalogScraper(provider).run({ fetchJson: async () => ({
+  const jobs = await createPublishingGapAtsScraper({...provider,boardToken:'tripadvisor',sourceScopeComplete:undefined}).run({ fetchJson: async () => ({
     jobs: [record('tripadvisor', 1, 'Indiana, United States'),
       { ...record('tripadvisor', 2, 'Indianapolis, United States'), metadata: [{ name: 'Country', value: 'United States' }] }],
     meta: { total: 2 },

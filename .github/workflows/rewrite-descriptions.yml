@@ -32,10 +32,10 @@ jobs:
     steps:
       - name: ${{ inputs.dispatch_token && format('Description Rewrite [dispatch:{0}]', inputs.dispatch_token) || 'Description Rewrite' }}
         run: echo 'Pipeline dispatch identity recorded'
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.pipeline_sha || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -91,10 +91,10 @@ jobs:
     steps:
       - name: Record generation job start
         run: printf 'JOB_DESCRIPTION_WORKFLOW_STARTED_AT=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.pipeline_sha || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'npm'
@@ -110,13 +110,13 @@ jobs:
           MONGO_URI: ${{ secrets.MONGO_URI }}
       - name: Cache immutable model and CPU runtime
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .cache/description-rewriter
           key: description-lfm12b-cpu-${{ runner.os }}-bb741ebb-b11146-14cf1303-c150306e
       - name: Restore validated source-grounded rewrites
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .cache/description-rewrites
           key: description-lfm12b-rewrites-${{ runner.os }}-v24-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -130,7 +130,7 @@ jobs:
           MONGO_URI: ${{ secrets.MONGO_URI }}
       - name: Save validated source-grounded rewrites for the next batch
         if: always() && steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0' && hashFiles('.cache/description-rewrites/**') != ''
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .cache/description-rewrites
           key: description-lfm12b-rewrites-${{ runner.os }}-v24-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -152,10 +152,10 @@ jobs:
     if: always() && needs.register.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.pipeline_sha || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm

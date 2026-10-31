@@ -86,7 +86,7 @@ export const createDassaultAviationIndiaScraper = (defaults={}) => ({
       firstParty=true
       const nativeCollectionEvidence=await collectNative({read,official})
       const jobs=attachInventoryEvidence([],{status:'discovery-only',surface:LISTING_URL,firstParty:true,listingComplete:false,pagesFetched:retainedResponses.length,
-        reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason:'All current native parent-board pages and role primary countries reconciled; all primary countries France. One role mentions future India expatriation; secondary scope and exact Dassault Aviation India subsidiary coverage remain unverified; cleanup disabled.'})
+        reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason:'Current native parent-board pages and explicit non-India primary countries reconciled. India references retain unresolved secondary scope; exact Dassault Aviation India subsidiary coverage remains unverified; cleanup disabled.'})
       Object.defineProperty(jobs,'nativeCollectionEvidence',{value:{...nativeCollectionEvidence,retainedResponses,exactSubsidiaryScopeComplete:false,lifecycleCleanupAllowed:false}})
       return jobs
     }

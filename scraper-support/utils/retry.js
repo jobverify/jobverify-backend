@@ -1,3 +1,6 @@
+import { traceRetryPressure, recordRetryAttempt, recordRetryFailure, recordRetryDelay } from './retryPressure.js'
+export { getRetryPressure } from './retryPressure.js'
+
 const resolveAbortReason = (signal) => {
   if (signal?.reason !== undefined) {
     return signal.reason
@@ -188,7 +191,7 @@ const buildRetryError = (
  * @returns {Promise<*>} Result of fn() on success
  * @throws {Error} After all attempts are exhausted
  */
-export const withRetry = async (
+const runRetryLoop = async (
   fn,
   {
     attempts = 3,
@@ -202,6 +205,7 @@ export const withRetry = async (
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
     throwIfAborted(signal)
+    recordRetryAttempt(attempt)
 
     try {
       const result = await fn()
@@ -212,6 +216,7 @@ export const withRetry = async (
         retryDelayMs,
       })
     } catch (err) {
+      recordRetryFailure()
       throwIfAborted(signal)
       lastError = err
       const isLastAttempt = attempt === attempts
@@ -230,6 +235,7 @@ export const withRetry = async (
         )
         console.warn(`  [retry:${label}] Retrying in ${(delay / 1000).toFixed(1)}s...\n`)
         retryDelayMs += delay
+        recordRetryDelay(delay)
         await sleep(delay, { signal })
       }
     }
@@ -237,3 +243,5 @@ export const withRetry = async (
 
   throw buildRetryError(label, attempts, attempts, lastError, { retryDelayMs })
 }
+
+export const withRetry = (fn, options) => traceRetryPressure(() => runRetryLoop(fn, options))

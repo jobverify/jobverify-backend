@@ -167,7 +167,7 @@ test('candidate evidence HTTP workflow and publication fences use real MongoDB',
         await User.findById(owner).session(session).lean();
         if (!deletionStarted) {
           deletionStarted = true;
-          await User.updateOne({ _id: owner }, { $set: { outreachDeletingAt: new Date() } });
+          await User.updateOne({ _id: owner }, { $set: { accountDeletingAt: new Date() } });
           await CandidateEvidence.deleteMany({ user: owner });
         }
         await mutateCandidateEvidence(owner, { collection: 'experiences', action: 'create', body: { version: 0, ...experience } }, { session });

@@ -10,16 +10,16 @@ import { getTailoredResumeArtifact } from './resumeTailoringService.js';
 import { artifactBytes } from './resumeArtifactService.js';
 import { recordApplicationOpen, recordApplicationEvidence, safeApplicationUrl } from './applicationService.js';
 import { hashValue, supportedTarget } from './autoApplyPolicy.js';
-import { validEmail } from './gmailService.js';
+import { validEmail } from '../utils/validEmail.js';
 
 export const autoApplyEnabled = () => process.env.AUTO_APPLY_ENABLED === 'true';
-const ownerFilter = (user, version) => ({ _id: user, deactivated: { $ne: true }, outreachDeletingAt: null, ...(version === undefined ? {} : { sessionVersion: version }) });
+const ownerFilter = (user, version) => ({ _id: user, deactivated: { $ne: true }, accountDeletingAt: null, ...(version === undefined ? {} : { sessionVersion: version }) });
 async function requireOwner(user, version) {
   if (!await User.exists(ownerFilter(user, version))) throw new APIError(401, 'Your account or session is no longer active.');
 }
 
 export async function cleanupInactiveAutoApplyData(user) {
-  if (await User.exists({ _id: user, outreachDeletingAt: null })) return false;
+  if (await User.exists({ _id: user, accountDeletingAt: null })) return false;
   await Promise.all([AutoApplyAttempt.deleteMany({ user }), Application.deleteMany({ user }), ApplicationEvent.deleteMany({ user })]);
   return true;
 }

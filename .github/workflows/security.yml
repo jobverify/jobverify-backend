@@ -19,15 +19,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24.14.0'
           cache: npm
       - run: npm ci --ignore-scripts
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .cache/mongodb-binaries
           key: mongodb-8.2.6-${{ runner.os }}-${{ runner.arch }}
@@ -41,10 +41,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.14.0'
+      - name: Verify secret scan filtering
+        run: node --test test/filterSecretScan.test.js
       - name: Install checksum-verified official Gitleaks binary
         id: gitleaks
         shell: bash
@@ -69,26 +74,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          umask 077
           git archive HEAD | tar -x -C "$RUNNER_TEMP/gitleaks-current"
+          raw_report="$RUNNER_TEMP/gitleaks-current-raw.json"
+          trap 'rm -f "$raw_report"' EXIT
           set +e
-          gitleaks dir "$RUNNER_TEMP/gitleaks-current" --redact=100 --no-banner --log-level error --ignore-gitleaks-allow --report-format json --report-path "$RUNNER_TEMP/gitleaks-current-raw.json"
+          # Exact-value review needs the raw value locally. Suppress scanner
+          # output; only the filter's metadata-only report can be uploaded.
+          gitleaks dir "$RUNNER_TEMP/gitleaks-current" --no-banner --log-level error --ignore-gitleaks-allow --report-format json --report-path "$raw_report" >/dev/null 2>&1
           scan_exit=$?
           set -e
-          # Raw reports may retain commit messages and other source context.
-          # Upload only locations and rule metadata, even for failed scans.
-          jq 'if type == "array" then map({RuleID, File, StartLine, EndLine, Commit, Fingerprint}) else error("Invalid Gitleaks report") end' "$RUNNER_TEMP/gitleaks-current-raw.json" > "$RUNNER_TEMP/security-reports/gitleaks-current.json"
-          exit "$scan_exit"
+          node scripts/filterSecretScan.js "$raw_report" .github/secret-scan-exceptions.json "$RUNNER_TEMP/security-reports/gitleaks-current.json" "$RUNNER_TEMP/gitleaks-current" "$scan_exit"
       - name: Scan all fetched refs and complete history
         if: ${{ !cancelled() && steps.gitleaks.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
+          umask 077
+          raw_report="$RUNNER_TEMP/gitleaks-history-raw.json"
+          trap 'rm -f "$raw_report"' EXIT
           set +e
-          gitleaks git . --log-opts="--all --full-history" --redact=100 --no-banner --log-level error --ignore-gitleaks-allow --report-format json --report-path "$RUNNER_TEMP/gitleaks-history-raw.json"
+          gitleaks git . --log-opts="--all --full-history" --no-banner --log-level error --ignore-gitleaks-allow --report-format json --report-path "$raw_report" >/dev/null 2>&1
           scan_exit=$?
           set -e
-          jq 'if type == "array" then map({RuleID, File, StartLine, EndLine, Commit, Fingerprint}) else error("Invalid Gitleaks report") end' "$RUNNER_TEMP/gitleaks-history-raw.json" > "$RUNNER_TEMP/security-reports/gitleaks-history.json"
-          exit "$scan_exit"
+          node scripts/filterSecretScan.js "$raw_report" .github/secret-scan-exceptions.json "$RUNNER_TEMP/security-reports/gitleaks-history.json" - "$scan_exit"
       - name: Preserve redacted secret scan reports
         if: ${{ !cancelled() && steps.gitleaks.outcome == 'success' }}
         uses: actions/upload-artifact@v7

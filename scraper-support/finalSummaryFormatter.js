@@ -163,6 +163,17 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
   const retriedRows = rows.filter(({ result }) => Number(result.retry?.retries) > 0)
   const totalAttempts = rows.reduce((total, { result }) => total + Number(result.retry?.attemptsUsed || 1), 0)
   const retryDelayMs = rows.reduce((total, { result }) => total + toFiniteNonNegative(result.retry?.retryDelayMs), 0)
+  const pressureRows = rows.filter(({ result }) => result.retryPressure)
+  const pressureTotal = metric => pressureRows.length
+    ? pressureRows.reduce((total, { result }) => total + toFiniteNonNegative(metric(result.retryPressure)), 0)
+    : null
+  const nestedRetries = pressureTotal(pressure => pressure.nestedRetries)
+  const nestedRetryDelayMs = pressureTotal(pressure => pressure.nestedRetryDelayMs)
+  const rateLimitResponses = pressureTotal(pressure => pressure.httpStatusCounts?.[429])
+  const workdayQueueWaitMs = pressureTotal(pressure => pressure.sourceAdmission?.queueWaitMs)
+  const workdayQueuedSources = pressureRows.length
+    ? pressureRows.filter(({ result }) => result.retryPressure.sourceAdmission?.queuedAttempts > 0).length
+    : null
   const startedAt = toValidDate(runTiming?.startedAt)
   const completedAt = toValidDate(runTiming?.completedAt)
   const elapsedMs = startedAt && completedAt
@@ -269,6 +280,12 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
       ['Retry recovery rate', formatPercent(retriedRows.filter(({ result }) => result.success).length, retriedRows.length)],
       ['Timed-out sources', timedOutSources],
       ['Time spent retrying', formatSeconds(retryDelayMs)],
+      ['Nested telemetry sources', `${pressureRows.length}/${processed}`],
+      ['Nested retry attempts', nestedRetries ?? 'unavailable'],
+      ['Nested retry backoff', nestedRetryDelayMs === null ? 'unavailable' : formatSeconds(nestedRetryDelayMs)],
+      ['Shared HTTP 429 responses', rateLimitResponses ?? 'unavailable'],
+      ['Workday queued sources', workdayQueuedSources ?? 'unavailable'],
+      ['Workday source queue time', workdayQueueWaitMs === null ? 'unavailable' : formatSeconds(workdayQueueWaitMs)],
     ]),
     'ZERO-YIELD WATCHLIST',
     formatAsciiTable(['Metric', 'Value'], [

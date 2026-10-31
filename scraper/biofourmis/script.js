@@ -1,3 +1,4 @@
+import { createNativeGreenhouseScraper, NATIVE_GREENHOUSE_PROFILES, nativeSourceMetadata } from '../../scraper-support/native-sources/declaredGreenhouse/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -261,30 +262,9 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createBiofourmisScraper = ({
-  maxJobs = null,
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+export const createBiofourmisScraper = (defaults = {}) => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["biofourmis"], defaults)
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Biofourmis careers page no longer matches the verified official job openings surface')
-    }
-
-    const jobs = extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' }),
-      { scrapedAt: now() },
-    )
-
-    return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-  },
-})
-
-export const run = async (options = {}) => createBiofourmisScraper(options).run(options)
+export const run = options => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["biofourmis"]).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

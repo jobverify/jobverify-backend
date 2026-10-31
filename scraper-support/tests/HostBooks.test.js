@@ -167,7 +167,7 @@ test('HostBooks scraper parses the verified current-opening table and inline rol
   )
   assert.equal(jobs[0].source, 'hostbooks')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
-  assert.match(jobs[0].sourceUrl, /#java-developer$/i)
+  assert.equal(jobs[0].sourceUrl, hostBooks.CAREERS_URL)
   assert.equal(jobs[0].applyUrl, hostBooks.CAREERS_URL)
 })
 

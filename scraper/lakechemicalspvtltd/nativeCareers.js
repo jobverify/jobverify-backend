@@ -98,14 +98,23 @@ const inspectCards = html => {
 async function snapshot(url, options) {
   options.signal?.throwIfAborted()
   const signal = options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000)
-  const response = await fetch(url, { signal, redirect: 'error', headers: { Accept: 'text/html,application/xhtml+xml',
-    'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)' } })
-  requireNative(response.status === 200 && response.url === url, 'HTTP response status or observed URL mismatch')
-  const html = await response.text()
-  signal.throwIfAborted()
-  requireNative(Buffer.byteLength(html) < 3000000, 'native page exceeded response size budget')
-  return { html, receipt: { url, status: response.status, observedAt: new Date().toISOString(), sha256: hash(html) },
-    scopeSignature: lakeExecutableScopeSignature(html) }
+  try {
+    const response = await fetch(url, { signal, redirect: 'error', headers: { Accept: 'text/html,application/xhtml+xml',
+      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)' } })
+    options.signal?.throwIfAborted()
+    signal.throwIfAborted()
+    requireNative(response.status === 200 && response.url === url, 'HTTP response status or observed URL mismatch')
+    const html = await response.text()
+    options.signal?.throwIfAborted()
+    signal.throwIfAborted()
+    requireNative(Buffer.byteLength(html) < 3000000, 'native page exceeded response size budget')
+    return { html, receipt: { url, status: response.status, observedAt: new Date().toISOString(), sha256: hash(html) },
+      scopeSignature: lakeExecutableScopeSignature(html) }
+  } catch (error) {
+    options.signal?.throwIfAborted()
+    signal.throwIfAborted()
+    throw error
+  }
 }
 
 export async function runLakeCurrentInventory(options = {}) {

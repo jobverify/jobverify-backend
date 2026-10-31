@@ -1,6 +1,7 @@
 import { composeLeverDescription } from '../utils/leverDescription.js'
 import { selectGreenhouseLocation } from '../utils/greenhouseLocations.js'
 import { selectLeverLocation, selectLeverCountry } from '../utils/leverLocations.js'
+import { readEightfoldLocationScope } from './eightfoldLocations.js'
 
 const DEFAULT_REQUEST = {
   method: 'GET',
@@ -60,6 +61,8 @@ export const getMappedFieldValue = (payload, selector) => {
   if (selector.strategy === 'lever-location') return selectLeverLocation(payload)
   if (selector.strategy === 'lever-country') return selectLeverCountry(payload)
   if (selector.strategy === 'greenhouse-location') return selectGreenhouseLocation(payload)
+  if (selector.strategy === 'eightfold-location') return readEightfoldLocationScope(payload).location
+  if (selector.strategy === 'eightfold-country') return readEightfoldLocationScope(payload).country
   if (selector.strategy === 'suffix') {
     const value = getMappedFieldValue(payload, selector.value)
     const normalized = value == null ? null : String(value).trim()

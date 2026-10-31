@@ -240,10 +240,13 @@ test('extractJobDetail maps a verified Amicorp first-party detail page into shar
     closingDate: null,
     jobDescription: 'The role holder is primarily accountable for ensuring compliance with statutory requirements for all internal entities, protect the interests of the Group and minimizing legal risk.',
     remoteStatus: null,
+    sourceListingComplete: false,
+    sourceDetailComplete: true,
+    sourceDetailStatus: 'complete',
   })
 })
 
-test('extractJobDetail accepts the current Amicorp updated-time metadata and single-quoted Zoho iframe', async () => {
+test('extractJobDetail uses the native displayed posting date rather than updated-time metadata and accepts a single-quoted Zoho iframe', async () => {
   const amicorp = await loadAmicorpModule()
   const listing = {
     title: 'Senior Local Fund Operations (AMIF)',
@@ -254,16 +257,21 @@ test('extractJobDetail accepts the current Amicorp updated-time metadata and sin
   const job = amicorp.extractJobDetail({
     listing,
     html: `
+      <html><head><title>Senior Local Fund Operations (AMIF) - JD1551 - Amicorp</title>
+      <link rel="canonical" href="${listing.sourceUrl}" />
+      <meta property="og:site_name" content="Amicorp" />
       <meta property="og:updated_time" content="2026-08-04T09:45:08+00:00" />
+      </head><body>
       <div><span class="colored" style="color:#152968">Bangalore (India)</span>
       <span class="colored" style="color:#6F82C1">(04 Aug 2026)</span><span>JD1551</span></div>
-      <a href="#form"><p>Current first-party Amicorp role description.</p></a>
+      <a href="#form">Apply now</a><p>Current first-party Amicorp role description. The role holder maintains fund administration records, reconciles investor activity and prepares accurate reports in accordance with native employer requirements.</p>
       <iframe aria-label='Career Page Form' src='https://forms.zohopublic.eu/zohopeople40/form/CareerPageForm/formperma/eclRamd2dWW4rbcIcyYbA0ooIb_3CA2MBYGp_56EYyY'></iframe>
+      </body></html>
     `,
   })
 
   assert.equal(job.requisitionId, 'JD1551')
-  assert.equal(job.postingDate, '2026-08-04T09:45:08+00:00')
+  assert.equal(job.postingDate, '2026-08-04')
   assert.equal(job.applyUrl, amicorp.TRUSTED_APPLY_FORM_URL)
 })
 

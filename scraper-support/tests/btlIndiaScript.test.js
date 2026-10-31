@@ -1,3 +1,11 @@
+import * as capturedFs from 'node:fs'
+import {gunzipSync as capturedGunzip} from 'node:zlib'
+import * as nativeSource from '../../scraper/btlindia/script.js'
+import {readInventoryEvidence as capturedInventory} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readSourceObservationEvidence as capturedObservations} from '../../scraper-support/utils/sourceObservationEvidence.js'
+const nativePacket=JSON.parse(capturedGunzip(capturedFs.readFileSync(new URL('../../scraper/btlindia/test-data/2026-10-31-native-packets.json.gz',import.meta.url))))
+const nativePage=url=>{const row=nativePacket.requests.find(row=>row.url===url);assert.ok(row,'Unrecorded native URL '+url);return row.body}
+const withCapturedNative=async(callback,alter=row=>row)=>{const original=globalThis.fetch,calls=[];globalThis.fetch=async(input,options={})=>{const url=String(input),method=options.method||'GET',body=String(options.body||''),recorded=nativePacket.requests.find(row=>row.url===url&&(row.method||'GET')===method&&(method==='GET'||row.requestBody===body));assert.ok(recorded,'Unrecorded native request '+url+' '+body);const row=alter({...recorded});calls.push({url,method,body});const response=new Response(Buffer.from(row.body,row.bodyEncoding),{status:row.status,headers:{'content-type':row.contentType}});Object.defineProperty(response,'url',{value:row.finalUrl});return response};try{return await callback(calls)}finally{globalThis.fetch=original}}
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -33,68 +41,8 @@ test('hasOfficialCareersSignal validates the verified BTL India careers surface'
   assert.equal(btl.hasOfficialCareersSignal(CAREERS_HTML), true)
 })
 
-test('extractPublicListings parses BTL India static PDF job links with mailto apply', async () => {
-  const btl = await loadBtlModule()
+test("BTL native PDF listings preserve plain titles, literal URLs and unknown geography",async()=>{const jobs=nativeSource.extractPublicListings(nativePage(nativeSource.CAREERS_URL));assert.equal(jobs.length,4);assert.equal(jobs[0].title,'Firmware Design engineer - 4 to 6 years');assert.match(jobs[0].sourceUrl,/developer%20%205%20yrs/);assert.ok(jobs.every(job=>job.country==null&&job.location==null&&job.requisitionId==null&&job.jobDescription==null));assert.equal(jobs[0].applyUrl,'mailto:btlinrd-hr@btlnet.com')})
 
-  assert.equal(btl.CAREERS_URL, 'https://www.btlnet.co.in/careers.php')
-  assert.equal(btl.APPLY_EMAIL, 'btlinrd-hr@btlnet.com')
+test("BTL default native path reads four advertised PDFs and keeps their dates and countries unqualified",async()=>{await withCapturedNative(async calls=>{const jobs=await nativeSource.run();assert.equal(calls.length,5);assert.equal(jobs.length,4);assert.ok(jobs.every(job=>job.source==='btlindia'&&job.jobDescription.length>2000&&job.postingDate==null&&job.country==null));assert.equal(capturedInventory(jobs).status,'coverage-gap')})})
 
-  const jobs = btl.extractPublicListings(CAREERS_HTML)
-
-  assert.equal(jobs.length, 4)
-  assert.deepEqual(jobs[0], {
-    title: 'Firmware Design engineer - 4 to 6 years',
-    company: 'BTL India Pvt. Ltd.',
-    department: null,
-    location: null,
-    city: null,
-    country: 'India',
-    jobId: 'btlindia-firmware-design-engineer-4-to-6-years',
-    requisitionId: 'btlindia-firmware-design-engineer-4-to-6-years',
-    sourceUrl: 'https://www.btlnet.co.in/admin/image/career/Job%20Description%20-%20Firmware%20developer%20%205%20yrs.pdf',
-    applyUrl: 'mailto:btlinrd-hr@btlnet.com',
-    employmentType: null,
-    experienceRequired: '4 to 6 years',
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: null,
-    remoteStatus: 'On-site',
-  })
-
-  assert.equal(jobs[1].experienceRequired, '6 to 8 years')
-  assert.match(jobs[2].title, /R&D Improvement & Support/i)
-  assert.match(jobs[3].sourceUrl, /I%26S%20Hardware%20Engineer/i)
-})
-
-test('run fetches the BTL India careers page and decorates runner fields', async () => {
-  const btl = await loadBtlModule()
-  const requestedUrls = []
-
-  const jobs = await btl.createBTLIndiaScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return CAREERS_HTML
-    },
-    now: () => '2026-07-09T12:30:00.000Z',
-  })
-
-  assert.deepEqual(requestedUrls, ['https://www.btlnet.co.in/careers.php'])
-  assert.equal(jobs.length, 4)
-  assert.equal(jobs[0].source, 'btlindia')
-  assert.equal(jobs[0].link, 'mailto:btlinrd-hr@btlnet.com')
-  assert.equal(jobs[0].scrapedAt, '2026-07-09T12:30:00.000Z')
-})
-
-test('run fails closed when the BTL India careers surface changes', async () => {
-  const btl = await loadBtlModule()
-
-  await assert.rejects(
-    btl.createBTLIndiaScraper().run({
-      fetchText: async () => '<html><body>No BTL openings</body></html>',
-    }),
-    /verified BTL India careers surface/i,
-  )
-})
+test("BTL changed employer surface fails closed without requesting unbound PDFs",async()=>{await assert.rejects(nativeSource.run({fetchText:async()=>'<html><title>Another employer</title></html>'}),error=>error.abortRetries===true&&error.inventoryEvidence?.reportedTotal===null)})

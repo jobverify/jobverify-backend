@@ -1,3 +1,4 @@
+import { createNativeGreenhouseScraper, NATIVE_GREENHOUSE_PROFILES, nativeSourceMetadata } from '../../scraper-support/native-sources/declaredGreenhouse/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import provider from './catalog.js'
@@ -5,7 +6,7 @@ import { createPublicAtsCatalogScraper } from '../../scraper-support/providers/i
 export const SOURCE = provider.source
 export const COMPANY = provider.companyName
 export const CAREERS_URL = provider.companyCareerPage
-export const run = options => createPublicAtsCatalogScraper(provider).run(options)
+export const run = options => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["elationhealth"]).run(options)
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()

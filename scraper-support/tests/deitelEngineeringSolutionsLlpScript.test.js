@@ -1,3 +1,11 @@
+import * as capturedFs from 'node:fs'
+import {gunzipSync as capturedGunzip} from 'node:zlib'
+import * as nativeSource from '../../scraper/deitelengineeringsolutionsllp/script.js'
+import {readInventoryEvidence as capturedInventory} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readSourceObservationEvidence as capturedObservations} from '../../scraper-support/utils/sourceObservationEvidence.js'
+const nativePacket=JSON.parse(capturedGunzip(capturedFs.readFileSync(new URL('../../scraper/deitelengineeringsolutionsllp/test-data/2026-10-31-native-packets.json.gz',import.meta.url))))
+const nativePage=url=>{const row=nativePacket.requests.find(row=>row.url===url);assert.ok(row,'Unrecorded native URL '+url);return row.body}
+const withCapturedNative=async(callback,alter=row=>row)=>{const original=globalThis.fetch,calls=[];globalThis.fetch=async(input,options={})=>{const url=String(input),method=options.method||'GET',body=String(options.body||''),recorded=nativePacket.requests.find(row=>row.url===url&&(row.method||'GET')===method&&(method==='GET'||row.requestBody===body));assert.ok(recorded,'Unrecorded native request '+url+' '+body);const row=alter({...recorded});calls.push({url,method,body});const response=new Response(Buffer.from(row.body,row.bodyEncoding),{status:row.status,headers:{'content-type':row.contentType}});Object.defineProperty(response,'url',{value:row.finalUrl});return response};try{return await callback(calls)}finally{globalThis.fetch=original}}
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -60,149 +68,8 @@ const officialCareersHtml = `
 </html>
 `
 
-test('DEITEL Engineering Solutions LLP validates the verified homepage and extracts role areas from the official careers page', async () => {
-  const deitel = await loadDeitelModule()
+test("DEITEL published role areas remain discovery metadata without becoming six vacancies",async()=>{assert.equal(nativeSource.hasOfficialHomepageSignal(nativePage(nativeSource.HOMEPAGE_URL)),true);const jobs=nativeSource.extractOpenings(nativePage(nativeSource.CAREERS_URL));assert.equal(jobs.length,0);assert.equal(jobs.nativeCollectionEvidence.observedRoleAreas.length,6);assert.equal(jobs.nativeCollectionEvidence.recordKind,'role-areas');assert.equal(jobs.nativeCollectionEvidence.observedVacancyCount,0);assert.equal(capturedInventory(jobs).reportedTotal,null)})
 
-  assert.equal(deitel.SOURCE, 'deitelengineeringsolutionsllp')
-  assert.equal(deitel.COMPANY, 'DEITEL Engineering Solutions LLP')
-  assert.equal(deitel.HOMEPAGE_URL, 'https://deitel.in/')
-  assert.equal(deitel.CAREERS_URL, 'https://deitel.in/career/')
-  assert.equal(deitel.APPLICATION_EMAIL, 'hr@deitel.in')
-  assert.equal(deitel.APPLICATION_URL, 'mailto:hr@deitel.in')
-  assert.equal(deitel.hasOfficialHomepageSignal(officialHomepageHtml), true)
-  assert.equal(deitel.hasOfficialCareersSignal(officialCareersHtml), true)
+test("DEITEL first-party handoff preserves six non-vacancy observations and unknown company scope",async()=>{await withCapturedNative(async calls=>{const jobs=await nativeSource.run();assert.equal(calls.length,2);assert.equal(jobs.length,0);const observation=capturedObservations(jobs,'deitelengineeringsolutionsllp');assert.equal(observation.recordKind,'role-areas');assert.equal(observation.observedRecordCount,6);assert.equal(observation.observedVacancyCount,0);assert.equal(observation.companyGlobalTotal,null);assert.equal(capturedInventory(jobs).status,'coverage-gap')})})
 
-  const jobs = deitel.extractOpenings(officialCareersHtml)
-
-  assert.equal(jobs.length, 6)
-  assert.deepEqual(
-    jobs.map((job) => job.title),
-    [
-      'Mechanical design for automotive and non-auto domains',
-      'Analysis and simulation engineers',
-      'Manufacturing engineering',
-      'Automotive electronics and embedded system areas',
-      'Technical writers and illustrators with aero/non-aero background',
-      'Senior engineers/Subject matter experts in key engineering domains (30+ years exp)',
-    ],
-  )
-  assert.deepEqual(jobs[0], {
-    title: 'Mechanical design for automotive and non-auto domains',
-    company: 'DEITEL Engineering Solutions LLP',
-    department: null,
-    location: null,
-    city: null,
-    country: 'India',
-    jobId: 'deitelengineeringsolutionsllp-mechanical-design-for-automotive-and-non-auto-domains',
-    requisitionId: 'deitelengineeringsolutionsllp-mechanical-design-for-automotive-and-non-auto-domains',
-    sourceUrl: 'https://deitel.in/career/',
-    applyUrl: 'mailto:hr@deitel.in',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: 'Official DEITEL Engineering Solutions LLP role area published on the first-party careers page. Apply via hr@deitel.in.',
-    publicExperienceChecked: true,
-  })
-  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
-})
-
-test('DEITEL Engineering Solutions LLP run validates the first-party handoff and decorates the extracted roles', async () => {
-  const deitel = await loadDeitelModule()
-  const requestedUrls = []
-
-  const jobs = await deitel.createDeitelEngineeringSolutionsLlpScraper({
-    now: () => '2026-07-11T10:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === deitel.HOMEPAGE_URL) return officialHomepageHtml
-      if (url === deitel.CAREERS_URL) return officialCareersHtml
-
-      throw new Error(`Unexpected DEITEL fixture URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    deitel.HOMEPAGE_URL,
-    deitel.CAREERS_URL,
-  ])
-  assert.equal(jobs.length, 6)
-  assert.deepEqual(jobs[0], {
-    title: 'Mechanical design for automotive and non-auto domains',
-    company: 'DEITEL Engineering Solutions LLP',
-    department: null,
-    location: null,
-    city: null,
-    country: 'India',
-    jobId: 'deitelengineeringsolutionsllp-mechanical-design-for-automotive-and-non-auto-domains',
-    requisitionId: 'deitelengineeringsolutionsllp-mechanical-design-for-automotive-and-non-auto-domains',
-    sourceUrl: 'https://deitel.in/career/',
-    applyUrl: 'mailto:hr@deitel.in',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: 'Official DEITEL Engineering Solutions LLP role area published on the first-party careers page. Apply via hr@deitel.in.',
-    publicExperienceChecked: true,
-    source: 'deitelengineeringsolutionsllp',
-    link: 'mailto:hr@deitel.in',
-    scrapedAt: '2026-07-11T10:00:00.000Z',
-  })
-  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
-})
-
-test('DEITEL Engineering Solutions LLP fails closed when the verified homepage, careers surface, or role list drifts', async () => {
-  const deitel = await loadDeitelModule()
-
-  await assert.rejects(
-    deitel.createDeitelEngineeringSolutionsLlpScraper().run({
-      fetchText: async (url) => {
-        if (url === deitel.HOMEPAGE_URL) {
-          return '<html><head><title>Unexpected</title></head><body></body></html>'
-        }
-
-        throw new Error(`Unexpected DEITEL fixture URL: ${url}`)
-      },
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    deitel.createDeitelEngineeringSolutionsLlpScraper().run({
-      fetchText: async (url) => {
-        if (url === deitel.HOMEPAGE_URL) return officialHomepageHtml
-        if (url === deitel.CAREERS_URL) {
-          return officialCareersHtml.replaceAll('hr@deitel.in', 'contact@example.com')
-        }
-
-        throw new Error(`Unexpected DEITEL fixture URL: ${url}`)
-      },
-    }),
-    /verified official careers page/i,
-  )
-
-  await assert.rejects(
-    deitel.createDeitelEngineeringSolutionsLlpScraper().run({
-      fetchText: async (url) => {
-        if (url === deitel.HOMEPAGE_URL) return officialHomepageHtml
-        if (url === deitel.CAREERS_URL) {
-          return officialCareersHtml.replace(
-            /<ul>[\s\S]*?<\/ul>/i,
-            '<section><h2>Search Jobs</h2><a href="/career/job-1">Apply Now</a></section>',
-          )
-        }
-
-        throw new Error(`Unexpected DEITEL fixture URL: ${url}`)
-      },
-    }),
-    /verified public role list/i,
-  )
-})
+test("DEITEL missing employer handoff or role-area scope is unavailable rather than verified empty",async()=>{await assert.rejects(nativeSource.run({fetchText:async()=>'<html><title>Changed</title></html>'}),/native:/);const changed=nativePage(nativeSource.CAREERS_URL).replace(/<ul>\s*<li>Mechanical design[\s\S]*?<\/ul>/,'');assert.notEqual(changed,nativePage(nativeSource.CAREERS_URL));assert.throws(()=>nativeSource.extractOpenings(changed),/native:/)})

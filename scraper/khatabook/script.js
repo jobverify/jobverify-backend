@@ -223,7 +223,8 @@ const dedupeJobs = (jobs = []) => {
   return deduped
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -249,9 +250,32 @@ export const createKhatabookScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
+    fetchText: rawFetchText = defaultFetchText,
+    fetchJson: rawFetchJson = defaultFetchJson,
+    signal,
   } = {}) {
+    const fetchText = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const value = await rawFetchText(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return value
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
+    const fetchJson = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const value = await rawFetchJson(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return value
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
     const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Khatabook verified official careers page no longer matches the verified public surface')

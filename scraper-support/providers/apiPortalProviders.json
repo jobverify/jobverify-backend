@@ -1176,7 +1176,14 @@
     "parser": "api-portal",
     "normalizationProfile": "engineering-default",
     "dryRunEnrichPublicExperience": false,
+    "scraperTimeoutMs": 900000,
     "config": {
+      "rateLimit": {
+        "minimumIntervalMs": 1000,
+        "maxRetries": 2,
+        "baseDelayMs": 5000,
+        "maxDelayMs": 30000
+      },
       "discovery": {
         "careerPageUrl": "https://careers.qualcomm.com/careers",
         "listingApiUrl": "https://careers.qualcomm.com/api/pcsx/search"
@@ -1194,11 +1201,13 @@
         "query": {
           "domain": "qualcomm.com",
           "query": "",
-          "location": "India"
+          "location": "India",
+          "sort_by": "timestamp"
         }
       },
       "pagination": {
         "strategy": "offset-limit",
+        "traversalMode": "staged-snapshot",
         "pageSize": 10,
         "offsetParam": "start",
         "limitParam": "limit",
@@ -1207,7 +1216,8 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": { "strategy": "eightfold-location" },
+        "country": { "strategy": "eightfold-country" },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": "positionUrl",
@@ -1216,7 +1226,9 @@
         "postingDate": "postedTs"
       },
       "detail": {
-        "enabled": false,
+        "enabled": true,
+        "requireListingIdentity": true,
+        "concurrency": 2,
         "urlTemplate": "https://careers.qualcomm.com/api/pcsx/position_details?position_id={{jobId}}&domain=qualcomm.com&hl=en",
         "method": "GET",
         "headers": {
@@ -1234,8 +1246,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "india"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       }

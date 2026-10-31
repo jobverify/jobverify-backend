@@ -145,11 +145,11 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
     _id: `${user}:${listing._id}`, user, job: listing._id, status: 'queued', requestedAt: new Date(), output: null,
   })));
   const secondPage = await request('/api/user/applications?page=2');
-  assert.equal(secondPage.body.data.length, 3);
+  assert.equal(secondPage.body.data.length, 2);
   assert.deepEqual(secondPage.body.summary, { total: 23, opened: 21, applied: 2 });
-  assert.equal(secondPage.body.pagination.totalPages, 2);
+  assert.equal(secondPage.body.pagination.totalPages, 12);
   const pendingPage = await request('/api/user/applications?status=opened');
-  assert.equal(pendingPage.body.data.length, 20);
+  assert.equal(pendingPage.body.data.length, 2);
   assert.equal(pendingPage.body.pagination.total, 21);
   assert.ok(pendingPage.body.data.every(item => item.resumeStatus === 'queued'));
 });

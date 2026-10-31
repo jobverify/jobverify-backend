@@ -9,7 +9,7 @@ import { dispatchTailoredResumes, requireTailoredResumeActions, tailoredResumeAc
 import { tailoringError } from './resumeTailoringContent.js';
 
 export const activeResumeStatuses = ['queued', 'running'];
-export const activeResumeOwner = user => ({ _id: user, deactivated: { $ne: true }, outreachDeletingAt: null });
+export const activeResumeOwner = user => ({ _id: user, deactivated: { $ne: true }, accountDeletingAt: null });
 const ownerFilter = user => ({ _id: user, user });
 export const evidenceMatches = (version, hash, evidence) => version == null ? evidence.version === 0 : version === evidence.version && hash === evidence.hash;
 export function preparationMetadata(record, evidence) {

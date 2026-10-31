@@ -157,23 +157,28 @@ export const buildPaginatedSearchDwrBody = ({
 export const fetchSuccessFactorsSearchSession = async ({
   searchUrl,
   fetchImpl = fetch,
+  signal,
   userAgent,
   label = 'successfactors-bootstrap',
   missingAjaxTokenErrorMessage = 'SuccessFactors search bootstrap no longer exposes an ajaxSecKey token',
 } = {}) => withRetry(async () => {
+  signal?.throwIfAborted()
   const response = await fetchImpl(searchUrl, {
+    signal,
     headers: {
       'User-Agent': userAgent,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
     },
   })
+  signal?.throwIfAborted()
 
   if (!response.ok) {
     throw buildHttpError(response, searchUrl)
   }
 
   const html = await response.text()
+  signal?.throwIfAborted()
   const csrfToken = extractAjaxToken(html)
 
   if (!csrfToken) {
@@ -191,6 +196,7 @@ export const fetchSuccessFactorsSearchSession = async ({
   attempts: 3,
   baseDelayMs: 500,
   label,
+  signal,
 })
 
 export const postSuccessFactorsDwr = async ({
@@ -206,13 +212,16 @@ export const postSuccessFactorsDwr = async ({
   refererUrl = searchUrl,
   subaction = 0,
   fetchImpl = fetch,
+  signal,
   viewId = SUCCESSFACTORS_VIEW_ID,
 } = {}) => {
   const origin = new URL(searchUrl).origin
   const url = `${origin}/xi/ajax/remoting/call/plaincall/careerJobSearchControllerProxy.${endpoint}.dwr`
 
   return withRetry(async () => {
+    signal?.throwIfAborted()
     const response = await fetchImpl(url, {
+      signal,
       method: 'POST',
       headers: {
         'User-Agent': userAgent,
@@ -229,12 +238,14 @@ export const postSuccessFactorsDwr = async ({
       },
       body,
     })
+    signal?.throwIfAborted()
 
     if (!response.ok) {
       throw buildHttpError(response, url)
     }
 
     const text = await response.text()
+    signal?.throwIfAborted()
     if (/<html\b/i.test(text)) {
       throw buildUnexpectedHtmlResponseError(url, text)
     }
@@ -249,6 +260,7 @@ export const postSuccessFactorsDwr = async ({
     attempts: 3,
     baseDelayMs: 500,
     label,
+    signal,
   })
 }
 

@@ -3,6 +3,9 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { AMNEAL_PHARMACEUTICALS_INDIA_CATALOG } from './catalog.js'
+import {readAmnealCareersHandoff} from './nativeHandoff.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readVisibleNativeDocument} from '../../scraper-support/utils/visibleNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -62,12 +65,18 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const activeNativeText = value => {
+  const doc=readVisibleNativeDocument(String(value??''),{strict:true})
+  const text=node=>{
+    if(typeof node==='string')return node
+    if(node.inert||['script','style'].includes(node.tag))return ''
+    const body=node.children.map(text).join(' ')
+    return /^(?:p|div|li|h[1-6]|ul|ol|br|hr)$/.test(node.tag)?'\n'+body+'\n':body
+  }
+  return text(doc.nodes(node=>node.tag==='root')[0])
+}
 const stripTagsToLines = (value) =>
-  String(value ?? '')
-    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|hr)\b[^>]*>/gi, '\n')
-    .replace(/<li\b[^>]*>/gi, '\n')
-    .replace(/<p\b[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
+  activeNativeText(value)
     .split('\n')
     .map((part) => normalizeWhitespace(part))
     .filter(Boolean)
@@ -100,7 +109,7 @@ const normalizeDate = (value) => {
 
 const joinDescriptionParts = (...parts) => normalizeWhitespace(
   parts
-    .map((part) => stripTags(part))
+    .map((part) => normalizeWhitespace(activeNativeText(part)))
     .filter(Boolean)
     .join(' '),
 )
@@ -137,15 +146,8 @@ const getEmploymentType = (record = {}) =>
 const isIndiaJob = (record = {}) => {
   const country = normalizeWhitespace(record.PrimaryLocationCountry)?.toUpperCase()
   const primaryLocation = normalizeWhitespace(record.PrimaryLocation)
-  const secondaryLocations = Array.isArray(record?.secondaryLocations)
-    ? record.secondaryLocations
-      .map((location) => normalizeWhitespace(location?.Name))
-      .filter(Boolean)
-    : []
-
-  return country === 'IN'
-    || /(?:^|,)\s*india\s*$/i.test(primaryLocation || '')
-    || secondaryLocations.some((location) => /(?:^|,)\s*india\s*$/i.test(location))
+  return country === 'IN' && (!primaryLocation || /(?:^|,)\s*india\s*$/i.test(primaryLocation))
+    || !country && /(?:^|,)\s*india\s*$/i.test(primaryLocation || '')
 }
 
 const extractQualificationDetails = (record = {}) => {
@@ -160,13 +162,7 @@ const extractQualificationDetails = (record = {}) => {
 }
 
 export const hasOfficialCareersPageSignal = (html) => {
-  const page = String(html ?? '')
-  const text = stripTags(page) || ''
-
-  return /<title>\s*Careers at Amneal India \| Join Our Team\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/india\.amneal\.com\/careers\/search-our-career-opportunities\/["'][^>]*>\s*Search Our Career Opportunities\s*</i.test(page)
-    && text.includes('Join and help make medicines accessible for all')
-    && text.includes('Amneal is cultivating a workplace where innovation, excellence, and employee growth are at the forefront')
+  return Boolean(readAmnealCareersHandoff(String(html??'')))
 }
 
 export const hasOfficialSearchPageSignal = (html) => {
@@ -261,6 +257,15 @@ export const extractPaginationSummary = (payload, { page = 0 } = {}) => {
 
 export const extractJobDetail = (payload, listing = {}) => {
   const detail = getRequisitionDetail(payload)
+  if(!Array.isArray(payload?.items)||payload.items.length!==1||!listing.jobId
+    ||normalizeWhitespace(detail.Id)!==listing.jobId||normalizeWhitespace(detail.Title)!==listing.title
+    ||!isIndiaJob(detail)||normalizeLocation(detail.PrimaryLocation)!==listing.location){
+    throw Object.assign(new Error('Amneal India native detail identity or primary workplace contradicts the advertised listing'),{abortRetries:true})
+  }
+  const nativeDescription=joinDescriptionParts(detail.ExternalDescriptionStr,detail.ExternalResponsibilitiesStr)
+  if(!nativeDescription||nativeDescription.length<150){
+    throw Object.assign(new Error('Amneal India native role description is missing or unqualified; listing teaser is not a full JD'),{abortRetries:true})
+  }
   const location = normalizeLocation(detail.PrimaryLocation) || listing.location || null
   const jobId = normalizeWhitespace(detail.Id) || listing.jobId || null
   const qualifications = extractQualificationDetails(detail)
@@ -293,13 +298,21 @@ export const extractJobDetail = (payload, listing = {}) => {
       detail.ShortDescriptionStr,
       detail.ExternalDescriptionStr,
       detail.ExternalResponsibilitiesStr,
+      detail.ExternalQualificationsStr,
     ) || listing.jobDescription || null,
     remoteStatus: null,
     siteNumber: SITE_NUMBER,
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const nativeFetch=async(url,options)=>{
+  const response=await fetch(url,options)
+  options.signal?.throwIfAborted()
+  if(response.url&&response.url!==url)throw Object.assign(new Error('Amneal India native response redirected away from the requested surface'),{abortRetries:true})
+  return response
+}
+const defaultFetchText = (url,{signal}={}) => fetchTextWithRetry(url, {
+  signal,fetchImpl:nativeFetch,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -308,7 +321,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url,{signal}={}) => fetchJsonWithRetry(url, {
+  signal,fetchImpl:nativeFetch,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -324,18 +338,25 @@ export const createAmnealPharmaceuticalsIndiaScraper = ({
   fetchJson = defaultFetchJson,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run() {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+  async run({signal}={}) {
+    let pagesFetched=0
+    const read=async(fn,url)=>{signal?.throwIfAborted();const result=await fn(url,{signal});signal?.throwIfAborted();pagesFetched++;return result}
+    const finish=jobs=>attachInventoryEvidence(jobs,{status:'coverage-gap',surface:CANDIDATE_EXPERIENCE_URL,
+      firstParty:true,listingComplete:false,pagesFetched,reportedTotal:null,indiaFacetCount:null,verifiedAt:null,
+      reason:'Native handoff and role details checked; opening/closing company and India cohorts not reconciled'})
+    const careersHtml = await read(fetchText,OFFICIAL_CAREERS_URL)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Amneal Pharmaceuticals India verified Amneal India careers landing page no longer matches the known first-party surface')
     }
 
-    const searchHtml = await fetchText(SEARCH_CAREERS_URL)
-    if (!hasOfficialSearchPageSignal(searchHtml)) {
-      throw new Error('Amneal Pharmaceuticals India verified Amneal India search careers page no longer matches the known first-party handoff')
+    if(readAmnealCareersHandoff(careersHtml)===SEARCH_CAREERS_URL){
+      const searchHtml = await read(fetchText,SEARCH_CAREERS_URL)
+      if (!hasOfficialSearchPageSignal(searchHtml)) {
+        throw new Error('Amneal Pharmaceuticals India verified Amneal India search careers page no longer matches the known first-party handoff')
+      }
     }
 
-    const candidateExperienceHtml = await fetchText(CANDIDATE_EXPERIENCE_URL)
+    const candidateExperienceHtml = await read(fetchText,CANDIDATE_EXPERIENCE_URL)
     if (!hasOfficialCandidateExperienceSignal(candidateExperienceHtml)) {
       throw new Error('Amneal Pharmaceuticals India verified Oracle candidate experience page no longer matches the known public shell')
     }
@@ -344,7 +365,7 @@ export const createAmnealPharmaceuticalsIndiaScraper = ({
     const seenJobIds = new Set()
 
     for (let page = 0; page < maxPages; page += 1) {
-      const payload = await fetchJson(buildSearchUrl({ page }))
+      const payload = await read(fetchJson,buildSearchUrl({ page }))
       const pageJobs = extractSearchResults(payload)
       const summary = extractPaginationSummary(payload, { page })
 
@@ -352,7 +373,7 @@ export const createAmnealPharmaceuticalsIndiaScraper = ({
         if (seenJobIds.has(listing.jobId)) continue
         seenJobIds.add(listing.jobId)
 
-        const detailPayload = await fetchJson(buildJobDetailApiUrl(listing.jobId))
+        const detailPayload = await read(fetchJson,buildJobDetailApiUrl(listing.jobId))
         const detail = extractJobDetail(detailPayload, listing)
 
         jobs.push({
@@ -360,21 +381,22 @@ export const createAmnealPharmaceuticalsIndiaScraper = ({
           source: SOURCE,
           link: detail.applyUrl || detail.sourceUrl,
           scrapedAt: now(),
+          sourceListingComplete:false,
         })
 
         if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
+          return finish(jobs)
         }
       }
 
       if (!summary.hasNext) break
     }
 
-    return jobs
+    return finish(jobs)
   },
 })
 
-export const run = async (options = {}) => createAmnealPharmaceuticalsIndiaScraper(options).run()
+export const run = async (options = {}) => createAmnealPharmaceuticalsIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

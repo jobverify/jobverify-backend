@@ -1,3 +1,4 @@
+import { checkCurrentFactory,checkChangedPublisher } from '../native-sources/declaredGreenhouse/replayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -102,31 +103,6 @@ test('Biofourmis extracts India jobs from the verified Greenhouse payload', asyn
   assert.equal(jobs[0].source, 'biofourmis')
 })
 
-test('Biofourmis run validates the official page before fetching the Greenhouse jobs API', async () => {
-  const biofourmis = await loadBiofourmisModule()
-  const requested = []
-
-  const jobs = await biofourmis.createBiofourmisScraper({ maxJobs: 1 }).run({
-    fetchText: async (url) => {
-      requested.push({ type: 'text', url })
-      if (url === biofourmis.CAREERS_URL) return officialCareersHtml
-      throw new Error(`Unexpected Biofourmis fixture URL: ${url}`)
-    },
-    fetchJson: async (url, options = {}) => {
-      requested.push({ type: 'json', url, options })
-      return greenhousePayload
-    },
-    now: () => '2026-07-14T12:00:00.000Z',
-  })
-
-  assert.deepEqual(requested, [
-    { type: 'text', url: biofourmis.CAREERS_URL },
-    {
-      type: 'json',
-      url: 'https://boards-api.greenhouse.io/v1/boards/biofourmis/jobs?content=true',
-      options: { method: 'GET' },
-    },
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'biofourmis')
+test('biofourmis actual factory retains complete original native models before selection',async()=>{
+ const biofourmis=await loadBiofourmisModule();await checkCurrentFactory('biofourmis',biofourmis.createBiofourmisScraper)
 })

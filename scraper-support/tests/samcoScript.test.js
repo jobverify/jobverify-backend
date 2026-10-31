@@ -1,3 +1,11 @@
+import * as capturedFs from 'node:fs'
+import {gunzipSync as capturedGunzip} from 'node:zlib'
+import * as nativeSource from '../../scraper/samco/script.js'
+import {readInventoryEvidence as capturedInventory} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readSourceObservationEvidence as capturedObservations} from '../../scraper-support/utils/sourceObservationEvidence.js'
+const nativePacket=JSON.parse(capturedGunzip(capturedFs.readFileSync(new URL('../../scraper/samco/test-data/2026-10-31-native-packets.json.gz',import.meta.url))))
+const nativePage=url=>{const row=nativePacket.requests.find(row=>row.url===url);assert.ok(row,'Unrecorded native URL '+url);return row.body}
+const withCapturedNative=async(callback,alter=row=>row)=>{const original=globalThis.fetch,calls=[];globalThis.fetch=async(input,options={})=>{const url=String(input),method=options.method||'GET',body=String(options.body||''),recorded=nativePacket.requests.find(row=>row.url===url&&(row.method||'GET')===method&&(method==='GET'||row.requestBody===body));assert.ok(recorded,'Unrecorded native request '+url+' '+body);const row=alter({...recorded});calls.push({url,method,body});const response=new Response(Buffer.from(row.body,row.bodyEncoding),{status:row.status,headers:{'content-type':row.contentType}});Object.defineProperty(response,'url',{value:row.finalUrl});return response};try{return await callback(calls)}finally{globalThis.fetch=original}}
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -113,33 +121,7 @@ test('Samco exports a stable exact-name wrapper over the verified SAMCO first-pa
   )
 })
 
-test('Samco run validates the first-party surface and decorates jobs from the existing SAMCO scraper', async () => {
-  const samco = await loadSamcoModule()
-  const requestedUrls = []
-
-  const jobs = await samco.createSamcoScraper({
-    now: () => '2026-07-15T21:30:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === samco.HOMEPAGE_URL) return homepageHtml
-      if (url === samco.CAREERS_URL) return careersHtml
-      throw new Error(`Unexpected Samco URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    samco.HOMEPAGE_URL,
-    samco.CAREERS_URL,
-  ])
-  assert.equal(jobs.length, 4)
-  assert.equal(jobs[0].source, 'samco')
-  assert.equal(jobs[0].company, 'Samco')
-  assert.equal(jobs[0].companyCareerPage, samco.CAREERS_URL)
-  assert.equal(jobs[0].companyDomain, 'samco.in')
-  assert.equal(jobs[0].atsPlatform, 'official-company-careers')
-  assert.equal(jobs[0].scrapedAt, '2026-07-15T21:30:00.000Z')
-})
+test("Samco wrapper retains its source attribution for eight native positions and mixed observation evidence",async()=>{await withCapturedNative(async()=>{const jobs=await nativeSource.run();assert.equal(jobs.length,8);assert.ok(jobs.every(job=>job.source==='samco'&&job.company==='Samco'&&job.country==null));assert.equal(jobs.find(job=>job.requisitionId==='171').location,'Mumbai');const observation=capturedObservations(jobs,'samco');assert.equal(observation.observedRecordCount,12);assert.equal(observation.observedVacancyCount,8);assert.equal(observation.companyIndiaTotal,null);assert.equal(capturedInventory(jobs).listingComplete,false)})})
 
 test('Samco fails closed when the verified homepage or careers page drifts materially', async () => {
   const samco = await loadSamcoModule()

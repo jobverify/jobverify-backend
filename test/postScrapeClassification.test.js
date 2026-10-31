@@ -8,6 +8,7 @@ import { classifySavedJobs } from '../scripts/classifySavedJobs.js'
 import { classificationShard, postScrapeInput, resolvePostScrapeClassification, sourceGuardedClassification } from '../src/services/postScrapeClassification.js'
 import { PUBLIC_JOB_TYPE_EXPRESSION } from '../src/utils/publicJobType.js'
 import { getAuthoritativeClassification } from '../src/services/jobClassificationPolicy.js'
+import { applyPublicJobVisibility } from '../src/utils/publicJobVisibility.js'
 import { saveToDB } from '../scraper-support/utils/saveToDB.js'
 
 const now = new Date('2026-10-10T12:00:00Z')
@@ -246,6 +247,7 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     assert.equal(summary.modelRequests, 1)
     assert.equal(summary.descriptionOrigins.source, 3)
     assert.equal(summary.quality.modelDisagreement, 1)
+    assert.equal(summary.quality.modelFinalDisagreement, 1)
     assert.equal(summary.resources.cpuThreads, 4)
     assert.equal(summary.inference.averageCpuCoresUsed, 3)
     assert.equal(rows.length, 3)
@@ -256,6 +258,9 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     assert.equal(skipped.inputBytes, 0)
     assert.equal((await Job.findById(missing._id).lean()).postClassification.reason, 'missing_description')
     assert.ok(rows.some(row => row.reason === 'oversized_description' && row.inputBytes > 262144))
+    const completed = rows.find(row => row.status === 'completed')
+    assert.equal(completed.sourcePolicyJobType, 'Full-time Experienced')
+    assert.equal(completed.modelMatchesFinalLabel, false)
     assert.ok(rows.every(row => !Object.hasOwn(row, 'body') && !Object.hasOwn(row, 'sourceDescription')))
     await Job.updateOne({ _id: missing._id }, { $set: { sourceDescription: 'Full-time position requiring 3 years of experience.' } })
     const resumed = await classifySavedJobs({ mode: 'policy', now: () => now, worker })
@@ -263,6 +268,37 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     assert.equal(resumed.cached, 1)
     assert.equal(resumed.skipped, 1)
     assert.equal(resumed.modelRequests, 1)
+  })
+
+  await t.test('source-quality blocks and review reasons survive persistence and public filtering', async () => {
+    await Job.deleteMany({})
+    const blocked = await Job.create({ title: 'Testing Engineer (Fresher)', company: 'Trial Company',
+      fingerprint: 'persisted-eligibility-conflict', sourceDescription: 'Minimum 3 years of professional experience required.',
+      status: 'active', sourceEmploymentType: 'Full time', jobType: 'Unspecified', isPublicIndia: true, postedAt: now })
+    await Job.create({ title: 'Graduate Engineer Trainee', company: 'Trial Company', fingerprint: 'persisted-title-review',
+      sourceDescription: 'Build and test software for our customers.', status: 'active', jobType: 'Unspecified' })
+    const worker = { classify: async () => prediction('Full-time Experienced') }
+    const result = await classifySavedJobs({ mode: 'policy', now: () => now, worker })
+    assert.equal(result.completed, 2)
+    const saved = await Job.findById(blocked._id).lean()
+    assert.equal(getAuthoritativeClassification(saved).jobType, 'Unspecified')
+    assert.ok(saved.classification.sourceQualityIssues.includes('conflicting_role_eligibility'))
+    assert.ok(saved.classification.reviewReasons.includes('conflicting_role_eligibility'))
+    assert.ok(saved.classification.sourceGuards.includes('conflicting_role_eligibility'))
+    const [publicRow] = await Job.aggregate([{ $match: { _id: blocked._id } }, { $project: { category: PUBLIC_JOB_TYPE_EXPRESSION } }])
+    assert.equal(publicRow.category, 'Unspecified')
+    assert.equal(await Job.countDocuments(applyPublicJobVisibility({ _id: blocked._id, status: 'active' }, {}, now)), 0)
+    const review = await Job.findOne({ fingerprint: 'persisted-title-review' }).lean()
+    assert.deepEqual(review.classification.reviewReasons, ['entry_level_title_with_experienced_prediction'])
+    const diagnostics = []
+    const rerun = await classifySavedJobs({ mode: 'policy', now: () => now, worker, onResult: row => diagnostics.push(row) })
+    assert.equal(rerun.cached, 2)
+    assert.equal(rerun.quality.reviewRequired, 2)
+    assert.ok(diagnostics.find(row => row.id === String(blocked._id)).sourceQualityIssues.includes('conflicting_role_eligibility'))
+    const fallback = diagnostics.find(row => row.id === String(review._id))
+    assert.equal(fallback.sourcePolicyJobType, 'Unspecified')
+    assert.equal(fallback.modelAgreement, false)
+    assert.equal(fallback.modelMatchesFinalLabel, true)
   })
 
   await t.test('diagnostic write failures propagate without marking a saved classification as failed', async () => {

@@ -6,9 +6,10 @@ import {gunzipSync} from 'node:zlib'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {validateCarrierDetail} from './nativeRun.js'
 import {projectNativeWorkdayClocks} from '../../test/helpers/nativeWorkdayClockProjection.js'
+import {carrierSearchPacket} from '../../test/helpers/carrierNativeSearch.js'
 const fixture=()=>JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/runtime-native-20261021.json.gz',import.meta.url))))
 async function replay(change,options={}){
- const f=fixture(),original=globalThis.fetch;let calls=0
+ const f=fixture(),original=globalThis.fetch;f.packets.push(carrierSearchPacket());let calls=0
  globalThis.fetch=async(url,init={})=>{const packet=f.packets.find(p=>p.url===String(url)&&p.requestBody===(init.body??null));assert.ok(packet,'Uncaptured native request '+url);const p=structuredClone(packet);change?.(p,++calls);const r=new Response(p.body,{status:p.status});Object.defineProperty(r,'url',{value:p.finalURL});return r}
  try{return await run({now:f.now,requestScheduler:{acquire:async()=>()=>{},recordRateLimit:()=>{},minIntervalMs:0},retryBaseDelayMs:0,...options})}finally{globalThis.fetch=original}
 }
@@ -54,11 +55,11 @@ test('new native secondary office uses exact current primary India-country evide
  const result=validateCarrierDetail(payload,row,'2026-10-21T06:00:00Z',new Set([office.replace(/\s+/g,' ').trim()]))
  assert.ok(result.locations.includes(office));assert.equal(result.city,null)
 })
-test('all68 fresh HTTP receipts replay once into exactly59 captured jobs, with original native fields and discrepancies',async()=>{
- const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/runtime-current59-20261021.json.gz',import.meta.url)))),used=new Set(),original=globalThis.fetch
+test('all68 archived HTTP receipts and current search discovery replay into exactly59 captured jobs with original native fields',async()=>{
+ const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/runtime-current59-20261021.json.gz',import.meta.url)))),used=new Set(),original=globalThis.fetch;f.packets.push(carrierSearchPacket())
  globalThis.fetch=async(url,init={})=>{const i=f.packets.findIndex((p,i)=>!used.has(i)&&p.url===String(url)&&p.method===(init.method??'GET')&&p.requestBody===(init.body??null));assert.ok(i>=0,'Missing exact receipt '+url);used.add(i);const p=f.packets[i],r=new Response(p.body,{status:p.status});Object.defineProperty(r,'url',{value:p.finalURL});return r}
  const stable=j=>{const c=structuredClone(j);delete c.scrapedAt;delete c.sourceOfficialBinding.checkedAt;return c}
- try{const jobs=await run({now:f.trial.completedAt});assert.equal(used.size,68);assert.equal(jobs.length,59);assert.deepEqual(projectNativeWorkdayClocks(jobs,f.trial.jobs,f.packets,stable),f.trial.jobs.map(stable));assert.equal(jobs.find(j=>j.jobId==='30213426').nativeLocationDiscrepancy.scopeAgreement,'India');assert.equal(jobs.find(j=>j.jobId==='30219751').city,null)}finally{globalThis.fetch=original}
+ try{const jobs=await run({now:f.trial.completedAt});assert.equal(used.size,69);assert.equal(jobs.length,59);assert.deepEqual(projectNativeWorkdayClocks(jobs,f.trial.jobs,f.packets,stable),f.trial.jobs.map(stable));assert.equal(jobs.find(j=>j.jobId==='30213426').nativeLocationDiscrepancy.scopeAgreement,'India');assert.equal(jobs.find(j=>j.jobId==='30219751').city,null)}finally{globalThis.fetch=original}
 })
 for(const label of ['US - Chicago','United States - Remote','Singapore Office','Office Singapore','Chicago - US'])test('explicit foreign primary prefix or suffix contradicts typed India: '+label,async()=>{
  await assert.rejects(()=>replay(p=>{if(p.method==='POST'){const j=JSON.parse(p.body);for(const row of j.jobPostings)row.locationsText=label;p.body=JSON.stringify(j)}else detailChange(j=>{j.jobPostingInfo.location=label;j.jobPostingInfo.jobRequisitionLocation.descriptor=label;j.jobPostingInfo.additionalLocations=[]})(p)}),/country/)

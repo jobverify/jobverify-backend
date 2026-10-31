@@ -80,15 +80,21 @@ export async function classifySavedJobs({ model = Job, worker, now = () => new D
           shard, status, durationMs: Date.now() - jobStarted, ...details })
         await onProgress({ ...summary, elapsedSeconds: (Date.now() - started) / 1000 })
       }
-      const decisionDetails = (result, prediction, publicJobType) => ({
-        resolvedJobType: result?.resolved?.jobType ?? null, publicJobType: publicJobType ?? null,
-        modelJobType: prediction?.modelLabel ?? result?.comparison?.modelJobType ?? null,
-        decisionSource: result?.decisionSource ?? null, classificationStatus: result?.status ?? null,
-        uncertain: result?.resolved ? result.status === 'uncertain' || result.resolved.jobType === 'Unspecified' : null,
-        modelAgreement: result?.comparison?.agreement ?? null,
-        uncalibratedModelScore: result?.decisions?.jobType?.probability ?? null,
-        reason: result?.reason ?? null,
-      })
+      const decisionDetails = (result, prediction, publicJobType) => {
+        const modelJobType = prediction?.modelLabel ?? result?.comparison?.modelJobType ?? null
+        const finalJobType = result?.resolved?.jobType
+        return {
+          resolvedJobType: result?.resolved?.jobType ?? null, publicJobType: publicJobType ?? null,
+          modelJobType, sourcePolicyJobType: result?.comparison?.logicJobType ?? null,
+          modelMatchesFinalLabel: modelJobType && finalJobType ? modelJobType === finalJobType : null,
+          decisionSource: result?.decisionSource ?? null, classificationStatus: result?.status ?? null,
+          uncertain: result?.resolved ? result.status === 'uncertain' || result.resolved.jobType === 'Unspecified' : null,
+          modelAgreement: result?.comparison?.agreement ?? null,
+          uncalibratedModelScore: result?.decisions?.jobType?.probability ?? null,
+          reason: result?.reason ?? null,
+          sourceQualityIssues: result?.sourceQualityIssues ?? [], reviewReasons: result?.reviewReasons ?? [],
+        }
+      }
       if (alreadyClassified(job, input, mode)) {
         summary.cached++
         const previous = job.postClassification.result

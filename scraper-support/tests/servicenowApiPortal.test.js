@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 import { runApiPortalScraper } from '../apiPortal/engine.js'
 import { getScraperCatalog } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -27,7 +28,7 @@ const buildListingsFixture = (name, index) => {
   }
 }
 
-test('runApiPortalScraper maps ServiceNow India SmartRecruiters jobs and paginates by offset', async () => {
+test('ServiceNow maps and paginates the retained roles while its two-row excerpt remains partial against total eleven', async () => {
   const provider = getScraperCatalog().find((item) => item.source === 'servicenow')
   assert.ok(provider)
 
@@ -111,7 +112,15 @@ test('runApiPortalScraper maps ServiceNow India SmartRecruiters jobs and paginat
     requiredSkills: [],
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
+  const evidence = readInventoryEvidence(jobs)
+  assert.ok(jobs.every(job => job.sourceListingComplete === false))
+  assert.equal(evidence.status, 'discovery-only')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, 11)
+  assert.equal(evidence.pagesFetched, 2)
+  assert.equal(evidence.reason, 'api-portal-incomplete-listing-or-role-details:upstream-count-mismatch')
 
   assert.match(jobs[0].jobDescription, /Role Overview/i)
   assert.match(jobs[0].minimumQualification, /10\+ years of software engineering experience/i)

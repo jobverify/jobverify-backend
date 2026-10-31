@@ -13,6 +13,7 @@ const scraper = createPhenomScraper({
   scraperDir: currentDir,
   defaultDetailConcurrency: 4,
   defaultDetailEnrichmentBudgetMs: 150000,
+  nativeLocalizedCountryNames: [{ locale: 'fr', region: 'IN' }],
 })
 
 export const {

@@ -33,10 +33,10 @@ jobs:
     steps:
       - name: ${{ inputs.dispatch_token && format('Job Classification [dispatch:{0}]', inputs.dispatch_token) || 'Job Classification' }}
         run: echo 'Pipeline dispatch identity recorded'
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.pipeline_sha || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -69,10 +69,10 @@ jobs:
       HF_HOME: '${{ github.workspace }}/.cache/gliclass-hub'
       NODE_OPTIONS: '--use-system-ca'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.pipeline_sha || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'npm'
@@ -89,7 +89,7 @@ jobs:
           python -m pip install --disable-pip-version-check torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
           python -m pip install --disable-pip-version-check -r classification/gliclass/requirements.txt
       - name: Cache immutable checkpoint
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .cache/gliclass-model
           key: gliclass-cpu-${{ runner.os }}-${{ hashFiles('classification/gliclass/model.json') }}
@@ -118,10 +118,10 @@ jobs:
     if: always() && needs.register.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.pipeline_sha || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm

@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import { runApiPortalScraper } from '../apiPortal/engine.js'
 import { getScraperCatalog } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const listingsPayload = {
   data: {
@@ -36,7 +37,7 @@ const listingsPayload = {
   },
 }
 
-test('runApiPortalScraper maps Virtusa GraphQL jobs, resolves relative URLs, and keeps India roles', async () => {
+test('Virtusa retains the India job while the missing foreign-role description keeps the full feed partial', async () => {
   const provider = getScraperCatalog().find((item) => item.source === 'virtusa')
   assert.ok(provider)
 
@@ -77,5 +78,11 @@ test('runApiPortalScraper maps Virtusa GraphQL jobs, resolves relative URLs, and
     requiredSkills: [],
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'discovery-only')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.pagesFetched, 1)
+  assert.equal(evidence.reason, 'api-portal-incomplete-listing-or-role-details:employer-description-unavailable')
 })

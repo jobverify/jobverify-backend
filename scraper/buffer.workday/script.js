@@ -1,18 +1,19 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import {collect} from './native.js'
+export {fetchNativePage,inspectEmptyPage} from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "buffer"
 export const COMPANY = "Buffer"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-08"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 10 exact-name sentinel for Buffer added on Saturday, August 8, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://buffer.com/journey'
+export const DISPOSITION = 'native-explicit-empty-contract-with-independent-closing'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Read the current official journey page; qualify zero only with visible employer-wide scope, corroborating native empty role data and a matching fresh independent closing read. Changed or unsupported positive schemas fail closed; no historical ATS URL supplies current inventory authority.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = async (options = {}) => collect(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

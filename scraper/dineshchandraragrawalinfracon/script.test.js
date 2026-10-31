@@ -252,16 +252,18 @@ test('DRA Infracon extracts the verified public first-party openings from the ca
 
   assert.equal(jobs.length, EXPECTED_TITLES.length)
   assert.deepEqual(jobs.map((job) => job.title), EXPECTED_TITLES)
-  assert.deepEqual(jobs[0], {
+  const {rawNativeRoleEvidence,...firstJob}=jobs[0]
+  assert.equal(rawNativeRoleEvidence.nativeRequisitionId,null)
+  assert.deepEqual(firstJob, {
     title: 'Project Manager',
     company: 'Dineshchandra R. Agrawal Infracon Private Limited',
     department: null,
     location: 'Tezpur - Assam',
     city: 'Tezpur',
     state: 'Assam',
-    country: 'India',
+    country: null,
     jobId: 'dineshchandraragrawalinfracon-project-manager',
-    requisitionId: 'dineshchandraragrawalinfracon-project-manager',
+    requisitionId: null,
     sourceUrl: CAREERS_URL,
     applyUrl: CAREERS_URL,
     employmentType: null,

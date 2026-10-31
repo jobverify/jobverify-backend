@@ -10,7 +10,7 @@ import { retainLegacyCv, removeCvDocuments } from '../services/cvRevisionService
 
 const metadata = resumeMetadata;
 const ownerFilter = user => ({ _id: user._id, user: user._id });
-const activeOwner = user => ({ _id: user._id, deactivated: { $ne: true }, outreachDeletingAt: null });
+const activeOwner = user => ({ _id: user._id, deactivated: { $ne: true }, accountDeletingAt: null });
 // Mongoose validation errors can contain the uploaded bytes. Log only error
 // classification, never a resume document, query payload, or filename.
 const failure = (res, error, message) => respondWithInternalError(res,

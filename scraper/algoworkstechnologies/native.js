@@ -21,6 +21,25 @@ const exceptions = new Map([
  ['81923',{title:'Lead Engineer',sha256:'3c62d1a762d97cff51eb807735abc2323fddc59abdfdcf8d302561fda968682b',role:'Lead Engineer',location:'India, Remote',city:'Remote'}],
 ])
 const fail = message => { throw new Error(`Algoworks native inventory: ${message}`) }
+const descriptionWorkplace = job => {
+ if(typeof job.description!=='string' || /<(?:style|link)\b/i.test(job.description)) fail(`unreviewed workplace header for ${job.id}`)
+ const document=readNativeDocument(job.description), blockTags=new Set(['div','p','li','h1','h2','h3','h4','h5','h6','td','th'])
+ const hasBlock=node=>node.children.some(child=>typeof child!=='string'&&!child.inert&&(blockTags.has(child.tag)||hasBlock(child)))
+ const blocks=document.nodes(node=>blockTags.has(node.tag)&&!hasBlock(node)).filter(node=>document.text(node))
+ const lines=blocks.map(node=>document.text(node)), header=lines.slice(0,3)
+ const role=header[0]?.match(/^Role:\s*(.+)$/i), workplace=header[1]?.match(/^Location:\s*(India(?:,\s*Remote)?)$/i)
+ const roleLines=lines.filter(line=>/^Role\s*:/i.test(line))
+ const workplaceLines=lines.filter(line=>/^(?:(?:Job\s+|Work\s+)?Location|Workplace)\s*:/i.test(line))
+ const tree=document.nodes(node=>node.tag==='root')[0]
+ const presentation=node=>Object.hasOwn(node.attrs,'class')||Object.hasOwn(node.attrs,'style')||Object.hasOwn(node.attrs,'id')
+   ||node.children.some(child=>typeof child!=='string'&&!child.inert&&presentation(child))
+ if(!role||role[1]!==text(job.title)||!workplace||!/^Experience:\s*\S/i.test(header[2]||'')
+   ||roleLines.length!==1||workplaceLines.length!==1||blocks.slice(0,3).some(presentation)
+   ||!document.text(tree).startsWith(header.join(' '))) fail(`unresolved or ambiguous role workplace header for ${job.id}`)
+ const remote=/,\s*Remote$/i.test(workplace[1]), location=remote?'India, Remote':'India'
+ return {location,city:remote?'Remote':null,evidence:{kind:'explicit-native-role-workplace-header',nativeRole:role[1],nativeLocation:workplace[1],
+   nativeField:'description.Role/Location',structuredLocationsMissing:true}}
+}
 const config = { source:'algoworkstechnologies', companyName:'Algoworks Technologies', officialUrl:official,
   handoffType:'embedded-script', handoffUrl:`${root}api/embedjobs/js/${identifier}`, kekaRootUrl:root,
   identifier, portalName:'default', portalIdentity:{name:'Algoworks Technologies Private Limited',shortName:'Algoworks Technologies Private Limited',domain:'algoworks.keka.com'} }
@@ -49,15 +68,17 @@ export async function runNativeInventory({ fetchImpl=fetch, signal, maxJobs, max
    seen.add(id)
    if(!Array.isArray(job.jobLocations)) fail(`missing geography array for ${id}`)
    if(!job.jobLocations.length) {
-    const rule=exceptions.get(id)
+    let rule=exceptions.get(id)
     const prefix=text(job.description).match(/^Role:\s*(.*?)\s+Location:\s*(.*?)\s+Experience:/i)
-    if(!rule || job.title!==rule.title || typeof job.description!=='string' || hash(job.description)!==rule.sha256
-      || !prefix || prefix[1]!==rule.role || prefix[2]!==rule.location) fail(`unresolved role geography for ${id}`)
+    if(rule) {
+     if(job.title!==rule.title || typeof job.description!=='string' || hash(job.description)!==rule.sha256
+       || !prefix || prefix[1]!==rule.role || prefix[2]!==rule.location) fail(`unresolved role geography for ${id}`)
+    } else rule=descriptionWorkplace(job)
     special.push({job,rule})
    }
   }
   // The shared strict engine still validates all normal location/country pairs.
-  // Only pinned role-owned exceptions bypass its city-required schema.
+  // Only verified role-owned country headers or retained exact-role evidence bypass its city-required schema.
   return new Response(JSON.stringify(raw.filter(job=>job.jobLocations.length)),{status:200})
  }})
  const group=JSON.parse(await request(`${root}api/embedjobs/grouplinkstatus/${identifier}`))
@@ -72,7 +93,7 @@ export async function runNativeInventory({ fetchImpl=fetch, signal, maxJobs, max
    sourceUrl:`${root}jobdetails/${job.id}`,applyUrl:`${root}jobdetails/${job.id}`,link:`${root}jobdetails/${job.id}`,
    jobDescription:text(job.description),experienceRequired:job.experience||null,department:job.departmentName||null,
    employmentType:Number(job.jobType)===2?'Full Time':null,requiredSkills:job.skillNames||[],postingDate:job.publishedOn?new Date(job.publishedOn).toISOString():null,
-   closingDate:null,publicExperienceChecked:true,sourceListingComplete:true,scrapedAt:new Date().toISOString(),sourceCountryEvidence:'exact-role-description-location-v1'})
+   closingDate:null,publicExperienceChecked:true,sourceListingComplete:true,scrapedAt:new Date().toISOString(),sourceCountryEvidence:rule.evidence||'exact-role-description-location-v1'})
  }
  for(const job of jobs) {
   const native=raw.find(row=>String(row.id)===job.jobId)

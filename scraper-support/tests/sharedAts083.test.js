@@ -4,7 +4,8 @@ import fs from 'node:fs'
 import { pathToFileURL, fileURLToPath } from 'node:url'
 import { gunzipSync } from 'node:zlib'
 globalThis.fetch = async () => { throw new Error('OFFLINE_FETCH_TRIPWIRE') }
-const { getScraperCatalog, createCatalogScraper } = await import('../providers/index.js')
+const { getScraperCatalog, createCatalogScraper, hydrateProviderCatalogEntry } = await import('../providers/index.js')
+const { createPublishingGapAtsScraper } = await import('../utils/publishingGapAts.js')
 const { readInventoryEvidence, isFreshCompleteInventoryEvidence } = await import('../utils/inventoryEvidence.js')
 const { identifyPublicAtsBoard, hasMatchingPublicAtsBinding } = await import('../utils/publicAtsIdentity.js')
 const { analyzePublishableJobs } = await import('../utils/publishableJobMetrics.js')
@@ -18,8 +19,29 @@ const catalog = getScraperCatalog()
 assert.equal(Object.keys(fixtures).length, 22)
 // Ebury now reconciles live native HTML pages and details in scraper/ebury/native.test.js.
 // Checkout.com current corporate proxy/native reconciliation is covered in scraper/checkoutcom/native.test.js.
+// These unchanged one-response fixtures and their original descriptors exercise
+// the historical shared API contract. Current source readers require separate
+// corporate/board/role HTTP evidence; this suite does not qualify them as current.
+const legacyDescriptors = JSON.parse(fs.readFileSync(new URL('../providers/providerExtensions/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz-verified-discovery-adapters-00083.json', import.meta.url)))
+const legacyCatalog = new Map(legacyDescriptors.map(row => [row.source, hydrateProviderCatalogEntry(row)]))
 const ids = Object.keys(fixtures).filter(source => !['ebury', 'checkoutcom'].includes(source)).sort()
-const unresolvedScopes = new Set(['characterai', 'checkoutcom', 'clearco', 'cohere', 'datafold', 'doximity', 'dutchie', 'ebury', 'elationhealth', 'eqtab', 'eqtcorporation', 'financialtimes'])
+const unresolvedScopes = new Set(['checkoutcom', 'clearco', 'cohere', 'datafold', 'doximity', 'dutchie', 'ebury', 'elationhealth', 'eqtcorporation', 'financialtimes'])
+
+test('archived country scope distinguishes explicit US records and unlocated prospect communities', () => {
+  assert.ok(fixtures.characterai.jobs.every(job => job.address.postalAddress.addressCountry === 'United States'))
+  const unlocated = fixtures.eqtab.jobs.filter(job => ['Global', 'Europe (Region)'].includes(job.location.name))
+  assert.equal(unlocated.length, 2)
+  assert.ok(unlocated.every(job => job.internal_job_id === null && /Community/i.test(job.title)))
+})
+
+test('cohere: registered identity-bound native reader clears historical static verification', () => {
+  const provider = catalog.find(row => row.source === 'cohere')
+  assert.equal(provider.adapter, 'script')
+  assert.equal(provider.verifiedOn, null);assert.equal(provider.verifiedAt, null)
+  assert.equal(provider.verifiedPublicJobCount, null);assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false);assert.equal(provider.lifecycleCleanupAllowed, false)
+  assert.equal(provider.zeroResultPolicy, 'coverage-gap')
+})
 
 test('checkoutcom: current native script reconciles details instead of the legacy one-response adapter', async () => {
   const { transport } = await import('../../scraper/checkoutcom/native.fixtures.js')
@@ -31,8 +53,8 @@ test('checkoutcom: current native script reconciles details instead of the legac
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })
 
-for (const source of ids) test(`${source}: exact registered board and direct wrapper retain current zero-match evidence`, async () => {
-  const provider = catalog.find(row => row.source === source)
+for (const source of ids) test(`${source}: historical shared API adapter and direct factory retain archived zero-match evidence`, async () => {
+  const provider = legacyCatalog.get(source)
   assert.equal(provider.adapter, 'publicAts')
   assert.equal(provider.sourceScopeComplete, false)
   assert.equal(hasMatchingPublicAtsBinding(provider), true)
@@ -54,8 +76,7 @@ for (const source of ids) test(`${source}: exact registered board and direct wra
   assert.equal(evidence.status, 'discovery-only')
   assert.equal(isFreshCompleteInventoryEvidence(evidence), false)
   assert.match(evidence.reason, /provider-source-scope-unresolved/)
-  const directPath = path.resolve(fileURLToPath(new URL('../../scraper/providers/', import.meta.url)), provider.modulePath)
-  const direct = await import(pathToFileURL(directPath).href)
+  const direct = createPublishingGapAtsScraper(provider)
   const directJobs = await direct.run({ fetchJson: async () => structuredClone(fixtures[source]) })
   assert.equal(directJobs.length, 0)
   assert.equal(readInventoryEvidence(directJobs).status, 'discovery-only')
@@ -71,9 +92,9 @@ test('company-advertised Europe-hosted Greenhouse boards match their exact token
   assert.equal(hasMatchingPublicAtsBinding({ atsPlatform: 'greenhouse', boardToken: 'other', bindingEvidence: { verified: true, matchedLinks: ['https://boards.eu.greenhouse.io/financialtimes33'] } }), false)
 })
 
-test('synthetic future India roles, missing descriptions, truncation and upstream failures exercise every newly connected source', async () => {
+test('synthetic future India, missing descriptions, truncation and failures exercise each historical shared API contract', async () => {
   for (const source of ids) {
-    const provider = catalog.find(row => row.source === source)
+    const provider = legacyCatalog.get(source)
     assert.equal(provider.adapter, 'publicAts')
     const date = new Date().toISOString()
     // Synthetic future fixtures only; these are never counted as actual openings.

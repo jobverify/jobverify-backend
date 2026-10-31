@@ -1,3 +1,4 @@
+import { createDeclaredJobFeedScraper, DECLARED_JOB_FEED_PROFILES } from '../../scraper-support/native-sources/declaredJobFeeds/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -171,45 +172,7 @@ export const extractAshbyJobs = (payload = {}) =>
     })
     .filter(Boolean)
 
-export const createRedpandaScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-  } = {}) {
-    const jobsPageHtml = await fetchText(JOBS_PAGE_URL)
-    if (!hasVerifiedJobsPageSignal(jobsPageHtml)) {
-      throw new Error('Verified Redpanda first-party jobs page changed materially')
-    }
-
-    const verifiedBoardSlug = extractVerifiedAshbyBoardSlug(jobsPageHtml)
-    if (verifiedBoardSlug !== ASHBY_BOARD_SLUG) {
-      throw new Error('Verified Redpanda Ashby handoff changed materially')
-    }
-
-    const verifiedJobBoardUrl = buildAshbyJobBoardUrl(verifiedBoardSlug)
-    if (verifiedJobBoardUrl !== ASHBY_JOB_BOARD_URL) {
-      throw new Error('Verified Redpanda Ashby handoff changed materially')
-    }
-
-    const payload = await fetchJson(ASHBY_JOB_BOARD_URL)
-    if (!Array.isArray(payload?.jobs)) {
-      throw new Error('Verified Redpanda Ashby payload changed materially')
-    }
-
-    const jobs = extractAshbyJobs(payload)
-    const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: now(),
-    }))
-  },
-})
+export const createRedpandaScraper = (options = {}) => createDeclaredJobFeedScraper(DECLARED_JOB_FEED_PROFILES.redpanda, options)
 
 export const run = async (options = {}) => createRedpandaScraper(options).run(options)
 

@@ -98,7 +98,7 @@ test('Baazi Games local catalog captures the verified no-public-jobs first-party
   assert.match(provider.verifiedSurfaceSummary, /AccessDenied/i)
 })
 
-test('Baazi Games scraper returns [] while the first-party site remains marketing and contact only', async () => {
+test('Baazi Games keeps a denied careers inventory unavailable after validated marketing and contact pages', async () => {
   const baazi = await loadScriptModule()
   const requestedUrls = []
 
@@ -108,7 +108,7 @@ test('Baazi Games scraper returns [] while the first-party site remains marketin
   assert.equal(baazi.hasPublicJobsSignal(homepageHtml), false)
   assert.equal(baazi.hasPublicJobsSignal(publicCareersHtml), true)
 
-  const jobs = await baazi.createBaaziGamesScraper().run({
+  await assert.rejects(baazi.createBaaziGamesScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === baazi.HOMEPAGE_URL) return homepageHtml
@@ -116,29 +116,27 @@ test('Baazi Games scraper returns [] while the first-party site remains marketin
       if (url === baazi.CAREERS_URL) return blockedCareersHtml
       throw new Error(`Unexpected Baazi URL: ${url}`)
     },
-  })
+  }), error => error.code === 'access_denied' && error.failureKind === 'incomplete_listing' && error.inventoryEvidence.reportedTotal === null)
 
   assert.deepEqual(requestedUrls, [
     baazi.HOMEPAGE_URL,
     baazi.CONTACT_URL,
     baazi.CAREERS_URL,
   ])
-  assert.deepEqual(jobs, [])
 })
 
-test('Baazi Games scraper also accepts the live 403 AccessDenied careers response', async () => {
+test('Baazi Games rejects the live 403 AccessDenied careers response with unknown inventory', async () => {
   const baazi = await loadScriptModule()
 
-  const jobs = await baazi.createBaaziGamesScraper().run({
+  await assert.rejects(baazi.createBaaziGamesScraper().run({
     fetchPage: async (url) => {
       if (url === baazi.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
       if (url === baazi.CONTACT_URL) return { status: 200, url, html: contactHtml }
       if (url === baazi.CAREERS_URL) return { status: 403, url, html: '<?xml version="1.0"?><Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>' }
       throw new Error(`Unexpected Baazi URL: ${url}`)
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), error => error.code === 'access_denied' && error.status === 403 && error.abortRetries === true
+    && error.inventoryEvidence.listingComplete === false && error.inventoryEvidence.indiaFacetCount === null)
 })
 
 test('Baazi Games scraper fails closed when a public jobs surface appears on the exact-name domain', async () => {

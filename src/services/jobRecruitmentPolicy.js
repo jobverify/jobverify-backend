@@ -7,6 +7,14 @@ const applicantExperienceRequirement = /\b(?:applicants?|candidates?|you)\s+(?:(
 const normalize = value => String(value || '').replace(/[\u2018\u2019]/g, "'").replace(/[\u2013\u2014]/g, '-');
 const clauses = text => normalize(text).split(/\n|[.;](?=\s|$)/).map(value => value.trim()).filter(Boolean);
 const negated = text => /\b(?:not|never|no longer|ineligible|cannot|can't|need not)\b/i.test(text);
+// The vacancy's own eligibility, not an occupation that trains or recruits freshers.
+export const fresherVacancyTitle = value => {
+  const title = normalize(value);
+  return /\bfreshers?\b/i.test(title)
+    && !/\b(?:no|not|non|never|cannot|ineligible|excluding|except|excluded)\b|\b\w+n't\b/i.test(title)
+    && !/\b(?:trainers?|training|mentors?|mentoring|instructors?|tutors?|coaches?|coaching|recruit(?:ers?|ment|ing)?|talent\s+acquisition|placements?)\b/i.test(title)
+    ? title : null;
+};
 const applicantContext = text => /\b(?:applicants?|candidates?|you)\s+(?:(?:who|must|should)\s+)?(?:(?:have|has|are|be)\s+)?(?:(?:currently|recently|just)\s+)?(?:pursuing|studying|enrolled|completed|finished|graduated|freshers?|fresh graduates?|recent graduates?|new graduates?)\b|\b(?:can|may|must|should|eligible to|encouraged to)\s+apply\b/i.test(text);
 const startsQualification = text => /^(?:(?:required|minimum|basic)\s+(?:qualifications?|requirements?)\s*:\s*)?(?:(?:currently\s+)?(?:pursuing|studying|enrolled)|recently\s+completed|just\s+completed|freshers?|fresh graduates?|recent graduates?|new graduates?|no (?:prior |previous |professional |work )?experience (?:is )?(?:required|necessary))\b/i.test(text);
 const unconditionalFresherEligibility = text => !negated(text) && !excludedStudentSubject.test(text)
@@ -72,7 +80,8 @@ export const collectRecruitmentFacts = input => {
     && (applicantContext(segment) || startsQualification(segment)
       || /\b(?:welcomes?|open to|suitable for|seeking)\s+(?:freshers?|fresh graduates?|recent graduates?|new graduates?)\b/i.test(segment))
     && (/\b(?:freshers?|fresh graduates?|recent graduates?|new graduates?|no (?:prior |previous |professional |work )?experience (?:is )?(?:required|necessary))\b/i.test(segment)
-      || (degree.test(segment) && /\b(?:recently|just)\s+(?:(?:have|has)\s+)?(?:completed|finished|graduated)|\b(?:completed|finished)\b.{0,65}\brecently\b/i.test(segment))));
+      || (degree.test(segment) && /\b(?:recently|just)\s+(?:(?:have|has)\s+)?(?:completed|finished|graduated)|\b(?:completed|finished)\b.{0,65}\brecently\b/i.test(segment))))
+    || fresherVacancyTitle(input.title);
   const completed = segments.find(segment => !negated(segment) && !excludedStudentSubject.test(segment) && degree.test(segment)
     && /\b(?:completed|finished|graduated)\b/i.test(segment));
   const experienced = !internshipTitle && !/\btrainee\b/i.test(input.title) && seniorRole.test(input.title) ? input.title
@@ -96,17 +105,18 @@ export const collectRecruitmentFacts = input => {
   return { internship, contract, fullTime, studying, recent, completed, experienced, cohorts, graduationEvidence: graduationSegments.join(' ').slice(0, 160), text };
 };
 
+// Optional experience on an alternative path is not mandatory for freshers.
+export const hasAlternativeFresherPath = (input, facts = collectRecruitmentFacts(input)) => Boolean(facts.recent && !input.sourceExperienceRequired
+    && /\bor\s+(?:\d+(?:\.\d+)?\s*(?:(?:-|to)\s*\d+(?:\.\d+)?\s*)?|one\s+|two\s+|three\s+)(?:years?|yrs?|months?)\b/i.test(facts.recent)
+    && !/\b(?:minimum(?: of)?|at least|requir(?:es|ed|ing)|must have)\s*:?\s*(?:\d|one\b|two\b|three\b)/i.test(input.body)
+    && !/\b(?:years?|yrs?|months?)\b[^.;\n]{0,70}\b(?:experience|background)\s+(?:is\s+)?(?:required|mandatory)\b/i.test(input.body));
+
 export const resolveRecruitmentPolicy = (input, { numeric, sourceEmployment, modelEmployment, modelExperience } = {}) => {
   if (input.incomplete) return null;
   const facts = collectRecruitmentFacts(input);
   const min = numeric.experienceProfile.minimumYears;
   const explicitZero = min === 0 || /^freshers?$/i.test(input.sourceExperienceRequired);
-  // An employer can offer separate fresher and experienced paths. Numeric
-  // bounds on that alternative do not make experience mandatory for freshers.
-  const alternativeFresherPath = facts.recent && !input.sourceExperienceRequired
-    && /\bor\s+(?:\d+(?:\.\d+)?\s*(?:(?:-|to)\s*\d+(?:\.\d+)?\s*)?|one\s+|two\s+|three\s+)(?:years?|yrs?|months?)\b/i.test(facts.recent)
-    && !/\b(?:minimum(?: of)?|at least|requir(?:es|ed|ing)|must have)\s*:?\s*(?:\d|one\b|two\b|three\b)/i.test(input.body)
-    && !/\b(?:years?|yrs?|months?)\b[^.;\n]{0,70}\b(?:experience|background)\s+(?:is\s+)?(?:required|mandatory)\b/i.test(input.body);
+  const alternativeFresherPath = hasAlternativeFresherPath(input, facts);
   // User-approved category defaults override employer fields, which remain separately stored.
   const employment = facts.internship || facts.studying ? 'internship' : sourceEmployment || (facts.contract ? 'contract'
     : facts.fullTime ? 'full_time'

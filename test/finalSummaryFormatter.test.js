@@ -3,6 +3,22 @@ import test from 'node:test'
 
 import { formatFinalSummaryTable } from '../scraper-support/finalSummaryFormatter.js'
 
+test('summary exposes recovered nested retries and rate limits separately from source retries', () => {
+  const output = formatFinalSummaryTable({
+    recovered: { success: true, jobs: 2, durationMs: 100,
+      retry: { attemptsUsed: 1, retries: 0, retryDelayMs: 0 },
+      retryPressure: { nestedScopes: 2, nestedAttempts: 3, nestedRetries: 1,
+        nestedFailedAttempts: 1, nestedRetryDelayMs: 1500, httpStatusCounts: { 429: 1 },
+        sourceAdmission: { groups: ['workday:wd1'], admittedAttempts: 1, queuedAttempts: 1, queueWaitMs: 2000 } } },
+  })
+  assert.match(output, /Nested retry attempts\s+\| 1/)
+  assert.match(output, /Nested retry backoff\s+\| 1\.5s/)
+  assert.match(output, /Shared HTTP 429 responses\s+\| 1/)
+  assert.match(output, /Sources retried\s+\| 0/)
+  assert.match(output, /Workday queued sources\s+\| 1/)
+  assert.match(output, /Workday source queue time\s+\| 2\.0s/)
+})
+
 test('console separates successful tasks from complete extraction and prioritizes skipped sources', () => {
   const completedAt = new Date(Date.now() - 1000).toISOString()
   const inventoryEvidence = { status: 'complete-inventory', firstParty: true, listingComplete: true,

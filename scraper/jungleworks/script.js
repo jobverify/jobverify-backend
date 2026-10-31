@@ -5,7 +5,8 @@ import { document, norm } from '../../scraper-support/shared/rmkNativePairHtml.j
 import { nativeCountryName, nativeLocationCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 import { activeScripts, extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
 import { parseJavaScriptLiteral, decodeJavaScriptStringLiteral } from '../../scraper-support/utils/safeLiteral.js'
-import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachInventoryEvidence, normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { buildHttpError } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'jungleworks'
 export const COMPANY = 'Jungleworks'
@@ -97,7 +98,18 @@ export const run = async ({ fetchImpl = fetch, signal, timeoutMs = 45000, now = 
       combined.throwIfAborted()
       const response = await fetchImpl(url, { signal: combined, redirect: 'error', headers: { Accept: 'text/html,application/json', 'User-Agent': 'Mozilla/5.0' } })
       combined.throwIfAborted()
-      proof(response.status === 200 && response.url === url, 'native HTTP status or redirect mismatch')
+      if (response.status !== 200 || response.url !== url) {
+        const error = response.status !== 200 ? buildHttpError(response, url) : Error('Jungleworks native final URL changed')
+        const reason = `Jungleworks native HTTP ${response.status} for ${url}; final URL ${response.url}; inventory unavailable`
+        Object.assign(error, {message: reason, code: [401,403].includes(response.status) ? 'access_denied' : 'native_inventory_unavailable',
+          requestUrl: url, finalUrl: response.url, failureKind: 'incomplete_listing', source: SOURCE,
+          sourceListingComplete: false, sourceScopeComplete: false,
+          inventoryEvidence: normalizeInventoryEvidence({status:'coverage-gap',surface:url,firstParty:true,listingComplete:false,
+            pagesFetched:pagesFetched+1,reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason})})
+        if ([202,401,403].includes(response.status) || response.url !== url) error.abortRetries = true
+        void Promise.resolve().then(() => response.body?.cancel?.(error)).catch(() => {})
+        throw error
+      }
       const body = await response.text()
       combined.throwIfAborted()
       pagesFetched++

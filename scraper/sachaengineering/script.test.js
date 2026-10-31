@@ -225,7 +225,7 @@ test('SACHA Engineering validates the official homepage, careers handoff, and Be
       department: null,
       location: null,
       city: null,
-      country: 'India',
+      country: null,
       sourceUrl: 'https://bell.careers/company/sacha?tab=jobs',
       applyUrl: 'https://bell.careers/company/sacha?tab=jobs',
       employmentType: 'Full-time',
@@ -267,7 +267,7 @@ test('SACHA Engineering validates the official homepage, careers handoff, and Be
       department: null,
       location: null,
       city: null,
-      country: 'India',
+      country: null,
       sourceUrl: 'https://bell.careers/company/sacha?tab=jobs',
       applyUrl: 'https://bell.careers/company/sacha?tab=jobs',
       employmentType: 'Full-time',
@@ -391,7 +391,7 @@ test('SACHA Engineering run fetches the official homepage, careers handoff page,
   )
 })
 
-test('SACHA Engineering accepts Bell title drift and excludes roles without India evidence', async () => {
+test('SACHA Engineering accepts Bell title drift and retains unknown-country roles without salary inference', async () => {
   const sachaengineering = await loadSachaEngineeringModule()
   const payload = JSON.parse(bellCompanyApiPage1Json)
   payload.next = null
@@ -408,8 +408,9 @@ test('SACHA Engineering accepts Bell title drift and excludes roles without Indi
     fetchBellCompanyApiPage: async () => payload,
   })
 
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].country, null)
+  assert.equal(jobs[1].country, null)
   assert.equal(jobs[0].jobId, 'sachaengineering-190')
 })
 

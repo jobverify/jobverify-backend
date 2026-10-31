@@ -200,11 +200,11 @@ test('SatSure scraper helpers stay pinned to the verified first-party careers pa
   assert.equal(jobs[1].location, null)
   assert.equal(jobs[1].city, null)
   assert.equal(jobs[1].state, null)
-  assert.equal(jobs[1].country, 'India')
+  assert.equal(jobs[1].country, null)
   assert.equal(jobs[1].applyUrl, 'https://satsure.keka.com/careers/applyjob/153042')
 })
 
-test('SatSure scraper returns India jobs from the verified Keka embed feed', async () => {
+test('SatSure scraper retains India and country-unknown observations from the verified Keka embed feed', async () => {
   const satSure = await loadModule()
   const requestedUrls = []
 
@@ -246,7 +246,7 @@ test('SatSure scraper returns India jobs from the verified Keka embed feed', asy
   assert.equal(jobs[0].atsPlatform, 'keka-embed-api')
   assert.equal(jobs[0].scrapedAt, '2026-08-04T11:22:33.000Z')
   assert.equal(jobs[1].title, 'Machine Learning Engineer - 2')
-  assert.equal(jobs[1].country, 'India')
+  assert.equal(jobs[1].country, null)
 })
 
 test('SatSure scraper fails closed when the verified first-party page or Keka identity drifts materially', async () => {

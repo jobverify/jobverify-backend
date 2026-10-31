@@ -18,7 +18,9 @@ import {
   saveDryRunSnapshot,
   saveToDB,
 } from './utils/saveToDB.js'
-import { getRetryMetadata, withRetry } from './utils/retry.js'
+import { getRetryMetadata, getRetryPressure, withRetry } from './utils/retry.js'
+import { recordSourceAdmission } from './utils/retryPressure.js'
+import { acquireWorkdaySourceAdmission } from './shared/workdaySourceAdmission.js'
 import { runWithNativeDetailRecovery } from './utils/nativeDetailRecovery.js'
 import { analyzePublishableJobs } from './utils/publishableJobMetrics.js'
 import {
@@ -53,6 +55,8 @@ import {
 } from './utils/inventoryEvidence.js'
 import { extractionDetailHealth } from './utils/extractionDetailHealth.js'
 import { extractionRawJobMetrics } from './utils/extractionRawJobMetrics.js'
+import { readInventoryDelegationEvidence } from './utils/inventoryDelegationEvidence.js'
+import { readSourceObservationEvidence } from './utils/sourceObservationEvidence.js'
 import { initializeScraperProxyEnvironment } from './utils/proxyEnvironment.js'
 
 const isDryRun = process.argv.includes('--dry-run')
@@ -70,6 +74,10 @@ export const buildScraperAttemptDiagnostics = (jobs, analysis = analyzePublishab
   filteredNonJob: analysis.filterCounts.nonJob,
   inventoryEvidence: readInventoryEvidence(jobs),
   detailHealth: extractionDetailHealth(analysis.indiaJobs),
+  ...(readInventoryDelegationEvidence(jobs)
+    ? { inventoryDelegationEvidence: readInventoryDelegationEvidence(jobs) } : {}),
+  ...(readSourceObservationEvidence(jobs, provider.source)
+    ? { sourceObservations: readSourceObservationEvidence(jobs, provider.source) } : {}),
 })
 const resolveExecutionPath = (value) => {
   if (value == null || value === '') return null
@@ -775,16 +783,55 @@ export const runScraperWithTimeout = async (
   scraper,
   timeoutMs = resolveScraperTimeoutMs(undefined, scraper),
   { abortGraceMs = DEFAULT_ABORT_GRACE_MS, signal = null,
-    nativeDetailRecovery = /^(?:1|true|yes)$/i.test(process.env.SCRAPER_NATIVE_DETAIL_RECOVERY || '') } = {},
+    nativeDetailRecovery = /^(?:1|true|yes)$/i.test(process.env.SCRAPER_NATIVE_DETAIL_RECOVERY || ''),
+    onAdmission = null, admissionTimeoutMs } = {},
 ) => {
-  if (!nativeDetailRecovery) return runBoundedScraperPass(scraper, timeoutMs, { abortGraceMs, signal })
-  return runWithNativeDetailRecovery((recovery, recoverySignal) => {
-    // Leave a settlement margin inside the unchanged source attempt deadline.
-    recovery.passDeadlineAt = timeoutMs > 0 ? Date.now() + Math.max(1, timeoutMs - Math.min(1000, timeoutMs / 10)) : null
-    return runBoundedScraperPass({ ...scraper,
-      run: options => scraper.run({ ...options, nativeDetailRecovery: recovery }),
-    }, timeoutMs, { abortGraceMs, signal: recoverySignal })
-  }, { signal })
+  let lease = null, waiting = null
+  const nativeOperations = new Set()
+  const reportAdmission = event => {
+    recordSourceAdmission(event)
+    onAdmission?.(event)
+    console.log(formatSourceStageLog({ source: scraper.name, stage: 'admission', status: event.status,
+      durationMs: event.queueWaitMs, error: event.groupKey }))
+  }
+  try {
+    lease = await acquireWorkdaySourceAdmission(scraper, { signal, admissionTimeoutMs,
+      onWait: event => {
+        waiting = { ...event, startedAt: Date.now() }
+        reportAdmission({ ...event, status: 'waiting' })
+      },
+    })
+    const operationSignal = lease?.signal || signal
+    if (lease) reportAdmission({ status: 'admitted', groupKey: lease.groupKey, queueWaitMs: lease.queueWaitMs })
+    const admittedScraper = lease ? { ...scraper, run: options => {
+      const operation = Promise.resolve().then(() => {
+        options?.signal?.throwIfAborted()
+        return scraper.run(options)
+      })
+      nativeOperations.add(operation)
+      operation.then(() => nativeOperations.delete(operation), () => nativeOperations.delete(operation))
+      return operation
+    } } : scraper
+    if (!nativeDetailRecovery) return await runBoundedScraperPass(admittedScraper, timeoutMs, { abortGraceMs, signal: operationSignal })
+    return await runWithNativeDetailRecovery((recovery, recoverySignal) => {
+      // The attempt clock starts after admission; queue time remains bounded
+      // by the source lifecycle and lease deadline and is reported separately.
+      recovery.passDeadlineAt = timeoutMs > 0 ? Date.now() + Math.max(1, timeoutMs - Math.min(1000, timeoutMs / 10)) : null
+      return runBoundedScraperPass({ ...admittedScraper,
+        run: options => admittedScraper.run({ ...options, nativeDetailRecovery: recovery }),
+      }, timeoutMs, { abortGraceMs, signal: recoverySignal })
+    }, { signal: operationSignal })
+  } catch (error) {
+    if (!lease && waiting) reportAdmission({ status: 'cancelled', groupKey: waiting.groupKey,
+      queueWaitMs: Math.max(0, Date.now() - waiting.startedAt) })
+    throw error
+  } finally {
+    // An abort-grace expiry bounds the caller's wait, not the native operation.
+    // Quarantine its shard until the actual source Promise settles. Queued
+    // sources retain their own finite admission deadlines during quarantine.
+    if (lease && nativeOperations.size) Promise.allSettled([...nativeOperations]).then(() => lease.release())
+    else lease?.release()
+  }
 }
 
 const formatPersistenceSummary = (result) => {
@@ -1204,8 +1251,9 @@ export const runAll = async ({ stopSignal = null } = {}) => {
     let capturedAt = null
     let processingStarted = false
     let attemptDiagnostics = {}
+    let scrapeOperation
     try {
-      const jobs = await withRetry(
+      scrapeOperation = withRetry(
         () => runScraperAttemptWithRetryPolicy(scraper, { signal: stopSignal }),
         {
           attempts: resolveScraperRetryAttempts(scraper),
@@ -1214,6 +1262,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
           signal: stopSignal,
         },
       )
+      const jobs = await scrapeOperation
       if (!Array.isArray(jobs) || jobs.some(job => !job || typeof job !== 'object' || Array.isArray(job))) {
         throw new Error(`[${scraper.name}] Expected an array of job records from the scraper`)
       }
@@ -1261,6 +1310,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
 
       if (zeroJobEvidence) result.zeroJobEvidence = zeroJobEvidence
       result.retry = getRetryMetadata(jobs)
+      result.retryPressure = getRetryPressure(scrapeOperation)
       result.durationMs = Date.now() - scraperStart
       summary[scraper.name] = finishScraperProcessing({
         success: true,
@@ -1294,6 +1344,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         error: err.message,
         ...(err.classificationPending ? { classificationPending: true } : {}),
         retry: getRetryMetadata(err),
+        retryPressure: getRetryPressure(scrapeOperation),
         durationMs: Date.now() - scraperStart,
         ...classification,
         ...(isMongoOperationalError(err, { networkCodes: processingStarted }) ? pendingPersistenceResult(err) : {}),
@@ -1398,11 +1449,12 @@ export const runScraper = async (
   let capturedAt = null
   let processingStarted = false
   let attemptDiagnostics = {}
+  let scrapeOperation
   try {
     throwIfAborted(lifecycleSignal)
     const scrapeStageStart = Date.now()
     logStage({ stage: 'scrape', status: 'start' })
-    const jobs = await withRetry(
+    scrapeOperation = withRetry(
       () => runScraperAttemptWithRetryPolicy(scraper, { signal: lifecycleSignal }),
       {
         attempts: resolveScraperRetryAttempts(scraper),
@@ -1411,6 +1463,7 @@ export const runScraper = async (
         signal: lifecycleSignal,
       },
     )
+    const jobs = await scrapeOperation
     if (!Array.isArray(jobs) || jobs.some(job => !job || typeof job !== 'object' || Array.isArray(job))) {
       throw new Error(`[${scraper.name}] Expected an array of job records from the scraper`)
     }
@@ -1472,6 +1525,7 @@ export const runScraper = async (
     throwIfAborted(lifecycleSignal)
     if (zeroJobEvidence) result.zeroJobEvidence = zeroJobEvidence
     result.retry = retry
+    result.retryPressure = getRetryPressure(scrapeOperation)
     result.dataQuality = dataQuality
     result.durationMs = Date.now() - scraperStart
     const successResult = finishScraperProcessing({
@@ -1508,6 +1562,7 @@ export const runScraper = async (
       error: err.message,
       ...(err.classificationPending ? { classificationPending: true } : {}),
       retry: getRetryMetadata(err),
+      retryPressure: getRetryPressure(scrapeOperation),
       durationMs: Date.now() - scraperStart,
       ...classification,
       ...(isMongoOperationalError(err, { networkCodes: processingStarted }) ? pendingPersistenceResult(err) : {}),

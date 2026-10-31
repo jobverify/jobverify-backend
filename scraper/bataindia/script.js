@@ -258,7 +258,8 @@ export const extractSearchResults = (html) => {
     .filter(Boolean)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -275,7 +276,19 @@ export const createBataIndiaScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
+    const { signal } = options
+    const rawFetchText = options.fetchText || defaultFetchText
+    const fetchText = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const value = await rawFetchText(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return value
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
 
     try {
       const officialHomepageHtml = await fetchText(HOMEPAGE_URL)
@@ -288,6 +301,7 @@ export const createBataIndiaScraper = ({
         throw new Error('Bata India homepage Careers link changed materially')
       }
     } catch (error) {
+      signal?.throwIfAborted()
       if (!isOfficialPageTimeoutError(error)) {
         throw error
       }

@@ -3,6 +3,7 @@ import {fileURLToPath} from 'node:url'
 import FEDILITY_INVESTMENTS_CATALOG from './catalog.js'
 import {createFidelityScraper,extractJobsFromFeed as legacyFeedRows,normalizeEmploymentType,createDefaultFetchText} from '../fidelity/script.js'
 import {parseFidelityBoard,parseFidelityFeed} from '../fidelity/nativeContract.js'
+import {runWithFidelityDelegation} from './nativeDelegation.js'
 
 export const PROVIDER_METADATA=FEDILITY_INVESTMENTS_CATALOG
 export const SOURCE='fedilityinvestments'
@@ -22,7 +23,10 @@ export const hasOfficialJobsPageSignal=(html='')=>{try{parseFidelityBoard(html);
 export const hasOfficialJobsFeedSignal=(xml='',options={})=>{try{parseFidelityFeed(xml,options);return true}catch{return false}}
 // Preserve actual canonical job.source/company; provider decoration and normal
 // persistence already honor these fields. The misspelled registered ID remains.
-export const createFedilityInvestmentsScraper=(defaults={})=>createFidelityScraper(defaults)
+export const createFedilityInvestmentsScraper=(defaults={})=>{
+ const canonical=createFidelityScraper(defaults)
+ return {run:(options={})=>runWithFidelityDelegation(canonical,options)}
+}
 export const run=async(options={})=>createFedilityInvestmentsScraper().run(options)
 if(process.argv[1]===fileURLToPath(import.meta.url)){
  const{saveToDB,saveToFile}=await import('../../scraper-support/utils/saveToDB.js'),jobs=await run()

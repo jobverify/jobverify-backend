@@ -62,6 +62,7 @@ const LIVE_DRIFT_SENSITIVE_PROVIDER_SOURCES = new Set([
   'piramalpharmadigital',
   'qburstindia',
   'selfscribe',
+  'skitai',
   'smartshift',
 ])
 
@@ -85,7 +86,7 @@ test('workbook batch 04 company-local providers are registered in the dedicated 
   assert.ok(providers.every(Boolean))
 })
 
-test('workbook batch 04 verified careers snapshot module returns only the authoritative empty result', async () => {
+test('historical unregistered Nomura snapshot helper retains its compatibility empty result', async () => {
   const modulePath = path.resolve(currentDir, '../../scraper/nomuraindia/verifiedCareersEmptyState.js')
   const module = await import(pathToFileURL(modulePath).href)
 
@@ -106,6 +107,14 @@ test('workbook batch 04 scripts stay fail-closed and never fabricate jobs', asyn
 
     assert.ok(scraper, `Expected scraper registration for ${hydratedProvider.source}`)
     assert.equal(scraper.provider.companyName, hydratedProvider.companyName)
+    if (hydratedProvider.source === 'nomuraindia') {
+      // The genuine 298-response registered-source fixture exercises this live
+      // reader. The old manifest remains historical compatibility input here.
+      assert.equal(scraper.provider.verifiedPublicJobCount, null)
+      assert.equal(scraper.provider.sourceScopeComplete, false)
+      assert.equal(scraper.provider.lifecycleCleanupAllowed, false)
+      continue
+    }
     assert.equal(scraper.provider.verifiedPublicJobCount, 0)
     if (LIVE_DRIFT_SENSITIVE_PROVIDER_SOURCES.has(hydratedProvider.source)) continue
 

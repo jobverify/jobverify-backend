@@ -1,7 +1,5 @@
-export const createFailClosedSentinelScraper = () => ({
-  async run() {
-    return []
-  },
-})
+import {run as runNative} from './script.js'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const createFailClosedSentinelScraper = () => ({run:runNative})
+
+export const run = async (options = {}) => runNative(options)

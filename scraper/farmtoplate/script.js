@@ -1,7 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
+import { farmVisibleText, visibleFarmCareersHandoff, readFarmOpeningEvidence, readFarmNativeRole } from './nativeRoleContent.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const listingUrlEvidence = new WeakMap()
 
 export const SOURCE = 'farmtoplate'
 export const COMPANY = 'Farm To Plate'
@@ -111,13 +115,13 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, options = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    signal: createTimeoutSignal(20000),
+    signal: AbortSignal.any([createTimeoutSignal(20000), ...(options.signal ? [options.signal] : [])]),
   })
 
   return {
@@ -224,6 +228,8 @@ const extractExperienceRequired = (lines) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  // Keep the existing literal drift marker; the visible career anchor supplies
+  // the public handoff, independent of animated marketing copy.
   const text = normalizeVisibleText(page)
 
   return /<title>\s*Supply chain track and trace \| Blockchain \| Farm To Plate\s*<\/title>/i.test(page)
@@ -231,6 +237,7 @@ export const hasOfficialHomepageSignal = (html) => {
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Farm to Plate["']/i.test(page)
     && text.includes('build a transparent, tech-driven, food supply chain of tomorrow')
     && page.includes('/about-us/careers-and-joining-the-team')
+    && visibleFarmCareersHandoff(page)
 }
 
 export const hasVerifiedPageSitemapSignal = (xml) => {
@@ -242,7 +249,7 @@ export const hasVerifiedPageSitemapSignal = (xml) => {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  const text = normalizeVisibleText(page)
+  const text = farmVisibleText(page).toLowerCase()
 
   return /<title>\s*Careers\s*&amp;\s*Joining the Team\s*-\s*Farm to Plate\s*<\/title>/i.test(page)
     && text.includes('careers & joining the team')
@@ -253,6 +260,7 @@ export const hasOfficialCareersSignal = (html) => {
 
 export const extractOpeningCards = (html) => {
   const page = String(html ?? '')
+  const { visibleUrls, headerLinks } = readFarmOpeningEvidence(page)
   const cardMatches = [...page.matchAll(
     /<h2\b[^>]*>\s*(?:<a\b[^>]*>)?\s*Position:\s*([\s\S]*?)<br\s*\/?>\s*Vacancy:\s*(\d+)(?:<\/a>)?\s*<\/h2>/gi,
   )]
@@ -266,11 +274,15 @@ export const extractOpeningCards = (html) => {
     )
       || extractLastMatch(block, /href=["']([^"']+)["']/i)
 
-    return {
+    if (!visibleUrls.has(normalizeUrl(detailUrl))) throw new Error('Farm To Plate active opening URL is unavailable')
+    const card = {
       title: normalizeWhitespace(match[1]),
       vacancy: Number.parseInt(match[2], 10),
       detailUrl: normalizeUrl(detailUrl),
     }
+    listingUrlEvidence.set(card, [detailUrl, ...(headerLinks.get(card.title) || [])]
+      .map(href => ({ href, absoluteUrl: normalizeUrl(href) })))
+    return card
   })
 }
 
@@ -285,6 +297,13 @@ const cardsMatchExpected = (cards) =>
   })
 
 export const extractRoleDetail = ({ title, detailUrl, html }) => {
+  const native = readFarmNativeRole({ title, detailUrl: normalizeUrl(detailUrl), html })
+  return { title, requisitionId: null, sourceUrl: normalizeUrl(detailUrl), employmentType: null,
+    experienceRequired: native.rawNativeRoleEvidence.identityQualified ? extractExperienceRequired(native.lines) : null,
+    ...Object.fromEntries(Object.entries(native).filter(([key]) => key !== 'lines')) }
+}
+
+const extractLegacyRoleDetail = ({ title, detailUrl, html }) => {
   const relevantLines = extractRelevantDetailLines({ title, html })
   const applyUrl = normalizeWhitespace(
     extractLastMatch(
@@ -309,19 +328,22 @@ export const extractRoleDetail = ({ title, detailUrl, html }) => {
 }
 
 const buildJob = ({ card, detail }) => {
-  const jobId = `${SOURCE}-${slugify(card.title)}`
+  const jobId = SOURCE + '-' + new URL(detail.sourceUrl).pathname.split('/').filter(Boolean).at(-1)
 
   if (!jobId) {
     throw new Error(`Farm To Plate role could not be normalized: "${card.title}"`)
   }
 
+  const listingUrls = listingUrlEvidence.get(card) || []
+  const listingIdentityQualified = listingUrls.every(url => url.absoluteUrl === card.detailUrl)
+  const identityQualified = listingIdentityQualified && detail.rawNativeRoleEvidence.identityQualified
   return {
     title: card.title,
     company: COMPANY,
     department: null,
     location: null,
     city: null,
-    country: 'India',
+    country: null,
     jobId,
     requisitionId: detail.requisitionId,
     sourceUrl: detail.sourceUrl,
@@ -333,24 +355,30 @@ const buildJob = ({ card, detail }) => {
     requiredSkills: [],
     postingDate: null,
     closingDate: null,
-    jobDescription: detail.jobDescription,
+    jobDescription: listingIdentityQualified ? detail.jobDescription : null,
     remoteStatus: null,
+    sourceDetailComplete: listingIdentityQualified && detail.sourceDetailComplete,
+    publicExperienceChecked: listingIdentityQualified && detail.publicExperienceChecked,
+    ...(!listingIdentityQualified ? { sourceDetailFailureKind: 'identity-mismatch' }
+      : detail.sourceDetailFailureKind ? { sourceDetailFailureKind: detail.sourceDetailFailureKind } : {}),
+    rawNativeRoleEvidence: { ...detail.rawNativeRoleEvidence, listingUrls, listingIdentityQualified, identityQualified },
   }
 }
 
 export const createFarmToPlateScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchPage = defaultFetchPage, now: overrideNow } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, now: overrideNow, signal } = {}) {
+    const read = async url => { signal?.throwIfAborted(); const page = await fetchPage(url, { signal }); signal?.throwIfAborted(); return page }
+    const homepage = await read(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Farm To Plate official homepage no longer matches the verified first-party surface')
     }
 
-    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
+    const pageSitemap = await read(PAGE_SITEMAP_URL)
     if (pageSitemap.status !== 200 || !hasVerifiedPageSitemapSignal(pageSitemap.html)) {
       throw new Error('Farm To Plate page sitemap no longer advertises the verified careers surface')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
+    const careersPage = await read(CAREERS_URL)
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('Farm To Plate verified careers page no longer matches the known first-party jobs surface')
     }
@@ -364,7 +392,7 @@ export const createFarmToPlateScraper = ({ now = () => new Date().toISOString() 
     const jobs = []
 
     for (const card of cards) {
-      const detailPage = await fetchPage(card.detailUrl)
+      const detailPage = await read(card.detailUrl)
 
       if (detailPage.status !== 200) {
         throw new Error(`Farm To Plate role detail page failed to load for "${card.title}"`)
@@ -388,7 +416,13 @@ export const createFarmToPlateScraper = ({ now = () => new Date().toISOString() 
       })
     }
 
-    return jobs
+    attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows', observedRecordCount: cards.length,
+      observedVacancyCount: cards.length, sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null })
+    return attachInventoryEvidence(jobs, { status: 'discovery-only', surface: CAREERS_URL, firstParty: true,
+      listingComplete: false, pagesFetched: 3 + cards.length, reportedTotal: null, indiaFacetCount: null, verifiedAt: null,
+      reason: 'farm-native-vacancy-observations'
+        + (jobs.some(job => !job.rawNativeRoleEvidence.identityQualified) ? ';native-identity-conflict' : '')
+        + ';workplace-country-company-scope-unconfirmed;closing-not-read' })
   },
 })
 

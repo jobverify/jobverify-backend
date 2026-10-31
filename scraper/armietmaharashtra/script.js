@@ -3,6 +3,9 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
+import { hasActiveArmietSurface, readArmietAdverts } from './nativeAdverts.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -97,10 +100,7 @@ const buildJobDescription = (lines, requiredSkills, minimumQualification) => {
 }
 
 export const hasOfficialCareersSignal = (html) => {
-  const page = String(html ?? '')
-  return /<h[1-3][^>]*>\s*Career\s*<\/h[1-3]>/i.test(page)
-    && /armietdigital@gmail\.com/i.test(page)
-    && /forms\.gle\/SAVWB6HD2V7bKv7x6/i.test(page)
+  return hasActiveArmietSurface(String(html ?? ''))
 }
 
 export const extractPublicListings = (html) => {
@@ -110,31 +110,28 @@ export const extractPublicListings = (html) => {
 
   const jobs = []
 
-  for (const match of String(html ?? '').matchAll(/<h4\b[^>]*>([\s\S]*?)<\/h4>([\s\S]*?)(?=<h4\b|<a\b[^>]*href=|$)/gi)) {
-    const title = cleanLine(match[1])
-    const lines = htmlToLines(match[2])
-    const slug = slugify(title)
+  for (const advert of readArmietAdverts(String(html ?? ''))) {
+    const { title, lines } = advert
 
-    if (!title || !slug) continue
+    if (!title) continue
 
     const requiredSkills = extractRequiredSkills(lines)
     const minimumQualification = parseLabelValue(lines, ['Eligibility', 'Qualification'])
     const employmentType = parseLabelValue(lines, ['Job Types', 'Job Type'])
     const locationValue = parseLabelValue(lines, ['Teaching Location', 'Job Location', 'Location'])
-    const location = normalizeLocation(locationValue)
-    const city = normalizeCity(cleanLine(String(locationValue ?? '').split(',')[0] || null))
+    const location = locationValue || null
 
     jobs.push({
       title,
       company: COMPANY,
       department: extractDepartment(title),
       location,
-      city,
-      country: 'India',
-      jobId: `${SOURCE}-${slug}`,
-      requisitionId: `${SOURCE}-${slug}`,
-      sourceUrl: `${CAREERS_URL}#${slug}`,
-      applyUrl: APPLY_URL,
+      city: null,
+      country: null,
+      jobId: null,
+      requisitionId: null,
+      sourceUrl: advert.sourceUrl,
+      applyUrl: advert.applyUrl,
       employmentType,
       experienceRequired: null,
       minimumQualification,
@@ -142,8 +139,11 @@ export const extractPublicListings = (html) => {
       requiredSkills,
       postingDate: null,
       closingDate: null,
-      jobDescription: buildJobDescription(lines, requiredSkills, minimumQualification),
-      remoteStatus: 'On-site',
+      jobDescription: lines.join('\n') || null,
+      remoteStatus: null,
+      sourceDetailComplete: false,
+      publicExperienceChecked: false,
+      sourceDetailFailureKind: 'missing-content',
     })
   }
 
@@ -154,25 +154,34 @@ export const extractPublicListings = (html) => {
   return jobs
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  attempts: 1,
+  signal: options.signal,
 })
 
 export const createArmietMaharashtraScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, now: overrideNow, signal } = {}) {
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
 
-    return extractPublicListings(careersHtml).map((job) => ({
+    const jobs = extractPublicListings(careersHtml).map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: (overrideNow || now)(),
     }))
+    attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows', observedRecordCount: jobs.length,
+      observedVacancyCount: jobs.length, sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null })
+    return attachInventoryEvidence(jobs, { status: 'discovery-only', surface: CAREERS_URL, firstParty: true,
+      listingComplete: false, pagesFetched: 1, reportedTotal: null, indiaFacetCount: null, verifiedAt: null,
+      reason: 'armiet-native-role-adverts-only;full-native-jd-and-company-scope-unconfirmed;closing-not-read' })
   },
 })
 

@@ -1,7 +1,7 @@
+import {readRoleControls,advertisedRoleClient,readLiteralRoles,norm} from './native.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -71,13 +71,7 @@ const extractBlock = (text, startPattern, endPattern) => {
   return normalizeWhitespace(end >= 0 ? remainder.slice(0, end) : remainder)
 }
 
-const normalizeLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  if (/india/i.test(normalized)) return normalized
-  if (/bangalore/i.test(normalized)) return 'Bangalore, Karnataka, India'
-  return `${normalized}, India`
-}
+const normalizeLocation = value => normalizeWhitespace(value) || null
 
 const extractTechnicalSkills = (text) => normalizeWhitespace(text)
   ?.split(/\s*(?:;|\||,)\s*/g)
@@ -109,9 +103,9 @@ const buildDetailedJob = (text) => {
     department: afterDepartment || null,
     location,
     city: location?.startsWith('Bangalore') ? 'Bangalore' : null,
-    country: 'India',
+    country: /\bIndia\b/i.test(location || '') ? 'India' : null,
     jobId: `${SOURCE}-${slugify(DETAILED_TITLE)}`,
-    requisitionId: `${SOURCE}-${slugify(DETAILED_TITLE)}`,
+    requisitionId: null,
     sourceUrl: CAREERS_URL,
     applyUrl,
     employmentType: null,
@@ -138,9 +132,9 @@ const buildGenericJob = (title) => ({
   department: null,
   location: null,
   city: null,
-  country: 'India',
+  country: null,
   jobId: `${SOURCE}-${slugify(title)}`,
-  requisitionId: `${SOURCE}-${slugify(title)}`,
+  requisitionId: null,
   sourceUrl: CAREERS_URL,
   applyUrl: null,
   employmentType: null,
@@ -150,8 +144,8 @@ const buildGenericJob = (title) => ({
   requiredSkills: [],
   postingDate: null,
   closingDate: null,
-  jobDescription: buildGenericJobDescription(title),
-  publicExperienceChecked: true,
+  jobDescription: null,
+  publicExperienceChecked: false,
 })
 
 export const hasOfficialHomepageSignal = (html) => {
@@ -177,48 +171,50 @@ export const extractPublicJobs = (html) => {
     throw new Error('m2nxt Solutions (P) Ltd verified first-party careers page no longer matches the known public surface')
   }
 
-  const normalizedText = stripTags(html)
-
-  if (!EXPECTED_TITLES.every((title) => normalizedText.includes(title))) {
-    throw new Error('m2nxt Solutions (P) Ltd verified public job titles changed on the first-party careers page')
-  }
-
-  return [
-    buildDetailedJob(normalizedText),
-    ...EXPECTED_TITLES.slice(1).map((title) => buildGenericJob(title)),
-  ]
+  const titles=readRoleControls(html),normalizedText=stripTags(html)
+  if(titles[0]!==DETAILED_TITLE)throw new Error('m2nxt native initial expanded role identity changed')
+  return titles.map((title,index)=>index===0?buildDetailedJob(normalizedText):buildGenericJob(title))
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
+const defaultFetchText = async (url,{signal}={}) => {
+ const request=new URL(url),surface=CAREERS_URL
+ const fail=(message,fields={})=>{throw Object.assign(Error('m2nxt native input: '+message),{abortRetries:true,...fields,inventoryEvidence:{status:'coverage-gap',surface,firstParty:true,listingComplete:false,reportedTotal:null,indiaFacetCount:null}})}
+ signal?.throwIfAborted()
+ let response;try{response=await fetch(url,{headers:{'User-Agent':USER_AGENT,Accept:'text/html,application/javascript,application/json;q=0.9,*/*;q=0.8'},signal:signal?AbortSignal.any([signal,AbortSignal.timeout(20000)]):AbortSignal.timeout(20000)})}catch(error){if(signal?.aborted)throw signal.reason;fail(error.message,{cause:error})}
+ if(!response.ok){await response.body?.cancel();fail('HTTP '+response.status,{status:response.status,code:[401,403].includes(response.status)?'access_denied':'native_unavailable',finalUrl:response.url})}
+ const final=new URL(response.url||url),samePath=final.pathname.replace(/\/$/,'')===request.pathname.replace(/\/$/,'')
+ if(final.origin!==request.origin||!samePath||final.search!==request.search){await response.body?.cancel();fail('unexpected native redirect',{status:response.status,finalUrl:response.url})}
+ const body=await response.text();signal?.throwIfAborted();if(/<title\b[^>]*>\s*(?:Access\s*Denied|Forbidden)\s*<\/title>|<Code>\s*AccessDenied\s*<\/Code>/i.test(body))fail('native access denial returned HTTP200',{status:response.status,code:'access_denied',finalUrl:response.url});return body
+}
+
+export const createM2nxtScraper=()=>({
+ async run({fetchText=defaultFetchText,now=()=>new Date().toISOString(),signal}={}){
+ const homepage=await fetchText(HOMEPAGE_URL,{signal})
+ if(!hasOfficialHomepageSignal(homepage))throw Object.assign(Error('m2nxt verified official homepage changed'),{abortRetries:true})
+ const html=await fetchText(CAREERS_URL,{signal}),observations=extractPublicJobs(html),clientUrl=advertisedRoleClient(html)
+ let jobs=observations
+ if(clientUrl){const rows=readLiteralRoles(await fetchText(clientUrl,{signal}),readRoleControls(html),{visibilityStyles:[...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map(m=>m[1]).join('\n')});jobs=rows.map(row=>({
+ ...buildGenericJob(norm(row.title)),department:norm(row.Department)||null,location:norm(row.Location)||null,city:null,country:/\bIndia\b/i.test(row.Location)?'India':null,
+ applyUrl:row.applyLink||null,employmentType:norm(row.Employment)||null,experienceRequired:norm(row.experience)||null,jobDescription:row.description,publicExperienceChecked:Boolean(row.experience),
+ rawNativeRoleEvidence:{title:row.title,location:row.Location,clientUrl,rawRoleLiteral:row.rawRoleLiteral,knowMoreLink:row.knowMoreLink,visibleControlMatched:true,identityQualified:true}
+ }))
+ const overview=observations[0].jobDescription.split(' Education:')[0]
+ if(!norm(jobs[0].jobDescription).startsWith(norm(overview)))throw Object.assign(Error('m2nxt native expanded description contradicts literal role'),{abortRetries:true})
+ if(norm(jobs[0].location)!==norm(observations[0].location))throw Object.assign(Error('m2nxt native expanded workplace contradicts literal role'),{abortRetries:true})
+ }
+ const result=jobs.map(job=>({...job,source:SOURCE,link:job.applyUrl||job.sourceUrl,scrapedAt:now(),companyCareerPage:CAREERS_URL,companyDomain:'m2nxt.com',atsPlatform:'official-company-careers'}))
+ return finishNativeCollection(result,{now,pagesFetched:clientUrl?3:2,observedListingCount:observations.length,descriptionSurface:clientUrl?'advertised-static-JSX-literals-bound-to-visible-role-controls':'expanded-native-html-only',formRoleSelectionQualified:false})
+ }
 })
 
-export const createM2nxtScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('m2nxt Solutions (P) Ltd verified official homepage no longer matches the known first-party surface')
-    }
-
-    const careersHtml = await fetchText(CAREERS_URL)
-    const jobs = extractPublicJobs(careersHtml)
-
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-      companyCareerPage: CAREERS_URL,
-      companyDomain: 'm2nxt.com',
-      atsPlatform: 'official-company-careers',
-    }))
-  },
-})
+const finishNativeCollection=(jobs,{observedListingCount=jobs.length,pagesFetched=1,now=()=>new Date().toISOString(),...extra}={})=>{
+ const failures=jobs.filter(j=>!j.jobDescription||j.rawNativeRoleEvidence?.identityQualified===false).map(j=>({stage:'native-detail',nativeRoleId:j.jobId??j.sourceUrl,kind:j.rawNativeRoleEvidence?.identityQualified===false?'identity-conflict':'missing-content'}))
+ const audit={source:'m2nxt',observedListingCount,candidateDetails:observedListingCount,extractedDetailJobs:jobs.length-failures.length,excludedDetailJobs:0,failures,reportedTotal:null,indiaFacetCount:null,listingPaginationComplete:null,closingInventoryMatches:null,sourceScopeComplete:false,observedMissingWorkplaces:jobs.filter(j=>!j.location).length,observedUnknownCountries:jobs.filter(j=>!j.country).length,rawProvenanceLimit:'Observed native rows only; employer-wide scope, exact India count, closing inventory and active application submission remain unqualified',...extra}
+ for(const job of jobs){job.sourceListingComplete=false;job.sourceDetailComplete=Boolean(job.jobDescription)&&job.rawNativeRoleEvidence?.identityQualified!==false}
+ if(jobs.length)jobs[0].nativeCollectionEvidence=audit
+ Object.defineProperty(jobs,'nativeCollectionEvidence',{value:audit})
+ return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:CAREERS_URL,firstParty:true,listingComplete:false,pagesFetched,reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason:'observed-native-subset-with-unqualified-employer-scope'})
+}
 
 export const run = async (options = {}) => createM2nxtScraper().run(options)
 

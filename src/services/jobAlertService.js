@@ -185,7 +185,7 @@ export const stageJobAlertDeliveries = async (jobs = [], { session } = {}) => {
   const siteSettings = await getSiteSettings();
   const query = User.find({
     deactivated: false,
-    outreachDeletingAt: null,
+    accountDeletingAt: null,
     "premium.telegramAlertsEnabled": true,
     ...(siteSettings.billingEnabled ? { $or: [{ role: "admin" }, { "premium.status": "active" }] } : {}),
   });
@@ -203,7 +203,7 @@ export const stageJobAlertDeliveries = async (jobs = [], { session } = {}) => {
     if (session) {
       // Serialize fanout with account deletion so it cannot recreate private
       // delivery/subscription rows after the account cleanup has finished.
-      const owner = await User.updateOne({ _id: user._id, deactivated: false, outreachDeletingAt: null },
+      const owner = await User.updateOne({ _id: user._id, deactivated: false, accountDeletingAt: null },
         { $inc: { __v: 1 } }, { session });
       if (!owner.matchedCount) continue;
     }

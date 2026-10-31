@@ -182,44 +182,28 @@ const PUBLIC_JOB_HTML = `
 </html>
 `
 
-test('Cyber Infrastructure parses India roles from the verified first-party jobs board', async () => {
+test('Cyber Infrastructure reads current genuine own criteria instead of historical card-shaped controls', async () => {
+  const { readFileSync } = await import('node:fs')
+  const { gunzipSync } = await import('node:zlib')
+  const corpus = JSON.parse(gunzipSync(readFileSync(new URL('../native-sources/cisVeeam/fixtures/actual-http-20261031.json.gz', import.meta.url))))
+  const pages = new Map(corpus.pages.map(page => [page.receipt.url, page]))
   const cyber = await loadModule('../../scraper/cyberinfrastructure/script.js')
-
-  assert.equal(cyber.SOURCE, 'cyberinfrastructure')
-  assert.equal(cyber.COMPANY, 'Cyber Infrastructure')
-  assert.equal(cyber.CAREERS_URL, 'https://career.cisin.com/')
-  assert.equal(cyber.VERIFIED_ON, '2026-07-18')
-  assert.equal(cyber.hasOfficialJobsBoardSignal(CYBER_HTML), true)
-
-  const jobs = await cyber.createCyberInfrastructureScraper().run({
-    fetchText: async () => CYBER_HTML,
-  })
-
-  assert.deepEqual(jobs, [
-    {
-      title: 'Generative AI Developer Freshers',
-      location: 'India',
-      detailUrl: 'https://career.cisin.com/india-job/generative-ai-developer-freshers-jobs',
-      applyUrl: 'https://r.cisin.com/apply/generative-ai-developer-freshers',
-    },
-    {
-      title: 'Junior Network Engineer',
-      location: 'India',
-      detailUrl: 'https://career.cisin.com/india-job/junior-network-engineer-jobs',
-      applyUrl: 'https://r.cisin.com/apply/junior-network-engineer',
-    },
-  ])
+  assert.equal(cyber.VERIFIED_ON, null)
+  const jobs = await cyber.run({ fetchPage: async url => {
+    const page = pages.get(url);assert.ok(page)
+    return { url, status: page.receipt.status, headers: page.receipt.responseHeaders, bodyBase64: page.bodyBase64 }
+  } })
+  assert.equal(jobs.length, 116)
+  assert.ok(jobs.every(job => job.country === 'India' && job.jobDescription && job.sourceNativeCriteria))
 })
 
-test('Cyber Infrastructure fails closed when the verified board contract disappears', async () => {
+test('Cyber Infrastructure missing native inventory stays a coverage gap with no cleanup permission', async () => {
   const cyber = await loadModule('../../scraper/cyberinfrastructure/script.js')
-
-  await assert.rejects(
-    cyber.createCyberInfrastructureScraper().run({
-      fetchText: async () => WEBTEL_SENTINEL_HTML,
-    }),
-    /verified Cyber Infrastructure jobs board/i,
-  )
+  let audit
+  const jobs = await cyber.run({ fetchText: async () => WEBTEL_SENTINEL_HTML, onAudit: value => { audit = value } })
+  assert.equal(jobs.length, 0)
+  assert.equal(audit.sourceScopeComplete, false);assert.equal(audit.lifecycleCleanupAllowed, false)
+  assert.ok(audit.issues.some(issue => issue.kind === 'official-primary-unqualified'))
 })
 
 test('Webtel Electrosoft stays fail-closed while the first-party careers page remains marketing-only', async () => {

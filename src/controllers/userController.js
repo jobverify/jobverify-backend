@@ -210,10 +210,6 @@ export const updateUserProfile = async (req, res) => {
     if (user) {
       // Update profile fields if provided
       if (req.body.name !== undefined) user.profile.name = normalizeProfileText(req.body.name);
-      for (const field of ['aboutYou', 'experienceProjects']) {
-        if (req.body[field] !== undefined) user.profile[field] = String(req.body[field]).trim().slice(0, 4000);
-      }
-      if (req.body.portfolioUrl !== undefined) user.profile.portfolioUrl = String(req.body.portfolioUrl).trim().slice(0, 2048);
       if (req.body.graduateEducation !== undefined) user.profile.graduateEducation = normalizeProfileText(req.body.graduateEducation);
       if (req.body.branch !== undefined) user.profile.branch = normalizeProfileText(req.body.branch);
       if (req.body.passingYear !== undefined) {

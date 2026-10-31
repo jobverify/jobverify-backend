@@ -100,9 +100,24 @@
   },
   "devDependencies": {
     "mongodb-memory-server": "^11.2.0",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.14"
+  },
+  "overrides": {
+    "nodemon": {
+      "minimatch": "^11.0.1"
+    }
   },
   "private": true,
+  "config": {
+    "mongodbMemoryServer": {
+      "downloadDir": ".cache/mongodb-binaries",
+      "runtimeDownload": false
+    }
+  },
+  "allowScripts": {
+    "mongodb-memory-server": false,
+    "tesseract.js": false
+  },
   "engines": {
     "node": ">=24.14.0 <25"
   }

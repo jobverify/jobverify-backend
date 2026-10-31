@@ -482,6 +482,56 @@ test('an explicitly partial board union retains proven India jobs and unresolved
   assert.equal(result.evidence?.listingComplete, false)
 })
 
+test('a board union independently rechecks the live detail after its closing inventory', async t => {
+  const result = await exercise(t, { boardUnion: {}, change: addProofIndiaOffice })
+  assert.ifError(result.error)
+  assert.deepEqual(result.jobs.map(job => job.jobId), ['R90001'])
+  const detailUrl = result.jobs[0].link.replace('/CSGCareers/job/', '/wday/cxs/csgi/CSGCareers/job/')
+  assert.equal(result.calls.filter(call => call.url === detailUrl).length, 2,
+    'The closing detail read is independent of the earlier country proof')
+  assert.equal(result.calls.filter(call => call.method === 'POST').length, 3,
+    'Initial, full closing reconciliation and union first-page recheck remain required')
+})
+
+test('a board union never reuses an earlier invocation detail when the current role identity changes', async t => {
+  const earlier = await exercise(t, { boardUnion: {}, change: addProofIndiaOffice })
+  assert.ifError(earlier.error)
+  const current = await exercise(t, { boardUnion: {}, change: state => {
+    addProofIndiaOffice(state)
+    const detail = [...state.details.values()].find(payload => payload.jobPostingInfo.jobReqId === 'R90001')
+    detail.jobPostingInfo.externalUrl = detail.jobPostingInfo.externalUrl.replace('_R90001', '_R90002')
+  } })
+  assert.ok(current.error)
+  assert.equal(current.error.failureKind, 'incomplete_location_scope')
+  assert.ok(current.calls.some(call => call.url.includes('/job/') && call.url.includes('_R90001')))
+  assertNoCertifiedZero(current)
+})
+
+test('each board union invocation reads the current native description for an unchanged role identity', async t => {
+  const earlier = await exercise(t, { boardUnion: {}, change: addProofIndiaOffice })
+  assert.ifError(earlier.error)
+  const description = '<p>Updated native engineering responsibilities for this current invocation, with the same public requisition and board.</p>'
+  const current = await exercise(t, { boardUnion: {}, change: state => {
+    addProofIndiaOffice(state)
+    const detail = [...state.details.values()].find(payload => payload.jobPostingInfo.jobReqId === 'R90001')
+    detail.jobPostingInfo.jobDescription = description
+  } })
+  assert.ifError(current.error)
+  assert.equal(current.jobs[0].sourceDescription, description)
+  assert.notEqual(current.jobs[0].sourceDescription, earlier.jobs[0].sourceDescription)
+  assert.equal(current.calls.filter(call => call.url.includes('/wday/cxs/') && call.url.includes('/job/') && call.url.includes('_R90001')).length, 2)
+})
+
+test('the closing detail pass does not bypass complete closing inventory reconciliation', async t => {
+  const result = await exercise(t, { boardUnion: {}, change: state => {
+    addProofIndiaOffice(state)
+    state.closing.jobPostings[0].title += ' changed'
+  } })
+  assert.ok(result.error)
+  assert.equal(result.error.name, 'WorkdayIncompleteListingError')
+  assertNoCertifiedZero(result)
+})
+
 test('an empty partial board union preserves unresolved-country diagnostics through the registered adapter decorator', async t => {
   const result = await exercise(t, { boardUnion: { allowUnresolvedCountryScope: true },
     configOverrides: { retainProvenIndiaOnUnresolvedLocations: true }, change: state => {

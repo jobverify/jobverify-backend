@@ -41,8 +41,10 @@ export async function runNativeMonocept(options={}){
   const html=await get(CAREER_PAGE_URL),styles=[],advertised=corporateContract(html).styles.stylesheets
   for(const url of advertised){const hash=reviewed.cssSHA256[url];check(hash,'unreviewed current corporate CSS URL');const css=await get(url);check(sha256(css)===hash,'unreviewed current corporate CSS bytes');styles.push(css)}
   const corporate=corporateContract(html,styles.join('\n')),shells=[]
-  for(const url of [BOARD_URL,DASHBOARD_URL]){const shell=nativeShellContract(await get(url));shells.push({url,hiringLinks:shell.hiringLinks,frames:shell.frames})}
-  const clients={};for(const url of Object.keys(reviewed.clientSHA256))clients[url]=clientContract(url,await get(url))
+  for(const url of [BOARD_URL,DASHBOARD_URL]){const shell=nativeShellContract(await get(url));shells.push({url,hiringLinks:shell.hiringLinks,frames:shell.frames,publicClientURLs:shell.publicClientURLs})}
+  const clientURLs=shells[0].publicClientURLs
+  check(shells.every(shell=>canonical(shell.publicClientURLs)===canonical(clientURLs)),'native public shells client version disagreement')
+  const clients={};for(const url of clientURLs)clients[url]=clientContract(url,await get(url))
   return {corporate,clients,shells}
  }
  const unreconciledLinks=(links,phase)=>links.filter(value=>{
