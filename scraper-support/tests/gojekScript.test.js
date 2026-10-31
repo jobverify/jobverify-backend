@@ -39,11 +39,11 @@ test('extractGotoBundleUrl finds the current GoTo careers bundle from the SSR pa
   )
 })
 
-test('run returns an empty result set when Gojek remains checkpointed and the GoTo bundle still hardcodes HoldCo-only jobs', async () => {
+test('run rejects the checkpoint instead of using parent HoldCo signals as empty Gojek proof', async () => {
   const requestedUrls = []
   const scraper = createGojekScraper()
 
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -78,20 +78,17 @@ test('run returns an empty result set when Gojek remains checkpointed and the Go
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), error => error.code === 'GOJEK_COVERAGE_GAP')
 
   assert.deepEqual(requestedUrls, [
     CAREER_PAGE_URL,
-    GOTO_CAREERS_URL,
-    'https://www.gotocompany.com/_next/static/chunks/pages/careers-123.js',
   ])
-  assert.deepEqual(jobs, [])
 })
 
-test('run recognizes the live GoTo shape when the Gojek card link is only present inside the careers bundle', async () => {
+test('a parent bundle Gojek card cannot qualify a blocked Gojek feed', async () => {
   const scraper = createGojekScraper()
 
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchPage: async (url) => {
       if (url === CAREER_PAGE_URL) {
         return {
@@ -123,15 +120,13 @@ test('run recognizes the live GoTo shape when the Gojek card link is only presen
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), error => error.code === 'GOJEK_COVERAGE_GAP')
 })
 
-test('run recognizes the current live GoTo split signal where the SSR page has the Gojek label and the bundle has the all-jobs URL', async () => {
+test('split parent SSR and bundle signals cannot qualify a blocked Gojek feed', async () => {
   const scraper = createGojekScraper()
 
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchPage: async (url) => {
       if (url === CAREER_PAGE_URL) {
         return {
@@ -165,9 +160,7 @@ test('run recognizes the current live GoTo split signal where the SSR page has t
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), error => error.code === 'GOJEK_COVERAGE_GAP')
 })
 
 test('run throws when the official public signals no longer prove the checkpointed HoldCo-only Gojek state', async () => {
@@ -180,6 +173,6 @@ test('run throws when the official public signals no longer prove the checkpoint
         text: '<main>Unexpected careers experience</main>',
       }),
     }),
-    /HoldCo-only Gojek state/i,
+    error => error.code === 'GOJEK_COVERAGE_GAP',
   )
 })

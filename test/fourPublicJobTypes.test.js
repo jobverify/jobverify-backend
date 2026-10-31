@@ -18,9 +18,9 @@ const cases = [
   { title: 'Engineer', classification: resolveClassification({ title: 'Engineer', description: 'Build software.' }, null, { now, mode: 'policy' }) },
 ];
 
-test('scraped and public jobs use four types and default unsupported types to experienced', () => {
+test('inventory retains unresolved input while public categories contain only four types', () => {
   for (const job of cases) {
-    const expected = allowed.includes(job.jobType) ? job.jobType : 'Full-time Experienced';
+    const expected = allowed.includes(job.jobType) ? job.jobType : 'Unspecified';
     assert.equal(normalizeScrapedJob(job).jobType, expected, JSON.stringify(job));
     assert.equal(normalizeJobListResponseJob(job).jobType, expected, JSON.stringify(job));
   }
@@ -33,12 +33,12 @@ test('Mongo categorization and live analytics normalize legacy types without los
   await Job.collection.insertMany(cases.map((job, index) => ({ ...job, fingerprint: `four-${index}`, company: 'Test', status: 'active', isPublicIndia: true, description: 'Build software.' })));
   const rows = await Job.aggregate([{ $project: { jobType: 1, classification: 1, title: 1, category: PUBLIC_JOB_TYPE_EXPRESSION } }]);
   for (const row of rows) {
-    assert.ok(allowed.includes(row.category), String(row.category));
+    assert.ok([...allowed, 'Unspecified'].includes(row.category), String(row.category));
     assert.equal(row.category, normalizeJobListResponseJob(row).jobType);
   }
   const summary = await readHiringSnapshot({ experiencedJobsEnabled: true }, now);
-  assert.equal(summary.totalJobs, cases.length);
-  assert.equal(summary.jobTypes.reduce((sum, row) => sum + row.count, 0), cases.length);
+  assert.equal(summary.totalJobs, allowed.length);
+  assert.equal(summary.jobTypes.reduce((sum, row) => sum + row.count, 0), allowed.length);
   assert.deepEqual(summary.jobTypes.map(row => row.label).sort(), [...allowed].sort());
   const early = await readHiringSnapshot({ experiencedJobsEnabled: false }, now);
   assert.ok(early.jobTypes.every(row => row.label !== 'Full-time Experienced'));

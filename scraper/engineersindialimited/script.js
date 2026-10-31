@@ -162,7 +162,7 @@ export const extractOpenings = (html) => {
         requiredSkills: [],
         postingDate: null,
         closingDate: null,
-        jobDescription: `Official EIL opening (${advNumber}). See the EIL Recruitment Portal for advertisement and application details.`,
+        jobDescription: null,
       }
     })
     .filter(Boolean)

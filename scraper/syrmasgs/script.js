@@ -302,12 +302,25 @@ export const hasOfficialJobsPageSignal = (html = '') => {
 }
 
 export const extractJobDetail = (html, listing = {}) => {
+  // Remove raw page-code bodies before converting tags to lines. Otherwise the
+  // tag removal turns global CSS, JSON-LD and scripts into description text.
   const page = String(html ?? '')
-  const lines = htmlToLines(page)
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
+  const titleHeadings = [...page.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/gi)]
+    .filter((match) => normalizeWhitespace(match[1]) === normalizeWhitespace(listing.title))
+  const afterTitle = titleHeadings.length === 1
+    ? page.slice(titleHeadings[0].index + titleHeadings[0][0].length)
+    : ''
+  const applicationHeading = [...afterTitle.matchAll(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1\s*>/gi)]
+    .find((match) => normalizeWhitespace(match[2]) === 'Apply for this position')
 
-  if (!/Apply for this position/i.test(page) || !/Upload CV\/Resume/i.test(page)) {
+  if (!applicationHeading || !/Upload CV\/Resume/i.test(afterTitle.slice(applicationHeading.index))) {
     throw new Error('Syrma SGS detail page no longer matches the verified first-party public jobs surface')
   }
+  // The first-party role table/free-form content ends where its separate
+  // application form begins; menu, form and previous/next job text stay out.
+  const lines = htmlToLines(afterTitle.slice(0, applicationHeading.index))
 
   const title =
     extractLabeledValue(lines, [/^Position Name\s*/i, /^Title of position\s*:\s*/i])

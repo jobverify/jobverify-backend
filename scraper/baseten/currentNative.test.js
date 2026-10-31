@@ -18,8 +18,8 @@ async function replay(mutator,callback){
  try{return await callback(calls)}finally{globalThis.fetch=original}
 }
 
-test('current104 complete native descriptions remain audited while47 unreviewed declared assets prevent company zero',async()=>{
- await replay(null,async()=>{const jobs=await run(),evidence=readInventoryEvidence(jobs),audit=jobs.sourceAudit;assert.equal(jobs.length,0);assert.equal(evidence.reportedTotal,104);assert.equal(evidence.indiaFacetCount,null);assert.equal(evidence.listingComplete,false);assert.equal(audit.nativeCount,104);assert.equal(audit.fullNativeDetails,104);assert.equal(audit.lifecycleCleanupAllowed,false);assert.equal(audit.reasons.length,47);assert.ok(audit.reasons.every(r=>r.startsWith('unreviewed-declared-asset:')));assert.equal(audit.opening.cms.length,105);assert.equal(audit.opening.cmsIds.length,104);assert.equal(audit.opening.unavailable.length,4);assert.equal(audit.closing.unavailable.length,4);assert.equal(audit.opening.native.proofs.flatMap(p=>p.countryProofs.slice(1)).filter(p=>p.countryCode==='CA').length,48);assert.match(audit.opening.strongestEvidence.reason,/provider-source-scope-unresolved/);});
+test('current104 complete native descriptions remain audited while47 unreviewed assets and3 JD worksites prevent company zero',async()=>{
+ await replay(null,async()=>{const jobs=await run(),evidence=readInventoryEvidence(jobs),audit=jobs.sourceAudit;assert.equal(jobs.length,0);assert.equal(evidence.reportedTotal,104);assert.equal(evidence.indiaFacetCount,null);assert.equal(evidence.listingComplete,false);assert.equal(audit.nativeCount,104);assert.equal(audit.fullNativeCriteriaCopies,104);assert.equal(audit.fullNativeDetails,101);assert.equal(audit.lifecycleCleanupAllowed,false);assert.equal(audit.reasons.length,50);assert.equal(audit.reasons.filter(r=>r.startsWith('unreviewed-declared-asset:')).length,47);assert.equal(audit.reasons.filter(r=>r.startsWith('role-owned-description-geography-unresolved:')).length,3);assert.equal(audit.opening.cms.length,105);assert.equal(audit.opening.cmsIds.length,104);assert.equal(audit.opening.unavailable.length,4);assert.equal(audit.closing.unavailable.length,4);assert.equal(audit.opening.native.proofs.flatMap(p=>p.countryProofs.slice(1)).filter(p=>p.countryCode==='CA').length,48);assert.match(audit.opening.strongestEvidence.reason,/provider-source-scope-unresolved/);});
 });
 
 for(const field of ['fetchText','fetchPage'])test('body-only '+field+' override is rejected before transport',async()=>{await assert.rejects(run({[field]:async()=>''}),/metadata|body-only|unsupported/i)});
@@ -28,13 +28,13 @@ for(const field of ['maxJobs','maxPages'])test('inventory '+field+' caps cannot 
 const official='https://www.baseten.co/resources/careers/',board='https://jobs.ashbyhq.com/baseten';
 const mutateJSON=(value,fn)=>{const object=JSON.parse(value.body);fn(object);value.body=Buffer.from(JSON.stringify(object))};
 test('unknown mandatory raw role fields revoke affected role detail completeness in both phases',async()=>{
- await replay((value,{url})=>{if(url===feed)mutateJSON(value,p=>p.jobs[0].mandatoryProfessionalLicense='Required')},async()=>{const jobs=await run(),audit=jobs.sourceAudit;assert.equal(audit.fullNativeDetails,103);assert.ok(audit.reasons.some(r=>r.startsWith('unknown-role-schema:')));assert.equal(audit.opening.payload.jobs[0].mandatoryProfessionalLicense,'Required');assert.equal(audit.opening.native.proofs[0].fullDetailComplete,false)});
+ await replay((value,{url})=>{if(url===feed)mutateJSON(value,p=>p.jobs[0].mandatoryProfessionalLicense='Required')},async()=>{const jobs=await run(),audit=jobs.sourceAudit;assert.equal(audit.fullNativeDetails,100);assert.ok(audit.reasons.some(r=>r.startsWith('unknown-role-schema:')));assert.equal(audit.opening.payload.jobs[0].mandatoryProfessionalLicense,'Required');assert.equal(audit.opening.native.proofs[0].fullDetailComplete,false)});
 });
 test('nested native country metadata cannot conceal new mandatory criteria',async()=>{
  await replay((value,{url})=>{if(url===feed)mutateJSON(value,p=>p.jobs[0].address.postalAddress.addressCountry={mandatoryLicense:'Required'})},async()=>{await assert.rejects(run(),/non-string native location|native/i)});
 });
 test('criteria drift only on the closing native cohort cannot retain opening detail completeness',async()=>{
- let reads=0;await replay((value,{url})=>{if(url===feed&&++reads===2)mutateJSON(value,p=>p.jobs[0].descriptionHtml+='<p>Mandatory professional license required.</p>')},async()=>{const jobs=await run(),audit=jobs.sourceAudit;assert.equal(audit.fullNativeDetails,103);assert.ok(audit.reasons.includes('native-closing-cohort-or-full-criteria-changed'));assert.notEqual(audit.opening.payload.jobs[0].descriptionHtml,audit.closing.payload.jobs[0].descriptionHtml)});
+ let reads=0;await replay((value,{url})=>{if(url===feed&&++reads===2)mutateJSON(value,p=>p.jobs[0].descriptionHtml+='<p>Mandatory professional license required.</p>')},async()=>{const jobs=await run(),audit=jobs.sourceAudit;assert.equal(audit.fullNativeDetails,100);assert.ok(audit.reasons.includes('native-closing-cohort-or-full-criteria-changed'));assert.notEqual(audit.opening.payload.jobs[0].descriptionHtml,audit.closing.payload.jobs[0].descriptionHtml)});
 });
 for(const [label,html]of [['hidden script','<script hidden>window.additionalHiring="https://jobs.ashbyhq.com/other"</script>'],['hidden frame','<iframe hidden src="https://jobs.ashbyhq.com/other"></iframe>'],['hidden data','<script type="application/json" hidden>{"mandatoryLicense":"Required"}</script>'],['style','<style>body:after{content:"Additional vacancies"}</style>']])test('new publisher '+label+' retains raw scope and prevents completeness',async()=>{
  await replay((value,{url})=>{if(url===official)value.body=Buffer.from(value.body.toString().replace('</body>',html+'</body>'))},async()=>{const audit=(await run()).sourceAudit;assert.ok(audit.reasons.includes('unreviewed-publisher-whole-dom-flight-or-hiring-scope'));assert.ok(audit.opening.officialBody.includes(html))});
@@ -60,4 +60,8 @@ test('body-only native JSON override cannot bypass employer/program/HTTP scope g
 });
 test('three actual role-owned JD alternative or conflicting worksites remain geography unknown despite native primary US',async()=>{
  await replay(null,async()=>{const audit=(await run()).sourceAudit;assert.equal(audit.fullNativeCriteriaCopies,104);assert.equal(audit.fullNativeDetails,101);assert.equal(audit.nativeCountryScopeUnresolvedRoleIds.length,3);for(const id of ['4dcdf587-38f3-4363-8033-a453f54b38b0','4e507a15-c9bb-4877-b422-f3eb462a3732','b1b5ab31-f90c-41f9-b9f2-13408b1c072b'])assert.ok(audit.nativeCountryScopeUnresolvedRoleIds.includes(id));});
+});
+test('abort inside the final closing HTTP response cannot resolve as a partial inventory',async()=>{
+ const controller=new AbortController(),last=board+'/43b6c299-d5df-4cf4-a816-142ba3014a9d/';let reads=0;
+ await replay((value,{url})=>{if(url===last&&++reads===2)controller.abort()},async()=>{await assert.rejects(run({signal:controller.signal}),{name:'AbortError'})});
 });

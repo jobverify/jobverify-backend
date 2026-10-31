@@ -268,6 +268,65 @@ test('Syrma SGS detail parsing reads both the structured and free-form first-par
   )
 })
 
+test('Syrma SGS keeps the complete role between its title and application heading without repeated site chrome', async () => {
+  const syrmaSgs = await loadSyrmaSgsModule()
+  // The saved 2026-10-20 extraction contains global CSS, JSON-LD and WordPress
+  // scripts in every role. The official public detail page has repeated menus,
+  // then the role H1/table, then the application H2/form and previous/next jobs.
+  // This reduced reconstruction keeps those observed boundaries explicit.
+  const repeatedMenu = '<nav>Home About Us Company History Industries Services Investors Contact Us</nav>'.repeat(3)
+  const html = npiDetailHtml
+    .replace('</head>', `<style>${':root{--ast-container-default-xlg-padding:3em;}'.repeat(4000)}</style><script type="application/ld+json">{"@type":"WebPage","name":"Global site schema"}</script></head>`)
+    .replace('<body>', `<body>${repeatedMenu}`)
+    .replace('</body>', '<p>Allowed Type(s): .pdf, .doc, .docx</p><p>By using this form you agree with the storage and handling of your data by this website.</p><a>Previous Job</a><a>Next Job</a><script>var elementorFrontendConfig = {siteOnly: true};</script></body>')
+  const listing = {
+    title: 'Manager/Sr.Manager - NPI & Engineering',
+    sourceUrl: 'https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/',
+    jobId: 'manager-sr-manager-npi-engineering',
+  }
+  const job = syrmaSgs.extractJobDetail(html, listing)
+
+  for (const unwanted of ['--ast-container', 'Global site schema', 'elementorFrontendConfig', 'Company History', 'Allowed Type(s)', 'Previous Job', 'storage and handling']) {
+    assert.equal(job.jobDescription.includes(unwanted), false, `Description contains site material: ${unwanted}`)
+  }
+  assert.equal(job.jobDescription, 'Position Name Manager/Sr.Manager - NPI & Engineering Department / Function NPI Educational qualifications (Threshold educational background required to execute the role) BE Relevant experience (Years of relevant experience required to execute the role) 12 to 18 yrs in NPI Threshold skills and capabilities required to execute the role Functional: BOM preparation through ERP, Control plan, APQP, PPAP, FMEA, SPC, NP development & ECN Control. Generic: Communication & interpersonal skill, leadership, team building.')
+  assert.equal(job.title, listing.title)
+  assert.equal(job.jobId, listing.jobId)
+  assert.equal(job.sourceUrl, listing.sourceUrl)
+  assert.equal(job.applyUrl, listing.sourceUrl)
+  assert.equal(job.experienceRequired, '12 to 18 yrs in NPI')
+  assert.equal(job.minimumQualification, 'BE')
+})
+
+test('Syrma SGS preserves genuinely long responsibilities through the end of the role', async () => {
+  const syrmaSgs = await loadSyrmaSgsModule()
+  const responsibilities = 'Design, debug and validate power electronics hardware against system requirements. '.repeat(2500)
+  const html = powerDetailHtml.replace('<h2>Apply for this position</h2>', `<section><h2>Responsibilities</h2><p>${responsibilities}</p><p>Final role requirement: qualify the production test fixture.</p></section><h2>Apply for this position</h2>`)
+  const job = syrmaSgs.extractJobDetail(html, {
+    title: 'Power Electronics Lead / Architect',
+    sourceUrl: 'https://syrmasgs.com/jobs/22188/',
+    jobId: 'power-electronics-lead-architect',
+  })
+
+  assert.equal(job.jobDescription, 'Title of position : Power Electronics Lead / Architect Work Experience : 8 to 12 Yrs. Qualification : B.E./Btech/ME/MTech - Electrical / Electronics Engineering/related subject Location : Chennai Skills Required : Realization of complex system requirements to provide robust and reliable hardware solutions. Strong in embedded hardware product design, Debug, and Test Responsibilities ' + responsibilities + 'Final role requirement: qualify the production test fixture.')
+  assert.equal(job.location, 'Chennai, India')
+  assert.equal(job.experienceRequired, '8 to 12 Yrs.')
+})
+
+test('Syrma SGS rejects detail pages without a matching role heading instead of using the full page', async () => {
+  const syrmaSgs = await loadSyrmaSgsModule()
+  for (const html of [
+    npiDetailHtml.replace('<h1>Manager/Sr.Manager &#8211; NPI &amp; Engineering</h1>', ''),
+    npiDetailHtml.replace('<h1>Manager/Sr.Manager &#8211; NPI &amp; Engineering</h1>', '<h1>Another role</h1>'),
+  ]) {
+    assert.throws(() => syrmaSgs.extractJobDetail(html, {
+      title: 'Manager/Sr.Manager - NPI & Engineering',
+      sourceUrl: 'https://syrmasgs.com/jobs/manager-sr-manager-npi-engineering/',
+      jobId: 'manager-sr-manager-npi-engineering',
+    }), /detail page/i)
+  }
+})
+
 test('Syrma SGS extractJobCards keeps the canonical title when archive cards append job metadata', async () => {
   const syrmaSgs = await loadSyrmaSgsModule()
 

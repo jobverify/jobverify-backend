@@ -212,8 +212,8 @@ test('an inactive or failed official Fountain handoff cannot authorize a migrate
   ]) assert.equal(hasSourceDescription(await fountainRun(value => value, value => { mutate(value); return value })), false)
 })
 
-const ceipal = () => ({ ...missing, title: 'Embedded Systems Engineer II', company: 'Detroit Engineered Products', source: 'detroitengineeredproducts',
-  companyCareerPage: 'https://depusa.com/index.php/careers-india', jobId: '241',
+const ceipal = () => ({ ...missing, title: 'Embedded Systems Engineer II', company: 'Example Engineering', source: 'exampleengineering',
+  companyCareerPage: 'https://engineering.example/careers-india', jobId: '241',
   sourceUrl: 'https://candidateportal.ceipal.com/job-details/native-role-241', applyUrl: 'https://candidateportal.ceipal.com/apply/native-role-241' })
 const ceipalRun = (change = value => value, changePage = value => value) => {
   const job = ceipal()

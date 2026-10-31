@@ -3,9 +3,11 @@ import { createHash } from "node:crypto";
 import Job from "../models/Job.js";
 import JobDatasetSummary from "../models/JobDatasetSummary.js";
 import { applyPublicJobLocationScope } from "../utils/publicJobLocationScope.js";
+import { PUBLIC_JOB_TYPE_EXPRESSION } from "../utils/publicJobType.js";
+import { PUBLIC_JOB_TYPES } from "../utils/publicJobTypeLabel.js";
 
 export const JOB_DATASET_SUMMARY_KEY = "public-active";
-export const JOB_DATASET_LIFECYCLE_VERSION = 6;
+export const JOB_DATASET_LIFECYCLE_VERSION = 8;
 const NATIVE_SUMMARY_FIND_ONE = JobDatasetSummary.findOne;
 const INITIAL_SUMMARY_ID = new mongoose.Types.ObjectId(
   createHash("sha256").update(JOB_DATASET_SUMMARY_KEY).digest("hex").slice(0, 24),
@@ -50,13 +52,13 @@ export const refreshJobDatasetSummary = async () => {
     {
       $facet: {
         visible: [
-          { $match: { $expr: lifecycleScope } },
+          { $match: { $expr: { $and: [lifecycleScope, { $in: [PUBLIC_JOB_TYPE_EXPRESSION, PUBLIC_JOB_TYPES] }] } } },
           { $group: {
             _id: null,
             totalJobs: { $sum: 1 },
             companies: { $addToSet: "$company" },
             cities: { $addToSet: "$city" },
-            jobTypes: { $addToSet: "$jobType" },
+            jobTypes: { $addToSet: PUBLIC_JOB_TYPE_EXPRESSION },
             nextClosingAt: { $min: "$closingDate" },
           } },
         ],

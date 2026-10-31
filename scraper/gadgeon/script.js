@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { inspectGadgeonPage, declaredRegionRequests, reconcileGadgeonPages } from './nativeCareers.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -13,18 +15,6 @@ export const CAREERS_PAGE_URL = 'https://www.gadgeon.com/joinus/'
 export const VERIFIED_PAGE_SIGNAL = 'Current Openings'
 
 const NAVIGATION_TIMEOUT_MS = 45000
-const PAGE_SETTLE_MS = 2500
-
-const waitForPageSettle = async (page, timeoutMs = PAGE_SETTLE_MS) => {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return
-
-  if (typeof page?.waitForTimeout === 'function') {
-    await page.waitForTimeout(timeoutMs)
-    return
-  }
-
-  await new Promise((resolve) => setTimeout(resolve, timeoutMs))
-}
 
 const normalizeWhitespace = (value) => {
   const normalized = String(value ?? '')
@@ -33,30 +23,6 @@ const normalizeWhitespace = (value) => {
     .trim()
 
   return normalized || null
-}
-
-const slugify = (value) => normalizeWhitespace(value)
-  ?.toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '')
-  || null
-
-const extractCity = (location) => normalizeWhitespace(String(location ?? '').split(',')[0])
-
-const isIndiaLocation = (location) => /\bindia\b/i.test(String(location ?? ''))
-
-const uniqueBy = (items, getKey) => {
-  const seen = new Set()
-  const results = []
-
-  for (const item of items) {
-    const key = getKey(item)
-    if (!key || seen.has(key)) continue
-    seen.add(key)
-    results.push(item)
-  }
-
-  return results
 }
 
 const extractTitle = (html = '') => normalizeWhitespace(
@@ -73,33 +39,6 @@ const extractVisibleText = (html = '') => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
-const extractListingJobsFromHtml = (html = '') => {
-  const jobs = []
-
-  for (const match of String(html ?? '').matchAll(
-    /<div class="border my-3 p-3 v-box">([\s\S]*?)<div class="modal fade" id="jobModal-\d+"/gi,
-  )) {
-    const block = match[1]
-    const title = normalizeWhitespace(
-      block.match(/<span class="fs-6 fw-medium caret-right">([\s\S]*?)<\/span>/i)?.[1],
-    )
-    const location = normalizeWhitespace(
-      block.match(/<div class="col-md-3 mb-3 mb-md-0">([\s\S]*?)<\/div>/i)?.[1],
-    )
-
-    if (!title || !location) continue
-
-    jobs.push({
-      title,
-      location,
-      experienceRequired: null,
-      department: null,
-    })
-  }
-
-  return jobs
-}
-
 export const hasVerifiedCareersSurface = (pageData) => {
   const title = normalizeWhitespace(pageData?.title)
   const text = String(pageData?.text ?? '')
@@ -109,45 +48,11 @@ export const hasVerifiedCareersSurface = (pageData) => {
     && new RegExp(VERIFIED_PAGE_SIGNAL, 'i').test(text)
 }
 
-export const extractJobsFromPageData = (pageData) => uniqueBy(
-  (Array.isArray(pageData?.jobs) ? pageData.jobs : [])
-    .map((job) => {
-      const title = normalizeWhitespace(job?.title)
-      const location = normalizeWhitespace(job?.location)
-      const experienceRequired = normalizeWhitespace(job?.experienceRequired)
-      const department = normalizeWhitespace(job?.department)
-      const jobId = slugify(`${title}-${location}`)
+// A single listing-only collector has no bound native modal or facet evidence.
+// Keep it readable for existing collectors without inventing posting IDs.
+export const extractJobsFromPageData = () => []
 
-      if (!title || !location || !isIndiaLocation(location) || !jobId) {
-        return null
-      }
-
-      return {
-        title,
-        company: COMPANY,
-        department,
-        location,
-        city: extractCity(location),
-        country: 'India',
-        jobId,
-        requisitionId: jobId,
-        sourceUrl: CAREERS_PAGE_URL,
-        applyUrl: CAREERS_PAGE_URL,
-        employmentType: null,
-        experienceRequired,
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: [],
-        postingDate: null,
-        closingDate: null,
-        jobDescription: null,
-      }
-    })
-    .filter(Boolean),
-  (job) => job.jobId,
-)
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -155,13 +60,17 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   attempts: 1,
   label: SOURCE,
   timeoutMs: NAVIGATION_TIMEOUT_MS,
+  includeResponseMetadata: true,
+  signal,
 })
 
 export const buildPageDataFromHtml = (html = '', url = CAREERS_PAGE_URL) => ({
   url,
   title: extractTitle(html),
   text: extractVisibleText(html) || '',
-  jobs: extractListingJobsFromHtml(html),
+  html,
+  jobs: [],
+  nativeObservations: inspectGadgeonPage(html, url).observations,
 })
 
 export const createGadgeonScraper = ({
@@ -170,26 +79,73 @@ export const createGadgeonScraper = ({
   async run({
     fetchText = defaultFetchText,
     collectPageDataImpl,
+    signal,
+    onAudit = () => {},
+    now = () => new Date().toISOString(),
   } = {}) {
-    if (!collectPageDataImpl) {
-      collectPageDataImpl = async (url) => buildPageDataFromHtml(await fetchText(url), url)
+    signal?.throwIfAborted()
+    const pages = []
+    if (collectPageDataImpl) {
+      const pageData = await collectPageDataImpl(CAREERS_PAGE_URL)
+      signal?.throwIfAborted()
+      if (!hasVerifiedCareersSurface(pageData)) throw new Error('Gadgeon careers page no longer matches the verified public careers surface')
+      const observations = pageData.nativeObservations || (pageData.jobs || []).map(original => ({ original, country: null }))
+      const audit = { source: SOURCE, observations, legacyPageData: pageData, pages: [], fullSourceVerified: false }
+      await onAudit(structuredClone(audit))
+      signal?.throwIfAborted()
+      return attachInventoryEvidence([], { status: 'discovery-only', surface: CAREERS_PAGE_URL, firstParty: false,
+        listingComplete: false, pagesFetched: 1, reportedTotal: null, indiaFacetCount: null, verifiedAt: now(),
+        reason: 'gadgeon-listing-only-collector-has-no-native-country-or-modal-proof' })
     }
-
-    const pageData = await collectPageDataImpl(CAREERS_PAGE_URL)
-
-    if (!hasVerifiedCareersSurface(pageData)) {
-      throw new Error('Gadgeon careers page no longer matches the verified public careers surface')
+    const load = async (url, requestedRegion = null) => {
+      signal?.throwIfAborted()
+      try {
+        const response = await fetchText(url, { signal })
+        signal?.throwIfAborted()
+        const html = typeof response === 'string' ? response : response?.html
+        if (typeof html !== 'string') throw new Error('Missing original careers HTML')
+        const page = inspectGadgeonPage(html, url)
+        Object.assign(page, { requestedRegion, responseStatus: response?.status ?? null,
+          finalURL: response?.url ?? null, transportQualified: response?.status === 200 && response?.url === url })
+        pages.push(page)
+        return page
+      } catch (error) {
+        signal?.throwIfAborted()
+        const page = { url, requestedRegion, transportQualified: false, observations: [], observedModalIDs: [],
+          error: { name: error.name, message: error.message }, originalHTML: null }
+        pages.push(page)
+        return page
+      }
     }
-
-    const jobs = extractJobsFromPageData(pageData)
-    const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
+    const opening = await load(CAREERS_PAGE_URL)
+    if (!opening.identity) {
+      const error = new Error('Gadgeon careers page no longer matches the verified public careers surface')
+      error.code = 'GADGEON_COVERAGE_GAP'
+      throw error
+    }
+    const requests = declaredRegionRequests(opening)
+    const regions = []
+    for (const request of requests) regions.push(await load(request.url, request.region))
+    const indiaRequest = requests.find(request => request.region === 'India')
+    const indiaClosing = indiaRequest ? await load(indiaRequest.url, 'India') : null
+    const closing = await load(CAREERS_PAGE_URL)
+    const reconciled = reconcileGadgeonPages({ opening, regions, indiaClosing, closing })
+    const audit = { source: SOURCE, ...reconciled, jobs: undefined, pages,
+      declaredRequests: requests, postingIdentityQualified: false, publicationQualified: false }
+    await onAudit(structuredClone(audit))
+    signal?.throwIfAborted()
+    const limit = Number.isSafeInteger(maxJobs) && maxJobs >= 0 ? maxJobs : null
+    const jobs = (limit == null ? reconciled.jobs : reconciled.jobs.slice(0, limit)).map(job => ({
       ...job,
       source: SOURCE,
       link: job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
+      scrapedAt: now(),
     }))
+    Object.defineProperty(jobs, 'sourceAudit', { value: audit })
+    return attachInventoryEvidence(jobs, { status: 'discovery-only', surface: CAREERS_PAGE_URL, firstParty: true,
+      listingComplete: false, pagesFetched: pages.filter(page => typeof page.originalHTML === 'string').length,
+      reportedTotal: null, indiaFacetCount: null, verifiedAt: now(),
+      reason: 'gadgeon-native-modal-criteria-and-country-facets-retained-activation-posting-identity-and-all-channel-scope-unresolved' })
   },
 })
 

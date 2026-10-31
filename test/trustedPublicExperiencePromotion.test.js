@@ -7,14 +7,6 @@ test('normalizeScrapedJob promotes trusted public experience checks for verified
   const samples = [
     {
       input: {
-        source: 'ibm',
-        title: 'Technical Consultant-AI Integration',
-        sourceUrl: 'https://careers.ibm.com/careers/JobDetail?jobId=116034',
-        applyUrl: 'https://careers.ibm.com/careers/JobDetail?jobId=116034',
-      },
-    },
-    {
-      input: {
         source: 'amrita',
         title: 'Post Doctoral Fellows @ Bengaluru',
         sourceUrl: 'https://www.amrita.edu/job/post-doctoral-fellows-bengaluru/',

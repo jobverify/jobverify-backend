@@ -8,6 +8,7 @@ import { RewriteWorkerError } from './worker.js';
 import { buildReferencedSections, expandReferencedSections } from './sectionProtocol.js';
 import { buildSourceEdits, expandSourceEdits } from './editProtocol.js';
 import { createProseRewriteClient, validateProseRewrite } from './prose.js';
+import { rewriteShardFilter } from './partitioning.js';
 
 export const rewriteDeadline = ({ now = Date.now(), budgetSeconds = 1200, workflowStartedAt, workflowSeconds = 9000, cleanupSeconds = 120 } = {}) => {
   const budget = Number(budgetSeconds);
@@ -291,14 +292,17 @@ export const rewriteWhenReady = async (probe, processQueue) => probe?.ready === 
   qualityStopped: true, stopReason: 'readiness_rejected', reason: 'model_quality_unavailable',
 };
 
-export const rewriteQueueQuery = (now = new Date()) => ({ status: 'active', sourceContentHash: { $type: 'string' },
+export const rewriteQueueQuery = (now = new Date(), { shard = 0, shardCount = 1 } = {}) => {
+  return { status: 'active', sourceContentHash: { $type: 'string' },
+  ...rewriteShardFilter(shard, shardCount),
   $or: [
     { 'descriptionRewrite.status': 'pending', 'descriptionRewrite.attempts': { $lt: 3 } },
     { 'descriptionRewrite.status': 'failed', 'descriptionRewrite.attempts': { $lt: 3 },
       'descriptionRewrite.nextAttemptAt': { $type: 'date', $lte: now } },
     { 'descriptionRewrite.status': 'failed', 'descriptionRewrite.policyVersion': { $type: 'string', $ne: REWRITE_MODEL.policyVersion } },
   ],
-});
+  };
+};
 
 const deterministicRejections = new Set(['numeric_relationship_changed', 'required_scope_changed', 'preferred_scope_changed',
   'negation_changed', 'application_url_changed', 'source_details_changed', 'unsupported_claim', 'unsafe_output',
@@ -409,7 +413,8 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
     }
     else if (!assessment.ok || ['not_improved','already_structured','dense_source','uncertain_section_assignment','model_context_budget'].includes(result.reason)) stats.skipped++;
     else stats.failed++;
-    await onResult({ id: String(job._id), inputHash: input.inputHash, ok: result.ok, reason: result.reason, durationMs, wordCount: result.wordCount, generated: assessment.ok, modelPlanCached: response?.cachedModelPlan || false,
+    await onResult({ id: String(job._id), inputHash: input.inputHash, ok: result.ok,
+      published: result.ok && saved.matchedCount !== 0, reason: result.reason, durationMs, wordCount: result.wordCount, generated: assessment.ok, modelPlanCached: response?.cachedModelPlan || false,
       generationRequests: response?.generationRequests ?? (assessment.ok && !response?.cachedModelPlan ? 1 : 0), renderedWithoutInference: response?.renderedWithoutInference,
       retrySkipped: response?.retrySkipped, quality: result.quality, usage: response?.usage, timings: response?.timings,
       generations: response?.generations, reusedChunks: response?.reusedChunks,

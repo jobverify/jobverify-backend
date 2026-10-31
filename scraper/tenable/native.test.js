@@ -16,6 +16,35 @@ function editRole(row,fn){editJson(row,data=>visit(data,value=>{if(value.id===ta
 
 test('receipts identify exact raw response bytes',async t=>{const {audit}=await check(t);const receipt=audit.receipts[0],raw=Buffer.from(fixture.responses['GET '+receipt.url].bodyBase64,'base64');assert.equal(receipt.sha256,createHash('sha256').update(raw).digest('hex'))})
 
+test('an unreviewed native job ID returns incomplete inventory without throwing', async t => {
+  const unseenId = '9999999999'
+  const detailUrl = `https://boards-api.greenhouse.io/v1/boards/tenableinc/jobs/${target}?content=true`
+  const unseenDetailUrl = detailUrl.replace(String(target), unseenId)
+  const recording = {
+    ...fixture,
+    responses: {
+      ...fixture.responses,
+      ['GET ' + unseenDetailUrl]: {
+        ...fixture.responses['GET ' + detailUrl],
+        url: unseenDetailUrl,
+        finalUrl: unseenDetailUrl,
+      },
+    },
+  }
+  const { evidence, audit } = await check(t, row => {
+    if (row.contentType?.includes('json')) row.body = row.body.replaceAll(String(target), unseenId)
+  }, recording)
+
+  assert.equal(evidence.status, 'coverage-gap')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
+  assert.equal(audit.lifecycleCleanupAllowed, false)
+  assert.ok(audit.reasons.includes('unreviewed-native-role-schema-or-criteria:' + unseenId))
+  assert.ok(audit.details.some(detail => detail.id === unseenId))
+  assert.ok(audit.closingDetails.some(detail => detail.id === unseenId))
+})
+
 for(const [name,change]of [
  ['unknown mandatory role field',(row)=>editRole(row,r=>r.mandatoryLicense='A professional license is mandatory')],
  

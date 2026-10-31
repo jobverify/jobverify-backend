@@ -313,7 +313,7 @@ test('BUSINESSNEXT run returns normalized jobs from the verified first-party cur
   assert.equal(jobs.at(-1).experienceRequired, '4 - 6 years')
 })
 
-test('RGBSI run validates the exact-name SmartRecruiters board and returns [] when no India jobs are present', async () => {
+test('RGBSI run keeps unavailable current handoffs and details partial while excluding explicit US legacy records', async () => {
   const rgbsi = await loadModule('../../scraper/rgbsi/script.js')
   const requestedUrls = []
 
@@ -322,12 +322,12 @@ test('RGBSI run validates the exact-name SmartRecruiters board and returns [] wh
   const jobs = await rgbsi.createRgbsiScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      assert.equal(url, rgbsi.BOARD_URL)
-      return rgbsiBoardHtml
+      if (url === rgbsi.BOARD_URL) return rgbsiBoardHtml
+      throw new Error('No retained current corporate reply in this legacy-only fixture')
     },
     fetchJson: async (url) => {
       requestedUrls.push(url)
-      if (url === 'https://api.smartrecruiters.com/v1/companies/RGBSI/postings?limit=100&country=in&offset=0') {
+      if (url === 'https://api.smartrecruiters.com/v1/companies/RGBSI/postings?limit=100&offset=0') {
         return rgbsiListingPayload
       }
       throw new Error(`Unexpected RGBSI URL: ${url}`)
@@ -336,9 +336,15 @@ test('RGBSI run validates the exact-name SmartRecruiters board and returns [] wh
 
   assert.deepEqual(requestedUrls, [
     rgbsi.BOARD_URL,
-    'https://api.smartrecruiters.com/v1/companies/RGBSI/postings?limit=100&country=in&offset=0',
+    'https://api.smartrecruiters.com/v1/companies/RGBSI/postings?limit=100&offset=0',
+    'https://api.smartrecruiters.com/v1/companies/RGBSI/postings/743999999000001',
+    'https://api.smartrecruiters.com/v1/companies/RGBSI/postings/743999999000002',
+    'https://www.rgbsi.com/',
   ])
   assert.deepEqual(jobs, [])
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
 })
 
 test('LocoNav sentinel validates the first-party LinkedIn handoff page and returns []', async () => {

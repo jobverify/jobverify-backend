@@ -28,7 +28,7 @@ const retiredSources = [
   "bajajfinserv", "bajajfinservhealth", "bajajhousingfinance", "bajajmarkets",
   "aakash", "dixontechnologies", "heromotocorp", "leapfinance", "mygate",
   "narayanahealth", "redbus", "redingtonindia", "sahyadriindustries",
-  "theindianpublicschool",
+  "theindianpublicschool", "ibm", "detroitengineeredproducts", "orangebusiness",
 ];
 const retiredCompanyNames = [
   "1mg", "Tata 1mg", "Tata1mg", "DishTV", "Dish TV", "DP World", "Stryker",
@@ -43,6 +43,7 @@ const retiredCompanyNames = [
   "Akash Institute", "Dixon Technologies", "Hero MotoCorp", "Leap Finance",
   "MyGate", "Narayana Health", "RedBus", "redBus India Pvt Ltd.",
   "Redington India", "Sahyadri Industries", "The Indian Public School (TIPS)",
+  "IBM", "Detroit Engineered Products", "Detroit Engineering", "Orange Business",
 ];
 
 const DISCOVERY_SOURCE_PATTERN = /(?:\.wellfoundDirectory|\.himalayas(?:Directory|\.app))$/i;

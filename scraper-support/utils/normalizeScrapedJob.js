@@ -235,9 +235,6 @@ const hasTrustedPublicExperienceSurface = (job = {}, provider = {}) => {
       return /^https:\/\/bitsilica\.com\/(?!careers(?:\/|$)).+/i.test(sourceUrl)
     case 'buyhatke':
       return /^https:\/\/compare\.buyhatke\.com\/company\/.+\.php$/i.test(sourceUrl)
-    case 'ibm':
-      return /^https:\/\/careers\.ibm\.com\//i.test(sourceUrl)
-        && /^https:\/\/careers\.ibm\.com\//i.test(applyUrl)
     case 'innovaccer':
       return (
         isAccountWorkableJobUrl(sourceUrl, 'innovaccer-analytics')
@@ -461,7 +458,7 @@ const inferExperienceLevel = (job = {}) => {
 
   if (/\b(junior|jr\.?|associate)\b/.test(title)) return 'Junior Level'
   if (/\b(ii|iii|iv|2|3|4)\b/.test(title)) return 'Mid Level'
-  return 'Mid Level'
+  return null
 }
 
 const composeJobType = ({ employmentType, experienceLevel, hasPositiveExperienceYears = false }) => {
@@ -471,13 +468,16 @@ const composeJobType = ({ employmentType, experienceLevel, hasPositiveExperience
   if (hasPositiveExperienceYears) return 'Full-time Experienced'
   return experienceLevel === 'Entry Level'
     ? 'Full-time Fresher'
-    : 'Full-time Experienced'
+    : ['Junior Level', 'Mid Level', 'Senior Level'].includes(experienceLevel)
+      ? 'Full-time Experienced'
+      : 'Unspecified'
 }
 
 export const resolveJobType = (job = {}) => {
   job = withSourceDescription(job);
   const classified = getAuthoritativeClassification(job)
   if (classified) return classified.jobType
+  if (normalizeString(job.jobType)?.toLowerCase() === 'unspecified') return 'Unspecified'
   const employmentType = inferEmploymentType(job)
   const experienceLevel = inferExperienceLevel(job)
   const hasPositiveExperienceYears = hasPositiveExperienceRequirement(getExperienceBounds(job))

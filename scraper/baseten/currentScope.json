@@ -1319,5 +1319,34 @@
       "nonce": "GYug4MbKR6nrrM-o39YE-a9gZjtPibDCzvjJdmLnIaU"
     }
   },
-  "unavailableNativeAppSha256": "29d35048e2eed903125c50c51e00b2e2d9e1e3cb705ba107cf3837fea8461b42"
+  "unavailableNativeAppSha256": "29d35048e2eed903125c50c51e00b2e2d9e1e3cb705ba107cf3837fea8461b42",
+  "roleOwnedDescriptionLocationGaps": [
+    {
+      "jobId": "4dcdf587-38f3-4363-8033-a453f54b38b0",
+      "issue": "Structured New York only, but actual role-owned JD explicitly on-site based in San Francisco.",
+      "assignedNativeJDParagraphs": [
+        "This is an on-site role based in San Francisco."
+      ],
+      "rawRoleSha256": "ac814dbc16498e1d30aa3acb0233717e8b4a93497991ccc889e90b7aa723eef7",
+      "provenance": "actual retained role-owned description; city names do not establish countries for additional or conflicting worksites"
+    },
+    {
+      "jobId": "4e507a15-c9bb-4877-b422-f3eb462a3732",
+      "issue": "Structured San Francisco only, but Requirements explicitly based in San Francisco or New York.",
+      "assignedNativeJDParagraphs": [
+        " - Based in San Francisco or New York and open to coming in office at least 3 days per week (Tuesday-Thursday)."
+      ],
+      "rawRoleSha256": "4b8672c42e1e46ec941c7c788252907171c31b1d7ef962b347d11bacd491a225",
+      "provenance": "actual retained role-owned description; city names do not establish countries for additional or conflicting worksites"
+    },
+    {
+      "jobId": "b1b5ab31-f90c-41f9-b9f2-13408b1c072b",
+      "issue": "Structured San Francisco only, but Requirements explicitly based in San Francisco or New York City.",
+      "assignedNativeJDParagraphs": [
+        " - Based in San Francisco or New York City and open to coming in office at least 3 days per week (Tuesday-Thursday)."
+      ],
+      "rawRoleSha256": "eeba261f76f63976ef976885d6d6971e6d01fbbdf988058837c1ab952a0b1ee0",
+      "provenance": "actual retained role-owned description; city names do not establish countries for additional or conflicting worksites"
+    }
+  ]
 }

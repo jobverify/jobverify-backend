@@ -60,7 +60,7 @@ const listingPageData = {
   ],
 }
 
-test('Gadgeon scraper validates the verified public careers page and extracts India jobs from rendered page data', async () => {
+test('Gadgeon recognizes listings while requiring native criteria and country binding before emitting jobs', async () => {
   const gadgeon = await loadModule()
   assert.ok(gadgeon, 'Gadgeon scraper module should load')
 
@@ -78,56 +78,16 @@ test('Gadgeon scraper validates the verified public careers page and extracts In
   assert.equal(CAREERS_PAGE_URL, 'https://www.gadgeon.com/joinus/')
   assert.equal(VERIFIED_PAGE_SIGNAL, 'Current Openings')
   assert.equal(hasVerifiedCareersSurface(listingPageData), true)
-  assert.deepEqual(extractJobsFromPageData(listingPageData), [
-    {
-      title: 'Senior Software Engineer',
-      company: 'Gadgeon',
-      department: 'Embedded Systems',
-      location: 'Kochi, India',
-      city: 'Kochi',
-      country: 'India',
-      jobId: 'senior-software-engineer-kochi-india',
-      requisitionId: 'senior-software-engineer-kochi-india',
-      sourceUrl: 'https://www.gadgeon.com/joinus/',
-      applyUrl: 'https://www.gadgeon.com/joinus/',
-      employmentType: null,
-      experienceRequired: '5-8 Years',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-    },
-    {
-      title: 'QA Automation Engineer',
-      company: 'Gadgeon',
-      department: 'Quality Engineering',
-      location: 'Bangalore, India',
-      city: 'Bangalore',
-      country: 'India',
-      jobId: 'qa-automation-engineer-bangalore-india',
-      requisitionId: 'qa-automation-engineer-bangalore-india',
-      sourceUrl: 'https://www.gadgeon.com/joinus/',
-      applyUrl: 'https://www.gadgeon.com/joinus/',
-      employmentType: null,
-      experienceRequired: '3-5 Years',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-    },
-  ])
+  assert.deepEqual(extractJobsFromPageData(listingPageData), [])
 })
 
-test('Gadgeon scraper runs through the browser-backed page collector and decorates final jobs', async () => {
+test('Gadgeon preserves listing-only page collector observations as incomplete evidence', async () => {
   const gadgeon = await loadModule()
   assert.ok(gadgeon, 'Gadgeon scraper module should load')
 
   const { CAREERS_PAGE_URL, createGadgeonScraper } = gadgeon
   const requestedUrls = []
+  const audits = []
 
   const jobs = await createGadgeonScraper({ maxJobs: 1 }).run({
     collectPageDataImpl: async (url) => {
@@ -135,14 +95,14 @@ test('Gadgeon scraper runs through the browser-backed page collector and decorat
       assert.equal(url, CAREERS_PAGE_URL)
       return listingPageData
     },
+    onAudit: audit => audits.push(audit),
   })
 
   assert.deepEqual(requestedUrls, [CAREERS_PAGE_URL])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Senior Software Engineer')
-  assert.equal(jobs[0].source, 'gadgeon')
-  assert.equal(jobs[0].link, jobs[0].sourceUrl)
-  assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
+  assert.equal(jobs.length, 0)
+  assert.equal(audits[0].observations.length, 3)
+  assert.equal(audits[0].observations[0].original.title, 'Senior Software Engineer')
+  assert.equal(audits[0].observations.every(role => role.country === null), true)
 })
 
 test('Gadgeon scraper rejects careers pages that no longer match the verified public surface', async () => {

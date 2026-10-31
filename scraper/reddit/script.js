@@ -3,6 +3,9 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import REDDIT_CATALOG from './catalog.js'
+import {retainRedditNativeRecords} from './nativeRecords.js'
+import {createPublishingGapAtsScraper} from '../../scraper-support/utils/publishingGapAts.js'
+import {attachInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -16,6 +19,7 @@ export const PROVIDER_METADATA = REDDIT_CATALOG
 export const CAREERS_PAGE_URL = REDDIT_CATALOG.companyCareerPage
 export const GREENHOUSE_BOARD_URL = REDDIT_CATALOG.greenhouseBoardUrl
 export const GREENHOUSE_JOBS_API_URL = REDDIT_CATALOG.greenhouseJobsApiUrl
+export const extractNativeJobsFromGreenhousePayload = retainRedditNativeRecords
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -99,58 +103,10 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /"Bangalore, India"\s*:\s*"India"/i.test(page)
 }
 
-export const extractIndiaJobsFromGreenhousePayload = (
-  payload,
-  { scrapedAt = new Date().toISOString() } = {},
-) => {
-  const jobs = Array.isArray(payload?.jobs) ? payload.jobs : null
-  if (!jobs) {
-    throw new Error('Verified Reddit Greenhouse payload changed materially')
-  }
-
-  return jobs
-    .map((job) => {
-      const companyName = normalizeWhitespace(job?.company_name)
-      const title = normalizeWhitespace(job?.title)
-      const location = normalizeWhitespace(job?.location?.name)
-      const sourceUrl = normalizeGreenhouseJobUrl(job?.absolute_url, job?.id)
-      const jobId = normalizeWhitespace(job?.id)
-
-      if (companyName && companyName.toLowerCase() !== COMPANY.toLowerCase()) {
-        throw new Error('Verified Reddit Greenhouse payload changed materially')
-      }
-
-      if (!title || !sourceUrl || !jobId) {
-        throw new Error('Verified Reddit Greenhouse payload changed materially')
-      }
-
-      return {
-        title,
-        company: COMPANY,
-        department: normalizeWhitespace(job?.departments?.[0]?.name),
-        location,
-        city: deriveCity(location),
-        country: isIndiaLocation(location) ? 'India' : null,
-        jobId,
-        requisitionId: jobId,
-        sourceUrl,
-        applyUrl: sourceUrl,
-        employmentType: null,
-        experienceRequired: null,
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: [],
-        postingDate: normalizeWhitespace(job?.updated_at || job?.first_published),
-        closingDate: null,
-        jobDescription: decodeHtmlEntities(job?.content) || null,
-        remoteStatus: normalizeRemoteStatus(location),
-        source: SOURCE,
-        link: sourceUrl,
-        scrapedAt,
-      }
-    })
-    .filter((job) => job.country === 'India')
-}
+export const extractIndiaJobsFromGreenhousePayload = (payload,{scrapedAt=new Date().toISOString()}={}) =>
+  retainRedditNativeRecords(payload,{scrapedAt})
+    .filter(job=>isIndiaLocation(job.location))
+    .map(job=>({...job,country:'India',city:deriveCity(job.location),department:normalizeWhitespace(job.sourceNativeRecord.departments?.[0]?.name),requisitionId:job.jobId,experienceRequired:null,minimumQualification:null,preferredQualification:null,requiredSkills:[],closingDate:null,remoteStatus:normalizeRemoteStatus(job.location)}))
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -177,16 +133,35 @@ export const createRedditScraper = ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
     now = defaultNow,
+    signal,
+    onAudit,
   } = {}) {
+    signal?.throwIfAborted()
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    signal?.throwIfAborted()
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Verified official Reddit careers page changed materially')
     }
 
-    return extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(GREENHOUSE_JOBS_API_URL),
-      { scrapedAt: now() },
-    )
+    const payload=await fetchJson(GREENHOUSE_JOBS_API_URL)
+    signal?.throwIfAborted()
+    const nativeRecords=retainRedditNativeRecords(payload,{scrapedAt:now()})
+    const nativeById=new Map(nativeRecords.map(row=>[row.jobId,row]))
+    // Preserve the CURRENT strongest engine, complete original envelope and
+    // all its country/detail/identity evidence. No feed subset or rebuilding.
+    const strong=await createPublishingGapAtsScraper({...REDDIT_CATALOG,boardToken:'reddit',sourceScopeComplete:false,lifecycleCleanupAllowed:false}).run({fetchJson:async url=>{if(url!==GREENHOUSE_JOBS_API_URL)throw Error('Unexpected Reddit native endpoint');return payload},signal})
+    signal?.throwIfAborted()
+    const strongestEngineEvidence=readInventoryEvidence(strong)
+    const jobs=strong.map(job=>{
+      const native=nativeById.get(String(job.jobId));if(!native)throw Error('Reddit strongest engine returned unknown native identity')
+      // Enrichment fields cannot overwrite engine country, location, identity,
+      // detail flags, normalized dates, content provenance or employment type.
+      const {sourceFirstPublished,sourceUpdatedAt,sourceEmploymentCriteria,sourceNativeMetadata,sourceNativeRecord,sourceNativeContent,sourceNativeRequisitionId,sourceCriteriaIssues,sourceCriteriaReviewComplete,legalHiringEmployer,sourcePublisher}=native
+      return {...job,sourceFirstPublished,sourceUpdatedAt,sourceEmploymentCriteria,sourceNativeMetadata,sourceNativeRecord,sourceNativeContent,sourceNativeRequisitionId,sourceCriteriaIssues,sourceCriteriaReviewComplete,legalHiringEmployer,sourcePublisher,sourceScopeComplete:false,lifecycleCleanupAllowed:false}
+    })
+    const audit={source:SOURCE,productionWrites:false,currentLiveQualification:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,authoritativeSourceTotal:null,authoritativeIndiaFacetCount:null,originalNativePayload:structuredClone(payload),nativeRecords,strongestEngineEvidence,observedNativeBoardCount:payload.jobs.length,missingProofs:['current corporate activation and hiring-channel scope','all native role country alternatives and full detail schema','fresh opening/closing global cohort'],noClosingCaptureClaimed:true}
+    Object.defineProperty(jobs,'sourceAudit',{value:audit});onAudit?.(structuredClone(audit));signal?.throwIfAborted()
+    return attachInventoryEvidence(jobs,{...strongestEngineEvidence,status:'discovery-only',listingComplete:false,reportedTotal:null,indiaFacetCount:null,reason:'reddit-native-criteria-retained-source-scope-unresolved:'+strongestEngineEvidence.reason})
   },
 })
 

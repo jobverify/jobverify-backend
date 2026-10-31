@@ -38,6 +38,7 @@ const junior = /\b(junior|jr\.?|associate)\b/;
 const canonical = choose([
   [match('$$type', /^(intern|internship)$/), 'Intern'],
   [eq('$$type', 'contract'), 'Contract'], [eq('$$type', 'others'), 'Others'],
+  [eq('$$type', 'unspecified'), 'Unspecified'],
   [eq('$$type', 'full-time fresher'), 'Full-time Fresher'],
   [eq('$$type', 'full-time experienced'), 'Full-time Experienced'],
   [eq('$$type', 'full-time'), 'Full-time'],
@@ -126,7 +127,10 @@ const LEGACY_PUBLIC_JOB_TYPE_EXPRESSION = bind({
       [ne('$$employmentType', 'Full-time'), '$$employmentType'],
       ['$$positiveExperience', 'Full-time Experienced'],
       [isEntry, 'Full-time Fresher'],
-    ], 'Full-time Experienced'),
+      [or({ $in: ['$$level', ['Junior Level', 'Mid Level', 'Senior Level']] },
+        and(eq('$$level', ''), or(eq('$jobType', 'Full-time Experienced'), match('$$title', senior),
+          match('$$title', junior), match('$$title', /\b(ii|iii|iv|2|3|4)\b/)))), 'Full-time Experienced'],
+    ], 'Unspecified'),
   }, choose([
     [and('$$responsePositiveExperience', not({ $in: ['$$canonical', ['Contract', 'Others']] }),
       or({ $in: ['$$canonical', ['Full-time Fresher', 'Full-time Experienced', 'Full-time', 'Intern']] }, eq('$$resolved', 'Full-time Fresher'))), 'Full-time Experienced'],
@@ -141,11 +145,16 @@ const LEGACY_PUBLIC_JOB_TYPE_EXPRESSION = bind({
 const RESOLVED_PUBLIC_JOB_TYPE_EXPRESSION = bind({ type: { $toLower: text('jobType') } }, choose([
   [and(eq('$classification.authoritative', true), { $in: ['$classification.mode', ['enforce', 'policy']] }, eq('$classification.policyVersion', JOB_CLASSIFICATION_POLICY_VERSION),
     { $in: ['$classification.status', ['accepted', 'uncertain', 'fallback']] },
-    { $in: ['$classification.resolved.jobType', ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract', 'Others', 'Unspecified']] }), '$classification.resolved.jobType'],
+    { $in: ['$classification.resolved.jobType', ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract', 'Others', 'Unspecified']] }), choose([
+      [and(eq('$classification.resolved.jobType', 'Unspecified'), eq('$classification.complete', true),
+        eq({ $ifNull: ['$classification.sourceQualityIssues', []] }, []),
+        { $in: ['$classification.decisions.jobType.label', PUBLIC_JOB_TYPES] }), '$classification.decisions.jobType.label'],
+    ], '$classification.resolved.jobType')],
   [eq('$$type', 'contract'), 'Contract'], [eq('$$type', 'others'), 'Others'],
+  [eq('$$type', 'unspecified'), 'Unspecified'],
   [and(eq('$employmentType', 'Full-time'), { $in: ['$experienceLevel', ['Junior Level', 'Mid Level', 'Senior Level']] }), 'Full-time Experienced'],
 ], LEGACY_PUBLIC_JOB_TYPE_EXPRESSION));
 
 export const PUBLIC_JOB_TYPE_EXPRESSION = bind({ publicType: RESOLVED_PUBLIC_JOB_TYPE_EXPRESSION }, choose([
   [{ $in: ['$$publicType', PUBLIC_JOB_TYPES] }, '$$publicType'],
-], 'Full-time Experienced'));
+], 'Unspecified'));

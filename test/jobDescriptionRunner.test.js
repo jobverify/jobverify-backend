@@ -86,9 +86,12 @@ test('publishing is guarded by current source hash and never modifies source or 
 
 test('a concurrent source change skips publication', async () => {
   const stored = { ...job, sourceContentHash: buildRewriteInput(job).inputHash };
-  const stats = await rewriteCandidates([stored], { client: { generate: async () => ({ value: valid, finishReason: 'stop' }) }, update: async () => ({ matchedCount: 0 }), deadline: Date.now() + 10000 });
+  const results = [];
+  const stats = await rewriteCandidates([stored], { client: { generate: async () => ({ value: valid, finishReason: 'stop' }) }, update: async () => ({ matchedCount: 0 }), deadline: Date.now() + 10000,
+    onResult: result => results.push(result) });
   assert.equal(stats.published, 0);
   assert.equal(stats.concurrentChanges, 1);
+  assert.equal(results[0].published, false);
 });
 
 test('failed or truncated generation retains the visible source description and records failure', async () => {

@@ -23,19 +23,22 @@ const pageData = {
   ],
 }
 
-test('Gadgeon default page collector works with optimized pages that omit waitForTimeout', async () => {
+test('Gadgeon listing-only collectors retain observations without inventing a posting identity', async () => {
   const gadgeon = await loadGadgeonModule()
   const requestedUrls = []
+  const audits = []
 
   const jobs = await gadgeon.createGadgeonScraper({ maxJobs: 1 }).run({
     collectPageDataImpl: async (url) => {
       requestedUrls.push(url)
       return pageData
     },
+    onAudit: audit => audits.push(audit),
   })
 
   assert.deepEqual(requestedUrls, [gadgeon.CAREERS_PAGE_URL])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'gadgeon')
-  assert.equal(jobs[0].city, 'Kochi')
+  assert.equal(jobs.length, 0)
+  assert.equal(audits[0].observations.length, 1)
+  assert.equal(audits[0].observations[0].original.title, 'Embedded Software Engineer')
+  assert.equal(audits[0].observations[0].country, null)
 })

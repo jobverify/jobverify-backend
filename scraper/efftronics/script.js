@@ -54,8 +54,6 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
-const escapeRegExp = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
 const toTextLines = (html) => decodeHtml(String(html ?? ''))
   .replace(/<(br|\/p|\/div|\/li|\/section|\/article|\/ul|\/ol|\/h[1-6]|\/span)\b[^>]*>/gi, '\n')
   .replace(/<(p|div|li|section|article|ul|ol|h[1-6]|span)\b[^>]*>/gi, '\n')
@@ -115,7 +113,7 @@ const findTitleCandidate = (lines, startIndex) => {
     }
   }
 
-  for (const length of [3, 2, 1]) {
+  for (const length of [1, 2, 3]) {
     const slice = nonEmptyLines.slice(0, length)
     if (slice.length !== length) continue
 
@@ -205,24 +203,19 @@ const extractVacancyCards = (html) => {
   return jobs
 }
 
-const extractDetailSection = (html, title, knownTitles) => {
-  const plainText = toTextLines(html).join('\n')
-  const titleRegex = new RegExp(`(?:^|\\n)\\s*${escapeRegExp(title)}\\s*(?:\\n|$)`, 'gi')
-  const matches = [...plainText.matchAll(titleRegex)]
-  const match = matches[matches.length - 1]
-  if (!match || match.index == null) return ''
+const extractDetailSection = (html, title) => {
+  const headings = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2\s*>/gi)]
+  const matching = headings.filter((heading) => stripTags(heading[1]) === title)
+  if (matching.length !== 1) return ''
 
-  const start = match.index
-  const nextStarts = knownTitles
-    .filter((candidate) => candidate !== title)
-    .map((candidate) => {
-      const nextMatch = new RegExp(`(?:^|\\n)\\s*${escapeRegExp(candidate)}\\s*(?:\\n|$)`, 'i').exec(plainText.slice(start + title.length))
-      return nextMatch?.index != null ? start + title.length + nextMatch.index : -1
-    })
-    .filter((value) => value > start)
-
-  const end = nextStarts.length > 0 ? Math.min(...nextStarts) : plainText.length
-  return plainText.slice(start, end)
+  const heading = matching[0]
+  const nextHeading = headings[headings.indexOf(heading) + 1]
+  let section = html.slice(heading.index, nextHeading?.index)
+  const formOrFooter = section.search(/<(?:form|footer)\b/i)
+  if (formOrFooter >= 0) section = section.slice(0, formOrFooter)
+  section = section.replace(/<(a|button)\b[^>]*>([\s\S]*?)<\/\1\s*>/gi,
+    (markup, _tag, content) => /^Apply Now$/i.test(stripTags(content) || '') ? '\nApply Now\n' : markup)
+  return toTextLines(section).join('\n')
 }
 
 const extractLabelValue = (sectionText, label) => {
@@ -266,13 +259,27 @@ const extractDescription = (sectionText) => {
     .map((line) => normalizeWhitespace(line))
     .filter(Boolean)
 
-  const startIndex = lines.findIndex((line) => /^At Efftronics,/i.test(line))
+  const startIndex = lines.findIndex((line) => /^At Efftronics,/i.test(line)
+    || /^(?:Job )?Responsibilities$/i.test(line))
   if (startIndex < 0) return null
+  const content = lines.slice(startIndex)
+  const endIndex = content.findIndex((line) => /^Apply Now$/i.test(line) || /^If any queries mail to /i.test(line))
+  const bodyLines = endIndex >= 0 ? content.slice(0, endIndex) : content
+  const sectionHeading = /^(?:(?:Job )?Responsibilities|About Job Role|Knowledge & Skills|Behavioural Attributes|Nature of Job|Eligibility|SERVICE AGREEMENT|Qualification|Job Location)$/i
+  let insideResponsibilities = false
+  const substantiveResponsibilities = bodyLines.some((line) => {
+    if (/^(?:Job )?Responsibilities$/i.test(line)) {
+      insideResponsibilities = true
+      return false
+    }
+    if (sectionHeading.test(line)) insideResponsibilities = false
+    return insideResponsibilities && !/^At Efftronics,/i.test(line)
+  })
+  if (!substantiveResponsibilities
+    && !bodyLines.some((line) => /^The primary purpose of .+\s+is\s+\S/i.test(line))) return null
 
   const descriptionLines = []
-  for (let index = startIndex; index < lines.length; index += 1) {
-    const line = lines[index]
-    if (line === 'SERVICE AGREEMENT') break
+  for (const line of bodyLines) {
     if (
       line === 'Qualification'
       || line === 'Job Location'
@@ -281,12 +288,12 @@ const extractDescription = (sectionText) => {
       || line === 'Responsibilities'
       || line === 'Knowledge & Skills'
       || line === 'Behavioural Attributes'
+      || /^If any queries mail to /i.test(line)
     ) {
       continue
     }
 
     descriptionLines.push(line)
-    if (descriptionLines.length >= 2) break
   }
 
   return descriptionLines.length > 0 ? descriptionLines.join(' ') : null
@@ -295,7 +302,15 @@ const extractDescription = (sectionText) => {
 const buildJob = ({ title, minimumQualification, requiredSkills, detailText }) => {
   const location = extractLabelValue(detailText, 'Job Location') || DEFAULT_LOCATION
   const city = location.split(',')[0]?.trim() || 'Mangalagiri'
-  const description = extractDescription(detailText)
+  const roleDescription = extractDescription(detailText)
+  const detailQualification = extractLabelValue(detailText, 'Qualification')
+  const description = roleDescription && detailQualification
+    ? `Qualification: ${detailQualification}. ${roleDescription}` : roleDescription
+  const requiredExperience = description?.match(/\bExperience\s+Required\s*:\s*(\d+(?:\.\d+)?(?:\s*[-\u2013]\s*\d+(?:\.\d+)?)?\+?\s*(?:years?|months?))\b/i)
+    || description?.match(/\b(\d+(?:\.\d+)?(?:\s*[-\u2013]\s*\d+(?:\.\d+)?)?\+?\s*(?:years?|months?))\s+(?:of\s+)?(?:relevant\s+)?(?:work\s+)?experience\b/i)
+  const experienceRequired = requiredExperience ? normalizeWhitespace(requiredExperience[1])
+    : /\bExperience preferred\b/i.test(description || '') ? 'Experience preferred'
+      : /\bFreshers (?:are )?preferred\b/i.test(description || '') ? 'Freshers preferred' : null
 
   return {
     title,
@@ -308,8 +323,8 @@ const buildJob = ({ title, minimumQualification, requiredSkills, detailText }) =
     requisitionId: slugify(title),
     sourceUrl: `${CAREERS_URL}#${slugify(title)}`,
     applyUrl: APPLY_URL,
-    employmentType: 'Full-time',
-    experienceRequired: 'Freshers preferred',
+    employmentType: null,
+    experienceRequired,
     minimumQualification: minimumQualification || null,
     preferredQualification: null,
     requiredSkills,
@@ -335,12 +350,15 @@ export const hasOfficialCareersSignal = (html) => {
 }
 
 export const extractPublicListings = (html) => {
-  const cards = extractVacancyCards(html)
-  const titles = cards.map((card) => card.title)
+  const page = String(html ?? '').replace(
+    /<!--[\s\S]*?(?:-->|$)|<(script|style|template)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,
+    ' ',
+  )
+  const cards = extractVacancyCards(page)
 
   return cards.map((card) => buildJob({
     ...card,
-    detailText: extractDetailSection(html, card.title, titles),
+    detailText: extractDetailSection(page, card.title),
   }))
 }
 

@@ -82,18 +82,16 @@ test('Selectsys extracts the verified same-page role list and email apply contra
   })
 
   assert.equal(jobs.length, 6)
-  assert.deepEqual(jobs[0], {
-    title: 'BPO Workflow Manager (Insurance Ops - Remote)',
-    location: 'Remote-first (U.S. and India hubs)',
-    applyUrl:
-      'mailto:hr@selectsys.com?subject=Application%20for%20BPO%20Workflow%20Manager%20(Insurance%20Ops%20-%20Remote)',
-    sourceUrl: 'https://www.selectsys.com/careers',
-    company: 'Selectsys',
-    country: 'India',
-    link:
-      'mailto:hr@selectsys.com?subject=Application%20for%20BPO%20Workflow%20Manager%20(Insurance%20Ops%20-%20Remote)',
-    source: 'selectsys',
-    publicExperienceChecked: true,
-    scrapedAt: '2026-07-18T00:00:00.000Z',
-  })
+  assert.equal(jobs[0].title, 'BPO Workflow Manager (Insurance Ops - Remote)')
+  assert.equal(jobs[0].country, null)
+  assert.equal(jobs[0].location, null)
+  assert.equal(jobs[0].jobDescription, null)
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.equal(jobs[0].applyUrl, 'mailto:hr@selectsys.com')
+  assert.equal(jobs[0].sourceUrl, 'https://www.selectsys.com/careers')
+  assert.equal(jobs[0].company, 'Selectsys')
+  assert.equal(jobs[0].source, 'selectsys')
+  assert.equal(jobs[0].publicExperienceChecked, false)
+  assert.match(jobs[0].sourceNativeApplication.instructions, /job title in the subject line/)
+  assert.equal(jobs[0].scrapedAt, '2026-07-18T00:00:00.000Z')
 })

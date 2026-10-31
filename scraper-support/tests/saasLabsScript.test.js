@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 import {
   CAREERS_URL,
@@ -72,15 +75,36 @@ test('uses the card title when Kula places Apply Now inside the detail link', ()
   assert.equal(extractJobsFromListingHtml(html)[0].title, 'Principal Product Manager, AI')
 })
 
-test('scraper validates the official listing surface before extracting', async () => {
-  const requestedUrls = []
+test('scraper recovers the authentic native India records while keeping source scope unverified', async () => {
+  const archive = JSON.parse(gunzipSync(readFileSync(
+    new URL('../../scraper/saaslabs/fixtures/retained-http-20261029.json.gz', import.meta.url),
+  )))
+  const html = Buffer.from(archive.bodyBase64, 'base64').toString('utf8')
+  const requestedUrls = [], audits = []
   const jobs = await createSaaSLabsScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      return listingHtml
+      if (url !== archive.receipt.url) throw Error('Native application not retained in this listing-only archive')
+      return html
     },
+    onAudit: audit => audits.push(audit),
   })
 
-  assert.deepEqual(requestedUrls, [CAREERS_URL])
-  assert.equal(jobs.length, 2)
+  assert.equal(requestedUrls[0], CAREERS_URL)
+  assert.equal(requestedUrls.length, 18)
+  assert.equal(jobs.length, 17)
+  assert.ok(jobs.every(job => job.country === 'India' && job.sourceDetailComplete === false))
+  assert.ok(jobs.every(job => job.sourceListingDescriptionComplete === true && job.sourceNativeCriteriaCopyComplete === false))
+  assert.deepEqual(new Set(requestedUrls.slice(1)), new Set(jobs.map(job => job.applyUrl)))
+  assert.ok(jobs.every(job => job.jobDescription && job.sourceNativeDescription))
+  assert.equal(audits.length, 1)
+  assert.equal(audits[0].originalNativeHTML, html)
+  assert.equal(audits[0].nativeRecords.length, 17)
+  assert.equal(audits[0].currentLiveQualification, false)
+  assert.equal(audits[0].lifecycleCleanupAllowed, false)
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.firstParty, false)
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
 })

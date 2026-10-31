@@ -21,7 +21,9 @@ export function stageOutcome(key, summary={}, code=0) {
   if (key==='rewrite') {
     // A normal budget stop leaves durable work for a later run. It must not
     // block classification, and it must never conceal an execution failure.
-    if (code!==0 || summary.errorType || summary.stale>0) return 'failed';
+    if (code!==0 || summary.errorType || summary.stale>0 || summary.missingShards?.length || summary.failedShards?.length) return 'failed';
+    // One runner's normal budget/quality handoff cannot hide unfinished peers.
+    if (summary.incompleteShards?.length) return 'incomplete';
     if (summary.cancelled || summary.stopReason==='cancelled') return 'incomplete';
     if (summary.qualityStopped && summary.reason==='model_quality_unavailable') return 'completed';
     if (summary.stopReason==='budget_exhausted' || summary.budgetExhausted || summary.reason==='workflow_budget_exhausted') return 'completed';

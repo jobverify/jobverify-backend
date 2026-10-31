@@ -201,7 +201,6 @@ ZoomRx,
 Nestle,
 Worldline India,
 Warner Bros. Discovery,
-Orange Business,
 WatchGuard Technologies,
 Temenos,
 Tetra Pak,
@@ -592,9 +591,9 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 142)
-  assert.equal(report.candidateRows, 142)
-  assert.equal(report.matchedCount, 139)
+  assert.equal(report.totalRows, 141)
+  assert.equal(report.candidateRows, 141)
+  assert.equal(report.matchedCount, 138)
   assert.equal(report.unmatchedCount, 3)
   assert.deepEqual(
     report.matched.map((item) => [item.companyName, item.source, item.provider?.source ?? null]),
@@ -608,7 +607,6 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
       ['Nestle', 'nestle', 'nestle'],
       ['Worldline India', 'worldlineindia', 'worldlineindia'],
       ['Warner Bros. Discovery', 'warnerbrosdiscovery', 'warnerbrosdiscovery'],
-      ['Orange Business', 'orangebusiness', 'orangebusiness'],
       ['WatchGuard Technologies', 'watchguard', 'watchguard'],
       ['Temenos', 'temenos', 'temenos'],
       ['Tetra Pak', 'tetrapak', 'tetrapak'],

@@ -2,10 +2,14 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-import { attachGreenhouseSourceEvidence, normalizeGreenhouseSourceRoleUrl } from '../../scraper-support/utils/greenhouseSourceEvidence.js'
+import { normalizeGreenhouseSourceRoleUrl } from '../../scraper-support/utils/greenhouseSourceEvidence.js'
 import { hasNativeIndiaLocation, selectGreenhouseLocation } from '../../scraper-support/utils/greenhouseLocations.js'
 
 import { SIGMA_COMPUTING_CATALOG } from './catalog.js'
+import {retainSigmaNativeRecords} from './nativeRecords.js'
+import {createPublishingGapAtsScraper} from '../../scraper-support/utils/publishingGapAts.js'
+import {attachInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readNativeDocument} from '../../scraper-support/utils/activeNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -15,6 +19,7 @@ export const COMPANY_NAME = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const GREENHOUSE_BOARD_URL = PROVIDER_METADATA.greenhouseBoardUrl
 export const GREENHOUSE_JOBS_API_URL = PROVIDER_METADATA.greenhouseJobsApiUrl
+export const extractNativeJobsFromGreenhousePayload = retainSigmaNativeRecords
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
@@ -92,56 +97,12 @@ export const hasOfficialCareersPageSignal = (html = '') => {
     && /job-boards\.greenhouse\.io\/sigmacomputing\/jobs\//i.test(page)
 }
 
-export const extractIndiaJobsFromGreenhousePayload = (
-  payload,
-  { scrapedAt = new Date().toISOString() } = {},
-) => {
-  const jobs = Array.isArray(payload?.jobs) ? payload.jobs : null
-  if (!jobs) {
-    throw new Error('Sigma Computing Greenhouse jobs API response no longer matches the expected payload')
-  }
-
-  return jobs.flatMap((job) => {
-    const title = normalizeWhitespace(job?.title)
-    const companyName = normalizeWhitespace(job?.company_name)
-    const sourceUrl = normalizeGreenhouseJobUrl(job?.absolute_url, job?.id)
-
-    if (companyName && companyName.toLowerCase() !== COMPANY_NAME.toLowerCase()) {
-      throw new Error('Sigma Computing Greenhouse payload no longer maps to the verified company identity')
-    }
-
-    if (!title || !sourceUrl) {
-      throw new Error('Sigma Computing Greenhouse payload no longer exposes the verified Greenhouse detail route')
-    }
-
-    const location = selectGreenhouseLocation(job)
-    if (!hasNativeIndiaLocation(location)) return []
-
-    return [{
-      title,
-      company: COMPANY_NAME,
-      location,
-      city: inferCity(location),
-      country: 'India',
-      link: sourceUrl,
-      applyUrl: sourceUrl,
-      sourceUrl,
-      source: SOURCE,
-      jobId: String(job?.id),
-      requisitionId: normalizeWhitespace(job?.requisition_id),
-      department: normalizeWhitespace(job?.departments?.[0]?.name),
-      employmentType: null,
-      experienceRequired: null,
-      jobDescription: decodeHtml(job?.content),
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: normalizeWhitespace(job?.updated_at || job?.first_published),
-      closingDate: null,
-      scrapedAt,
-    }]
+export const extractIndiaJobsFromGreenhousePayload = (payload,{scrapedAt=new Date().toISOString()}={}) =>
+  retainSigmaNativeRecords(payload,{scrapedAt}).flatMap(job=>{
+    const raw=job.sourceNativeRecord,location=selectGreenhouseLocation(raw)
+    if(!hasNativeIndiaLocation(location))return []
+    return [{...job,location,city:inferCity(location),country:'India',requisitionId:normalizeWhitespace(raw.requisition_id),department:normalizeWhitespace(raw.departments?.[0]?.name),experienceRequired:null,minimumQualification:null,preferredQualification:null,requiredSkills:[],closingDate:null}]
   })
-}
 
 export const createSigmaComputingScraper = () => ({
   async run({
@@ -149,16 +110,35 @@ export const createSigmaComputingScraper = () => ({
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
     signal,
+    onAudit,
   } = {}) {
+    signal?.throwIfAborted()
     const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Sigma Computing verified official careers page no longer matches the trusted public surface')
     }
 
     const payload = await fetchJson(buildGreenhouseJobsApiUrl(), { signal })
-    const jobs = extractIndiaJobsFromGreenhousePayload(payload, { scrapedAt: now() })
-    return attachGreenhouseSourceEvidence(jobs, { source: SOURCE, companyName: COMPANY_NAME,
-      companyCareerPage: CAREERS_URL, boardToken: 'sigmacomputing', payload, signal, officialHtml: careersHtml })
+    signal?.throwIfAborted()
+    const nativeRecords=retainSigmaNativeRecords(payload,{scrapedAt:now()}),nativeById=new Map(nativeRecords.map(row=>[row.jobId,row]))
+    // Preserve the previous source's advertised-role reconciliation diagnostic.
+    // It does not prove that the publisher's scripts/styles/hiring scope closes.
+    const document=readNativeDocument(careersHtml),employerAdvertisedRoleIds=[...new Set(document.nodes(node=>node.tag==='a'&&node.attrs.href).flatMap(node=>{
+      try{const url=new URL(node.attrs.href,CAREERS_URL);return url.origin==='https://job-boards.greenhouse.io'?url.pathname.match(/^\/sigmacomputing\/jobs\/(\d+)\/?$/)?.slice(1)||[]:[]}catch{return []}
+    }))].sort(),unreconciledEmployerRoleIds=employerAdvertisedRoleIds.filter(id=>!nativeById.has(id))
+    // Pass the original COMPLETE envelope to the CURRENT strongest GH engine.
+    // Enrichment never replaces its country/detail/identity/date/content proof.
+    const strong=await createPublishingGapAtsScraper({...PROVIDER_METADATA,boardToken:'sigmacomputing',sourceScopeComplete:false,lifecycleCleanupAllowed:false}).run({fetchJson:async url=>{if(url!==buildGreenhouseJobsApiUrl())throw Error('Unexpected Sigma native endpoint');return payload},signal})
+    signal?.throwIfAborted()
+    const strongestEngineEvidence=readInventoryEvidence(strong),jobs=strong.map(job=>{
+      const native=nativeById.get(String(job.jobId));if(!native)throw Error('Sigma strongest engine returned unknown native identity')
+      const {sourceFirstPublished,sourceUpdatedAt,sourceNativeEducation,sourceNativeMetadata,sourceNativeRecord,sourceNativeContent,sourceNativeRequisitionId,sourceCriteriaIssues,sourceCriteriaSchemaKnown,sourcePublisher,legalHiringEmployer}=native
+      return {...job,sourceFirstPublished,sourceUpdatedAt,sourceNativeEducation,sourceNativeMetadata,sourceNativeRecord,sourceNativeContent,sourceNativeRequisitionId,sourceCriteriaIssues,sourceCriteriaSchemaKnown,sourcePublisher,legalHiringEmployer,sourceScopeComplete:false,lifecycleCleanupAllowed:false}
+    })
+    const audit={source:SOURCE,productionWrites:false,currentLiveQualification:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,authoritativeSourceTotal:null,authoritativeIndiaFacetCount:null,observedNativeBoardCount:payload.jobs.length,originalNativePayload:structuredClone(payload),nativeRecords,strongestEngineEvidence,employerAdvertisedRoleIds,unreconciledEmployerRoleIds,noClosingCaptureClaimed:true,missingProofs:['current active corporate renderer/programs/styles and all hiring channels','all role-owned country alternatives and public full native detail/schema','fresh opening/closing global inventory']}
+    Object.defineProperty(jobs,'sourceAudit',{value:audit});onAudit?.(structuredClone(audit));signal?.throwIfAborted()
+    return attachInventoryEvidence(jobs,{...strongestEngineEvidence,status:'discovery-only',listingComplete:false,reportedTotal:null,indiaFacetCount:null,reason:'sigma-native-criteria-retained-source-scope-unresolved:'+strongestEngineEvidence.reason+(unreconciledEmployerRoleIds.length?';official-role-links-not-reconciled':'')})
   },
 })
 
