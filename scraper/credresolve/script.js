@@ -1,7 +1,8 @@
+import {readCredresolveFields} from './nativeFields.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {nativeLocationCountryName} from '../../scraper-support/shared/nativeJobPosting.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -32,46 +33,6 @@ const normalizeText = (value) => {
     .trim()
 
   return normalized || null
-}
-
-const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
-const stripTags = (value) => normalizeText(
-  String(value ?? '')
-    .replace(/<(br|\/p|\/div|\/li|\/section|\/h[1-6]|\/ul|\/ol)\b[^>]*>/gi, '\n')
-    .replace(/<li\b[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, ' '),
-)
-
-const extractFieldValue = (html, heading) => {
-  const pattern = new RegExp(
-    `<h[1-6][^>]*>\\s*${escapeRegex(heading)}\\s*<\\/h[1-6]>\\s*<p[^>]*>([\\s\\S]*?)<\\/p>`,
-    'i',
-  )
-
-  return normalizeText(String(html ?? '').match(pattern)?.[1])
-}
-
-const extractListAfterHeading = (html, heading) => {
-  const pattern = new RegExp(
-    `<h[1-6][^>]*>\\s*${escapeRegex(heading)}\\s*<\\/h[1-6]>([\\s\\S]*?)(?=<h[1-6][^>]*>|$)`,
-    'i',
-  )
-  const section = String(html ?? '').match(pattern)?.[1] || ''
-
-  return [...section.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
-    .map((match) => stripTags(match[1]))
-    .filter(Boolean)
-}
-
-const extractDescriptionParts = (html) => {
-  const parts = [
-    extractFieldValue(html, 'Job Description'),
-    ...extractListAfterHeading(html, 'Key Responsibilities'),
-    ...extractListAfterHeading(html, 'Requirements'),
-  ]
-
-  return parts.filter(Boolean)
 }
 
 const titleCaseWords = (value) => String(value ?? '')
@@ -110,7 +71,7 @@ const normalizeLocation = (value) => {
   }
 
   return {
-    location: `${normalized}, India`,
+    location: normalized,
     city: normalized,
   }
 }
@@ -153,7 +114,7 @@ const assertVerifiedFeed = (records) => {
 
   for (const record of records) {
     const classList = Array.isArray(record?.class_list) ? record.class_list : []
-    if (!classList.includes('type-awsm_job_openings') || !isSameDomainDetail(record?.link)) {
+    if (!classList.includes('type-awsm_job_openings') || !classList.includes('status-publish') || !Number.isInteger(record?.id) || record.id<=0 || record?.content?.protected===true || !isSameDomainDetail(record?.link) || !/^\/jobopenings\/[^/]+\/$/.test(new URL(record.link).pathname)) {
       throw new Error('CredResolve verified WP Job Openings feed no longer matches the public archive')
     }
   }
@@ -172,12 +133,16 @@ export const buildSearchUrl = (page, pageSize = PAGE_SIZE) => {
 export const extractSearchResults = (records) => assertVerifiedFeed(records)
   .map((record) => {
     const contentHtml = String(record?.content?.rendered ?? '')
-    const department = extractFieldValue(contentHtml, 'Job Category')
-    const requirements = extractListAfterHeading(contentHtml, 'Requirements')
-    const description = extractDescriptionParts(contentHtml).join(' ') || null
-    const locationField = extractFieldValue(contentHtml, 'Job Location')
-    const typeField = extractFieldValue(contentHtml, 'Job Type')
+    const fields=readCredresolveFields(contentHtml)
+    const department = fields.field('Job Category')
+    const requirements = fields.items('Requirements')
+    const description = [fields.field('Job Description'),...fields.items('Key Responsibilities'),...fields.items('Requirements')].filter(Boolean).join(' ')||null
+    const locationField = fields.field('Job Location')
+    const typeField = fields.field('Job Type')
     const location = normalizeLocation(locationField)
+    const feedTitle=normalizeText(record.title?.rendered),contentJobTitle=fields.field('Job Title')
+    const descriptionIntroRole=fields.field('Job Description')?.match(/^The (.+?) (?:at CredResolve(?: Advisory Services)? )?(?:will|shall|is responsible for)\b/i)?.[1]||null
+    const identityQualified=Boolean(feedTitle&&contentJobTitle&&feedTitle===contentJobTitle&&(!descriptionIntroRole||descriptionIntroRole===feedTitle))
 
     return {
       title: normalizeText(record?.title?.rendered),
@@ -185,7 +150,7 @@ export const extractSearchResults = (records) => assertVerifiedFeed(records)
       department,
       location: location.location,
       city: location.city,
-      country: 'India',
+      country: nativeLocationCountryName(location.location),
       jobId: record?.id == null ? null : String(record.id),
       requisitionId: record?.id == null ? null : String(record.id),
       sourceUrl: normalizeText(record?.link),
@@ -197,29 +162,25 @@ export const extractSearchResults = (records) => assertVerifiedFeed(records)
       requiredSkills: requirements,
       postingDate: null,
       closingDate: null,
-      jobDescription: description,
+      jobDescription: identityQualified?description:null,
+      rawNativeRoleEvidence:{feedTitle,contentJobTitle,descriptionIntroRole,workplaceField:locationField,identityQualified,contentHtml,contentJobDescription:description,activeNativeFieldsQualified:true,applicationSubmissionQualified:false},
       remoteStatus: normalizeRemoteStatus(locationField, typeField),
     }
   })
   .filter((job) => job.title && job.jobId && job.sourceUrl)
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json,text/plain,*/*',
-  },
-  label: SOURCE,
-  timeoutMs: 30000,
-})
+const defaultFetchJson=async(url,options)=>JSON.parse(await defaultFetchText(url,options))
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 30000,
-})
+const defaultFetchText = async (url,{signal}={}) => {
+ const request=new URL(url),surface=JOB_OPENINGS_URL
+ const fail=(message,fields={})=>{throw Object.assign(Error('credresolve native input: '+message),{abortRetries:true,...fields,inventoryEvidence:{status:'coverage-gap',surface,firstParty:true,listingComplete:false,reportedTotal:null,indiaFacetCount:null}})}
+ signal?.throwIfAborted()
+ let response;try{response=await fetch(url,{headers:{'User-Agent':USER_AGENT,Accept:'text/html,application/javascript,application/json;q=0.9,*/*;q=0.8'},signal:signal?AbortSignal.any([signal,AbortSignal.timeout(20000)]):AbortSignal.timeout(20000)})}catch(error){if(signal?.aborted)throw signal.reason;fail(error.message,{cause:error})}
+ if(!response.ok){await response.body?.cancel();fail('HTTP '+response.status,{status:response.status,code:[401,403].includes(response.status)?'access_denied':'native_unavailable',finalUrl:response.url})}
+ const final=new URL(response.url||url),samePath=final.pathname.replace(/\/$/,'')===request.pathname.replace(/\/$/,'')
+ if(final.origin!==request.origin||!samePath||final.search!==request.search){await response.body?.cancel();fail('unexpected native redirect',{status:response.status,finalUrl:response.url})}
+ const body=await response.text();signal?.throwIfAborted();if(/<title\b[^>]*>\s*(?:Access\s*Denied|Forbidden)\s*<\/title>|<Code>\s*AccessDenied\s*<\/Code>/i.test(body))fail('native access denial returned HTTP200',{status:response.status,code:'access_denied',finalUrl:response.url});return body
+}
 
 export const createCredresolveScraper = ({
   pageSize = PAGE_SIZE,
@@ -227,22 +188,25 @@ export const createCredresolveScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
+    now = () => new Date().toISOString(), signal,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    const homepageHtml = await fetchText(HOMEPAGE_URL,{signal})
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('CredResolve verified official homepage surface no longer matches the known first-party site')
     }
 
-    const jobOpeningsHtml = await fetchText(JOB_OPENINGS_URL)
+    const jobOpeningsHtml = await fetchText(JOB_OPENINGS_URL,{signal})
     if (!hasOfficialJobOpeningsSignal(jobOpeningsHtml)) {
       throw new Error('CredResolve verified official job openings surface no longer matches the known first-party site')
     }
 
-    const jobs = []
+    const jobs = [],seen=new Set();let pagesFetched=2
 
     for (let page = 1; ; page += 1) {
-      const pageRecords = assertVerifiedFeed(await fetchJson(buildSearchUrl(page, pageSize)))
+      if(page>100)throw Object.assign(Error('CredResolve unbounded inventory pagination'),{abortRetries:true})
+      const pageRecords = assertVerifiedFeed(await fetchJson(buildSearchUrl(page, pageSize),{signal}))
+      pagesFetched+=1
+      for(const row of pageRecords){if(seen.has(row.id))throw Object.assign(Error('CredResolve duplicated/cyclic native role inventory'),{abortRetries:true});seen.add(row.id)}
       jobs.push(...extractSearchResults(pageRecords).map((job) => ({
         ...job,
         source: SOURCE,
@@ -253,9 +217,19 @@ export const createCredresolveScraper = ({
       if (pageRecords.length < pageSize) break
     }
 
-    return jobs
+    if(!jobs.length)throw Object.assign(Error('CredResolve native role inventory empty without scope proof'),{abortRetries:true})
+    return finishNativeCollection(jobs,{now,pagesFetched,observedListingCount:seen.size})
   },
 })
+
+const finishNativeCollection=(jobs,{observedListingCount=jobs.length,pagesFetched=1,now=()=>new Date().toISOString(),...extra}={})=>{
+ const failures=jobs.filter(j=>!j.jobDescription||j.rawNativeRoleEvidence?.identityQualified===false).map(j=>({stage:'native-detail',nativeRoleId:j.jobId??j.sourceUrl,kind:j.rawNativeRoleEvidence?.identityQualified===false?'identity-conflict':'missing-content'}))
+ const audit={source:'credresolve',observedListingCount,candidateDetails:observedListingCount,extractedDetailJobs:jobs.length-failures.length,excludedDetailJobs:0,failures,reportedTotal:null,indiaFacetCount:null,listingPaginationComplete:null,closingInventoryMatches:null,sourceScopeComplete:false,observedMissingWorkplaces:jobs.filter(j=>!j.location).length,observedUnknownCountries:jobs.filter(j=>!j.country).length,rawProvenanceLimit:'Observed native rows only; employer-wide scope, exact India count, closing inventory and active application submission remain unqualified',...extra}
+ for(const job of jobs){job.sourceListingComplete=false;job.sourceDetailComplete=Boolean(job.jobDescription)&&job.rawNativeRoleEvidence?.identityQualified!==false}
+ if(jobs.length)jobs[0].nativeCollectionEvidence=audit
+ Object.defineProperty(jobs,'nativeCollectionEvidence',{value:audit})
+ return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:JOB_OPENINGS_URL,firstParty:true,listingComplete:false,pagesFetched,reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason:'observed-native-subset-with-unqualified-employer-scope'})
+}
 
 export const run = async (options = {}) => createCredresolveScraper().run(options)
 

@@ -1,3 +1,11 @@
+import * as capturedFs from 'node:fs'
+import {gunzipSync as capturedGunzip} from 'node:zlib'
+import * as nativeSource from '../../scraper/continualengine/script.js'
+import {readInventoryEvidence as capturedInventory} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readSourceObservationEvidence as capturedObservations} from '../../scraper-support/utils/sourceObservationEvidence.js'
+const nativePacket=JSON.parse(capturedGunzip(capturedFs.readFileSync(new URL('../../scraper/continualengine/test-data/2026-10-31-native-packets.json.gz',import.meta.url))))
+const nativePage=url=>{const row=nativePacket.requests.find(row=>row.url===url);assert.ok(row,'Unrecorded native URL '+url);return row.body}
+const withCapturedNative=async(callback,alter=row=>row)=>{const original=globalThis.fetch,calls=[];globalThis.fetch=async(input,options={})=>{const url=String(input),method=options.method||'GET',body=String(options.body||''),recorded=nativePacket.requests.find(row=>row.url===url&&(row.method||'GET')===method&&(method==='GET'||row.requestBody===body));assert.ok(recorded,'Unrecorded native request '+url+' '+body);const row=alter({...recorded});calls.push({url,method,body});const response=new Response(Buffer.from(row.body,row.bodyEncoding),{status:row.status,headers:{'content-type':row.contentType}});Object.defineProperty(response,'url',{value:row.finalUrl});return response};try{return await callback(calls)}finally{globalThis.fetch=original}}
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -22,51 +30,6 @@ const careersHtml = `
   </div>
 `
 
-test('extractCareerListings maps official Continual Engine accordion openings', async () => {
-  const continualEngine = await import('../../scraper/continualengine/script.js')
+test("Continual Engine complete active panels preserve native text with unknown workplace, country and requisition",async()=>{const jobs=nativeSource.extractCareerListings(nativePage(nativeSource.CAREERS_URL));assert.equal(jobs.length,4);assert.equal(jobs[0].title,'Product Analyst');assert.ok(jobs.every(job=>job.jobDescription.length>400&&job.location==null&&job.country==null&&job.requisitionId==null));assert.match(jobs[0].sourceUrl,/#elementor-tab-title-3311$/);assert.match(jobs[3].jobDescription,/Responsibilities/i)})
 
-  const jobs = continualEngine.extractCareerListings(careersHtml)
-
-  assert.equal(jobs.length, 2)
-  assert.deepEqual(jobs[0], {
-    title: 'Product Analyst',
-    company: 'Continual Engine',
-    department: null,
-    location: null,
-    city: null,
-    country: 'India',
-    jobId: 'continualengine-product-analyst',
-    requisitionId: 'continualengine-product-analyst',
-    sourceUrl: 'https://www.continualengine.com/careers/#elementor-tab-title-3311',
-    applyUrl: 'mailto:contact@continualengine.com',
-    employmentType: null,
-    experienceRequired: '2 years',
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: 'Minimum of 2 years of experience as a Product Analyst or in a similar role.',
-    remoteStatus: 'On-site',
-  })
-  assert.equal(jobs[1].title, 'Editor - Alt text (All engineering subjects)')
-  assert.equal(jobs[1].jobId, 'continualengine-editor-alt-text-all-engineering-subjects')
-})
-
-test('run fetches the official Continual Engine careers page and decorates its listings', async () => {
-  const continualEngine = await import('../../scraper/continualengine/script.js')
-  const requestedUrls = []
-
-  const jobs = await continualEngine.createContinualEngineScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return careersHtml
-    },
-  })
-
-  assert.deepEqual(requestedUrls, ['https://www.continualengine.com/careers/'])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'continualengine')
-  assert.equal(jobs[0].link, 'mailto:contact@continualengine.com')
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
-})
+test("Continual Engine default path reads one native page and retains partial inventory metadata",async()=>{await withCapturedNative(async calls=>{const jobs=await nativeSource.run();assert.equal(calls.length,1);assert.equal(jobs.length,4);assert.ok(jobs.every(job=>job.source==='continualengine'&&job.country==null));assert.equal(capturedInventory(jobs).status,'coverage-gap');assert.equal(capturedInventory(jobs).indiaFacetCount,null)})})

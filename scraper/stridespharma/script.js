@@ -180,7 +180,8 @@ export const extractJobDetail = (xml = '') => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -229,10 +230,33 @@ export const createStridesPharmaScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
+    fetchText: rawFetchText = defaultFetchText,
+    fetchJson: rawFetchJson = defaultFetchJson,
+    signal,
     now = () => new Date().toISOString(),
   } = {}) {
+    const fetchText = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const value = await rawFetchText(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return value
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
+    const fetchJson = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const value = await rawFetchJson(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return value
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Strides Pharma verified first-party careers page changed materially')

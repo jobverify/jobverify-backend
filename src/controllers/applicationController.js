@@ -5,7 +5,7 @@ import Job from '../models/Job.js';
 import { safeApplicationUrl, recordApplicationEvidence, publicApplication } from '../services/applicationService.js';
 import { respondWithInternalError } from '../utils/respondWithInternalError.js';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 2;
 
 export async function getApplications(req, res) {
   const { page: rawPage = '1', status = 'all', stage = 'all' } = req.query ?? {};

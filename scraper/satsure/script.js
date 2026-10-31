@@ -2,6 +2,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readVisibleNativeDocument } from '../../scraper-support/utils/visibleNativeHtml.js'
+import { extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
+import { nativeCountryName, nativeLocationCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 
 import SATSURE_CATALOG from './catalog.js'
 
@@ -59,7 +63,8 @@ const parseQuotedConfigValue = (block, key) => {
   return normalizeWhitespace(match?.[1] ?? null)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -68,7 +73,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -79,16 +85,27 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 })
 
 export const extractOfficialKekaHandoffUrl = (html = '') => {
-  const match = String(html ?? '').match(/https:\/\/satsure\.keka\.com\/careers\/?/i)
-  if (!match?.[0]) return null
-  return match[0].replace(/\/$/, '')
+  const doc = readVisibleNativeDocument(String(html ?? ''), {strict:true})
+  const links = doc.nodes(node => node.tag === 'a' && node.attrs.href).flatMap(node => {
+    try {
+      const url = new URL(node.attrs.href, CAREERS_PAGE_URL)
+      return url.origin === 'https://satsure.keka.com' && /^\/careers\/?$/.test(url.pathname)
+        && !url.username && !url.password && !url.search && !url.hash ? [url.href.replace(/\/$/,'')] : []
+    } catch { return [] }
+  })
+  const unique = [...new Set(links)]
+  return unique.length === 1 ? unique[0] : null
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page) || ''
+  const doc = readVisibleNativeDocument(page, {strict:true})
+  const normalized = normalizeWhitespace(doc.nodes(node => node.tag === 'root').map(node => doc.text(node)).join(' ')) || ''
+  const heads = doc.nodes(node => node.tag === 'head')
+  const titles = heads.length === 1 ? heads[0].children.filter(node => typeof node !== 'string' && node.tag === 'title' && !node.inert)
+    .map(node => normalizeWhitespace(node.raw)) : []
 
-  return /<title[^>]*>\s*SatSure Careers \| Build the Future of Earth Intelligence\s*<\/title>/i.test(page)
+  return titles.length === 1 && titles[0] === 'SatSure Careers | Build the Future of Earth Intelligence'
     && normalized.includes('Think Bold To Soar High')
     && normalized.includes("Let's Solve for Earth from Space")
     && normalized.includes('View Open Positions')
@@ -149,15 +166,42 @@ export const hasExpectedPortalIdentity = (payload = {}) => {
     && normalizedPortalDomain === EXPECTED_PORTAL_DOMAIN
 }
 
-const isIndiaLocation = (location = {}) => {
-  if (String(location.countryCode ?? '').trim().toUpperCase() === 'IN') return true
-  if (/^india$/i.test(String(location.countryName ?? '').trim())) return true
+const inventoryUnavailable = reason => Object.assign(new Error('SatSure native inventory unavailable: '+reason), {
+  softFailure:true, abortRetries:true, failureKind:'upstream_inventory_unavailable',
+})
 
-  return /\bindia\b/i.test(
-    [location.name, location.city, location.state]
-      .filter(Boolean)
-      .join(' '),
-  )
+const locationCountry = (location = {}) => {
+  const code = normalizeWhitespace(location.countryCode)?.toUpperCase()
+  const name = normalizeWhitespace(location.countryName)
+  const codeCountry = nativeCountryName(code), nameCountry = nativeCountryName(name)
+  if (codeCountry && nameCountry && codeCountry !== nameCountry) {
+    throw inventoryUnavailable('native country fields conflict')
+  }
+  // Unknown typed values are not positive foreign-country evidence. A city or
+  // state never fills them. Written country suffixes belong to this location.
+  const label = normalizeWhitespace(location.name)
+  const labelCountry = label && (label.includes(',') || /^India$/i.test(label)) ? nativeLocationCountryName(label) : null
+  const typed = code && !codeCountry || name && !nameCountry ? null : codeCountry || nameCountry
+  if (typed && labelCountry && typed !== labelCountry) throw inventoryUnavailable('native country and workplace conflict')
+  return typed || (!code && !name ? labelCountry : null)
+}
+const isIndiaLocation = location => locationCountry(location) === 'India'
+
+const descriptionWorkplace = html => {
+  if (typeof html !== 'string' || !html.trim()) return null
+  const doc = readVisibleNativeDocument(html, {strict:true})
+  const blocks = new Set(['p','div','li'])
+  const labels = doc.nodes(node => blocks.has(node.tag)
+    && !node.children.some(child => typeof child !== 'string' && blocks.has(child.tag)))
+    .map(node => doc.text(node).match(/^Location\s*:\s*(.{1,200})$/i)?.[1]?.trim()).filter(Boolean)
+  const unique = [...new Set(labels)]
+  return unique.length === 1 ? unique[0] : null
+}
+
+const descriptionText = html => {
+  if (typeof html !== 'string' || !html.trim()) return null
+  const doc = readVisibleNativeDocument(html, {strict:true})
+  return normalizeWhitespace(doc.nodes(node => node.tag === 'root').map(node => doc.text(node)).join(' '))
 }
 
 const addUniquePart = (parts, seen, value) => {
@@ -184,7 +228,7 @@ const buildLocationLabel = (location = {}) => {
     addUniquePart(parts, seen, state)
   }
 
-  addUniquePart(parts, seen, 'India')
+  addUniquePart(parts, seen, locationCountry(location))
 
   return parts.join(', ') || null
 }
@@ -194,8 +238,6 @@ const buildLocation = (locations = []) => {
   const seen = new Set()
 
   for (const location of Array.isArray(locations) ? locations : []) {
-    if (!isIndiaLocation(location)) continue
-
     const label = buildLocationLabel(location)
     if (!label) continue
 
@@ -211,8 +253,6 @@ const buildLocation = (locations = []) => {
 
 const extractPrimaryCity = (locations = []) => {
   for (const location of Array.isArray(locations) ? locations : []) {
-    if (!isIndiaLocation(location)) continue
-
     const city = normalizeWhitespace(location.city) || normalizeWhitespace(location.name)
     if (!city || /^india$/i.test(city) || /^remote$/i.test(city)) continue
 
@@ -224,8 +264,6 @@ const extractPrimaryCity = (locations = []) => {
 
 const extractPrimaryState = (locations = []) => {
   for (const location of Array.isArray(locations) ? locations : []) {
-    if (!isIndiaLocation(location)) continue
-
     const state = normalizeWhitespace(location.state)
     if (!state || /^india$/i.test(state)) continue
 
@@ -248,13 +286,15 @@ const toEmploymentType = (jobType) => (jobType === 2 || jobType === '2' ? 'Full 
 const mapJob = (job = {}, { domain } = {}) => {
   const locations = Array.isArray(job.jobLocations) ? job.jobLocations : []
   const indiaLocations = locations.filter(isIndiaLocation)
+  const unknownLocations = locations.filter(location => locationCountry(location) == null)
+  const retainedLocations = [...indiaLocations, ...unknownLocations]
   const hasExplicitLocations = locations.length > 0
   const jobId = normalizeWhitespace(job.id)
   const title = normalizeWhitespace(job.title)
   const sourceUrl = buildJobDetailUrl({ domain, jobId })
   const applyUrl = buildApplyUrl({ domain, jobId })
 
-  if ((hasExplicitLocations && indiaLocations.length === 0) || !jobId || !title || !sourceUrl || !applyUrl) {
+  if ((hasExplicitLocations && retainedLocations.length === 0) || !jobId || !title || !sourceUrl || !applyUrl) {
     return null
   }
 
@@ -262,10 +302,10 @@ const mapJob = (job = {}, { domain } = {}) => {
     title,
     company: COMPANY,
     department: normalizeWhitespace(job.departmentName),
-    location: hasExplicitLocations ? buildLocation(indiaLocations) : null,
-    city: hasExplicitLocations ? extractPrimaryCity(indiaLocations) : null,
-    state: hasExplicitLocations ? extractPrimaryState(indiaLocations) : null,
-    country: 'India',
+    location: hasExplicitLocations ? buildLocation(retainedLocations) : descriptionWorkplace(job.description),
+    city: hasExplicitLocations ? extractPrimaryCity(retainedLocations) : null,
+    state: hasExplicitLocations ? extractPrimaryState(retainedLocations) : null,
+    country: indiaLocations.length ? 'India' : null,
     jobId,
     requisitionId: normalizeWhitespace(job.jobNumber) || jobId,
     sourceUrl,
@@ -279,14 +319,29 @@ const mapJob = (job = {}, { domain } = {}) => {
       : [],
     postingDate: normalizePostingDate(job.publishedOn),
     closingDate: null,
-    jobDescription: normalizeWhitespace(job.description || job.excerpt),
+    jobDescription: descriptionText(job.description),
   }
 }
 
-export const extractSearchResults = (payload, { domain } = {}) =>
-  (Array.isArray(payload) ? payload : [])
-    .map((job) => mapJob(job, { domain }))
-    .filter(Boolean)
+export const extractSearchResults = (payload, { domain } = {}) => {
+  if (!Array.isArray(payload)) throw inventoryUnavailable('active feed is not a native job array')
+  const seen = new Set()
+  for (const job of payload) {
+    if (!job || typeof job !== 'object' || Array.isArray(job)
+      || !['number','string'].includes(typeof job.id) || !/^\d+$/.test(String(job.id))
+      || !Number.isSafeInteger(Number(job.id)) || Number(job.id) < 1
+      || typeof job.title !== 'string' || !job.title.trim() || !Array.isArray(job.jobLocations)
+      || job.description != null && typeof job.description !== 'string'
+      || job.jobLocations.some(location => !location || typeof location !== 'object' || Array.isArray(location)
+        || ['name','city','state','countryCode','countryName'].some(key => location[key] != null && typeof location[key] !== 'string'))) {
+      throw inventoryUnavailable('native role identity or workplace schema is missing or malformed')
+    }
+    const identity = String(Number(job.id))
+    if (seen.has(identity)) throw inventoryUnavailable('duplicate native vacancy identity')
+    seen.add(identity)
+  }
+  return payload.map(job => mapJob(job, {domain})).filter(Boolean)
+}
 
 export const createSatSureScraper = ({
   maxJobs = null,
@@ -295,20 +350,34 @@ export const createSatSureScraper = ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
+    signal,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    signal?.throwIfAborted()
+    const read = reader => async url => {
+      signal?.throwIfAborted()
+      try {
+        const value = await reader(url, {signal})
+        signal?.throwIfAborted()
+        return value
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
+    const readText = read(fetchText), readJson = read(fetchJson)
+    const careersHtml = await readText(CAREERS_PAGE_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified SatSure careers page changed materially')
     }
 
-    const kekaShellHtml = await fetchText(OFFICIAL_CAREERS_HANDOFF_URL)
+    const kekaShellHtml = await readText(OFFICIAL_CAREERS_HANDOFF_URL)
     const embeddedDocumentPath = extractEmbeddedCareersDocumentPath(kekaShellHtml)
     if (!embeddedDocumentPath || !embeddedDocumentPath.includes(EXPECTED_IDENTIFIER)) {
       throw new Error('The verified SatSure Keka surface changed materially')
     }
 
     const embeddedCareersUrl = new URL(embeddedDocumentPath, OFFICIAL_CAREERS_HANDOFF_URL).toString()
-    const careerConfig = extractCareerConfig(await fetchText(embeddedCareersUrl))
+    const careerConfig = extractCareerConfig(await readText(embeddedCareersUrl))
     if (
       !careerConfig
       || careerConfig.identifier !== EXPECTED_IDENTIFIER
@@ -324,23 +393,45 @@ export const createSatSureScraper = ({
       throw new Error('Unable to build SatSure Keka endpoints')
     }
 
-    const portalInfo = await fetchJson(careerPortalInfoUrl)
+    const portalInfo = await readJson(careerPortalInfoUrl)
     if (!hasExpectedPortalIdentity(portalInfo)) {
       throw new Error('The verified SatSure Keka surface no longer matches the exact company identity')
     }
 
-    const jobs = extractSearchResults(await fetchJson(activeJobsUrl), careerConfig)
+    const payload = await readJson(activeJobsUrl)
+    const jobs = extractSearchResults(payload, careerConfig)
     const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+    const scrapedAt = now()
+    const byId = new Map(payload.map(job => [String(job.id),job]))
 
-    return selectedJobs.map((job) => ({
+    const result = selectedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
+      scrapedAt,
       companyCareerPage: CAREERS_PAGE_URL,
       companyDomain: PROVIDER_METADATA.companyDomain,
       atsPlatform: PROVIDER_METADATA.atsPlatform,
+      sourceListingComplete:false,
+      sourceDetailComplete:Boolean(extractActiveDescription(job.jobDescription)),
+      sourceScopeComplete:false,
+      lifecycleCleanupAllowed:false,
+      nativeLocationEvidence:{jobLocations:byId.get(job.jobId).jobLocations,
+        descriptionWorkplace:descriptionWorkplace(byId.get(job.jobId).description),
+        countryQualified:Boolean(job.country),
+        reason:job.country?'explicit-native-role-country':'native-role-country-unknown'},
     }))
+    const audit = {source:SOURCE,observedListingCount:payload.length,reportedTotal:null,indiaFacetCount:null,
+      nativeMissingWorkplaceCount:jobs.filter(job=>!job.location).length,
+      nativeUnknownCountryCount:jobs.filter(job=>!job.country).length,
+      extractedDetailJobs:result.filter(job=>job.sourceDetailComplete).length,
+      sourceScopeComplete:false,listingPaginationComplete:null,closingInventoryMatches:null,
+      reason:'Observed single public active feed; full employer and India inventory scope are unverified.'}
+    if(result.length) result[0].nativeCollectionEvidence = audit
+    Object.defineProperty(result,'nativeCollectionEvidence',{value:audit})
+    return attachInventoryEvidence(result,{status:'coverage-gap',surface:activeJobsUrl,firstParty:true,
+      listingComplete:false,pagesFetched:5,reportedTotal:null,indiaFacetCount:null,verifiedAt:scrapedAt,
+      reason:'single-active-feed-employer-scope-unverified'})
   },
 })
 

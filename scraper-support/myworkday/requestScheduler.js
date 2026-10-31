@@ -1,4 +1,4 @@
-const getShardKey = (url) => {
+export const getWorkdayShardKey = (url) => {
   const parsed = new URL(url)
   return parsed.hostname.match(/(?:^|\.)(wd\d+)\.myworkday(?:jobs|site)\.com$/i)?.[1]?.toLowerCase()
     || parsed.origin
@@ -15,7 +15,7 @@ export class WorkdayRequestScheduler {
   }
 
   stateFor(url) {
-    const key = getShardKey(url)
+    const key = getWorkdayShardKey(url)
     if (!this.shards.has(key)) {
       this.shards.set(key, { active: 0, queue: [], nextStartAt: 0, cooldownUntil: 0, timer: null })
     }

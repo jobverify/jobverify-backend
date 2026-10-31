@@ -1,13 +1,20 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
 
 import {
   GE_CAREERS_HUB_URL,
   GE_SUBSIDIARY_SOURCES,
   createGeneralElectricScraper,
 } from '../../scraper/generalelectric/script.js'
+const nativeFAQ = JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/generalelectric/test-data/faq-delegation-20261031.json.gz', import.meta.url))))
+const fetchPage = async url => {
+  assert.equal(url, GE_CAREERS_HUB_URL)
+  return structuredClone(nativeFAQ.packets[0])
+}
 
-test('General Electric wrapper scraper delegates to the three verified first-party GE career surfaces', async () => {
+test('General Electric wrapper preserves the three independent company identities after a native FAQ check', async () => {
   const invocationOrder = []
   const scraper = createGeneralElectricScraper({
     geAerospaceRun: async (options) => {
@@ -36,7 +43,7 @@ test('General Electric wrapper scraper delegates to the three verified first-par
     },
   })
 
-  const jobs = await scraper.run({ maxJobs: 10 })
+  const jobs = await scraper.run({ maxJobs: 10, fetchPage })
 
   assert.equal(GE_CAREERS_HUB_URL, 'https://www.ge.com/faq')
   assert.deepEqual(GE_SUBSIDIARY_SOURCES, ['geaerospace', 'gevernova', 'gehealthcare'])
@@ -55,7 +62,7 @@ test('General Electric wrapper scraper delegates to the three verified first-par
   )
 })
 
-test('General Electric wrapper scraper applies a final maxJobs cap after combining subsidiary jobs', async () => {
+test('General Electric wrapper applies its final cap without changing independent company ownership', async () => {
   const scraper = createGeneralElectricScraper({
     geAerospaceRun: async () => [
       { title: 'A1', company: 'GE Aerospace', source: 'geaerospace' },
@@ -69,7 +76,7 @@ test('General Electric wrapper scraper applies a final maxJobs cap after combini
     ],
   })
 
-  const jobs = await scraper.run({ maxJobs: 2 })
+  const jobs = await scraper.run({ maxJobs: 2, fetchPage })
 
   assert.deepEqual(
     jobs.map((job) => [job.company, job.title]),

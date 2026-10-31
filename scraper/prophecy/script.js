@@ -1,3 +1,4 @@
+import { createNativeGreenhouseScraper, NATIVE_GREENHOUSE_PROFILES, nativeSourceMetadata } from '../../scraper-support/native-sources/declaredGreenhouse/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -12,8 +13,8 @@ const USER_AGENT =
 export const SOURCE = PROPHECY_CATALOG.source
 export const COMPANY = PROPHECY_CATALOG.companyName
 export const OFFICIAL_BRAND_NAME = PROPHECY_CATALOG.officialBrandName
-export const VERIFIED_ON = PROPHECY_CATALOG.verifiedOn
-export const PROVIDER_METADATA = PROPHECY_CATALOG
+export const VERIFIED_ON = null
+export const PROVIDER_METADATA = nativeSourceMetadata(NATIVE_GREENHOUSE_PROFILES["prophecy"], PROPHECY_CATALOG)
 export const CAREERS_URL = PROPHECY_CATALOG.companyCareerPage
 export const GREENHOUSE_DEPARTMENTS_API_URL = PROPHECY_CATALOG.greenhouseDepartmentsApiUrl
 export const GREENHOUSE_JOB_BOARD_PREFIX = PROPHECY_CATALOG.greenhouseJobBoardPrefix
@@ -236,34 +237,9 @@ export const extractIndiaJobsFromDepartmentsPayload = (
     })
 }
 
-export const createProphecyScraper = ({
-  now: defaultNow = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = defaultNow,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Verified official careers page changed materially')
-    }
+export const createProphecyScraper = (defaults = {}) => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["prophecy"], defaults)
 
-    const apiUrl = extractGreenhouseDepartmentsApiUrl(careersHtml)
-    if (normalizeComparableUrl(apiUrl) !== normalizeComparableUrl(GREENHOUSE_DEPARTMENTS_API_URL)) {
-      throw new Error('Verified careers page embedded greenhouse departments api changed materially')
-    }
-
-    const jobs = extractIndiaJobsFromDepartmentsPayload(
-      await fetchJson(apiUrl),
-      { scrapedAt: now() },
-    )
-
-    return enrichIndiaJobsWithGreenhouseDetails(jobs, fetchText)
-  },
-})
-
-export const run = async (options = {}) => createProphecyScraper(options).run(options)
+export const run = options => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["prophecy"]).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

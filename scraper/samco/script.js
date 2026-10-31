@@ -1,3 +1,4 @@
+import {finish,nativeFetch} from './native.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -19,20 +20,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
+const defaultFetchText = nativeFetch
 
 export const PROVIDER_METADATA = SAMCO_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -70,32 +58,33 @@ export const createSamcoScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchText = defaultFetchText,fetchData,signal,now:overrideNow,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    signal?.throwIfAborted()
+    const homepageHtml = await fetchText(HOMEPAGE_URL,{signal})
     if (!hasVerifiedSamcoHomepageSignal(homepageHtml)) {
       throw new Error('Samco verified Samco homepage no longer matches the pinned first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersHtml = await fetchText(CAREERS_URL,{signal})
     if (!hasVerifiedSamcoCareersSignal(careersHtml)) {
       throw new Error('Samco verified Samco careers page no longer matches the pinned first-party surface')
     }
 
-    const cachedFetchText = async (url) => {
+    const cachedFetchText = async (url,options) => {
       if (url === HOMEPAGE_URL) return homepageHtml
       if (url === CAREERS_URL) return careersHtml
-      return fetchText(url)
+      return fetchText(url,options)
     }
 
-    const scrapedAt = now()
+    const scrapedAt = (overrideNow||now)()
     const jobs = await createSamcoSecuritiesLimitedScraper({
       now: () => scrapedAt,
     }).run({
-      fetchText: cachedFetchText,
+      fetchText: cachedFetchText,fetchData,signal,
     })
 
-    return jobs.map((job) => decorateSamcoJob(job, scrapedAt))
+    return finish(jobs.map((job) => decorateSamcoJob(job, scrapedAt)),{...jobs.nativeCollectionEvidence,source:SOURCE,now:()=>scrapedAt})
   },
 })
 

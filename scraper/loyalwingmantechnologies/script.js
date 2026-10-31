@@ -36,7 +36,8 @@ const parseLocation = (value) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -94,13 +95,19 @@ export const extractIndiaJobListings = (html) => [...String(html ?? '').matchAll
 }).filter(Boolean)
 
 export const createLoyalWingmanTechnologiesScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const companyHtml = await fetchText(LINKEDIN_COMPANY_PAGE_URL)
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString(), signal } = {}) {
+    const read = async url => {
+      signal?.throwIfAborted()
+      const html = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      return html
+    }
+    const companyHtml = await read(LINKEDIN_COMPANY_PAGE_URL)
     if (!pageIndicatesLoyalWingmanCompany(companyHtml)) {
       throw new Error('Loyal Wingman Technologies LinkedIn company page no longer matches the verified organization')
     }
 
-    const jobsHtml = await fetchText(LINKEDIN_INDIA_JOBS_URL)
+    const jobsHtml = await read(LINKEDIN_INDIA_JOBS_URL)
     if (!pageIndicatesLoyalWingmanIndiaJobsSearch(jobsHtml)) {
       throw new Error('Loyal Wingman Technologies LinkedIn India jobs search no longer matches the verified public search')
     }

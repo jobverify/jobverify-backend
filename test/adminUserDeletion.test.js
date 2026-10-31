@@ -15,7 +15,7 @@ import TelegramLinkToken from "../src/models/TelegramLinkToken.js";
 import UserSuggestion from "../src/models/UserSuggestion.js";
 import Application from '../src/models/Application.js';
 import Resume from '../src/models/Resume.js';
-import { mockOutreachDeletion } from './helpers/outreachDeletionDoubles.js';
+import { mockAccountDeletion } from './helpers/accountDeletionDoubles.js';
 import AdminAudit from "../src/models/AdminAudit.js";
 import SiteSettings from "../src/models/SiteSettings.js";
 import BlacklistedToken from "../src/models/BlacklistedToken.js";
@@ -39,7 +39,7 @@ const responseDouble = () => ({
 });
 
 const setupCleanup = (t) => {
-  mockOutreachDeletion(t);
+  mockAccountDeletion(t);
   const removals = [];
   for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application, Resume, PendingUser, AdminAudit]) {
     t.mock.method(Model, "deleteMany", async (filter) => {
@@ -55,7 +55,7 @@ const setupCleanup = (t) => {
     return { deletedCount: 1 };
   });
   t.mock.method(User, "updateOne", async (filter, update) => {
-    if (update.$set?.outreachDeletingAt) return { matchedCount: 1 };
+    if (update.$set?.accountDeletingAt) return { matchedCount: 1 };
     removals.push(["UserAccess", filter, update]);
     return { matchedCount: 1 };
   });

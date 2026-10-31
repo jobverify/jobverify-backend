@@ -143,6 +143,7 @@ const phenomScraper = createPhenomScraper({
   defaultDetailConcurrency: 4,
   defaultDetailEnrichmentBudgetMs: 150000,
   nativeConcatenatedStateCountry: true,
+  nativeCityCountryLiteral: true,
 })
 
 export const {

@@ -17,7 +17,10 @@ import {
 } from '../supportPaths.js'
 import { TARGETED_OPENING_PROVIDERS } from './targetedOpeningProviders.js'
 import { attachInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { attachInventoryDelegationEvidence, readInventoryDelegationEvidence } from '../utils/inventoryDelegationEvidence.js'
+import { attachSourceObservationEvidence, readSourceObservationEvidence } from '../utils/sourceObservationEvidence.js'
 import { hasMatchingPublicAtsBinding } from '../utils/publicAtsIdentity.js'
+import { buildHttpError, parseRetryAfterHeader } from '../utils/fetch.js'
 
 const currentDir = SUPPORT_PROVIDER_DIR
 const scraperDir = SCRAPER_DIR
@@ -479,7 +482,7 @@ const createAuthorizedFetchJson = (provider) => {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} for ${authConfig.tokenUrl}`)
+      throw buildHttpError(response, authConfig.tokenUrl)
     }
 
     const payload = await response.json()
@@ -510,16 +513,16 @@ const createAuthorizedFetchJson = (provider) => {
     }
 
     let response = await executeRequest()
+    let httpError = response.ok ? null : buildHttpError(response, url)
     if (
       shouldAuthorizeRequest(provider, url)
       && (response.status === 401 || response.status === 403)
     ) {
       response = await executeRequest({ forceRefresh: true })
+      httpError = response.ok ? null : buildHttpError(response, url)
     }
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} for ${url}`)
-    }
+    if (httpError) throw httpError
 
     return response.json()
   }
@@ -547,6 +550,10 @@ export const getScraperCatalog = ({
 
 export const decorateJobsWithProviderMetadata = (jobs, provider) => {
   const decoratedJobs = jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
+  const sourceObservations = readSourceObservationEvidence(jobs, provider.source)
+  if (sourceObservations) attachSourceObservationEvidence(decoratedJobs, sourceObservations)
+  const delegationEvidence = readInventoryDelegationEvidence(jobs)
+  if (delegationEvidence) attachInventoryDelegationEvidence(decoratedJobs, delegationEvidence)
   const inventoryEvidence = readInventoryEvidence(jobs)
   if (inventoryEvidence) {
     attachInventoryEvidence(decoratedJobs, inventoryEvidence)
@@ -623,7 +630,14 @@ const fetchJson = async (url, options = {}) => {
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+    const error = buildHttpError(response, url)
+    const retryAfter = response.headers?.get?.('retry-after')
+    if (retryAfter != null) {
+      error.retryAfter = retryAfter
+      const retryDelayMs = error.retryDelayMs ?? parseRetryAfterHeader(retryAfter)
+      if (retryDelayMs != null) error.retryDelayMs = retryDelayMs
+    }
+    throw error
   }
 
   return response.json()

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateResumeText, RESUME_MODEL } from '../outreach/resumeRuntime.js';
-import { compilerArguments, compilerFailure } from '../outreach/latexCompiler.js';
+import { generateResumeText, RESUME_MODEL } from '../resume-tailoring/resumeRuntime.js';
+import { compilerArguments, compilerFailure } from '../resume-tailoring/latexCompiler.js';
 
 test('resume model is pinned separately and counts the complete rendered prompt before inference', async () => {
   assert.match(RESUME_MODEL.modelId, /Qwen3-4B-Instruct-2507/);

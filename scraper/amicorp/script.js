@@ -2,6 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { AMICORP_CATALOG } from './catalog.js'
+import {readAmicorpDetail} from './nativeContract.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readVisibleNativeDocument} from '../../scraper-support/utils/visibleNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -72,8 +75,10 @@ const isTrustedCareerDetailUrl = (value) => {
   }
 }
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, {signal} = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -84,20 +89,26 @@ const defaultFetchText = async (url) => {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return response.text()
+  signal?.throwIfAborted()
+  if(response.url && response.url !== url) throw new Error('Amicorp native response redirected away from the requested surface')
+  const html=await response.text()
+  signal?.throwIfAborted()
+  return html
 }
 
 export const extractCareerListings = (html) => {
-  const matches = String(html ?? '').matchAll(
-    /<div class="gem-infotext\b[\s\S]*?<a[^>]+href="([^"]+)"[^>]+class="[^"]*gem-infotext-wrap[^"]*"[\s\S]*?<div class="title-customize[^"]*"[^>]*>\s*([\s\S]*?)\s*<\/div>[\s\S]*?<div class="subtitle-customize[^"]*"[^>]*>\s*([\s\S]*?)\s*<\/div>/gi,
-  )
+  const doc=readVisibleNativeDocument(String(html??''),{strict:true})
+  const within=(node,predicate)=>node.inert?[]:[...(predicate(node)?[node]:[]),...node.children.filter(child=>typeof child!=='string').flatMap(child=>within(child,predicate))]
   const seen = new Set()
   const listings = []
 
-  for (const match of matches) {
-    const sourceUrl = toAbsoluteUrl(match[1])
-    const title = normalizeWhitespace(match[2])
-    const subtitle = normalizeWhitespace(match[3])
+  for (const anchor of doc.nodes(node=>node.tag==='a'&&doc.hasClass(node,'gem-infotext-wrap'))) {
+    const titles=within(anchor,node=>node.tag==='div'&&(node.attrs.class||'').split(/\s+/).some(name=>name.startsWith('title-customize')))
+    const subtitles=within(anchor,node=>node.tag==='div'&&(node.attrs.class||'').split(/\s+/).some(name=>name.startsWith('subtitle-customize')))
+    if(titles.length!==1||subtitles.length!==1)continue
+    const sourceUrl = toAbsoluteUrl(anchor.attrs.href)
+    const title = doc.text(titles[0])
+    const subtitle = doc.text(subtitles[0])
 
     if (!sourceUrl || !title || !subtitle || !isTrustedCareerDetailUrl(sourceUrl)) {
       continue
@@ -214,42 +225,20 @@ export const extractJobDetail = ({ listing, html }) => {
     throw new Error('Amicorp detail page is outside the trusted first-party careers surface')
   }
 
-  const headerMeta = extractHeaderMeta(html)
-  const applyUrl = extractApplyFormUrl(html)
-  const postingDate = extractPostingDate(html)
-  const jobDescription = extractFirstDescriptionParagraph(html)
-
-  if (!headerMeta || !postingDate || !jobDescription) {
-    throw new Error('Amicorp detail page no longer exposes the verified role metadata')
-  }
-
-  if (applyUrl !== TRUSTED_APPLY_FORM_URL) {
-    throw new Error('Amicorp detail page no longer exposes the trusted apply form')
-  }
-
-  const location = parseLocationLabel(headerMeta.locationLabel)
-  const requisitionId = headerMeta.requisitionId
+  const native=readAmicorpDetail(html,listing)
 
   return {
     title: listing.title,
     company: COMPANY,
     department: null,
-    location: location.location,
-    city: location.city,
-    state: location.state,
-    country: location.country,
-    jobId: `${SOURCE}-${requisitionId.toLowerCase()}`,
-    requisitionId,
+    ...native,
     sourceUrl: listing.sourceUrl,
-    applyUrl,
     employmentType: null,
     experienceRequired: null,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate,
     closingDate: null,
-    jobDescription,
     remoteStatus: null,
   }
 }
@@ -258,13 +247,19 @@ export const createAmicorpScraper = ({
   maxJobs = null,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, signal } = {}) {
+    let pagesFetched=0
+    const read=async url=>{
+      signal?.throwIfAborted()
+      try{const html=await fetchText(url,{signal});signal?.throwIfAborted();pagesFetched++;return html}
+      catch(error){signal?.throwIfAborted();throw error}
+    }
+    const careersHtml = await read(CAREERS_URL)
     if (!hasOfficialCareersSurface(careersHtml)) {
       throw new Error('Response is not the verified official Amicorp careers page')
     }
 
-    const pageSitemapXml = await fetchText(PAGE_SITEMAP_URL)
+    const pageSitemapXml = await read(PAGE_SITEMAP_URL)
     if (!hasOfficialPageSitemapSurface(pageSitemapXml)) {
       throw new Error('Response is not the verified Amicorp page sitemap surface')
     }
@@ -284,20 +279,21 @@ export const createAmicorpScraper = ({
         throw new Error(`Amicorp page sitemap no longer advertises the verified detail URL: ${listing.sourceUrl}`)
       }
 
-      const detailHtml = await fetchText(listing.sourceUrl)
+      const detailHtml = await read(listing.sourceUrl)
       jobs.push(extractJobDetail({ listing, html: detailHtml }))
     }
 
-    return jobs.map((job) => ({
+    return attachInventoryEvidence(jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl,
       scrapedAt: now(),
-    }))
+    })),{status:'coverage-gap',surface:CAREERS_URL,firstParty:true,listingComplete:false,pagesFetched,
+      reportedTotal:null,indiaFacetCount:null,verifiedAt:null,reason:'Opening native careers cards and sitemap checked; closing/company-wide inventory not established'})
   },
 })
 
-export const run = async (options = {}) => createAmicorpScraper().run(options)
+export const run = async (options = {}) => createAmicorpScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

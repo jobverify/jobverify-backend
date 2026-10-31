@@ -1,3 +1,4 @@
+import {readHighlights,readCategories,categoryObservations,bindApplication,finish,nativeFetch} from './native.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -55,90 +56,14 @@ const buildJob = ({
   atsPlatform: ATS_PLATFORM,
 })
 
-export const extractHighlightedRoles = (html) => {
-  const jobs = []
-  const matches = String(html ?? '').matchAll(
-    /<strong[^>]*>([^<]+)<\/strong>[\s\S]*?<a[^>]+href="([^"]+)"[^>]*>[\s\S]*?Apply Now[\s\S]*?<\/a>/gi,
-  )
+export const extractHighlightedRoles = readHighlights
+export const extractJobCategories = categoryObservations
 
-  for (const match of matches) {
-    const title = normalizeWhitespace(match[1])
-    const applyUrl = normalizeWhitespace(match[2])
-
-    if (!title || /bluestock fintech/i.test(title)) continue
-
-    jobs.push(buildJob({
-      title,
-      sourceUrl: CAREER_PAGE_URL,
-      applyUrl,
-      description: 'Highlighted opening from the official Bluestock careers page.',
-    }))
-  }
-
-  return jobs
-}
-
-export const extractJobCategories = (html) => {
-  const jobs = []
-  const matches = String(html ?? '').matchAll(
-    /<div class="job-category-card"[\s\S]*?<h5>([^<]+)<\/h5>[\s\S]*?<p>[\s\S]*?(\d+\s+Job Openings)[\s\S]*?<\/p>[\s\S]*?<a[^>]+href="([^"]+)"[^>]*>[\s\S]*?View All Jobs[\s\S]*?<\/a>/gi,
-  )
-
-  for (const match of matches) {
-    const title = normalizeWhitespace(match[1])
-    const description = normalizeWhitespace(match[2])
-    const applyUrl = normalizeWhitespace(match[3])
-
-    if (!title) continue
-
-    jobs.push(buildJob({
-      title,
-      sourceUrl: JOBS_PAGE_URL,
-      applyUrl,
-      description,
-    }))
-  }
-
-  return jobs
-}
-
-const fetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
-
-export const run = async () => {
-  const [careersHtml, jobsHtml] = await Promise.all([
-    fetchText(CAREER_PAGE_URL),
-    fetchText(JOBS_PAGE_URL),
-  ])
-
-  const seenJobIds = new Set()
-  const jobs = [...extractHighlightedRoles(careersHtml), ...extractJobCategories(jobsHtml)]
-    .filter((job) => {
-      if (!job.jobId || seenJobIds.has(job.jobId)) return false
-      seenJobIds.add(job.jobId)
-      return true
-    })
-    .map((job) => ({
-      ...job,
-      source: 'bluestock',
-      link: job.applyUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-
-  const maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null
-  return maxJobs ? jobs.slice(0, maxJobs) : jobs
+export const run = async ({fetchText=nativeFetch,now=()=>new Date().toISOString(),signal}={}) => {
+ signal?.throwIfAborted();const careersHtml=await fetchText(CAREER_PAGE_URL,{signal}),jobsHtml=await fetchText(JOBS_PAGE_URL,{signal}),highlights=readHighlights(careersHtml),categories=readCategories(jobsHtml),jobs=[]
+ for(const job of highlights){const landing=await fetchText(job.applyUrl,{signal}),proved=bindApplication(job,landing);jobs.push({...proved,source:'bluestock',link:proved.applyUrl||job.sourceUrl,scrapedAt:now()})}
+ const maxJobs=Number.isInteger(config.maxJobs)&&config.maxJobs>0?config.maxJobs:null,result=maxJobs?jobs.slice(0,maxJobs):jobs
+ return finish(result,{recordKind:categories.length&&jobs.length?'mixed':jobs.length?'vacancy-rows':'categories',observedRecordCount:highlights.length+categories.length,observedVacancyCount:highlights.length,observedCategories:categories,observedCategoryCount:categories.length,actualVacancyCount:null,pagesFetched:2+highlights.length,now})
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

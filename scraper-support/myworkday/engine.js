@@ -23,6 +23,10 @@ import {
   nativeDetailReceiptKey, readNativeDetailReceipt, rememberNativeDetailReceipt,
   NativeDetailRecoveryPendingError, NATIVE_DETAIL_SCOPE_PASS_MS, nativeDetailPassBudget, currentNativeDetailRecovery,
 } from '../utils/nativeDetailRecovery.js'
+import {
+  currentWorkdayVanityHandoffReceipt, currentWorkdayVanityBoardReceipt,
+  snapshotWorkdayVanityCaptureClocks, readBoundedWorkdayVanityHtml,
+} from './officialVanityCareers.js'
 
 const DEFAULT_COUNTRY_FACET_PARAMETER = 'locationCountry'
 const DEFAULT_WORKDAY_DETAIL_FETCH_CONCURRENCY = 4
@@ -85,7 +89,7 @@ const createWorkdayEmptyResult = ({
   })
 }
 
-const mapWithConcurrency = async (items, concurrency, mapper) => {
+const mapWithConcurrency = async (items, concurrency, mapper, errorController = null) => {
   const limit = Math.max(1, Number.parseInt(concurrency, 10) || 1)
   const results = new Array(items.length)
   let nextIndex = 0
@@ -100,12 +104,17 @@ const mapWithConcurrency = async (items, concurrency, mapper) => {
       try {
         results[currentIndex] = await mapper(items[currentIndex], currentIndex)
       } catch (error) {
-        firstError ||= error
+        if (!firstError) {
+          firstError = error
+          errorController?.abort(error)
+        }
         return
       }
     }
   }
 
+  // Cancellation stops active native peers; ownership is retained until every
+  // worker's actual transport/response consumption has settled.
   await Promise.all(
     Array.from({ length: Math.min(limit, items.length) }, worker),
   )
@@ -1833,6 +1842,38 @@ const runWorkdayJobsApiScraper = async ({
     let boardReceipt = null
     if (countryProof) {
       try {
+        if (config.officialVanityCareersUrl) {
+          const readVanityPage = async (url, maxBytes) => {
+            const controller = new AbortController()
+            const deadline = new WorkdayRequestTimeoutError(source, url, requestTimeoutMs)
+            const timer = setTimeout(() => controller.abort(deadline), requestTimeoutMs)
+            const boundarySignal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal
+            const captureStartedAt = new Date().toISOString()
+            try {
+              return await fetchWorkdayResource(url,
+                { headers: { accept: 'text/html,application/xhtml+xml', 'user-agent': WORKDAY_FETCH_USER_AGENT }, cache: 'no-store', redirect: 'manual' },
+                { signal: boundarySignal, timeoutMs: requestTimeoutMs, source, requestScheduler },
+                async response => {
+                  boundarySignal.throwIfAborted()
+                  const html = await readBoundedWorkdayVanityHtml(response, { expectedUrl: url, signal: boundarySignal, maxBytes })
+                  boundarySignal.throwIfAborted()
+                  const clocks = snapshotWorkdayVanityCaptureClocks(response, { captureStartedAt, capturedAt: new Date().toISOString() })
+                  return { response, html, clocks }
+                })
+            } catch (error) {
+              throwIfAborted(signal)
+              boundarySignal.throwIfAborted()
+              throw error
+            } finally { clearTimeout(timer) }
+          }
+          const primary = await readVanityPage(config.officialCareersUrl, 4 * 1024 * 1024)
+          throwIfAborted(signal)
+          const handoff = currentWorkdayVanityHandoffReceipt({ officialCareersUrl: config.officialCareersUrl,
+            vanityCareersUrl: config.officialVanityCareersUrl, boardUrl: baseUrl, ...primary })
+          const native = await readVanityPage(config.officialVanityCareersUrl, 1024 * 1024)
+          throwIfAborted(signal)
+          boardReceipt = currentWorkdayVanityBoardReceipt({ handoff, ...native })
+        } else {
         const { response, html } = await fetchWorkdayResource(
           config.officialCareersUrl,
           { headers: { accept: 'text/html,application/xhtml+xml', 'user-agent': WORKDAY_FETCH_USER_AGENT }, cache: 'no-store' },
@@ -1841,11 +1882,13 @@ const runWorkdayJobsApiScraper = async ({
         )
         boardReceipt = currentWorkdayBoardReceipt({ officialCareersUrl: config.officialCareersUrl,
           boardUrl: baseUrl, response, html })
+        }
         // The configured API must belong to the board the corporate page names.
         const inferred = inferWorkdayJobsApiConfig(baseUrl)
         if (!inferred || inferred.jobsApiUrl !== jobsApiUrl) throw new Error('Workday API does not match the corporate-bound tenant and site')
       } catch (error) {
         throwIfAborted(signal)
+        if (config.officialVanityCareersUrl && error instanceof WorkdayRequestTimeoutError) throw error
         throw buildWorkdayIncompleteScopeError(source, config.officialCareersUrl || baseUrl, error)
       }
     }
@@ -2108,8 +2151,8 @@ const runWorkdayJobsApiScraper = async ({
           new Error('Native Workday detail lacks the matching requisition, title, site, or canonical same-board URL'))
       }
       const suppliedCountries = [info?.country, info?.jobRequisitionLocation?.country].filter(country => country != null)
-      if (countryProof && (!suppliedCountries.length && config.retainProvenIndiaOnUnresolvedLocations !== true || suppliedCountries
-        .some(country => !hasRecognizedWorkdayCountry(country)))) {
+      if (countryProof && !suppliedCountries.length && config.retainProvenIndiaOnUnresolvedLocations !== true
+        || suppliedCountries.some(country => !hasRecognizedWorkdayCountry(country))) {
         throw Object.assign(buildWorkdayIncompleteScopeError(source, candidate.canonicalLink,
           new Error('Native Workday country fields are unrecognized or conflicting')),
         { code: 'WORKDAY_NATIVE_COUNTRY_MISMATCH' })
@@ -2126,8 +2169,7 @@ const runWorkdayJobsApiScraper = async ({
       }
     }
     const scopeController = new AbortController()
-    const scopeSignal = nativeDetailRecovery
-      ? (signal ? AbortSignal.any([signal, scopeController.signal]) : scopeController.signal) : signal
+    const scopeSignal = signal ? AbortSignal.any([signal, scopeController.signal]) : scopeController.signal
     const scopeTimer = nativeDetailRecovery && scopeCandidates.length
       ? setTimeout(() => scopeController.abort(new NativeDetailRecoveryPendingError(scopeCandidates.length)),
         nativeDetailPassBudget(nativeDetailRecovery, NATIVE_DETAIL_SCOPE_PASS_MS)) : null
@@ -2160,6 +2202,7 @@ const runWorkdayJobsApiScraper = async ({
             if (!scopeController.signal.aborted) throw error
           }
         },
+        scopeController,
       )
     } finally { clearTimeout(scopeTimer) }
     const pendingScopeCount = scopeCandidates.filter(candidate => !candidate.scopePayload).length
@@ -2349,6 +2392,7 @@ const runWorkdayJobsApiScraper = async ({
             ? workdayJob
             : null
         },
+        detailController,
       )
 
       allJobs.push(...detailedJobs.filter(Boolean))

@@ -6,6 +6,25 @@ import {buildPublishingGapReport,publishingGapCsv} from '../../scripts/publishin
 const imported="import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js';\n",empty="return attachInventoryEvidence([], {status:'discovery-only',firstParty:true,listingComplete:false})",fixtureModule=fileURLToPath(new URL('../../scraper/fixture/script.js',import.meta.url)),classify=code=>classifyProviderImplementation({adapter:'script',modulePath:fixtureModule},{exists:()=>true,read:()=>code}).type
 test('exported discovery-only runs are not implemented extraction scripts',()=>{assert.equal(classify(imported+`export async function run() { await inspectOfficialSite(); ${empty} }`),'discovery-only');assert.equal(classify(imported+`export const run=async()=>{ await inspectOfficialSite(); ${empty} }`),'discovery-only')})
 test('a locally defined factory run delegated by the public run entry is inspected',()=>{assert.equal(classify(imported+`export const createScraper=({fetchImpl=fetch}={})=>({async run({signal}={}){ const handoff=['a'].some(x=>{if(x)return true;return false}); await fetchImpl(handoff); ${empty} }}); export const run=(options={})=>createScraper(options).run(options)`),'discovery-only')})
+
+test('non-status shorthand metadata cannot promote an always-empty discovery checker to implemented extraction',()=>{
+ for(const metadata of ["status:'discovery-only',firstParty", "firstParty,status:'discovery-only',pagesFetched", "status:'discovery-only',__proto__"]){
+  assert.equal(classify(imported+`export async function run(){const firstParty=false,pagesFetched=2,__proto__={};return attachInventoryEvidence([],{${metadata}})}`),'discovery-only',metadata)
+ }
+})
+
+test('shorthand or duplicate unknown status values remain inconclusive',()=>{
+ for(const metadata of ["status", "status:'discovery-only',status", "firstParty,...fields,status:'discovery-only'"]){
+  assert.equal(classify(imported+`export async function run(){const status=mode,firstParty=false;return attachInventoryEvidence([],{${metadata}})}`),'script',metadata)
+ }
+})
+
+test('current AgNext diagnostic checker remains discovery-only while Auth0 delegates to native extraction',()=>{
+ for(const [source,type] of [['agnext','discovery-only'],['auth0','script']]){
+  const modulePath=fileURLToPath(new URL(`../../scraper/${source}/script.js`,import.meta.url))
+  assert.equal(classifyProviderImplementation({adapter:'script',modulePath}).type,type,source)
+ }
+})
 test('semicolon-free exported wrappers stop before the ordinary CLI entry block',()=>{assert.equal(classify(imported+`const factory=()=>({async run(){${empty}}})\nexport const run=(options={})=>factory(options).run(options)\nif(process.argv[1]){const jobs=await run();saveToFile(jobs)}`),'discovery-only')})
 test('unrelated discovery helpers cannot override an actual positive run',()=>{assert.equal(classify(imported+`function discovery(){${empty}} export async function run(){return fetchActualJobs()}`),'script')})
 test('positive branches and positive discovery-labelled job arrays remain implemented',()=>{assert.equal(classify(imported+`export async function run(){if(ready)return jobs;${empty}}`),'script');assert.equal(classify(imported+"export async function run(){return attachInventoryEvidence(jobs,{status:'discovery-only'})}"),'script')})

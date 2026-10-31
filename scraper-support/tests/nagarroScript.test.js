@@ -244,6 +244,7 @@ test('Nagarro validates the first-party careers surface and maps SmartRecruiters
     requiredSkills: [],
     remoteStatus: 'On-site',
     publicExperienceChecked: true,
+    sourceDetailComplete: true,
     scrapedAt: jobs[0].scrapedAt,
   })
 
@@ -252,7 +253,7 @@ test('Nagarro validates the first-party careers surface and maps SmartRecruiters
   assert.match(jobs[0].preferredQualification ?? '', /distributed engineering teams/i)
 })
 
-test('Nagarro preserves sparse public detail payloads as checked without triggering downstream page refetches', async () => {
+test('Nagarro preserves sparse public detail as incomplete without inventing an employer description', async () => {
   const nagarro = await loadModule()
 
   const jobs = await nagarro.createNagarroScraper().run({
@@ -294,18 +295,17 @@ test('Nagarro preserves sparse public detail payloads as checked without trigger
   })
 
   assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].publicExperienceChecked, true)
-  assert.match(
-    jobs[0].jobDescription ?? '',
-    /detail api exposed only the applicant privacy notice/i,
-  )
+  assert.equal(jobs[0].publicExperienceChecked, false)
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.equal(jobs[0].sourceDetailFailureKind, 'missing-content')
+  assert.equal(jobs[0].jobDescription, '')
   assert.match(
     jobs[0].preferredQualification ?? '',
     /application privacy notice|applicant%20privacy%20notice/i,
   )
 })
 
-test('Nagarro rewrites motivational SmartRecruiters shells into checked source summaries', async () => {
+test('Nagarro preserves motivational native text and marks its role description incomplete', async () => {
   const nagarro = await loadModule()
 
   const jobs = await nagarro.createNagarroScraper().run({
@@ -331,9 +331,9 @@ test('Nagarro rewrites motivational SmartRecruiters shells into checked source s
           ...DETAIL_PAYLOAD,
           name: 'Associate Staff Engineer',
           postingUrl:
-            'https://jobs.smartrecruiters.com/Nagarro1/743999982757594-associate-staff-engineer',
+            'https://jobs.smartrecruiters.com/Nagarro1/744000138066871-associate-staff-engineer',
           applyUrl:
-            'https://jobs.smartrecruiters.com/Nagarro1/743999982757594-associate-staff-engineer?oga=true',
+            'https://jobs.smartrecruiters.com/Nagarro1/744000138066871-associate-staff-engineer?oga=true',
           jobAd: {
             sections: {
               jobDescription: {
@@ -359,12 +359,14 @@ test('Nagarro rewrites motivational SmartRecruiters shells into checked source s
   })
 
   assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].publicExperienceChecked, true)
-  assert.match(jobs[0].jobDescription ?? '', /official nagarro smartrecruiters posting/i)
-  assert.doesNotMatch(jobs[0].jobDescription ?? '', /by this point in your career/i)
+  assert.equal(jobs[0].publicExperienceChecked, false)
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.equal(jobs[0].sourceDetailFailureKind, 'missing-content')
+  assert.match(jobs[0].jobDescription ?? '', /by this point in your career/i)
+  assert.doesNotMatch(jobs[0].jobDescription ?? '', /official nagarro smartrecruiters posting/i)
 })
 
-test('Nagarro promotes qualification-only public detail payloads into checked descriptions', async () => {
+test('Nagarro retains native qualifications separately while its missing JD remains incomplete', async () => {
   const nagarro = await loadModule()
 
   const jobs = await nagarro.createNagarroScraper().run({
@@ -390,9 +392,9 @@ test('Nagarro promotes qualification-only public detail payloads into checked de
           ...DETAIL_PAYLOAD,
           name: 'Associate Principal Consultant, Business Analyst',
           postingUrl:
-            'https://jobs.smartrecruiters.com/Nagarro1/743999982752143-associate-principal-consultant-business-analyst',
+            'https://jobs.smartrecruiters.com/Nagarro1/744000138066871-associate-principal-consultant-business-analyst',
           applyUrl:
-            'https://jobs.smartrecruiters.com/Nagarro1/743999982752143-associate-principal-consultant-business-analyst?oga=true',
+            'https://jobs.smartrecruiters.com/Nagarro1/744000138066871-associate-principal-consultant-business-analyst?oga=true',
           jobAd: {
             sections: {
               jobDescription: { text: '' },
@@ -418,8 +420,11 @@ test('Nagarro promotes qualification-only public detail payloads into checked de
   })
 
   assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].publicExperienceChecked, true)
-  assert.match(jobs[0].jobDescription ?? '', /8\+ years of experience in business analysis/i)
+  assert.equal(jobs[0].publicExperienceChecked, false)
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.equal(jobs[0].sourceDetailFailureKind, 'missing-content')
+  assert.equal(jobs[0].jobDescription, '')
+  assert.match(jobs[0].minimumQualification ?? '', /8\+ years of experience in business analysis/i)
 })
 
 test('Nagarro overlaps detail API fetches so the large India job feed does not crawl serially', async () => {

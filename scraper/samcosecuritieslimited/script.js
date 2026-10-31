@@ -1,3 +1,4 @@
+import {departmentObservations,collect,nativeFetch} from './native.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -20,14 +21,7 @@ const CAREERS_ERROR =
   'SAMCO verified first-party careers page no longer matches the trusted public surface'
 const OPTIONS_ERROR = 'SAMCO verified public position options changed shape'
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = nativeFetch
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
@@ -135,71 +129,13 @@ const extractPositionOptions = (html) => {
   return options.map(({ requisitionId, title }) => ({ requisitionId, title }))
 }
 
-export const extractPublicJobs = (html) => {
-  if (!hasOfficialCareersSignal(html)) {
-    throw new Error(CAREERS_ERROR)
-  }
-
-  const cards = extractPositionCards(html)
-  const options = extractPositionOptions(html)
-
-  const optionById = new Map(options.map((option) => [option.requisitionId, option.title]))
-  if (cards.length !== options.length || cards.some((card) => optionById.get(card.requisitionId) !== card.title)) {
-    throw new Error(OPTIONS_ERROR)
-  }
-
-  return cards.map((opening) => {
-    const slug = `${opening.requisitionId}-${slugify(opening.title)}`
-    const jobId = `${SOURCE}-${slug}`
-
-    return {
-      title: opening.title,
-      company: COMPANY,
-      department: opening.title,
-      location: null,
-      city: null,
-      country: 'India',
-      jobId,
-      requisitionId: opening.requisitionId,
-      sourceUrl: `${CAREERS_URL}#${jobId}`,
-      applyUrl: CAREERS_URL,
-      employmentType: null,
-      workplaceType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: normalizeWhitespace(
-        `Public SAMCO careers department opening: ${opening.title}. `
-          + 'Apply through the official SAMCO careers page shared resume submission form.',
-      ),
-    }
-  })
-}
+export const extractPublicJobs = departmentObservations
 
 export const createSamcoSecuritiesLimitedScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error(HOMEPAGE_ERROR)
-    }
-
-    const careersHtml = await fetchText(CAREERS_URL)
-    const jobs = extractPublicJobs(careersHtml)
-
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: (overrideNow || now)(),
-      companyCareerPage: CAREERS_URL,
-      companyDomain: COMPANY_DOMAIN,
-      atsPlatform: 'official-company-careers',
-    }))
+  async run(options = {}) {
+    return collect({...options,now:options.now||now,homepageVerifier:hasOfficialHomepageSignal})
   },
 })
 

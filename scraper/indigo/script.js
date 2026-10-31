@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { composeAbortSignals, fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
 import { INDIGO_CATALOG } from './catalog.js'
 import { runNativeIndigo } from './nativeRun.js'
@@ -97,23 +97,27 @@ const normalizeSuccessFactorsUrl = (value) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal: abortSignal } = {}) => {
   return withRetry(async () => {
+    abortSignal?.throwIfAborted()
+    const requestSignal = composeAbortSignals(abortSignal, typeof AbortSignal?.timeout === 'function' ? AbortSignal.timeout(15000) : undefined)
     const response = await fetch(url, {
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
       redirect: 'follow',
-      signal: typeof AbortSignal?.timeout === 'function' ? AbortSignal.timeout(15000) : undefined,
+      signal: requestSignal,
     })
 
-    return {
-      status: response.status,
-      url: response.url,
-      html: await response.text(),
-    }
+    abortSignal?.throwIfAborted()
+    requestSignal?.throwIfAborted()
+    const html = await response.text()
+    abortSignal?.throwIfAborted()
+    requestSignal?.throwIfAborted()
+    return { status: response.status, url: response.url, html }
   }, {
+    signal: abortSignal,
     attempts: 3,
     baseDelayMs: 250,
     label: `${SOURCE}-page`,
@@ -130,6 +134,7 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
     ...(options.headers || {}),
   },
   body: options.body,
+  signal: options.signal,
   redirect: 'follow',
   attempts: 3,
   baseDelayMs: 250,
@@ -346,10 +351,25 @@ export const extractJobsFromApiPayload = (
 
 export const createIndigoScraper = () => ({
   async run({
-    fetchPage = defaultFetchPage,
-    fetchJson = defaultFetchJson,
+    fetchPage: rawFetchPage = defaultFetchPage,
+    fetchJson: rawFetchJson = defaultFetchJson,
+    signal: abortSignal,
     now = () => new Date().toISOString(),
   } = {}) {
+    abortSignal?.throwIfAborted()
+    const read = async (fetchSurface, url, options = {}) => {
+      abortSignal?.throwIfAborted()
+      try {
+        const result = await fetchSurface(url, { ...options, signal: abortSignal || options.signal })
+        abortSignal?.throwIfAborted()
+        return result
+      } catch (error) {
+        abortSignal?.throwIfAborted()
+        throw error
+      }
+    }
+    const fetchPage = (url, options) => read(rawFetchPage, url, options)
+    const fetchJson = (url, options) => read(rawFetchJson, url, options)
     const careersPage = await fetchPage(CAREERS_PAGE_URL)
     verifyPage({
       page: careersPage,

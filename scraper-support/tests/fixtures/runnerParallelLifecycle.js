@@ -7,11 +7,13 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { attachInventoryEvidence } from '../../utils/inventoryEvidence.js'
+import { fetchJsonWithRetry } from '../../utils/fetch.js'
 
 const scenario = process.argv[2]
 const recoveryScenario = ['transaction', 'transaction-resume', 'finalization-resume', 'finalization-still-unavailable', 'connection', 'status-read', 'status-write', 'quota', 'code-error', 'source-code-error'].includes(scenario)
 const state = {
   started: [],
+  httpRequests: 0,
   peerAborted: false,
   peerSettled: false,
   history: null,
@@ -26,6 +28,17 @@ const source = (name, sourceLifecycleTimeoutMs = 0) => ({
   sourceLifecycleTimeoutMs,
   run: async () => {
     state.started.push(name)
+    if (scenario === 'recovered-request-telemetry') {
+      await fetchJsonWithRetry('https://offline.invalid/jobs', {
+        attempts: 2, baseDelayMs: 0, label: 'fixture-listing',
+        fetchImpl: async () => ({
+          ok: ++state.httpRequests > 1,
+          status: state.httpRequests === 1 ? 429 : 200,
+          headers: { get: () => null },
+          json: async () => [],
+        }),
+      })
+    }
     if (scenario === 'source-code-error' && name === 'alpha') throw new TypeError('invalid scraper code')
     return attachInventoryEvidence([], { status: 'verified-empty', firstParty: true, listingComplete: true,
       surface: 'https://example.invalid/careers', pagesFetched: 1, reportedTotal: 0, verifiedAt: new Date().toISOString() })
@@ -37,6 +50,8 @@ globalThis.runnerLifecycleFixture = {
     ? [source('peer'), source('queued')]
     : scenario === 'classification-pending'
     ? [source('alpha'), source('beta')]
+    : scenario === 'recovered-request-telemetry'
+    ? [source('recovered')]
     : scenario === 'failed-retry-telemetry'
     ? [{ name: 'unavailable', run: async () => {
       state.started.push('unavailable')

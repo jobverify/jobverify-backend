@@ -108,7 +108,8 @@ export const collectPolicybazaarNative = async ({ read, now, onCorporate }) => {
     if (parts.at(-1) !== 'India') continue
     check(parts.map(nativeCountryName).filter(Boolean).every(country=>country==='India')&&!foreignState.test(fact.location),'Contradictory native location country or region')
     const apply = detail.nodes(node => node.tag === 'button' && detail.text(node) === 'Apply'
-      && (['job-details-subnav-apply-modal', 'job-details-topcard-apply-modal'].includes(node.attrs['data-modal'])||node.attrs['data-tracking-control-name']==='public_jobs_apply-link-onsite')
+      && (['job-details-subnav-apply-modal', 'job-details-topcard-apply-modal'].includes(node.attrs['data-modal'])
+        || ['public_jobs_apply-link-onsite','public_jobs_apply-link-simple_onsite'].includes(node.attrs['data-tracking-control-name']))
       && !Object.hasOwn(node.attrs, 'disabled') && node.attrs['aria-disabled'] !== 'true')
     check(apply.length > 0 && detail.nodes(node => node.tag === 'a'
       && node.attrs['data-tracking-control-name'] === 'public_jobs_nav-header-signin').some(node => {
@@ -119,7 +120,9 @@ export const collectPolicybazaarNative = async ({ read, now, onCorporate }) => {
       } catch { return false }
     }), 'Native enabled Apply or same-role sign-in route missing')
     const markup = detail.nodes(node => detail.hasClass(node, 'show-more-less-html__markup'))
-    const prose = node => node.inactive || ['strong', 'b', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(node.tag) ? ''
+    const emphasisHeading = node => ['strong','b'].includes(node.tag)
+      && /^(?:(?:role|about|the|job|and|or|responsibilities|requirements|qualifications|experience|skills|benefits|preferred|candidate|profile|perks|eligibility)[\s:,.&-]*)+$/i.test(detail.text(node))
+    const prose = node => node.inactive || ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(node.tag) || emphasisHeading(node) ? ''
       : node.children.map(child => typeof child === 'string' ? child : prose(child)).join(' ').replace(/\s+/g, ' ').trim()
     const description = markup.length === 1 && prose(markup[0]).length >= 40
       && prose(markup[0]).split(/\s+/).length >= 6 ? detail.text(markup[0]) : null

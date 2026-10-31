@@ -1,5 +1,5 @@
 import { githubRequest } from '../pipeline/github.js';
-import { monthKey, reserveUsage } from './outreachUsage.js';
+import { monthKey, reserveUsage } from './resumeUsage.js';
 import { tailoringError } from './resumeTailoringContent.js';
 
 export const TAILORED_RESUME_WORKFLOW = 'tailored-resumes.yml';

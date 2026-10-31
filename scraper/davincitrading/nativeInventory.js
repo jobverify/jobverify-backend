@@ -148,7 +148,20 @@ const readBoard = (html, page, reasons) => {
     valid(id(row.id) && id(row.internal_job_id) && clean(row.title) && clean(row.location) && row.absolute_url === nativeUrl(row.id)
       && !rows.has(String(row.id)), 'native board posting identity invalid or duplicate')
     const anchor = one(anchors.filter(n => n.attrs.href === row.absolute_url), 'native visible posting')
-    valid(folded(doc.text(anchor)) === folded(clean(row.title) + ' ' + clean(row.location)), 'native visible title/location conflicts')
+    const badges = descendants(anchor, n => cls(n, 'tag-container'))
+    let visibleIdentity = doc.text(anchor)
+    if (badges.length) {
+      const title = one(children(anchor).filter(n => n.tag === 'p' && cls(n, 'body--medium')), 'native visible posting title')
+      const location = one(children(anchor).filter(n => n.tag === 'p' && cls(n, 'body--metadata')), 'native visible posting location')
+      valid(children(anchor).length === 2 && badges.length === 1 && title.children.includes(badges[0]), 'unreviewed native badge placement')
+      const badge = badges[0], ellipse = one(children(badge), 'native badge shape'), label = one(children(ellipse), 'native badge label')
+      valid(badge.tag === 'span' && ellipse.tag === 'span' && cls(ellipse, 'ellipse') && label.tag === 'span' && cls(label, 'tag-text')
+        && children(label).length === 0 && doc.text(label) === 'New' && doc.text(badge) === 'New', 'unreviewed native posting badge')
+      // This publication badge is separate from both identity fields. Preserve
+      // title words and geography; do not strip arbitrary matching prose.
+      visibleIdentity = title.children.filter(child => child !== badge).map(child => typeof child === 'string' ? decodeNativeEntities(child) : doc.text(child)).join(' ') + ' ' + doc.text(location)
+    }
+    valid(folded(visibleIdentity) === folded(clean(row.title) + ' ' + clean(row.location)), 'native visible title/location conflicts')
     rows.set(String(row.id), row)
   }
   if (anchors.length !== rows.size) reasons.add('unaccounted-native-board-posting-links')

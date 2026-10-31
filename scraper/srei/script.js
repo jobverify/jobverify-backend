@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+
 import { SREI_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -30,9 +32,11 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const requestSignal = composeAbortSignals(signal, controller.signal)
 
   try {
     const response = await fetch(url, {
@@ -41,14 +45,19 @@ const defaultFetchPage = async (url) => {
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
       redirect: 'follow',
-      signal: controller.signal,
+      signal: requestSignal,
     })
 
-    return {
-      status: response.status,
-      url: response.url,
-      html: await response.text(),
-    }
+    signal?.throwIfAborted()
+    requestSignal.throwIfAborted()
+    const html = await response.text()
+    signal?.throwIfAborted()
+    requestSignal.throwIfAborted()
+    return { status: response.status, url: response.url, html }
+  } catch (error) {
+    signal?.throwIfAborted()
+    requestSignal.throwIfAborted()
+    throw error
   } finally {
     clearTimeout(timeout)
   }
@@ -99,7 +108,19 @@ export const hasPublicJobListingsSignal = (html = '') => (
 )
 
 export const createSreiScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchPage: rawFetchPage = defaultFetchPage, signal } = {}) {
+    signal?.throwIfAborted()
+    const fetchPage = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const page = await rawFetchPage(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return page
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
     const careersPage = await fetchPage(CAREERS_URL)
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('SREI verified first-party careers page no longer matches the known public surface')

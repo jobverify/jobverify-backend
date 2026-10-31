@@ -33,7 +33,25 @@ const surfaceStyles = (html,_doc,base) => ({
   inlineStyleSHA256:[...String(html).matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map(m=>sha256(m[1])).sort(),
   stylesheets:executableDocument(html).nodes(n=>n.tag==='link'&&n.attrs.rel==='stylesheet').map(n=>new URL(n.attrs.href,base).href).sort(),
 })
-const inlineClients = doc => doc.nodes(n=>isExecutable(n)&&!n.attrs.src).map(n=>sha256(n.raw||'')).sort()
+const inlineClients = (doc, hash = node => sha256(node.raw||'')) => doc.nodes(n=>isExecutable(n)&&!n.attrs.src).map(hash).sort()
+const corporateInlineClient = node => {
+  const raw = node.raw || '', reviewed = reviewedSurfaces.corporateInlineConfigurations?.[node.attrs.id]
+  if (!reviewed) return sha256(raw)
+  // These exact JSON assignments contain rotating public WordPress nonces.
+  // Parse without executing them, erase only the reviewed nonce value paths,
+  // and keep every configuration key/value and all surrounding code pinned.
+  const assignment = new RegExp('^\\s*var '+reviewed.variable+' = (\\{[^\\r\\n]*\\});\\r?\\n//# sourceURL='+node.attrs.id+'\\s*$').exec(raw)
+  if (!assignment) return sha256(raw)
+  try {
+    const value = JSON.parse(assignment[1])
+    for (const path of reviewed.noncePaths) {
+      const keys = path.split('.'), key = keys.pop(), parent = keys.reduce((value, part) => value?.[part], value)
+      if (!parent || typeof parent[key] !== 'string' || !/^[a-f0-9]{10}$/.test(parent[key])) return sha256(raw)
+      parent[key] = '<public-nonce>'
+    }
+    return sha256(canonical(value)) === reviewed.semanticSHA256 ? reviewed.reviewedSHA256 : sha256(raw)
+  } catch { return sha256(raw) }
+}
 const sameStyles = (actual,reviewed) => canonical(actual.inlineStyleSHA256)===canonical(reviewed.inlineStyleSHA256)&&canonical(actual.stylesheets)===canonical(reviewed.stylesheets)
 const explicitClosure = text => /\b(?:this|the)\s+(?:job|role|position|vacancy)\s+(?:(?:is|has been|has)\s+)?(?:closed|filled|expired|removed|no longer (?:available|open|active|accepting applications)|not available)\b|\b(?:applications (?:are |have been )?closed|no longer accepting applications)\b/i.test(text)
 const schema = (doc, type) => {
@@ -70,8 +88,11 @@ const NATIVE_EXTERNALS = new Set([
 
 export function corporateContract(html) {
   const doc = document(html), execution=executableDocument(html), reasons = []
-  check(sameStyles(surfaceStyles(html,doc,CAREER_PAGE_URL),reviewedSurfaces.corporate),'unreviewed corporate stylesheet visibility')
-  if(canonical(inlineClients(execution))!==canonical(reviewedSurfaces.corporate.inlineExecutableSHA256)) reasons.push('unreviewed-corporate-inline-client')
+  const styles = surfaceStyles(html,doc,CAREER_PAGE_URL)
+  const reviewed = [reviewedSurfaces.corporate,...(reviewedSurfaces.corporateStyleVersions||[])].find(version=>sameStyles(styles,version))
+  check(reviewed,'unreviewed corporate stylesheet visibility')
+  const clients = inlineClients(execution,corporateInlineClient)
+  if(canonical(clients)!==canonical(reviewed.inlineExecutableSHA256)) reasons.push('unreviewed-corporate-inline-client')
   check(doc.nodes(n => n.tag === 'link' && n.attrs.rel === 'canonical').length === 1 && doc.nodes(n => n.tag === 'link' && n.attrs.rel === 'canonical')[0].attrs.href === CAREER_PAGE_URL, 'official canonical changed')
   check(schema(doc,'Organization').some(o => o.name === 'Byteridge' && companyURL(o.url)), 'official employer identity changed')
   const activeFrames=projectedFrameContexts(doc)
@@ -90,7 +111,7 @@ export function corporateContract(html) {
   if (extraLinks.length) reasons.push('additional-unreviewed-hiring-path')
   const scripts = execution.nodes(n => isExecutable(n) && n.attrs.src).map(n => pathOnly(n.attrs.src, CAREER_PAGE_URL))
   if (scripts.some(u => !CORPORATE_SCRIPTS.has(u))) reasons.push('additional-unreviewed-corporate-client')
-  return { reasons, frames, frameContexts, extraLinks, scripts: [...new Set(scripts)].sort(),inlineClients:inlineClients(execution),styles:surfaceStyles(html,doc,CAREER_PAGE_URL) }
+  return { reasons, frames, frameContexts, extraLinks, scripts: [...new Set(scripts)].sort(),inlineClients:clients,styles }
 }
 export function frameContract(html, client) {
   // Both bytes and active execution are checked before either public read-only
@@ -110,7 +131,8 @@ export function nativePageContract(html, expected) {
   check(doc.nodes(n => n.tag === 'base').length === 0, 'unreviewed native base')
   const scripts = execution.nodes(n => n.tag === 'script' && n.attrs.src)
   const native = scripts.filter(n => new URL(n.attrs.src, NATIVE_ORIGIN).origin === NATIVE_ORIGIN)
-  check(native.length === NATIVE_CLIENTS.length && native.every(n => executable(n) && NATIVE_CLIENTS.includes(new URL(n.attrs.src, NATIVE_ORIGIN).href)) && new Set(native.map(n => n.attrs.src)).size === NATIVE_CLIENTS.length, 'native public client version/execution drift')
+  const clientURLs = [NATIVE_CLIENTS,...(reviewedSurfaces.nativeClientVersions||[]).map(version=>version.scriptURLs)].find(urls => native.length === urls.length && native.every(n => executable(n) && urls.includes(new URL(n.attrs.src, NATIVE_ORIGIN).href)) && new Set(native.map(n => new URL(n.attrs.src, NATIVE_ORIGIN).href)).size === urls.length)
+  check(clientURLs, 'native public client version/execution drift')
   check(scripts.filter(n => new URL(n.attrs.src, NATIVE_ORIGIN).origin !== NATIVE_ORIGIN).every(n => executable(n) && NATIVE_EXTERNALS.has(pathOnly(n.attrs.src, NATIVE_ORIGIN))), 'unreviewed external native client')
   check(projectedFrameContexts(doc).length === 0, 'unreviewed native frame')
   check(doc.nodes(n => n.tag === 'div' && n.attrs.id === 'root').length === 1, 'missing active public application root')
@@ -130,7 +152,7 @@ export function nativePageContract(html, expected) {
   })
   const roleLinks=doc.nodes(n=>n.tag==='a'&&n.attrs.href).map(n=>new URL(n.attrs.href,NATIVE_ORIGIN)).filter(u=>/\/job\/publicjobs\/|career|dashboard|jobs|vacanc|hiring/i.test(u.pathname)).map(u=>u.href)
   const visibleText=doc.nodes(n=>n.tag==='body').map(n=>doc.text(n)).join(' ')
-  return { posting, countries: [...new Set(countries)], clientURLs: NATIVE_CLIENTS,roleLinks,visibleClosure:explicitClosure(visibleText) }
+  return { posting, countries: [...new Set(countries)], clientURLs,roleLinks,visibleClosure:explicitClosure(visibleText) }
 }
 export function organizationContract(value) {
   check(value && typeof value === 'object' && !Array.isArray(value) && value.OrgID === ORG_ID, 'public organization identity changed')

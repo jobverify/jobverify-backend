@@ -2,6 +2,9 @@ import { createHash } from 'node:crypto'
 import { nativeCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { analyzePublishableJobs } from '../../scraper-support/utils/publishableJobMetrics.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
+import { literalFields, nativeHTMLText, nativeLocationMetadata } from '../../scraper-support/native-sources/declaredGreenhouse/nativeData.js'
+import { nativeEnvelopeFailed } from '../../scraper-support/native-sources/declaredGreenhouse/nativeCareers.js'
 import { decodeLeaf, normalizeText, visibleDocument, visibleText } from './nativeVisibility.js'
 
 export const SOURCE = 'financialtimes'
@@ -104,10 +107,18 @@ export function classifyFinancialTimesWorksites(row, graph) {
     if (!office || ref.name !== office.name || (ref.parent_id ?? null) !== office.parent_id || !Array.isArray(ref.child_ids) || state([...ref.child_ids].sort()) !== state([...office.child_ids].sort())) { issues.push('conflicting-job-office-identity:' + ref.id); continue }
     const c = add(office, 'native-office-assignment'); if (c) typedCountries.add(c)
   }
+  const metadata=nativeLocationMetadata(row),metadataCountries=new Set()
+  for(const item of metadata){
+    let country=item.country
+    if(!country&&item.originalLabel){const matches=graph.byName.get(key(item.originalLabel))||[];if(matches.length===1)country=add(matches[0],'native-location-metadata-office')}
+    evidence.push({...item,kind:'role-owned-native-location-metadata',country})
+    if(country){metadataCountries.add(country);typedCountries.add(country)}else issues.push('unresolved-native-location-metadata:'+item.originalField)
+  }
   const labels = typeof row.location?.name === 'string' ? row.location.name.split(';').map(clean).filter(Boolean) : []
   if (!labels.length) issues.push('missing-primary-location')
   for (const label of labels) {
     if (broad.has(label)) {
+      if(metadataCountries.size&&metadata.every(item=>item.country)){for(const country of metadataCountries)primaryCountries.add(country);continue}
       const body = description(row).text || ''
       const selected = (row.offices || []).map(r => graph.byId.get(r.id)).filter(Boolean)
       const supported = selected.length === 1 && typedCountries.size === 1 && !issues.length && selected[0].name === [...typedCountries][0]
@@ -159,7 +170,7 @@ export function parseFinancialTimesRole(row, graph, { now = new Date().toISOStri
 }
 
 const header = (r, name) => r.headers?.get ? r.headers.get(name) : Object.entries(r.headers || {}).find(([k]) => k.toLowerCase() === name)?.[1]
-const defaultPage = async (url, init) => { const r = await fetch(url, { ...init, redirect:'manual' }); return { url:r.url, status:r.status, headers:Object.fromEntries(r.headers), contentType:r.headers.get('content-type'), body:await r.text() } }
+const defaultPage = async (url, init) => { const r = await fetch(url, { ...init, redirect:'manual' }); return { url:r.url, status:r.status, headers:Object.fromEntries(r.headers), contentType:r.headers.get('content-type'), bodyBase64:Buffer.from(await r.arrayBuffer()).toString('base64') } }
 const gate = r => [401,403,429].includes(r?.status) || /<(?:title|h1)\b[^>]*>\s*(?:access denied|just a moment|verify you are human|security verification|bot verification|robot check|checking your browser|request rejected|captcha)/i.test(r?.body || '')
 const infoPath = path => /^\/careers\/(?:ft-blog|benefits|values)(?:\/|$)/.test(path)
 const safePath = path => /^\/careers(?:\/|$)/.test(path) && !/\/(?:apply|application|register|login|profile|consent)(?:\/|$)/i.test(path)
@@ -168,11 +179,15 @@ export const createFinancialTimesScraper = (defaults = {}) => ({ async run(optio
   const settings = { ...defaults, ...options }, signal = settings.signal, maxJobs = settings.maxJobs ?? 0, maxPages = settings.maxPages ?? 40
   valid(Number.isSafeInteger(maxJobs) && maxJobs >= 0 && Number.isSafeInteger(maxPages) && maxPages > 0, 'invalid source budget')
   valid(settings.onAudit == null || typeof settings.onAudit === 'function', 'invalid audit observer')
+  valid(settings.onRecords == null || typeof settings.onRecords === 'function', 'invalid record observer')
   const now = new Date(typeof settings.now === 'function' ? settings.now() : settings.now || new Date()).toISOString()
-  const load = settings.fetchPage || defaultPage, reasons = new Set(), receipts = []; let requests = 0
+  const load = settings.fetchPage || defaultPage, reasons = new Set(), receipts = [], rawPages = []; let requests = 0
   const init = json => ({ method:'GET', headers:{ Accept:json?'application/json':'text/html' }, signal:signal ? AbortSignal.any([signal,AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000), redirect:'manual' })
   const page = async (url, redirect = false) => {
-    signal?.throwIfAborted(); const r = await load(url,init(false)); requests++; signal?.throwIfAborted()
+    signal?.throwIfAborted(); const original = await load(url,init(false)); requests++; signal?.throwIfAborted()
+    const bytes=typeof original?.bodyBase64==='string'?Buffer.from(original.bodyBase64,'base64'):typeof original?.body==='string'?Buffer.from(original.body):null
+    const r=original&&{...original,body:bytes?.toString('utf8')}
+    if(bytes)rawPages.push({...original,requestedURL:url,bodyBase64:bytes.toString('base64'),bodyBytes:bytes.length,bodySHA256:hash(bytes)})
     if (gate(r)) { const e = new FinancialTimesNativeError('public access denied HTTP ' + r?.status); e.status=r?.status; throw e }
     valid(r && (r.url == null || r.url === url) && typeof r.body === 'string' && Buffer.byteLength(r.body) <= 8*1024*1024, 'invalid or redirected public response')
     receipts.push({url,status:r.status,bodyBytes:Buffer.byteLength(r.body),bodySHA256:hash(r.body)})
@@ -183,7 +198,7 @@ export const createFinancialTimesScraper = (defaults = {}) => ({ async run(optio
     signal?.throwIfAborted(); let payload
     if (settings.fetchJson) { payload = await settings.fetchJson(url,init(true)); requests++; signal?.throwIfAborted(); if (object(payload) && Number.isInteger(payload.status) && ('body' in payload)) { if(gate(payload))throw new FinancialTimesNativeError('public API denied HTTP '+payload.status); valid(payload.status===200,'public API HTTP '+payload.status); payload=JSON.parse(payload.body) } }
     else { const r=await page(url); valid(/^application\/json\b/i.test(r.contentType || header(r,'content-type') || ''),'native JSON content type changed'); payload=JSON.parse(r.body) }
-    valid(object(payload),'invalid native JSON'); return payload
+    valid(object(payload)&&!nativeEnvelopeFailed(payload),'invalid or failed native JSON'); return payload
   }
   const surfaces = async () => {
     const queue=[HOMEPAGE_URL,CAREERS_URL], visited=new Set(), discovered=[], shortLinks=new Set(), advertisedIds=new Set(), external=[]
@@ -230,16 +245,48 @@ export const createFinancialTimesScraper = (defaults = {}) => ({ async run(optio
     return {payload,rows}
   }
   const openingSurfaces=await surfaces(),opening=await inventory(),officePayload=await json(OFFICES_URL),graph=buildOfficeGraph(officePayload)
-  const all=[]
-  for(const row of opening.rows.values()) { signal?.throwIfAborted(); const job=parseFinancialTimesRole(row,graph,{now});all.push(job); if(!job.sourceDetailComplete)reasons.add('full-native-criteria-unresolved:'+job.jobId);if(!job.sourceCountryComplete)reasons.add('native-country-scope-unresolved:'+job.jobId) }
-  const closing=await inventory(),closingGraph=buildOfficeGraph(await json(OFFICES_URL)),closingSurfaces=await surfaces()
-  const nativeSame=state(opening.payload)===state(closing.payload),officeSame=state(graph.projection)===state(closingGraph.projection),surfaceSame=state(openingSurfaces)===state(closingSurfaces)
+  const prepare=(row,currentGraph)=>{
+    // Retain the original before projection; one malformed date/field must not
+    // discard earlier healthy observations or the original closing snapshot.
+    const original=structuredClone(row),fields=literalFields(row)
+    let job
+    try{job={...parseFinancialTimesRole(row,currentGraph,{now}),sourceNativeProjectionQualified:true,sourceNativeIssues:[]}}
+    catch(error){
+      signal?.throwIfAborted();let body
+      try{body=description(row)}catch{body={text:nativeHTMLText(row.content)||null,complete:false}}
+      job={source:SOURCE,company:COMPANY,id:String(row.id),jobId:String(row.id),internalJobId:row.internal_job_id??null,requisitionId:row.requisition_id??null,
+        title:clean(row.title)||null,country:null,city:null,state:null,location:null,locations:[],sourceIndiaEligible:false,sourceCountryComplete:false,
+        sourceDescription:body.text,description:body.text,sourceDetailComplete:body.complete,sourceNativeProjectionQualified:false,sourceNativeIssues:[error.message],
+        nativeVacancy:false,nativeNonVacancy:false,nativeInactive:false,postingDate:fields.postingDate,sourceScopeComplete:false,lifecycleCleanupAllowed:false}
+      reasons.add('native-record-projection-held:'+row.id+':'+error.message)
+    }
+    Object.assign(job,fields,{postingDate:job.postingDate,sourceNativeRecord:original,sourceNativeListingRecord:structuredClone(original),
+      sourceNativeContentText:nativeHTMLText(row.content),jobDescription:job.sourceDescription,
+      sourceNativePostKind:row.internal_job_id===null?'prospect':Number.isSafeInteger(row.internal_job_id)&&row.internal_job_id>0?'job':'unresolved',
+      sourceNativeOwnHostedPageReadThisRun:false,sourceNativePrimaryLocation:structuredClone(row.location),
+      sourceCountryScopeUnresolved:!job.sourceCountryComplete,sourceCurrentNativeRoleQualified:false})
+    if(job.sourceNativePostKind!=='job')Object.assign(job,{nativeVacancy:false,sourceIndiaEligible:false})
+    if(!job.country)Object.assign(job,{location:null,city:null,state:null,locations:[]})
+    return job
+  }
+  const all=[],observationHistory=[]
+  for(const row of opening.rows.values()) { signal?.throwIfAborted(); const job=prepare(row,graph);all.push(job); if(!job.sourceDetailComplete)reasons.add('full-native-criteria-unresolved:'+job.jobId);if(!job.sourceCountryComplete)reasons.add('native-country-scope-unresolved:'+job.jobId) }
+  let closing=null,closingGraph=null,closingSurfaces=null,closingOfficePayload=null
+  try{closing=await inventory();closingOfficePayload=await json(OFFICES_URL);closingGraph=buildOfficeGraph(closingOfficePayload);closingSurfaces=await surfaces()}
+  catch(error){signal?.throwIfAborted();reasons.add('closing-reconciliation-unavailable:'+error.message)}
+  const nativeSame=Boolean(closing&&state(opening.payload)===state(closing.payload)),officeSame=Boolean(closingGraph&&state(graph.projection)===state(closingGraph.projection)),surfaceSame=Boolean(closingSurfaces&&state(openingSurfaces)===state(closingSurfaces))
+  if(closing&&closingGraph)for(const row of closing.rows.values()){
+    const current=prepare(row,closingGraph),earlier=all.find(job=>job.jobId===current.jobId)
+    if(earlier)observationHistory.push({postId:row.id,earlier:structuredClone(earlier),current})
+    else all.push(current)
+  }
+  for(const job of all)job.sourceCurrentNativeRoleQualified=Boolean(job.sourceNativeProjectionQualified&&officeSame&&surfaceSame&&opening.rows.has(job.jobId)&&closing?.rows.has(job.jobId)&&state(opening.rows.get(job.jobId))===state(closing.rows.get(job.jobId)))
   if(!nativeSame)reasons.add('closing-native-inventory-changed')
   if(!officeSame)reasons.add('closing-native-office-graph-changed')
   if(!surfaceSame)reasons.add('closing-official-handoffs-changed')
-  for(const id of [...openingSurfaces.advertisedIds,...closingSurfaces.advertisedIds])if(!opening.rows.has(id)||!closing.rows.has(id))reasons.add('advertised-role-unreconciled:'+id)
+  for(const id of [...openingSurfaces.advertisedIds,...(closingSurfaces?.advertisedIds||[])])if(!opening.rows.has(id)||!closing?.rows.has(id))reasons.add('advertised-role-unreconciled:'+id)
   const additionalRecruitmentScopes=[];let deniedAdditionalScope=false
-  for(const entry of new Map([...openingSurfaces.external,...closingSurfaces.external].map(e=>[e.url,e])).values()) {
+  for(const entry of new Map([...openingSurfaces.external,...(closingSurfaces?.external||[])].map(e=>[e.url,e])).values()) {
     const supported=/^https:\/\/www\.ft\.com\/(?:maisiefellowship|brittanfellowship)$/.test(entry.url)||entry.url==='https://marjoriedeane.com/'||entry.url==='https://www.azizfoundation.org.uk/'
     if(deniedAdditionalScope||!supported){additionalRecruitmentScopes.push({...entry,status:null,inspected:false,reason:deniedAdditionalScope?'stopped-after-access-denial':'unreviewed-public-information-channel'});continue}
     try {
@@ -254,17 +301,20 @@ export const createFinancialTimesScraper = (defaults = {}) => ({ async run(optio
       if(accessDenied)deniedAdditionalScope=true
     }
   }
-  const vacancies=all.filter(j=>j.nativeVacancy),india=vacancies.filter(j=>j.sourceIndiaEligible),healthy=india.filter(j=>j.sourceDetailComplete&&closing.rows.has(j.jobId)&&state(opening.rows.get(j.jobId))===state(closing.rows.get(j.jobId)))
+  const vacancies=all.filter(j=>j.nativeVacancy),india=vacancies.filter(j=>j.sourceIndiaEligible),healthy=india.filter(j=>j.sourceDetailComplete&&j.sourceCurrentNativeRoleQualified)
   const selected=maxJobs?healthy.slice(0,maxJobs):healthy
   if(selected.length<healthy.length)reasons.add('source-job-limit')
-  const complete=reasons.size===0,eligibility=analyzePublishableJobs(healthy,{now:new Date(now)})
+  const complete=false,eligibility=analyzePublishableJobs(healthy,{now:new Date(now)})
   const audit={source:SOURCE,observedAt:now,nativePostings:all.length,activeVacancies:vacancies.length,nonVacancyPostings:all.filter(j=>j.nativeNonVacancy).length,expiredVacancies:all.filter(j=>j.nativeInactive&&!j.nativeNonVacancy).length,
     fullNativeDetails:all.filter(j=>j.sourceDetailComplete).length,unknownVacancyCountry:vacancies.filter(j=>!j.sourceCountryComplete).length,indiaVacancies:india.length,fullIndia:healthy.length,eligibleIndia:eligibility.eligibleJobs.length,eligibilityFilterCounts:eligibility.filterCounts,returnedIndia:selected.length,
     countryResolution:'exact-native-office-ID-and-primary-native-office-name-to-country-ancestor;all-plausible-scopes-retained',allOfficeAssignmentsAreAvailableWorksites:false,
-    nativeInventoryComplete:nativeSame&&officeSame,corporateScopeComplete:surfaceSame&&openingSurfaces.external.length===0&&closingSurfaces.external.length===0,complete,sourceScopeComplete:complete,lifecycleCleanupAllowed:complete,
-    wholeCompanyGlobal:complete?all.length:null,wholeCompanyIndia:complete?india.length:null,openingTotal:opening.payload.meta.total,closingTotal:closing.payload.meta.total,officeNodes:graph.byId.size,openingSurfaces,closingSurfaces,additionalRecruitmentScopes,deniedAdditionalScope,requests,receipts,reasons:[...reasons],applicationsVisited:false}
-  for(const job of selected)Object.assign(job,{scrapedAt:now,sourceListingComplete:complete,sourceScopeComplete:complete,lifecycleCleanupAllowed:complete,sourceNativeInventoryEvidence:audit})
-  Object.defineProperty(selected,'sourceAudit',{value:audit});settings.onAudit?.(structuredClone(audit));settings.onRecords?.(structuredClone(all))
+    nativeInventoryComplete:nativeSame&&officeSame,corporateScopeComplete:surfaceSame&&openingSurfaces.external.length===0&&closingSurfaces.external.length===0,complete,sourceScopeComplete:false,lifecycleCleanupAllowed:false,
+    wholeCompanyGlobal:null,wholeCompanyIndia:null,openingTotal:opening.payload.meta.total,closingTotal:closing?.payload.meta.total??null,officeNodes:graph.byId.size,openingSurfaces,closingSurfaces,additionalRecruitmentScopes,deniedAdditionalScope,requests,receipts,reasons:[...reasons],applicationsVisited:false,
+    observations:all,observationHistory,rawPages,opening:{originalNativeFeed:opening.payload,originalNativeOffices:officePayload},closing:{originalNativeFeed:closing?.payload??null,originalNativeOffices:closingOfficePayload}}
+  const inventorySummary={source:SOURCE,nativePostings:all.length,nativeInventoryComplete:audit.nativeInventoryComplete,sourceScopeComplete:false,lifecycleCleanupAllowed:false,wholeCompanyGlobal:null,wholeCompanyIndia:null}
+  for(const job of selected)Object.assign(job,{scrapedAt:now,sourceListingComplete:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,sourceNativeInventoryEvidence:{...inventorySummary}})
+  Object.defineProperty(selected,'sourceAudit',{value:audit});await settings.onAudit?.(structuredClone(audit));signal?.throwIfAborted();await settings.onRecords?.(structuredClone(all));signal?.throwIfAborted()
+  attachSourceObservationEvidence(selected,{source:SOURCE,recordKind:all.some(job=>job.sourceNativePostKind!=='job')?'mixed':'vacancy-rows',observedRecordCount:all.length,observedVacancyCount:all.filter(job=>job.sourceNativePostKind==='job').length,sourceScopeComplete:false,companyGlobalTotal:null,companyIndiaTotal:null})
   return attachInventoryEvidence(selected,{status:complete?all.length?'complete-inventory':'verified-empty':'discovery-only',surface:CAREERS_URL,firstParty:true,listingComplete:complete,pagesFetched:requests,reportedTotal:complete?all.length:null,indiaFacetCount:complete?india.length:null,verifiedAt:now,reason:complete?'financialtimes-native-inventory-reconciled':'financialtimes-native-partial:'+ [...reasons].join(';')})
 } })
 export const run = options => createFinancialTimesScraper().run(options)

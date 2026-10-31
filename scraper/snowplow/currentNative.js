@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import {createHash} from 'node:crypto'
 import {createHiBobNativeInventory} from '../../scraper-support/hibob/nativeInventory.js'
-import {readInventoryEvidence, attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readInventoryEvidence, attachInventoryEvidence, normalizeInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {readVisibleNativeDocument} from '../../scraper-support/utils/visibleNativeHtml.js'
 import {extractActiveDescription} from '../../scraper-support/utils/activeNativeHtml.js'
 import {NATIVE_CONFIG} from './catalog.js'
@@ -136,16 +136,24 @@ export const createCurrentSnowplowScraper = (defaults = {}) => ({async run(optio
     settings.signal?.throwIfAborted()
     const response = await load(url, init)
     settings.signal?.throwIfAborted()
+    receipts.push({url, response})
     if (url === NATIVE_CONFIG.careers || url === NATIVE_CONFIG.board) {
       const expected = url === NATIVE_CONFIG.careers ? reviewed.corporateBodySha256 : reviewed.boardBodySha256
-      requireProof(response?.status === 200 && response.url === url && /^text\/html\b/i.test(response.contentType || '')
-        && typeof response.body === 'string' && hash(response.body) === expected, 'unreviewed complete raw employer/native DOM or activation')
+      const accepted = response?.status === 200 && response.url === url && /^text\/html\b/i.test(response.contentType || '')
+        && typeof response.body === 'string' && hash(response.body) === expected
+      if (!accepted) {
+        const reason = 'unreviewed complete raw employer/native DOM or activation'
+        throw Object.assign(Error('Snowplow native proof: ' + reason), {code:'SNOWPLOW_NATIVE_UNREVIEWED',
+          abortRetries:true,failureKind:'incomplete_listing',source:'snowplow',sourceListingComplete:false,sourceScopeComplete:false,
+          status:response?.status??null,requestUrl:url,finalUrl:response?.url??null,retainedNativeResponses:receipts,
+          inventoryEvidence:normalizeInventoryEvidence({status:'coverage-gap',surface:url,firstParty:true,listingComplete:false,
+            pagesFetched:receipts.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason})})
+      }
       if (url === NATIVE_CONFIG.careers) {
         const document = readVisibleNativeDocument(response.body, {strict: true})
         requireProof(document.nodes(n => n.tag === 'a' && n.attrs.href === NATIVE_CONFIG.board && document.text(n)).length > 0, 'visible first-party handoff missing')
       }
     }
-    receipts.push({url, response})
     return response
   }
   const jobs = await createHiBobNativeInventory(NATIVE_CONFIG, {...settings, fetchPage}).run()

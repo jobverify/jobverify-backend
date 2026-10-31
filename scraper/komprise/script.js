@@ -55,7 +55,8 @@ const stripHtml = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -221,13 +222,19 @@ export const createKompriseScraper = ({
   maxJobs = null,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, signal } = {}) {
+    const read = async url => {
+      signal?.throwIfAborted()
+      const html = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      return html
+    }
+    const careersHtml = await read(CAREERS_URL)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Komprise verified careers page no longer matches the known first-party surface')
     }
 
-    const sitemapXml = await fetchText(JOB_LISTING_SITEMAP_URL)
+    const sitemapXml = await read(JOB_LISTING_SITEMAP_URL)
     if (!hasJobListingSitemapSignal(sitemapXml)) {
       throw new Error('Komprise verified job listing sitemap no longer matches the known public jobs surface')
     }
@@ -238,7 +245,7 @@ export const createKompriseScraper = ({
       : entries
 
     const jobs = (await Promise.all(selectedEntries.map(async (entry) => {
-      const html = await fetchText(entry.url)
+      const html = await read(entry.url)
       const job = extractJobFromDetailPage({ ...entry, html })
 
       if (!job) return null

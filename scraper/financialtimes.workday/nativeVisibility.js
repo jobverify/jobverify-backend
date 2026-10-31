@@ -9,7 +9,13 @@ export const decodeLeaf = value => String(value ?? '').replace(/&(#x[\da-f]+|#\d
   return cp > 0 && cp <= 0x10ffff && !(cp >= 0xd800 && cp <= 0xdfff) ? String.fromCodePoint(cp) : '�'
 })
 export const normalizeText = value => String(value ?? '').replace(/\s+/g, ' ').trim()
-const textLeaves = node => typeof node === 'string' ? decodeLeaf(node) : node.inert || node.tag === 'script' ? '' : node.children.map(textLeaves).join(' ')
+const textBlocks = new Set(['p','div','li','ul','ol','h1','h2','h3','h4','h5','h6','br','hr','table','tr','td','th','dl','dt','dd','section','article'])
+const textLeaves = node => {
+  if(typeof node==='string')return decodeLeaf(node)
+  if(node.inert||node.tag==='script')return ''
+  const body=node.children.map(textLeaves).join('')
+  return textBlocks.has(node.tag)?' '+body+' ':body
+}
 const cleanCss = value => String(value ?? '').replace(/\/\*[\s\S]*?\*\//g, '').trim()
 const hidden = value => cleanCss(value).split(';').some(part => {
   const [key, ...rest] = part.split(':'), property = key.trim().toLowerCase(), value = rest.join(':').replace(/\s*!important\s*$/i, '').trim().toLowerCase()

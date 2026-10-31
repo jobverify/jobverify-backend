@@ -87,8 +87,9 @@ test('application history is paginated, owner-scoped and retains snapshots witho
   await getApplications({ user: { _id: user }, query: { page: '2', status: 'opened' } }, res);
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body.summary, { total: 25, opened: 23, applied: 2 });
-  assert.equal(res.body.pagination.totalPages, 2);
-  assert.equal(res.body.data.length, 3); assert.equal(res.body.pagination.total, 23);
+  assert.equal(res.body.pagination.totalPages, 12);
+  assert.equal(res.body.pagination.limit, 2);
+  assert.equal(res.body.data.length, 2); assert.equal(res.body.pagination.total, 23);
   assert.ok(res.body.data.every(item => item.status === 'opened' && item.stage === 'preparing'));
   assert.equal(res.body.data[0].jobSnapshot.applicationUrl, job.sourceUrl);
 });

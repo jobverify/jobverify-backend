@@ -62,7 +62,7 @@ Work Mode
 Onsite only (No remote/hybrid options)
 `
 
-test('MediBuddy skips inactive Trakstar listings and parses public Google Doc exports', async () => {
+test('MediBuddy retains inactive adverts and exact public document evidence without qualifying a conflicting title', async () => {
   const medibuddy = await loadMediBuddyModule()
 
   assert.equal(medibuddy.hasOfficialJobsPageSignal(INDORE_PAGE_HTML), true)
@@ -86,31 +86,30 @@ test('MediBuddy skips inactive Trakstar listings and parses public Google Doc ex
     now: () => '2026-07-25T12:00:00.000Z',
   })
 
-  assert.deepEqual(jobs, [
-    {
-      title: 'Financial Analyst - AR',
-      company: 'MediBuddy',
-      department: null,
-      location: null,
-      city: null,
-      country: 'India',
-      source: 'medibuddy',
-      jobId: '18zXKapwfIJPCaLmSHsG4Z6z2_JRjB3mEgsRX4xPB43c',
-      requisitionId: '18zXKapwfIJPCaLmSHsG4Z6z2_JRjB3mEgsRX4xPB43c',
-      sourceUrl: 'https://docs.google.com/document/d/18zXKapwfIJPCaLmSHsG4Z6z2_JRjB3mEgsRX4xPB43c/edit?usp=sharing',
-      applyUrl: 'https://form.typeform.com/to/lCYKMpLE?typeform-source=www.google.com',
-      link: 'https://docs.google.com/document/d/18zXKapwfIJPCaLmSHsG4Z6z2_JRjB3mEgsRX4xPB43c/edit?usp=sharing',
-      employmentType: 'Internship',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription:
-        'Role Overview We are looking for a detail-oriented and proactive Financial Analyst to join our Finance & Accounts team. Work Mode Onsite only (No remote/hybrid options)',
-      remoteStatus: 'On-site',
-      scrapedAt: '2026-07-25T12:00:00.000Z',
-    },
-  ])
+  assert.equal(jobs.length, 2)
+  const financial = jobs.find(job => job.title === 'Financial Analyst - AR')
+  const inactive = jobs.find(job => job.title === 'Associate/ Senior Associate - Operations')
+  assert.equal(financial.jobDescription, null)
+  assert.equal(financial.sourceDetailFailureKind, 'identity-mismatch')
+  assert.equal(financial.rawNativeRoleEvidence.contentJobTitle, 'Financial Analyst – Finance & Accounts Team')
+  assert.equal(financial.rawNativeRoleEvidence.contentJobDescription, DOC_EXPORT_TEXT)
+  assert.equal(financial.rawNativeRoleEvidence.workplaceField, 'Onsite (No remote or hybrid work)')
+  assert.equal(financial.rawNativeRoleEvidence.advertisedSourceUrl,
+    'https://docs.google.com/document/d/18zXKapwfIJPCaLmSHsG4Z6z2_JRjB3mEgsRX4xPB43c/edit?usp=sharing')
+  assert.equal(inactive.rawNativeRoleEvidence.advertisedSourceUrl, 'https://medibuddy.hire.trakstar.com/jobs/fk0pg7p/')
+  assert.equal(inactive.rawNativeRoleEvidence.upstreamObservation, 'native-account-inactive')
+  for (const job of jobs) {
+    assert.equal(job.sourceDetailComplete, false)
+    assert.equal(job.sourceListingComplete, false)
+    assert.equal(job.country, null)
+    assert.equal(job.location, null)
+    assert.equal(job.requisitionId, null, 'A document identifier is not a native requisition')
+    assert.match(job.jobId, /^medibuddy-url-[a-f0-9]{64}$/)
+    assert.equal(job.applyUrl, null)
+    assert.equal(job.link, null)
+    assert.equal(job.sourceUrl, job.rawNativeRoleEvidence.sourcePageUrl)
+    assert.equal(job.scrapedAt, '2026-07-25T12:00:00.000Z')
+  }
+  assert.equal(jobs[0].nativeCollectionEvidence.successfulDetailReads, 1)
+  assert.equal(jobs[0].nativeCollectionEvidence.extractedDetailJobs, 0)
 })

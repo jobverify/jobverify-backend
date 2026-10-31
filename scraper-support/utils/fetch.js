@@ -1,4 +1,5 @@
 import { withRetry } from './retry.js'
+import { recordRetryHttpStatus } from './retryPressure.js'
 
 const NON_RETRIABLE_HTTP_STATUSES = new Set([401, 403, 404, 410, 451])
 const NON_RETRIABLE_TRANSPORT_CODES = new Set([
@@ -88,6 +89,7 @@ const buildHtmlInsteadOfJsonError = (url, html) => {
 }
 
 export const buildHttpError = (response, url) => {
+  recordRetryHttpStatus(response.status)
   const error = new Error(`HTTP ${response.status} for ${url}`)
   error.status = response.status
 
@@ -158,14 +160,17 @@ const fetchWithRetry = async (url, {
         throwCallerAbort()
       }
 
+      const attemptSignal = composeAbortSignals(callerSignal, createTimeoutSignal(timeoutMs))
+      const checkAttemptAbort = () => {
+        if (callerSignal?.aborted) throwCallerAbort()
+        attemptSignal?.throwIfAborted()
+      }
       try {
         const response = await fetchImpl(url, {
           ...requestInit,
-          signal: composeAbortSignals(
-            callerSignal,
-            createTimeoutSignal(timeoutMs),
-          ),
+          signal: attemptSignal,
         })
+        checkAttemptAbort()
 
         if (!response.ok) {
           throw buildHttpError(response, url)
@@ -173,20 +178,22 @@ const fetchWithRetry = async (url, {
 
         if (parse === 'text') {
           const html = await response.text()
+          checkAttemptAbort()
           return includeResponseMetadata ? { html, status: response.status, url: response.url } : html
         }
 
         const contentType = response.headers?.get?.('content-type') || ''
         if (/text\/html/i.test(contentType)) {
-          throw buildHtmlInsteadOfJsonError(url, await response.text().catch(() => ''))
+          const html = await response.text().catch(() => '')
+          checkAttemptAbort()
+          throw buildHtmlInsteadOfJsonError(url, html)
         }
 
         const payload = await response.json()
+        checkAttemptAbort()
         return includeResponseMetadata ? { payload, status: response.status, url: response.url } : payload
       } catch (error) {
-        if (callerSignal?.aborted) {
-          throwCallerAbort()
-        }
+        checkAttemptAbort()
         if (isNonRetriableTransportError(error)) {
           error.abortRetries = true
         }

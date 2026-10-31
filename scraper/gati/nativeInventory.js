@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import {createHash} from 'node:crypto'
 import {createDarwinboxScraper} from '../darwinbox/script.js'
 import {activeHead, readNativeDocument} from '../../scraper-support/utils/activeNativeHtml.js'
-import {attachInventoryEvidence, readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {attachInventoryEvidence, normalizeInventoryEvidence, readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {currentCorporateScopeHash} from './corporateScope.js'
 
 const review=JSON.parse(fs.readFileSync(new URL('./reviewedNativeScope.json',import.meta.url),'utf8'))
@@ -56,15 +56,24 @@ export async function runCurrentGatiInventory(options={}){
  }
  async function client(){const {body,response}=await request(CLIENT);requireNative(/(?:java|ecma)script/i.test(response.headers?.get('content-type')||''),'client content type changed');note(sha(body)===review.surfaceHashes[CLIENT]&&['getCompanyConfig','groupcompanycareersetting','job?page='].every(value=>body.includes(value)),'published-native-client-contract-changed');return sha(body)}
  async function api(url){
+  let deniedReceipt
   for(let attempt=0;attempt<2;attempt++){
    const session=await request(SEED,{},true),cookies=session.response.headers?.getSetCookie?.().map(v=>v.split(';')[0]).filter(Boolean).join('; ')
    requireNative(Boolean(cookies),'public native session unavailable')
    // Use the exact publicly successful research profile. No profile rotation
    // or browser/challenge execution is attempted when this bounded read fails.
    const value=await request(url,{allow403:true,headers:{'User-Agent':'Mozilla/5.0 (compatible; Jobverify scraper)',Cookie:cookies,Origin:ORIGIN,Referer:SEED}})
-   if(value.response.status===403){if(attempt)requireNative(false,'native API unavailable after bounded fresh session retry');value.receipt.recoveredByFreshSessionRetry=true;continue}
+   if(value.response.status===403){
+    if(attempt)throw Object.assign(new Error('Gati native API unavailable after bounded fresh public session retry'),{
+     code:'GATI_NATIVE_PUBLIC_API_UNAVAILABLE',softFailure:true,abortRetries:true,failureKind:'blocked_or_access_denied',
+     status:403,statusCode:403,requestUrl:url,receipts,lifecycleCleanupAllowed:false,
+     inventoryEvidence:normalizeInventoryEvidence({status:'coverage-gap',surface:HOME,firstParty:false,listingComplete:false,pagesFetched:receipts.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date(options.now?options.now():Date.now()).toISOString(),reason:'Public native API denied both bounded fresh-session reads; employer configuration and vacancy inventory unavailable'}),
+    })
+    deniedReceipt=value.receipt;continue
+   }
    requireNative(/^application\/json\b/i.test(value.response.headers?.get('content-type')||''),'native JSON content type changed')
    let payload;try{payload=JSON.parse(value.body)}catch{requireNative(false,'native JSON malformed')}
+   if(deniedReceipt)deniedReceipt.recoveredByFreshSessionRetry=true
    note(canonical(payload)===canonical(review.apiPayloads[url]),'unreviewed-native-payload:'+url)
    return payload
   }

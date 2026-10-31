@@ -144,14 +144,14 @@ test('CredResolve helpers stay pinned to the verified official homepage, job ope
     'https://credresolve.co.in/wp-json/wp/v2/awsm_job_openings?_fields=id%2Clink%2Ctitle%2Ccontent%2Cclass_list&per_page=100&page=1',
   )
 
-  assert.deepEqual(credresolve.extractSearchResults(listingPayload), [
+  assert.deepEqual(credresolve.extractSearchResults(listingPayload).map(({rawNativeRoleEvidence,...job})=>job), [
     {
       title: 'Back Office Executive',
       company: 'CredResolve',
       department: 'Administration / Operations',
       location: null,
       city: null,
-      country: 'India',
+      country: null,
       jobId: '606',
       requisitionId: '606',
       sourceUrl: 'https://credresolve.co.in/jobopenings/back-office-executive/',

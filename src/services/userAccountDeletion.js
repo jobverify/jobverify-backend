@@ -1,3 +1,5 @@
+import ResumeUsage from '../models/ResumeUsage.js';
+import { removeRetiredAccountData } from './retiredAccountData.js';
 import User from "../models/User.js";
 import PendingUser from "../models/PendingUser.js";
 import Subscription from "../models/Subscription.js";
@@ -16,13 +18,6 @@ import Resume from '../models/Resume.js';
 import TailoredResume from '../models/TailoredResume.js';
 import ResumeArtifact from '../models/ResumeArtifact.js';
 import CVRevision from '../models/CVRevision.js';
-import OutreachThread from '../models/OutreachThread.js';
-import OutreachTask from '../models/OutreachTask.js';
-import OutreachUsage from '../models/OutreachUsage.js';
-import { cleanupUserCampaignData } from './campaignService.js';
-import ApplicationMailbox from '../models/ApplicationMailbox.js';
-import ApplicationMailboxAuth from '../models/ApplicationMailboxAuth.js';
-import ApplicationMail from '../models/ApplicationMail.js';
 import AutoApplyAttempt from '../models/AutoApplyAttempt.js';
 
 // Keep the account until cleanup succeeds, so a failed deletion can be retried.
@@ -31,11 +26,11 @@ export const removeUserAccount = async (user) => {
     throw new Error("User ID and email are required for account deletion");
   }
   const userId = user._id;
-  await User.updateOne({ _id: userId }, { $set: { outreachDeletingAt: new Date() } });
-  await cleanupUserCampaignData(userId);
+  await User.updateOne({ _id: userId }, { $set: { accountDeletingAt: new Date() } });
+  await removeRetiredAccountData(userId);
   for (const Model of [ApplicationEvent, CandidateEvidence, CVRevision]) await Model.deleteMany({ user: userId });
-  for (const Model of [ApplicationMailboxAuth, ApplicationMailbox, ApplicationMail, AutoApplyAttempt]) await Model.deleteMany({ user: userId });
-  for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application, Resume, TailoredResume, ResumeArtifact, OutreachTask, OutreachThread, OutreachUsage]) {
+  for (const Model of [AutoApplyAttempt]) await Model.deleteMany({ user: userId });
+  for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application, Resume, TailoredResume, ResumeArtifact, ResumeUsage]) {
     await Model.deleteMany({ user: userId });
   }
   await PendingUser.deleteMany({ email: user.email });

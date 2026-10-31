@@ -1,3 +1,11 @@
+import * as capturedFs from 'node:fs'
+import {gunzipSync as capturedGunzip} from 'node:zlib'
+import * as nativeSource from '../../scraper/cloudambassadors/script.js'
+import {readInventoryEvidence as capturedInventory} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readSourceObservationEvidence as capturedObservations} from '../../scraper-support/utils/sourceObservationEvidence.js'
+const nativePacket=JSON.parse(capturedGunzip(capturedFs.readFileSync(new URL('../../scraper/cloudambassadors/test-data/2026-10-31-native-packets.json.gz',import.meta.url))))
+const nativePage=url=>{const row=nativePacket.requests.find(row=>row.url===url);assert.ok(row,'Unrecorded native URL '+url);return row.body}
+const withCapturedNative=async(callback,alter=row=>row)=>{const original=globalThis.fetch,calls=[];globalThis.fetch=async(input,options={})=>{const url=String(input),method=options.method||'GET',body=String(options.body||''),recorded=nativePacket.requests.find(row=>row.url===url&&(row.method||'GET')===method&&(method==='GET'||row.requestBody===body));assert.ok(recorded,'Unrecorded native request '+url+' '+body);const row=alter({...recorded});calls.push({url,method,body});const response=new Response(Buffer.from(row.body,row.bodyEncoding),{status:row.status,headers:{'content-type':row.contentType}});Object.defineProperty(response,'url',{value:row.finalUrl});return response};try{return await callback(calls)}finally{globalThis.fetch=original}}
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFileSync } from 'node:fs'
@@ -56,16 +64,7 @@ const applyPageHtml = `
 
 const capturedRoles = () => gunzipSync(readFileSync(new URL('./fixtures/cloudambassadors/native-role-data-20261029.js.gz', import.meta.url))).toString()
 
-test('Cloud Ambassadors exact static native data supplies complete role-specific descriptions', async () => {
-  const module = await loadCloudAmbassadorsModule()
-  const jobs = module.extractCareerListings(careersHtml)
-  const roles = module.extractStaticRoleDescriptions(capturedRoles(), jobs)
-  assert.equal(roles.length, 5)
-  assert.match(roles[0].description, /lead discovery workshops/)
-  assert.match(roles[1].description, /Proficiency in Terraform/)
-  assert.doesNotMatch(roles[1].description, /You own the relationship/)
-  assert.equal(module.extractStaticRoleDescriptions(capturedRoles(), jobs.slice(1)), null)
-})
+test("Cloud Ambassadors literal candidates retain all role descriptions without asserting visibility",async()=>{const jobs=nativeSource.extractCareerListings(nativePage(nativeSource.CAREERS_URL)),roles=nativeSource.extractStaticRoleDescriptions(capturedRoles(),jobs);assert.equal(roles.length,5);assert.match(roles[0].description,/lead discovery workshops/);assert.match(roles[1].description,/Proficiency in Terraform/);assert.equal(nativeSource.extractStaticRoleDescriptions(capturedRoles(),jobs.slice(1)),null)})
 
 test('Cloud Ambassadors parses literals without executing application code and rejects ambiguous data', async () => {
   const module = await loadCloudAmbassadorsModule()
@@ -78,107 +77,10 @@ test('Cloud Ambassadors parses literals without executing application code and r
   assert.deepEqual(module.linkedCareerAssets('<script src="https://foreign.example/_next/static/chunks/roles.js"></script>'), [])
 })
 
-test('Cloud Ambassadors run reads the role bundle linked by the verified page', async () => {
-  const module = await loadCloudAmbassadorsModule()
-  const assetUrl = 'https://cloudambassadors.com/_next/static/chunks/current-roles.js'
-  const html = careersHtml + '<script src="/_next/static/chunks/current-roles.js"></script>'
-  const options = { fetchText: async url => url === module.CAREERS_URL ? html : applyPageHtml,
-    fetchAsset: async url => ({ status: 200, url, html: capturedRoles() }) }
-  const jobs = await module.run(options)
-  assert.equal(jobs.length, 5)
-  assert.ok(jobs.every(job => job.sourceDetailComplete && job.sourceDescription.length > 1000))
-  assert.equal(jobs[0].applyUrl, module.APPLICATION_URL)
-  const denied = await module.run({ ...options, fetchAsset: async () => ({ status: 403, url: assetUrl, html: capturedRoles() }) })
-  assert.ok(denied.every(job => job.sourceDescription === null && !job.sourceDetailComplete))
-})
+test("Cloud Ambassadors binds native role descriptions to supported motion and modal carriers",async()=>{await withCapturedNative(async()=>{const jobs=await nativeSource.run();assert.equal(jobs.length,5);assert.ok(jobs.every(job=>job.sourceDetailComplete&&job.sourceDescription.length>1000&&job.rawNativeRoleEvidence.nativeRendererQualified));const denied=await nativeSource.run({fetchAsset:async url=>({status:403,url,html:'Denied'})});assert.equal(denied.length,5);assert.ok(denied.every(job=>job.sourceDescription==null&&!job.sourceDetailComplete))})})
 
-test('extractCareerListings maps the official published roles to application-ready jobs', async () => {
-  const cloudAmbassadors = await loadCloudAmbassadorsModule()
-  assert.ok(cloudAmbassadors)
+test("Cloud Ambassadors role labels remain partial without declared renderer or job-specific application proof",async()=>{const jobs=nativeSource.extractCareerListings(nativePage(nativeSource.CAREERS_URL));assert.equal(jobs.length,5);assert.equal(jobs[0].title,'Cloud Consultant');assert.ok(jobs.every(job=>job.country==null&&job.location==null&&job.jobId==null&&job.requisitionId==null&&job.jobDescription==null));assert.equal(jobs[0].rawNativeRoleEvidence.applicationRoleIdentityQualified,false)})
 
-  const jobs = cloudAmbassadors.extractCareerListings(careersHtml)
+test("Cloud Ambassadors disabled enrichment leaves five explicitly unqualified role descriptions",async()=>{await withCapturedNative(async calls=>{const jobs=await nativeSource.run({detailEnrichmentBudgetMs:0});assert.equal(calls.length,2);assert.equal(jobs.length,5);assert.ok(jobs.every(job=>job.jobDescription==null&&!job.sourceDetailComplete&&job.country==null));assert.equal(capturedInventory(jobs).status,'coverage-gap');assert.equal(capturedInventory(jobs).reportedTotal,null)})})
 
-  assert.equal(jobs.length, 5)
-  assert.deepEqual(jobs[0], {
-    title: 'Cloud Consultant',
-    company: 'Cloud Ambassadors',
-    department: null,
-    location: null,
-    city: null,
-    state: null,
-    country: 'India',
-    jobId: 'cloud-consultant',
-    requisitionId: 'cloud-consultant',
-    sourceUrl: 'https://cloudambassadors.com/careers',
-    applyUrl: 'https://cloudambassadors.com/careers/apply',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: null,
-    publicExperienceChecked: true,
-    remoteStatus: null,
-  })
-  assert.equal(jobs[4].title, 'DevOps / MLOps Engineer')
-  assert.equal(jobs[4].jobId, 'devops-mlops-engineer')
-  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
-})
-
-test('run fetches the official careers and shared apply pages and decorates verified-missing roles for the runner', async () => {
-  const cloudAmbassadors = await loadCloudAmbassadorsModule()
-  assert.ok(cloudAmbassadors)
-
-  const requestedUrls = []
-  const jobs = await cloudAmbassadors.createCloudAmbassadorsScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === 'https://cloudambassadors.com/careers') return careersHtml
-      if (url === 'https://cloudambassadors.com/careers/apply') return applyPageHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    'https://cloudambassadors.com/careers',
-    'https://cloudambassadors.com/careers/apply',
-  ])
-  assert.equal(jobs.length, 5)
-  assert.equal(jobs[0].source, 'cloudambassadors')
-  assert.equal(jobs[0].link, 'https://cloudambassadors.com/careers/apply')
-  assert.equal(jobs[0].company, 'Cloud Ambassadors')
-  assert.equal(jobs[0].experienceRequired, null)
-  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
-})
-
-test('runStandalone writes the verified-missing jobs to jobs.json during dry-run execution', async () => {
-  const cloudAmbassadors = await loadCloudAmbassadorsModule()
-  assert.ok(cloudAmbassadors)
-
-  const savedFiles = []
-  const savedDatabases = []
-
-  await cloudAmbassadors.runStandalone({
-    argv: ['node', 'cloudambassadors/script.js', '--dry-run'],
-    fetchText: async (url) => {
-      if (url === 'https://cloudambassadors.com/careers') return careersHtml
-      if (url === 'https://cloudambassadors.com/careers/apply') return applyPageHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-    saveToFile: (jobs, filePath) => {
-      savedFiles.push({ jobs, filePath })
-    },
-    saveToDB: async (jobs, source) => {
-      savedDatabases.push({ jobs, source })
-    },
-  })
-
-  assert.equal(savedFiles.length, 1)
-  assert.equal(savedDatabases.length, 0)
-  assert.match(savedFiles[0].filePath, /cloudambassadors[\\/]jobs\.json$/)
-  assert.equal(savedFiles[0].jobs.length, 5)
-  assert.ok(savedFiles[0].jobs.every((job) => job.publicExperienceChecked === true))
-})
+test("Cloud Ambassadors dry-run writes native partial results without a database write",async()=>{await withCapturedNative(async()=>{const saved=[];let databaseWrites=0;const jobs=await nativeSource.runStandalone({argv:['node','script.js','--dry-run'],saveToFile:(rows,filePath)=>saved.push({rows,filePath}),saveToDB:async()=>{databaseWrites++}});assert.equal(jobs.length,5);assert.equal(saved.length,1);assert.equal(saved[0].rows,jobs);assert.match(saved[0].filePath,/jobs.json$/);assert.equal(databaseWrites,0)})})

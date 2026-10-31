@@ -1,3 +1,4 @@
+import {readCards,verifyApplication,finish,nativeFetch} from './native.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -48,50 +49,25 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /Tech Support Executive/i.test(page)
 }
 
-export const extractOpeningCards = (html = '') => [...String(html ?? '').matchAll(
-  /<div class="career-box[\s\S]*?<h3>([\s\S]*?)<span[^>]*>([\s\S]*?)<\/span><\/h3>[\s\S]*?<span[^>]*class="dispmsg">([\s\S]*?)<\/span>[\s\S]*?No\. of Vacancies:\s*([^)<\s]+)[\s\S]*?<a[^>]+href="([^"]+)"[^>]*>\s*APPLY NOW!/gi,
-)].map((match) => {
-  const title = normalizeText(match[3]) || normalizeText(match[1])
-  const experienceRequired = normalizeText(match[2])
-  const openingsCount = Number.parseInt(String(match[4]).replace(/^0+/, '') || '0', 10)
-  const href = normalizeText(match[5])
-  const code = href?.match(/code=([^&]+)/i)?.[1] ?? slugify(title)
+export const extractOpeningCards = readCards
 
-  return {
-    title,
-    experienceRequired,
-    openingsCount,
-    applyUrl: toAbsoluteUrl(href),
-    jobId: `${SOURCE}-${code}`,
-    requisitionId: code,
-    jobDescription: title && openingsCount
-      ? `${title}\nVacancies: ${openingsCount}`
-      : title,
-  }
-}).filter((job) => job.title && job.applyUrl)
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = nativeFetch
 
 export const createSagInfotechScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, now: overrideNow, signal } = {}) {
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL,{signal})
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified SAG Infotech careers page no longer matches the trusted first-party surface')
     }
 
-    const jobs = extractOpeningCards(careersHtml)
+    const jobs = []
+    for(const job of extractOpeningCards(careersHtml))jobs.push(verifyApplication(await fetchText(job.applyUrl,{signal}),job))
     if (jobs.length === 0) {
       throw new Error('SAG Infotech careers page no longer exposes the verified current openings cards')
     }
 
-    return jobs
+    return finish(jobs
       .sort((left, right) => left.title.localeCompare(right.title) || left.jobId.localeCompare(right.jobId))
       .map((job) => ({
         ...job,
@@ -111,10 +87,10 @@ export const createSagInfotechScraper = ({ now = () => new Date().toISOString() 
         source: SOURCE,
         companyDomain: SAG_INFOTECH_CATALOG.companyDomain,
         atsPlatform: SAG_INFOTECH_CATALOG.atsPlatform,
-        country: 'India',
+        country: job.country??null,
         link: job.applyUrl,
         scrapedAt: (overrideNow || now)(),
-      }))
+      })),{now:overrideNow||now,pagesFetched:1+jobs.length})
   },
 })
 

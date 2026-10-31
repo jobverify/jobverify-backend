@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import TailoredResume from '../src/models/TailoredResume.js';
 import Resume from '../src/models/Resume.js';
-import { runTailoredResumeWorker } from '../outreach/tailoredResumeWorker.js';
+import { runTailoredResumeWorker } from '../resume-tailoring/tailoredResumeWorker.js';
 
 const tailored = { kind: 'tailored', row: { _id: 'owner:job', user: 'owner', revision: 2, status: 'queued' } };
 const base = { kind: 'base', row: { _id: 'owner', user: 'owner', preparation: { revision: 3, status: 'queued' } } };

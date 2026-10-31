@@ -34,6 +34,7 @@ after(async () => {
 
 const fixture = (id, overrides = {}) => ({
   jobId: id, requisitionId: id, title: 'Software Engineer', company: 'Native date fixture',
+  jobType: 'Full-time Experienced',
   location: 'Bengaluru, India', country: 'India',
   sourceUrl: `https://example.invalid/native-dates/${id}`,
   applyUrl: `https://example.invalid/native-dates/${id}`,

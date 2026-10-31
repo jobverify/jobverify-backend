@@ -78,7 +78,8 @@ export const hasSharedDarwinboxShellSignal = (html = '') => {
     && /db-components\.esm\.js/i.test(page)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -92,32 +93,49 @@ const isBrowserFallbackError = (error) =>
     .test(String(error?.message ?? error ?? ''))
 
 export const createAirtelDigitalScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchBrowserText, signal } = {}) {
+    signal?.throwIfAborted()
     let browserSession = null
 
     const getBrowserSession = async () => {
+      signal?.throwIfAborted()
       if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT, signal })
       }
 
+      signal?.throwIfAborted()
       return browserSession
     }
 
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
+    const browserTextFetcher = fetchBrowserText || (async (url, options = {}) => {
       const session = await getBrowserSession()
-      return session.fetchText(url)
+      return session.fetchText(url, { ...options, signal })
     })
 
-    const fetchPageText = async (url) => {
+    const readBrowser = async url => {
+      signal?.throwIfAborted()
       try {
-        return await fetchText(url)
+        const value = await browserTextFetcher(url, { signal })
+        signal?.throwIfAborted()
+        return value
       } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
+        signal?.throwIfAborted()
+        throw error
       }
+    }
+    const fetchPageText = async (url) => {
+      signal?.throwIfAborted()
+      let value
+      try {
+        value = await fetchText(url, { signal })
+        signal?.throwIfAborted()
+      } catch (error) {
+        signal?.throwIfAborted()
+        if (!isBrowserFallbackError(error)) throw error
+        return readBrowser(url)
+      }
+
+      return value
     }
 
     try {
@@ -146,9 +164,9 @@ export const createAirtelDigitalScraper = () => ({
 
       return []
     } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
+      try {
+        if (browserSession) await browserSession.close()
+      } finally { signal?.throwIfAborted() }
     }
   },
 })

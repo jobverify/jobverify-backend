@@ -1,4 +1,5 @@
-import { runWorkdayScraper, buildWorkdayAppliedFacets, buildWorkdayDetailApiUrl, extractWorkdayStructuredDetail } from '../myworkday/engine.js'
+import { runWorkdayScraper, buildWorkdayAppliedFacets, buildWorkdayDetailApiUrl, extractWorkdayStructuredDetail, resolveWorkdayDetailFetchConcurrency } from '../myworkday/engine.js'
+import { workdayRequestScheduler } from '../myworkday/requestScheduler.js'
 import { loadConfig } from '../utils/loadConfig.js'
 import { attachInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { toPlainText } from '../detailExtractors/shared.js'
@@ -51,14 +52,36 @@ const canonical = (value, board) => {
 }
 const defaultJson = async (url,init,options) => {
   options.signal?.throwIfAborted()
-  const signal=options.signal ? AbortSignal.any([options.signal,AbortSignal.timeout(options.requestTimeoutMs||25000)]) : AbortSignal.timeout(options.requestTimeoutMs||25000)
-  const response=await fetch(url,{...init,headers:{Accept:'application/json','Content-Type':'application/json','User-Agent':'Mozilla/5.0'},signal,redirect:'error'})
-  signal.throwIfAborted()
-  proof(response.status===200,`native HTTP ${response.status}`)
-  const payload=await response.json()
-  signal.throwIfAborted()
-  proof(!hasFailureEnvelope(payload),'native error envelope')
-  return payload
+  const release=await (options.requestScheduler||workdayRequestScheduler).acquire(url,{signal:options.signal,kind:'listing'})
+  try {
+    const signal=options.signal ? AbortSignal.any([options.signal,AbortSignal.timeout(options.requestTimeoutMs||25000)]) : AbortSignal.timeout(options.requestTimeoutMs||25000)
+    const response=await fetch(url,{...init,headers:{Accept:'application/json','Content-Type':'application/json','User-Agent':'Mozilla/5.0'},signal,redirect:'error'})
+    signal.throwIfAborted()
+    proof(response.status===200,`native HTTP ${response.status}`)
+    const payload=await response.json()
+    signal.throwIfAborted()
+    proof(!hasFailureEnvelope(payload),'native error envelope')
+    return payload
+  } finally { release() }
+}
+
+const fetchClosingDetails = async (jobs,config,options) => {
+  const controller=new AbortController(),signal=options.signal?AbortSignal.any([options.signal,controller.signal]):controller.signal
+  const payloads=new Array(jobs.length)
+  let next=0
+  const workers=Array.from({length:Math.min(jobs.length,resolveWorkdayDetailFetchConcurrency(process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY,config.detailFetchConcurrency))},async()=>{
+    try {
+      while(next<jobs.length){
+        signal.throwIfAborted()
+        const index=next++,url=buildWorkdayDetailApiUrl(jobs[index].link,config.jobsApiUrl)
+        proof(url,'native detail URL unavailable')
+        payloads[index]=await defaultJson(url,{}, {...options,signal})
+      }
+    } catch(error) { controller.abort(error); throw error }
+  })
+  const settled=await Promise.allSettled(workers),failed=settled.find(result=>result.status==='rejected')
+  if(failed)throw failed.reason
+  return payloads
 }
 
 // Listing and geography stay in the existing Workday engine. This layer only
@@ -115,11 +138,12 @@ export async function runVerifiedWorkdayBoardUnion({source,company,boards,employ
       countryScopeComplete:evidence.listingComplete===true,unresolvedCountryRoles:partialCountryProof?countryProof.unresolvedRoles:[],
       reconciliation:countryProof?{initial:countryProof.initial,closing:countryProof.closing}:null,
       explicitGlobalEmpty:Object.keys(facets).length===0&&recheck.total===0})
-    for(const job of jobs){
-      proof(job.sourceDetailComplete===true && typeof job.requisitionId==='string','native detail incomplete')
-      const detailUrl=buildWorkdayDetailApiUrl(job.link,config.jobsApiUrl)
-      proof(detailUrl,'native detail URL unavailable')
-      const payload=await nativeJson(detailUrl),info=payload.jobPostingInfo,employer=payload.hiringOrganization?.name
+    for(const job of jobs)proof(job.sourceDetailComplete===true && typeof job.requisitionId==='string','native detail incomplete')
+    // Keep the independent closing HTTP reads. Bounded workers share the same
+    // shard pacing and capacity as enumeration and required country checks.
+    const closingDetails=await fetchClosingDetails(jobs,config,options)
+    for(const [index,job] of jobs.entries()){
+      const payload=closingDetails[index],info=payload.jobPostingInfo,employer=payload.hiringOrganization?.name
       proof(info && info.jobPostingSiteId===board.site && typeof info.id==='string' && /^[a-f0-9]{32}$/.test(info.id)
         && info.jobReqId===job.requisitionId && info.title===job.title,'native title/requisition/board mismatch')
       proof(info.canApply===true && info.posted===true,'native application status unavailable')

@@ -230,7 +230,7 @@ test('extractSearchResults and extractJobDetail normalize Amneal Pharmaceuticals
     postingDate: '2026-07-02',
     closingDate: '2026-07-19',
     jobDescription:
-      'Candidate must have exposure of Clinical trial operation and have handled patient PK and CEP study. Job Description: Scientific review of Protocol and related documents as per regulatory requirements. Review of SIV presentations prepared by CRO and check for compliance with protocol.',
+      'Candidate must have exposure of Clinical trial operation and have handled patient PK and CEP study. Job Description: Scientific review of Protocol and related documents as per regulatory requirements. Review of SIV presentations prepared by CRO and check for compliance with protocol. M. Pharm (Clinical Pharmacy/Pharmacology) 5-7 years\' Experience',
     remoteStatus: null,
     siteNumber: 'CX_5001',
   })

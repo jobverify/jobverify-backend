@@ -1,3 +1,4 @@
+import { createDeclaredJobFeedScraper, DECLARED_JOB_FEED_PROFILES } from '../../scraper-support/native-sources/declaredJobFeeds/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -92,29 +93,7 @@ export const hasEmptyGreenhouseBoardSignal = (html = '') => {
     && !/\/dagsterlabs\/jobs\/\d+/i.test(page)
 }
 
-export const createDagsterScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchPage = defaultFetchPage,
-  } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Verified Dagster homepage changed materially')
-    }
-
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (!isVerifiedPrefectCareersRedirect(careersPage, CAREERS_URL)) {
-      throw new Error('Verified Dagster careers redirect changed materially')
-    }
-
-    const greenhouseBoardHtml = await fetchText(GREENHOUSE_BOARD_URL)
-    if (!hasEmptyGreenhouseBoardSignal(greenhouseBoardHtml)) {
-      throw new Error('Verified Dagster Greenhouse board changed materially')
-    }
-
-    return []
-  },
-})
+export const createDagsterScraper = (options = {}) => createDeclaredJobFeedScraper(DECLARED_JOB_FEED_PROFILES.dagster, options)
 
 export const run = async (options = {}) => createDagsterScraper().run(options)
 

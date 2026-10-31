@@ -1,3 +1,11 @@
+import * as capturedFs from 'node:fs'
+import {gunzipSync as capturedGunzip} from 'node:zlib'
+import * as nativeSource from './script.js'
+import {readInventoryEvidence as capturedInventory} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readSourceObservationEvidence as capturedObservations} from '../../scraper-support/utils/sourceObservationEvidence.js'
+const nativePacket=JSON.parse(capturedGunzip(capturedFs.readFileSync(new URL('./test-data/2026-10-31-native-packets.json.gz',import.meta.url))))
+const nativePage=url=>{const row=nativePacket.requests.find(row=>row.url===url);assert.ok(row,'Unrecorded native URL '+url);return row.body}
+const withCapturedNative=async(callback,alter=row=>row)=>{const original=globalThis.fetch,calls=[];globalThis.fetch=async(input,options={})=>{const url=String(input),method=options.method||'GET',body=String(options.body||''),recorded=nativePacket.requests.find(row=>row.url===url&&(row.method||'GET')===method&&(method==='GET'||row.requestBody===body));assert.ok(recorded,'Unrecorded native request '+url+' '+body);const row=alter({...recorded});calls.push({url,method,body});const response=new Response(Buffer.from(row.body,row.bodyEncoding),{status:row.status,headers:{'content-type':row.contentType}});Object.defineProperty(response,'url',{value:row.finalUrl});return response};try{return await callback(calls)}finally{globalThis.fetch=original}}
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -34,91 +42,8 @@ test('NITARA Gormalone LLP scraper constants stay pinned to the verified first-p
   assert.equal(nitara.hasOfficialCareersSignal(careersHtml), true)
 })
 
-test('NITARA Gormalone LLP extracts public first-party PDF-backed openings from the verified careers page', async () => {
-  const nitara = await loadNitaraGormaloneModule()
+test("NITARA native PDF links retain five title bindings with unknown IDs and geography",async()=>{const jobs=nativeSource.extractPublicListings(nativePage(nativeSource.CAREERS_URL));assert.equal(jobs.length,5);assert.equal(jobs[0].title,'Female Field Associate');assert.ok(jobs.every(job=>job.sourceUrl.startsWith('https://gormalone.com/files/JD/')&&job.country==null&&job.location==null&&job.jobId==null&&job.requisitionId==null&&job.jobDescription==null));assert.equal(jobs[0].applyUrl,'mailto:hr@gormalone.com')})
 
-  const jobs = nitara.extractPublicListings(careersHtml)
+test("NITARA default native PDF path preserves three listing/document title contradictions",async()=>{await withCapturedNative(async calls=>{const jobs=await nativeSource.run();assert.equal(calls.length,7);assert.equal(jobs.length,5);assert.equal(jobs.filter(job=>job.jobDescription).length,2);assert.equal(jobs.filter(job=>job.rawNativeRoleEvidence.identityQualified===false).length,3);assert.ok(jobs.every(job=>job.country==null&&job.location==null&&job.postingDate==null));assert.equal(capturedInventory(jobs).status,'coverage-gap')})})
 
-  assert.equal(jobs.length, 5)
-  assert.deepEqual(jobs[0], {
-    title: 'Female Field Associate',
-    company: 'NITARA Gormalone LLP',
-    department: 'Early Careers',
-    location: null,
-    city: null,
-    country: 'India',
-    jobId: 'nitaragormalonellp-female-field-associate',
-    requisitionId: 'nitaragormalonellp-female-field-associate',
-    sourceUrl: 'https://gormalone.com/files/JD/JD-Female%20Field%20Associate.pdf',
-    applyUrl: 'mailto:hr@gormalone.com',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: 'Official NITARA Gormalone LLP opening for Female Field Associate in Early Careers. Review the first-party job description PDF and email hr@gormalone.com to apply.',
-  })
-  assert.deepEqual(
-    jobs.map((job) => ({ title: job.title, department: job.department })),
-    [
-      { title: 'Female Field Associate', department: 'Early Careers' },
-      { title: 'Senior Business Development Associate', department: 'Mid-Level Careers' },
-      { title: 'Senior Business Development Executive', department: 'Mid-Level Careers' },
-      { title: 'Embedded Systems Consultant', department: 'Experienced Professionals' },
-      { title: 'Senior Business Development Specialist', department: 'Experienced Professionals' },
-    ],
-  )
-  assert.equal(
-    jobs.at(-1)?.sourceUrl,
-    'https://gormalone.com/files/JD/JD%20-%20Senior%20Business%20Development%20Specialist.pdf',
-  )
-})
-
-test('NITARA Gormalone LLP run verifies the homepage handoff and decorates public jobs for persistence', async () => {
-  const nitara = await loadNitaraGormaloneModule()
-  const requestedUrls = []
-
-  const jobs = await nitara.createNitaraGormaloneLlpScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === nitara.HOMEPAGE_URL) return homepageHtml
-      if (url === nitara.CAREERS_URL) return careersHtml
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-    now: () => '2026-07-11T04:00:00.000Z',
-  })
-
-  assert.deepEqual(requestedUrls, [nitara.HOMEPAGE_URL, nitara.CAREERS_URL])
-  assert.equal(jobs.length, 5)
-  assert.equal(jobs[0].source, 'nitaragormalonellp')
-  assert.equal(jobs[0].link, 'https://gormalone.com/files/JD/JD-Female%20Field%20Associate.pdf')
-  assert.equal(jobs[0].scrapedAt, '2026-07-11T04:00:00.000Z')
-})
-
-test('NITARA Gormalone LLP fails closed when the verified homepage handoff or careers jobs surface changes', async () => {
-  const nitara = await loadNitaraGormaloneModule()
-
-  await assert.rejects(
-    nitara.createNitaraGormaloneLlpScraper().run({
-      fetchText: async (url) => {
-        if (url === nitara.HOMEPAGE_URL) return '<html><title>Unexpected</title></html>'
-        return careersHtml
-      },
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    nitara.createNitaraGormaloneLlpScraper().run({
-      fetchText: async (url) => {
-        if (url === nitara.HOMEPAGE_URL) return homepageHtml
-        return '<html><body><h1>Careers</h1><p>Send your CV to hr@gormalone.com</p></body></html>'
-      },
-    }),
-    /verified first-party careers page|public job openings/i,
-  )
-})
+test("NITARA missing homepage identity or public role-document scope fails closed",async()=>{await assert.rejects(nativeSource.run({fetchText:async()=>'<html><title>Changed</title></html>'}),/native:/);assert.throws(()=>nativeSource.extractPublicListings('<html><title>Careers at Gormalone</title></html>'),/native:/)})

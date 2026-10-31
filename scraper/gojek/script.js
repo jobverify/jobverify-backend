@@ -1,6 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachInventoryEvidence, normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { GojekCoverageGapError, inspectGojekCareersPage } from './nativeObservations.js'
 
 export { inspectGojekCareersPage } from './nativeObservations.js'
@@ -42,6 +42,7 @@ const defaultFetchPage = async (url, { signal } = {}) => {
 
   return {
     status: response.status,
+    url: response.url,
     text: await response.text(),
   }
 }
@@ -51,8 +52,15 @@ export const createGojekScraper = () => ({
     signal?.throwIfAborted()
     const gojekPage = await fetchPage(buildSearchUrl(), { signal })
     signal?.throwIfAborted()
-    if (gojekPage?.status !== 200 || typeof gojekPage.text !== 'string') {
-      throw new GojekCoverageGapError('Careers HTTP response is blocked or unavailable; parent HoldCo signals cannot establish an empty Gojek inventory')
+    if (gojekPage?.status !== 200 || gojekPage.url != null && gojekPage.url !== CAREER_PAGE_URL || typeof gojekPage.text !== 'string') {
+      const reason = 'Careers HTTP response is blocked, unavailable or has a changed final URL; parent HoldCo signals cannot establish an empty Gojek inventory'
+      throw Object.assign(new GojekCoverageGapError(reason), {
+        status: gojekPage?.status ?? null, requestUrl: CAREER_PAGE_URL, finalUrl: gojekPage?.url ?? null,
+        failureKind: 'incomplete_listing', source: 'gojek', sourceListingComplete: false, sourceScopeComplete: false,
+        inventoryEvidence: normalizeInventoryEvidence({status: 'coverage-gap', surface: CAREER_PAGE_URL,
+          firstParty: false, listingComplete: false, pagesFetched: 1, reportedTotal: null, indiaFacetCount: null,
+          verifiedAt: now(), reason}),
+      })
     }
     const audit = inspectGojekCareersPage(gojekPage.text)
     await onAudit(structuredClone(audit))

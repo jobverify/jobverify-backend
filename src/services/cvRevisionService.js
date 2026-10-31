@@ -30,7 +30,7 @@ const metadata = revision => ({ id: revision._id, kind: revision.kind, jobId: re
   evidenceVersion: revision.evidenceSnapshot?.version ?? null, filename: revision.sourceSnapshot?.filename || 'resume' });
 
 async function lockOwner(userId, session) {
-  const owner = await User.findOneAndUpdate({ _id: userId, deactivated: { $ne: true }, outreachDeletingAt: null }, { $inc: { __v: 1 } }, { session, new: true }).select('savedJobs').lean();
+  const owner = await User.findOneAndUpdate({ _id: userId, deactivated: { $ne: true }, accountDeletingAt: null }, { $inc: { __v: 1 } }, { session, new: true }).select('savedJobs').lean();
   if (!owner) throw tailoringError('This account is unavailable.', 409);
   return owner;
 }

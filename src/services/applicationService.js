@@ -12,7 +12,7 @@ export const publicApplication = application => application ? { ...application, 
 async function fenceOwner(user, session) {
   // Write the same user row that account deletion marks before removing data.
   // Snapshot isolation alone would permit a late request to recreate history.
-  const owner = await User.updateOne({ _id: user, deactivated: { $ne: true }, outreachDeletingAt: null }, { $inc: { __v: 1 } }, { session });
+  const owner = await User.updateOne({ _id: user, deactivated: { $ne: true }, accountDeletingAt: null }, { $inc: { __v: 1 } }, { session });
   if (owner.matchedCount !== 1) throw failure(404, 'Candidate account is no longer active.');
 }
 

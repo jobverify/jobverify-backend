@@ -251,7 +251,8 @@ export const extractActionableRecruitmentNotices = (html, {
     }))
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -262,10 +263,22 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const createBharatDynamicsScraper = () => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchText: rawFetchText = defaultFetchText,
+    signal,
     now = () => new Date().toISOString(),
     maxPages = 2,
   } = {}) {
+    const fetchText = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const value = await rawFetchText(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return value
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Bharat Dynamics homepage no longer matches the verified official surface')

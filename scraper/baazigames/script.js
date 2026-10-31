@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { BAAZI_GAMES_CATALOG } from './catalog.js'
 import { runBaaziLinkedInSubset } from './employerLinkedIn.js'
+import { normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -117,15 +118,23 @@ export const createBaaziGamesScraper = () => ({
     }
 
     const careers = await resolvePage(CAREERS_URL)
+    if ([401, 403, 429].includes(Number(careers.status)) || isBlockedCareersResponse(careers)) {
+      throw Object.assign(new Error(`Baazi Games public careers inventory is unavailable: AccessDenied (HTTP ${careers.status})`), {
+        code: 'access_denied', status: careers.status, failureKind: 'incomplete_listing', abortRetries: true,
+        primaryInventoryUnavailable: 'Baazi Games current public careers inventory is unavailable; native route denied access, global and India totals unknown',
+        inventoryEvidence: normalizeInventoryEvidence({
+          status: 'coverage-gap', surface: CAREERS_URL, firstParty: true, listingComplete: false,
+          pagesFetched: 1, reportedTotal: null, indiaFacetCount: null,
+          verifiedAt: typeof now === 'function' ? now() : new Date().toISOString(),
+          reason: 'public-careers-access-denied; inventory-counts-unknown',
+        }),
+      })
+    }
     if (hasPublicJobsSignal(careers.html)) {
       throw new Error('Baazi Games careers route now exposes a public jobs surface')
     }
 
-    if (!isBlockedCareersResponse(careers)) {
-      throw new Error('Baazi Games careers route changed materially and needs review')
-    }
-
-    return []
+    throw new Error('Baazi Games careers route changed materially and needs review')
   },
 })
 

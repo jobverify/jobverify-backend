@@ -2,7 +2,7 @@ import http from 'node:http'
 import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { extractSucuriCookieData } from '../../scraper-support/utils/remoteScriptData.js'
+import { attachInventoryEvidence, normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { ASTRA_MICROWAVE_CATALOG } from './catalog.js'
 
@@ -132,17 +132,12 @@ export const isSucuriJavascriptGatePage = (page = {}) => {
   const html = String(page.html ?? '')
   const normalized = normalizeWhitespace(html)
 
-  const gated = Number(page.status) === 307
+  // A denial is evidence of missing coverage. Its opaque program is neither
+  // source data nor something this read-only scraper should interpret.
+  return Number(page.status) === 307
     && /<title>\s*You are being redirected\.\.\.\s*<\/title>/i.test(html)
     && normalized.includes('Javascript is required. Please enable javascript before you are allowed to see this page.')
     && !pageExposesPublicJobListings(html)
-  if (gated) {
-    const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)]
-    // Preserve the captured non-executable gate marker. An actual challenge
-    // must match the bounded supported format before it can be classified.
-    if (scripts.length !== 1 || scripts[0][1].trim() !== 'Sucuri CloudProxy') extractSucuriCookieData(html)
-  }
-  return gated
 }
 
 const isKnownBlockedOrGatedPage = (page = {}) =>
@@ -226,23 +221,31 @@ export const isMissingJobRoute = (page = {}) => {
 
 const getClient = (url) => (url.startsWith('https:') ? https : http)
 
-const rawRequest = (url, cookieHeader = '') =>
+const rawRequest = (url, { signal } = {}) =>
   new Promise((resolve, reject) => {
+    signal?.throwIfAborted()
     const client = getClient(url)
     const request = client.request(url, {
       method: 'GET',
+      signal,
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Encoding': 'identity',
-        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
       },
     }, (response) => {
       const chunks = []
+      let bytes = 0
 
       response.on('data', (chunk) => {
+        bytes += chunk.length
+        if (bytes > 5000000) {
+          response.destroy(new Error('Astra Microwave response exceeds byte bound'))
+          return
+        }
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
       })
+      response.on('error', reject)
       response.on('end', () => {
         resolve({
           status: response.statusCode ?? 0,
@@ -259,81 +262,16 @@ const rawRequest = (url, cookieHeader = '') =>
     request.end()
   })
 
-const getCookieBucket = (cookieJar, hostname) => {
-  if (!cookieJar.has(hostname)) {
-    cookieJar.set(hostname, new Map())
-  }
-
-  return cookieJar.get(hostname)
-}
-
-const storeCookie = (cookieJar, url, cookiePair) => {
-  if (!cookiePair || !cookiePair.includes('=')) return
-
-  const hostname = new URL(url).hostname.toLowerCase()
-  const [name, ...valueParts] = cookiePair.split('=')
-  const value = valueParts.join('=').trim()
-  if (!name || !value) return
-
-  getCookieBucket(cookieJar, hostname).set(name.trim(), value)
-}
-
-const storeResponseCookies = (cookieJar, url, responseHeaders = {}) => {
-  const setCookieHeader = responseHeaders['set-cookie']
-  const headerValues = Array.isArray(setCookieHeader)
-    ? setCookieHeader
-    : setCookieHeader
-      ? [setCookieHeader]
-      : []
-
-  for (const headerValue of headerValues) {
-    const cookiePair = String(headerValue).split(';', 1)[0]?.trim()
-    if (cookiePair) {
-      storeCookie(cookieJar, url, cookiePair)
-    }
-  }
-}
-
-const buildCookieHeader = (cookieJar, url) => {
-  const hostname = new URL(url).hostname.toLowerCase()
-  const bucket = cookieJar.get(hostname)
-  if (!bucket || bucket.size === 0) return ''
-
-  return [...bucket.entries()].map(([name, value]) => `${name}=${value}`).join('; ')
-}
-
-const extractSucuriChallengeCookie = (html = '') => {
-  const match = String(html ?? '').match(/\bS='([^']+)'/)
-  if (!match) return null
-
-  return extractSucuriCookieData(String(html ?? ''))
-}
-
-const fetchPageWithFirewallHandling = async (url) => {
-  const cookieJar = new Map()
+const fetchOfficialPage = async (url, options) => {
   let currentUrl = url
   let redirects = 0
-  const challengeAttempts = new Map()
 
   while (redirects <= 8) {
-    const response = await rawRequest(currentUrl, buildCookieHeader(cookieJar, currentUrl))
-    storeResponseCookies(cookieJar, currentUrl, response.headers)
+    const response = await rawRequest(currentUrl, options)
 
     const gatedPage = { status: response.status, url: currentUrl, html: response.body }
     if (isSucuriJavascriptGatePage(gatedPage)) {
       return gatedPage
-    }
-
-    const challengeCookie = extractSucuriChallengeCookie(response.body)
-    if (challengeCookie) {
-      const currentAttempts = challengeAttempts.get(currentUrl) ?? 0
-      if (currentAttempts >= 2) {
-        return { status: response.status, url: currentUrl, html: response.body }
-      }
-
-      challengeAttempts.set(currentUrl, currentAttempts + 1)
-      storeCookie(cookieJar, currentUrl, challengeCookie)
-      continue
     }
 
     if ([301, 302, 303, 307, 308].includes(response.status)) {
@@ -342,7 +280,11 @@ const fetchPageWithFirewallHandling = async (url) => {
         return { status: response.status, url: currentUrl, html: response.body }
       }
 
-      currentUrl = new URL(locationHeader, currentUrl).toString()
+      const next = new URL(locationHeader, currentUrl)
+      if (next.protocol !== 'https:' || !['astramwp.com', 'www.astramwp.com'].includes(next.hostname) || next.username || next.password) {
+        throw new Error('Astra Microwave redirect left the official HTTPS surface')
+      }
+      currentUrl = next.href
       redirects += 1
       continue
     }
@@ -357,7 +299,7 @@ const fetchPageWithFirewallHandling = async (url) => {
   throw new Error(`Too many redirects while requesting Astra Microwave URL: ${url}`)
 }
 
-const defaultFetchPage = async (url) => fetchPageWithFirewallHandling(url)
+const defaultFetchPage = async (url, options) => fetchOfficialPage(url, options)
 
 const hasResumeOnlyOrGatedCareersSignal = (page = {}) => (
   Number(page.status) === 200
@@ -366,49 +308,80 @@ const hasResumeOnlyOrGatedCareersSignal = (page = {}) => (
 ) || isSucuriJavascriptGatePage(page)
 
 export const createAstraMicrowaveScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, signal } = {}) {
+    const receipts = []
+    let resumeObserved = false
+    const evidence = () => normalizeInventoryEvidence({ status: 'coverage-gap', firstParty: resumeObserved,
+      listingComplete: false, surface: CAREERS_URL, pagesFetched: receipts.length, reportedTotal: null,
+      indiaFacetCount: null, verifiedAt: new Date().toISOString(),
+      reason: 'Astra Microwave public hiring routes are gated or resume-only; vacancy inventory is unverified' })
+    const read = async url => {
+      signal?.throwIfAborted()
+      let page
+      try { page = await fetchPage(url, { signal }) }
+      catch (error) { if (signal?.aborted) throw signal.reason; throw error }
+      signal?.throwIfAborted()
+      receipts.push({ url, responseUrl: page.url, status: page.status })
+      return page
+    }
+    const requireReadable = page => {
+      if (isKnownBlockedOrGatedPage(page)) {
+        throw Object.assign(new Error('Astra Microwave public crawl resource is blocked or gated'), {
+          code: 'ASTRA_MICROWAVE_COVERAGE_GAP', softFailure: true, abortRetries: true,
+          failureKind: 'blocked_or_access_denied', status: page.status, statusCode: page.status,
+          requestUrl: receipts.at(-1).url, receipts, inventoryEvidence: evidence(), lifecycleCleanupAllowed: false,
+        })
+      }
+    }
+    const homepage = await read(HOMEPAGE_URL)
     if (!isKnownBlockedOrGatedPage(homepage)) {
       throw new Error('Astra Microwave homepage no longer matches the verified first-party blocked shell')
     }
 
-    const robots = await fetchPage(ROBOTS_URL)
+    const robots = await read(ROBOTS_URL)
+    requireReadable(robots)
     if (robots.status !== 200 || !hasOfficialRobotsTxtSignal(robots.html)) {
       throw new Error('Astra Microwave robots.txt no longer matches the verified first-party crawl surface')
     }
 
-    const sitemapIndex = await fetchPage(SITEMAP_INDEX_URL)
+    const sitemapIndex = await read(SITEMAP_INDEX_URL)
+    requireReadable(sitemapIndex)
     if (sitemapIndex.status !== 200 || !hasOfficialSitemapIndexSignal(sitemapIndex.html)) {
       throw new Error('Astra Microwave sitemap index no longer matches the verified first-party crawl surface')
     }
 
-    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
+    const pageSitemap = await read(PAGE_SITEMAP_URL)
+    requireReadable(pageSitemap)
     if (pageSitemap.status !== 200 || !hasOfficialPageSitemapSignal(pageSitemap.html)) {
       throw new Error('Astra Microwave page sitemap no longer matches the verified careers section route set')
     }
 
     for (const routeUrl of [CAREERS_URL, CAREERS_ALIAS_URL]) {
-      const careersPage = await fetchPage(routeUrl)
+      const careersPage = await read(routeUrl)
       if (!hasResumeOnlyOrGatedCareersSignal(careersPage)) {
         throw new Error(`Astra Microwave verified resume-only careers page changed materially or now exposes public job listings: ${routeUrl}`)
       }
+      resumeObserved ||= careersPage.status === 200
     }
 
     for (const routeUrl of BLOCKED_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+      const routePage = await read(routeUrl)
       if (!isBlockedJobRoute(routePage)) {
         throw new Error(`Astra Microwave blocked job route changed materially or now exposes public jobs: ${routeUrl}`)
       }
     }
 
     for (const routeUrl of MISSING_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+      const routePage = await read(routeUrl)
       if (!isMissingJobRoute(routePage)) {
         throw new Error(`Astra Microwave missing job route changed materially or now exposes public jobs: ${routeUrl}`)
       }
     }
 
-    return []
+    const jobs = attachInventoryEvidence([], evidence())
+    Object.defineProperty(jobs, 'sourceAudit', { value: { complete: false, lifecycleCleanupAllowed: false, receipts,
+      reasons: ['Public vacancy inventory unavailable; gated routes and resume forms do not establish zero jobs'] } })
+    return jobs
   },
 })
 

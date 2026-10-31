@@ -13,7 +13,7 @@ test('compiler copies the trusted 24 MB format before limiting untrusted output'
   const format = await fs.open(path.join(root, 'source/latex.fmt'), 'w');
   await format.truncate(24 * 1024 * 1024); await format.close();
   // Redirect only filesystem locations; execute the real production wrapper.
-  const wrapper = (await fs.readFile(new URL('../outreach/compiler/compile.sh', import.meta.url), 'utf8'))
+  const wrapper = (await fs.readFile(new URL('../resume-tailoring/compiler/compile.sh', import.meta.url), 'utf8'))
     .replaceAll('/opt/tectonic-cache', path.join(root, 'source'))
     .replaceAll('/tmp/tectonic-cache', path.join(root, 'temporary/cache'))
     .replaceAll('/tmp/compiler.log', path.join(root, 'temporary/compiler.log'))

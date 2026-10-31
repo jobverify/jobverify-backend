@@ -109,8 +109,8 @@ test('saved-job tailoring persists, isolates owners, retries and rejects stale g
     assert.equal((await getTailoredResume(owner, job)).status, 'failed');
   });
 
-  await t.test('the real request path dispatches the dedicated GitHub workflow with outreach disabled', async t => {
-    const config = { GITHUB_PAT: 'tailoring-test-token', GITHUB_REPO: 'example/backend', OUTREACH_ACTIONS_ENABLED: 'false', OUTREACH_ACTIONS_FREE_CONFIRMED: 'false', TAILORED_RESUME_ACTIONS_ENABLED: 'true' };
+  await t.test('the real request path dispatches the dedicated GitHub workflow independently', async t => {
+    const config = { GITHUB_PAT: 'tailoring-test-token', GITHUB_REPO: 'example/backend', TAILORED_RESUME_ACTIONS_ENABLED: 'true' };
     for (const [key, value] of Object.entries(config)) {
       const old = process.env[key]; process.env[key] = value;
       t.after(() => { if (old === undefined) delete process.env[key]; else process.env[key] = old; });

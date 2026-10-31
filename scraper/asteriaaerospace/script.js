@@ -45,13 +45,16 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })
+  signal?.throwIfAborted()
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} for ${url}`)
@@ -85,32 +88,49 @@ export const hasUnexpectedPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const createAsteriaAerospaceScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchBrowserText, signal } = {}) {
+    signal?.throwIfAborted()
     let browserSession = null
 
     const getBrowserSession = async () => {
+      signal?.throwIfAborted()
       if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT, signal })
       }
 
+      signal?.throwIfAborted()
       return browserSession
     }
 
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
+    const browserTextFetcher = fetchBrowserText || (async (url, options = {}) => {
       const session = await getBrowserSession()
-      return session.fetchText(url)
+      return session.fetchText(url, { ...options, signal })
     })
 
-    const fetchPageText = async (url) => {
+    const readBrowser = async url => {
+      signal?.throwIfAborted()
       try {
-        return await fetchText(url)
+        const value = await browserTextFetcher(url, { signal })
+        signal?.throwIfAborted()
+        return value
       } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
+        signal?.throwIfAborted()
+        throw error
       }
+    }
+    const fetchPageText = async (url) => {
+      signal?.throwIfAborted()
+      let value
+      try {
+        value = await fetchText(url, { signal })
+        signal?.throwIfAborted()
+      } catch (error) {
+        signal?.throwIfAborted()
+        if (!isBrowserFallbackError(error)) throw error
+        return readBrowser(url)
+      }
+
+      return value
     }
 
     try {
@@ -130,9 +150,9 @@ export const createAsteriaAerospaceScraper = () => ({
 
       return []
     } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
+      try {
+        if (browserSession) await browserSession.close()
+      } finally { signal?.throwIfAborted() }
     }
   },
 })

@@ -9,6 +9,14 @@ const DEFAULT_LISTING_BUDGET_MS = 120000
 const DEFAULT_DETAIL_BUDGET_MS = 30000
 const MAX_DEFAULT_DETAIL_BUDGET_MS = 120000
 const DEFAULT_DETAIL_WORKER_WAVE_ALLOWANCE_MS = 1000
+// These names are independently published equivalents, not geography lookups.
+// MHA/PIB relid=113433: Belgaum/Belagavi, Hubli/Hubballi (Karnataka).
+// trivandrum.nic.in/en/about-district/: Trivandrum/Thiruvananthapuram.
+const REVIEWED_INDIA_CITY_NAMES = [
+  { states: ['karnataka'], names: ['belgaum', 'belagavi'] },
+  { states: ['karnataka'], names: ['hubli', 'hubballi'] },
+  { states: ['kerala', 'keralam'], names: ['trivandrum', 'thiruvananthapuram'] },
+]
 const nonnegativeBudget = (value, fallback) => Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : fallback
 const incompleteSnapshot = message => Object.assign(new Error('PHENOM_INCOMPLETE_SNAPSHOT: ' + message), { code: 'PHENOM_INCOMPLETE_SNAPSHOT' })
 const requestWithSignal = async (fetcher, url, signal, requestOptions = {}) => {
@@ -390,11 +398,39 @@ export const createPhenomScraper = ({
   defaultDetailConcurrency = 1,
   nativeConcatenatedStateCountry = false,
   nativeBangaloreLocationAlias = false,
+  nativeLocalitySuffixFormatting = false,
+  nativeBoundUSStateCodeFormatting = false,
+  nativeReviewedIndiaCityAliases = false,
+  nativeCountryBeforePostalCode = false,
+  nativeCityCountryLiteral = false,
   nativeUnspecifiedState = false,
+  nativeLocalizedCountryNames = [],
   useJobSequenceForDetailUrl = false,
   numberedOfficeLocations = null,
 }) => {
   const config = loadConfig(scraperDir)
+  // An opt-in names only observed locale/region pairs. Intl supplies the name;
+  // source configuration cannot invent a country alias or replace another one.
+  if (!Array.isArray(nativeLocalizedCountryNames) || nativeLocalizedCountryNames.length > 4) {
+    throw new Error('Phenom localized country names require at most four locale/region pairs')
+  }
+  const countryNames = new Map(knownCountries)
+  const localizedCountryNames = nativeLocalizedCountryNames.map(entry => {
+    if (!entry || typeof entry.locale !== 'string' || entry.locale.length > 32
+      || typeof entry.region !== 'string' || !/^[A-Z]{2}$/.test(entry.region)
+      || knownCountries.get(entry.region.toLowerCase()) !== entry.region
+      || Intl.DisplayNames.supportedLocalesOf([entry.locale]).length !== 1) {
+      throw new Error('Phenom localized country name requires a supported locale and known region')
+    }
+    const locale = Intl.getCanonicalLocales(entry.locale)[0]
+    const label = new Intl.DisplayNames([locale], { type: 'region', fallback: 'none' }).of(entry.region)
+    const key = label?.toLowerCase()
+    if (!key || countryNames.has(key) && countryNames.get(key) !== entry.region) {
+      throw new Error('Phenom localized country name is absent or ambiguous')
+    }
+    countryNames.set(key, entry.region)
+    return { label, region: entry.region, locale }
+  })
 
   const toAbsoluteUrl = (value) => {
     try {
@@ -431,13 +467,13 @@ export const createPhenomScraper = ({
   const countryIsUnknown = value => {
     if (typeof value !== 'string') return true
     const parts = countryParts(value)
-    return !parts.length || parts.some(part => !knownCountries.has(part.toLowerCase()))
-      || !countryMatchesTarget(value) && parts.some(part => knownCountries.get(part.toLowerCase()) === knownCountries.get(targetCountry.toLowerCase()))
+    return !parts.length || parts.some(part => !countryNames.has(part.toLowerCase()))
+      || !countryMatchesTarget(value) && parts.some(part => countryNames.get(part.toLowerCase()) === countryNames.get(targetCountry.toLowerCase()))
   }
   const locationParts = value => (normalizeWhitespace(value) || '').split(',').map(part => part.trim().normalize('NFC').toLowerCase()).filter(Boolean)
   const countryCode = value => {
     if (typeof value !== 'string') return null
-    const parts=countryParts(value).map(part=>knownCountries.get(part.toLowerCase()))
+    const parts=countryParts(value).map(part=>countryNames.get(part.toLowerCase()))
       .map(code => code ? new Intl.Locale('und-' + code).region : null)
     return parts.length && parts.every(Boolean) && new Set(parts).size===1 ? parts[0] : null
   }
@@ -448,7 +484,18 @@ export const createPhenomScraper = ({
     return state.length > 0 && Boolean(countryCode(full.at(-1)))
       && state.length === full.length - 1 && prefixAgrees(state, full.slice(0, -1))
   }
-  const resolveDetailLocation = value => {
+  const nativeOfficeCoordinates = office => {
+    const lat = office?.latlong?.lat, lon = office?.latlong?.lon
+    if (typeof lat !== 'number' || typeof lon !== 'number' || !Number.isFinite(lat) || !Number.isFinite(lon)
+      || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null
+    for (const [name, expected] of [['latitude', lat], ['longitude', lon]]) {
+      if (office[name] == null) continue
+      if (!['number', 'string'].includes(typeof office[name]) || String(office[name]).trim() === ''
+        || Number(office[name]) !== expected) return null
+    }
+    return [lat, lon]
+  }
+  const resolveDetailLocation = (value, standardisedOffices = []) => {
     if (typeof value === 'string') return { consistent:true,target:countryMatchesTarget(value.split(',').at(-1)) }
     if (!value || typeof value !== 'object' || Array.isArray(value)
       || [value.country,value.city,value.state,value.cityState,value.cityCountry,value.stateCountry,value.location,value.cityStateCountry]
@@ -461,9 +508,26 @@ export const createPhenomScraper = ({
     if (!fullCountry || country && countryCode(country)!==fullCountry) return {consistent:false,target:false}
     const fullPrefix=complete.slice(0,-1)
     const city = normalizeWhitespace(value.city)
-    if (city && !/^not location specific$/i.test(city) && city.normalize('NFC').toLowerCase() !== complete[0]) return {consistent:false,target:false}
-    const region = isStateOnlyLocation(value, full) ? fullPrefix : complete.slice(1,-1)
     const state=normalizeWhitespace(value.state)
+    const literalCityParts = locationParts(city)
+    const literalCityState = locationParts(value.cityState), literalCityCountry = locationParts(value.cityCountry)
+    // NTT sometimes supplies the literal city field as "Bengaluru, India".
+    // Keep that value unchanged and bind both tokens to this exact office.
+    // This is not support for arbitrary comma-separated city lists.
+    const cityCountryLiteral = nativeCityCountryLiteral && country === 'India' && fullCountry === 'IN'
+      && literalCityParts.length === 2 && !/[\\/;|&+•·，、]|\b(?:and|or)\b/i.test(literalCityParts[0]) && !countryCode(literalCityParts[0])
+      && countryCode(literalCityParts[1]) === fullCountry
+      && literalCityParts.every(part => countryParts(part).every(component => !countryCode(component) || countryCode(component) === fullCountry))
+      && state && /^IN-[A-Z]{2}$/.test(state) && complete.length === literalCityParts.length + 2
+      && prefixAgrees(literalCityParts, fullPrefix) && fullPrefix.at(-1) === state.toLowerCase()
+      && literalCityState.length === fullPrefix.length && prefixAgrees(literalCityState, fullPrefix)
+      && literalCityCountry.length === literalCityParts.length + 1 && countryCode(literalCityCountry.at(-1)) === fullCountry
+      && prefixAgrees(literalCityCountry.slice(0, -1), literalCityParts)
+      && normalizeWhitespace(value.stateCountry)
+      && locationParts(value.location).length === complete.length && prefixAgrees(locationParts(value.location), complete)
+    if (city && !/^not location specific$/i.test(city) && city.normalize('NFC').toLowerCase() !== complete[0]
+      && !cityCountryLiteral) return {consistent:false,target:false}
+    const region = isStateOnlyLocation(value, full) ? fullPrefix : complete.slice(cityCountryLiteral ? literalCityParts.length : 1,-1)
     // Orange's current native country/city-only offices use this exact marker
     // for an absent state. Accept it only with mutually consistent explicit
     // India, city and country-only stateCountry fields; real regions still bind.
@@ -497,6 +561,23 @@ export const createPhenomScraper = ({
     // A postal suffix (including a native N/A marker) supplies no country.
     // Bind the exact label to this office's explicit country and full region.
     const postalCode = typeof value.postalCode === 'string' ? value.postalCode.trim().normalize('NFC').toLowerCase() : null
+    const countryBeforePostalCode = nativeCountryBeforePostalCode && city && state && countryCode(country) === fullCountry
+      // Redundant display fields cannot add another region or country between
+      // this office's typed city/state and its country/postal suffix.
+      && fullPrefix.length === 2 && fullPrefix[0] === city.normalize('NFC').toLowerCase()
+      && fullPrefix[1] === state.normalize('NFC').toLowerCase()
+      && postalCode && postalCode.length <= 32 && short.at(-1) === postalCode
+      && short.length === fullPrefix.length + 2 && countryCode(short.at(-2)) === fullCountry
+      && prefixAgrees(short.slice(0, -2), fullPrefix)
+      && ['cityStateZipCode', 'cityStatePostalCode'].every(field => {
+        if (!Object.hasOwn(value, field)) return true
+        if (typeof value[field] !== 'string' || !value[field].trim()) return false
+        const alias = locationParts(value[field])
+        return alias.at(-1) === postalCode && (alias.length === fullPrefix.length + 1
+          && prefixAgrees(alias.slice(0, -1), fullPrefix)
+          || alias.length === fullPrefix.length + 2 && countryCode(alias.at(-2)) === fullCountry
+            && prefixAgrees(alias.slice(0, -2), fullPrefix))
+      })
     const postalLabel = !shortCountry && countryCode(country) === fullCountry
       && postalCode && postalCode.length <= 32 && short.at(-1) === postalCode
       && short.length - 1 === fullPrefix.length && prefixAgrees(short.slice(0, -1), fullPrefix)
@@ -522,7 +603,7 @@ export const createPhenomScraper = ({
       && typeof numberedOfficeLocations.namePrefix === 'string' && numberedOfficeLocations.namePrefix
       && value.locationId === numberedOfficeLocations.idPrefix + numbered[2]
       && value.locationName === numberedOfficeLocations.namePrefix + numbered[0]
-    if (postalLabel || namedOffice || numberedOffice) return { consistent: true, target: fullCountry === countryCode(targetCountry) }
+    if (postalLabel || countryBeforePostalCode || namedOffice || numberedOffice) return { consistent: true, target: fullCountry === countryCode(targetCountry) }
     const shortPrefix = shortCountry ? short.slice(0,-1) : short
     // An abbreviated native label is usable only alongside the same office's
     // explicit country and full label, with every short component equal.
@@ -535,10 +616,48 @@ export const createPhenomScraper = ({
       && fullPrefix.length === 2 && fullPrefix[0] === 'bengaluru' && fullPrefix[1] === 'karnataka'
       && shortPrefix.length === 2 && shortPrefix[0] === 'bangalore' && shortPrefix[1] === fullPrefix[1]
       && normalizeWhitespace(value.cityState) && normalizeWhitespace(value.cityCountry)
-    const consistent=prefixAgrees(shortPrefix,fullPrefix) || Boolean(nativeBangaloreAlias)
+    const reviewedIndiaCityAlias = nativeReviewedIndiaCityAliases && countryCode(country) === 'IN'
+      && fullCountry === 'IN' && shortCountry === 'IN' && city && state
+      && fullPrefix.length === 2 && shortPrefix.length === 2 && shortPrefix[1] === fullPrefix[1]
+      && state.normalize('NFC').toLowerCase() === fullPrefix[1]
+      && normalizeWhitespace(value.cityState) && normalizeWhitespace(value.cityCountry)
+      && REVIEWED_INDIA_CITY_NAMES.some(group => group.states.includes(fullPrefix[1])
+        && group.names.includes(fullPrefix[0]) && group.names.includes(shortPrefix[0]))
+    // A longer native label may include a locality before the already bound
+    // city/state/country, or before state/country when the native city is absent.
+    // Preserve that prefix as text; it never fills an absent canonical city.
+    const localityPrefix = shortPrefix.slice(0, shortPrefix.length - fullPrefix.length)
+    const localitySuffix = nativeLocalitySuffixFormatting && countryCode(country) === fullCountry
+      && shortCountry === fullCountry && fullPrefix.length > 0 && shortPrefix.length > fullPrefix.length
+      && fullPrefix.every((part, index) => shortPrefix[localityPrefix.length + index] === part)
+      && localityPrefix.every(part => countryParts(part).every(country => !countryCode(country) || countryCode(country) === fullCountry))
+    // A US state code is usable only through one same-job standardized office.
+    // Coordinates join the two explicit offices; they supply no geography.
+    let boundUSStateCode = false
+    if (nativeBoundUSStateCodeFormatting && fullCountry === 'US' && countryCode(country) === 'US'
+      && shortCountry === 'US' && city && state && fullPrefix.length === 2 && shortPrefix.length === 2
+      && shortPrefix[0] === fullPrefix[0] && /^[a-z]{2}$/.test(shortPrefix[1])
+      && Array.isArray(standardisedOffices)) {
+      const coordinates = nativeOfficeCoordinates(value)
+      const matches = coordinates ? standardisedOffices.filter(office => {
+        if (!office || typeof office !== 'object' || Array.isArray(office)
+          || office.isLocationStandardized !== true || countryCode(office.standardisedCountry) !== 'US'
+          || typeof office.standardisedCity !== 'string' || typeof office.standardisedState !== 'string'
+          || normalizeWhitespace(office.standardisedCity)?.toLowerCase() !== city.toLowerCase()
+          || normalizeWhitespace(office.standardisedState)?.toLowerCase() !== state.toLowerCase()) return false
+        const canonical = locationParts(office.standardisedMapQueryLocation)
+        const candidateCoordinates = nativeOfficeCoordinates(office)
+        return canonical.length === fullPrefix.length + 1 && countryCode(canonical.at(-1)) === 'US'
+          && prefixAgrees(canonical.slice(0, -1), fullPrefix) && candidateCoordinates
+          && candidateCoordinates.every((coordinate, index) => coordinate === coordinates[index])
+      }) : []
+      boundUSStateCode = matches.length === 1 && typeof matches[0].standardisedStateCode === 'string'
+        && matches[0].standardisedStateCode.trim().toLowerCase() === shortPrefix[1]
+    }
+    const consistent=prefixAgrees(shortPrefix,fullPrefix) || Boolean(nativeBangaloreAlias || reviewedIndiaCityAlias || localitySuffix || boundUSStateCode)
     return {consistent,target:consistent && fullCountry===countryCode(targetCountry)}
   }
-  const detailLocationHasTarget = value => resolveDetailLocation(value).target
+  const detailLocationHasTarget = (value, standardisedOffices) => resolveDetailLocation(value, standardisedOffices).target
   const resolveListingScope = raw => {
     const locations = [...new Set([
       ...(Array.isArray(raw.multi_location) ? raw.multi_location : []),
@@ -964,8 +1083,9 @@ export const createPhenomScraper = ({
               ...(Array.isArray(structured?.multi_location) ? structured.multi_location : []),
               ...(Array.isArray(structured?.multi_location_array) ? structured.multi_location_array : []),
             ]
-            const invalidLocationShape = detailLocations.some(value=>!resolveDetailLocation(value).consistent)
-            const detailHasTargetLocation = detailLocations.some(detailLocationHasTarget)
+            const standardisedOffices = structured?.standardised_multi_location
+            const invalidLocationShape = detailLocations.some(value=>!resolveDetailLocation(value, standardisedOffices).consistent)
+            const detailHasTargetLocation = detailLocations.some(value => detailLocationHasTarget(value, standardisedOffices))
             const structuredCountries = [structured?.country, structured?.ml_country, structured?.standardisedCountry]
             const suppliedPostingCountries = postingLocations.map(location => location?.address?.addressCountry)
             const invalidPostingCountryShape = suppliedPostingCountries.some(country => country != null && (
@@ -980,15 +1100,18 @@ export const createPhenomScraper = ({
               ? locationParts(location).at(-1) : location?.country || locationParts(location?.cityStateCountry).at(-1)))
             const postingOfficeCountryConflict = nativeOfficeCountries.length > 0 && (!nativeOfficeCountries.every(Boolean)
               || postingCountries.some(country => countryCode(country) && !nativeOfficeCountries.includes(countryCode(country))))
-            const invalidCountryShape = invalidPostingCountryShape || [...structuredCountries, ...postingCountries]
+            const invalidCountryShape = invalidPostingCountryShape
+              || [structured?.country, structured?.standardisedCountry, ...postingCountries]
+                .some(country => typeof country === 'string' && country.trim() && !countryCode(country))
+              || [...structuredCountries, ...postingCountries]
               .some(country => country != null && (typeof country !== 'string'
-                || country.trim() && countryParts(country).some(part => !knownCountries.has(part.toLowerCase()))))
+                || country.trim() && countryParts(country).some(part => !countryNames.has(part.toLowerCase()))))
             const detailCountries = [...structuredCountries, ...postingCountries].filter(value => typeof value === 'string' && value.trim())
             const derivedCountryConflict = countryMatchesTarget(structured?.country) && typeof structured?.ml_country === 'string'
               && structured.ml_country.trim() && !countryMatchesTarget(structured.ml_country)
             const corroboratedIndiaOffices = detailLocations.filter(value => value && typeof value === 'object'
               && countryMatchesTarget(value.country) && countryMatchesTarget(locationParts(value.cityStateCountry).at(-1))
-              && detailLocationHasTarget(value))
+              && detailLocationHasTarget(value, standardisedOffices))
             const corroboratedDerivedConflict = !derivedCountryConflict || countryMatchesTarget(structured?.standardisedCountry)
               && corroboratedIndiaOffices.length > 0 && corroboratedIndiaOffices.length === detailLocations.length
               && (!posting || postingCountries.length > 0
@@ -1027,10 +1150,13 @@ export const createPhenomScraper = ({
             enriched.title = listing.title
             enriched.country = listing.country
             enriched.sourceUrl = listing.sourceUrl
-            if (derivedCountryConflict) enriched.sourceNativeCountryEvidence = {
+            const nativeCountryNameMappings = localizedCountryNames.filter(entry => detailCountries.some(country =>
+              countryParts(country).some(part => part.toLowerCase() === entry.label.toLowerCase())))
+            if (derivedCountryConflict || nativeCountryNameMappings.length) enriched.sourceNativeCountryEvidence = {
               country: structured.country, standardisedCountry: structured.standardisedCountry, ml_country: structured.ml_country,
               nativeIndiaOfficeLabels: corroboratedIndiaOffices.map(value => value.cityStateCountry),
-              jsonLdCountries: postingCountries, derivedCountryConflict: true,
+              jsonLdCountries: postingCountries, derivedCountryConflict: Boolean(derivedCountryConflict),
+              ...(nativeCountryNameMappings.length ? { nativeCountryNameMappings: nativeCountryNameMappings.map(entry => ({ ...entry })) } : {}),
             }
             enriched.link = enriched.applyUrl
             enriched.sourceDetailComplete = true
@@ -1041,7 +1167,7 @@ export const createPhenomScraper = ({
                 // Cache the verified content and the exact evidence used by the
                 // guard above, without retaining the page's UI/scripts/assets.
                 structured: structured ? Object.fromEntries(['jobId', 'reqId', 'jobSeqNo', 'title', 'applyUrl', 'country',
-                  'ml_country', 'standardisedCountry', 'multi_location', 'multi_location_array'].filter(key => structured[key] !== undefined)
+                  'ml_country', 'standardisedCountry', 'multi_location', 'multi_location_array', 'standardised_multi_location'].filter(key => structured[key] !== undefined)
                   .map(key => [key, structured[key]])) : null,
                 posting: posting ? Object.fromEntries(['identifier', 'title', 'jobLocation'].filter(key => posting[key] !== undefined)
                   .map(key => [key, posting[key]])) : null,

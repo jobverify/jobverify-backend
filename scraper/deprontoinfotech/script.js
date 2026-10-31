@@ -77,7 +77,8 @@ const decodeJavaScriptString = (value) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,text/javascript,application/javascript,*/*;q=0.8',
@@ -151,8 +152,19 @@ export const createDeProntoInfoTechScraper = ({
   fetchText = defaultFetchText,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText: overrideFetchText, now: overrideNow } = {}) {
-    const fetchImpl = overrideFetchText || fetchText
+  async run({ fetchText: overrideFetchText, now: overrideNow, signal } = {}) {
+    const rawFetchText = overrideFetchText || fetchText
+    const fetchImpl = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const value = await rawFetchText(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return value
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
     const homepageHtml = await fetchImpl(HOMEPAGE_URL)
 
     if (!hasOfficialHomepageSignal(homepageHtml)) {
@@ -187,7 +199,7 @@ export const createDeProntoInfoTechScraper = ({
   },
 })
 
-export const run = async (options = {}) => createDeProntoInfoTechScraper(options).run()
+export const run = async (options = {}) => createDeProntoInfoTechScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

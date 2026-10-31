@@ -45,15 +45,21 @@ test('structured location country codes and secondary locations retain their own
     } }).indiaScopeLocations, ['Remote, India'])
   }
   assert.deepEqual(engine.extractWorkdayStructuredDetail({ jobPostingInfo: {
-    location: 'Remote', jobRequisitionLocation: { country: { alpha2Code: 'US' } },
-    additionalLocations: ['Remote'], jobDescription: description,
-  } }).indiaScopeLocations, [])
-  assert.deepEqual(engine.extractWorkdayStructuredDetail({ jobPostingInfo: {
     location: 'Remote', country: { alpha2Code: 'US' }, additionalLocations: [
       { descriptor: 'Bangalore', country: { alpha2Code: 'IN' } },
       { descriptor: 'Remote', country: { alpha2Code: 'US' } },
     ], jobDescription: description,
   } }).indiaScopeLocations, ['Bangalore, India'])
+})
+
+test('an unbound requisition country stays unknown while a bound foreign office proves foreign scope', () => {
+  const posting = { location: 'Remote', jobRequisitionLocation: { country: { alpha2Code: 'US' } },
+    additionalLocations: ['Remote'], jobDescription: '<p>Professional experience required.</p>' }
+  // The requisition office may differ from every advertised posting location.
+  // A country without its office descriptor cannot certify the public location.
+  assert.equal(engine.extractWorkdayStructuredDetail({ jobPostingInfo: posting }).indiaScopeLocations, null)
+  const bound = { ...posting, jobRequisitionLocation: { ...posting.jobRequisitionLocation, descriptor: 'Remote' } }
+  assert.deepEqual(engine.extractWorkdayStructuredDetail({ jobPostingInfo: bound }).indiaScopeLocations, [])
 })
 
 test('authoritative structured countries scope Remote jobs and retain an India secondary location', async t => {

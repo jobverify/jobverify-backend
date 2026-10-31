@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { safeResumeDiagnostic, resumeFailure } from '../outreach/resumeDiagnostics.js';
+import { safeResumeDiagnostic, resumeFailure } from '../resume-tailoring/resumeDiagnostics.js';
 
 test('diagnostics permit fixed codes, stages and bounded numbers only', () => {
   const event = safeResumeDiagnostic({ stage: 'compiling', code: 'compiler_dependency_missing', attempt: 2, seconds: 3.5,

@@ -15,6 +15,11 @@ import {
   hasVerifiedPageSitemapSignal,
 } from './script.js'
 
+// Inspect the original native content separately from normalized JD qualification.
+const nativeDetailEvidence = detail => ({ title: detail.title, requisitionId: detail.requisitionId,
+  sourceUrl: detail.sourceUrl, applyUrl: detail.applyUrl, employmentType: detail.employmentType,
+  experienceRequired: detail.experienceRequired, contentJobDescription: detail.rawNativeRoleEvidence.contentJobDescription })
+
 const homepageHtml = `
   <html>
     <head>
@@ -78,11 +83,13 @@ const dataEngineerHtml = `
   <html>
     <head>
       <title>Data Engineer - Farm to Plate %</title>
+      <link rel="canonical" href="https://www.farmtoplate.io/data-engineer/" />
+      <meta property="og:url" content="https://www.farmtoplate.io/data-engineer/" />
       <meta property="og:site_name" content="Farm to Plate" />
     </head>
     <body>
       <a href="mailto:info@farmtoplate.io">info@farmtoplate.io</a>
-      <h1>Data engineer job description</h1>
+      <h1>Data Engineer</h1><main><h1>Data engineer job description</h1>
       <p>At Farm to Plate, we rely on powerfully insightful data to inform our systems and solutions.</p>
       <h4>Objectives of this role</h4>
       <ul>
@@ -95,7 +102,7 @@ const dataEngineerHtml = `
       <a class="qwords-button qwords-button-flat" href="mailto:sakshi.verma@farmtoplate.io">
         <span class="text">Submit your CV here</span>
       </a>
-      <a href="mailto:info@farmtoplate.io">info@farmtoplate.io</a>
+      </main><a href="mailto:info@farmtoplate.io">info@farmtoplate.io</a>
       <p>Copyright 2025. Farm to Plate. All Rights Reserved.</p>
       <p>100% Subsidiary of Paramount Software Solutions</p>
     </body>
@@ -106,11 +113,13 @@ const seniorDevopsHtml = `
   <html>
     <head>
       <title>DevOps Engineer - Farm to Plate %</title>
+      <link rel="canonical" href="https://www.farmtoplate.io/devops-engineer/" />
+      <meta property="og:url" content="https://www.farmtoplate.io/devops-engineer/" />
       <meta property="og:site_name" content="Farm to Plate" />
     </head>
     <body>
       <a href="mailto:info@farmtoplate.io">info@farmtoplate.io</a>
-      <h4>Job Title: DevOps Engineer - Associate</h4>
+      <h1>DevOps Engineer</h1><main><h4>Job Title: DevOps Engineer - Associate</h4>
       <h4>Exp: 7+ Years</h4>
       <h2>Job Description</h2>
       <p>FarmtoPlate is setting up a blockchain product research and development team to deliver world-class enterprise grade Distributed Ledger Technology Networks for the food and beverage industry ecosystem.</p>
@@ -121,7 +130,7 @@ const seniorDevopsHtml = `
       <a class="qwords-button qwords-button-flat" href="mailto:sakshi.verma@farmtoplate.io">
         <span class="text">Submit your CV here</span>
       </a>
-      <a href="mailto:info@farmtoplate.io">info@farmtoplate.io</a>
+      </main><a href="mailto:info@farmtoplate.io">info@farmtoplate.io</a>
       <p>Copyright 2025. Farm to Plate. All Rights Reserved.</p>
     </body>
   </html>
@@ -131,11 +140,13 @@ const juniorDevopsHtml = `
   <html>
     <head>
       <title>DevOps Engineer - Associate - Farm to Plate %</title>
+      <link rel="canonical" href="https://www.farmtoplate.io/devops-engineer-associate/" />
+      <meta property="og:url" content="https://www.farmtoplate.io/devops-engineer-associate/" />
       <meta property="og:site_name" content="Farm to Plate" />
     </head>
     <body>
       <a href="mailto:info@farmtoplate.io">info@farmtoplate.io</a>
-      <h1>DevOps Engineer - Associate</h1>
+      <h1>DevOps Engineer - Associate</h1><main>
       <h4>Job Title: DevOps Engineer - Associate</h4>
       <h4>Exp: 2-3 Years</h4>
       <h2>Job Description</h2>
@@ -147,7 +158,7 @@ const juniorDevopsHtml = `
       <a class="qwords-button qwords-button-flat" href="mailto:sakshi.verma@farmtoplate.io">
         <span class="text">Submit your CV here</span>
       </a>
-      <a href="mailto:info@farmtoplate.io">info@farmtoplate.io</a>
+      </main><a href="mailto:info@farmtoplate.io">info@farmtoplate.io</a>
       <p>Copyright 2025. Farm to Plate. All Rights Reserved.</p>
     </body>
   </html>
@@ -186,12 +197,12 @@ test('Farm To Plate scraper extracts the current opening cards and role detail m
   ])
 
   assert.deepEqual(
-    extractRoleDetail({
+    nativeDetailEvidence(extractRoleDetail({
       title: 'Data Engineer',
       vacancy: 1,
       detailUrl: 'https://www.farmtoplate.io/data-engineer/',
       html: dataEngineerHtml,
-    }),
+    })),
     {
       title: 'Data Engineer',
       requisitionId: null,
@@ -199,7 +210,7 @@ test('Farm To Plate scraper extracts the current opening cards and role detail m
       applyUrl: 'mailto:sakshi.verma@farmtoplate.io',
       employmentType: null,
       experienceRequired: '3+ years',
-      jobDescription: [
+      contentJobDescription: [
         'Data engineer job description',
         'At Farm to Plate, we rely on powerfully insightful data to inform our systems and solutions.',
         'Objectives of this role',
@@ -211,20 +222,20 @@ test('Farm To Plate scraper extracts the current opening cards and role detail m
   )
 
   assert.deepEqual(
-    extractRoleDetail({
+    nativeDetailEvidence(extractRoleDetail({
       title: 'Sr. Devops Engineer',
       vacancy: 2,
       detailUrl: 'https://www.farmtoplate.io/devops-engineer/',
       html: seniorDevopsHtml,
-    }),
+    })),
     {
       title: 'Sr. Devops Engineer',
       requisitionId: null,
       sourceUrl: 'https://www.farmtoplate.io/devops-engineer/',
       applyUrl: 'mailto:sakshi.verma@farmtoplate.io',
       employmentType: null,
-      experienceRequired: '7+ years',
-      jobDescription: [
+      experienceRequired: null,
+      contentJobDescription: [
         'Job Title: DevOps Engineer - Associate',
         'Exp: 7+ Years',
         'Job Description',
@@ -236,21 +247,20 @@ test('Farm To Plate scraper extracts the current opening cards and role detail m
   )
 
   assert.deepEqual(
-    extractRoleDetail({
+    nativeDetailEvidence(extractRoleDetail({
       title: 'Jr Devops Engineer',
       vacancy: 1,
       detailUrl: 'https://www.farmtoplate.io/devops-engineer-associate/',
       html: juniorDevopsHtml,
-    }),
+    })),
     {
       title: 'Jr Devops Engineer',
       requisitionId: null,
       sourceUrl: 'https://www.farmtoplate.io/devops-engineer-associate/',
       applyUrl: 'mailto:sakshi.verma@farmtoplate.io',
       employmentType: null,
-      experienceRequired: '2-3 years',
-      jobDescription: [
-        'DevOps Engineer - Associate',
+      experienceRequired: null,
+      contentJobDescription: [
         'Job Title: DevOps Engineer - Associate',
         'Exp: 2-3 Years',
         'Job Description',
@@ -313,8 +323,8 @@ test('Farm To Plate scraper runs end to end and fails closed on careers drift', 
   ])
   assert.deepEqual(jobs.map((job) => job.jobId), [
     'farmtoplate-data-engineer',
-    'farmtoplate-sr-devops-engineer',
-    'farmtoplate-jr-devops-engineer',
+    'farmtoplate-devops-engineer',
+    'farmtoplate-devops-engineer-associate',
   ])
   assert.deepEqual(jobs.map((job) => job.applyUrl), [
     'mailto:sakshi.verma@farmtoplate.io',
@@ -326,8 +336,10 @@ test('Farm To Plate scraper runs end to end and fails closed on careers drift', 
     'https://www.farmtoplate.io/devops-engineer/',
     'https://www.farmtoplate.io/devops-engineer-associate/',
   ])
-  assert.equal(jobs[1].experienceRequired, '7+ years')
-  assert.equal(jobs[2].experienceRequired, '2-3 years')
+  assert.equal(jobs[1].experienceRequired, null)
+  assert.equal(jobs[2].experienceRequired, null)
+  assert.equal(jobs[1].sourceDetailComplete, false)
+  assert.equal(jobs[2].jobDescription, null)
   assert.equal(jobs[0].company, 'Farm To Plate')
   assert.equal(jobs[0].source, 'farmtoplate')
   assert.equal(jobs[0].companyCareerPage, CAREERS_URL)

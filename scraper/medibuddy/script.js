@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { hasActiveMediPage, readMediListings, googleDocExportUrl, extractMediDocDetail, createNativeMediCollector } from './nativeObservations.js'
 
 import { MEDIBUDDY_CATALOG } from './catalog.js'
 
@@ -71,6 +72,7 @@ const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   },
   label: SOURCE,
   timeoutMs: 15000,
+  attempts: 1,
   ...options,
 })
 
@@ -142,8 +144,7 @@ const extractTrackedTrakstarUrl = (value) => {
 }
 
 export const getGoogleDocExportUrl = (value) => {
-  const docId = String(value ?? '').match(/docs\.google\.com\/document\/d\/([^/]+)/i)?.[1]
-  return docId ? `https://docs.google.com/document/d/${docId}/export?format=txt` : null
+  return googleDocExportUrl(value)
 }
 
 const extractGoogleDocUrl = (value, baseUrl) => {
@@ -227,7 +228,8 @@ const getJobIdFromUrl = (value, title) => {
     .replace(/^-+|-+$/g, '') || null
 }
 
-export const hasOfficialJobsPageSignal = (html) => {
+export const hasOfficialJobsPageSignal = hasActiveMediPage
+const hasLegacyOfficialJobsPageSignal = (html) => {
   const normalized = normalizeWhitespace(html) || ''
 
   return /Available Positions/i.test(normalized)
@@ -244,7 +246,8 @@ export const isInactiveTrakstarAccount = (html) => {
     && /no longer using trakstar hire/i.test(normalized)
 }
 
-export const extractListingCards = (html, sourcePageUrl) => {
+export const extractListingCards = (html, sourcePageUrl) => readMediListings(html, sourcePageUrl).listings
+const extractLegacyListingCards = (html, sourcePageUrl) => {
   const listings = []
   const sectionHtml = getJobsSectionHtml(html, sourcePageUrl)
 
@@ -404,7 +407,8 @@ const isSkippableDetailError = (error) => {
   return status === 401 || status === 403 || status === 404
 }
 
-export const extractGoogleDocDetail = (value, listing = {}) => {
+export const extractGoogleDocDetail = extractMediDocDetail
+const extractLegacyGoogleDocDetail = (value, listing = {}) => {
   const source = normalizePlainText(value)
   const title = normalizeWhitespace(listing.title) || extractDocTitle(value, listing)
   const locationLine = extractLabeledValue(source, ['Location'])
@@ -446,7 +450,9 @@ export const extractGoogleDocDetail = (value, listing = {}) => {
   }
 }
 
-export const createMediBuddyScraper = ({
+export const createMediBuddyScraper = ({ maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null } = {}) =>
+  createNativeMediCollector({ maxJobs, defaultFetchText })
+const createLegacyMediBuddyScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {

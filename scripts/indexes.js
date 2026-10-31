@@ -27,22 +27,12 @@ const { default: HiringObservation } = await import('../src/models/HiringObserva
 const { default: Application } = await import('../src/models/Application.js');
 const { default: ApplicationEvent } = await import('../src/models/ApplicationEvent.js');
 const { default: CandidateEvidence } = await import('../src/models/CandidateEvidence.js');
-const { default: ApplicationMailbox } = await import('../src/models/ApplicationMailbox.js');
-const { default: ApplicationMailboxAuth } = await import('../src/models/ApplicationMailboxAuth.js');
-const { default: ApplicationMail } = await import('../src/models/ApplicationMail.js');
 const { default: AutoApplyAttempt } = await import('../src/models/AutoApplyAttempt.js');
 const { default: Resume } = await import('../src/models/Resume.js');
 const { default: ResumeArtifact } = await import('../src/models/ResumeArtifact.js');
 const { default: CVRevision } = await import('../src/models/CVRevision.js');
 const { default: TailoredResume } = await import('../src/models/TailoredResume.js');
-const { default: OutreachThread } = await import('../src/models/OutreachThread.js');
-const { default: OutreachTask } = await import('../src/models/OutreachTask.js');
-const { default: OutreachDiscoveryCache } = await import('../src/models/OutreachDiscoveryCache.js');
-const { default: OutreachEmailCache } = await import('../src/models/OutreachEmailCache.js');
-const { default: OutreachUsage } = await import('../src/models/OutreachUsage.js');
-const { default: GmailConnection } = await import('../src/models/GmailConnection.js');
-const { default: GmailOAuthState } = await import('../src/models/GmailOAuthState.js');
-const { default: Campaign } = await import('../src/models/Campaign.js');
+const { default: ResumeUsage } = await import('../src/models/ResumeUsage.js');
 
 const MODELS = [
   ["Job", Job],
@@ -61,22 +51,12 @@ const MODELS = [
   ['Application', Application],
   ['ApplicationEvent', ApplicationEvent],
   ['CandidateEvidence', CandidateEvidence],
-  ['ApplicationMailbox', ApplicationMailbox],
-  ['ApplicationMailboxAuth', ApplicationMailboxAuth],
-  ['ApplicationMail', ApplicationMail],
   ['AutoApplyAttempt', AutoApplyAttempt],
   ['Resume', Resume],
   ['ResumeArtifact', ResumeArtifact],
   ['CVRevision', CVRevision],
   ['TailoredResume', TailoredResume],
-  ['OutreachThread', OutreachThread],
-  ['OutreachTask', OutreachTask],
-  ['OutreachDiscoveryCache', OutreachDiscoveryCache],
-  ['OutreachEmailCache', OutreachEmailCache],
-  ['OutreachUsage', OutreachUsage],
-  ['GmailConnection', GmailConnection],
-  ['GmailOAuthState', GmailOAuthState],
-  ['Campaign', Campaign],
+  ['ResumeUsage', ResumeUsage],
 ];
 
 const formatIndex = (idx) => {

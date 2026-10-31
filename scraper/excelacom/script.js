@@ -129,6 +129,17 @@ const enumerate = async (startUrl, fetchText, options) => {
 
 const calendarDate = value => {
   if (!value) return null
+  // Some native Taleo postings use Java's Date.toString format, including
+  // an explicit GMT zone. Accept only that observed format and round-trip
+  // every component; Date.parse alone would normalize impossible dates.
+  const nativeGmt = /^(Sun|Mon|Tue|Wed|Thu|Fri|Sat) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{2}) (\d{2}):(\d{2}):(\d{2}) GMT (\d{4})$/.exec(normalize(value))
+  if (nativeGmt) {
+    const [, weekday, month, day, hour, minute, second, year] = nativeGmt
+    const monthNumber = String(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(month) + 1).padStart(2, '0')
+    const instant = `${year}-${monthNumber}-${day}T${hour}:${minute}:${second}.000Z`, parsed = new Date(instant)
+    need(!Number.isNaN(parsed.getTime()) && parsed.toISOString() === instant && ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][parsed.getUTCDay()] === weekday, 'invalid native job date')
+    return instant
+  }
   const match = /^(\d{4}-\d{2}-\d{2})(?:$|[ T])/.exec(normalize(value))
   need(match && !Number.isNaN(Date.parse(match[1])) && new Date(`${match[1]}T00:00:00Z`).toISOString().slice(0, 10) === match[1], 'invalid native job date')
   // Taleo's current datePosted has no timezone. Preserve its calendar date;
@@ -206,6 +217,7 @@ export const parseNativeDetail = (html, row) => {
   const city = fields['Location City'] || null, state = fields.Location || null
   const location = [...new Set([city, state, country].filter(Boolean))].join(', ') || null
   const lines = description.split('\n'), nativeType = normalize(posting.employmentType) || null
+  const closingDate = calendarDate(posting.validThrough)
   return {
     title: row.title, company: 'Excelacom', source: 'excelacom', nativeEmployer: employer,
     companyDomain: 'excelacom.com', companyCareerPage: COMPANY_CAREERS_URL,
@@ -218,7 +230,7 @@ export const parseNativeDetail = (html, row) => {
     nativeEmploymentType: nativeType, workType: null,
     postingDate: calendarDate(posting.datePosted), sourcePostingDateRaw: posting.datePosted || null,
     sourcePostingDateProvenance: posting.datePosted ? 'native JobPosting.datePosted' : null,
-    closingDate: calendarDate(posting.validThrough), sourceClosingDateIsExact: Boolean(posting.validThrough && /T.*(?:Z|[+-]\d\d:\d\d)$/i.test(posting.validThrough)),
+    closingDate, sourceClosingDateIsExact: Boolean(closingDate && /T/.test(closingDate)),
     jobDescription: description, sourceDescription: description,
     minimumQualification: section(lines, 'Required Qualifications') || section(lines, 'Education'),
     preferredQualification: section(lines, 'Preferred Qualifications'),

@@ -17,21 +17,21 @@ jobs:
     steps:
       - name: Record worker budget start
         run: printf 'TAILORED_RESUME_WORKFLOW_STARTED_AT=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
       - name: Install backend dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache only immutable resume model and compiler dependencies
         id: resume-dependencies
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: |
             .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
             .cache/resume-runtime/b11146/llama-b11146-bin-ubuntu-x64.tar.gz
             .cache/resume-compiler/image.tar
-          key: resume-qwen4b-3605803b-runtime-c150306e-${{ hashFiles('outreach/compiler/**') }}
+          key: resume-qwen4b-3605803b-runtime-c150306e-${{ hashFiles('resume-tailoring/compiler/**') }}
       - name: Prepare or tailor one requested resume
         timeout-minutes: 28
         env:
@@ -46,7 +46,7 @@ jobs:
           fi
       - name: Save immutable dependencies even if document validation failed
         if: ${{ !cancelled() && steps.complete-cache.outputs.ready == 'true' }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: |
             .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf

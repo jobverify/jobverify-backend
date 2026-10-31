@@ -9,7 +9,7 @@ const SOURCE = 'buildkite'
 const COMPANY = 'Buildkite'
 const CAREERS_URL = 'https://buildkite.com/about/careers/'
 
-test('Buildkite is registered as a verified first-party careers plus Greenhouse provider without aliases', () => {
+test('Buildkite is registered as a bounded current first-party careers plus Greenhouse provider without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
 
   assert.ok(provider, 'Expected Buildkite provider to be registered in customProviders.json')
@@ -18,17 +18,17 @@ test('Buildkite is registered as a verified first-party careers plus Greenhouse 
   assert.equal(provider.companyCareerPage, CAREERS_URL)
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-careers-page-plus-public-greenhouse-board')
+  assert.equal(provider.paginationStrategy, 'full-native-post-feed-and-office-index;all-native-post-GETs-opening-closing')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+public-greenhouse-jobs-api+india-location-filter',
+    'all-published-original-post-models-and-complete-criteria-before-prospect-country-selection',
   )
-  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.parser, 'current-declared-native-post-models')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'buildkite.com')
-  assert.equal(provider.verifiedOn, '2026-08-13')
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Remote-first careers/i)
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.match(provider.verifiedSurfaceSummary, /unverified/i)
   assert.match(provider.modulePath, /buildkite[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)
 })

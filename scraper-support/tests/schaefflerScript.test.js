@@ -1,124 +1,61 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
+import { buildIndiaSearchUrl, createSchaefflerScraper } from '../../scraper/schaeffler/script.js'
 
-const loadSchaefflerModule = async () => {
-  try {
-    return await import('../../scraper/schaeffler/script.js')
-  } catch {
-    assert.fail('Expected Schaeffler scraper module at ../../scraper/schaeffler/script.js')
+const fixture = JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/schaeffler/fixtures/actual-http-20261031.json.gz', import.meta.url))))
+globalThis.fetch = async () => { throw Error('Schaeffler tests prohibit live HTTP') }
+const replay = () => {
+  const queues = new Map(), calls = []
+  for (const row of fixture.responses) {
+    if (!queues.has(row.url)) queues.set(row.url, [])
+    queues.get(row.url).push(row)
   }
+  const get = async url => {
+    calls.push(url)
+    const row = queues.get(url)?.shift()
+    assert.ok(row, 'Expected retained original HTTP response')
+    return { url: row.finalURL, status: row.status, headers: row.responseHeaders, bodyBase64: row.bodyBase64 }
+  }
+  return { get, calls }
 }
 
-const listingHtml = `
-  <html>
-    <body>
-      <span class="paginationLabel">1 - 1 of 1 jobs</span>
-      <span class="srHelp">Page 1 of 1</span>
-      <table>
-        <tr class="data-row">
-          <td class="colTitle">
-            <a class="jobTitle-link" href="/job/Pune-Senior-Software-Engineer/123456789/">
-              Senior Software Engineer
-            </a>
-          </td>
-          <td>
-            <span class="jobLocation">Pune, MH, IN, 411057</span>
-          </td>
-        </tr>
-      </table>
-    </body>
-  </html>
-`
+test('Schaeffler retains its established official search URL utility', () => {
+  assert.equal(buildIndiaSearchUrl(), 'https://jobs.schaeffler.com/search/?createNewAlert=false&q=&locationsearch=India&locale=en_US')
+  assert.equal(new URL(buildIndiaSearchUrl(100)).searchParams.get('startrow'), '100')
+})
 
-const detailHtml = `
-  <html>
-    <body>
-      <h1 itemprop="title">Senior Software Engineer</h1>
-      <span itemprop="description">
-        <p>Build platform integrations for Schaeffler engineering systems.</p>
-        <ul>
-          <li>Node.js</li>
-          <li>REST APIs</li>
-        </ul>
-      </span>
-      <meta itemprop="datePosted" content="2026-07-01" />
-      <meta itemprop="validThrough" content="2026-07-31" />
-      <meta itemprop="addressLocality" content="Pune" />
-      <a
-        class="btn btn-primary btn-large btn-lg apply dialogApplyBtn "
-        href="/talentcommunity/apply/123456789/?locale=en_US"
-      >
-        Apply
-      </a>
-    </body>
-  </html>
-`
-
-test('Schaeffler uses the official India search route and decorates shared scraper fields', async () => {
-  const {
-    buildIndiaSearchUrl,
-    run,
-  } = await loadSchaefflerModule()
-  const requestedUrls = []
-
-  const jobs = await run({
-    maxPages: 1,
-    maxJobs: 1,
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === buildIndiaSearchUrl()) return listingHtml
-      if (url === 'https://jobs.schaeffler.com/job/Pune-Senior-Software-Engineer/123456789/') {
-        return detailHtml
-      }
-      throw new Error(`Unexpected Schaeffler URL: ${url}`)
-    },
-  })
-
-  assert.equal(
-    buildIndiaSearchUrl(),
-    'https://jobs.schaeffler.com/search/?createNewAlert=false&q=&locationsearch=India&locale=en_US',
-  )
-  assert.deepEqual(requestedUrls, [
-    'https://jobs.schaeffler.com/search/?createNewAlert=false&q=&locationsearch=India&locale=en_US',
-    'https://jobs.schaeffler.com/job/Pune-Senior-Software-Engineer/123456789/',
-  ])
+test('Schaeffler factory reads genuine native tiles and full fields with a limited returned array', async () => {
+  const { get, calls } = replay()
+  let audit
+  const jobs = await createSchaefflerScraper().run({ fetchPage: get, maxJobs: 1,
+    now: () => '2026-10-31T03:30:00.000Z', onAudit: value => { audit = value } })
   assert.equal(jobs.length, 1)
-  assert.deepEqual(
-    {
-      jobId: jobs[0].jobId,
-      requisitionId: jobs[0].requisitionId,
-      title: jobs[0].title,
-      company: jobs[0].company,
-      location: jobs[0].location,
-      city: jobs[0].city,
-      source: jobs[0].source,
-      sourceUrl: jobs[0].sourceUrl,
-      applyUrl: jobs[0].applyUrl,
-      employmentType: jobs[0].employmentType,
-      postingDate: jobs[0].postingDate,
-      closingDate: jobs[0].closingDate,
-      requiredSkills: jobs[0].requiredSkills,
-    },
-    {
-      jobId: '123456789',
-      requisitionId: '123456789',
-      title: 'Senior Software Engineer',
-      company: 'Schaeffler',
-      location: 'Pune, MH, IN, 411057',
-      city: 'Pune',
-      source: 'schaeffler',
-      sourceUrl: 'https://jobs.schaeffler.com/job/Pune-Senior-Software-Engineer/123456789/',
-      applyUrl: 'https://jobs.schaeffler.com/talentcommunity/apply/123456789/?locale=en_US',
-      employmentType: 'Full-time',
-      postingDate: '2026-07-01',
-      closingDate: '2026-07-31',
-      requiredSkills: ['Node.js', 'REST APIs'],
-    },
-  )
-  assert.match(
-    jobs[0].jobDescription,
-    /build platform integrations for schaeffler engineering systems/i,
-  )
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.match(jobs[0].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
+  assert.equal(calls.length, 12)
+  assert.equal(audit.observations.length, 10)
+  const job = audit.observations.find(job => job.jobId === '1430629133')
+  assert.equal(job.title, 'SAP S/4HANA ABAP Techno-Functional Consultant')
+  assert.equal(job.requisitionId, '46510')
+  assert.equal(job.company, 'Schaeffler')
+  assert.equal(job.country, null);assert.equal(job.city, null);assert.equal(job.location, null)
+  assert.equal(job.sourceCountryScopeUnresolved, true)
+  assert.equal(job.employmentType, null)
+  assert.deepEqual(job.requiredSkills, [])
+  assert.equal(job.postingDate, '2026-10-31T02:00:00.000Z')
+  assert.equal(job.closingDate, '2026-11-07T18:30:00.000Z')
+  assert.ok(job.jobDescription.length > 3000)
+  assert.equal(job.sourceNativeRoleDetail.bound, true)
+  assert.equal(job.sourceDetailComplete, false);assert.equal(job.lifecycleCleanupAllowed, false)
+})
+
+test('legacy bare-text injection remains diagnostic and cannot manufacture qualified HTTP or role authority', async () => {
+  const { get } = replay()
+  let audit
+  const jobs = await createSchaefflerScraper().run({ fetchText: async url => Buffer.from((await get(url)).bodyBase64, 'base64').toString('utf8'),
+    onAudit: value => { audit = value } })
+  assert.equal(jobs.length, 0)
+  assert.equal(audit.observations.length, 10)
+  assert.ok(audit.observations.every(job => !job.sourceNativeRoleDetail.bound && job.country === null && job.sourceNativeRole.originalDescriptionHTML))
+  assert.equal(audit.sourceScopeComplete, false)
 })

@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { resolveJobType } from "../utils/normalizeScrapedJob.js";
 
-test("resolveJobType normalizes common full-time source labels", () => {
+test("resolveJobType preserves unresolved experience for common full-time source labels", () => {
   for (const employmentType of [
     "Full time",
     "Full Time",
@@ -17,7 +17,7 @@ test("resolveJobType normalizes common full-time source labels", () => {
   ]) {
     assert.equal(
       resolveJobType({ employmentType, title: "Software Engineer" }),
-      "Full-time Experienced",
+      "Unspecified",
       employmentType,
     );
   }
@@ -36,7 +36,7 @@ test("resolveJobType classifies every label containing contract as contract", ()
   }
 });
 
-test("resolveJobType classifies the selected permanent and employment labels as experienced full-time", () => {
+test("resolveJobType does not manufacture experience for permanent and employment labels", () => {
   for (const employmentType of [
     "Professional",
     "On-site with Flexibility",
@@ -56,15 +56,15 @@ test("resolveJobType classifies the selected permanent and employment labels as 
   ]) {
     assert.equal(
       resolveJobType({ employmentType, title: "Software Engineer" }),
-      "Full-time Experienced",
+      "Unspecified",
       employmentType,
     );
   }
 });
 
-test("resolveJobType treats unrecognized employment labels as full-time experienced", () => {
+test("resolveJobType leaves work-arrangement and unknown labels without invented experience", () => {
   for (const employmentType of ["Onsite", "Hybrid", "Remote Local", "J"]) {
-    assert.equal(resolveJobType({ employmentType, title: "Software Engineer" }), "Full-time Experienced", employmentType);
+    assert.equal(resolveJobType({ employmentType, title: "Software Engineer" }), "Unspecified", employmentType);
   }
 });
 

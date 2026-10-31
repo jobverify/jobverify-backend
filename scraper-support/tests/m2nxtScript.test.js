@@ -59,6 +59,8 @@ test('m2nxt Solutions (P) Ltd scraper returns the verified public openings from 
     ],
   )
   assert.equal(jobs[0].applyUrl, 'mailto:Ahalya.k@m2nxt.com')
-  assert.equal(jobs[0].location, 'Bangalore, Karnataka, India')
-  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
+  assert.equal(jobs[0].location, 'Bangalore')
+  assert.equal(jobs[0].publicExperienceChecked,true)
+  assert.equal(jobs[0].country,null)
+  assert.ok(jobs.slice(1).every(job=>job.publicExperienceChecked===false&&job.jobDescription==null&&job.country==null))
 })

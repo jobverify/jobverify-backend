@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import {run as runCarrier} from '../carrier.workday/script.js'
 import {verifyCarrierGroupDelegation} from './nativeBinding.js'
+import {attachInventoryDelegationEvidence} from '../../scraper-support/utils/inventoryDelegationEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -19,10 +20,13 @@ export const run=async(options={})=>{
  const timeoutMs=options.timeoutMs??120000
  if(!Number.isInteger(timeoutMs)||timeoutMs<=0||timeoutMs>180000)throw Error('Invalid Carrier Global deadline')
  const deadline=AbortSignal.timeout(timeoutMs),signal=options.signal?AbortSignal.any([options.signal,deadline]):deadline
- await verifyCarrierGroupDelegation({fetchPage:options.fetchPage,signal})
+ const relationship=await verifyCarrierGroupDelegation({fetchPage:options.fetchPage,signal})
  // Return the canonical array and its inventory evidence without rewriting
  // source, company, native legal employers or company-coverage limitations.
- const jobs=await runCarrier({...options,signal});signal.throwIfAborted();return jobs
+ const jobs=await runCarrier({...options,signal});signal.throwIfAborted()
+ if(!Array.isArray(jobs)||jobs.some(job=>job.source!==CANONICAL_SOURCE||job.company!=='Carrier'))throw Object.assign(Error('Carrier Global canonical child source/company identity mismatch'),{abortRetries:true,failureKind:'source_identity_unverified'})
+ if(relationship.observation)attachInventoryDelegationEvidence(jobs,{source:SOURCE,sources:[CANONICAL_SOURCE],preservesChildSourceAndCompany:true,...relationship.observation})
+ return jobs
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

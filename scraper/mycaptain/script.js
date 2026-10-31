@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -193,16 +194,16 @@ export const isMyCaptainVerifiedTimeoutBlocker = (error) =>
   /connect timeout error|timed out|timeout|fetch failed|getaddrinfo|err_connection_timed_out|other side closed|terminated/i
     .test(String(error?.message ?? error?.cause?.message ?? error ?? ''))
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
+  const deadline = AbortSignal.timeout(15000)
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
-    signal: typeof AbortSignal?.timeout === 'function'
-      ? AbortSignal.timeout(15000)
-      : undefined,
+    signal: signal ? AbortSignal.any([signal, deadline]) : deadline,
   })
 
   return {
@@ -216,12 +217,15 @@ const defaultFetchPage = async (url) => {
 }
 
 export const createMyCaptainScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchPage = defaultFetchPage, now: overrideNow } = {}) {
+  async run({ fetchPage = defaultFetchPage, now: overrideNow, signal } = {}) {
+    signal?.throwIfAborted()
     try {
       const routePages = new Map()
       const loadPage = async (url) => {
+        signal?.throwIfAborted()
         if (!routePages.has(url)) {
-          routePages.set(url, await fetchPage(url))
+          routePages.set(url, await fetchPage(url, { signal }))
+          signal?.throwIfAborted()
         }
 
         return routePages.get(url)
@@ -240,15 +244,23 @@ export const createMyCaptainScraper = ({ now = () => new Date().toISOString() } 
         }
 
         const jobs = extractInlineJobCards(careerPage.html)
+        const capturedAt = (overrideNow || now)()
 
-        return jobs.map((job) => ({
+        return attachInventoryEvidence(jobs.map((job) => ({
           ...job,
           source: SOURCE,
-          scrapedAt: (overrideNow || now)(),
+          scrapedAt: capturedAt,
           companyCareerPage: CAREER_URL,
           companyDomain: COMPANY_DOMAIN,
           atsPlatform: 'official-company-careers',
-        }))
+          sourceListingComplete: false,
+          sourceDetailComplete: false,
+        })), {
+          status: 'coverage-gap', surface: CAREER_URL, firstParty: true,
+          listingComplete: false, pagesFetched: routePages.size,
+          reportedTotal: null, indiaFacetCount: null, verifiedAt: capturedAt,
+          reason: 'native-cards-without-verified-full-role-details-or-application-entry',
+        })
       }
 
       for (const url of VERIFIED_ROUTE_URLS.slice(2)) {
@@ -256,15 +268,15 @@ export const createMyCaptainScraper = ({ now = () => new Date().toISOString() } 
       }
 
       if (VERIFIED_ROUTE_URLS.every((url) => hasVerifiedDeploymentPausedSignal(routePages.get(url)))) {
-        return []
+        throw Object.assign(new Error('MyCaptain public deployment is paused; native inventory unavailable'), {
+          softFailure: true, failureKind: 'upstream_inventory_unavailable',
+          abortRetries: true, status: 402,
+        })
       }
 
       throw new Error('MyCaptain first-party public routes no longer match either the verified reachable jobs shell or the verified deployment-paused sentinel')
     } catch (error) {
-      if (isMyCaptainVerifiedTimeoutBlocker(error)) {
-        return []
-      }
-
+      signal?.throwIfAborted()
       throw error
     }
   },

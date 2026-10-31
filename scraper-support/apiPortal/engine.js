@@ -1,11 +1,14 @@
 import { createPaginationState, getNextPageRequest, updatePaginationState, hasPaginationContinuation } from './pagination.js'
 import { createHash } from 'node:crypto'
 import { setTimeout as sleep } from 'node:timers/promises'
+import { traceRetryPressure, recordRetryAttempt, recordRetryFailure, recordRetryDelay } from '../utils/retryPressure.js'
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { isIndiaJob } from '../utils/indiaLocationFilter.js'
 import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { fetchSmartRecruitersDetail } from './smartRecruitersDetail.js'
 import { isGreenhousePublicationProvider, resolveGreenhousePublication } from './greenhousePublication.js'
+import { assertEightfoldDetailIdentity } from './eightfoldDetailIdentity.js'
+import { readEightfoldLocationScope } from './eightfoldLocations.js'
 import { identifyPublicAtsBoard } from '../utils/publicAtsIdentity.js'
 import {
   expandTemplate,
@@ -156,6 +159,8 @@ const mapRecord = (raw, provider, config, detail = {}, detailObservation = 'not-
     ? resolveGreenhousePublication(raw, detail, detailObservation)
     : null
   const merged = { ...raw, ...detail }
+  const eightfoldLocationScope = config.mapping.location?.strategy === 'eightfold-location'
+    ? readEightfoldLocationScope(raw) : null
   const title = getMappedValue(merged, config.mapping.title)
   const location = getMappedValue(merged, config.mapping.location)
   const experienceLevel = getMappedValue(merged, config.mapping.experienceLevel)
@@ -182,6 +187,11 @@ const mapRecord = (raw, provider, config, detail = {}, detailObservation = 'not-
     country: config.mapping.country
       ? nativeCountry || (provider.atsPlatform === 'lever' && /\bindia\b/i.test(String(location || '')) ? 'India' : null)
       : provider.countryFilter || 'India',
+    ...(eightfoldLocationScope ? {
+      locations: eightfoldLocationScope.indiaLocations,
+      sourceNativeLocations: eightfoldLocationScope.nativeLocations,
+      sourceStandardizedLocations: eightfoldLocationScope.standardizedLocations,
+    } : {}),
     link: canonicalUrl,
     applyUrl,
     sourceUrl: canonicalUrl,
@@ -317,17 +327,42 @@ const validateInventory = (payload, records, rules) => {
 export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJson, signal }) => {
   signal?.throwIfAborted()
   const config = normalizeApiPortalConfig(provider.config || {})
+  const traversalMode = config.pagination.traversalMode
+  if (traversalMode != null && !['interleaved', 'staged-snapshot'].includes(traversalMode)) {
+    throw Object.assign(new Error('API portal traversalMode must be interleaved or staged-snapshot'), { abortRetries: true })
+  }
+  const stagedTraversal = traversalMode === 'staged-snapshot'
   const maxPages = Number(config.pagination.maxPages ?? 1000)
   if (!Number.isSafeInteger(maxPages) || maxPages < 1) throw new Error('API portal inventory requires a positive page limit')
   if (
     provider.atsPlatform === 'eightfold'
     && config.pagination?.strategy === 'offset-limit'
-    && (config.pagination.pageSize == null || config.pagination.pageSize === 10)
-    && !Number.isInteger(provider.templateOptions?.pageSize)
+    && config.pagination.pageSize == null
   ) {
-    config.pagination.pageSize = 50
+    config.pagination = { ...config.pagination, pageSize: provider.templateOptions?.pageSize ?? 50 }
   }
-  let lastRequestStartedAt = 0
+  const maximumTimerDelayMs = 2147483647
+  const policy = config.rateLimit
+  const policyNumber = (name, fallback) => {
+    const value = Number(policy[name] ?? fallback)
+    if (!Number.isSafeInteger(value) || value < 0 || name !== 'maxRetries' && value > maximumTimerDelayMs) {
+      throw Object.assign(new Error(`API portal rate limit ${name} must be a bounded nonnegative integer`), { abortRetries: true })
+    }
+    return value
+  }
+  const rateLimit = policy ? {
+    minimumIntervalMs: policyNumber('minimumIntervalMs', 0),
+    maxRetries: policyNumber('maxRetries', 0),
+    baseDelayMs: policyNumber('baseDelayMs', 2000),
+    maxDelayMs: policyNumber('maxDelayMs', 30000),
+  } : null
+  const pacingController = rateLimit ? new AbortController() : null
+  const exhaustPortalRetries = error => {
+    Object.assign(error, { abortRetries: true })
+    pacingController.abort(error)
+    return error
+  }
+  let lastRequestStartedAt = null, cooldownUntil = 0, slotQueue = Promise.resolve()
   const requestJson = async (url, options = {}) => {
     signal?.throwIfAborted()
     const requestSignal = AbortSignal.any([...(signal ? [signal] : []), ...(options.signal ? [options.signal] : []), AbortSignal.timeout(20000)])
@@ -340,34 +375,57 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
       throw error
     }
   }
-  const wait = async ms => {
-    try { await sleep(ms, undefined, { signal }) }
-    catch (error) { signal?.throwIfAborted(); throw error }
+  const wait = async (ms, waitSignal = signal) => {
+    try { await sleep(ms, undefined, { signal: waitSignal }) }
+    catch (error) { waitSignal?.throwIfAborted(); throw error }
   }
-  const fetchPortalJson = async (url, options) => {
-    const policy = config.rateLimit
-    if (!policy) return requestJson(url, options)
-
-    const maxRetries = Math.max(0, Number(policy.maxRetries) || 0)
-    for (let attempt = 0; ; attempt += 1) {
-      const waitMs = Math.max(0, (Number(policy.minimumIntervalMs) || 0) - (Date.now() - lastRequestStartedAt))
-      if (waitMs > 0) await wait(waitMs)
+  const reserveRequestSlot = requestSignal => {
+    // Serialize only slot reservation. Requests can remain in flight together,
+    // but workers cannot awaken from the same wait and start as one burst.
+    const slot = slotQueue.then(async () => {
+      while (true) {
+        requestSignal?.throwIfAborted()
+        const earliestStart = Math.max(cooldownUntil, lastRequestStartedAt == null ? 0 : lastRequestStartedAt + rateLimit.minimumIntervalMs)
+        const remaining = earliestStart - Date.now()
+        if (remaining <= 0) break
+        await wait(remaining, requestSignal)
+        // A peer may receive Retry-After while this slot is waiting.
+      }
+      requestSignal?.throwIfAborted()
       lastRequestStartedAt = Date.now()
+    })
+    slotQueue = slot.catch(() => {})
+    return slot
+  }
+  const fetchPortalJson = (url, options = {}) => traceRetryPressure(async () => {
+    const requestSignal = signal && options.signal ? AbortSignal.any([signal, options.signal]) : signal || options.signal
+    const pacingSignal = rateLimit ? AbortSignal.any([pacingController.signal, ...(requestSignal ? [requestSignal] : [])]) : requestSignal
+    for (let attempt = 0; ; attempt += 1) {
+      if (rateLimit) await reserveRequestSlot(pacingSignal)
+      requestSignal?.throwIfAborted()
+      recordRetryAttempt(attempt + 1)
       try {
         return await requestJson(url, options)
       } catch (error) {
-        signal?.throwIfAborted()
-        if (attempt >= maxRetries || !(/HTTP 429\b/i.test(String(error?.message)) || error?.status === 429)) {
+        recordRetryFailure()
+        requestSignal?.throwIfAborted()
+        if (!rateLimit || !(/HTTP 429\b/i.test(String(error?.message)) || error?.status === 429)) {
           throw error
         }
+        if (error?.abortRetries === true || attempt >= rateLimit.maxRetries) throw exhaustPortalRetries(error)
         const backoffMs = Math.min(
-          Number(policy.maxDelayMs) || 30000,
-          (Number(policy.baseDelayMs) || 2000) * (2 ** attempt),
+          rateLimit.maxDelayMs,
+          rateLimit.baseDelayMs * (2 ** Math.min(attempt, 31)),
         )
-        await wait(backoffMs)
+        const retryAfterMs = error.retryDelayMs == null ? 0 : Math.ceil(Number(error.retryDelayMs))
+        const delayMs = Math.max(backoffMs, retryAfterMs)
+        // Never shorten a server delay or let an oversized timeout wrap to 1 ms.
+        if (!Number.isSafeInteger(delayMs) || delayMs > maximumTimerDelayMs) throw exhaustPortalRetries(error)
+        cooldownUntil = Math.max(cooldownUntil, Date.now() + delayMs)
+        recordRetryDelay(delayMs)
       }
     }
-  }
+  })
   const jobs = []
   let state = createPaginationState(config.pagination)
   let pagesFetched = 0
@@ -376,16 +434,118 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
   let inventoryComplete = true
   let indiaCount = 0
   let continuation = false
-  const seenPages = new Set()
   const seenIdentities = new Set()
   const incompleteReasons = new Set()
   const markIncomplete = reason => { inventoryComplete = false; incompleteReasons.add(reason) }
 
-  try {
+  let stagedDeadline = null, stagedDeadlineController, stagedDeadlineReason, stagedDeadlineTimer
+  if (stagedTraversal) {
+    const budget = provider.scraperTimeoutMs ?? 300000
+    if (!Number.isSafeInteger(budget) || budget < 1 || budget > 1800000) {
+      throw Object.assign(new Error('API portal staged source deadline must be within 30 minutes'), { abortRetries: true })
+    }
+    stagedDeadlineController = new AbortController()
+    stagedDeadlineReason = new DOMException('API portal staged source deadline exceeded', 'TimeoutError')
+    signal = signal ? AbortSignal.any([signal, stagedDeadlineController.signal]) : stagedDeadlineController.signal
+    stagedDeadline = performance.now() + budget
+    stagedDeadlineTimer = setTimeout(() => stagedDeadlineController.abort(stagedDeadlineReason), budget)
+  }
+  const checkTraversalAbort = () => {
+    signal?.throwIfAborted()
+    if (stagedDeadline != null && performance.now() >= stagedDeadline) stagedDeadlineController.abort(stagedDeadlineReason)
+    signal?.throwIfAborted()
+  }
+  const hydrateRecords = async listingRecords => {
+    checkTraversalAbort()
+    const mappedRecords = await mapWithConcurrency(
+      listingRecords,
+      config.detail.enabled ? (config.detail.concurrency || 1) : 1,
+      async (record) => {
+        checkTraversalAbort()
+        // Reconcile the full feed above, but only hydrate explicitly selected
+        // public records. Draft/private records are not missing job details.
+        if (config.recordFilter && !passesResultFilter(record, config.recordFilter)) return null
+        let detailPayload = {}
+        let detailObservation = 'not-requested'
+
+        if (config.detail.enabled) {
+          const detailUrl = expandTemplate(config.detail.urlTemplate, {
+            jobId: getMappedValue(record, config.mapping.jobId),
+            requisitionId: getMappedValue(record, config.mapping.requisitionId),
+          })
+
+          try {
+            detailPayload = config.detail.strategy === 'smartrecruiters-public-posting'
+              ? await fetchSmartRecruitersDetail({
+                publicUrl: getMappedValue(record, config.detail.publicUrlPath || config.mapping.applyUrl),
+                expectedCompany: config.detail.expectedCompany,
+                expectedCountry: config.detail.expectedCountry,
+                expectedLocation: getMappedValue(record, config.detail.locationPath || config.mapping.location),
+                fetchJson: fetchPortalJson,
+              })
+              : await fetchPortalJson(detailUrl, {
+              method: config.detail.method,
+              headers: config.detail.headers,
+              body: serializeRequestBody(config.detail.body, config.detail.headers),
+            })
+            if (!detailPayload || typeof detailPayload !== 'object' || detailPayload.success === false
+              || (detailPayload.error && !isEmptyEightfoldError(detailPayload, provider)) || (Array.isArray(detailPayload.errors) && detailPayload.errors.length)) {
+              throw new Error('API portal detail contract failed: upstream error response')
+            }
+            if (config.detail.requireListingIdentity === true) assertEightfoldDetailIdentity(record, detailPayload, provider)
+            if (config.detail.mapping.jobDescription && !hasSourceDescription({
+              jobDescription: getMappedValue(detailPayload, config.detail.mapping.jobDescription),
+            })) throw new Error('API portal detail contract incomplete: missing employer description')
+            detailObservation = 'observed'
+          } catch (error) {
+            signal?.throwIfAborted()
+            if (config.detail.required || error.incompleteScope === true) throw error
+            markIncomplete('optional-role-details-unavailable')
+            detailObservation = 'failed'
+
+            detailPayload = {
+              sourceUrl: createFallbackDetailUrl(provider, record, config),
+              applyUrl: createFallbackDetailUrl(provider, record, config),
+              detailFetchError: error.message,
+            }
+          }
+        }
+
+        const mapped = mapRecord(record, provider, config, detailPayload, detailObservation)
+        if (!mapped) markIncomplete('unmappable-listing')
+        if (mapped) {
+          const identity = mapped.jobId ?? mapped.requisitionId ?? mapped.sourceUrl
+          if (identity != null) {
+            const key = String(identity)
+            if (seenIdentities.has(key)) markIncomplete('repeated-vacancy-identity')
+            seenIdentities.add(key)
+          }
+          const needsIndiaDetails = provider.atsPlatform !== 'lever'
+            || (isIndiaJob(mapped) && passesResultFilter(mapped, config.resultFilter))
+          if (needsIndiaDetails && !hasSourceDescription(mapped)) {
+            if (config.detail.enabled && config.detail.required) throw new Error('API portal detail contract incomplete: missing employer description')
+            markIncomplete('employer-description-unavailable')
+          }
+        }
+        if (mapped && isIndiaJob(mapped)) indiaCount += 1
+        return mapped && passesResultFilter(mapped, config.resultFilter) ? mapped : null
+      },
+    )
+
+    for (const mapped of mappedRecords) {
+      if (mapped) jobs.push(mapped)
+    }
+
+  }
+  const traverseListing = async hydrateOnPage => {
+    let state = createPaginationState(config.pagination), cohortPagesFetched = 0
+    let recordsFetched = 0, reportedTotal = null, continuation = false
+    const seenPages = new Set(), cohortRecords = []
     while (true) {
+      checkTraversalAbort()
       const nextPage = getNextPageRequest(config, state)
       if (!nextPage) break
-      if (pagesFetched >= maxPages) throw new Error('API portal inventory incomplete: page limit reached')
+      if (cohortPagesFetched >= maxPages) throw new Error('API portal inventory incomplete: page limit reached')
 
       const url = new URL(config.discovery.listingApiUrl)
       Object.entries(config.request.query || {}).forEach(([key, value]) => {
@@ -403,6 +563,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
           config.request.headers,
         ),
       })
+      checkTraversalAbort()
       const records = getValueAtPath(listingPayload, config.pagination.resultsPath)
       // Eightfold includes this exact blank error object in successful search
       // responses. Populated, unknown and non-success envelopes still fail.
@@ -424,6 +585,11 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         for (const reason of validatePublicPostingScope(records, 'lever', { ...provider, boardToken: board.boardToken, leverRegion: board.region || 'global' })) markIncomplete(reason)
       }
       const listingRecords = records
+      if (stagedTraversal) cohortRecords.push(...listingRecords)
+      if (config.mapping.location?.strategy === 'eightfold-location') {
+        if (listingRecords.some(record => readEightfoldLocationScope(record).unresolved)) markIncomplete('native-location-scope-unresolved')
+      }
+      cohortPagesFetched += 1
       pagesFetched += 1
       if (listingRecords.length) {
         const fingerprint = createHash('sha256').update(JSON.stringify(listingRecords)).digest('hex')
@@ -442,82 +608,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         if (listingRecords.length === 0 && recordsFetched < totalCount) throw new Error('API portal inventory incomplete: empty page contradicts total count')
       }
 
-      const mappedRecords = await mapWithConcurrency(
-        listingRecords,
-        config.detail.enabled ? (config.detail.concurrency || 1) : 1,
-        async (record) => {
-          // Reconcile the full feed above, but only hydrate explicitly selected
-          // public records. Draft/private records are not missing job details.
-          if (config.recordFilter && !passesResultFilter(record, config.recordFilter)) return null
-          let detailPayload = {}
-          let detailObservation = 'not-requested'
-
-          if (config.detail.enabled) {
-            const detailUrl = expandTemplate(config.detail.urlTemplate, {
-              jobId: getMappedValue(record, config.mapping.jobId),
-              requisitionId: getMappedValue(record, config.mapping.requisitionId),
-            })
-
-            try {
-              detailPayload = config.detail.strategy === 'smartrecruiters-public-posting'
-                ? await fetchSmartRecruitersDetail({
-                  publicUrl: getMappedValue(record, config.detail.publicUrlPath || config.mapping.applyUrl),
-                  expectedCompany: config.detail.expectedCompany,
-                  expectedCountry: config.detail.expectedCountry,
-                  expectedLocation: getMappedValue(record, config.detail.locationPath || config.mapping.location),
-                  fetchJson: fetchPortalJson,
-                })
-                : await fetchPortalJson(detailUrl, {
-                method: config.detail.method,
-                headers: config.detail.headers,
-                body: serializeRequestBody(config.detail.body, config.detail.headers),
-              })
-              if (!detailPayload || typeof detailPayload !== 'object' || detailPayload.success === false
-                || (detailPayload.error && !isEmptyEightfoldError(detailPayload, provider)) || (Array.isArray(detailPayload.errors) && detailPayload.errors.length)) {
-                throw new Error('API portal detail contract failed: upstream error response')
-              }
-              if (config.detail.mapping.jobDescription && !hasSourceDescription({
-                jobDescription: getMappedValue(detailPayload, config.detail.mapping.jobDescription),
-              })) throw new Error('API portal detail contract incomplete: missing employer description')
-              detailObservation = 'observed'
-            } catch (error) {
-              signal?.throwIfAborted()
-              if (config.detail.required || error.incompleteScope === true) throw error
-              markIncomplete('optional-role-details-unavailable')
-              detailObservation = 'failed'
-
-              detailPayload = {
-                sourceUrl: createFallbackDetailUrl(provider, record, config),
-                applyUrl: createFallbackDetailUrl(provider, record, config),
-                detailFetchError: error.message,
-              }
-            }
-          }
-
-          const mapped = mapRecord(record, provider, config, detailPayload, detailObservation)
-          if (!mapped) markIncomplete('unmappable-listing')
-          if (mapped) {
-            const identity = mapped.jobId ?? mapped.requisitionId ?? mapped.sourceUrl
-            if (identity != null) {
-              const key = String(identity)
-              if (seenIdentities.has(key)) markIncomplete('repeated-vacancy-identity')
-              seenIdentities.add(key)
-            }
-            const needsIndiaDetails = provider.atsPlatform !== 'lever'
-              || (isIndiaJob(mapped) && passesResultFilter(mapped, config.resultFilter))
-            if (needsIndiaDetails && !hasSourceDescription(mapped)) {
-              if (config.detail.enabled && config.detail.required) throw new Error('API portal detail contract incomplete: missing employer description')
-              markIncomplete('employer-description-unavailable')
-            }
-          }
-          if (mapped && isIndiaJob(mapped)) indiaCount += 1
-          return mapped && passesResultFilter(mapped, config.resultFilter) ? mapped : null
-        },
-      )
-
-      for (const mapped of mappedRecords) {
-        if (mapped) jobs.push(mapped)
-      }
+      if (hydrateOnPage) await hydrateRecords(listingRecords)
 
       const hasMore = config.pagination.hasMorePath
         ? getValueAtPath(listingPayload, config.pagination.hasMorePath)
@@ -538,8 +629,53 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
           ? listingRecords.length : config.pagination.pageSize,
       })
     }
+    checkTraversalAbort()
+    return { state, recordsFetched, reportedTotal, continuation, records: cohortRecords, pagesFetched: cohortPagesFetched }
+  }
+  const canonicalRecord = record => JSON.stringify(record, (_, value) => value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value)
+  const snapshotIdentities = (snapshot, phase) => {
+    const identities = new Map()
+    for (const record of snapshot.records) {
+      const value = getMappedValue(record, config.mapping.jobId) ?? getMappedValue(record, config.mapping.requisitionId)
+        ?? toAbsoluteUrl(getMappedValue(record, config.mapping.sourceUrl) || getMappedValue(record, config.mapping.applyUrl), provider)
+      if (!(typeof value === 'string' && value.trim() || typeof value === 'number' && Number.isSafeInteger(value))) {
+        markIncomplete(phase + '-vacancy-identity-unavailable'); continue
+      }
+      const key = String(value)
+      if (identities.has(key)) markIncomplete(phase + '-repeated-vacancy-identity')
+      identities.set(key, canonicalRecord(record))
+    }
+    return identities
+  }
 
-    signal?.throwIfAborted()
+  try {
+    const opening = await traverseListing(!stagedTraversal)
+    state = opening.state; recordsFetched = opening.recordsFetched; reportedTotal = opening.reportedTotal; continuation = opening.continuation
+    if (stagedTraversal) {
+      // Capture the opening raw records before hydration. No field is ignored:
+      // order may change, but native IDs, locations, dates, URLs and all other
+      // record values must reconcile with an independent complete closing pass.
+      const openingIdentities = snapshotIdentities(opening, 'opening')
+      await hydrateRecords(opening.records)
+      checkTraversalAbort()
+      try {
+        const closing = await traverseListing(false), closingIdentities = snapshotIdentities(closing, 'closing')
+        if (closing.reportedTotal !== opening.reportedTotal) markIncomplete('closing-total-changed')
+        if (!closing.state.done || closing.continuation || closing.reportedTotal != null && closing.reportedTotal !== closing.recordsFetched) markIncomplete('closing-inventory-incomplete')
+        if (openingIdentities.size !== closingIdentities.size || [...openingIdentities.keys()].some(key => !closingIdentities.has(key))) {
+          markIncomplete('closing-vacancy-identities-changed')
+        }
+        if ([...openingIdentities].some(([key, value]) => closingIdentities.has(key) && closingIdentities.get(key) !== value)) markIncomplete('closing-vacancy-record-changed')
+      } catch (error) {
+        checkTraversalAbort()
+        // Closing failure cannot erase already validated opening vacancies.
+        markIncomplete('closing-inventory-unavailable')
+      }
+    }
+
+
+    checkTraversalAbort()
     const complete = inventoryComplete && state.done && !continuation
       && (reportedTotal == null || reportedTotal === recordsFetched)
     if (!complete) for (const job of jobs) job.sourceListingComplete = false
@@ -550,13 +686,18 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
       indiaFacetCount: incompleteReasons.has('native-location-scope-unresolved')
         || incompleteReasons.has('native-india-location-unmapped') ? null : indiaCount,
       verifiedAt: new Date().toISOString(),
-      reason: complete ? 'api-portal-complete-native-pagination'
+      reason: complete ? stagedTraversal ? 'api-portal-complete-opening-and-closing-native-pagination' : 'api-portal-complete-native-pagination'
         : `api-portal-incomplete-listing-or-role-details:${[...incompleteReasons,
           ...(!state.done || continuation ? ['unconsumed-continuation'] : []),
           ...(reportedTotal != null && reportedTotal !== recordsFetched ? ['upstream-count-mismatch'] : []),
         ].sort().join(',')}`,
     })
   } catch (error) {
+    // A staged cohort can be much larger than one page. Stop peer workers on
+    // a terminal opening/hydration failure rather than draining its queue.
+    stagedDeadlineController?.abort(error)
     throw error
+  } finally {
+    clearTimeout(stagedDeadlineTimer)
   }
 }

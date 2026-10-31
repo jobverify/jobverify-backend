@@ -40,6 +40,7 @@ test('public query hides previously saved empty source descriptions, including b
   await collection.insertMany([
     ...empty.map((sourceDescription, index) => ({ title: `empty-${index}`, status: 'active', isPublicIndia: true,
       ...(sourceDescription === undefined ? {} : { sourceDescription, description: 'Generated wording cannot supply missing source content.' }) })),
+    { title: 'placeholder', status: 'active', isPublicIndia: true, sourceDescription: '<p>Enter job description</p>', description: 'Enter job description\n\nLocation: Bangalore' },
     { title: 'legacy', status: 'active', isPublicIndia: true, description: 'Build APIs.' },
     { title: 'source', status: 'active', isPublicIndia: true, sourceDescription: '\u00a0'.repeat(10000) + '<script></script><!-- spacer -->'.repeat(100) + '<p>Build APIs.</p>' },
     { title: 'alias', status: 'active', isPublicIndia: true, jobDescription: 'Build APIs.' },
