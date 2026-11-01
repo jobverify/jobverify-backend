@@ -26,44 +26,15 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Seeq local catalog captures the verified first-party careers handoff and Workable feed metadata without alias churn', async () => {
-  const { SEEQ_CATALOG, default: defaultCatalog } = await loadCatalogModule()
-  const seeq = await loadScriptModule()
-  const provider = hydrateProviderCatalogEntry(SEEQ_CATALOG)
-
-  assert.equal(defaultCatalog, SEEQ_CATALOG)
-  assert.equal(provider.source, 'seeq')
-  assert.equal(provider.companyName, 'Seeq')
-  assert.equal(provider.officialBrandName, 'Seeq')
-  assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://www.seeq.com/')
-  assert.equal(provider.companyCareerPage, 'https://www.seeq.com/careers/')
-  assert.equal(provider.workableBoardUrl, 'https://apply.workable.com/seeq/')
-  assert.equal(provider.jobsFeedUrl, 'https://apply.workable.com/seeq/jobs.md')
-  assert.equal(provider.companyDomain, 'seeq.com')
-  assert.equal(provider.atsPlatform, 'workable')
-  assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'unfiltered-native-cursor-exact-total')
-  assert.equal(
-    provider.extractionStrategy,
-    'current-employer-handoff+reciprocal-native-account+complete-india-details',
-  )
-  assert.equal(provider.parser, 'custom-script')
-  assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-10-26')
-  assert.match(provider.dryRunFile, /seeq[\\/]jobs\.json$/i)
-  assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /October 26, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.seeq\.com\/careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/apply\.workable\.com\/seeq\//i)
-  assert.match(provider.verifiedSurfaceSummary, /complete unfiltered cursor inventory/i)
-  assert.match(provider.verifiedSurfaceSummary, /reciprocal native account/i)
-  assert.match(provider.verifiedSurfaceSummary, /partial India scope/i)
-  assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Seeq'), false)
-
-  assert.equal(seeq.PROVIDER_METADATA.source, SEEQ_CATALOG.source)
-  assert.equal(seeq.PROVIDER_METADATA.companyName, SEEQ_CATALOG.companyName)
-  assert.equal(seeq.PROVIDER_METADATA.workableBoardUrl, SEEQ_CATALOG.workableBoardUrl)
+test('Seeq catalogue records discovery policy without stale verification claims',async()=>{
+ const {SEEQ_CATALOG,default:defaultCatalog}=await loadCatalogModule(),seeq=await loadScriptModule(),provider=hydrateProviderCatalogEntry(SEEQ_CATALOG)
+ assert.equal(defaultCatalog,SEEQ_CATALOG);assert.equal(provider.source,'seeq');assert.equal(provider.companyName,'Seeq')
+ assert.equal(provider.companyCareerPage,'https://www.seeq.com/careers/');assert.equal(provider.workableBoardUrl,'https://apply.workable.com/seeq/')
+ assert.equal(provider.atsPlatform,'workable-public-get');assert.equal(provider.countryFilter,'India');assert.equal(provider.verifiedOn,null)
+ assert.equal(provider.verifiedPublicJobCount,null);assert.equal(provider.verifiedIndiaJobCount,null)
+ assert.equal(provider.sourceScopeComplete,false);assert.equal(provider.lifecycleCleanupAllowed,false);assert.equal(provider.backfillMode,'discovery-only')
+ assert.equal(provider.modulePath,modulePath);assert.equal(seeq.PROVIDER_METADATA.source,SEEQ_CATALOG.source)
+ assert.equal(Object.prototype.hasOwnProperty.call(companyAliases,'Seeq'),false)
 })
 
 test('Seeq backlog row matches directly from the local catalog without alias churn', async () => {
@@ -90,7 +61,7 @@ test('Seeq hydrated local catalog stays script-runner compatible for central reg
   assert.equal(provider.companyName, 'Seeq')
   assert.equal(provider.companyCareerPage, 'https://www.seeq.com/careers/')
   assert.equal(provider.companyDomain, 'seeq.com')
-  assert.equal(provider.atsPlatform, 'workable')
+  assert.equal(provider.atsPlatform, 'workable-public-get')
   assert.match(provider.modulePath, /seeq[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /seeq[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')

@@ -63,7 +63,7 @@ const unstopEvidence = () => {
     _id: new mongoose.Types.ObjectId(), source: 'unstop', jobId: null, company: 'Unstop', title, originalTitle: title,
     department: null, sourceUrl: index === 0 ? 'https://unstop.com/jobs/business-operations-specialist-unstop-1780828'
       : 'https://unstop.com/jobs/enterprise-sales-unstop-1735410', sourceDescription: null, description: null,
-    status: 'active', isPublicIndia: true, country: 'India', location: 'India',
+    status: 'active', isPublicIndia: true, jobType: 'Full-time Experienced', country: 'India', location: 'India',
     postedAt: new Date(+now - 86400000), postedAtProvenance: 'observation',
     postedAtProvenanceValue: new Date(+now - 86400000).toISOString(), updatedAt: new Date(+now - 3600000),
   }));

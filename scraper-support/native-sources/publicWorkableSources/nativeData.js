@@ -17,7 +17,7 @@ export const publicURLs=(p,id)=>({board:`https://apply.workable.com/${p.tenant}/
  own:`https://apply.workable.com/${p.tenant}/j/${id}`,markdown:`https://apply.workable.com/${p.tenant}/jobs/view/${id}.md`})
 export const accountMatches=(p,a)=>{
  let url;try{url=new URL(a?.url)}catch{return false}
- return a?.id===p.accountId&&a?.uid===p.accountUid&&a?.subdomain===p.tenant&&a?.name===p.companyName
+ return a?.ok!==false&&a?.success!==false&&!a?.error&&a?.status!=='error'&&a?.id===p.accountId&&a?.uid===p.accountUid&&a?.subdomain===p.tenant&&a?.name===p.companyName
   &&['https:','http:'].includes(url.protocol)&&!url.username&&!url.password&&!url.search&&!url.hash&&url.pathname==='/'&&url.hostname.replace(/^www\./,'')===p.domain
 }
 export const pageIdentity=(page,title,canonical=null)=>{
@@ -71,6 +71,7 @@ const nonGeo=row=>Object.fromEntries(Object.entries(row).filter(([k])=>!['countr
 const sameLocation=(a,b)=>['country','countryCode','city','region','hidden'].every(k=>(a?.[k]??null)===(b?.[k]??null))
 export const validatePair=(p,id,variants,detail,own,mdRow,ownMarkdown)=>{
  ensure(detail&&typeof detail==='object'&&!Array.isArray(detail),'native own model unavailable')
+ ensure(detail.ok!==false&&detail.success!==false&&!detail.error&&detail.status!=='error','native own error envelope')
  ensure(detail.accountUid===p.accountUid&&detail.shortcode===id&&Number.isSafeInteger(detail.id)&&detail.id>0,'native own account/post identity changed')
  ensure(detail.state==='published'&&detail.isInternal===false&&detail.approvalStatus==='approved','native own publication eligibility changed')
  ensure(text(detail.title)&&typeof detail.published==='string'&&Number.isFinite(Date.parse(detail.published)),'native title/publication missing')
@@ -82,7 +83,7 @@ export const validatePair=(p,id,variants,detail,own,mdRow,ownMarkdown)=>{
  for(const row of variants){
   ensure(row&&typeof row==='object'&&!Array.isArray(row),'malformed posting row')
   ensure(equal(nonGeo(row),nonGeo(variants[0])),'contradictory duplicate location views')
-  ensure(row.shortcode===id&&row.title===detail.title&&row.code===(detail.code??''),'listing/native identity or employer code changed')
+  ensure(row.shortcode===id&&row.title===detail.title&&(row.code??null)===(detail.code??null),'listing/native identity or employer code changed')
   ensure(row.url===urls.generic&&row.shortlink===urls.generic&&row.application_url===urls.generic+'/apply','published own/application declaration changed')
   ensure(typeof row.published_on==='string'&&row.published_on===detail.published.slice(0,10),'publication date contradiction')
   ensure(row.telecommuting===detail.remote,'native remote flag contradiction')
@@ -93,14 +94,28 @@ export const validatePair=(p,id,variants,detail,own,mdRow,ownMarkdown)=>{
   const listing=plainHTML(row.description)
   for(const key of ['description','requirements','benefits'])if(text(detail[key]))ensure(listing.includes(plainHTML(detail[key])),'listing/native '+key+' contradiction')
  }
+ for(const key of ['salary_from','salary_to'])if(detail[key]!=null)ensure(typeof detail[key]==='number'&&Number.isFinite(detail[key])&&detail[key]>=0,'native salary amount invalid')
+ if(detail.salary_from!=null&&detail.salary_to!=null)ensure(detail.salary_from<=detail.salary_to,'native salary range inverted')
  if(mdRow){
   ensure(mdRow.title===detail.title&&mdRow.published===detail.published.slice(0,10),'markdown/native identity/publication contradiction')
   ensure(typeof ownMarkdown==='string'&&ownMarkdown.startsWith('# '+detail.title+'\n'),'own markdown title unavailable')
+  const compact=value=>value.normalize('NFKC').replace(/[^\p{L}\p{N}]/gu,'').toLowerCase()
+  for(const [key,label]of [['description','Description'],['requirements','Requirements'],['benefits','Benefits']]){
+   const matches=[...ownMarkdown.matchAll(new RegExp('^## '+label+'\\r?\\n','gm'))]
+   ensure(matches.length<=1,'ambiguous own markdown '+key+' section')
+   let part=''
+   if(matches.length){part=ownMarkdown.slice(matches[0].index+matches[0][0].length);const end=part.search(/^## (?:Description|Requirements|Benefits|Apply)\r?$|^---\s*$/m);if(end>=0)part=part.slice(0,end)}
+   const decoded=part.replace(/!?\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\\([\\`*_[\]{}()#+.!-])/g,'$1')
+   ensure(compact(decoded)===compact(plainHTML(detail[key]||'')),'own markdown/native '+key+' contradiction')
+  }
   const heading=ownMarkdown.split(/\r?\n/).find(l=>l.startsWith('> '))||''
   ensure(heading.includes(p.companyName+' · ')&&heading.includes('Posted '+detail.published.slice(0,10)),'own markdown publisher/publication contradiction')
   if(detail.salary_from!=null||detail.salary_to!=null){
    const pay=ownMarkdown.match(/^\*\*Salary:\*\* (.+)$/m)?.[1]
-   ensure(pay&&pay.startsWith(detail.salary_currency_iso_code+' '),'own markdown salary currency contradiction')
+   ensure(typeof detail.salary_currency_iso_code==='string'&&/^[A-Z]{3}$/.test(detail.salary_currency_iso_code),'native salary currency invalid')
+   ensure(pay&&new RegExp('^(?:(?:From|Up to) )?'+detail.salary_currency_iso_code+' ').test(pay),'own markdown salary currency contradiction')
+   if(pay.startsWith('From '))ensure(detail.salary_from!=null&&detail.salary_to==null,'own markdown lower salary bound contradiction')
+   if(pay.startsWith('Up to '))ensure(detail.salary_from==null&&detail.salary_to!=null,'own markdown upper salary bound contradiction')
    const numbers=pay.match(/\d[\d,]*(?:\.\d+)?/g)?.map(n=>Number(n.replaceAll(',','')))||[]
    const expected=[...new Set([detail.salary_from,detail.salary_to].filter(v=>v!=null))]
    ensure(equal([...new Set(numbers)],expected),'own markdown salary amount contradiction')

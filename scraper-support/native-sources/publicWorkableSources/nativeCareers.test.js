@@ -7,7 +7,7 @@ for(const profile of fixture.profiles)test(profile.source+': registered reader a
  const r=replay(),provider=getScraperCatalog().find(p=>p.source===profile.source)
  const jobs=await createCatalogScraper(provider).run({...r.options,maxJobs:1})
  assert.equal(r.audits.length,1,'Native original audit callback is required')
- const a=r.audits[0],expected=fixture.oracle[profile.source]
+ const a=r.audits[0],expected=fixture.oracle[profile.source],expectedCandidates=profile.source==='huggingface'?expected.hiddenPostings:0
  assert.equal(a.source,profile.source);assert.equal(a.sourceScopeComplete,false)
  assert.equal(a.observations.length,expected.records.length)
  assert.equal(a.phases.length,2,'Fresh opening/closing collections and own pairs required')
@@ -26,9 +26,10 @@ for(const profile of fixture.profiles)test(profile.source+': registered reader a
  assert.ok(r.requests.every(u=>!u.includes('/api/v3/')&&!/\/apply\/?$/.test(new URL(u).pathname)&&!u.includes('llms.txt')))
  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
  assert.notEqual(readInventoryEvidence(jobs).status,'verified-empty')
- assert.equal(a.employerBindingQualified,profile.source!=='travisci')
- assert.equal(a.candidateCount,expected.hiddenPostings)
- assert.equal(jobs.length,Math.min(1,expected.hiddenPostings))
+ assert.equal(a.employerBindingQualified,profile.source==='huggingface')
+ assert.equal(a.candidateCount,expectedCandidates)
+ assert.equal(jobs.length,Math.min(1,expectedCandidates))
+ if(profile.source==='seeq'){assert.equal(a.companyDeclaredHandoff,true);assert.ok(a.issues.some(s=>s.includes('current-company-handoff-visibility-unqualified')))}
  if(profile.source==='travisci')assert.ok(a.issues.some(s=>s.includes('current-company-handoff-missing')))
 })
 test('catalogues clear stale source-wide dates, counts and fixed-zero claims',()=>{
@@ -38,4 +39,11 @@ test('catalogues clear stale source-wide dates, counts and fixed-zero claims',()
   assert.equal(row.countryFilter,'India');assert.equal(row.sourceScopeComplete,false);assert.equal(row.lifecycleCleanupAllowed,false)
   assert.equal(row.backfillMode,'discovery-only');assert.equal(row.atsPlatform,'workable-public-get')
  }
+})
+
+test('ordinary consumers preserve original criteria and never promote hidden-country candidates to India',async()=>{
+ const {normalizeScrapedJob}=await import('../../utils/normalizeScrapedJob.js'),{generateFingerprint}=await import('../../utils/applicationIdentity.js'),{isIndiaJob}=await import('../../utils/indiaLocationFilter.js'),r=replay()
+ const jobs=await createCatalogScraper(getScraperCatalog().find(p=>p.source==='huggingface')).run(r.options)
+ assert.equal(jobs.length,3)
+ for(const job of jobs){const normalized=normalizeScrapedJob(job);assert.equal(normalized.sourceDescription,job.jobDescription);assert.equal(normalized.country,null);assert.equal(normalized.countryScopeUnresolved,true);assert.equal(isIndiaJob(normalized),false);assert.match(generateFingerprint(normalized),/^[a-f0-9]{16,}$/)}
 })

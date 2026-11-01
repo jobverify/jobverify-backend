@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import {readVisibleNativeDocument} from '../../utils/visibleNativeHtml.js'
 import {readNativeDocument,decodeNativeEntities} from '../../utils/activeNativeHtml.js'
 import {createPublicIO} from '../publicIO.js'
 import {attachInventoryEvidence} from '../../utils/inventoryEvidence.js'
@@ -51,21 +52,22 @@ export const createPublicWorkableSource=(profile,defaults={})=>({name:profile.so
  }
  const phases=[]
  for(const phaseName of ['opening','closing']){
-  const phase={name:phaseName,issues:[],records:[],listingRows:[],markdownRows:[],originalPrimaryPages:[],employerBindingQualified:false,selectedCollectionComplete:true};phases.push(phase)
+  const phase={name:phaseName,issues:[],records:[],listingRows:[],markdownRows:[],originalPrimaryPages:[],employerBindingQualified:false,companyDeclaredHandoff:false,selectedCollectionComplete:true};phases.push(phase)
   const protect=async(label,fn)=>{try{return await fn()}catch(error){signal?.throwIfAborted();phase.issues.push(label+': '+error.message);return null}}
   let companyHandoff=false,accountGood=false,boardGood=false
   for(const url of profile.primaryURLs)await protect('company primary',async()=>{
    const page=await follow(url);phase.originalPrimaryPages.push(page);ensure(original(page),'original company response unavailable')
-   const d=readNativeDocument(page.originalText);ensure(d.nodes(n=>n.tag==='title').some(n=>profile.primaryTitles.some(t=>text(decodeNativeEntities(n.raw)).includes(t))),'current company publisher/title changed')
+   const d=readVisibleNativeDocument(page.originalText,{strict:true});ensure(d.nodes(n=>n.tag==='title').some(n=>profile.primaryTitles.some(t=>text(decodeNativeEntities(n.raw)).includes(t))),'current company publisher/title changed')
+   phase.companyDeclaredHandoff ||= readNativeDocument(page.originalText).nodes(n=>n.tag==='a'&&n.attrs.href).some(n=>{try{return new URL(n.attrs.href,page.url).href===u.board}catch{return false}})
    companyHandoff ||= d.nodes(n=>n.tag==='a'&&n.attrs.href).some(n=>{try{return new URL(n.attrs.href,page.url).href===u.board}catch{return false}})
   })
   await protect('native account',async()=>{const page=await follow(u.account);phase.originalAccountResponse=page;ensure(original(page),'original account unavailable');phase.originalAccount=io.json(page);ensure(accountMatches(profile,phase.originalAccount),'reciprocal native account identity changed');accountGood=true})
   await protect('native board',async()=>{const page=await follow(u.board);phase.originalBoard=page;ensure(original(page),'original board unavailable');pageIdentity(page,profile.companyName+' - Current Openings');boardGood=true})
   phase.employerBindingQualified=companyHandoff&&accountGood&&boardGood
-  if(!companyHandoff)phase.issues.push('current-company-handoff-missing')
+  if(!companyHandoff)phase.issues.push(phase.companyDeclaredHandoff?'current-company-handoff-visibility-unqualified':'current-company-handoff-missing')
   const collection=await protect('public collection',async()=>{
    const page=await follow(u.collection);phase.originalCollectionResponse=page;ensure(original(page),'original collection unavailable');const model=io.json(page);phase.originalCollection=model
-   ensure(model&&model.name===profile.companyName&&Array.isArray(model.jobs)&&!model.error&&model.success!==false,'invalid public collection/error envelope');return model.jobs
+   ensure(model&&model.name===profile.companyName&&Array.isArray(model.jobs)&&!model.error&&model.success!==false&&model.ok!==false&&model.status!=='error','invalid public collection/error envelope');return model.jobs
   })
   phase.listingRows=collection||[];phase.listingRowCount=phase.listingRows.length
   if(!collection)phase.selectedCollectionComplete=false
@@ -98,18 +100,20 @@ export const createPublicWorkableSource=(profile,defaults={})=>({name:profile.so
  const merged=new Map(),employerBindingQualified=phases.every(p=>p.employerBindingQualified)
  for(const phase of phases)for(const row of phase.records){
   const prior=merged.get(row.id),history=[...(prior?.history||[]),{phase:phase.name,originalNative:row.originalNative,listingVariants:row.listingVariants,ownPairQualified:row.ownPairQualified,issues:row.issues}]
-  const changed=prior&&prior.ownPairQualified&&row.ownPairQualified&&(!equal(prior.originalNative,row.originalNative)||!equal(prior.listingVariants,row.listingVariants))
+  const changed=prior&&prior.ownPairQualified&&(!row.ownPairQualified||!equal(prior.originalNative,row.originalNative)||!equal(prior.listingVariants,row.listingVariants))
   const selected=row.ownPairQualified||!prior?row:prior
   merged.set(row.id,{...selected,history,stableAcrossPhases:!changed&&(prior?.stableAcrossPhases??true),issues:[...new Set([...(prior?.issues||[]),...row.issues,...(changed?['native-post-changed-between-phases']:[])])]})
  }
  const observations=[...merged.values()]
- for(const row of observations){row.employerBindingQualified=employerBindingQualified;row.discoveryQualified=employerBindingQualified&&row.ownPairQualified&&row.stableAcrossPhases
+ for(const row of observations){
+  if(phases.some(p=>p.selectedCollectionComplete&&!p.records.some(r=>r.id===row.id))){row.stableAcrossPhases=false;row.issues.push('native-post-missing-from-complete-phase')}
+  row.employerBindingQualified=employerBindingQualified;row.discoveryQualified=employerBindingQualified&&row.ownPairQualified&&row.stableAcrossPhases
   row.countrySelected=profile.countryFilter==='Global'||row.geography.countries.includes('India')||row.geography.unresolved
   row.candidateEligible=row.discoveryQualified&&row.countrySelected}
  const candidates=observations.filter(r=>r.candidateEligible).map(r=>projectJob(profile,r,observedAt)),jobs=maxJobs===null?candidates:candidates.slice(0,maxJobs)
  const issues=[...new Set([...phases.flatMap(p=>p.issues),...io.issues.map(i=>i.kind+': '+(i.url||'')),...observations.flatMap(r=>r.issues.map(s=>r.id+': '+s))])]
  const audit={source:profile.source,observedAt,countryFilter:profile.countryFilter,sourceScopeComplete:false,lifecycleCleanupAllowed:false,
-  employerBindingQualified,selectedCollectionComplete:phases.every(p=>p.selectedCollectionComplete),candidateCount:candidates.length,returnedCount:jobs.length,
+  employerBindingQualified,companyDeclaredHandoff:phases.every(p=>p.companyDeclaredHandoff),selectedCollectionComplete:phases.every(p=>p.selectedCollectionComplete),candidateCount:candidates.length,returnedCount:jobs.length,
   observations,phases,issues,rawPages:io.rawPages,websiteJavaScriptExecuted:false,applicationActivationQualified:false,persistenceQualified:false}
  await onAudit(structuredClone(audit));signal?.throwIfAborted();await onRecords(structuredClone(observations));signal?.throwIfAborted()
  attachInventoryEvidence(jobs,{status:jobs.length?'discovery-only':'coverage-gap',surface:u.board,firstParty:employerBindingQualified,listingComplete:false,pagesFetched:io.rawPages.length,

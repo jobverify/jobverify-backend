@@ -36,9 +36,9 @@ test('live posting activity ends today in India and counts only visible current 
   assert.deepEqual(all.daily.slice(-3), [
     { date: '2026-10-17', count: 0, entryLevel: 0 },
     { date: '2026-10-18', count: 1, entryLevel: 0 },
-    { date: '2026-10-19', count: 3, entryLevel: 2 },
+    { date: '2026-10-19', count: 2, entryLevel: 2 },
   ]);
-  assert.equal(all.daily.reduce((sum, row) => sum + row.count, 0), 4);
+  assert.equal(all.daily.reduce((sum, row) => sum + row.count, 0), 3);
   const earlyCareer = await readHiringSnapshot({ experiencedJobsEnabled: false }, now);
   assert.deepEqual(earlyCareer.daily.slice(-2), [
     { date: '2026-10-18', count: 0, entryLevel: 0 },

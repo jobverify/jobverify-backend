@@ -7,7 +7,7 @@ const OPERATIONAL_NAMES = new Set([
   'MongoNetworkError', 'MongoNetworkTimeoutError', 'MongoServerSelectionError',
   'MongooseServerSelectionError', 'MongoTopologyClosedError', 'MongoNotConnectedError',
   'MongoPoolClearedError', 'MongoPoolClosedError', 'MongoWaitQueueTimeoutError',
-  'MongoOperationTimeoutError', 'MongoWriteConcernError', 'MongoRunLeaseHeldError',
+  'MongoOperationTimeoutError', 'MongoWriteConcernError',
 ]);
 
 // Unknown server/query/validation errors deliberately remain fatal. Never infer

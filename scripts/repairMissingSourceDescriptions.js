@@ -10,6 +10,8 @@ import { buildDescriptionSourceUpdate } from '../src/services/jobDescriptionPoli
 import { postScrapePersistencePatch, sourceSnapshotFilter } from '../src/services/postScrapeClassification.js';
 import { buildMissingSourceDescriptionFilter, getSourceDescription, hasSourceDescription } from '../src/utils/jobSourceContent.js';
 import { applyPublicJobVisibility } from '../src/utils/publicJobVisibility.js';
+import { normalizePublicJobCategory } from '../src/utils/publicJobNormalization.js';
+import { PUBLIC_JOB_TYPES } from '../src/utils/publicJobTypeLabel.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
 import { resolveJobPublicationDate } from '../src/utils/jobPublicationDate.js';
 import { analyzePublishableJobs } from '../scraper-support/utils/publishableJobMetrics.js';
@@ -211,9 +213,14 @@ export function buildDescriptionRepairPlan({ jobs, statuses = [], trials, siteSe
       const classification = postScrapePersistencePatch(updated, before, {
         now, mode: before.postClassification?.mode === 'policy' ? 'policy' : 'shadow',
       });
-      const expectedVisible = !nativeDateSources.has(before.source) || (updated.isPublicIndia === true && updated.status === 'active'
+      const classified = { ...updated, ...classification.set };
+      for (const field of Object.keys(classification.unset)) delete classified[field];
+      const publicCategory = normalizePublicJobCategory(classified);
+      const categoryVisible = PUBLIC_JOB_TYPES.includes(publicCategory)
+        && !(siteSettings.experiencedJobsEnabled === false && publicCategory === 'Full-time Experienced');
+      const expectedVisible = categoryVisible && (!nativeDateSources.has(before.source) || (updated.isPublicIndia === true && updated.status === 'active'
         && (!resolveJobPublicationDate(updated).date || resolveJobPublicationDate(updated).date <= now)
-        && analyzePublishableJobs([{ ...updated, sourceClosingDateIsExact: true }], { now }).eligibleJobs.length === 1);
+        && analyzePublishableJobs([{ ...updated, sourceClosingDateIsExact: true }], { now }).eligibleJobs.length === 1));
       entries.push({ source: before.source, jobId: before.jobId, before, expectedVisible,
         filter: { $and: [sourceSnapshotFilter(before), { source: before.source, jobId: before.jobId,
           company: before.company, department: before.department ?? null, updatedAt: before.updatedAt ?? null,
