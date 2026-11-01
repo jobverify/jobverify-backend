@@ -8,7 +8,11 @@ const nativeDetail = await fs.readFile(new URL('./fixtures/current-job-detail.ht
 const origin = 'https://careers.sap.com'
 const row = (id, title = 'Senior Developer', location = 'Bangalore, IN, 560103') => '<tr class="data-row"><td class="colTitle"><a href="/job/Bangalore-Senior-Developer-560103/' + id + '/" class="jobTitle-link">' + title + '</a></td><td class="colLocation hidden-phone"><span class="jobLocation">' + location + '</span></td></tr>'
 const page = (rows, start = 1, end = 1, total = 2) => '<title>India - SAP Jobs</title><link rel="canonical" href="' + origin + '/search/"/><div id="searchresults">Results <b>' + start + ' – ' + end + '</b> of <b>' + total + '</b><table>' + rows + '</table></div>'
-const detail = (id = '1384474433', req = '441574') => nativeDetail.replaceAll('1384474433', id).replace('>441574\n', '>' + req + '\n')
+const detail = (id = '1384474433', req = '441574') => {
+  const html = nativeDetail.replaceAll('1384474433', id).replace(/>441574(?=\r?\n)/, '>' + req)
+  assert.equal(extractJobDetail(html).requisitionId, req, 'Synthetic detail must carry its intended native requisition')
+  return html
+}
 const fixtureRun = async (t, modify = () => {}, options = {}) => {
   const calls = []
   const originalFetch = globalThis.fetch
@@ -71,7 +75,7 @@ for (const [name, change] of [
   ['detail location conflict', r => { if (r.url.includes('/job/')) r.html = r.html.replaceAll('Bangalore, IN, 560103', 'Palo Alto, US, 94304') }],
   ['detail title mismatch', r => { if (r.url.includes('/job/')) r.html = r.html.replaceAll('Senior Developer', 'Unrelated role') }],
   ['missing native requisition identity', r => { if (r.url.includes('/job/')) r.html = r.html.replaceAll('data-careersite-propertyid="facility"', 'data-careersite-propertyid="unknown"') }],
-  ['duplicate native requisition identity', r => { if (r.url.includes('/1384474434/')) r.html = r.html.replace('>441575\n', '>441574\n') }],
+  ['duplicate native requisition identity', r => { if (r.url.includes('/1384474434/')) { const before = r.html; r.html = r.html.replace(/>441575(?=\r?\n)/, '>441574'); assert.notEqual(r.html, before, 'Duplicate-requisition mutation must change the synthetic native field') } }],
   ['empty native JD', r => { if (r.url.includes('/job/')) r.html = r.html.replaceAll('jobdescription', 'unknown-description') }],
   ['snapshot identity drift', (r, c) => { if (c.length === 5) r.html = page(row('1384474439')) }],
 ]) test('SAP fails closed on ' + name, async t => {

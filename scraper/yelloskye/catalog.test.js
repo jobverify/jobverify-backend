@@ -5,23 +5,25 @@ import companyAliases from '../../scraper-support/providers/companyAliases.json'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('YelloSKYE is registered as a first-party inventory-unavailable provider without aliases', () => {
+test('YelloSKYE is registered as a first-party discovery-only provider without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'yelloskye')
 
   assert.ok(provider, 'Expected YelloSKYE provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'YelloSKYE')
   assert.equal(provider.companyCareerPage, 'https://www.yelloskye.ai/')
-  assert.equal(provider.atsPlatform, 'official-company-site-inventory-unavailable')
+  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'verified-domain-redirect-plus-current-client-bundle')
   assert.equal(
     provider.extractionStrategy,
-    'verified-canonical-company-app+current-client-route-inspection+reject-unavailable-inventory',
+    'verified-canonical-company-app+current-client-route-inspection+no-public-listings-discovery-only-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'yelloskye.ai')
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  assert.match(provider.verifiedSurfaceSummary, /discovery-only evidence, not an authoritative empty-opening statement/i)
   assert.match(provider.modulePath, /yelloskye[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'YelloSKYE'), false)
 })

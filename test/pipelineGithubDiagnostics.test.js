@@ -68,7 +68,7 @@ test(`report preserves source warnings and respects the ${jobResult} workflow re
     return update.$set;
   } }));
   await import(`../scripts/pipelineGithub.js?diagnostic=report-${jobResult}`);
-  assert.equal(process.exitCode, jobResult === 'failure' ? 1 : undefined);
+  assert.equal(process.exitCode, jobResult === 'success' ? undefined : 1);
   const output = messages.join('\n');
   assert.match(output, new RegExp(`scraper.*${jobResult === 'success' ? 'completed' : jobResult === 'incomplete' ? 'incomplete' : 'failed'}`));
   assert.match(output, /"failed":10/);

@@ -168,7 +168,7 @@ export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
       location,
       city: extractCity(location),
       jobId,
-      requisitionId: jobId,
+      requisitionId: null,
       sourceUrl,
       postingDate: normalizePostingDate(
         extractFirst(/<span\b[^>]*class=["'][^"']*jobDate[^"']*["'][^>]*>([\s\S]*?)<\/span>/i, row),
@@ -227,7 +227,7 @@ export const extractJobDetail = (html, listing = {}) => {
     location,
     city: extractCity(location) || listing.city || null,
     jobId: detailJobId || null,
-    requisitionId: listing.requisitionId || detailJobId || null,
+    requisitionId: null,
     employmentType: normalizeWhitespace(
       extractFirst(/data-careersite-propertyid=["'](?:employmentType|jobtype|shifttype)["'][^>]*>([\s\S]*?)<\/span>/i, html),
     ) || null,

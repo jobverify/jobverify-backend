@@ -21,6 +21,29 @@ globalThis.fetch = async () => { throw Error('Offline original-entity controls p
 const sources = { banyansoftware, doximity, elationhealth, eqtcorporation, buildkite, tripadvisor, prophecy, dutchie, biofourmis,
   'financialtimes-channel-only':createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES.financialtimes) }
 
+// The Oct31 cohort predates Biofourmis's additional departments scope read.
+// Keep that missing fixture explicitly unanswered, with no invented HTTP proof.
+const assertMissingBiofourmisDepartmentScope = audit => {
+  const scopeURL = 'https://boards-api.greenhouse.io/v1/boards/biofourmis/departments/'
+  const unanswered = audit.rawPages.filter(page => !page.transportQualified)
+  assert.deepEqual(unanswered.map(page => page.url), [scopeURL, scopeURL])
+  for (const page of unanswered) {
+    assert.equal(page.usable, false)
+    assert.ok(page.status == null && page.bodyBase64 == null && page.bodySHA256 == null)
+    assert.equal(page.originalText, null)
+    assert.equal(page.legacyParsedJSON, undefined)
+    assert.match(page.error.message, /Only original current public URLs may be replayed/)
+  }
+  for (const phase of [audit.opening, audit.closing]) {
+    assert.equal(phase.publisherQualified, true)
+    assert.equal(phase.qualified, false)
+    assert.ok(phase.issues.some(issue => /current declared department collection unavailable/.test(issue)))
+  }
+  assert.equal(audit.publicInventoryProof.complete, false)
+  assert.equal(audit.sourceScopeComplete, false)
+  assert.equal(audit.lifecycleCleanupAllowed, false)
+}
+
 for (const [source, module] of Object.entries(sources)) test(source + ': genuine complete native post corpus is retained before prospect/country selection', async () => {
   const r = replay(), nativeSource=source==='financialtimes-channel-only'?'financialtimes':source, expected = fixture.oracle[nativeSource]
   let jobs, error
@@ -30,8 +53,12 @@ for (const [source, module] of Object.entries(sources)) test(source + ': genuine
   const audit = r.audits[0]
   assert.equal(audit.opening.publisherQualified, true)
   assert.equal(audit.closing.publisherQualified, true)
-  assert.equal(audit.opening.qualified, true)
-  assert.equal(audit.closing.qualified, true)
+  // The public Biofourmis wrapper now requires a department response absent
+  // from this original cohort; all original native post assertions stay below.
+  const additionalPublicScopeMissing = source === 'biofourmis'
+  assert.equal(audit.opening.qualified, !additionalPublicScopeMissing)
+  assert.equal(audit.closing.qualified, !additionalPublicScopeMissing)
+  if (additionalPublicScopeMissing) assertMissingBiofourmisDepartmentScope(audit)
   assert.equal(audit.observations.length, expected.records.length)
   assert.equal(audit.opening.reportedNativePostCount, expected.records.length)
   assert.equal(audit.closing.reportedNativePostCount, expected.records.length)
@@ -58,11 +85,18 @@ for (const [source, module] of Object.entries(sources)) test(source + ': genuine
     assert.equal(job.sourceScopeComplete, false);assert.equal(job.lifecycleCleanupAllowed, false)
   }
   assert.ok(jobs.every(job => job.sourceNativePostKind === 'job'))
-  assert.equal(readInventoryEvidence(jobs).status, 'discovery-only')
+  assert.equal(readInventoryEvidence(jobs).status, additionalPublicScopeMissing ? 'coverage-gap' : 'discovery-only')
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
   assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
   assert.equal(audit.sourceScopeComplete, false)
-  assert.ok(r.requests.every(url => !new URL(url).hostname.startsWith('job-boards.')), 'Blocked hosted pages are never retried')
+  const hostedRoleRequests = additionalPublicScopeMissing
+    ? r.requests.filter(url => url !== 'https://job-boards.greenhouse.io/biofourmis')
+    : r.requests
+  assert.ok(hostedRoleRequests.every(url => !new URL(url).hostname.startsWith('job-boards.')), 'Blocked hosted role pages are never retried')
+  if (additionalPublicScopeMissing) assert.equal(
+    r.requests.filter(url => url === 'https://job-boards.greenhouse.io/biofourmis').length, 2,
+    'The two unanswered advertised board scope reads are not role detail retries',
+  )
 })
 
 test('original Response transport is read without inventing HTTP metadata or falling back to parsed JSON', async () => {
@@ -75,5 +109,8 @@ test('original Response transport is read without inventing HTTP metadata or fal
   assert.equal(jobs.length, 0);assert.equal(r.audits.length, 1)
   assert.equal(r.audits[0].opening.publisherQualified, true);assert.equal(r.audits[0].closing.publisherQualified, true)
   assert.ok(methods.length > 0 && methods.every(method => method === 'GET'))
-  assert.ok(r.audits[0].rawPages.every(page => page.transportQualified && page.bodyBase64 && page.bodySHA256))
+  const originalResponses = r.audits[0].rawPages.filter(page => page.transportQualified)
+  assert.ok(originalResponses.length > 0)
+  assert.ok(originalResponses.every(page => page.status === 200 && page.bodyBase64 && page.bodySHA256))
+  assertMissingBiofourmisDepartmentScope(r.audits[0])
 })

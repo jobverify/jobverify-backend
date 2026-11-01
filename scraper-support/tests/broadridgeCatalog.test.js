@@ -19,8 +19,11 @@ test('getScraperCatalog includes Broadridge Financial Solutions on the official 
   assert.equal(broadridge.adapter, 'workday')
   assert.equal(broadridge.atsPlatform, 'workday')
   assert.equal(broadridge.companyName, 'Broadridge Financial Solutions')
-  assert.match(broadridge.companyCareerPage, /broadridge\.wd5\.myworkdayjobs\.com\/Careers/i)
-  assert.equal(broadridge.companyDomain, 'broadridge.wd5.myworkdayjobs.com')
+  assert.equal(broadridge.companyCareerPage, 'https://www.broadridge.com/careers')
+  assert.equal(broadridge.bindingEvidence.verified, true)
+  assert.equal(broadridge.bindingEvidence.officialURL, broadridge.companyCareerPage)
+  assert.ok(broadridge.bindingEvidence.matchedLinks.includes(broadridge.baseUrl))
+  assert.equal(broadridge.companyDomain, 'broadridge.com')
   assert.match(broadridge.baseUrl, /broadridge\.wd5\.myworkdayjobs\.com\/Careers/i)
 })
 

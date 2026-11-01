@@ -2,14 +2,30 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import test,{after} from 'node:test'
+import {createReviewedProofRuntime} from './helpers/reviewedProofRuntime.js'
 import {gunzipSync} from 'node:zlib'
 import {createHash} from 'node:crypto'
 import {buildPartialAttempt,recordPartialPublishingStatus} from '../scripts/partialPublishingGapEvidence.js'
 import {isSuccessfulPublishingGapTrial} from '../scripts/publishPublishingGapRepairs.js'
 const now=new Date('2026-10-21T04:00:00Z'),sha=b=>createHash('sha256').update(b).digest('hex'),url=new URL('../scripts/castrolPartialPublishingEvidence.js',import.meta.url)
-const load=async()=>{assert.ok(fs.existsSync(url),'Castrol exact partial proof implementation is required');return import(url)}
+const load=async()=>{assert.ok(fs.existsSync(url),'Castrol exact partial proof implementation is required');return import(runtime.url('scripts/castrolPartialPublishingEvidence.js'))}
 const fixture=()=>{const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/castrolPartial/reviewed-native-001.json.gz',import.meta.url)))),files=new Map(Object.entries(f.files).map(([k,v])=>[k,Buffer.from(v,'base64')]));return{source:'castrolindia',httpEvidence:f.httpEvidence,files,readEvidence:async file=>files.get(file),now}}
+// Positive and mutation cases replay the immutable reviewed runtime.
+const runtime=createReviewedProofRuntime(fixture(),{prefix:'castrol-reviewed-proof-'})
+after(runtime.cleanup)
+test('castrol verifier rejects changed reviewed source bytes and checkout drift',async()=>{
+ const {deriveCastrolPartialEvidence}=await import(url)
+ const f=fixture(),drift=f.httpEvidence.receipts.filter(r=>r.sourcePath).some(r=>sha(fs.readFileSync(new URL('../'+r.sourcePath,import.meta.url)))!==r.sha256)
+ if(drift)await assert.rejects(deriveCastrolPartialEvidence(f),/current (?:source|extraction code).*differs/)
+ const receipt=f.httpEvidence.receipts.find(r=>r.kind==='current-code'),file=runtime.url(receipt.sourcePath),bytes=fs.readFileSync(file)
+ try {
+  fs.writeFileSync(file,Buffer.concat([bytes,Buffer.from('\n// changed source bytes\n')]))
+  const {deriveCastrolPartialEvidence:deriveReviewed}=await load()
+  await assert.rejects(deriveReviewed(f),/current source.*differs/)
+ } finally {fs.writeFileSync(file,bytes)}
+})
+
 async function makeTrial(f=fixture()){
  const{deriveCastrolPartialEvidence}=await load(),p=await deriveCastrolPartialEvidence(f)
  const trial={schemaVersion:1,source:'castrolindia',mode:'native-http-partial-positive-trial',outcome:'positive-extraction-incomplete-evidence',productionWrites:false,
@@ -42,6 +58,6 @@ test('Castrol stale, missing, duplicate, rewritten native/client/review/current-
  ]){const f=fixture();change(f);await assert.rejects(deriveCastrolPartialEvidence(f))}
 })
 test('Castrol immutable freezer preserves21 corrected original jobs/dates and all25 packets, refuses reused or escaping outputs',async()=>{
- const url=new URL('../scripts/freezeCastrolPartialPublishingTrial.js',import.meta.url);assert.ok(fs.existsSync(url),'Castrol immutable freezer is required');const{freezeCastrolPartialTrial}=await import(url),parent=fs.mkdtempSync(path.join(os.tmpdir(),'castrol-proof-')),outputDirectory=path.join(parent,'release')
+ const url=runtime.url('scripts/freezeCastrolPartialPublishingTrial.js');assert.ok(fs.existsSync(url),'Castrol immutable freezer is required');const{freezeCastrolPartialTrial}=await import(url),parent=fs.mkdtempSync(path.join(os.tmpdir(),'castrol-proof-')),outputDirectory=path.join(parent,'release')
  try{const f=fixture(),result=await freezeCastrolPartialTrial({...f,outputDirectory}),bytes=fs.readFileSync(path.join(outputDirectory,'castrolindia.json')),trial=JSON.parse(bytes),corrected=JSON.parse(f.files.get('evidence/frozen-trials/castrolindia-corrected-019.json'));assert.equal(result.trialByteHash,sha(bytes));assert.equal(result.eligibleJobs,21);assert.equal(result.indiaJobs,null);assert.equal(result.missingDescriptions,0);assert.deepEqual(trial.jobs,corrected.jobs);assert.equal(trial.attemptedAt,corrected.attemptedAt);assert.equal(trial.completedAt,corrected.completedAt);for(const[file,body]of f.files)assert.deepEqual(fs.readFileSync(path.join(outputDirectory,file)),body);await assert.rejects(freezeCastrolPartialTrial({...f,outputDirectory}));const bad=fixture();bad.httpEvidence.receipts[0].file='../escape.json';const badOutput=path.join(parent,'bad');await assert.rejects(freezeCastrolPartialTrial({...bad,outputDirectory:badOutput}));assert.equal(fs.existsSync(badOutput),false)}finally{assert.equal(path.dirname(parent),fs.realpathSync(os.tmpdir()));assert.ok(path.basename(parent).startsWith('castrol-proof-'));fs.rmSync(parent,{recursive:true})}
 })

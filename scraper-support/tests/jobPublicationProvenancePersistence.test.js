@@ -8,8 +8,8 @@ const repo=fileURLToPath(new URL('../../',import.meta.url)),load=file=>import(pa
 const root=os.tmpdir()
 const output=await fs.mkdtemp(path.join(root,'jobverify-publication-provenance-'))
 await fs.mkdir(output,{recursive:true})
-const binaryDir=path.join(os.tmpdir(),'codex-scraper-test-mongo-8.2.6'),binary=path.join(binaryDir,'mongod-x64-win32-8.2.6.exe')
-process.env.MONGOMS_SYSTEM_BINARY=binary;process.env.MONGOMS_DOWNLOAD_DIR=binaryDir;process.env.MONGOMS_RUNTIME_DOWNLOAD='false'
+const binaryDir=process.env.MONGOMS_DOWNLOAD_DIR||path.join(os.tmpdir(),'codex-scraper-test-mongo-8.2.6'),binary=process.env.MONGOMS_SYSTEM_BINARY||path.join(binaryDir,'mongod-x64-win32-8.2.6.exe')
+process.env.MONGOMS_SYSTEM_BINARY||=binary;process.env.MONGOMS_DOWNLOAD_DIR||=binaryDir;process.env.MONGOMS_RUNTIME_DOWNLOAD='false'
 process.env.MONGO_URI='mongodb://127.0.0.1:1/unused_guard';process.env.POST_SCRAPE_CLASSIFICATION_MODE='shadow'
 const {default:mongoose}=await load('node_modules/mongoose/index.js')
 const {MongoMemoryServer}=await load('node_modules/mongodb-memory-server/index.js')

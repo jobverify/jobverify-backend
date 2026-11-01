@@ -69,18 +69,6 @@ test('builds Volvo Group detail, apply, and shared job URLs from listing data', 
   })
 })
 
-test('returns runner metadata in the shared script adapter shape', () => {
-  assert.deepEqual(getRunnerMetadata(), {
-    name: 'volvo',
-    dryRunFile: 'jobs.json',
-    provider: {
-      source: 'volvo',
-      companyName: 'Volvo Group',
-      companyCareerPage: CAREER_PAGE_URL,
-      baseUrl: JOBS_URL,
-      adapter: 'script',
-      atsPlatform: 'successfactors',
-      countryFilter: 'India',
-    },
-  })
-})
+test('returns runner metadata with unknown current totals and held full-source scope',()=>{
+ const meta=getRunnerMetadata();assert.equal(meta.name,'volvo');assert.equal(meta.dryRunFile,'jobs.json');assert.equal(meta.provider.source,'volvo');assert.equal(meta.provider.companyCareerPage,CAREER_PAGE_URL);assert.equal(meta.provider.baseUrl,JOBS_URL);assert.equal(meta.provider.adapter,'script');assert.equal(meta.provider.atsPlatform,'successfactors-public-native-get');assert.equal(meta.provider.verifiedPublicJobCount,null);assert.equal(meta.provider.sourceScopeComplete,false);assert.equal(meta.provider.lifecycleCleanupAllowed,false);assert.equal(meta.provider.zeroResultPolicy,'coverage-gap');
+});

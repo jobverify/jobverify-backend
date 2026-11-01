@@ -66,7 +66,13 @@ test('buildScrapers and company coverage resolve Spotify from the shared catalog
   assert.ok(provider)
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Spotify')
-  assert.equal(provider.companyCareerPage, 'https://www.lifeatspotify.com/jobs')
+  assert.equal(provider.companyCareerPage, 'https://lifeatspotify.com/jobs/research-scientist-personalization')
+  assert.equal(provider.adapter, 'publicAts')
+  assert.equal(provider.atsPlatform, 'lever')
+  assert.equal(provider.boardToken, 'spotify')
+  assert.equal(provider.bindingEvidence.verified, true)
+  assert.equal(provider.bindingEvidence.officialURL, provider.companyCareerPage)
+  assert.ok(provider.bindingEvidence.matchedLinks.some(link => link.startsWith('https://jobs.lever.co/spotify/')))
   assert.match(scraper.dryRunFile, /spotify[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

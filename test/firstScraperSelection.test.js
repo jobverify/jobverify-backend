@@ -10,12 +10,19 @@ const selection = { onlySources: '', startAt: '', startAfter: '', firstN: '1000'
 test('first 1000 selection follows the executable catalog order through its boundary', () => {
   const catalog = getScraperCatalog()
   const result = selectScrapersForRun(buildScrapers(), selection)
+  assert.ok(catalog.length > 1000, 'live catalog should exercise a truncated selection')
   assert.equal(result.scrapers.length, 1000)
   assert.deepEqual(result.scrapers.map(scraper => scraper.name), catalog.slice(0, 1000).map(provider => provider.source))
-  assert.equal(result.scrapers[0].name, 'abb')
-  assert.equal(result.scrapers[999].name, 'hex')
-  assert.equal(catalog[1000].source, 'hfcl')
-  assert.equal(result.scrapers.some(scraper => scraper.name === 'hfcl'), false)
+})
+
+test('first 1000 includes the last prefix entry and excludes the next synthetic catalog entry', () => {
+  const scrapers = Array.from({ length: 1001 }, (_, index) => ({ name: `source-${index}` }))
+  const result = selectScrapersForRun(scrapers, selection)
+
+  assert.deepEqual(result.scrapers, scrapers.slice(0, 1000))
+  assert.equal(result.scrapers[0], scrapers[0])
+  assert.equal(result.scrapers.at(-1), scrapers[999])
+  assert.equal(result.scrapers.includes(scrapers[1000]), false)
 })
 
 test('first N rejects ambiguous counts instead of silently parsing a prefix', () => {

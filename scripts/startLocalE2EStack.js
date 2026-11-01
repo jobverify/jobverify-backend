@@ -43,7 +43,7 @@ let FRONTEND_ORIGIN = `http://${FRONTEND_HOST}:${FRONTEND_PORT}`;
 let BACKEND_ORIGIN = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
 const TOTAL_JOBS = Number(process.env.JOBVERIFY_E2E_TOTAL_JOBS || 1800);
 const E2E_EMAIL = normalizeEmailAddress(
-  process.env.JOBVERIFY_E2E_EMAIL || "student@example.com",
+  process.env.JOBVERIFY_E2E_EMAIL || "student@example.edu",
 );
 const E2E_PASSWORD = process.env.JOBVERIFY_E2E_PASSWORD || "Password123A";
 const E2E_USER_NAME = process.env.JOBVERIFY_E2E_USER_NAME || "Jobverify E2E User";
@@ -300,7 +300,7 @@ const seedLocalState = async () => {
     JobDatasetSummary.deleteMany({}),
   ]);
 
-  const seedInfo = await seedJobProfileFixtures(Job, { totalJobs: TOTAL_JOBS });
+  const seedInfo = await seedJobProfileFixtures(Job, { totalJobs: TOTAL_JOBS, referenceDate: new Date() });
   const auditJob = await createAuditSentinelJob();
   await refreshJobDatasetSummary();
 

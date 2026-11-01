@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { replayCurrentDeclaredNative } from './declaredNativeCoverageCompatibility20261101.fixtures.js'
 import { createCatalogScraper, getScraperCatalog } from '../providers/index.js'
 import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
-import { createPrefectScraper } from '../../scraper/prefect/script.js'
+import { createPrefectScraper, extractAshbyJobs } from '../../scraper/prefect/script.js'
 import { createAshbyApiScraper } from '../utils/ashbyApi.js'
 
 const catalog = getScraperCatalog()
@@ -20,9 +21,9 @@ const row = (board, id = 'native-role', location = 'Bengaluru, India', country =
 for (const source of sources) {
   // Zapier now has independent current-corporate/public-role source tests.
   // Retain these original synthetic payloads as unchanged shared API controls.
-  const adapter = () => source === 'zapier' ? createAshbyApiScraper({ source, companyName: 'Zapier',
-    ashbyJobBoardUrl: 'https://api.ashbyhq.com/posting-api/job-board/zapier' }) : createCatalogScraper(catalog.find(p => p.source === source))
-  const label = source === 'zapier' ? 'zapier shared API compatibility' : source
+  const adapter = () => ['zapier', 'prefect'].includes(source) ? createAshbyApiScraper({ source, companyName: source === 'zapier' ? 'Zapier' : 'Prefect',
+    ashbyJobBoardUrl: `https://api.ashbyhq.com/posting-api/job-board/${source}` }) : createCatalogScraper(catalog.find(p => p.source === source))
+  const label = source === 'zapier' ? 'zapier shared API compatibility' : source === 'prefect' ? 'prefect shared Ashby API compatibility' : source
   const run = (payload, options = {}) => adapter().run({
     fetchText: async () => prefectPage,
     fetchJson: async url => {
@@ -98,13 +99,17 @@ test('Ashby preserves native plain content when the HTML variant contains only e
 
 test('Prefect job limits retain fetched counts while preventing complete-inventory cleanup', async () => {
   for (const maxJobs of [0, 1]) {
-    const jobs = await createPrefectScraper({ maxJobs }).run({ fetchText: async () => prefectPage,
+    // Retain the original bare fixture as an explicit rejected legacy input.
+    await assert.rejects(createPrefectScraper({ maxJobs }).run({ fetchText: async () => prefectPage,
       fetchJson: async () => ({ apiVersion: '1', jobs: [row('prefect', 'one'), row('prefect', 'two')] }),
-    })
+    }), /Parsed\/text-only injection has no original HTTP provenance/)
+    const { jobs, audit, expected } = await replayCurrentDeclaredNative('prefect', { maxJobs })
+    assert.equal(audit.observations.length, expected.length)
+    assert.ok(audit.observations.length > maxJobs)
     assert.equal(jobs.length, maxJobs)
-    assert.equal(readInventoryEvidence(jobs)?.reportedTotal, 2)
+    assert.equal(readInventoryEvidence(jobs)?.reportedTotal, null)
     assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
-    assert.ok(jobs.every(job => job.sourceListingComplete === false))
+    assert.ok(jobs.every(job => job.sourceScopeComplete === false && job.lifecycleCleanupAllowed === false))
   }
 })
 
@@ -112,21 +117,24 @@ test('Prefect script-only board references cannot establish current employer del
   const page = prefectPage.replace('<a href="https://jobs.ashbyhq.com/prefect">Careers</a>',
     '<a href="/careers">Careers</a><script>const board="https://jobs.ashbyhq.com/prefect"</script>')
   const careers = '<title>Careers at Prefect - Open Roles</title><h1>Join the team defining the future of workflow automation</h1><p>We\'re remote first and have carefully created a supportive, high-performance culture.</p><h2>Open roles</h2><link rel="stylesheet" href="https://www.prefect.io/ashby-job-board.css">'
-  const jobs = await createPrefectScraper().run({
+  await assert.rejects(createPrefectScraper().run({
     fetchText: async url => url.endsWith('/company') ? page : careers,
     fetchJson: async () => ({ apiVersion: '1', jobs: [] }),
-  })
+  }), /Parsed\/text-only injection has no original HTTP provenance/)
+  const { jobs, audit } = await replayCurrentDeclaredNative('prefect', { scenario: 'foreign-company-delegation' })
+  await replayCurrentDeclaredNative('prefect', { scenario: 'script-only-declaration' })
   assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
-  assert.match(readInventoryEvidence(jobs)?.reason || '', /scope|binding|delegation/i)
+  assert.ok(audit.opening.issues.some(issue => /current primary career handoff changed/.test(issue)))
 })
 
-test('Prefect retains employer experience and work arrangement when validating the native feed', async () => {
-  const jobs = await createPrefectScraper().run({ fetchText: async () => prefectPage,
+test('Prefect retained pure Ashby mapper keeps employer experience and work arrangement', async () => {
+  const legacyInput = { fetchText: async () => prefectPage,
     fetchJson: async () => ({ apiVersion: '1', jobs: [{ ...row('prefect'), workplaceType: 'Hybrid',
       descriptionHtml: '<p>Minimum 5 years of software engineering experience.</p>',
       descriptionPlain: 'Minimum 5 years of software engineering experience.',
     }] }),
-  })
+  }
+  const jobs = extractAshbyJobs(await legacyInput.fetchJson())
   assert.equal(jobs[0].experienceRequired, '5+ years')
   assert.equal(jobs[0].remoteStatus, 'Hybrid')
 })
@@ -138,9 +146,11 @@ test('the effective Sisense provider describes the Ashby endpoint actually used 
 })
 
 test('Prefect advertised native role identities cannot coexist with authoritative empty inventory', async () => {
-  const jobs = await createPrefectScraper().run({ fetchText: async () => prefectPage.replace('/prefect"', '/prefect/role-1"'),
+  await assert.rejects(createPrefectScraper().run({ fetchText: async () => prefectPage.replace('/prefect"', '/prefect/role-1"'),
     fetchJson: async () => ({ apiVersion: '1', jobs: [] }),
-  })
+  }), /Parsed\/text-only injection has no original HTTP provenance/)
+  const { jobs, audit } = await replayCurrentDeclaredNative('prefect', { scenario: 'missing-advertised-identity' })
+  assert.equal(audit.opening.nativeListingComplete, false)
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
 })
 

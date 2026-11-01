@@ -8,6 +8,31 @@ const provider = (source, companyName = source) => ({ source, companyName, adapt
 const attempt = (result = {}) => ({ attemptedAt: '2026-10-20T05:00:00Z', completedAt: '2026-10-20T05:01:00Z', success: true, rawRecords: 3, jobs: 2, eligibleJobs: 1, ...result })
 const evidence = { status: 'verified-empty', surface: 'https://example.com/careers', firstParty: true, listingComplete: true, pagesFetched: 1, reportedTotal: 0, indiaFacetCount: 0, verifiedAt: '2026-10-20T05:00:00Z' }
 
+test('saved inventory and verified-zero checks do not request redundant source discovery', () => {
+  const report = buildPublishingGapReport({ now, catalog: [provider('saved'), provider('zero'), provider('unknown')],
+    runtime: { databaseAvailable: true, generatedAt: now.toISOString(), publicCompanyNames: [],
+      inventory: [{ source: 'saved', savedJobs: 2, visibleJobs: 0, visibleCompanies: [] }],
+      statuses: [{ source: 'zero', latestAttempt: attempt({ jobs: 0, eligibleJobs: 0, rawRecords: 0, inventoryEvidence: evidence }) }],
+    } })
+  assert.equal(report.backlog.find(row => row.source === 'saved').discoveryRequired, false)
+  assert.equal(report.rows.find(row => row.source === 'zero').runtimeOutcome, 'verified-zero')
+  assert.equal(report.backlog.find(row => row.source === 'zero').discoveryRequired, false)
+  assert.equal(report.backlog.find(row => row.source === 'unknown').discoveryRequired, true)
+})
+
+test('coverage summary distinguishes runtime gaps from declared zero-result policy', () => {
+  const report = buildPublishingGapReport({ now,
+    catalog: [{ ...provider('policy'), zeroResultPolicy: 'coverage-gap' }, provider('runtime')],
+    runtime: { databaseAvailable: true, generatedAt: now.toISOString(), publicCompanyNames: [], inventory: [],
+      statuses: [{ source: 'runtime', latestAttempt: attempt({ success: false, failureKind: 'coverage_gap' }) }],
+    } })
+  assert.equal(report.summary.coverageGaps, 2)
+  assert.equal(report.summary.runtimeCoverageGaps, 1)
+  assert.equal(report.summary.coverageGapPolicySources, 1)
+  assert.equal(report.summary.implementationGaps, 0)
+  assert.match(report.metricDefinitions.coverageGaps, /union/i)
+})
+
 test('topology detects a sentinel inside a dedicated script directory', () => {
   const result = classifyProviderImplementation({ adapter: 'script', modulePath: '/scraper/acme/script.js' }, {
     exists: () => true, read: () => "import { createFailClosedSentinelScraper } from './failClosedSentinel.js'; export const run = () => createFailClosedSentinelScraper().run()",

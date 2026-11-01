@@ -35,6 +35,7 @@ test('publication diagnosis explains actual Mongo visibility without publishing 
     { key: 'old', changes: { postedAt: new Date('2026-09-01T00:00:00Z') }, reasons: ['outside_publication_window_or_closed'] },
     { key: 'future', changes: { postedAt: new Date('2026-11-01T00:00:00Z') }, reasons: ['outside_publication_window_or_closed'] },
     { key: 'experienced', changes: { title: 'Senior Engineer', jobType: 'Full-time Experienced', sourceDescription: '5 years of engineering experience required.' }, reasons: ['experienced_jobs_disabled'] },
+    { key: 'unclassified', changes: { jobType: 'Unspecified' }, reasons: ['unclassified_job_type'] },
     { key: 'aggregate', changes: { title: 'Current openings at Employer', jobId: 'employer-current-openings' }, reasons: ['aggregate_hiring_signal'] },
     { key: 'multiple', changes: { status: 'expired', isPublicIndia: false, sourceDescription: '' }, reasons: ['inactive', 'outside_india_scope', 'missing_source_description'] },
     { key: 'legacy', changes: { sourceDescription: undefined, description: 'Employer authored description.' }, reasons: [] },
@@ -64,6 +65,9 @@ test('publication diagnosis explains actual Mongo visibility without publishing 
     source: 'absent', savedJobs: 0, visibleJobs: 0, observedJobs: 0, blockingReasonCounts: {},
   });
   assert.equal(await database.collection('jobs').countDocuments(), cases.length + 1);
+  const unclassified = report.jobs.find(row => row.jobId === 'unclassified');
+  assert.equal(unclassified.jobType, 'Unspecified');
+  assert.equal(unclassified.publicJobType, 'Unspecified');
 });
 
 test('failed connections and reads preserve unknown counts and redact driver details', async () => {

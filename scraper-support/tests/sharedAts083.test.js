@@ -40,7 +40,8 @@ test('cohere: registered identity-bound native reader clears historical static v
   assert.equal(provider.verifiedOn, null);assert.equal(provider.verifiedAt, null)
   assert.equal(provider.verifiedPublicJobCount, null);assert.equal(provider.verifiedIndiaJobCount, null)
   assert.equal(provider.sourceScopeComplete, false);assert.equal(provider.lifecycleCleanupAllowed, false)
-  assert.equal(provider.zeroResultPolicy, 'coverage-gap')
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  assert.equal(provider.parser, 'cohere-native-public-scope-reconciliation')
 })
 
 test('checkoutcom: current native script reconciles details instead of the legacy one-response adapter', async () => {

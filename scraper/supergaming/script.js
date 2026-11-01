@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto'
 import {fileURLToPath} from 'node:url'
 import {attachInventoryEvidence,normalizeInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {attachSourceObservationEvidence} from '../../scraper-support/utils/sourceObservationEvidence.js'
 import {collectSuperGamingNative} from './native.js'
 import {SUPERGAMING_CATALOG as candidate} from './catalog.js'
 
@@ -54,6 +55,8 @@ export const createSuperGamingScraper=(defaults={})=>({async run(options={}) {
   checkBudget()
   const result=attachInventoryEvidence(jobs,{status:inventoryStatus,surface,firstParty,listingComplete:false,pagesFetched:retainedResponses.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason})
   Object.defineProperty(result,'nativeCollectionEvidence',{value:{retainedResponses,...facts,lifecycleCleanupAllowed:false}})
+  attachSourceObservationEvidence(result,{source:SOURCE,recordKind:'vacancy-rows',observedRecordCount:facts.nativeObservedRecordCount,
+   observedVacancyCount:facts.nativeObservedRecordCount,sourceScopeComplete:false,companyGlobalTotal:null,companyIndiaTotal:null})
   return result
  }
  try{return await Promise.race([collect(),aborted])}

@@ -47,11 +47,11 @@ test('thinkbridge local catalog captures the verified first-party job-search pag
   assert.equal(defaultExport, constant)
   assert.equal(provider.source, 'thinkbridge')
   assert.equal(provider.officialBrandName, 'thinkbridge')
-  assert.equal(provider.companyCareerPage, 'https://www.thinkbridge.com/job-search')
-  assert.equal(provider.atsPlatform, 'official-webflow-job-search')
-  assert.equal(provider.verifiedPublicJobCount, 4)
-  assert.match(provider.verifiedSurfaceSummary, /ServiceNow Architect/i)
-  assert.match(provider.verifiedSurfaceSummary, /Solution Engineer/i)
+  assert.equal(provider.companyCareerPage, 'https://www.thinkbridge.com/careers')
+  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.ok(Number.isSafeInteger(provider.verifiedPublicJobCount) && provider.verifiedPublicJobCount > 0)
+  assert.match(provider.verifiedSurfaceSummary, /Customer Success Lead/i)
+  assert.match(provider.verifiedSurfaceSummary, /same-domain role page exposes a matching title, description, and application link/i)
 
   assertCatalogMatchesBacklogRow({
     provider,
@@ -62,7 +62,7 @@ test('thinkbridge local catalog captures the verified first-party job-search pag
   await assertHydratedCatalogLoadsScript(provider)
 })
 
-test('Algonomy local catalog captures the verified first-party page and embedded Paycor handoff', async () => {
+test('Algonomy local catalog retains unverified parent-company migration scope and historical Paycor references', async () => {
   const { constant, defaultExport } = await loadCatalog('../../scraper/algonomy/catalog.js', 'ALGONOMY_CATALOG')
   const provider = hydrateProviderCatalogEntry(constant)
 
@@ -70,12 +70,13 @@ test('Algonomy local catalog captures the verified first-party page and embedded
   assert.equal(provider.source, 'algonomy')
   assert.equal(provider.companyCareerPage, 'https://algonomy.com/careers/')
   assert.equal(provider.paycorClientId, '8a7883c6606d030901607ae3719c71a6')
-  assert.equal(provider.atsPlatform, 'official-careers-page-embedded-paycor')
-  assert.equal(provider.verifiedPublicJobCount, 4)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Database Developer/i)
-  assert.match(provider.verifiedSurfaceSummary, /legacy https:\/\/www\.algonomy\.com\.br\/en\/careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /public Paycor board/i)
-  assert.match(provider.verifiedSurfaceSummary, /parentUrl=https:\/\/algonomy\.com\/careers\//i)
+  assert.equal(provider.atsPlatform, 'official-careers-migration-unverified-scope')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.paginationStrategy, 'unavailable-until-algonomy-scope-is-verified')
+  assert.equal(provider.extractionStrategy, 'reject-parent-company-migration-without-verified-algonomy-inventory')
+  assert.match(provider.verifiedSurfaceSummary, /redirects to https:\/\/adaglobal\.com\/careers\//i)
+  assert.match(provider.verifiedSurfaceSummary, /Algonomy-specific inventory cannot be established/i)
+  assert.match(provider.verifiedSurfaceSummary, /unlinked legacy Paycor board is not trusted/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

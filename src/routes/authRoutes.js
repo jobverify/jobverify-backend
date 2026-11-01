@@ -4,6 +4,7 @@
  */
 
 import express from "express";
+import { getEmailChange, requestEmailChange, verifyEmailChange } from '../controllers/emailChangeController.js';
 import {
   authenticateWithGoogle,
   changePassword,
@@ -84,6 +85,12 @@ const forgotPasswordLimiter = createRateLimiter({
 });
 
 const router = express.Router();
+const emailChangeLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 3,
+  message: { code: 429, success: false, message: 'Too many email change requests. Please try again after 15 minutes.' },
+  standardHeaders: true, legacyHeaders: false });
+const emailChangeVerificationLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20,
+  message: { code: 429, success: false, message: 'Too many verification attempts. Please try again after 15 minutes.' },
+  standardHeaders: true, legacyHeaders: false });
 
 // Routes definitions
 router.get("/csrf-token", getCsrfToken);
@@ -104,6 +111,9 @@ router.post(
   login,
 );
 router.post("/logout", protectLogout, logout);
+router.get('/email-change', protect, getEmailChange);
+router.post('/change-email', protect, emailChangeLimiter, resendValidation, validateRequest, requestEmailChange);
+router.post('/verify-email-change', emailChangeVerificationLimiter, verifyEmailValidation, validateRequest, verifyEmailChange);
 router.post('/change-password', protect, loginLimiter, changePasswordValidation, validateRequest, changePassword);
 router.get("/verify-email", redirectVerifyEmail);
 router.post("/verify-email", verifyEmailValidation, validateRequest, verifyEmail);

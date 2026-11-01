@@ -37,6 +37,7 @@ try {
     }
     if(id) {
       await fs.appendFile(process.env.GITHUB_OUTPUT,`pipeline_id=${id}\nshould_run=true\n`);
+      if(process.env.GITHUB_ENV)await fs.appendFile(process.env.GITHUB_ENV,`PIPELINE_ID=${id}\n`);
       await updateStage(id,key,{status:'running'});
     }
   } else if(command==='report') {
@@ -77,7 +78,7 @@ try {
     }
     await recordStageResult(run._id,key,{outcome,summary});
     console.log(`Pipeline stage ${key} outcome: ${outcome}; summary: ${redactLog(JSON.stringify(summary))}`);
-    if(outcome==='failed'||(outcome!=='completed'&&key!=='scraper'))process.exitCode=1;
+    if(outcome!=='completed')process.exitCode=1;
   } else if(command==='complete') {
     const event=JSON.parse(await fs.readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
     const remote=event.workflow_run;

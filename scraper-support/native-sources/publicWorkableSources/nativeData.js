@@ -38,21 +38,24 @@ export const ownContext=html=>{
 }
 export const markdownRows=(p,raw)=>{
  ensure(typeof raw==='string'&&raw.startsWith('# '+p.companyName+' ')&&raw.includes('| Title | Department | Location | Type | Salary | Posted | Details |'),'markdown collection contract changed')
- const rows=[]
- // Only the actual table contributes declarations; prose/fences are never routes.
- let inFence=false
+ const rows=[],issues=[];let inFence=false
  for(const line of raw.split(/\r?\n/)){
   if(/^\s*```|^\s*~~~/.test(line)){inFence=!inFence;continue}
   if(inFence||!line.startsWith('|')||!line.includes('[View]('))continue
-  const cells=line.split('|').slice(1,-1).map(v=>v.trim());ensure(cells.length===7,'unsupported markdown row')
-  const match=cells[6].match(/^\[View\]\((https:\/\/apply\.workable\.com\/[^\s)]+)\)$/);ensure(match,'markdown details declaration changed')
-  const url=new URL(match[1]),id=url.pathname.match(new RegExp('^/'+p.tenant+'/jobs/view/([A-Z0-9]{6,32})\\.md$'))?.[1]
-  ensure(id&&!url.search&&!url.hash,'markdown own route outside native account')
-  rows.push({id,url:url.href,title:cells[0],department:cells[1],location:cells[2],employmentType:cells[3],salary:cells[4],published:cells[5],originalLine:line})
+  const cells=line.split('|').slice(1,-1).map(v=>v.trim()),links=[...line.matchAll(/\[View\]\((https:\/\/apply\.workable\.com\/[^\s)]+)\)/g)]
+  let id=null,url=null
+  if(links.length===1){try{const u=new URL(links[0][1]);id=u.pathname.match(new RegExp('^/'+p.tenant+'/jobs/view/([A-Z0-9]{6,32})\\.md$'))?.[1]??null;if(id&&!u.search&&!u.hash)url=u.href;else id=null}catch{}}
+  if(!id){issues.push({kind:'malformed-markdown-peer',originalLine:line});continue}
+  const contractQualified=cells.length===7&&cells[6]==='[View]('+url+')'&&Boolean(cells[0])&&/^\d{4}-\d{2}-\d{2}$/.test(cells[5])
+  const value=index=>cells.length===7?cells[index]:null
+  rows.push({id,url,title:value(0),department:value(1),location:value(2),employmentType:value(3),salary:value(4),published:value(5),originalLine:line,contractQualified})
+  if(!contractQualified)issues.push({kind:'malformed-markdown-peer',id,originalLine:line})
  }
- ensure(new Set(rows.map(r=>r.id)).size===rows.length,'duplicate markdown posting identity')
- return rows
+ const counts=new Map();for(const row of rows)counts.set(row.id,(counts.get(row.id)||0)+1)
+ for(const row of rows)if(counts.get(row.id)>1){row.contractQualified=false;issues.push({kind:'duplicate-markdown-identity',id:row.id,originalLine:row.originalLine})}
+ return {rows,issues}
 }
+
 export const geography=detail=>{
  const input=Array.isArray(detail?.locations)?detail.locations:[],locations=[],countries=[];let unresolved=input.length===0
  for(const l of input){
@@ -68,6 +71,11 @@ export const geography=detail=>{
   location:locations.length?locations.map(l=>l.location).join(' | '):'Location undisclosed',locations,unresolved,originalJobLocations:input}
 }
 const nonGeo=row=>Object.fromEntries(Object.entries(row).filter(([k])=>!['country','city','state','locations'].includes(k)))
+const worksiteShape=value=>value&&typeof value==='object'&&!Array.isArray(value)
+ && ['country','countryCode','city','region','hidden'].some(k=>Object.hasOwn(value,k))
+ && ['country','countryCode','city','region'].every(k=>value[k]==null||typeof value[k]==='string')
+ && (value.hidden==null||typeof value.hidden==='boolean')
+ && !(countryName(value.country)&&countryName(value.countryCode)&&countryName(value.country)!==countryName(value.countryCode))
 const sameLocation=(a,b)=>['country','countryCode','city','region','hidden'].every(k=>(a?.[k]??null)===(b?.[k]??null))
 export const validatePair=(p,id,variants,detail,own,mdRow,ownMarkdown)=>{
  ensure(detail&&typeof detail==='object'&&!Array.isArray(detail),'native own model unavailable')
@@ -78,6 +86,8 @@ export const validatePair=(p,id,variants,detail,own,mdRow,ownMarkdown)=>{
  ensure(extractActiveDescription(detail.description),'native description unavailable or hidden')
  for(const key of ['requirements','benefits'])if(detail[key]!=null&&detail[key]!=='')ensure(typeof detail[key]==='string'&&extractActiveDescription(detail[key]),'native '+key+' unavailable or hidden')
  ensure(Array.isArray(detail.locations)&&detail.locations.length>0,'native worksite collection missing')
+ ensure(detail.locations.every(worksiteShape),'malformed native worksite element')
+ if(detail.location!=null)ensure(worksiteShape(detail.location),'malformed native primary worksite')
  const urls=publicURLs(p,id);ensure(own?.url===urls.own||own?.url===urls.own+'/','own redirect points outside native tenant/post')
  pageIdentity(own,detail.title+' - '+p.companyName,urls.own);const context=ownContext(own.originalText)
  for(const row of variants){
@@ -89,7 +99,7 @@ export const validatePair=(p,id,variants,detail,own,mdRow,ownMarkdown)=>{
   ensure(row.telecommuting===detail.remote,'native remote flag contradiction')
   if(row.employment_type!=null||detail.type!=null)ensure(row.employment_type===employment(detail.type),'native employment type contradiction')
   ensure(Array.isArray(detail.department)&&row.department===detail.department.join(', '),'native department contradiction')
-  ensure(Array.isArray(row.locations)&&row.locations.length>0&&row.locations.every(l=>detail.locations.some(r=>sameLocation(l,r))),'listing/native worksite projection contradiction')
+  ensure(Array.isArray(row.locations)&&row.locations.length>0&&row.locations.every(worksiteShape)&&row.locations.every(l=>detail.locations.some(r=>sameLocation(l,r))),'listing/native worksite projection contradiction')
   if(text(row.country))ensure(row.locations.some(l=>l.country===row.country),'listing country projection contradiction')
   const listing=plainHTML(row.description)
   for(const key of ['description','requirements','benefits'])if(text(detail[key]))ensure(listing.includes(plainHTML(detail[key])),'listing/native '+key+' contradiction')
@@ -97,6 +107,7 @@ export const validatePair=(p,id,variants,detail,own,mdRow,ownMarkdown)=>{
  for(const key of ['salary_from','salary_to'])if(detail[key]!=null)ensure(typeof detail[key]==='number'&&Number.isFinite(detail[key])&&detail[key]>=0,'native salary amount invalid')
  if(detail.salary_from!=null&&detail.salary_to!=null)ensure(detail.salary_from<=detail.salary_to,'native salary range inverted')
  if(mdRow){
+  ensure(mdRow.contractQualified!==false,'ambiguous or malformed Markdown declaration for this post')
   ensure(mdRow.title===detail.title&&mdRow.published===detail.published.slice(0,10),'markdown/native identity/publication contradiction')
   ensure(typeof ownMarkdown==='string'&&ownMarkdown.startsWith('# '+detail.title+'\n'),'own markdown title unavailable')
   const compact=value=>value.normalize('NFKC').replace(/[^\p{L}\p{N}]/gu,'').toLowerCase()
@@ -131,9 +142,9 @@ export const projectJob=(p,row,observedAt)=>{
  if(Object.values(salary).some(v=>v!=null))parts.push('Salary: '+[salary.currency,salary.minimum,salary.maximum,salary.frequency].filter(v=>v!=null).join(' '))
  return {source:p.source,company:p.companyName,title:n.title,jobId:row.id,publicJobId:row.id,platformJobId:n.id,employerJobCode:n.code??null,requisitionId:null,
   sourceUrl:publicURLs(p,row.id).own,applyUrl:first.application_url??null,link:publicURLs(p,row.id).own,
-  ...g,countryScopeUnresolved:g.unresolved,employmentType:employment(n.type),remoteType:({remote:'Remote',hybrid:'Hybrid',on_site:'On-site'})[n.workplace]??null,
+  ...g,locations:g.locations.map(place=>place.location),countryScopeUnresolved:g.unresolved,employmentType:employment(n.type),remoteType:({remote:'Remote',hybrid:'Hybrid',on_site:'On-site'})[n.workplace]??null,
   workplace:n.workplace??null,department:Array.isArray(n.department)?n.department.join(', '):null,postingDate:n.published,closingDate:null,
-  experienceRequired:first.experience??null,minimumQualification:first.education??null,requiredSkills:[],salaryRange:salary,
+  experienceRequired:first.experience??null,sourceExperienceRequired:first.experience??null,sourceEmploymentType:first.employment_type??employment(n.type),minimumQualification:first.education??null,requiredSkills:[],salaryRange:salary,
   jobDescription:parts.join('\n\n'),sourceScopeComplete:false,lifecycleCleanupAllowed:false,discoveryOnly:true,scrapedAt:observedAt,
   nativeFieldProvenance:row.fieldProvenance}
 }

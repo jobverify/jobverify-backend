@@ -1,5 +1,14 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createHash } from 'node:crypto'
+import { activeHead } from '../utils/activeNativeHtml.js'
+import { readVisibleNativeDocument } from '../utils/visibleNativeHtml.js'
+import { normalizeScrapedJob } from '../utils/normalizeScrapedJob.js'
+import { decorateJobsWithProviderMetadata } from '../providers/index.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { createPublicIO } from '../native-sources/publicIO.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+
 
 const careersPageHtml = `
 <!doctype html>
@@ -127,76 +136,10 @@ const pageZeroPayload = {
   Pages: 1,
 }
 
-const loadModule = async () => {
-  try {
-    return await import('../../scraper/adityabirlacapital/script.js')
-  } catch {
-    assert.fail('Expected Aditya Birla Capital scraper module at ../../scraper/adityabirlacapital/script.js')
-  }
-}
 
-test('Aditya Birla Capital scraper constants stay pinned to the verified official careers surfaces', async () => {
-  const adityaBirlaCapital = await loadModule()
-
-  assert.equal(
-    adityaBirlaCapital.CAREERS_PAGE_URL,
-    'https://www.adityabirlacapital.com/careers',
-  )
-  assert.equal(
-    adityaBirlaCapital.JOBS_PAGE_URL,
-    'https://www.adityabirlacapital.com/careers/jobs',
-  )
-  assert.equal(
-    adityaBirlaCapital.RESUME_HANDOFF_URL,
-    'https://abgcareers.peoplestrong.com/register',
-  )
-  assert.equal(
-    adityaBirlaCapital.buildJobsApiUrl(),
-    'https://www.adityabirlacapital.com/careers/jobs?blogAjax=1&jobTitle=&location=&businessline=&function=&experience=&page=0',
-  )
-  assert.equal(
-    adityaBirlaCapital.buildJobsApiUrl({
-      page: 1,
-      jobTitle: 'Sales Manager',
-      location: 'Mumbai',
-    }),
-    'https://www.adityabirlacapital.com/careers/jobs?blogAjax=1&jobTitle=Sales+Manager&location=Mumbai&businessline=&function=&experience=&page=1',
-  )
-  assert.equal(
-    adityaBirlaCapital.buildDetailUrl(
-      '/sitecore/content/abcl/abcareers/home/jobs/job-details/valuation-officer-sales-in-varanasi-jobs-abcl_job-33975',
-    ),
-    'https://www.adityabirlacapital.com/careers/sitecore/content/abcl/abcareers/home/jobs/job-details/valuation-officer-sales-in-varanasi-jobs-abcl_job-33975',
-  )
-  assert.equal(
-    adityaBirlaCapital.buildApplyUrl('abcl_job-33975'),
-    'https://abccareers.iona.ai/job-details/referral/abcl_job-33975?source=ABCCareers&subsource=ABCCareer-Jobs',
-  )
-  assert.equal(
-    adityaBirlaCapital.buildApplyUrl('abg107672'),
-    'https://abgcareers.peoplestrong.com/job/detail/abg107672?source=ABCCareers&subsource=ABCCareer-Jobs',
-  )
-  assert.equal(
-    adityaBirlaCapital.extractResumeHandoffUrl(jobsPageHtml),
-    'https://abgcareers.peoplestrong.com/register',
-  )
-  assert.equal(adityaBirlaCapital.hasOfficialCareersPageSignals(careersPageHtml), true)
-  assert.equal(adityaBirlaCapital.hasOfficialJobsPageSignals(jobsPageHtml), true)
-  assert.deepEqual(
-    adityaBirlaCapital.extractServerRenderedDetailUrls(jobsPageHtml),
-    [
-      'https://www.adityabirlacapital.com/careers/sitecore/content/abcl/abcareers/home/jobs/job-details/valuation-officer-sales-in-varanasi-jobs-abcl_job-33975',
-    ],
-  )
-})
-
-test('extractSearchResults maps the first-party Aditya Birla Capital jobs payload into the shared job shape', async () => {
-  const adityaBirlaCapital = await loadModule()
-
-  const jobs = adityaBirlaCapital.extractSearchResults(pageZeroPayload)
-
-  assert.equal(jobs.length, 2)
-  assert.deepEqual(jobs[0], {
+// Archived canonical-role fixtures from the original two exact assertions.
+// No source parser is rebuilt here and this private provider is never registered.
+const legacyRoleFields = [{
     title: 'Valuation Officer',
     company: 'Aditya Birla Capital',
     department: 'Sales',
@@ -218,8 +161,8 @@ test('extractSearchResults maps the first-party Aditya Birla Capital jobs payloa
     requiredSkills: [],
     jobDescription: null,
     remoteStatus: null,
-  })
-  assert.deepEqual(jobs[1], {
+  },
+{
     title: 'Branch Manager - Retail Gold Loan - Merta City',
     company: 'Aditya Birla Capital',
     department: 'Sales',
@@ -241,96 +184,93 @@ test('extractSearchResults maps the first-party Aditya Birla Capital jobs payloa
     requiredSkills: [],
     jobDescription: null,
     remoteStatus: null,
-  })
+  }]
+const observationClock = '2026-07-14T09:30:00.000Z'
+const privateProvider = { source: 'controlled-retired-role-fixture', companyName: 'Aditya Birla Capital',
+  companyCareerPage: 'https://www.adityabirlacapital.com/careers', companyDomain: 'adityabirlacapital.com' }
+const normalized = () => legacyRoleFields.map((fields, index) => normalizeScrapedJob({ ...structuredClone(fields),
+  source: privateProvider.source, scrapedAt: observationClock, nativeLegacyRecord: structuredClone(pageZeroPayload.Results[index]),
+}, privateProvider))
+
+test('generic active DOM retains the legacy careers identity and literal same-domain detail anchor', () => {
+  assert.deepEqual(activeHead(careersPageHtml).titles, ['Aditya Birla Capital Careers: Explore Career Opportunities Now!'])
+  for (const [html, expected] of [[careersPageHtml, 'https://www.adityabirlacapital.com/careers'],
+    [jobsPageHtml, 'https://www.adityabirlacapital.com/careers/jobs']]) {
+    const document = readVisibleNativeDocument(html)
+    assert.deepEqual(document.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical').map(node => node.attrs.href), [expected])
+  }
+  const document = readVisibleNativeDocument(jobsPageHtml)
+  const links = document.nodes(node => node.tag === 'a' && node.attrs.href).map(node =>
+    new URL(node.attrs.href, 'https://www.adityabirlacapital.com/careers/jobs').href)
+  assert.deepEqual(links, [legacyRoleFields[0].sourceUrl])
 })
 
-test('Aditya Birla Capital detail-page helpers decode both verified public apply handoffs', async () => {
-  const adityaBirlaCapital = await loadModule()
-
-  assert.equal(adityaBirlaCapital.hasOfficialJobDetailSignals(ionaDetailHtml), true)
-  assert.equal(adityaBirlaCapital.hasOfficialJobDetailSignals(peopleStrongDetailHtml), true)
-  assert.equal(
-    adityaBirlaCapital.extractApplyUrlFromDetailHtml(ionaDetailHtml),
-    'https://abccareers.iona.ai/job-details/referral/abcl_job-33975?source=ABCCareers&subsource=ABCCareer-Jobs',
-  )
-  assert.equal(
-    adityaBirlaCapital.extractApplyUrlFromDetailHtml(peopleStrongDetailHtml),
-    'https://abgcareers.peoplestrong.com/job/detail/abg107672?source=ABCCareers&subsource=ABCCareer-Jobs',
-  )
+test('shared normalization preserves the two legacy role fixtures without manufacturing missing descriptions', () => {
+  const jobs = normalized()
+  for (const [index, job] of jobs.entries()) {
+    const fields = legacyRoleFields[index]
+    for (const key of ['title', 'company', 'department', 'businessLine', 'team', 'location', 'city', 'country',
+      'sourceUrl', 'applyUrl', 'jobId', 'requisitionId', 'experienceRequired']) assert.equal(job[key], fields[key], key)
+    assert.equal(job.postingDate.getTime(), Date.parse(fields.postingDate))
+    assert.equal(job.closingDate.getTime(), Date.parse(fields.closingDate))
+    assert.deepEqual(job.nativeLegacyRecord, pageZeroPayload.Results[index])
+    assert.equal(job.jobDescription, null)
+    assert.equal(hasSourceDescription(job), false)
+  }
 })
 
-test('run validates the official Aditya Birla Capital careers surfaces and decorates jobs for the shared runner', async () => {
-  const adityaBirlaCapital = await loadModule()
-  const textRequests = []
-  const jsonRequests = []
-
-  const jobs = await adityaBirlaCapital.createAdityaBirlaCapitalScraper({
-    now: () => '2026-07-14T09:30:00.000Z',
-  }).run({
-    maxPages: 1,
-    fetchText: async (url) => {
-      textRequests.push(url)
-
-      if (url === adityaBirlaCapital.CAREERS_PAGE_URL) return careersPageHtml
-      if (url === adityaBirlaCapital.JOBS_PAGE_URL) return jobsPageHtml
-      if (url === adityaBirlaCapital.buildDetailUrl(pageZeroPayload.Results[0].Url)) return ionaDetailHtml
-      if (url === adityaBirlaCapital.buildDetailUrl(pageZeroPayload.Results[1].Url)) return peopleStrongDetailHtml
-
-      throw new Error(`Unexpected Aditya Birla Capital text URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      jsonRequests.push(url)
-      return pageZeroPayload
-    },
-  })
-
-  assert.deepEqual(textRequests, [
-    'https://www.adityabirlacapital.com/careers',
-    'https://www.adityabirlacapital.com/careers/jobs',
-    'https://www.adityabirlacapital.com/careers/sitecore/content/abcl/abcareers/home/jobs/job-details/valuation-officer-sales-in-varanasi-jobs-abcl_job-33975',
-    'https://www.adityabirlacapital.com/careers/sitecore/content/abcl/abcareers/home/jobs/job-details/branch-manager-retail-gold-loan-merta-city-retail-gold-loan-in-rajasthan-jobs-abg107672',
-  ])
-  assert.deepEqual(jsonRequests, [
-    'https://www.adityabirlacapital.com/careers/jobs?blogAjax=1&jobTitle=&location=&businessline=&function=&experience=&page=0',
-  ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'adityabirlacapital')
-  assert.equal(jobs[0].company, 'Aditya Birla Capital')
-  assert.equal(
-    jobs[0].link,
-    'https://abccareers.iona.ai/job-details/referral/abcl_job-33975?source=ABCCareers&subsource=ABCCareer-Jobs',
-  )
-  assert.equal(
-    jobs[1].link,
-    'https://abgcareers.peoplestrong.com/job/detail/abg107672?source=ABCCareers&subsource=ABCCareer-Jobs',
-  )
-  assert.equal(jobs[0].scrapedAt, '2026-07-14T09:30:00.000Z')
-  assert.equal(jobs[1].scrapedAt, '2026-07-14T09:30:00.000Z')
+test('generic DOM decodes both literal event attributes once without executing the legacy apply handlers', () => {
+  for (const [index, html] of [ionaDetailHtml, peopleStrongDetailHtml].entries()) {
+    const document = readVisibleNativeDocument(html)
+    const buttons = document.nodes(node => node.tag === 'button' && node.attrs.onclick)
+    assert.equal(buttons.length, 1)
+    assert.ok(buttons[0].attrs.onclick.includes(legacyRoleFields[index].applyUrl))
+    assert.equal(buttons[0].attrs.onclick.includes('&amp;'), false)
+    assert.match(document.text(buttons[0]), /Apply now/)
+    assert.deepEqual(document.nodes(node => node.tag === 'script'), [])
+  }
 })
 
-test('Aditya Birla Capital fails closed when the verified public apply handoff drifts', async () => {
-  const adityaBirlaCapital = await loadModule()
+test('actual normalization and provider decoration preserve the original observation clock and raw provenance', () => {
+  const jobs = normalized()
+  const evidence = { status: 'discovery-only', firstParty: false, listingComplete: false, reportedTotal: null,
+    indiaFacetCount: null, verifiedAt: observationClock, reason: 'Synthetic legacy contract; no current native admission.' }
+  const decorated = decorateJobsWithProviderMetadata(attachInventoryEvidence(jobs, evidence), privateProvider)
+  for (const [index, job] of decorated.entries()) {
+    assert.equal(job.scrapedAt.toISOString(), observationClock)
+    assert.equal(job.scrapedTimestamp.toISOString(), observationClock)
+    assert.equal(job.postingDate.getTime(), Date.parse(legacyRoleFields[index].postingDate))
+    assert.equal(job.closingDate.getTime(), Date.parse(legacyRoleFields[index].closingDate))
+    assert.equal(job.source, privateProvider.source)
+    assert.equal(job.company, 'Aditya Birla Capital')
+    assert.equal(job.companyCareerPage, privateProvider.companyCareerPage)
+    assert.deepEqual(job.nativeLegacyRecord, pageZeroPayload.Results[index])
+    assert.equal(job.jobDescription, null)
+    assert.equal(hasSourceDescription(job), false)
+  }
+  assert.deepEqual(readInventoryEvidence(decorated), readInventoryEvidence(jobs))
+  assert.equal(readInventoryEvidence(decorated).verifiedAt, observationClock)
+  assert.equal(readInventoryEvidence(decorated).listingComplete, false)
+})
 
-  await assert.rejects(
-    adityaBirlaCapital.createAdityaBirlaCapitalScraper().run({
-      maxPages: 1,
-      fetchText: async (url) => {
-        if (url === adityaBirlaCapital.CAREERS_PAGE_URL) return careersPageHtml
-        if (url === adityaBirlaCapital.JOBS_PAGE_URL) return jobsPageHtml
-        if (url === adityaBirlaCapital.buildDetailUrl(pageZeroPayload.Results[0].Url)) {
-          return ionaDetailHtml.replace(
-            'https://abccareers.iona.ai/job-details/referral/abcl_job-33975?source=ABCCareers&amp;subsource=ABCCareer-Jobs',
-            'https://example.com/job-details/referral/abcl_job-33975',
-          )
-        }
-        if (url === adityaBirlaCapital.buildDetailUrl(pageZeroPayload.Results[1].Url)) {
-          return peopleStrongDetailHtml
-        }
-
-        throw new Error(`Unexpected Aditya Birla Capital text URL: ${url}`)
-      },
-      fetchJson: async () => pageZeroPayload,
-    }),
-    /verified apply handoff/i,
-  )
+test('shared public IO rejects a foreign handoff before transport and retains exact allowed legacy HTML bytes', async () => {
+  const urls = legacyRoleFields.map(row => row.applyUrl), calls = []
+  const io = createPublicIO({ allowed: url => urls.includes(url.href), fetchPage: async url => {
+    calls.push(url)
+    return { url, status: 200, headers: { 'content-type': 'text/html' },
+      bodyBase64: Buffer.from(url === urls[0] ? ionaDetailHtml : peopleStrongDetailHtml).toString('base64') }
+  } })
+  for (const [index, url] of urls.entries()) {
+    const page = await io.load(url)
+    const html = index ? peopleStrongDetailHtml : ionaDetailHtml
+    assert.equal(page.originalText, html)
+    assert.equal(page.bodySHA256, createHash('sha256').update(html).digest('hex'))
+    assert.equal(page.transportQualified, true)
+  }
+  assert.equal(await io.load('https://example.com/job-details/referral/abcl_job-33975'), null)
+  assert.equal(io.issues.at(-1).kind, 'native-url-blocked')
+  assert.deepEqual(calls, urls)
+  const reason = Object.freeze({ controlled: 'stop before handoff' })
+  await assert.rejects(createPublicIO({ signal: AbortSignal.abort(reason), allowed: () => true,
+    fetchPage: async () => assert.fail('transport after caller cancellation') }).load(urls[0]), error => error === reason)
 })

@@ -22,12 +22,15 @@ test('exact source recovery survives persistence and makes only the described In
   })
   process.env.MONGOMS_RUNTIME_DOWNLOAD = 'false'
   mongo = new MongoMemoryServer({
-    instance: { ip: '127.0.0.1' },
+    instance: { ip: '127.0.0.1', launchTimeout: 30_000 },
+    spawn: { signal: t.signal },
     binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../../.cache/mongodb-binaries/', import.meta.url)) },
   })
   await mongo.start()
+  t.signal.throwIfAborted()
   assert.match(mongo.getUri(), /^mongodb:\/\/127\.0\.0\.1:\d+\//)
   await mongoose.connect(mongo.getUri(), { autoIndex: false, autoCreate: false, serverSelectionTimeoutMS: 10000 })
+  t.signal.throwIfAborted()
   const now = new Date('2026-10-24T10:00:00.000Z')
   const role = id => ({
     title: 'Platform Engineer', company: 'Source recovery regression', source: 'source-recovery-regression',

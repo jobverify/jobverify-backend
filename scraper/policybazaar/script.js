@@ -6,6 +6,7 @@ import { POLICYBAZAAR_CATALOG } from './catalog.js'
 import { document, norm } from '../../scraper-support/shared/rmkNativePairHtml.js'
 import { activeHead } from '../../scraper-support/utils/activeNativeHtml.js'
 import { attachInventoryEvidence, normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import {attachSourceObservationEvidence} from '../../scraper-support/utils/sourceObservationEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const PROVIDER_METADATA = POLICYBAZAAR_CATALOG
@@ -133,6 +134,8 @@ export const createPolicybazaarScraper=(defaults={})=>({async run(options={}) {
   checkBudget()
   const result=attachInventoryEvidence(jobs,{status:inventoryStatus,surface,firstParty,listingComplete:false,pagesFetched:retainedResponses.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason})
   Object.defineProperty(result,'nativeCollectionEvidence',{value:{retainedResponses,...facts,lifecycleCleanupAllowed:false}})
+  attachSourceObservationEvidence(result,{source:SOURCE,recordKind:'vacancy-rows',observedRecordCount:facts.nativeRecordCount,
+   observedVacancyCount:facts.nativeRecordCount,sourceScopeComplete:false,companyGlobalTotal:null,companyIndiaTotal:null})
   return result
  }
  try{return await Promise.race([collect(),aborted])}

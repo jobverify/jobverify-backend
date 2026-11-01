@@ -25,7 +25,7 @@ test('the observed queue gets a full dynamic matrix rather than four fixed worke
   assert.equal(typeof buildRewritePlan, 'function');
   const plan = buildRewritePlan(27660);
   assert.equal(plan.shardCount, 32);
-  assert.equal(plan.maxParallel, 8);
+  assert.equal(plan.maxParallel, 4);
   assert.equal(plan.estimatedJobsPerShard, 865);
   assert.deepEqual(plan.matrix.shard, Array.from({ length: 32 }, (_, index) => index));
   assert.equal(buildRewritePlan(0).shardCount, 1);
@@ -36,4 +36,21 @@ test('the observed queue gets a full dynamic matrix rather than four fixed worke
   for (const queued of [-1, 1.5, NaN, Infinity]) assert.throws(() => buildRewritePlan(queued), /queue/i);
   assert.throws(() => buildRewritePlan(10, { jobsPerShard: 0 }), /partition/i);
   assert.throws(() => buildRewritePlan(10, { maxParallel: 0 }), /parallel/i);
+});
+
+test('a configured four-shard plan keeps the complete queue in four workers', async () => {
+  const { buildRewritePlan } = await import('../rewriting/partitioning.js');
+  for (const queued of [0, 1000, 27660, 1000000]) {
+    const plan = buildRewritePlan(queued, { shardCount: 4, maxParallel: 8 });
+    assert.equal(plan.queued, queued);
+    assert.equal(plan.shardCount, 4);
+    assert.equal(plan.maxParallel, 4);
+    assert.deepEqual(plan.matrix.shard, [0, 1, 2, 3]);
+  }
+  const plan = buildRewritePlan(27660, { shardCount: 4 });
+  assert.equal(plan.estimatedJobsPerShard, 6915);
+  assert.equal(plan.capacityLimited, true);
+  for (const shardCount of [0, 3, 257, NaN]) {
+    assert.throws(() => buildRewritePlan(10, { shardCount }), /shard/i);
+  }
 });

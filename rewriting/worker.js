@@ -91,8 +91,9 @@ export function rewriteWorkerConfiguration({ threads = REWRITE_MODEL.cpuThreads,
   return { threads: Math.min(cpus, Number(threads)), parallelism: slots, contextTokens: REWRITE_MODEL.contextTokens * slots };
 }
 
+// GDB's --args shell-escapes argv; its startup shell must decode those escapes.
 const nativeDebuggerArguments = (binary, args) => ['--nx', '--quiet', '--batch', '--return-child-result',
-  '-iex', 'set auto-load off', '-iex', 'set debuginfod enabled off', '-ex', 'set startup-with-shell off',
+  '-iex', 'set auto-load off', '-iex', 'set debuginfod enabled off', '-ex', 'set startup-with-shell on',
   '-x', path.join(root, 'rewriting/nativeBacktrace.py'), '-ex', 'run', '-ex', 'python finish_rewrite_debugging()', '--args', binary, ...args];
 
 export const collectRewriteRuntimeDiagnostics = async ({ binary, nativeBacktrace = false, platform = process.platform, execute = exec } = {}) => {
@@ -117,7 +118,9 @@ export const collectRewriteRuntimeDiagnostics = async ({ binary, nativeBacktrace
       details.nativeBacktrace.reason = 'debugger_preflight_failed';
       temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'rewrite-debugger-preflight-'));
       const file = path.join(temporary, 'native.json');
-      await execute('gdb', nativeDebuggerArguments(process.execPath, ['--version']), { timeout: 5000, maxBuffer: 16384,
+      const probeArgs = ['{"enable_thinking":false}', 'model path with spaces.gguf', '\'"\\$;*[]', ''];
+      const probe = 'require("node:assert/strict").deepEqual(process.argv.slice(1), ' + JSON.stringify(probeArgs) + ')';
+      await execute('gdb', nativeDebuggerArguments(process.execPath, ['-e', probe, '--', ...probeArgs]), { timeout: 5000, maxBuffer: 16384,
         env: { ...process.env, JOB_DESCRIPTION_NATIVE_DIAGNOSTIC_FILE: file } });
       const observed = JSON.parse(await fs.readFile(file, 'utf8'));
       if (observed.state !== 'running' || !Number.isInteger(observed.pid) || observed.pid <= 0) throw new Error('Debugger preflight did not observe a running inferior');

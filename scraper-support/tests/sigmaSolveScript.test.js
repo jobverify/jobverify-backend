@@ -64,13 +64,13 @@ const loadModule = async () => {
   }
 }
 
-test('Sigma Solve helpers stay pinned to the verified first-party openings route and detail-link pattern', async () => {
+test('Sigma Solve generic helpers retain the original legacy opening format under current metadata', async () => {
   const sigmaSolve = await loadModule()
 
   assert.equal(sigmaSolve.SOURCE, 'sigmasolve')
   assert.equal(sigmaSolve.COMPANY, 'Sigma Solve')
   assert.equal(sigmaSolve.CAREERS_PAGE_URL, 'https://www.sigmasolve.com/who-we-are/openings')
-  assert.equal(sigmaSolve.VERIFIED_ON, '2026-07-17')
+  assert.equal(sigmaSolve.VERIFIED_ON, '2026-10-03')
   assert.equal(sigmaSolve.hasOfficialOpeningsPageSignal(openingsHtml), true)
   assert.deepEqual(sigmaSolve.extractOpeningSummaries(openingsHtml), [
     {
@@ -83,7 +83,7 @@ test('Sigma Solve helpers stay pinned to the verified first-party openings route
   ])
 })
 
-test('Sigma Solve extracts the verified first-party detail page into shared scraper job fields', async () => {
+test('Sigma Solve generic legacy detail helper preserves metadata with no inferred application', async () => {
   const sigmaSolve = await loadModule()
   const jobs = sigmaSolve.extractJobsFromDetailPages([
     {
@@ -110,7 +110,7 @@ test('Sigma Solve extracts the verified first-party detail page into shared scra
       jobId: 'ai-driven-lead-generation-amp-email-marketing-specialist',
       requisitionId: 'ai-driven-lead-generation-amp-email-marketing-specialist',
       sourceUrl: OPENING_URL,
-      applyUrl: OPENING_URL,
+      applyUrl: null,
       employmentType: 'Full-time',
       experienceRequired: null,
       minimumQualification: null,
@@ -124,11 +124,11 @@ test('Sigma Solve extracts the verified first-party detail page into shared scra
   ])
 })
 
-test('Sigma Solve run validates the official openings page and returns normalized same-domain jobs', async () => {
+test('Sigma Solve rejects the original thin legacy detail without an application anchor', async () => {
   const sigmaSolve = await loadModule()
   const requestedUrls = []
 
-  const jobs = await sigmaSolve.createSigmaSolveScraper({ maxJobs: 1 }).run({
+  await assert.rejects(sigmaSolve.createSigmaSolveScraper({ maxJobs: 1 }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === sigmaSolve.CAREERS_PAGE_URL) return openingsHtml
@@ -136,16 +136,12 @@ test('Sigma Solve run validates the official openings page and returns normalize
       throw new Error(`Unexpected Sigma Solve URL: ${url}`)
     },
     now: () => FIXED_SCRAPED_AT,
-  })
+  }), /verified sigma solve detail page/i)
 
   assert.deepEqual(requestedUrls, [
     sigmaSolve.CAREERS_PAGE_URL,
     OPENING_URL,
   ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'sigmasolve')
-  assert.equal(jobs[0].link, OPENING_URL)
-  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
 })
 
 test('Sigma Solve fails closed when the openings page, opening cards, or detail page drift', async () => {
@@ -179,4 +175,53 @@ test('Sigma Solve fails closed when the openings page, opening cards, or detail 
     }),
     /verified sigma solve detail page/i,
   )
+})
+
+// Historical fixtures above remain untouched. This separate controlled positive
+// copies the existing current-role fixture declarations; it is not a native recapture.
+const controlledCurrentRoleFixture = CAREERS_PAGE_URL => {
+const DETAIL_URL = 'https://www.sigmasolve.com/who-we-are/open-position/content-growth-strategist'
+const APPLY_URL = 'https://www.sigmasolve.com/who-we-are/apply-for-job?job=content-growth-strategist'
+const OPENINGS_HTML = `
+  <title>Open Positions | Sigma Solve</title>
+  <meta name="description" content="Career opportunities at Sigma Solve. Explore current openings and apply directly." />
+  <link rel="canonical" href="${CAREERS_PAGE_URL}" />
+  <p>Returning Candidate?</p><input placeholder="Search your job here" />
+  <a href="/who-we-are/open-position/content-growth-strategist">Content &amp; Growth Strategist</a>
+  <p><span>Full-time</span><span>Marketing</span></p>
+`
+const detailHtml = (applyUrl = APPLY_URL) => `
+  <title>Content &amp; Growth Strategist | Sigma Solve</title>
+  <meta name="description" content="Own and scale Sigma Solve's marketing engine." />
+  <link rel="canonical" href="${DETAIL_URL}" />
+  <span>Type</span><span>Full-time</span>
+  <span>Location</span><span>United States</span>
+  <span>Department</span><span>Marketing</span>
+  <a href="${applyUrl}">Apply for this job</a>
+`
+  return {DETAIL_URL, APPLY_URL, OPENINGS_HTML, detailHtml}
+}
+
+test('Sigma Solve controlled current-role fixture preserves source, application and observation fields', async () => {
+  const sigmaSolve = await loadModule(), fixture = controlledCurrentRoleFixture(sigmaSolve.CAREERS_PAGE_URL), requestedUrls = []
+  const jobs = await sigmaSolve.createSigmaSolveScraper({ maxJobs: 1 }).run({
+    fetchText: async url => {
+      requestedUrls.push(url)
+      if (url === sigmaSolve.CAREERS_PAGE_URL) return fixture.OPENINGS_HTML
+      if (url === fixture.DETAIL_URL) return fixture.detailHtml()
+      assert.fail('Unexpected controlled Sigma Solve URL: ' + url)
+    },
+    now: () => FIXED_SCRAPED_AT,
+  })
+  assert.deepEqual(requestedUrls, [sigmaSolve.CAREERS_PAGE_URL, fixture.DETAIL_URL])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'sigmasolve')
+  assert.equal(jobs[0].link, fixture.APPLY_URL)
+  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.equal(jobs[0].title, 'Content & Growth Strategist')
+  assert.equal(jobs[0].sourceUrl, fixture.DETAIL_URL)
+  assert.equal(jobs[0].applyUrl, fixture.APPLY_URL)
+  assert.equal(jobs[0].country, 'United States')
+  assert.equal(jobs[0].postingDate, null)
+  assert.equal(jobs[0].closingDate, null)
 })

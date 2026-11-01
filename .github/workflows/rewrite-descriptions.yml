@@ -41,7 +41,13 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: Install native debugger test tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gdb gcc libc6-dev
       - name: Check rewrite workflow and worker diagnostics on Linux
+        env:
+          JOB_DESCRIPTION_REWRITE_REQUIRE_NATIVE_TESTS: '1'
         run: |
           bash -n scripts/portableRewriteRuntime.sh
           node --test test/descriptionRewriteWorkflow.test.js test/jobDescriptionPortableRuntime.test.js test/jobDescriptionNativeDiagnostics.test.js test/jobDescriptionWorkerHealth.test.js
@@ -62,12 +68,13 @@ jobs:
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           JOB_DESCRIPTION_REWRITE_MODE: 'publish'
-      - name: Size partitions for the complete queue
+      - name: Plan four shards for the complete queue
         id: plan
         run: node scripts/planDescriptionRewrites.js
         env:
+          JOB_DESCRIPTION_REWRITE_SHARD_COUNT: '4'
           JOB_DESCRIPTION_REWRITE_JOBS_PER_SHARD: ${{ vars.JOB_DESCRIPTION_REWRITE_JOBS_PER_SHARD || '1000' }}
-          JOB_DESCRIPTION_REWRITE_MAX_PARALLEL: ${{ vars.JOB_DESCRIPTION_REWRITE_MAX_PARALLEL || '8' }}
+          JOB_DESCRIPTION_REWRITE_MAX_PARALLEL: ${{ vars.JOB_DESCRIPTION_REWRITE_MAX_PARALLEL || '4' }}
       - name: Cache portable AVX2 CPU runtime
         id: portable_runtime
         if: steps.description_queue.outputs.queued != '0'

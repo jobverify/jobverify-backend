@@ -9,8 +9,8 @@ import { inspectSearch, parsePage, parseDetail } from '../../scraper/disney.work
 import { readNativeRoleAvailability, storedAvailabilityMarker } from '../utils/sourceAvailability.js'
 
 const binaryDir = path.join(os.tmpdir(), 'codex-scraper-test-mongo-8.2.6')
-process.env.MONGOMS_SYSTEM_BINARY = path.join(binaryDir, 'mongod-x64-win32-8.2.6.exe')
-process.env.MONGOMS_DOWNLOAD_DIR = binaryDir
+process.env.MONGOMS_SYSTEM_BINARY ||= path.join(binaryDir, 'mongod-x64-win32-8.2.6.exe')
+process.env.MONGOMS_DOWNLOAD_DIR ||= binaryDir
 process.env.MONGOMS_RUNTIME_DOWNLOAD = 'false'
 process.env.MONGO_URI = 'mongodb://127.0.0.1:1/availability_disney_disconnected_guard'
 const { default: mongoose } = await import('mongoose')

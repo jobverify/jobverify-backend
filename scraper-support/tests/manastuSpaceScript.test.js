@@ -116,7 +116,7 @@ test('Manastu Space extracts only actual open roles from the current careers lay
     'Embedded Firmware Developer',
     'Propellant Research Chemist/ Engineer',
   ])
-  assert.equal(jobs[0].experienceRequired, '4 years')
+  assert.equal(jobs[0].experienceRequired, '4 - 7 Years')
   assert.equal(jobs[0].publicExperienceChecked, false)
   assert.match(jobs[0].jobDescription || '', /4 - 7 Years of relevant embedded firmware experience/i)
   assert.equal(jobs[1].experienceRequired, null)

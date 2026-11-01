@@ -2,18 +2,48 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import test from 'node:test'
+import test,{after} from 'node:test'
+import {createReviewedProofRuntime,readReviewedSnapshot} from './helpers/reviewedProofRuntime.js'
 import {gunzipSync} from 'node:zlib'
 import {createHash} from 'node:crypto'
 import {spawnSync} from 'node:child_process'
-import {ZEE_PARTIAL_CONTRACTS,deriveZeePartialEvidence,verifyZeePartialPublishingTrial} from '../scripts/zeePartialPublishingEvidence.js'
-import {freezeZeePartialTrial} from '../scripts/freezeZeePartialTrial.js'
+import {deriveZeePartialEvidence as deriveCurrentZeePartialEvidence} from '../scripts/zeePartialPublishingEvidence.js'
+
 const now=new Date('2026-10-20T23:00:00Z'),hash=x=>createHash('sha256').update(x).digest('hex')
 const fixture=()=>{
  const raw=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/zeePartial/native-reviewed-005.json.gz',import.meta.url))))
  const files=new Map(Object.entries(raw.files).map(([file,data])=>[file,Buffer.from(data,'base64')]))
  return {source:raw.source,httpEvidence:raw.httpEvidence,files,readEvidence:async file=>files.get(file),now}
 }
+// Replay the exact reviewed source and the actual Oct21 eligibility policy.
+const providerUrl=new URL('../scraper-support/providers/index.js',import.meta.url).href
+const relocatedCatalog=Buffer.from(`
+import {fileURLToPath} from 'node:url';
+import {getScraperCatalog as liveCatalog} from ${JSON.stringify(providerUrl)};
+export * from ${JSON.stringify(providerUrl)};
+export const getScraperCatalog=(...args)=>liveCatalog(...args).map(provider=>
+ provider.source==='zeeentertainmententerprises'
+  ? {...provider,modulePath:fileURLToPath(new URL('../../scraper/zeeentertainmententerprises/script.js',import.meta.url))}
+  : provider);
+`)
+const runtime=createReviewedProofRuntime(fixture(),{prefix:'zee-reviewed-proof-',extraFiles:new Map([
+ ['scraper-support/providers/index.js',relocatedCatalog],
+ ['scraper-support/utils/publishableJobMetrics.js',readReviewedSnapshot(new URL('./fixtures/aeriesPartial/reviewed-publishableJobMetrics-7ebb487d0.js.gz',import.meta.url),'f7d4baf7d52d6f3efd0fe23e5adbfff820f53194f3a3ddfbe7a0982d385b0621')],
+])})
+after(runtime.cleanup)
+const {ZEE_PARTIAL_CONTRACTS,deriveZeePartialEvidence,verifyZeePartialPublishingTrial}=await import(runtime.url('scripts/zeePartialPublishingEvidence.js'))
+const {freezeZeePartialTrial}=await import(runtime.url('scripts/freezeZeePartialTrial.js'))
+test('Zee production verifier checks the archived source against the current checkout',async()=>{
+ const f=fixture(),drift=f.httpEvidence.receipts.filter(r=>r.sourcePath).some(r=>hash(fs.readFileSync(new URL('../'+r.sourcePath,import.meta.url)))!==r.sha256)
+ if(drift)await assert.rejects(deriveCurrentZeePartialEvidence(f),/current source differs/)
+ else await assert.rejects(deriveCurrentZeePartialEvidence(f),/all and only110 jobs must remain eligible/)
+ const receipt=f.httpEvidence.receipts.find(r=>r.kind==='source-code'),file=runtime.url(receipt.sourcePath),bytes=fs.readFileSync(file)
+ try {
+  fs.writeFileSync(file,Buffer.concat([bytes,Buffer.from('\n// changed source bytes\n')]))
+  await assert.rejects(deriveZeePartialEvidence(f),/current source differs/)
+ } finally {fs.writeFileSync(file,bytes)}
+})
+
 async function trialFor(f){
  const p=await deriveZeePartialEvidence(f)
  const trial={schemaVersion:1,source:f.source,mode:'native-http-partial-positive-trial',outcome:'positive-extraction-incomplete-evidence',productionWrites:false,
@@ -60,7 +90,7 @@ test('unsupported source, completed outcome and false global scope cannot use th
  }
 })
 test('the isolated verifier works when imported from inline ESM callers',()=>{
- const entry=`import fs from 'node:fs';import {gunzipSync} from 'node:zlib';import {deriveZeePartialEvidence} from ${JSON.stringify(new URL('../scripts/zeePartialPublishingEvidence.js',import.meta.url).href)};
+ const entry=`import fs from 'node:fs';import {gunzipSync} from 'node:zlib';import {deriveZeePartialEvidence} from ${JSON.stringify(runtime.url('scripts/zeePartialPublishingEvidence.js').href)};
  const raw=JSON.parse(gunzipSync(fs.readFileSync(new URL(${JSON.stringify(new URL('./fixtures/zeePartial/native-reviewed-005.json.gz',import.meta.url).href)}))));
  const files=new Map(Object.entries(raw.files).map(([k,v])=>[k,Buffer.from(v,'base64')]));
  const proof=await deriveZeePartialEvidence({source:raw.source,httpEvidence:raw.httpEvidence,readEvidence:async f=>files.get(f),now:new Date('2026-10-20T23:00:00Z')});console.log(proof.jobs.length)`

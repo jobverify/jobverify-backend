@@ -2,6 +2,7 @@ import path from 'node:path'
 import {createHash} from 'node:crypto'
 import {fileURLToPath} from 'node:url'
 import {attachInventoryEvidence,normalizeInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {attachSourceObservationEvidence} from '../../scraper-support/utils/sourceObservationEvidence.js'
 import {collectInCredNative} from './native.js'
 import candidate from './catalog-candidate.json' with {type:'json'}
 
@@ -57,6 +58,8 @@ export const createInCredScraper=(defaults={})=>({async run(options={}) {
   checkBudget()
   const result=attachInventoryEvidence(jobs,{status:inventoryStatus,surface,firstParty,listingComplete:false,pagesFetched:retainedResponses.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason})
   Object.defineProperty(result,'nativeCollectionEvidence',{value:{retainedResponses,...facts,lifecycleCleanupAllowed:false}})
+  attachSourceObservationEvidence(result,{source:SOURCE,recordKind:'vacancy-rows',observedRecordCount:facts.nativeRecordCount,
+   observedVacancyCount:facts.nativeRecordCount,sourceScopeComplete:false,companyGlobalTotal:null,companyIndiaTotal:null})
   return result
  }
  try{return await Promise.race([collect(),aborted])}

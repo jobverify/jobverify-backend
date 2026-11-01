@@ -2,14 +2,31 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import test,{after} from 'node:test'
+import {createReviewedProofRuntime,readReviewedSnapshot} from './helpers/reviewedProofRuntime.js'
 import { gunzipSync } from 'node:zlib'
 import { createHash } from 'node:crypto'
 import { buildPartialAttempt,recordPartialPublishingStatus } from '../scripts/partialPublishingGapEvidence.js'
 import { isSuccessfulPublishingGapTrial } from '../scripts/publishPublishingGapRepairs.js'
 const now=new Date('2026-10-20T23:50:00Z'),sha=b=>createHash('sha256').update(b).digest('hex'),url=new URL('../scripts/ivaluePartialPublishingEvidence.js',import.meta.url)
-const load=async()=>{assert.ok(fs.existsSync(url),'iValue exact partial proof implementation is required');return import(url)}
+const load=async()=>{assert.ok(fs.existsSync(url),'iValue exact partial proof implementation is required');return import(runtime.url('scripts/ivaluePartialPublishingEvidence.js'))}
 const fixture=()=>{const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/ivaluePartial/reviewed-native-001.json.gz',import.meta.url)))),files=new Map(Object.entries(f.files).map(([k,v])=>[k,Buffer.from(v,'base64')]));return{source:'ivalue',httpEvidence:f.httpEvidence,files,readEvidence:async file=>files.get(file),now}}
+// Positive and mutation cases replay the immutable reviewed runtime.
+const runtime=createReviewedProofRuntime(fixture(),{prefix:'ivalue-reviewed-proof-',extraFiles:new Map([['scraper-support/utils/publishableJobMetrics.js',readReviewedSnapshot(new URL('./fixtures/aeriesPartial/reviewed-publishableJobMetrics-7ebb487d0.js.gz',import.meta.url),'f7d4baf7d52d6f3efd0fe23e5adbfff820f53194f3a3ddfbe7a0982d385b0621')],['scraper/ivalue/fixtures/official-browser-binding-20261020.json',fixture().files.get(fixture().httpEvidence.receipts.find(r=>r.kind==='corporate-browser').file)]])})
+after(runtime.cleanup)
+test('ivalue verifier rejects changed reviewed source bytes and checkout drift',async()=>{
+ const {deriveIValuePartialEvidence}=await import(url)
+ const f=fixture(),drift=f.httpEvidence.receipts.filter(r=>r.sourcePath).some(r=>sha(fs.readFileSync(new URL('../'+r.sourcePath,import.meta.url)))!==r.sha256)
+ if(drift)await assert.rejects(deriveIValuePartialEvidence(f),/current (?:source|extraction code).*differs/)
+ else await assert.rejects(deriveIValuePartialEvidence(f),/current approved browser binding fixture differs|every selected role must remain eligible now/)
+ const receipt=f.httpEvidence.receipts.find(r=>r.kind==='current-code'),file=runtime.url(receipt.sourcePath),bytes=fs.readFileSync(file)
+ try {
+  fs.writeFileSync(file,Buffer.concat([bytes,Buffer.from('\n// changed source bytes\n')]))
+  const {deriveIValuePartialEvidence:deriveReviewed}=await load()
+  await assert.rejects(deriveReviewed(f),/current source.*differs/)
+ } finally {fs.writeFileSync(file,bytes)}
+})
+
 async function makeTrial(f=fixture()){
  const {deriveIValuePartialEvidence}=await load(),p=await deriveIValuePartialEvidence(f)
  const trial={schemaVersion:1,source:'ivalue',mode:'native-http-partial-positive-trial',outcome:'positive-extraction-incomplete-evidence',productionWrites:false,
@@ -59,7 +76,7 @@ test('caller-updated hashes cannot replace the blocked corporate page, public de
 })
 
 test('iValue freezer preserves exact37 original job fields and evidence, original time windows, and immutable confined outputs',async()=>{
- const url=new URL('../scripts/freezeIValuePartialPublishingTrial.js',import.meta.url);assert.ok(fs.existsSync(url),'iValue exact immutable freezer is required')
+ const url=runtime.url('scripts/freezeIValuePartialPublishingTrial.js');assert.ok(fs.existsSync(url),'iValue exact immutable freezer is required')
  const{freezeIValuePartialTrial}=await import(url),parent=fs.mkdtempSync(path.join(os.tmpdir(),'ivalue-proof-')),outputDirectory=path.join(parent,'release')
  try{
   const f=fixture(),result=await freezeIValuePartialTrial({...f,outputDirectory}),bytes=fs.readFileSync(path.join(outputDirectory,'ivalue.json')),trial=JSON.parse(bytes)

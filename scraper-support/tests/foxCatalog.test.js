@@ -12,7 +12,7 @@ import { loadConfig } from '../utils/loadConfig.js'
 
 const testsDir = path.dirname(fileURLToPath(import.meta.url))
 
-test('getScraperCatalog includes Fox Corporation on the official India careers page backed by Workday', () => {
+test('Fox Corporation catalog retains its official careers binding with exact-role brand scope', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'fox')
 
   assert.ok(provider)
@@ -21,9 +21,12 @@ test('getScraperCatalog includes Fox Corporation on the official India careers p
   assert.equal(provider.companyName, 'Fox Corporation')
   assert.equal(
     provider.companyCareerPage,
-    'https://www.foxcareers.com/Search/SearchResults?country=India',
+    'https://www.foxcareers.com/',
   )
   assert.equal(provider.companyDomain, 'foxcareers.com')
+  assert.equal(provider.bindingEvidence.verified, true)
+  assert.equal(provider.bindingEvidence.scopeRestrictions.exactRoleBrandQualified, true)
+  assert.equal(provider.bindingEvidence.scopeRestrictions.unfilteredNativeBoardQualified, false)
   assert.equal(provider.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(provider.baseUrl, 'https://fox.wd1.myworkdayjobs.com/en-US/Domestic')
 })

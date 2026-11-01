@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import ResumeUsage from '../src/models/ResumeUsage.js';
 import { dispatchTailoredResumes, tailoredResumeActionsConfigured } from '../src/services/resumeTailoringWorkflow.js';
 
@@ -97,16 +100,52 @@ test('invalid GitHub responses and failed dispatches are retryable and do not le
   assert.equal(posts, 1, 'a rejected dispatch must release the in-process lock');
 });
 
-test('dedicated workflow runs local inference without inference APIs or private artifacts', async () => {
+test('dedicated source-only workflow avoids model and compiler startup on standard CPU runners', async () => {
   const workflow = await readFile(new URL('../.github/workflows/tailored-resumes.yml', import.meta.url), 'utf8');
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /group: jobverify-tailored-resumes/);
   assert.match(workflow, /cancel-in-progress: false/);
-  assert.match(workflow, /timeout-minutes: 30/);
-  assert.match(workflow, /Qwen3-4B-Instruct-2507-Q4_K_M/);
-  assert.match(workflow, /\.cache\/resume-compiler\/image.tar/);
-  assert.doesNotMatch(workflow, /LFM2.5/);
+  assert.match(workflow, /runs-on: ubuntu-latest/);
+  assert.match(workflow, /timeout-minutes: 2/);
+  assert.match(workflow, /sparse-checkout:/);
+  assert.match(workflow, /cache: 'npm'/);
+  assert.doesNotMatch(workflow, /Qwen|llama|\.cache\/resume-(?:models|runtime|compiler)|actions\/cache|docker/i);
   assert.match(workflow, /secrets\.MONGO_URI/);
   assert.match(workflow, /node scripts\/runTailoredResumes\.js/);
   assert.doesNotMatch(workflow, /upload-artifact|GITHUB_PAT|INFERENCE_API|OPENAI_API/);
+});
+
+test('sparse worker checkout covers the complete local import closure and its font resources', async () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const workflow = await readFile(path.join(root, '.github/workflows/tailored-resumes.yml'), 'utf8');
+  const block = workflow.match(/sparse-checkout: \|\r?\n((?:[ \t]{12}[^\r\n]+\r?\n)+)/);
+  assert.ok(block, 'the worker must declare its checkout paths');
+  const includedPaths = block[1].trim().split(/\r?\n/).map(value => value.trim().replace(/^\//, ''));
+  const included = file => includedPaths.some(pattern => pattern.endsWith('/') ? file.startsWith(pattern) : file === pattern);
+  const visited = new Set();
+  async function visit(file) {
+    if (visited.has(file)) return;
+    visited.add(file);
+    const relative = path.relative(root, file).replaceAll('\\', '/');
+    assert.ok(included(relative), `worker import missing from sparse checkout: ${relative}`);
+    const text = await readFile(file, 'utf8');
+    for (const match of text.matchAll(/(?:from\s+|import\(\s*)['"]([^'"]+)['"]/g)) {
+      if (!match[1].startsWith('.')) continue;
+      const imported = path.resolve(path.dirname(file), match[1]);
+      assert.ok(existsSync(imported), `missing worker module: ${match[1]}`);
+      await visit(imported);
+    }
+  }
+  await visit(path.join(root, 'scripts/runTailoredResumes.js'));
+  assert.ok(visited.size > 20);
+  for (const file of ['package.json', 'package-lock.json', 'resume-tailoring/fonts/manifest.json', 'src/services/resumeTextWorker.js']) assert.ok(included(file));
+});
+
+test('worker budget includes setup time and cannot extend beyond one minute', async () => {
+  const budget = await import('../resume-tailoring/resumeBudget.js');
+  assert.equal(typeof budget.resumeWorkerDeadline, 'function');
+  const now = Date.parse('2026-11-01T15:00:30Z');
+  assert.equal(budget.resumeWorkerDeadline('2026-11-01T15:00:00Z', now), now + 30000);
+  assert.equal(budget.resumeWorkerDeadline(undefined, now), now + 60000);
+  assert.equal(budget.resumeWorkerDeadline('2026-11-01T16:00:00Z', now), now + 60000);
 });

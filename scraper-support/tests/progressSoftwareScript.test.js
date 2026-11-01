@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { gunzipSync } from 'node:zlib'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
@@ -142,10 +142,11 @@ test('Progress Software propagates an official request failure', async () => {
   assert.equal(fetchCalls, 1)
 })
 
-test('Progress Software bounds noncooperative requests and honours active cancellation', () => {
+test('Progress Software bounds noncooperative requests and honours active cancellation', async () => {
   const moduleUrl = new URL('../../scraper/progresssoftware/script.js', import.meta.url).href
-  const output = execFileSync(process.execPath, ['--input-type=module', '-e', `
+  const script = `
     import { run } from ${JSON.stringify(moduleUrl)};
+    process.send('ready');
     const keepAlive = setInterval(() => {}, 100);
     const results = [];
     try {
@@ -160,7 +161,35 @@ test('Progress Software bounds noncooperative requests and honours active cancel
       }
       console.log(JSON.stringify(results));
     } finally { clearInterval(keepAlive); }
-  `], { encoding: 'utf8', timeout: 2000 })
+  `
+  const output = await new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, ['--input-type=module', '-e', script], {
+      stdio: ['ignore', 'pipe', 'pipe', 'ipc'], windowsHide: true,
+    })
+    let stdout = '', stderr = '', ready = false, deadlineError
+    const expire = phase => {
+      deadlineError = new Error(`Progress Software ${phase} deadline exceeded`)
+      child.kill()
+    }
+    // Imports have a separate bound so process startup under suite load cannot
+    // consume the original two-second transport/cancellation watchdog.
+    let timer = setTimeout(() => expire('child startup'), 30000)
+    child.stdout.setEncoding('utf8').on('data', data => { stdout += data })
+    child.stderr.setEncoding('utf8').on('data', data => { stderr += data })
+    child.on('message', message => {
+      if (message !== 'ready' || ready) return
+      ready = true
+      clearTimeout(timer)
+      timer = setTimeout(() => expire('transport checks'), 2000)
+    })
+    child.on('error', error => { clearTimeout(timer); reject(error) })
+    child.on('close', (code, signal) => {
+      clearTimeout(timer)
+      if (deadlineError) reject(deadlineError)
+      else if (!ready || code !== 0) reject(new Error(`Progress Software child failed (${code ?? signal}): ${stderr}`))
+      else resolve(stdout)
+    })
+  })
   const results = JSON.parse(output)
   assert.match(results[0], /deadline|timed out|timeout/i)
   assert.match(results[1], /caller cancelled/)

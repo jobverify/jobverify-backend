@@ -35,7 +35,7 @@ test('GoCardless can reconcile a fully explicit native country inventory', async
 
 test('GoCardless never queries the ATS when the official link disappears', async () => {
   let requests = 0
-  await assert.rejects(run({ fetchPage: async () => ({ status: 200, url: 'https://gocardless.com/about/careers', html: '<h1>Careers</h1>' }), fetchJson: async () => { requests++; return { jobs: [], meta: { total: 0 } } } }), /official.*binding/i)
+  await assert.rejects(run({ fetchPage: async () => ({ status: 200, url: 'https://gocardless.com/about/careers', html: '<h1>Careers</h1>' }), fetchJson: async () => { requests++; return { jobs: [], meta: { total: 0 } } } }), /Current employer inventory binding unavailable: active board-handoff handoff not established/)
   assert.equal(requests, 0)
 })
 

@@ -56,6 +56,9 @@ test('rewrite builds one portable runtime and activates the verified artifact be
  assert.match(register,/hashFiles\('scripts\/portableRewriteRuntime\.sh'\)/);
  assert.match(register,/node --test test\/descriptionRewriteWorkflow\.test\.js/);
  assert.match(register,/test\/jobDescriptionPortableRuntime\.test\.js/);
+  const nativeTools = register.indexOf('name: Install native debugger test tools');
+  assert.ok(nativeTools >= 0 && nativeTools < register.indexOf('name: Check rewrite workflow and worker diagnostics on Linux'));
+  assert.match(register,/JOB_DESCRIPTION_REWRITE_REQUIRE_NATIVE_TESTS: '1'/);
  assert.match(register,/runtime_artifact: description-runtime-avx2-\$\{\{ github.run_id \}\}-\$\{\{ github.run_attempt \}\}/);
  assert.match(register,/name: description-runtime-avx2-\$\{\{ github.run_id \}\}-\$\{\{ github.run_attempt \}\}/);
  assert.match(shards,/name: \$\{\{ needs.register.outputs.runtime_artifact \}\}/);

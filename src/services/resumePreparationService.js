@@ -7,6 +7,7 @@ import { getCandidateEvidenceSnapshot } from './candidateEvidenceService.js';
 import { publishGeneratedCv } from './cvRevisionService.js';
 import { dispatchTailoredResumes, requireTailoredResumeActions, tailoredResumeActionsConfigured } from './resumeTailoringWorkflow.js';
 import { tailoringError } from './resumeTailoringContent.js';
+import { remainingBudget } from '../../resume-tailoring/resumeBudget.js';
 
 export const activeResumeStatuses = ['queued', 'running'];
 export const activeResumeOwner = user => ({ _id: user, deactivated: { $ne: true }, accountDeletingAt: null });
@@ -99,9 +100,10 @@ export async function drainResumePreparations({ generate, deadline = Date.now() 
     const evidence = await getCandidateEvidenceSnapshot(row.user);
     if (!evidenceMatches(row.preparation.sourceEvidenceVersion, row.preparation.sourceEvidenceHash, evidence)) throw tailoringError('Your candidate evidence changed. Prepare a new version.', 409);
     const { extractResumeSource } = await import('./resumeSource.js');
-    const document = await extractResumeSource({ extension: source.extension, data: artifactBytes(source.data) });
-    const output = await generate({ mode: 'base', source: document, candidateEvidence: evidence }, { deadline, onPhase: async phase => {
-      await Resume.updateOne({ ...lease, 'preparation.leaseUntil': { $gt: new Date() } }, { $set: { 'preparation.phase': String(phase).slice(0, 100) } });
+    const document = await extractResumeSource({ extension: source.extension, data: artifactBytes(source.data), deadline });
+    const output = await generate({ mode: 'base', source: document, candidateEvidence: evidence }, { deadline, onPhase: async (phase, { signal } = {}) => {
+      await Resume.updateOne({ ...lease, 'preparation.leaseUntil': { $gt: new Date() } }, { $set: { 'preparation.phase': String(phase).slice(0, 100) } },
+        { signal, timeoutMS: remainingBudget(deadline, 5000) });
     } });
     if (Date.now() >= deadline) throw tailoringError('Resume preparation exceeded its time budget. Please retry.', 504);
     await publishGeneratedCv({ kind: 'base', row, lease, output, source, document, evidence });

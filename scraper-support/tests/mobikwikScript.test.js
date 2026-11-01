@@ -139,7 +139,7 @@ test('MobiKwik fails closed when the rendered careers surface changes', async ()
   )
 })
 
-test('MobiKwik loads its careers proof and Darwinbox jobs over native HTTP', async () => {
+test('MobiKwik rejects the original catch-all listing-shaped native detail', async () => {
   const requests = []
   const fetchImpl = async (url, options = {}) => {
     requests.push({ url, options })
@@ -177,13 +177,97 @@ test('MobiKwik loads its careers proof and Darwinbox jobs over native HTTP', asy
     }
   }
 
-  const jobs = await createMobiKwikScraper({ fetchImpl }).run({ maxPages: 1 })
-
-  assert.equal(jobs.length, 1)
+  const notReturned = Symbol('unavailable'), unchanged = notReturned
+  let jobs = unchanged
+  await assert.rejects(async () => {
+    jobs = await createMobiKwikScraper({ fetchImpl }).run({ maxPages: 1 })
+  }, error => {
+    assert.equal(error.name, 'DarwinboxDetailContractError')
+    assert.equal(error.abortRetries, true)
+    assert.equal(error.failureKind, 'parser_or_contract_error')
+    assert.match(error.message, /malformed for mobikwik-api-001/)
+    return true
+  })
+  assert.strictEqual(jobs, notReturned, 'invalid detail cannot become a successful empty or partial return')
   assert.deepEqual(requests.map(({ url }) => url), [
     CAREERS_URL,
     PUBLIC_ALL_JOBS_URL,
     'https://mobikwik.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+    PUBLIC_ALL_JOBS_URL,
+    'https://mobikwik.darwinbox.in/ms/candidateapi/job/mobikwik-api-001?companyId=main',
   ])
   assert.equal(requests[2].options.method, 'POST')
+  assert.equal(requests[4].options.method, 'GET')
+})
+
+test('MobiKwik controlled detail envelope reuses original listing facts and keeps missing JD unqualified', async () => {
+  const requests = []
+  const fetchImpl = async (url, options = {}) => {
+    requests.push({ url, options })
+
+    if (url === CAREERS_URL) {
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => 'text/html' },
+        text: async () => `
+          <html><head><title>MobiKwik Careers: Join Our Team</title></head><body>
+            <p>Want to empower millions of Indians with financial Independence?</p>
+            <p>We are a publicly listed fintech company</p>
+            <p>There's a lot to love at MobiKwik</p>
+            <a href="${OFFICIAL_CAREERS_HANDOFF_URL}">View Job Openings</a>
+          </body></html>
+        `,
+      }
+    }
+
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      json: async () => ({
+        status: 'success',
+        job_counts: 1,
+        data: [{
+          id: 'mobikwik-api-001',
+          title: 'Backend Engineer',
+          locations: 'Gurgaon, Haryana, India',
+          country: 'India',
+        }],
+      }),
+    }
+  }
+
+  const detailEnvelopes = []
+  const controlledFetch = async (url, options) => {
+    const response = await fetchImpl(url, options)
+    if (url !== 'https://mobikwik.darwinbox.in/ms/candidateapi/job/mobikwik-api-001?companyId=main') return response
+    const original = await response.json(), row = original.data[0]
+    const envelope = { status: original.status, message: { job: [{
+      id: row.id, title: row.title, officelocation_show_arr: row.locations, country: row.country,
+    }] } }
+    detailEnvelopes.push(envelope)
+    return { ...response, json: async () => envelope }
+  }
+  const jobs = await createMobiKwikScraper({ fetchImpl: controlledFetch, now: () => FIXED_SCRAPED_AT }).run({ maxPages: 1 })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'mobikwik-api-001')
+  assert.equal(jobs[0].title, 'Backend Engineer')
+  assert.equal(jobs[0].location, 'Gurgaon, Haryana, India')
+  assert.equal(detailEnvelopes[0].message.job[0].country, 'India')
+  assert.equal(Object.hasOwn(jobs[0], 'country'), false, 'do not invent a country field absent from this existing DTO')
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.equal(jobs[0].sourceDetailFailureKind, 'missing-content')
+  assert.ok(jobs[0].jobDescription == null || jobs[0].jobDescription === '')
+  assert.ok(jobs[0].postingDate == null, 'missing native posting date stays unknown')
+  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.deepEqual(requests.map(({ url }) => url), [
+    CAREERS_URL,
+    PUBLIC_ALL_JOBS_URL,
+    'https://mobikwik.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+    PUBLIC_ALL_JOBS_URL,
+    'https://mobikwik.darwinbox.in/ms/candidateapi/job/mobikwik-api-001?companyId=main',
+  ])
+  assert.equal(requests[2].options.method, 'POST')
+  assert.equal(requests[4].options.method, 'GET')
 })

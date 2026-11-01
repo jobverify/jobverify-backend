@@ -48,23 +48,28 @@ const retiredCompanyNames = [
 
 const DISCOVERY_SOURCE_PATTERN = /(?:\.wellfoundDirectory|\.himalayas(?:Directory|\.app))$/i;
 const confirmed = process.argv.includes("--confirm");
-const onlySource = process.argv
-  .find((argument) => argument.startsWith("--only-source="))
-  ?.slice("--only-source=".length)
-  .trim();
+const onlySourceSelectors = process.argv.slice(2).filter((argument) =>
+  argument === "--only-source" || argument.startsWith("--only-source="),
+);
+if (onlySourceSelectors.length > 1 || onlySourceSelectors.length === 1
+  && (!onlySourceSelectors[0].startsWith("--only-source=")
+    || !onlySourceSelectors[0].slice("--only-source=".length).trim())) {
+  throw new Error("Expected one non-empty --only-source=<source> selector; bare, empty and duplicate selectors are invalid.");
+}
+const onlySource = onlySourceSelectors[0]?.slice("--only-source=".length).trim();
 const sourcesToPurge = onlySource ? [onlySource] : retiredSources;
 const companyNamesToPurge = onlySource ? [] : retiredCompanyNames;
-const discoverySourcePattern = onlySource ? /^$/ : DISCOVERY_SOURCE_PATTERN;
+const discoverySourcePattern = onlySource ? null : DISCOVERY_SOURCE_PATTERN;
 const sourceSet = new Set(sourcesToPurge);
 const decodeMongoMapKey = (value) => String(value || "")
   .replaceAll("\uFF04", "$")
   .replaceAll("\uFF0E", ".");
 const isRetiredSource = (source) => {
   const decodedSource = decodeMongoMapKey(source);
-  return sourceSet.has(decodedSource) || discoverySourcePattern.test(decodedSource);
+  return sourceSet.has(decodedSource) || Boolean(discoverySourcePattern?.test(decodedSource));
 };
 const uniqueStrings = (values) => [...new Set(
-  values.map((value) => String(value || "").trim()).filter(Boolean),
+  values.filter((value) => typeof value === "string").map((value) => value.trim()).filter(Boolean),
 )];
 
 const { default: connectDB } = await import("../db/db.js");
@@ -83,6 +88,7 @@ try {
     { default: ScraperStatus },
     { default: User },
     { refreshJobDatasetSummary },
+    { getScraperCatalog },
   ] = await Promise.all([
     import("../src/models/AdminAudit.js"),
     import("../src/models/Click.js"),
@@ -93,16 +99,20 @@ try {
     import("../src/models/ScraperStatus.js"),
     import("../src/models/User.js"),
     import("../src/services/jobDatasetSummaryService.js"),
+    import("../scraper-support/providers/index.js"),
   ]);
 
   const initialCompanyNames = uniqueStrings(companyNamesToPurge);
-  const scraperStatusFilter = {
+  // Source is the ownership boundary. Mongo query $in/regex also match array
+  // elements, so require the field itself to be a scalar string.
+  const sourceSelectionFilter = {
+    $expr: { $eq: [{ $type: "$source" }, "string"] },
     $or: [
       { source: { $in: sourcesToPurge } },
-      { source: discoverySourcePattern },
-      { companyName: { $in: initialCompanyNames } },
+      ...(discoverySourcePattern ? [{ source: discoverySourcePattern }] : []),
     ],
   };
+  const scraperStatusFilter = sourceSelectionFilter;
   const matchedStatuses = await ScraperStatus.find(scraperStatusFilter)
     .select("_id source companyName")
     .lean();
@@ -110,13 +120,7 @@ try {
     ...initialCompanyNames,
     ...matchedStatuses.map(({ companyName }) => companyName),
   ]);
-  const retiredCompanyFilter = {
-    $or: [
-      { source: { $in: sourcesToPurge } },
-      { source: discoverySourcePattern },
-      { company: { $in: companyNames } },
-    ],
-  };
+  const retiredCompanyFilter = sourceSelectionFilter;
   const matchedJobs = await Job.find(retiredCompanyFilter)
     .select("_id company source")
     .lean();
@@ -126,19 +130,28 @@ try {
   ]);
   const jobIds = matchedJobs.map(({ _id }) => _id);
   const statusIds = matchedStatuses.map(({ _id }) => _id);
+  const registeredCompanyNames = uniqueStrings(getScraperCatalog()
+    .filter(({ source }) => !isRetiredSource(source))
+    .map(({ companyName }) => companyName));
+  const removableCompanyNames = async (names, excludedJobIds = [], excludedStatusIds = []) => {
+    const [jobCompanies, statusCompanies] = await Promise.all([
+      Job.distinct("company", { _id: { $nin: excludedJobIds }, company: { $in: names } }),
+      ScraperStatus.distinct("companyName", { _id: { $nin: excludedStatusIds }, companyName: { $in: names } }),
+    ]);
+    const retained = new Set([...registeredCompanyNames, ...jobCompanies, ...statusCompanies]);
+    return names.filter((name) => !retained.has(name));
+  };
+  const previewCompanyNames = await removableCompanyNames(allCompanyNames, jobIds, statusIds);
   const userFilter = {
     $or: [
       { savedJobs: { $in: jobIds } },
-      { "profile.profilePreferenceFilters.company": { $in: allCompanyNames } },
-      { "profile.telegramAlertFilters.company": { $in: allCompanyNames } },
+      { "profile.profilePreferenceFilters.company": { $in: previewCompanyNames } },
+      { "profile.telegramAlertFilters.company": { $in: previewCompanyNames } },
     ],
   };
-  const deliveryFilter = {
-    $or: [
-      { job: { $in: jobIds } },
-      { "jobSnapshot.company": { $in: allCompanyNames } },
-    ],
-  };
+  // A delivery's snapshot has no source ownership. Only an attributable job
+  // ID can select it; historical company labels never widen this query.
+  const deliveryFilter = { job: { $in: jobIds } };
   const auditFilter = {
     $or: [
       { targetType: "Job", targetId: { $in: jobIds } },
@@ -155,7 +168,7 @@ try {
     const sourceResults = Object.values(remainingSources);
     return [{
       updateOne: {
-        filter: { _id: run._id },
+        filter: { _id: run._id, sources: run.sources },
         update: {
           $set: {
             sources: remainingSources,
@@ -184,22 +197,49 @@ try {
     console.log("Preview only. Re-run with --confirm to delete these records.");
   } else {
     const results = {};
-
-    results.users = await User.updateMany(userFilter, {
+    // Recheck ownership atomically at removal. Linked cleanup uses only rows
+    // actually returned, never IDs whose source changed after the preview.
+    const removedJobs = [], removedStatuses = [];
+    for (const { _id } of matchedJobs) {
+      const removed = await Job.findOneAndDelete({ ...sourceSelectionFilter, _id })
+        .select("_id company source").lean();
+      if (removed) removedJobs.push(removed);
+    }
+    for (const { _id } of matchedStatuses) {
+      const removed = await ScraperStatus.findOneAndDelete({ ...sourceSelectionFilter, _id })
+        .select("_id companyName source").lean();
+      if (removed) removedStatuses.push(removed);
+    }
+    const removedJobIds = removedJobs.map(({ _id }) => _id);
+    const removedStatusIds = removedStatuses.map(({ _id }) => _id);
+    const confirmedCompanyNames = await removableCompanyNames(uniqueStrings([
+      ...initialCompanyNames,
+      ...removedJobs.map(({ company }) => company),
+      ...removedStatuses.map(({ companyName }) => companyName),
+    ]));
+    const confirmedUserFilter = { $or: [
+      { savedJobs: { $in: removedJobIds } },
+      { "profile.profilePreferenceFilters.company": { $in: confirmedCompanyNames } },
+      { "profile.telegramAlertFilters.company": { $in: confirmedCompanyNames } },
+    ] };
+    results.users = await User.updateMany(confirmedUserFilter, {
       $pull: {
-        savedJobs: { $in: jobIds },
-        "profile.profilePreferenceFilters.company": { $in: allCompanyNames },
-        "profile.telegramAlertFilters.company": { $in: allCompanyNames },
+        savedJobs: { $in: removedJobIds },
+        "profile.profilePreferenceFilters.company": { $in: confirmedCompanyNames },
+        "profile.telegramAlertFilters.company": { $in: confirmedCompanyNames },
       },
     });
-    results.clicks = await Click.deleteMany({ job: { $in: jobIds } });
-    results.jobAlertDeliveries = await JobAlertDelivery.deleteMany(deliveryFilter);
-    results.adminAudits = await AdminAudit.deleteMany(auditFilter);
+    results.clicks = await Click.deleteMany({ job: { $in: removedJobIds } });
+    results.jobAlertDeliveries = await JobAlertDelivery.deleteMany({ job: { $in: removedJobIds } });
+    results.adminAudits = await AdminAudit.deleteMany({ $or: [
+      { targetType: "Job", targetId: { $in: removedJobIds } },
+      { targetType: "ScraperStatus", targetId: { $in: removedStatusIds } },
+    ] });
     if (scraperRunUpdates.length > 0) {
       results.scraperRuns = await ScraperRun.collection.bulkWrite(scraperRunUpdates);
     }
-    results.jobs = await Job.deleteMany(retiredCompanyFilter);
-    results.scraperStatuses = await ScraperStatus.deleteMany(scraperStatusFilter);
+    results.jobs = { deletedCount: removedJobs.length };
+    results.scraperStatuses = { deletedCount: removedStatuses.length };
     await refreshJobDatasetSummary();
 
     console.log("Retired-company purge applied:", JSON.stringify({
@@ -209,6 +249,7 @@ try {
       clicks: results.clicks.deletedCount,
       jobAlertDeliveries: results.jobAlertDeliveries.deletedCount,
       scraperRuns: results.scraperRuns?.modifiedCount || 0,
+      scraperRunConflicts: scraperRunUpdates.length - (results.scraperRuns?.matchedCount || 0),
       adminAudits: results.adminAudits.deletedCount,
     }));
   }

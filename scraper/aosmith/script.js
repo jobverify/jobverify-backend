@@ -1,3 +1,4 @@
+import {createAoSmithNativeScraper} from './native.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -30,35 +31,9 @@ export const pageIndicatesIndiaFalsePositive = (html) => {
   )
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+export const createAoSmithScraper = (defaults = {}) => createAoSmithNativeScraper(defaults)
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
-
-export const createAoSmithScraper = () => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const html = await fetchText(buildSearchUrl())
-
-    if (!pageIndicatesIndiaFalsePositive(html)) {
-      throw new Error('A. O. Smith careers page no longer matches the expected India false-positive flow')
-    }
-
-    return []
-  },
-})
-
-export const run = async () => createAoSmithScraper().run()
+export const run = options => createAoSmithScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

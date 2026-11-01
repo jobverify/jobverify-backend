@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto'
 import {fileURLToPath} from 'node:url'
 import {attachInventoryEvidence,normalizeInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {attachSourceObservationEvidence} from '../../scraper-support/utils/sourceObservationEvidence.js'
 import {CORPORATE_HOME,CORPORATE_CAREERS,ATS_ROOT,IDENTIFIER,EMPLOYER,APPLICATION_CLIENT,parseCorporate,verifyDetail,mapNative,verifyApplication,buildLocationCountryReferences} from './native.js'
 import {document} from '../../scraper-support/shared/rmkNativePairHtml.js'
 import candidate from './catalog-candidate.json' with {type:'json'}
@@ -70,6 +71,8 @@ export const createMyClassboardScraper=(defaults={})=>({async run(options={}) {
   const reason='Current corporate careers cards bind exact MyClassboard Keka employer; native active array, individual details, application client and individual application forms recovered. Corporate cards differ from native inventory and some observed records lack explicit country; whole-company scope remains incomplete, cleanup disabled.'
   const result=attachInventoryEvidence(jobs,{status:'discovery-only',surface:ATS_ROOT,firstParty:true,listingComplete:false,pagesFetched,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason})
   Object.defineProperty(result,'nativeCollectionEvidence',{value:{retainedResponses,nativeRecordCount:rows.length,corporateCardCount:cards.length,exclusions,lifecycleCleanupAllowed:false}})
+  attachSourceObservationEvidence(result,{source:SOURCE,recordKind:'vacancy-rows',observedRecordCount:rows.length,
+   observedVacancyCount:rows.length,sourceScopeComplete:false,companyGlobalTotal:null,companyIndiaTotal:null})
   return result
  }
  try{return await Promise.race([collect(),aborted])}

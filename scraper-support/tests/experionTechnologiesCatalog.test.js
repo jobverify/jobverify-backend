@@ -11,17 +11,20 @@ test('Experion Technologies is registered against the official first-party caree
   assert.ok(provider, 'Expected Experion Technologies provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Experion Technologies')
-  assert.equal(provider.companyCareerPage, 'https://experionglobal.com/')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.companyCareerPage, 'https://experionglobal.com/job-openings/')
+  assert.equal(provider.atsPlatform, 'custom')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-jobs-page-plus-detail-pages')
+  assert.equal(provider.paginationStrategy, 'all-server-rendered-cards-native-client-side-load-more-contract+stable-final-listing')
   assert.equal(
     provider.extractionStrategy,
-    'official-homepage-validation+official-job-openings-page+first-party-detail-pages+inline-apply-form',
+    'current-active-corporate-handoff+reviewed-native-client-pagination+all-full-role-pages+identity-location-apply-form-and-native-page-dates',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'experionglobal.com')
+  assert.equal(provider.bindingEvidence.verified, true)
+  assert.equal(provider.bindingEvidence.officialURL, 'https://experionglobal.com/')
+  assert.ok(provider.bindingEvidence.matchedLinks.includes(provider.companyCareerPage))
   assert.match(provider.modulePath, /experiontechnologies[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Experion Technologies'), false)
 })
@@ -46,6 +49,6 @@ test('Experion Technologies is runnable through the scraper provider catalog', (
   assert.ok(scraper, 'Expected buildScrapers() to return the Experion Technologies scraper')
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'experiontechnologies')
-  assert.equal(scraper.provider.companyCareerPage, 'https://experionglobal.com/')
+  assert.equal(scraper.provider.companyCareerPage, 'https://experionglobal.com/job-openings/')
   assert.match(scraper.dryRunFile, /experiontechnologies[\\/]jobs\.json$/i)
 })

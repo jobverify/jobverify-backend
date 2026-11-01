@@ -1,4 +1,4 @@
-import { readNativeDocument, decodeNativeEntities } from './activeNativeHtml.js'
+import { readNativeDocument, decodeNativeEntities, readNativeAttributeTokens } from './activeNativeHtml.js'
 
 const hiddenStyle = value => /(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|content-visibility\s*:\s*hidden|opacity\s*:\s*[+-]?(?:0(?:\.0*)?|\.0+)(?:e[+-]?\d+)?%?)(?:\s*!important)?\s*(?:;|$)/i.test(value || '')
 
@@ -53,8 +53,8 @@ const escapedCompound = (compound, strict) => {
   else if (!['.', '#', '[', ':'].includes(compound[index])) {
     const identifier = cssIdentifier(compound, index)
     if (!identifier || identifier.invalid) return { ...result, invalid: true }
-    // The native tree only preserves ASCII tag names ending at a word boundary.
-    // A decoded type outside that vocabulary cannot prove a hiding rule absent.
+    // Retain the existing finite escaped type-selector vocabulary. A decoded
+    // type outside it cannot prove a hiding rule absent.
     if (!/^[a-z](?:[a-z0-9:_-]*[a-z0-9_])?$/i.test(identifier.name)) return { ...result, invalid: true }
     result.tag = identifier.name; index = identifier.end
   }
@@ -83,8 +83,13 @@ const ambiguousAttributes = (html, { statusStyleQuotes = false } = {}) => {
   for (const [, source] of html.matchAll(/<[a-z][a-z0-9:_-]*\b((?:[^"'<>]|"[^"]*"|'[^']*')*)>/gi)) {
     const legacy = [...source.matchAll(/([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g)].map(match => [match[1].toLowerCase(), match[2] ?? match[3] ?? match[4] ?? ''])
     const ascii = [...source.matchAll(/([^\t\n\f\r =/>]+)(?:[\t\n\f\r ]*=[\t\n\f\r ]*(?:"([^"]*)"|'([^']*)'|([^\t\n\f\r "'=<>`]+)))?/g)].map(match => [match[1].toLowerCase(), match[2] ?? match[3] ?? match[4] ?? ''])
-    const uncertainTokens = legacy.length !== ascii.length || legacy.some(([name, value], index) => name !== ascii[index][0] || value !== ascii[index][1])
-    for (const [name, value] of legacy) {
+    let current, unsupported = false
+    try { current = readNativeAttributeTokens(source) } catch { current = legacy; unsupported = true }
+    const different = (left, right) => left.length !== right.length || left.some(([name, value], index) => name !== right[index][0] || value !== right[index][1])
+    const uncertainTokens = unsupported || different(legacy, ascii) || different(current, ascii)
+    // Retain old conservative raw-value caution as well as the exact new
+    // lexical values. Inert/raw strings cannot grant an absence proof.
+    for (const [name, value] of [...legacy, ...current]) {
       if (!uncertainTokens && !/[&\u0000\r\uD800-\uDFFF]/u.test(value)) continue
       // This exact reference spelling is already decoded once by the native
       // attribute reader. The opt-in flow check may trust its quote token;
@@ -444,6 +449,9 @@ export const readVisibleNativeDocument = (html, { strict = false, statusLayout =
           : stronglyExcluded || weakVisibility === 'hidden' ? 'excluded' : 'visible', stronglyExcluded, weakVisibility }
       }
     }
+    // An unsupported native tag is an unqualified scope, not visual absence.
+    // Keep it in opt-in status traversal even if a style could hide its text.
+    if (layout && node.nativeTagUnqualified) layout = { ...layout, qualified: false, visibility: 'uncertain', stronglyExcluded: false, reason: 'unsupported-native-tag-scope' }
     // A legacy conservative hiding match may exceed the opt-in finite rule
     // grammar. Unexplained inert content is uncertain, never proof of absence.
     if (layout?.visibility === 'visible' && !active) layout = { ...layout, qualified: false, visibility: 'uncertain' }

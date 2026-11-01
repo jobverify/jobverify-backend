@@ -23,7 +23,10 @@ test('getScraperCatalog includes the Qualcomm apiPortal provider with official m
     'https://careers.qualcomm.com/careers?domain=qualcomm.com',
   )
   assert.equal(qualcomm.config.request.headers.Origin, 'https://careers.qualcomm.com')
-  assert.equal(qualcomm.config.detail.enabled, false)
+  assert.equal(qualcomm.config.detail.enabled, true)
+  assert.equal(qualcomm.config.detail.requireListingIdentity, true)
+  assert.equal(qualcomm.config.detail.urlTemplate, 'https://careers.qualcomm.com/api/pcsx/position_details?position_id={{jobId}}&domain=qualcomm.com&hl=en')
+  assert.equal(qualcomm.config.detail.mapping.jobDescription, 'data.jobDescription')
   assert.equal(qualcomm.dryRunEnrichPublicExperience, false)
 })
 

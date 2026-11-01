@@ -8,7 +8,9 @@ const queueAsOf = summary.queueAsOf || summary.startedAt;
 if (!Number.isFinite(Date.parse(queueAsOf))) throw new Error('Invalid rewrite queue cutoff');
 const plan = { ...buildRewritePlan(summary.queued, {
   jobsPerShard: Number(process.env.JOB_DESCRIPTION_REWRITE_JOBS_PER_SHARD || 1000),
-  maxParallel: Number(process.env.JOB_DESCRIPTION_REWRITE_MAX_PARALLEL || 8),
+  maxParallel: Number(process.env.JOB_DESCRIPTION_REWRITE_MAX_PARALLEL || 4),
+  shardCount: process.env.JOB_DESCRIPTION_REWRITE_SHARD_COUNT
+    ? Number(process.env.JOB_DESCRIPTION_REWRITE_SHARD_COUNT) : undefined,
 }), queueAsOf };
 const file = '.cache/scraper-actions/description-plan.json';
 await fs.mkdir(path.dirname(file), { recursive: true });

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildSourceFacts } from '../src/services/resumeLatexContent.js';
 import { createRequire } from 'node:module';
-import { extractResumeSource } from '../src/services/resumeSource.js';
+import { extractResumeSource, normalizeResumeLinks } from '../src/services/resumeSource.js';
 import { extractResumeText } from '../src/services/resumeText.js';
 
 const require = createRequire(import.meta.url);
@@ -23,6 +23,18 @@ test('PDF source retains visible lines and contact annotations', async () => {
   const source = await extractResumeSource({ extension: 'pdf', data: pdfWithContactLink() });
   assert.match(source.text, /Asha Rao\nSoftware Engineer at Cedar Systems/);
   assert.ok(source.links.includes('mailto:asha@example.test'));
+});
+
+test('source extraction respects an expired worker deadline', async () => {
+  await assert.rejects(extractResumeSource({ extension: 'pdf', data: pdfWithContactLink(), deadline: Date.now() - 1 }),
+    { code: 'time_limit', statusCode: 504 });
+});
+
+test('encoded email punctuation remains safe without allowing mail header injection', () => {
+  assert.deepEqual(normalizeResumeLinks(['mailto:al%3Fex@example.com', 'mailto:al%23ex@example.com']),
+    ['mailto:al%3Fex@example.com', 'mailto:al%23ex@example.com']);
+  for (const unsafe of ['mailto:alex@example.com?bcc=other@example.com', 'mailto:alex@example.com?attach=file.txt',
+    'mailto:al%0D%0ABcc%3Aother@example.com', 'mailto:alex@invalid%3Fdomain.com']) assert.deepEqual(normalizeResumeLinks([unsafe]), []);
 });
 
 test('Word source retains paragraph boundaries and hyperlink relationships', async () => {

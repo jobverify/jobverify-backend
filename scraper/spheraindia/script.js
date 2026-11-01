@@ -1,7 +1,9 @@
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
+import { inferWorkdayJobsApiConfig, runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -217,7 +219,23 @@ export const createSpheraIndiaScraper = ({
       retryBaseDelayMs,
     }))
 
-    return jobs.map(normalizeWorkdayJob)
+    const decorated = jobs.map(normalizeWorkdayJob)
+    const inventory = readInventoryEvidence(jobs)
+    if (!inventory || inventory.surface !== inferWorkdayJobsApiConfig(verifiedBoardUrl)?.jobsApiUrl
+      || jobs.some(job => job?.source !== source || job?.company !== company)) return decorated
+    // These are returned role observations, not the reported parent-board total.
+    attachSourceObservationEvidence(decorated, {
+      source: source, recordKind: 'vacancy-rows',
+      observedRecordCount: jobs.length, observedVacancyCount: jobs.length,
+      sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null,
+    })
+    return attachInventoryEvidence(decorated, {
+      ...inventory,
+      status: ['unverified', 'discovery-only', 'coverage-gap'].includes(inventory.status) ? inventory.status : 'coverage-gap',
+      listingComplete: false, reportedTotal: null, indiaFacetCount: null,
+      reason: 'The shared Workday board does not establish exact company or India inventory completeness.'
+        + (inventory.reason ? ' Board diagnostic: ' + inventory.reason : ''),
+    })
   },
 })
 

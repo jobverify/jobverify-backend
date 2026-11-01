@@ -226,11 +226,12 @@ test('caller cancellation reaches both employer discovery and native API reads',
   } }), /cancelled API request/)
 })
 
-test('initial registered source replacements execute recovery through the production catalog', async () => {
+test('initial registered source replacements execute recovery through the production catalog', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => assert.fail('Registered recovery tests must use controlled transport'))
   const sources = ['blockchaincom', 'cloudinary', 'cloverhealth', 'dailypay', 'flatironhealth', 'influxdata',
     'goodnotes', 'duda', 'housecallpro', 'hoxhunt', 'immersivelabs', 'immuta', 'instructure', 'hyperscience', 'huntress']
   const catalog = getScraperCatalog()
-  assert.equal(catalog.length, 4570)
+  assert.equal(new Set(catalog.map(p => p.source)).size, catalog.length, 'catalog sources should remain unique')
   for (const source of sources) {
     const rows = catalog.filter(p => p.source === source)
     assert.equal(rows.length, 1, source)

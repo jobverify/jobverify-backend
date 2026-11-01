@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { SIMPLIFY3X_SOFTWARE_CATALOG } from './catalog.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readEightfoldLocationScope } from '../../scraper-support/apiPortal/eightfoldLocations.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -82,11 +83,27 @@ const brandLinks = html => /href=["']https:\/\/www\.linkedin\.com\/company\/simp
  && /mailto:info@simplify3x\.com/i.test(html)
  && /cvstaticfiles\.s3\.ap-south-1\.amazonaws\.com\/website\/Simplify3x\/Simplify3X\+SOC\+2\+Type\+2\+Report\.pdf/.test(html)
 const classifyLocation = locations => {
- if (!Array.isArray(locations) || !locations.length || locations.some(value => typeof value !== 'string' || !value.trim())) return 'unknown'
- const values = locations.map(value => value.trim().toLowerCase())
- if (values.every(value => ['bengaluru','bangalore','kalyan nagar'].includes(value)) && values.some(value => ['bengaluru','bangalore'].includes(value))) return 'india'
- if (values.every(value => ['kualalampur','kualalumpur','malaysia','nyc global hq'].includes(value))) return 'foreign'
- return 'unknown'
+ const unknown = {country:null,city:null,state:null,location:null,nativeGeographyQualified:false}
+ if (!Array.isArray(locations) || !locations.length || locations.some(value => typeof value !== 'string' || !value.trim())) return unknown
+ const countryFor = value => {
+  const scope = readEightfoldLocationScope({locations:[value]})
+  return scope.unresolved ? null : scope.country
+ }
+ const countries = []
+ for (const raw of locations) {
+  const value = raw.normalize('NFKC').replace(/\s+/g,' ').trim(), parts = value.split(',')
+  if (parts.some(part => !part.trim()) || /[;/|\\&]/.test(value)) return unknown
+  const country = countryFor(value)
+  if (!country) return unknown
+  for (const part of parts) {
+   const observed = countryFor(part.trim())
+   if (observed && observed !== country) return unknown
+   if (!observed && /\b(?:and|or|global|worldwide|multiple|anywhere)\b/i.test(part)) return unknown
+  }
+  countries.push(country)
+ }
+ if (new Set(countries).size !== 1) return unknown
+ return {...unknown,country:countries[0],location:locations.join(', '),nativeGeographyQualified:true}
 }
 const validateIdentity = job => {
  if (!job || typeof job !== 'object' || !/^L\d{6}A\d{3}CU\d{3}JD\d{3}$/.test(job.jobID || '')
@@ -171,14 +188,16 @@ export const createSimplify3xSoftwareScraper = () => ({
    if (JSON.stringify(detail.location) !== JSON.stringify(row.location)) fail('native detail location mismatch')
    if (detail.closed !== false || row.onHold === true) fail('native active status disagrees with listing')
    if (!hasForm(detail)) fail('native application form is missing')
-   if (row.licenseKey !== 'L071122A001' || classifyLocation(detail.location) !== 'india') continue
+   if (row.licenseKey !== 'L071122A001') continue
+   const geography = classifyLocation(detail.location)
+   if (geography.nativeGeographyQualified && geography.country !== 'India') continue
    const description = normalizeWhitespace(detail.description)
-   if (description.length < 100) fail('native India detail description is incomplete')
+   if (description.length < 100) fail('native detail description is incomplete')
    const availability = parseJson(await get(AVAILABILITY_BASE+row.jobID),'availability')
    if (availability?.type !== 'Success' || availability?.data?.JobID !== row.jobID || availability?.data?.customerID !== row.customerID) fail('application availability identity changed')
    const applyUrl = 'https://recruitment.hire3x.com/JobRegistration/'+row.jobID
    jobs.push({jobId:row.jobID,title:detail.title,company:COMPANY,companyName:COMPANY,source:SOURCE,
-    country:'India',city:'Bengaluru',location:detail.location.join(', '),description,
+    ...geography,rawNativeWorkplaceEvidence:{source:SOURCE,jobId:row.jobID,sourceUrl:applyUrl,locations:[...detail.location]},description,
     jobUrl:applyUrl,applyUrl,link:applyUrl,sourceUrl:applyUrl,employmentType:detail.jobType,
     postedAt:detail.createdAt,sourceListingComplete:false,scrapedAt:now()})
   }
@@ -186,7 +205,7 @@ export const createSimplify3xSoftwareScraper = () => ({
   if (snapshot(first) !== snapshot(second)) fail('listing changed during detail verification')
   return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:CAREERS_URL,firstParty:true,
    listingComplete:false,pagesFetched,reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),
-   reason:'Verified active India assignments only. The linked board mixes client assignments with a separate tenant containing dated recruitment drives; current full source coverage cannot be established.'})
+   reason:'Native same-license role observations only. Unqualified workplaces retain raw location evidence without public geography. The linked board mixes client assignments with a separate tenant containing dated recruitment drives; current full source coverage cannot be established.'})
  },
 })
 export const run = async (options = {}) => createSimplify3xSoftwareScraper().run(options)

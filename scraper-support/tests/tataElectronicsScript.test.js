@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import https from 'node:https'
+import {syncBuiltinESMExports} from 'node:module'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
 
 const loadTataElectronicsModule = async () => {
   try {
@@ -102,40 +107,16 @@ const detailPage1Html = `
 </html>
 `
 
-const detailPage2Html = `
-<!doctype html>
-<html>
-  <body>
-    <div class="jobDisplayShell" itemscope="itemscope" itemtype="http://schema.org/JobPosting">
-      <p id="job-location"><span class="jobGeoLocation">Hosur, Tamil Nadu, India</span></p>
-      <meta itemprop="datePosted" content="2026-07-07" />
-      <div class="applylink pull-right">
-        <a class="btn btn-primary btn-large btn-lg apply dialogApplyBtn " href="/talentcommunity/apply/7039901/?locale=en_US">Apply now</a>
-      </div>
-      <h1>
-        <span itemprop="title" data-careersite-propertyid="title">Process Engineer</span>
-      </h1>
-      <span data-careersite-propertyid="department">Operations</span>
-      <span itemprop="description" data-careersite-propertyid="description">
-        <span class="jobdescription">
-          <p>Improve yield and process stability across semiconductor manufacturing lines.</p>
-        </span>
-      </span>
-    </div>
-  </body>
-</html>
-`
-
 test('buildSearchUrl keeps Tata Electronics listings on the official public jobs2web route', async () => {
   const { buildSearchUrl } = await loadTataElectronicsModule()
 
   assert.equal(
     buildSearchUrl(),
-    'https://tataelectrd.valhalla44.stage.jobs2web.com/search/?createNewAlert=false&locationsearch=&q=',
+    'https://careers.tataelectronics.com/search',
   )
   assert.equal(
     buildSearchUrl(25),
-    'https://tataelectrd.valhalla44.stage.jobs2web.com/search/?createNewAlert=false&locationsearch=&q=&startrow=25',
+    'https://careers.tataelectronics.com/tile-search-results/?q=&sortColumn=referencedate&sortDirection=desc&startrow=25',
   )
 })
 
@@ -150,8 +131,8 @@ test('extractSearchResults collapses duplicate Tata Electronics title links into
     location: 'Bengaluru, Karnataka, India',
     city: 'Bengaluru',
     jobId: '7038894',
-    requisitionId: '7038894',
-    sourceUrl: 'https://tataelectrd.valhalla44.stage.jobs2web.com/job/Bengaluru-DB-Admin-KA/7038894/',
+    requisitionId: null,
+    sourceUrl: 'https://careers.tataelectronics.com/job/Bengaluru-DB-Admin-KA/7038894/',
     postingDate: 'Jul 8, 2026',
   })
 })
@@ -181,8 +162,8 @@ test('extractJobDetail reads Tata Electronics apply locale from the detail page 
     location: 'Bengaluru, Karnataka, India',
     city: 'Bengaluru',
     jobId: '7038894',
-    requisitionId: '7038894',
-    sourceUrl: 'https://tataelectrd.valhalla44.stage.jobs2web.com/job/Bengaluru-DB-Admin-KA/7038894/',
+    requisitionId: null,
+    sourceUrl: 'https://careers.tataelectronics.com/job/Bengaluru-DB-Admin-KA/7038894/',
     postingDate: 'Jul 8, 2026',
   })
 
@@ -192,7 +173,7 @@ test('extractJobDetail reads Tata Electronics apply locale from the detail page 
     location: 'Bengaluru, Karnataka, India',
     city: 'Bengaluru',
     jobId: '7038894',
-    requisitionId: '7038894',
+    requisitionId: null,
     employmentType: 'Full-time',
     experienceRequired: null,
     jobDescription: 'Manage production databases for Tata Electronics plants. - PostgreSQL administration - Disaster recovery planning',
@@ -204,90 +185,75 @@ test('extractJobDetail reads Tata Electronics apply locale from the detail page 
     ],
     postingDate: '2026-07-08',
     closingDate: '2026-07-31',
-    applyUrl: 'https://tataelectrd.valhalla44.stage.jobs2web.com/talentcommunity/apply/7038894/?locale=en_GB',
-    sourceUrl: 'https://tataelectrd.valhalla44.stage.jobs2web.com/job/Bengaluru-DB-Admin-KA/7038894/',
+    applyUrl: 'https://careers.tataelectronics.com/talentcommunity/apply/7038894/?locale=en_GB',
+    sourceUrl: 'https://careers.tataelectronics.com/job/Bengaluru-DB-Admin-KA/7038894/',
   })
 })
 
-test('run follows Tata Electronics public search pages and carries detail-derived apply URLs into final jobs', async () => {
+test('run replays the current Tata Electronics public native GETs before applying the requested cap', async () => {
   const tataElectronics = await loadTataElectronicsModule()
-  const requestedUrls = []
+  const capture = JSON.parse(gunzipSync(readFileSync(new URL(
+    './fixtures/cariad-tataelectronics-native-20261101.json.gz', import.meta.url,
+  ))))
+  const entities = new Map(capture.entities.map(entity => [entity.url, entity]))
+  const requestedUrls = [], records = [], audits = []
+  const observedAt = '2026-11-01T16:45:00.000Z'
+  const previous = {fetch: globalThis.fetch, get: https.get, request: https.request}
+  const refuse = () => { throw new Error('Tata Electronics replay forbids live HTTP') }
+  globalThis.fetch = refuse; https.get = refuse; https.request = refuse
+  syncBuiltinESMExports()
+  let jobs
+  try {
+    jobs = await tataElectronics.createTataElectronicsScraper().run({
+      maxJobs: 2,
+      now: () => observedAt,
+      fetchPage: async url => {
+        requestedUrls.push(url)
+        const entity = entities.get(url)
+        assert.ok(entity, 'Unrecorded Tata Electronics public URL: ' + url)
+        return {url, status: entity.status, headers: structuredClone(entity.headers), bodyBase64: entity.bodyBase64}
+      },
+      onRecords: async rows => records.push(rows),
+      onAudit: async audit => audits.push(audit),
+    })
+  } finally {
+    globalThis.fetch = previous.fetch; https.get = previous.get; https.request = previous.request
+    syncBuiltinESMExports()
+  }
 
-  const jobs = await tataElectronics.createTataElectronicsScraper().run({
-    maxPages: 2,
-    maxJobs: 2,
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === tataElectronics.buildSearchUrl()) return searchPage1Html
-      if (url === tataElectronics.buildSearchUrl(25)) return searchPage2Html
-      if (url === 'https://tataelectrd.valhalla44.stage.jobs2web.com/job/Bengaluru-DB-Admin-KA/7038894/') {
-        return detailPage1Html
-      }
-      if (url === 'https://tataelectrd.valhalla44.stage.jobs2web.com/job/Hosur-Process-Engineer-TN/7039901/') {
-        return detailPage2Html
-      }
-
-      throw new Error(`Unexpected Tata Electronics URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    'https://tataelectrd.valhalla44.stage.jobs2web.com/search/?createNewAlert=false&locationsearch=&q=',
-    'https://tataelectrd.valhalla44.stage.jobs2web.com/job/Bengaluru-DB-Admin-KA/7038894/',
-    'https://tataelectrd.valhalla44.stage.jobs2web.com/search/?createNewAlert=false&locationsearch=&q=&startrow=25',
-    'https://tataelectrd.valhalla44.stage.jobs2web.com/job/Hosur-Process-Engineer-TN/7039901/',
-  ])
+  assert.equal(records.length, 1)
+  assert.equal(records[0].length, 112, 'the cap must not truncate native own-model observations')
+  assert.equal(requestedUrls.filter(url => new URL(url).pathname.startsWith('/job/')).length, 112)
+  assert.equal(requestedUrls.filter(url => url === 'https://www.tataelectronics.com/work-with-us').length, 2)
+  assert.equal(requestedUrls.filter(url => url === tataElectronics.buildSearchUrl()).length, 2)
+  assert.equal(requestedUrls.some(url => url.includes('.stage.jobs2web.com')), false)
   assert.equal(jobs.length, 2)
-  assert.deepEqual(
-    jobs.map((job) => ({
-      jobId: job.jobId,
-      requisitionId: job.requisitionId,
-      title: job.title,
-      company: job.company,
-      department: job.department,
-      location: job.location,
-      city: job.city,
-      source: job.source,
-      sourceUrl: job.sourceUrl,
-      applyUrl: job.applyUrl,
-      link: job.link,
-      employmentType: job.employmentType,
-      postingDate: job.postingDate,
-    })),
-    [
-      {
-        jobId: '7038894',
-        requisitionId: '7038894',
-        title: 'DB Admin',
-        company: 'TATA Electronics Private Limited',
-        department: 'Manufacturing IT',
-        location: 'Bengaluru, Karnataka, India',
-        city: 'Bengaluru',
-        source: 'tataelectronics',
-        sourceUrl: 'https://tataelectrd.valhalla44.stage.jobs2web.com/job/Bengaluru-DB-Admin-KA/7038894/',
-        applyUrl: 'https://tataelectrd.valhalla44.stage.jobs2web.com/talentcommunity/apply/7038894/?locale=en_GB',
-        link: 'https://tataelectrd.valhalla44.stage.jobs2web.com/talentcommunity/apply/7038894/?locale=en_GB',
-        employmentType: 'Full-time',
-        postingDate: '2026-07-08',
-      },
-      {
-        jobId: '7039901',
-        requisitionId: '7039901',
-        title: 'Process Engineer',
-        company: 'TATA Electronics Private Limited',
-        department: 'Operations',
-        location: 'Hosur, Tamil Nadu, India',
-        city: 'Hosur',
-        source: 'tataelectronics',
-        sourceUrl: 'https://tataelectrd.valhalla44.stage.jobs2web.com/job/Hosur-Process-Engineer-TN/7039901/',
-        applyUrl: 'https://tataelectrd.valhalla44.stage.jobs2web.com/talentcommunity/apply/7039901/?locale=en_US',
-        link: 'https://tataelectrd.valhalla44.stage.jobs2web.com/talentcommunity/apply/7039901/?locale=en_US',
-        employmentType: null,
-        postingDate: '2026-07-07',
-      },
-    ],
-  )
-  assert.match(jobs[0].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
-  assert.match(jobs[1].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
+  for (const job of jobs) {
+    assert.equal(job.source, 'tataelectronics')
+    assert.equal(job.company, 'TATA Electronics Private Limited')
+    assert.equal(job.country, 'India')
+    assert.equal(job.requisitionId, null)
+    assert.match(job.internalJobId, /^[0-9]+$/)
+    assert.ok(job.jobDescription.length > 100)
+    assert.equal(new URL(job.sourceUrl).origin, 'https://careers.tataelectronics.com')
+    assert.equal(new URL(job.applyUrl).searchParams.get('locale'), 'en_GB')
+    assert.equal(new URL(job.applyUrl).pathname, '/talentcommunity/apply/' + job.jobId + '/')
+    assert.equal(job.link, job.applyUrl)
+    assert.equal(job.scrapedAt, observedAt)
+    assert.equal(job.sourceScopeComplete, false)
+    assert.equal(job.lifecycleCleanupAllowed, false)
+  }
+  assert.equal(jobs[0].jobId, '55450944')
+  assert.equal(jobs[0].postingDate, '2026-11-01T02:00:00.000Z')
+  assert.equal(jobs[0].closingDate, '2026-12-10T18:30:00.000Z')
+  assert.equal(jobs[0].applyUrl, 'https://careers.tataelectronics.com/talentcommunity/apply/55450944/?locale=en_GB')
+  assert.equal(audits.length, 1)
+  assert.equal(audits[0].opening.rows.length, 112)
+  assert.equal(audits[0].closing.rows.length, 112)
+  assert.equal(audits[0].ownModelStabilityQualified, false)
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'coverage-gap')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
 })

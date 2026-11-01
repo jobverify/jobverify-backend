@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { installWorkbookOfflineGuard } from './helpers/workbookBatchCatalogAssertions20261102.js'
+
+test.beforeEach((t) => installWorkbookOfflineGuard(t))
+
 
 const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
 
@@ -162,21 +166,20 @@ test('QualiZeal sentinel validates the anti-bot challenge and returns []', async
   assert.deepEqual(jobs, [])
 })
 
-test('Solera sentinel validates the first-party careers copy and Workday handoff before returning []', async () => {
+test('Solera legacy careers shell cannot certify native inventory through a body-only override', async () => {
   const solera = await loadModule('../../scraper/solera/script.js')
-
   assert.equal(solera.hasOfficialCareersSignal(soleraCareersHtml), true)
   assert.equal(solera.hasWorkdayHandoffSignal(soleraCareersHtml), true)
   assert.equal(solera.hasInlineJobCards(soleraCareersHtml), false)
-
-  const jobs = await solera.createSoleraScraper().run({
-    fetchText: async (url) => {
-      assert.equal(url, solera.CAREERS_URL)
-      return soleraCareersHtml
-    },
-  })
-
-  assert.deepEqual(jobs, [])
+  let bodyReads = 0
+  await assert.rejects(solera.createSoleraScraper().run({ fetchText: async () => {
+    bodyReads += 1
+    return soleraCareersHtml
+  } }), /native HTTP response metadata is required; body-only transport overrides are unsupported/)
+  assert.equal(bodyReads, 0)
+  await assert.rejects(solera.run({ maxJobs: 1 }), /inventory caps and page limits are unsupported/)
+  const cancelled = new Error('cancel before Solera source reads')
+  await assert.rejects(solera.run({ signal: AbortSignal.abort(cancelled) }), error => error === cancelled)
 })
 
 test('Factspan sentinel validates the current-openings shell and returns [] when no public jobs inventory is present', async () => {

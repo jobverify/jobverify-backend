@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createThryveDigitalScraper } from '../scraper/thryvedigital/script.js'
+import { createThryveDigitalScraper, COMPANY, SOURCE, DARWINBOX_ORIGIN, DARWINBOX_COMPANY_ID } from '../scraper/thryvedigital/script.js'
+import { createDarwinboxScraper } from '../scraper/darwinbox/script.js'
 import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 import { hasSourceDescription } from '../src/utils/jobSourceContent.js'
 
@@ -54,13 +55,32 @@ test('ordinary Thryve defaults exhaust a 154-record feed beyond ten pages withou
   assert.equal(evidence.reason, 'darwinbox-complete-public-pagination')
 })
 
-test('Thryve still reports discovery-only when a caller explicitly limits pagination', async () => {
+test('Thryve preserves the delegated discovery-only evidence when a caller explicitly limits pagination', async () => {
+  const original = structuredClone(nativeRecords)
+  const startedAt = Date.now()
   const jobs = await createThryveDigitalScraper().run({ ...transport, maxPages: 2 })
+  const delegated = await createDarwinboxScraper({
+    companyName: COMPANY, source: SOURCE, origin: DARWINBOX_ORIGIN, companyId: DARWINBOX_COMPANY_ID,
+  }).run({ fetchListingPage: transport.fetchListingPage, maxPages: 2 })
+  const completedAt = Date.now()
 
   assert.equal(jobs.length, 20)
   assert(jobs.every(job => job.sourceListingComplete === false))
   const evidence = readInventoryEvidence(jobs)
+  const expected = readInventoryEvidence(delegated)
+  assert.equal(evidence.status, 'discovery-only')
   assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.pagesFetched, 2)
   assert.equal(evidence.reportedTotal, 154)
-  assert.equal(evidence.reason, 'company-wrapper-limited-inventory')
+  assert.equal(evidence.reason, 'darwinbox-incomplete-or-limited-pagination')
+  assert.deepEqual({ ...evidence, verifiedAt: null }, { ...expected, verifiedAt: null })
+  for (const item of [evidence, expected]) {
+    assert.ok(Date.parse(item.verifiedAt) >= startedAt && Date.parse(item.verifiedAt) <= completedAt)
+  }
+  for (const job of [...jobs, ...delegated]) {
+    assert.ok(Date.parse(job.scrapedAt) >= startedAt && Date.parse(job.scrapedAt) <= completedAt)
+  }
+  const nativeFields = value => Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'scrapedAt'))
+  assert.deepEqual(jobs.map(nativeFields), delegated.map(nativeFields))
+  assert.deepEqual(nativeRecords, original)
 })

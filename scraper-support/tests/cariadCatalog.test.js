@@ -12,10 +12,12 @@ test('getScraperCatalog includes CARIAD on the official Volkswagen Group jobs ho
 
   assert.ok(cariad)
   assert.equal(cariad.adapter, 'script')
-  assert.equal(cariad.atsPlatform, 'successfactors')
+  assert.equal(cariad.atsPlatform, 'successfactors-public-native-get')
   assert.equal(cariad.companyName, 'CARIAD')
-  assert.match(cariad.companyCareerPage, /jobs\.volkswagen-group\.com\/cariad/i)
-  assert.equal(cariad.companyDomain, 'jobs.volkswagen-group.com')
+  assert.equal(cariad.companyCareerPage, 'https://cariad.technology/de/en/careers.html')
+  assert.equal(cariad.companyDomain, 'cariad.technology')
+  assert.equal(cariad.sourceScopeComplete, false)
+  assert.equal(cariad.lifecycleCleanupAllowed, false)
 })
 
 test('buildScrapers exposes a runnable CARIAD scraper without changing the runner contract', () => {

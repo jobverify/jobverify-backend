@@ -19,10 +19,11 @@ const createFetch = (mutate = () => {}) => async url => {
   mutate(page,url)
   return page
 }
-test('current published Hire3x migration returns only verified active India assignments and protects earlier inventory', async () => {
+test('current published Hire3x migration retains raw unknown-geography observations and protects earlier inventory', async () => {
  const jobs = await source.run({fetchPage:createFetch()})
- assert.deepEqual(jobs.map(j=>j.jobId).sort(),['L071122A001CU010JD017','L071122A001CU036JD027','L071122A001CU036JD028'])
- assert.ok(jobs.every(j=>j.country==='India' && j.description.length>1500 && j.sourceListingComplete===false && j.jobUrl===j.applyUrl))
+ assert.deepEqual(jobs.map(j=>j.jobId).sort(),["L071122A001CU009JD010","L071122A001CU009JD012","L071122A001CU009JD013","L071122A001CU009JD014","L071122A001CU009JD015","L071122A001CU010JD017","L071122A001CU036JD027","L071122A001CU036JD028","L071122A001CU036JD029"])
+ assert.ok(jobs.every(j=>j.country===null && j.city===null && j.location===null && j.nativeGeographyQualified===false && j.description.length>100 && j.sourceListingComplete===false && j.jobUrl===j.applyUrl))
+ assert.ok(jobs.filter(j=>["L071122A001CU010JD017","L071122A001CU036JD027","L071122A001CU036JD028"].includes(j.jobId)).every(j=>j.description.length>1500))
  assert.equal(readInventoryEvidence(jobs).status,'coverage-gap')
  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
  assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null)
@@ -45,13 +46,13 @@ for (const [label,change,pattern] of [
  ['unexpected closed response',(p,u)=>{if(u.startsWith(source.DETAIL_BASE)&&u.endsWith('L071122A001CU036JD028')){p.status=409;p.html=JSON.stringify({type:'Fail',data:{data:'Job Not found'}})}},/detail|active/i],
  ['availability identity',(p,u)=>{if(u.startsWith(source.AVAILABILITY_BASE)){let b=JSON.parse(p.html);b.data.JobID='other';p.html=JSON.stringify(b)}},/availability/i]
 ]) test('fails closed on '+label,async()=>assert.rejects(source.run({fetchPage:createFetch(change)}),pattern))
-test('unknown locations are excluded and remain an incomplete country inventory', async()=>{
+test('unknown locations remain raw and preserve an incomplete country inventory', async()=>{
  const jobs=await source.run({fetchPage:createFetch((p,u)=>{if(u===source.LISTING_URL||u.startsWith(source.DETAIL_BASE)){let b=JSON.parse(p.html);let rows=u===source.LISTING_URL?b.data.flatMap(g=>g.jobs):[b.data];for(const j of rows)if(j.jobID==='L071122A001CU036JD028')j.location=['Remote'];p.html=JSON.stringify(b)}})})
- assert.equal(jobs.length,2);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+ assert.equal(jobs.length,9);assert.ok(jobs.every(j=>j.country===null && j.nativeGeographyQualified===false));assert.deepEqual(jobs.find(j=>j.jobId==='L071122A001CU036JD028').rawNativeWorkplaceEvidence.locations,['Remote']);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
 test('no verified India rows never authorizes empty expiry',async()=>{
  const jobs=await source.run({fetchPage:createFetch((p,u)=>{if(u===source.LISTING_URL||u.startsWith(source.DETAIL_BASE)){let b=JSON.parse(p.html);let rows=u===source.LISTING_URL?b.data.flatMap(g=>g.jobs):[b.data];for(const j of rows)if(j?.licenseKey==='L071122A001'&&j.location?.some(l=>/bengaluru|bangalore/i.test(l)))j.location=['Remote'];p.html=JSON.stringify(b)}})})
- assert.equal(jobs.length,0);assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+ assert.equal(jobs.length,9);assert.ok(jobs.every(j=>j.country===null && j.nativeGeographyQualified===false));assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
 
 test('a changing final snapshot is rejected',async()=>{
@@ -65,5 +66,5 @@ test('an aborted run makes no requests',async()=>{
 })
 test('default transport requests JSON for public APIs and supplies a bounded request signal',async()=>{
  const originalFetch=globalThis.fetch;const mock=createFetch();let calls=0
- try {globalThis.fetch=async(url,options)=>{calls++;assert.ok(options.signal);assert.equal(options.redirect,'follow');if(String(url).includes('-api.hire3x.com/')||String(url).includes('api-website.hire3x.com/'))assert.equal(options.headers.Accept,'application/json');const page=await mock(url);return {status:page.status,url:page.url,text:async()=>page.html}};assert.equal((await source.run()).length,3);assert.equal(calls,25)}finally{globalThis.fetch=originalFetch}
+ try {globalThis.fetch=async(url,options)=>{calls++;assert.ok(options.signal);assert.equal(options.redirect,'follow');if(String(url).includes('-api.hire3x.com/')||String(url).includes('api-website.hire3x.com/'))assert.equal(options.headers.Accept,'application/json');const page=await mock(url);return {status:page.status,url:page.url,text:async()=>page.html}};assert.equal((await source.run()).length,9);assert.equal(calls,31)}finally{globalThis.fetch=originalFetch}
 })

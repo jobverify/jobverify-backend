@@ -6,6 +6,10 @@ const DEFAULT_TOTAL_JOBS = 1800;
 const ACTIVE_JOB_COUNT = 1720;
 const NON_PUBLIC_ACTIVE_JOB_COUNT = 80;
 const EXPIRED_JOB_COUNT = 30;
+const FIXTURE_TIMESTAMP_FIELDS = [
+  "postedAt", "sortDate", "scrapedAt", "scrapedTimestamp",
+  "lastSeenAt", "createdAt", "updatedAt", "extractedAt",
+];
 
 const INDIA_CITIES = Object.freeze([
   { city: "Bangalore", state: "Karnataka" },
@@ -377,7 +381,11 @@ const buildGeneratedJob = (index) => {
   });
 };
 
-export const buildJobProfileFixtureJobs = ({ totalJobs = DEFAULT_TOTAL_JOBS } = {}) => {
+// Profiling keeps its fixed dates; local browser stacks can opt into a valid Date clock.
+export const buildJobProfileFixtureJobs = ({ totalJobs = DEFAULT_TOTAL_JOBS, referenceDate } = {}) => {
+  if (referenceDate !== undefined && (!(referenceDate instanceof Date) || !Number.isFinite(referenceDate.getTime()))) {
+    throw new TypeError("referenceDate must be a valid Date.");
+  }
   const safeTotalJobs = Math.max(totalJobs, DEFAULT_TOTAL_JOBS);
   const jobs = [buildCanonicalMatchJob()];
 
@@ -385,7 +393,17 @@ export const buildJobProfileFixtureJobs = ({ totalJobs = DEFAULT_TOTAL_JOBS } = 
     jobs.push(buildGeneratedJob(index));
   }
 
-  return jobs;
+  if (referenceDate === undefined) return jobs;
+  const newestPostedAt = jobs.reduce((latest, job) => Math.max(latest, job.postedAt.getTime()), -Infinity);
+  const shift = referenceDate.getTime() - newestPostedAt;
+  return jobs.map(job => ({
+    ...job,
+    ...Object.fromEntries(FIXTURE_TIMESTAMP_FIELDS.map(field => {
+      const shifted = new Date(job[field].getTime() + shift);
+      if (!Number.isFinite(shifted.getTime())) throw new RangeError("referenceDate produces out-of-range fixture timestamps.");
+      return [field, shifted];
+    })),
+  }));
 };
 
 export const seedJobProfileFixtures = async (JobModel, options = {}) => {

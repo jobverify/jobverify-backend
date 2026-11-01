@@ -92,9 +92,9 @@ test('A3logics local catalog captures the verified first-party careers page and 
     provider.extractionStrategy,
     'verified-first-party-careers-page+keka-embed-handoff+active-jobs-api',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.verifiedSurfaceSummary, /Explore Job opportunities/i)
-  assert.match(provider.verifiedSurfaceSummary, /Data Administrator/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior System and Network Administrator in Jaipur/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

@@ -58,7 +58,7 @@ test('Novo Nordisk GBS scraper keeps requests on the official public board and f
     city: 'Bangalore',
     department: 'Data & AI',
     jobId: '1401136833',
-    requisitionId: '1401136833',
+    requisitionId: null,
     sourceUrl: 'https://careers.novonordisk.com/job/Bangalore-Global-Customer-Insights-Associate-Lead-Karn/1401136833/',
     postingDate: '2026-07-04',
   }, {
@@ -67,7 +67,7 @@ test('Novo Nordisk GBS scraper keeps requests on the official public board and f
     city: 'Bangalore',
     department: 'Legal, Compliance & Audit',
     jobId: '1401136834',
-    requisitionId: '1401136834',
+    requisitionId: null,
     sourceUrl: 'https://careers.novonordisk.com/job/Bangalore-Senior-Counsel-Karn/1401136834/',
     postingDate: '2026-07-03',
   }])

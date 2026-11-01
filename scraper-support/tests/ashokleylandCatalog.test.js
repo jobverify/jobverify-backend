@@ -5,23 +5,25 @@ import {
   buildScrapers,
   getScraperCatalog,
 } from '../providers/index.js'
+import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 
-test('getScraperCatalog includes the Ashok Leyland Darwinbox-backed script provider with official metadata', () => {
+test('getScraperCatalog excludes the retired Ashok Leyland provider', () => {
   const catalog = getScraperCatalog()
   const ashokLeyland = catalog.find((provider) => provider.source === 'ashokleyland')
 
-  assert.ok(ashokLeyland)
-  assert.equal(ashokLeyland.adapter, 'script')
-  assert.equal(ashokLeyland.atsPlatform, 'darwinbox')
-  assert.match(ashokLeyland.companyCareerPage, /ashokleyland\.com\/in\/careers/i)
+  assert.equal(ashokLeyland, undefined)
 })
 
-test('buildScrapers exposes a runnable Ashok Leyland scraper without changing the runner contract', () => {
+test('buildScrapers and company coverage exclude retired Ashok Leyland', () => {
   const scrapers = buildScrapers()
   const ashokLeyland = scrapers.find((scraper) => scraper.name === 'ashokleyland')
 
-  assert.ok(ashokLeyland)
-  assert.equal(typeof ashokLeyland.run, 'function')
-  assert.match(ashokLeyland.dryRunFile, /ashokleyland[\\/]jobs\.json$/)
-  assert.equal(ashokLeyland.provider.source, 'ashokleyland')
+  assert.equal(ashokLeyland, undefined)
+
+  const report = generateCompanyCoverageReport({
+    csvText: 'Ashok Leyland\n',
+    catalog: getScraperCatalog(),
+  })
+  assert.equal(report.matchedCount, 0)
+  assert.deepEqual(report.unmatched.map((item) => item.companyName), ['Ashok Leyland'])
 })

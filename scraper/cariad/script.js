@@ -1,7 +1,9 @@
+import {createNativeScraper,nativeProfile,nativeMetadata} from './native.js'
+export {nativeMetadata}
 import https from 'node:https'
 
 export const BASE_URL = 'https://jobs.volkswagen-group.com'
-export const SEARCH_PATH = '/cariad/search/?createNewAlert=false&q=&locationsearch=&optionsFacetsDD_country=&optionsFacetsDD_department=&optionsFacetsDD_shifttype=&locale=en_US'
+export const SEARCH_PATH = new URL(nativeProfile.searchURL).pathname + new URL(nativeProfile.searchURL).search
 export const CAREER_PAGE_URL = new URL('/cariad/', BASE_URL).toString()
 
 const INDIA_LOCATION_PATTERN = /\b(india|bengaluru|bangalore|pune|hyderabad|chennai|mumbai|gurugram|gurgaon|noida|delhi|navi mumbai)\b/i
@@ -112,7 +114,7 @@ export const extractSearchResults = (html) => {
       const sourceUrl = toAbsoluteUrl(relativeLink)
       const jobId = extractJobIdFromUrl(sourceUrl)
 
-      if (!title || !location || !sourceUrl || !jobId || !isIndiaLocation(location)) return null
+      if (!title || !location || !sourceUrl || !jobId) return null
 
       return {
         title,
@@ -120,7 +122,7 @@ export const extractSearchResults = (html) => {
         location,
         city: extractCity(location),
         jobId,
-        requisitionId: jobId,
+        requisitionId: null,
         sourceUrl,
         postingDate,
       }
@@ -154,7 +156,7 @@ export const extractJobDetail = (html, listing = {}) => {
     location,
     city: listing.city || extractCity(location),
     jobId: listing.jobId || extractJobIdFromUrl(listing.sourceUrl),
-    requisitionId: listing.requisitionId || listing.jobId || extractJobIdFromUrl(listing.sourceUrl),
+    requisitionId: null,
     employmentType: null,
     experienceRequired: null,
     jobDescription: stripTags(descriptionHtml),
@@ -168,43 +170,6 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-export const createCariadScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const jobs = []
-    const listingHtml = await fetchText(buildSearchUrl())
-    const listings = extractSearchResults(listingHtml)
+export const createCariadScraper = (defaults = {}) => createNativeScraper(defaults)
 
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml, listing)
-
-      jobs.push({
-        jobId: detail.jobId || listing.jobId,
-        requisitionId: detail.requisitionId || listing.requisitionId,
-        title: detail.title || listing.title,
-        company: 'CARIAD',
-        department: listing.department || null,
-        location: detail.location || listing.location,
-        city: detail.city || listing.city,
-        country: 'India',
-        link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-        applyUrl: detail.applyUrl || listing.sourceUrl,
-        sourceUrl: detail.sourceUrl || listing.sourceUrl,
-        source: 'cariad',
-        employmentType: detail.employmentType,
-        experienceRequired: detail.experienceRequired,
-        jobDescription: detail.jobDescription,
-        minimumQualification: detail.minimumQualification,
-        preferredQualification: detail.preferredQualification,
-        requiredSkills: detail.requiredSkills,
-        postingDate: detail.postingDate || listing.postingDate,
-        closingDate: detail.closingDate,
-        scrapedAt: new Date().toISOString(),
-      })
-    }
-
-    return jobs
-  },
-})
-
-export const run = async () => createCariadScraper().run()
+export const run = async (options = {}) => createCariadScraper().run(options)

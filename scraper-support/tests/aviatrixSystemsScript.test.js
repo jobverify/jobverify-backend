@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFileSync } from 'node:fs'
+import { decodeHTML } from 'entities'
 import { createAviatrixSystemsScraper } from '../../scraper/aviatrixsystems/script.js'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
@@ -27,7 +28,9 @@ test('Aviatrix Systems extracts the five native India vacancies and preserves th
     assert.equal(job.company, 'Aviatrix Systems')
     assert.equal(job.applyUrl, original.absolute_url)
     assert.equal(job.postingDate, original.first_published)
-    assert.equal(job.jobDescription, original.content)
+    assert.equal(job.jobDescription, decodeHTML(original.content))
+    assert.equal(job.nativeDescriptionRaw, original.content)
+    assert.equal(job.nativeDescriptionHTML, job.jobDescription)
     assert.equal(job.sourceNativeLocationEvidence.primary,original.location.name)
     assert.deepEqual(job.sourceNativeLocationEvidence.offices,original.offices)
   }

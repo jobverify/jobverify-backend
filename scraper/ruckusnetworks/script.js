@@ -138,7 +138,7 @@ export const extractSearchResults = (html) => [...String(html ?? '').matchAll(/<
       location,
       city: location.split(',')[0]?.trim() || null,
       jobId,
-      requisitionId: requisitionId || jobId,
+      requisitionId: requisitionId || null,
       department,
       postingDate,
       sourceUrl,

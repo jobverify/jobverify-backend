@@ -19,9 +19,9 @@ test('registers Protiviti against the official careers page and verified public 
   assert.equal(provider.companyName, 'Protiviti')
   assert.equal(provider.adapter, 'workday')
   assert.equal(provider.atsPlatform, 'workday')
-  assert.equal(provider.companyCareerPage, 'https://www.protiviti.com/in-en/careers')
+  assert.equal(provider.companyCareerPage, 'https://www.protiviti.com/in-pcc/careers')
   assert.equal(provider.companyDomain, 'protiviti.com')
-  assert.match(provider.baseUrl, /roberthalf\.wd1\.myworkdayjobs\.com\/en-US\/ProtivitiNA/i)
+  assert.equal(provider.baseUrl, 'https://roberthalf.wd1.myworkdayjobs.com/en-US/ProtivitiIndia')
   assert.equal(provider.locationCountry, INDIA_WORKDAY_COUNTRY_FACET)
 
   const scraper = buildScrapers().find((candidate) => candidate.name === 'protiviti')
@@ -30,18 +30,20 @@ test('registers Protiviti against the official careers page and verified public 
   assert.match(scraper.dryRunFile, /protiviti.workday[\\/]jobs\.json$/)
 })
 
-test('uses the Protiviti Workday jobs API so the verified India filter returns an honest zero-result source today', () => {
+test('uses the Protiviti India Workday board with the native India country facet', () => {
   const config = loadConfig(path.join(testsDir, '../../scraper/protiviti.workday'))
 
   assert.equal(config.listingStrategy, 'jobs-api')
   assert.equal(
     config.jobsApiUrl,
-    'https://roberthalf.wd1.myworkdayjobs.com/wday/cxs/roberthalf/ProtivitiNA/jobs',
+    'https://roberthalf.wd1.myworkdayjobs.com/wday/cxs/roberthalf/ProtivitiIndia/jobs',
   )
   assert.equal(
     config.detailUrlBase,
-    'https://roberthalf.wd1.myworkdayjobs.com/en-US/ProtivitiNA',
+    'https://roberthalf.wd1.myworkdayjobs.com/en-US/ProtivitiIndia',
   )
+  assert.equal(config.countryFacetParameter, 'Location_Country')
+  assert.equal(config.locationCountry, INDIA_WORKDAY_COUNTRY_FACET)
 })
 
 test('company coverage resolves Protiviti Global Business Consulting to the Protiviti provider', () => {

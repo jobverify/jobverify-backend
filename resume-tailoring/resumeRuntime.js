@@ -7,6 +7,7 @@ import { availableParallelism } from 'node:os';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { spawn } from 'node:child_process';
+import { Agent } from 'undici';
 import { resumeFailure, safeResumeDiagnostic } from './resumeDiagnostics.js';
 
 export const RESUME_MODEL = JSON.parse(await fs.readFile(new URL('./resume-model.json', import.meta.url), 'utf8'));
@@ -76,17 +77,27 @@ const comparisonSchema = { type: 'object', additionalProperties: false, required
   evidence: { type: 'string', minLength: 1, maxLength: 4096 },
   missingFacts: { type: 'array', items: { type: 'string' } }, unsupportedClaims: { type: 'array', items: { type: 'string' } }, supported: { type: 'boolean' },
 } };
+const modelTimeoutCodes = new Set(['UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT', 'UND_ERR_CONNECT_TIMEOUT', 'ETIMEDOUT']);
+function modelRequestFailure(error, signal, fallbackCode) {
+  const timedOut = signal.aborted || modelTimeoutCodes.has(error?.code) || modelTimeoutCodes.has(error?.cause?.code);
+  return resumeFailure(timedOut ? 'model_timeout' : fallbackCode);
+}
 export async function generateResumeText(prompt, { fetchImpl = fetch, deadline = Date.now() + 480000, comparison = false, onDiagnostic = () => {} } = {}) {
   const messages = [{ role: 'user', content: prompt }];
   const maxTokens = comparison ? RESUME_MODEL.comparisonOutputTokens : RESUME_MODEL.maxOutputTokens;
   const request = async (endpoint, body) => {
     const signal = AbortSignal.timeout(remainingBudget(deadline, RESUME_MODEL.requestSeconds * 1000));
-    let response;
+    // The abort signal bounds the whole request, including the response body.
+    // Undici's separate five-minute timers must not preempt that deadline.
+    const dispatcher = new Agent({ headersTimeout: 0, bodyTimeout: 0 });
     try {
-      response = await fetchImpl(`${serverUrl}${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal, body: JSON.stringify(body) });
-    } catch { throw resumeFailure(signal.aborted ? 'model_timeout' : 'model_unavailable'); }
-    if (!response.ok) throw resumeFailure('model_unavailable');
-    try { return await response.json(); } catch { throw resumeFailure(signal.aborted ? 'model_timeout' : 'model_protocol_invalid'); }
+      let response;
+      try {
+        response = await fetchImpl(`${serverUrl}${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal, dispatcher, body: JSON.stringify(body) });
+      } catch (error) { throw modelRequestFailure(error, signal, 'model_unavailable'); }
+      if (!response.ok) throw resumeFailure('model_unavailable');
+      try { return await response.json(); } catch (error) { throw modelRequestFailure(error, signal, 'model_protocol_invalid'); }
+    } finally { await dispatcher.destroy(); }
   };
   const rendered = await request('/apply-template', { messages });
   if (typeof rendered.prompt !== 'string') throw resumeFailure('model_protocol_invalid');

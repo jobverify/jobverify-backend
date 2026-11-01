@@ -1,3 +1,4 @@
+import {replay as currentReplay} from '../../scraper-support/native-sources/publicNativeGetSources/fixtureReplay.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -60,15 +61,6 @@ test('Dunzo verified Workable surfaces accept the current empty-feed format', ()
   assert.equal(hasWidgetApiSignal(widgetPayload), true)
 })
 
-test('Dunzo scraper returns no India jobs while the verified Workable board stays empty', async () => {
-  const jobs = await createDunzoScraper({
-    now: () => new Date('2026-08-02T00:00:00.000Z'),
-  }).run({
-    resolveHosts: async () => ['127.0.0.1', '::1'],
-    fetchPage: async () => ({ status: 200, url: BOARD_URL, html: boardHtml }),
-    fetchText: async () => jobsFeedMarkdown,
-    fetchJson: async () => widgetPayload,
-  })
 
-  assert.deepEqual(jobs, [])
-})
+
+test('Dunzo current GET factory retains a primary hold without requiring loopback DNS as success',async()=>{const r=currentReplay(),jobs=await createDunzoScraper().run(r.options);assert.equal(jobs.length,0);assert.equal(r.audits.length,1);assert.equal(r.audits[0].employerBindingQualified,false);assert.equal(r.audits[0].sourceScopeComplete,false)})

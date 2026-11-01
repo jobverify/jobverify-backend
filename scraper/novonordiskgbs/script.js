@@ -116,7 +116,7 @@ export const extractSearchResults = (html) => [...String(html ?? '').matchAll(/<
       city: location.split(',')[0]?.trim() || null,
       department,
       jobId,
-      requisitionId: jobId,
+      requisitionId: null,
       sourceUrl,
       postingDate,
     }
@@ -170,7 +170,7 @@ export const extractJobDetail = (html, listing = {}) => {
     city: location?.split(',')[0]?.trim() || listing.city || null,
     department: extractLabelValue(html, 'Category:') || listing.department || null,
     jobId: listing.jobId || extractJobIdFromUrl(listing.sourceUrl),
-    requisitionId: extractLabelValue(html, 'Requisition ID:') || listing.requisitionId || null,
+    requisitionId: extractLabelValue(html, 'Requisition ID:') || null,
     employmentType: extractLabelValue(html, 'Type of position:') || null,
     experienceRequired: extractLabelValue(html, 'Work experience:') || null,
     organization,

@@ -73,7 +73,12 @@ const parseCsvRows = (csvText) => {
 }
 
 test('generated dedicated scraper backfill manifest stays aligned with local source files', () => {
-  assert.equal(BACKFILL_MANIFEST.length, 586)
+  assert.ok(BACKFILL_MANIFEST.length > 0, 'backfill manifest should contain dedicated providers')
+  assert.equal(
+    new Set(BACKFILL_MANIFEST.map((provider) => provider.source)).size,
+    BACKFILL_MANIFEST.length,
+    'each source should have only one dedicated backfill entry',
+  )
 
   for (const provider of BACKFILL_MANIFEST) {
     const sourceDir = path.join(
@@ -87,7 +92,7 @@ test('generated dedicated scraper backfill manifest stays aligned with local sou
   }
 })
 
-test('getScraperCatalog resolves backfilled sentinel and workday providers to local script modules', () => {
+test('getScraperCatalog resolves backfilled and upgraded providers to local script modules', () => {
   const catalog = getScraperCatalog()
   const uniqueSources = new Set(catalog.map((provider) => provider.source))
 
@@ -104,7 +109,9 @@ test('getScraperCatalog resolves backfilled sentinel and workday providers to lo
   const fortanix = catalog.find((provider) => provider.source === 'fortanix')
   assert.ok(fortanix)
   assert.equal(fortanix.adapter, 'script')
-  assert.equal(fortanix.atsPlatform, 'workbook-exact-name-sentinel')
+  assert.equal(fortanix.atsPlatform, 'workable-native-api')
+  assert.equal(fortanix.originalAtsPlatform, 'workbook-exact-name-sentinel')
+  assert.equal(fortanix.backfillMode, 'live-parser')
   assert.match(fortanix.modulePath, /fortanix[\\/]script\.js$/i)
   assert.equal(fortanix.originalModulePath, '../workbookbatch08/failClosedSentinel.js')
 

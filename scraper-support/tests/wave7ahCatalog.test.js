@@ -170,15 +170,15 @@ test('Atidiv local catalog captures the verified server-rendered current opening
   assert.equal(defaultExport, constant)
   assert.equal(provider.source, 'atidiv')
   assert.equal(provider.officialBrandName, 'Atidiv')
-  assert.equal(provider.companyCareerPage, 'https://www.atidiv.com/careers/')
+  assert.equal(provider.companyCareerPage, 'https://atidiv.com/careers/')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.paginationStrategy, 'single-static-careers-page')
   assert.equal(
     provider.extractionStrategy,
     'verified-first-party-careers-page+static-current-openings-links',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Senior Campaign Manager/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/atidiv\.com\/job\/senior-campaign-manager\//i)
   assert.match(provider.verifiedSurfaceSummary, /Digital Marketing/i)
 
   assertCatalogMatchesBacklogRow({

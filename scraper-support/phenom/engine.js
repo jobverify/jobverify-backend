@@ -909,6 +909,7 @@ export const createPhenomScraper = ({
     const targetListings = []
     const nativeListingSequences = new WeakMap()
     const nativeListingCountries = new WeakMap()
+    const nativeListingsWithoutApply = new WeakSet()
     let offset = Number.isInteger(options.initialFrom) ? Math.max(0, options.initialFrom) : 0
     let totalHits = null
     let targetCountryCount = null
@@ -977,6 +978,7 @@ export const createPhenomScraper = ({
           const verifiedListing = { ...listing, country: targetCountry, ...(scope.locations.length > 1 ? { locations: scope.locations } : {}) }
           nativeListingSequences.set(verifiedListing, nativeSequence)
           nativeListingCountries.set(verifiedListing,raw.country)
+          if (!Object.hasOwn(raw, 'applyUrl')) nativeListingsWithoutApply.add(verifiedListing)
           targetListings.push(verifiedListing)
         }
         if (!added) throw incompleteSnapshot('duplicate page before inventory completion')
@@ -1119,13 +1121,29 @@ export const createPhenomScraper = ({
             const targetDetailCountry = !primaryCountryConflict && !postingOfficeCountryConflict && !invalidCountryShape && !invalidLocationShape && corroboratedDerivedConflict && (detailHasTargetLocation || detailCountries.length > 0
               && detailCountries.every(country => countryMatchesTarget(country)
                 || targetCountry === 'India' && /^IN$/i.test(country.trim())))
+            // Bind an observed endpoint to raw native identity, separately from the generated role fallback.
+            const detailApplyUrl = typeof structured?.applyUrl === 'string' ? normalizeWhitespace(structured.applyUrl) : null
+            let ownedObservedApply = false
+            if (nativeListingsWithoutApply.has(listing) && detailApplyUrl && canonical === listing.sourceUrl
+              && identifiers.length > 0 && identifiers.every(id => expectedIds.includes(id))
+              && typeof structured?.title === 'string' && normalizeWhitespace(structured.title) === listing.title
+              && detailCountries.length > 0 && targetDetailCountry) {
+              try {
+                const observed = new URL(detailApplyUrl)
+                ownedObservedApply = observed.protocol === 'https:' && observed.href === detailApplyUrl
+                  && observed.origin === canonicalUrl.origin && canonicalUrl.origin === new URL(baseUrl).origin
+                  && !observed.username && !observed.password && !observed.port && !observed.search && !observed.hash
+                  && !canonicalUrl.username && !canonicalUrl.password && !canonicalUrl.port && !canonicalUrl.search && !canonicalUrl.hash
+                  && observed.pathname === canonicalUrl.pathname + '/apply'
+              } catch {}
+            }
             if ((identifiers.length ? !identifiers.every(id => expectedIds.includes(id))
               : !posting || canonical !== listing.sourceUrl)
               || postingId && !expectedIds.includes(postingId)
               || structured?.title != null && (typeof structured.title !== 'string' || normalizeWhitespace(structured.title) !== listing.title)
               || posting?.title && normalizeWhitespace(posting.title) !== listing.title
               || structured?.applyUrl != null && (typeof structured.applyUrl !== 'string'
-                || normalizeWhitespace(structured.applyUrl) !== (listing.applyUrl || listing.sourceUrl))
+                || normalizeWhitespace(structured.applyUrl) !== (listing.applyUrl || listing.sourceUrl)) && !ownedObservedApply
               || listingSequence && structured?.jobSeqNo != null && !matchingNativeSequence
               || canonicalUrl && (canonicalUrl.origin !== new URL(listing.sourceUrl).origin
                 || !expectedIds.includes(canonicalId) && !(matchingNativeSequence && canonicalId === listingSequence))

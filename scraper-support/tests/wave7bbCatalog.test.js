@@ -64,9 +64,9 @@ test('Nuvento Systems local catalog captures the verified first-party India care
     provider.extractionStrategy,
     'verified-first-party-careers-hub+india-careers-page-inline-role-sections',
   )
-  assert.equal(provider.verifiedOn, '2026-08-03')
-  assert.match(provider.verifiedSurfaceSummary, /Team Lead -Python/i)
-  assert.match(provider.verifiedSurfaceSummary, /Sales and Marketing Intern/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /accordion role sections/i)
+  assert.match(provider.verifiedSurfaceSummary, /HR Trainee, Intern - Automation/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

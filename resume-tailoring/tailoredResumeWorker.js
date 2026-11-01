@@ -6,7 +6,7 @@ import { drainResumeDocuments, nextResumeDocumentTask } from '../src/services/re
 const prepareResumeRuntime = async options => (await import('./resumePipeline.js')).prepareResumeRuntime(options);
 const processResumeDocument = async (input, options) => (await import('./resumePipeline.js')).processResumeDocument(input, { ...options, onDiagnostic: reportResumeDiagnostic });
 
-export async function runTailoredResumeWorker({ deadline = Date.now() + 30 * 60000,
+export async function runTailoredResumeWorker({ deadline = Date.now() + 60000,
   prepareRuntime = prepareResumeRuntime, generate = processResumeDocument, drain = drainResumeDocuments, nextTask = nextResumeDocumentTask,
 } = {}) {
   const task = await nextTask();

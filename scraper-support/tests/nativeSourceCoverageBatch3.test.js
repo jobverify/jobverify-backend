@@ -6,6 +6,9 @@ import { verifyOfficialAtsBinding } from '../utils/officialAtsBinding.js'
 import { createCatalogScraper, createPublicAtsCatalogScraper, getScraperCatalog } from '../providers/index.js'
 import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { createPropelScraper } from '../../scraper/propel/script.js'
+import { hasEmptyLeverBoardSignal } from '../../scraper/plivo/script.js'
+import { readSourceObservationEvidence } from '../utils/sourceObservationEvidence.js'
+import { fixture as currentFeedFixture, replay as replayCurrentFeed } from '../native-sources/declaredJobFeeds/fixtureReplay.js'
 
 const id = '2c31fc64-dce6-41cc-93cb-1dc97100157b'
 const leverRow = (board = 'olx', region = 'eu', location = 'Bengaluru, India', country = 'IN') => ({
@@ -143,52 +146,67 @@ test('OLX inert handoff URLs cannot establish employer delegation', async () => 
   }), /handoff|careers|binding/i)
 })
 
-test('Plivo missing public board plus an empty API remains uncertain', async () => {
-  const jobs = await registered('plivo').run(plivoOptions([], true))
+// The following generic fixtures are not registered Plivo native inventory proof.
+test('current registered Plivo cannot promote the old parsed/text-only empty-board fixture into source authority', async () => {
+  let parsedReads = 0
+  const jobs = await registered('plivo').run({ ...plivoOptions([], true), fetchJson: async () => { parsedReads++;return [] } })
   assert.equal(jobs.length, 0)
-  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
-  assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
-  assert.match(readInventoryEvidence(jobs).reason, /missing|unresolved/i)
+  assert.equal(parsedReads, 0)
+  const evidence = readInventoryEvidence(jobs), observed = readSourceObservationEvidence(jobs, 'plivo')
+  assert.equal(evidence.status, 'discovery-only')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
+  assert.equal(observed.sourceScopeComplete, false)
+  assert.equal(observed.companyGlobalTotal, null)
+  assert.equal(observed.companyIndiaTotal, null)
 })
 
-test('Plivo returns proven India roles and retains full native description sections', async () => {
+test('generic Lever India fixtures retain full description sections and the complete controlled feed total', async () => {
   const row = leverRow('plivo', 'global')
   row.descriptionPlain = 'Employer introduction.'
   row.lists = [{ text: 'Responsibilities', content: '<li>Maintain production services.</li>' }]
-  const jobs = await registered('plivo').run(plivoOptions([row, { ...leverRow('plivo', 'global', 'Boston, United States', 'US'),
-    id: 'foreign', hostedUrl: 'https://jobs.lever.co/plivo/foreign', applyUrl: 'https://jobs.lever.co/plivo/foreign/apply',
-  }]))
+  const jobs = await createPublishingGapAtsScraper({ source: 'generic-lever-contract', companyName: 'Plivo', atsPlatform: 'lever', boardToken: 'plivo', countryFilter: 'India' }).run({ fetchJson: async () => [row,
+    { ...leverRow('plivo', 'global', 'Boston, United States', 'US'), id: 'foreign',
+      hostedUrl: 'https://jobs.lever.co/plivo/foreign', applyUrl: 'https://jobs.lever.co/plivo/foreign/apply' }] })
   assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, id)
   assert.match(jobs[0].jobDescription, /Maintain production services/)
   assert.equal(readInventoryEvidence(jobs).reportedTotal, 2)
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })
 
-test('Plivo caps retain native totals and cannot authorize complete inventory', async () => {
-  const jobs = await registered('plivo').run({ ...plivoOptions([leverRow('plivo', 'global')]), maxJobs: 0 })
+test('current original-HTTP Plivo empty replay stays Global and non-authoritative with maxJobs zero', async () => {
+  const r = replayCurrentFeed(), jobs = await registered('plivo').run({ ...r.options, maxJobs: 0 })
+  assert.equal(catalog.find(row => row.source === 'plivo').countryFilter, 'Global')
   assert.equal(jobs.length, 0)
-  assert.equal(readInventoryEvidence(jobs).reportedTotal, 1)
+  assert.deepEqual(r.audits[0].observations, currentFeedFixture.oracle.plivo.records)
+  assert.equal(r.audits[0].countryFilter, 'Global')
+  assert.equal(r.audits[0].sourceScopeComplete, false)
+  assert.equal(r.audits[0].lifecycleCleanupAllowed, false)
+  assert.equal(r.audits[0].authoritativeSourceTotal, null)
+  assert.equal(r.audits[0].authoritativeIndiaFacetCount, null)
+  assert.ok(r.audits[0].rawPages.every(page => typeof page.bodySHA256 === 'string'))
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).verifiedAt, r.options.now())
 })
 
-test('Plivo requires visible empty-state text rather than inert HTML before certifying zero', async () => {
+test('exported legacy Lever visibility helper distinguishes inert text without certifying registered inventory', () => {
   const empty = 'No job postings currently open. Check back later!'
   for (const html of [`<div hidden>${empty}</div>`, `<div inert>${empty}</div>`,
     `<div aria-hidden="true">${empty}</div>`, `<div style="display:none">${empty}</div>`,
     `<script>const state = '${empty}'</script>`, `<!-- ${empty} -->`]) {
-    await assert.rejects(registered('plivo').run({ ...plivoOptions([]),
-      fetchPage: async url => ({ status: 200, url, html: plivoBoard + html }),
-    }), /no-openings|empty|board/i)
+    assert.equal(hasEmptyLeverBoardSignal(plivoBoard + html), false, html)
   }
-  const jobs = await registered('plivo').run({ ...plivoOptions([]),
-    fetchPage: async url => ({ status: 200, url, html: plivoBoard + `<div>${empty}</div>` }),
-  })
-  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
-  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(hasEmptyLeverBoardSignal(plivoBoard + `<div>${empty}</div>`), true)
 })
 
-test('Plivo reconciles a foreign-only feed as a checked zero India inventory', async () => {
-  const jobs = await registered('plivo').run(plivoOptions([leverRow('plivo', 'global', 'Boston, United States', 'US')]))
+test('generic Lever foreign-only fixture retains its native total while returning no India rows', async () => {
+  const jobs = await createPublishingGapAtsScraper({ source: 'generic-lever-contract', companyName: 'Plivo', atsPlatform: 'lever', boardToken: 'plivo', countryFilter: 'India' }).run({
+    fetchJson: async () => [leverRow('plivo', 'global', 'Boston, United States', 'US')],
+  })
   assert.equal(jobs.length, 0)
   assert.equal(readInventoryEvidence(jobs).reportedTotal, 1)
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)

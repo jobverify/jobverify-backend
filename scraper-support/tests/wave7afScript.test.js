@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { installWorkbookOfflineGuard } from './helpers/workbookBatchCatalogAssertions20261102.js'
+
+test.beforeEach((t) => installWorkbookOfflineGuard(t))
+
 
 const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
 
@@ -299,62 +303,65 @@ const xoxodayPayload = [
   },
 ]
 
-test('thinkbridge run returns normalized global jobs from the first-party job-search cards', async () => {
+// Controlled DTO fixtures for the current careers/detail contract. These are
+// synthetic test roles; the two original Webflow layouts above remain negative
+// history and must not be silently promoted into current source inventory.
+const controlledThinkbridgeRoles = [
+  { title: 'ServiceNow Architect', slug: 'controlled-servicenow', location: 'India', mode: 'remote' },
+  { title: 'Solution Engineer', slug: 'controlled-solution', location: 'USA', mode: 'onsite' },
+].map(role => ({ ...role, sourceUrl: 'https://www.thinkbridge.com/careers/' + role.slug,
+  applyUrl: 'https://careers.thinkbridge.com/jobs/Careers/' + role.slug }))
+const controlledThinkbridgeCareers = '<html><head><title>Careers at thinkbridge | Remote-first engineering work</title></head><body><p>2 open roles</p>'
+  + controlledThinkbridgeRoles.map(role => '<li data-loc="' + role.mode + '"><a class="role" href="/careers/' + role.slug
+    + '"><span class="role-t">' + role.title + '</span><span class="role-m">' + role.location
+    + ' &middot; Full-time &middot; 7+ Years</span></a></li>').join('') + '</body></html>'
+const controlledThinkbridgeDetail = role => '<html><head><title>' + role.title + ' job | thinkbridge</title><link rel="canonical" href="'
+  + role.sourceUrl + '"><meta name="description" content="Build reliable enterprise integrations."></head><body><h1>' + role.title
+  + '</h1><a href="' + role.applyUrl + '">Apply for this role</a></body></html>'
+
+test('thinkbridge runs the current careers and detail identity contract from controlled fixtures', async () => {
   const thinkbridge = await loadModule('../../scraper/thinkbridge/script.js')
-
-  assert.equal(thinkbridge.hasOfficialCareersSignal(thinkbridgeCareersHtml), true)
-  assert.equal(thinkbridge.extractJobCards(thinkbridgeCareersHtml).length, 2)
-
-  const jobs = await thinkbridge.createThinkbridgeScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      assert.equal(url, thinkbridge.CAREERS_URL)
-      return thinkbridgeCareersHtml
+  const requests = []
+  assert.equal(thinkbridge.hasOfficialCareersSignal(controlledThinkbridgeCareers), true)
+  assert.equal(thinkbridge.extractJobCards(controlledThinkbridgeCareers).length, 2)
+  const jobs = await thinkbridge.createThinkbridgeScraper({ now: () => FIXED_SCRAPED_AT }).run({
+    fetchText: async url => {
+      requests.push(url)
+      if (url === thinkbridge.CAREERS_URL) return controlledThinkbridgeCareers
+      const role = controlledThinkbridgeRoles.find(role => role.sourceUrl === url)
+      assert.ok(role, 'Uncontrolled role detail: ' + url)
+      return controlledThinkbridgeDetail(role)
     },
   })
-
-  assert.deepEqual(
-    jobs.map((job) => [job.title, job.location, job.department, job.sourceUrl]),
-    [
-      ['ServiceNow Architect', 'India', 'App Dev', 'https://www.thinkbridge.com/jobs/servicenow-architect'],
-      ['Solution Engineer', 'USA', 'App Dev', 'https://www.thinkbridge.com/jobs/solution-engineer'],
-    ],
-  )
-  assert.deepEqual(jobs[0].requiredSkills, ['ServiceNow Architect', 'CMDB', 'Discovery'])
+  assert.deepEqual(requests, [thinkbridge.CAREERS_URL, ...controlledThinkbridgeRoles.map(role => role.sourceUrl)])
+  assert.deepEqual(jobs.map(job => [job.title, job.location, job.department, job.sourceUrl]),
+    controlledThinkbridgeRoles.map(role => [role.title, role.location, null, role.sourceUrl]))
+  assert.deepEqual(jobs.map(job => job.applyUrl), controlledThinkbridgeRoles.map(role => role.applyUrl))
+  assert.deepEqual(jobs[0].requiredSkills, [])
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[1].country, null)
+  assert.ok(jobs.every(job => job.jobDescription === 'Build reliable enterprise integrations.' && job.scrapedAt === FIXED_SCRAPED_AT))
 })
 
-test('thinkbridge accepts the Monday, August 17, 2026 first-party job-search cards after the sample role refresh', async () => {
+test('thinkbridge rejects both legacy Webflow layouts and changed native role identities', async () => {
   const thinkbridge = await loadModule('../../scraper/thinkbridge/script.js')
-
-  assert.equal(thinkbridge.hasOfficialCareersSignal(currentThinkbridgeCareersHtml), true)
-
-  const jobs = await thinkbridge.createThinkbridgeScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      assert.equal(url, thinkbridge.CAREERS_URL)
-      return currentThinkbridgeCareersHtml
-    },
-  })
-
-  assert.deepEqual(
-    jobs.map((job) => [job.title, job.location, job.department, job.sourceUrl]),
-    [
-      [
-        'Developer - C#.NET & Firebase (Store & Functions)',
-        'India',
-        'App Dev',
-        'https://www.thinkbridge.com/jobs/developer-csharp-dotnet-firebase',
-      ],
-      [
-        'Business Development Specialist',
-        'Singapore',
-        'Growth',
-        'https://www.thinkbridge.com/jobs/business-development-specialist',
-      ],
-    ],
-  )
+  for (const legacy of [thinkbridgeCareersHtml, currentThinkbridgeCareersHtml]) {
+    assert.equal(thinkbridge.hasOfficialCareersSignal(legacy), false)
+    const requests = []
+    await assert.rejects(thinkbridge.run({ fetchText: async url => { requests.push(url); return legacy } }), /changed materially/)
+    assert.deepEqual(requests, [thinkbridge.CAREERS_URL])
+  }
+  for (const mutate of [
+    html => html.replace('<h1>ServiceNow Architect</h1>', '<h1>Other Role</h1>'),
+    html => html.replace(controlledThinkbridgeRoles[0].sourceUrl, 'https://other-employer.invalid/careers/role'),
+    html => html.replace('https://careers.thinkbridge.com/', 'https://other-employer.invalid/'),
+  ]) {
+    await assert.rejects(thinkbridge.run({ fetchText: async url => {
+      if (url === thinkbridge.CAREERS_URL) return controlledThinkbridgeCareers
+      assert.equal(url, controlledThinkbridgeRoles[0].sourceUrl)
+      return mutate(controlledThinkbridgeDetail(controlledThinkbridgeRoles[0]))
+    } }), /detail page changed materially/)
+  }
 })
 
 test('Algonomy run returns grouped public jobs from the embedded Paycor board', async () => {

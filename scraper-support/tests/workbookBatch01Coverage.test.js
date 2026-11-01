@@ -1,3 +1,4 @@
+import { assertCurrentWorkbookRoute, installWorkbookOfflineGuard } from './helpers/workbookBatchCatalogAssertions20261102.js'
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import test from 'node:test'
@@ -5,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 import dedicatedProviders from '../providers/providerExtensions/zz-dedicated-scraper-folder-backfill.json' with { type: 'json' }
 import { generateCompanyCoverageReport, getCompanyAliasMap } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { buildScrapers, getScraperCatalog, hydrateProviderCatalogEntry } from '../providers/index.js'
 
 const currentDir = fileURLToPath(new URL('.', import.meta.url))
 const scraperDir = path.resolve(currentDir, '..', '..', 'scraper')
@@ -30,7 +31,8 @@ test('workbook batch 01 companies all resolve to providers', () => {
   assert.deepEqual(report.unmatched, [])
 })
 
-test('workbook batch 01 sentinels are registered and stay fail-closed', async () => {
+test('workbook batch 01 preserves historical registration and checks current routes offline', async (t) => {
+  const forbidden = installWorkbookOfflineGuard(t)
   const catalog = getScraperCatalog()
   const scrapersByName = new Map(buildScrapers().map((scraper) => [scraper.name, scraper]))
   const manifestCompanies = new Set(manifest.companies)
@@ -50,27 +52,31 @@ test('workbook batch 01 sentinels are registered and stay fail-closed', async ()
   for (const provider of batchProviders) {
     const catalogProvider = catalog.find((item) => item.source === provider.source)
     const scraper = scrapersByName.get(provider.source)
+    const historicalProvider = hydrateProviderCatalogEntry(provider)
+    const implementation = await assertCurrentWorkbookRoute(catalogProvider, scraper)
 
     assert.ok(manifestCompanies.has(provider.companyName))
     assert.ok(catalogProvider)
     assert.ok(scraper)
     assert.equal(catalogProvider.companyName, provider.companyName)
-    assert.equal(catalogProvider.modulePath, path.join(scraperDir, provider.source, 'script.js'))
-    assert.equal(catalogProvider.originalModulePath, '../workbookbatch01/failClosedSentinel.js')
-    assert.equal(catalogProvider.atsPlatform, 'workbook-exact-name-sentinel')
+    assert.equal(historicalProvider.modulePath, path.join(scraperDir, provider.source, 'script.js'))
+    assert.equal(historicalProvider.originalModulePath, '../workbookbatch01/failClosedSentinel.js')
+    assert.equal(historicalProvider.atsPlatform, 'workbook-exact-name-sentinel')
     assert.equal(
-      catalogProvider.extractionStrategy,
+      historicalProvider.extractionStrategy,
       'exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified',
     )
-    assert.equal(catalogProvider.verifiedOn, '2026-07-25')
-    assert.equal(catalogProvider.verifiedPublicJobCount, 0)
-    assert.equal(catalogProvider.verifiedIndiaJobCount, 0)
-    assert.equal(catalogProvider.dryRunFile, path.join(scraperDir, provider.source, 'jobs.json'))
-    assert.match(catalogProvider.verifiedSurfaceSummary, new RegExp(`exact-name sentinel for ${provider.companyName}`))
+    assert.equal(historicalProvider.verifiedOn, '2026-07-25')
+    assert.equal(historicalProvider.verifiedPublicJobCount, 0)
+    assert.equal(historicalProvider.verifiedIndiaJobCount, 0)
+    assert.equal(historicalProvider.dryRunFile, path.join(scraperDir, provider.source, 'jobs.json'))
+    assert.match(historicalProvider.verifiedSurfaceSummary, new RegExp(`exact-name sentinel for ${provider.companyName}`))
     assert.match(
-      catalogProvider.verifiedSurfaceSummary,
+      historicalProvider.verifiedSurfaceSummary,
       /intentionally returns zero jobs until a trustworthy public careers surface is verified/,
     )
-    assert.deepEqual(await scraper.run(), [])
+    if (['sentinel', 'static-empty'].includes(implementation)) {
+      assert.deepEqual(await scraper.run({ fetchText: forbidden, fetchJson: forbidden, fetchPage: forbidden }), [])
+    }
   }
 })

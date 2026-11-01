@@ -2,14 +2,34 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import test,{after} from 'node:test'
+import {createReviewedProofRuntime,readReviewedSnapshot} from './helpers/reviewedProofRuntime.js'
 import {gunzipSync} from 'node:zlib'
 import {createHash} from 'node:crypto'
 import {buildPartialAttempt,recordPartialPublishingStatus} from '../scripts/partialPublishingGapEvidence.js'
 import {isSuccessfulPublishingGapTrial} from '../scripts/publishPublishingGapRepairs.js'
 const now=new Date('2026-10-21T00:45:00Z'),sha=b=>createHash('sha256').update(b).digest('hex'),url=new URL('../scripts/eInfochipsPartialPublishingEvidence.js',import.meta.url)
-const load=async()=>{assert.ok(fs.existsSync(url),'eInfochips exact partial proof implementation is required');return import(url)}
+const load=async()=>{assert.ok(fs.existsSync(url),'eInfochips exact partial proof implementation is required');return import(runtime.url('scripts/eInfochipsPartialPublishingEvidence.js'))}
 const fixture=()=>{const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/eInfochipsPartial/reviewed-native-001.json.gz',import.meta.url)))),files=new Map(Object.entries(f.files).map(([k,v])=>[k,Buffer.from(v,'base64')]));return{source:'einfochips',httpEvidence:f.httpEvidence,files,readEvidence:async file=>files.get(file),now}}
+// Positive and mutation cases replay the immutable reviewed runtime. The shared
+// Workday engine is the actual Oct21 implementation from git7ebb487d0, before
+// additional date/native-detail metadata changed the exact replayed job fields.
+// The same commit preserves reviewed experience parsing and eligibility rules.
+const runtime=createReviewedProofRuntime(fixture(),{prefix:'einfochips-reviewed-proof-',extraFiles:new Map([['scraper-support/detailExtractors/workday.js',readReviewedSnapshot(new URL('./fixtures/eInfochipsPartial/reviewed-workday-detail-7ebb487d0.js.gz',import.meta.url),'d5c832348c8edb433b79879e68f868fc7f68d23b3c1aeff37224a13360ca7205')],['scraper-support/utils/publishableJobMetrics.js',readReviewedSnapshot(new URL('./fixtures/aeriesPartial/reviewed-publishableJobMetrics-7ebb487d0.js.gz',import.meta.url),'f7d4baf7d52d6f3efd0fe23e5adbfff820f53194f3a3ddfbe7a0982d385b0621')],['src/utils/jobFilterSignals.js',readReviewedSnapshot(new URL('./fixtures/eInfochipsPartial/reviewed-jobFilterSignals-7ebb487d0.js.gz',import.meta.url),'2cce3c04654a68f27d654415e88186a0e7602cb261cd67c445491294893ee775')],['scraper-support/myworkday/engine.js',readReviewedSnapshot(new URL('./fixtures/eInfochipsPartial/reviewed-workday-engine-7ebb487d0.js.gz',import.meta.url),'986e83077e6da1d09d1bdb24ba024a9c993df40cd8afb9c328a16fcb0575b4ac')]])})
+after(runtime.cleanup)
+test('eInfochips verifier rejects changed reviewed source bytes and checkout drift',async()=>{
+ const {deriveEInfochipsPartialEvidence}=await import(url)
+ const f=fixture(),drift=f.httpEvidence.receipts.filter(r=>r.sourcePath).some(r=>sha(fs.readFileSync(new URL('../'+r.sourcePath,import.meta.url)))!==r.sha256)
+ if(drift)await assert.rejects(deriveEInfochipsPartialEvidence(f),/current (?:source|extraction code).*differs/)
+ else await assert.rejects(deriveEInfochipsPartialEvidence(f),/every current frozen native field and partial scope must remain unchanged/)
+ const receipt=f.httpEvidence.receipts.find(r=>r.kind==='current-code'),file=runtime.url(receipt.sourcePath),bytes=fs.readFileSync(file)
+ try {
+  fs.writeFileSync(file,Buffer.concat([bytes,Buffer.from('\n// changed source bytes\n')]))
+  const {deriveEInfochipsPartialEvidence:deriveReviewed}=await load()
+  await assert.rejects(deriveReviewed(f),/current source.*differs/)
+ } finally {fs.writeFileSync(file,bytes)}
+})
+
 async function makeTrial(f=fixture()){
  const{deriveEInfochipsPartialEvidence}=await load(),p=await deriveEInfochipsPartialEvidence(f)
  const trial={schemaVersion:1,source:'einfochips',mode:'native-http-partial-positive-trial',outcome:'positive-extraction-incomplete-evidence',productionWrites:false,
@@ -59,7 +79,7 @@ test('updating caller hashes cannot relabel actual eInfochips empty descriptions
 })
 
 test('eInfochips freezer preserves exactly25 original healthy jobs and all68 receipts in an unused confined directory',async()=>{
- const url=new URL('../scripts/freezeEInfochipsPartialPublishingTrial.js',import.meta.url);assert.ok(fs.existsSync(url),'eInfochips immutable freezer is required')
+ const url=runtime.url('scripts/freezeEInfochipsPartialPublishingTrial.js');assert.ok(fs.existsSync(url),'eInfochips immutable freezer is required')
  const{freezeEInfochipsPartialTrial}=await import(url),parent=fs.mkdtempSync(path.join(os.tmpdir(),'einfochips-proof-')),outputDirectory=path.join(parent,'release')
  try{
   const f=fixture(),result=await freezeEInfochipsPartialTrial({...f,outputDirectory}),bytes=fs.readFileSync(path.join(outputDirectory,'einfochips.json')),trial=JSON.parse(bytes),original=JSON.parse(f.files.get('evidence/frozen-trials/einfochips.json'))

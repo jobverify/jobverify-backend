@@ -1,5 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readEightfoldLocationScope } from '../../scraper-support/apiPortal/eightfoldLocations.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -29,6 +31,8 @@ const normalizeWhitespace = (value) => String(value ?? '')
 const normalizePathname = (value, baseUrl = CAREERS_URL) => {
   try {
     const url = new URL(value, baseUrl)
+    if (url.protocol !== 'https:' || url.origin !== new URL(HOMEPAGE_URL).origin
+      || url.username || url.password) return null
     return url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`
   } catch {
     return null
@@ -159,6 +163,24 @@ export const fetchOpenRoles = async (fetchImpl = fetch) => {
   return result.dataItems
 }
 
+// The role feed has one location string, not a separate native country field.
+// Preserve only explicit country text; cities, employer addresses and the
+// provider's requested country cannot supply a vacancy's missing geography.
+const resolveRoleGeography = location => {
+  const unknown = { country: null, location: null, city: null, state: null, nativeGeographyQualified: false }
+  if (location.split(',').some(component => !component.trim())
+    || /[;/|]|\b(?:and|or|global|worldwide|multiple|anywhere)\b/i.test(location)) return unknown
+  const countryFor = value => {
+    const scope = readEightfoldLocationScope({ locations: [value] })
+    return scope.unresolved ? null : scope.country
+  }
+  const country = countryFor(location)
+  if (!country) return unknown
+  const explicitCountries = new Set(location.split(',').map(component => countryFor(component.trim())).filter(Boolean))
+  if (explicitCountries.size > 1 || [...explicitCountries].some(observed => observed !== country)) return unknown
+  return { ...unknown, country, location, nativeGeographyQualified: true }
+}
+
 export const extractVerifiedOpenRoles = (careersSnapshot, roleItems, roleSnapshotsByPath = {}) => {
   if (!hasOfficialCareersSignal(careersSnapshot)) {
     throw new Error('LifeSigns careers page no longer matches the verified official public surface')
@@ -173,7 +195,7 @@ export const extractVerifiedOpenRoles = (careersSnapshot, roleItems, roleSnapsho
     const role = item.data
     const slug = normalizeWhitespace(role.slug)
     const title = normalizeWhitespace(role.title)
-    const city = normalizeWhitespace(role.location)
+    const city = typeof role.location === 'string' ? normalizeWhitespace(role.location) : null
     if (!slug || !/^[a-z0-9-]+$/.test(slug) || !title || !city || !role.employmentType) {
       throw new Error('LifeSigns public role feed has an incomplete opening')
     }
@@ -196,9 +218,11 @@ export const extractVerifiedOpenRoles = (careersSnapshot, roleItems, roleSnapsho
       title,
       company: COMPANY,
       department: null,
-      location: `${city}, India`,
-      city,
-      country: 'India',
+      ...resolveRoleGeography(city),
+      rawNativeWorkplaceEvidence: { source: SOURCE, jobId, sourceUrl: roleUrl, roleLocation: role.location },
+      sourceListingComplete: false,
+      sourceScopeComplete: false,
+      lifecycleCleanupAllowed: false,
       jobId,
       requisitionId: item.id,
       sourceUrl: roleUrl,
@@ -217,12 +241,18 @@ export const extractVerifiedOpenRoles = (careersSnapshot, roleItems, roleSnapsho
 
 export const createLifeSignsScraper = () => ({
   async run({ fetchPageSnapshot = defaultFetchPageSnapshot, fetchRoleItems = fetchOpenRoles } = {}) {
-    const homepageSnapshot = await fetchPageSnapshot(HOMEPAGE_URL)
+    let pagesFetched = 0
+    const readPageSnapshot = async url => {
+      const snapshot = await fetchPageSnapshot(url)
+      pagesFetched += 1
+      return snapshot
+    }
+    const homepageSnapshot = await readPageSnapshot(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageSnapshot)) {
       throw new Error('LifeSigns homepage no longer matches the verified official public surface')
     }
 
-    const careersSnapshot = await fetchPageSnapshot(CAREERS_URL)
+    const careersSnapshot = await readPageSnapshot(CAREERS_URL)
     if (!hasOfficialCareersSignal(careersSnapshot)) {
       throw new Error('LifeSigns careers page no longer matches the verified official public surface')
     }
@@ -232,14 +262,14 @@ export const createLifeSignsScraper = () => ({
       await Promise.all(
         roleItems.map(async (item) => {
           const pathname = `/careers/${item.data?.slug}/`
-          return [pathname, await fetchPageSnapshot(buildRoleUrl(pathname))]
+          return [pathname, await readPageSnapshot(buildRoleUrl(pathname))]
         }),
       ),
     )
     const jobs = extractVerifiedOpenRoles(careersSnapshot, roleItems, roleSnapshots)
     const scrapedAt = new Date().toISOString()
 
-    return jobs.map((job) => ({
+    return attachInventoryEvidence(jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl,
@@ -247,7 +277,14 @@ export const createLifeSignsScraper = () => ({
       companyCareerPage: CAREERS_URL,
       companyDomain: 'lifesigns.us',
       atsPlatform: 'official-company-careers',
-    }))
+    })), {
+      status: 'coverage-gap', surface: CAREERS_URL, firstParty: false,
+      listingComplete: false, pagesFetched, reportedTotal: null,
+      indiaFacetCount: null, verifiedAt: null,
+      reason: jobs.some(job => job.nativeGeographyQualified === false)
+        ? 'lifesigns-native-role-workplace-unqualified;company-inventory-scope-unqualified'
+        : 'lifesigns-company-inventory-scope-unqualified',
+    })
   },
 })
 

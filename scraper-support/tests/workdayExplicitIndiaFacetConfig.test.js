@@ -13,7 +13,7 @@ const INDIA_ID = 'c4f78be1a8f14da0ab49ce1162348a5e'
 const loadSourceConfig = source => loadConfig(path.join(testsDir, `../../scraper/${source}.workday`))
 const companyUrl = source => new URL(companies.find(company => company.name === source).baseUrl)
 
-test('country-capable Workday tenants use their declared India country facet instead of text search', () => {
+test('Workday tenants preserve their declared native India selection strategies', () => {
   const expected = {
     philips: ['locationHierarchy1', '6e1b2a934716103c2adde1d57e7700ea'],
     dow: ['Location_Country', INDIA_ID],
@@ -21,7 +21,6 @@ test('country-capable Workday tenants use their declared India country facet ins
     salesforce: ['CF_-_REC_-_LRV_-_Job_Posting_Anchor_-_Country_from_Job_Posting_Location_Extended', INDIA_ID],
     brenntagindia: ['Country', INDIA_ID],
     protiviti: ['Location_Country', INDIA_ID],
-    guardian: ['hiringCompany', '4d442d4f5d091032118fe34e0ae8f401'],
   }
 
   for (const [source, [parameter, id]] of Object.entries(expected)) {
@@ -29,6 +28,19 @@ test('country-capable Workday tenants use their declared India country facet ins
     assert.equal(config.countryFacetParameter, parameter, `${source} country facet parameter`)
     assert.equal(config.locationCountry, id, `${source} India facet id`)
     assert.equal(config.searchText, undefined, `${source} must not use India text search`)
+  }
+
+  const completeBoards = {
+    guardian: 'https://www.guardianlife.com/careers/corporate',
+    csg: 'https://www.csgi.com/careers',
+    temenos: 'https://www.temenos.com/about-us/careers/',
+  }
+  for (const [source, officialCareersUrl] of Object.entries(completeBoards)) {
+    const config = loadSourceConfig(source)
+    assert.equal(config.inventoryScope, 'complete-board-country-proof', `${source} native country proof`)
+    assert.equal(config.locationCountry, null, `${source} must enumerate the complete board`)
+    assert.equal(config.searchText ?? '', '', `${source} must not restrict native country proof to a keyword subset`)
+    assert.equal(config.officialCareersUrl, officialCareersUrl, `${source} current corporate binding`)
   }
 })
 

@@ -97,7 +97,7 @@ const buildSearchResultsHtml = (jobs) => `
 </html>
 `
 
-const buildJobDetailHtml = (sourceUrl) => `
+const buildJobDetailHtml = (sourceUrl, applyUrl = `${sourceUrl}/apply`) => `
 <!doctype html>
 <html lang="en">
   <head>
@@ -150,7 +150,7 @@ const buildJobDetailHtml = (sourceUrl) => `
                 job_type: 'Full-Time',
               },
               postedDate: '2025-08-12',
-              applyUrl: `${sourceUrl}/apply`,
+              applyUrl,
             },
           },
         },
@@ -216,7 +216,11 @@ test('NTT Data Services scraper exposes the verified first-party surfaces and Ph
   )
 })
 
-test('NTT Data Services preserves India identity but rejects an uncorroborated detail-only application URL', async () => {
+for (const [kind, applicationUrl] of [
+  ['external', () => 'https://ntt.wd3.myworkdayjobs.com/External/job/Noida/SASE-ENGINEER_P-100131/apply'],
+  ['different role', () => 'https://careers.nttdata.com/global/en/job/P-OTHER/Engineer/apply'],
+  ['redirect query', sourceUrl => `${sourceUrl}/apply?redirect=https%3A%2F%2Funrelated.invalid`],
+]) test(`NTT Data Services preserves India identity but rejects an uncorroborated ${kind} detail-only application URL`, async () => {
   const ntt = await loadModule()
   const requestedUrls = []
   const searchResultsUrl = ntt.SEARCH_RESULTS_URL
@@ -254,7 +258,7 @@ test('NTT Data Services preserves India identity but rejects an uncorroborated d
           },
         ])
       }
-      if (url === detailUrl) return buildJobDetailHtml(detailUrl)
+      if (url === detailUrl) return buildJobDetailHtml(detailUrl, applicationUrl(detailUrl))
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
@@ -288,6 +292,37 @@ test('NTT Data Services preserves India identity but rejects an uncorroborated d
   assert.equal(jobs[0].sourceDetailFailureKind, 'identity-mismatch')
   assert.match(jobs[0].experienceRequired, /5\+ years/i)
   assert.ok(jobs[0].scrapedAt)
+})
+
+test('NTT Data Services accepts the exact first-party same-role apply route after native identity checks', async () => {
+  const ntt = await loadModule()
+  const detailUrl = 'https://careers.nttdata.com/global/en/job/P-100131/SASE-ENGINEER'
+  const pages = new Map([
+    [ntt.HOMEPAGE_URL, officialHomepageHtml],
+    [ntt.CAREERS_URL, officialCareersHtml],
+    [ntt.JOBS_HOME_URL, officialJobsHomeHtml],
+    [ntt.SEARCH_RESULTS_URL, buildSearchResultsHtml([{
+      reqId: 'P-100131', jobId: 'P-100131', title: 'SASE ENGINEER ',
+      cityStateCountry: 'Noida, Uttar Pradesh, India', country: 'India',
+    }])],
+    [detailUrl, buildJobDetailHtml(detailUrl)],
+  ])
+  const calls = []
+  const jobs = await ntt.run({ fetchText: async url => {
+    calls.push(url)
+    assert.ok(pages.has(url), `Unexpected offline request: ${url}`)
+    return pages.get(url)
+  } })
+  assert.deepEqual(calls, [...pages.keys()])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'P-100131')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].sourceUrl, detailUrl)
+  assert.equal(jobs[0].applyUrl, `${detailUrl}/apply`)
+  assert.equal(jobs[0].link, `${detailUrl}/apply`)
+  assert.equal(jobs[0].sourceDetailComplete, true)
+  assert.equal(jobs[0].sourceDetailFailureKind, undefined)
+  assert.match(jobs[0].jobDescription, /Secure the platform for enterprise clients/)
 })
 
 test('NTT Data Services scraper fails closed when a verified first-party surface changes', async () => {

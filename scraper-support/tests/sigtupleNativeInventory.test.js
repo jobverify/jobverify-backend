@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs'
 import { gunzipSync } from 'node:zlib'
 import test from 'node:test'
 
-import { run } from '../../scraper/sigtuple/script.js'
+import {createSigtupleNativeScraper} from '../../scraper/sigtuple/native.js'
+import {replay as currentReplay} from '../native-sources/publicNativeGetSources/fixtureReplay.js'
+// Legacy POST-helper compatibility only; registered SigTuple uses the GET reader.
+const run=options=>createSigtupleNativeScraper().run(options)
 import { createCatalogScraper, getScraperCatalog } from '../providers/index.js'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
@@ -69,13 +72,7 @@ test('captured current SigTuple site cannot turn an unbound historical zero into
   assert.deepEqual(opts.calls.map(c => c.url), [HOME])
 })
 
-test('registered SigTuple execution uses the current company authority gate without persistence', async () => {
-  const provider = getScraperCatalog().find(p => p.source === 'sigtuple'), opts = options()
-  assert.equal(provider.companyCareerPage, HOME)
-  assert.equal(provider.companyDomain, 'sigtuple.com')
-  await assert.rejects(createCatalogScraper(provider).run(opts), /handoff/i)
-  assert.deepEqual(opts.calls.map(c => c.url), [HOME])
-})
+
 
 test('a synthetic bound native role retains full original sections, dates, country proof, and native application', async () => {
   const data = synthetic(), opts = options(data), jobs = await run(opts)
@@ -209,3 +206,5 @@ test('SigTuple bounds an abort-ignoring response and cancels oversized streams',
   } }), /bound|limit/i)
   assert.equal(cancelled, true)
 })
+
+test('registered SigTuple uses original public GETs and records the current missing company handoff without persistence',async()=>{const p=getScraperCatalog().find(p=>p.source==='sigtuple'),r=currentReplay(),jobs=await createCatalogScraper(p).run(r.options);assert.equal(jobs.length,0);assert.equal(r.audits.length,1);assert.equal(r.audits[0].employerBindingQualified,false);assert.equal(r.audits[0].sourceScopeComplete,false);assert.ok(r.requests.some(u=>u.includes('?details=true')));assert.ok(!r.requests.some(u=>u.includes('/api/v3/')))})

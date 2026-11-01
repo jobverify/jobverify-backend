@@ -12,14 +12,33 @@ import { claimJobAlertEvent, persistJobChangesWithAlertOutbox, processClaimedJob
 import { updateAlertSchedule } from '../src/services/alertScheduleService.js';
 import { saveToDB } from '../scraper-support/utils/saveToDB.js';
 
-test('job persistence retains the alert obligation without a running worker', { timeout: 60000 }, async t => {
-  const mongo = await MongoMemoryReplSet.create({
+test('job persistence retains the alert obligation without a running worker', { timeout: 90_000 }, async t => {
+  const mongo = new MongoMemoryReplSet({
     binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) },
-    replSet: { count: 1 },
+    // Cached mongod startup can exceed its 10s default on busy Windows runners.
+    instanceOpts: [{ launchTimeout: 30_000 }],
+    replSet: { count: 1, spawn: { signal: t.signal } },
   });
-  t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
+  let startup;
+  t.after(async () => {
+    try { await mongoose.disconnect(); }
+    finally {
+      // Retain server handles until a cancelled or delayed start has settled.
+      try { await mongo.stop({ doCleanup: false }); }
+      finally {
+        await startup?.catch(() => {});
+        await mongo.stop();
+      }
+    }
+  });
+  t.signal.throwIfAborted();
+  startup = mongo.start();
+  await startup;
+  t.signal.throwIfAborted();
   await mongoose.connect(mongo.getUri(), { monitorCommands: true });
+  t.signal.throwIfAborted();
   await Promise.all([Job.init(), User.init(), Subscription.init(), JobAlertDelivery.init(), JobAlertOutbox.init()]);
+  t.signal.throwIfAborted();
   t.mock.method(globalThis, 'fetch', async () => { throw new Error('External sends are forbidden in local outbox tests.'); });
   const source = [{ title: 'Software Engineer', company: 'Example', location: 'Bengaluru, India',
     city: 'Bengaluru', link: 'https://example.com/jobs/outbox-engineer',

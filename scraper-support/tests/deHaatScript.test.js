@@ -1,3 +1,4 @@
+import {replay as currentReplay} from '../native-sources/publicNativeGetSources/fixtureReplay.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -125,7 +126,7 @@ test('DeHaat constants and validators stay pinned to the verified first-party an
     dehaat.WIDGET_API_URL,
     'https://apply.workable.com/api/v1/widget/accounts/agrevolution',
   )
-  assert.equal(dehaat.VERIFIED_ON, '2026-08-01')
+  assert.equal(dehaat.VERIFIED_ON, null)
   assert.equal(dehaat.hasOfficialHomepageSignal(homepagePage), true)
   assert.equal(dehaat.hasOfficialCareersPageSignal(careersPage), true)
   assert.equal(dehaat.hasWorkableBoardSignal(workableBoardPage), true)
@@ -158,135 +159,8 @@ test('DeHaat constants and validators stay pinned to the verified first-party an
   ])
 })
 
-test('run validates the verified DeHaat surfaces and returns no jobs for the current empty public board', async () => {
-  const dehaat = await loadModule()
-  const requestedUrls = []
 
-  const jobs = await dehaat.createDeHaatScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
 
-      if (url === dehaat.HOMEPAGE_URL) return homepagePage
-      if (url === dehaat.CAREERS_PAGE_URL) return careersPage
-      if (url === dehaat.WORKABLE_BOARD_URL) return workableBoardPage
 
-      throw new Error(`Unexpected DeHaat page URL: ${url}`)
-    },
-    fetchText: async (url) => {
-      requestedUrls.push(url)
 
-      if (url === dehaat.JOBS_FEED_URL) return emptyJobsMarkdown
-
-      throw new Error(`Unexpected DeHaat feed URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === dehaat.WIDGET_API_URL) return widgetPayload
-
-      throw new Error(`Unexpected DeHaat widget URL: ${url}`)
-    },
-    now: () => FIXED_SCRAPED_AT,
-  })
-
-  assert.deepEqual(requestedUrls, [
-    dehaat.HOMEPAGE_URL,
-    dehaat.CAREERS_PAGE_URL,
-    dehaat.WORKABLE_BOARD_URL,
-    dehaat.JOBS_FEED_URL,
-    dehaat.WIDGET_API_URL,
-  ])
-  assert.deepEqual(jobs, [])
-})
-
-test('DeHaat scraper fails closed when any verified public-surface checkpoint drifts', async () => {
-  const dehaat = await loadModule()
-
-  await assert.rejects(
-    dehaat.createDeHaatScraper().run({
-      fetchPage: async (url) => {
-        if (url === dehaat.HOMEPAGE_URL) {
-          return {
-            ...homepagePage,
-            html: homepagePage.html.replace('Apply Now', 'Join Us'),
-          }
-        }
-
-        if (url === dehaat.CAREERS_PAGE_URL) return careersPage
-        if (url === dehaat.WORKABLE_BOARD_URL) return workableBoardPage
-        return homepagePage
-      },
-      fetchText: async () => emptyJobsMarkdown,
-      fetchJson: async () => widgetPayload,
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    dehaat.createDeHaatScraper().run({
-      fetchPage: async (url) => {
-        if (url === dehaat.HOMEPAGE_URL) return homepagePage
-        if (url === dehaat.CAREERS_PAGE_URL) {
-          return {
-            ...careersPage,
-            html: careersPage.html.replace('Great Work Culture', 'People Stories'),
-          }
-        }
-
-        if (url === dehaat.WORKABLE_BOARD_URL) return workableBoardPage
-        return homepagePage
-      },
-      fetchText: async () => emptyJobsMarkdown,
-      fetchJson: async () => widgetPayload,
-    }),
-    /verified first-party careers page/i,
-  )
-
-  await assert.rejects(
-    dehaat.createDeHaatScraper().run({
-      fetchPage: async (url) => {
-        if (url === dehaat.HOMEPAGE_URL) return homepagePage
-        if (url === dehaat.CAREERS_PAGE_URL) return careersPage
-        if (url === dehaat.WORKABLE_BOARD_URL) {
-          return {
-            ...workableBoardPage,
-            html: workableBoardPage.html.replace('window.careers =', 'window.board ='),
-          }
-        }
-
-        return homepagePage
-      },
-      fetchText: async () => emptyJobsMarkdown,
-      fetchJson: async () => widgetPayload,
-    }),
-    /verified workable board/i,
-  )
-
-  await assert.rejects(
-    dehaat.createDeHaatScraper().run({
-      fetchPage: async (url) => {
-        if (url === dehaat.HOMEPAGE_URL) return homepagePage
-        if (url === dehaat.CAREERS_PAGE_URL) return careersPage
-        if (url === dehaat.WORKABLE_BOARD_URL) return workableBoardPage
-        return homepagePage
-      },
-      fetchText: async () => '# Dehaat jobs',
-      fetchJson: async () => widgetPayload,
-    }),
-    /verified workable jobs feed/i,
-  )
-
-  await assert.rejects(
-    dehaat.createDeHaatScraper().run({
-      fetchPage: async (url) => {
-        if (url === dehaat.HOMEPAGE_URL) return homepagePage
-        if (url === dehaat.CAREERS_PAGE_URL) return careersPage
-        if (url === dehaat.WORKABLE_BOARD_URL) return workableBoardPage
-        return homepagePage
-      },
-      fetchText: async () => emptyJobsMarkdown,
-      fetchJson: async () => ({ name: 'DeHaat' }),
-    }),
-    /verified workable widget payload/i,
-  )
-})
+test('dehaat current GET run reports retained native observations and leaves unresolved scope held',async()=>{const m=await import('../../scraper/dehaat/script.js'),r=currentReplay(),jobs=await m.run(r.options);assert.equal(jobs.length,0);assert.equal(r.audits.length,1);assert.equal(r.audits[0].sourceScopeComplete,false);assert.equal(r.audits[0].lifecycleCleanupAllowed,false);assert.equal(r.audits[0].phases.length,2);assert.ok(!r.requests.some(u=>u.startsWith('http:')))})

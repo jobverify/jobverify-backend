@@ -1,3 +1,4 @@
+import {replay as currentReplay} from '../native-sources/publicNativeGetSources/fixtureReplay.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -96,7 +97,7 @@ test('Ikya pins the verified empty SmartRecruiters board and homepage blocker si
   assert.equal(ikya.COMPANY_NAME, 'Ikya')
   assert.equal(ikya.CAREERS_URL, 'https://careers.smartrecruiters.com/Ikya1')
   assert.equal(ikya.HOMEPAGE_URL, 'http://www.ikya.com/')
-  assert.equal(ikya.VERIFIED_ON, '2026-09-03')
+  assert.equal(ikya.VERIFIED_ON, null)
   assert.equal(ikya.hasVerifiedEmptyBoardSignal(careersBoardHtml), true)
   assert.deepEqual(
     ikya.extractPublicJobLinksFromBoard(careersBoardHtml),
@@ -112,48 +113,8 @@ test('Ikya pins the verified empty SmartRecruiters board and homepage blocker si
   assert.equal(ikya.hasHomepagePlaceholderSignal(realHomepageHtml), false)
 })
 
-test('Ikya returns [] only while the SmartRecruiters board stays empty and the homepage stays blocked', async () => {
-  const ikya = await loadIkyaModule()
-  const requestedUrls = []
 
-  const jobs = await ikya.createIkyaScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-      if (url === ikya.CAREERS_URL) return { status: 200, url, html: careersBoardHtml }
-      if (url === ikya.HOMEPAGE_URL) return { status: 200, url, html: browserChallengeHomepageHtml }
-      throw new Error(`Unexpected Ikya URL: ${url}`)
-    },
-  })
 
-  assert.deepEqual(requestedUrls, [
-    ikya.CAREERS_URL,
-    ikya.HOMEPAGE_URL,
-  ])
-  assert.deepEqual(jobs, [])
-})
 
-test('Ikya fails closed when the public board starts listing jobs or the homepage becomes a real HTML site', async () => {
-  const ikya = await loadIkyaModule()
 
-  await assert.rejects(
-    ikya.createIkyaScraper().run({
-      fetchPage: async (url) => {
-        if (url === ikya.CAREERS_URL) return { status: 200, url, html: activeBoardHtml }
-        if (url === ikya.HOMEPAGE_URL) return { status: 200, url, html: browserChallengeHomepageHtml }
-        throw new Error(`Unexpected Ikya URL: ${url}`)
-      },
-    }),
-    /public jobs surface/i,
-  )
-
-  await assert.rejects(
-    ikya.createIkyaScraper().run({
-      fetchPage: async (url) => {
-        if (url === ikya.CAREERS_URL) return { status: 200, url, html: careersBoardHtml }
-        if (url === ikya.HOMEPAGE_URL) return { status: 200, url, html: realHomepageHtml }
-        throw new Error(`Unexpected Ikya URL: ${url}`)
-      },
-    }),
-    /homepage/i,
-  )
-})
+test('ikya current GET run reports retained native observations and leaves unresolved scope held',async()=>{const m=await import('../../scraper/ikya/script.js'),r=currentReplay(),jobs=await m.run(r.options);assert.equal(jobs.length,0);assert.equal(r.audits.length,1);assert.equal(r.audits[0].sourceScopeComplete,false);assert.equal(r.audits[0].lifecycleCleanupAllowed,false);assert.equal(r.audits[0].phases.length,2);assert.ok(!r.requests.some(u=>u.startsWith('http:')))})

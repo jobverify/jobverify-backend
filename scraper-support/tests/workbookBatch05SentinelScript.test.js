@@ -1,3 +1,4 @@
+import { assertCurrentWorkbookRoute, installWorkbookOfflineGuard } from './helpers/workbookBatchCatalogAssertions20261102.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -85,7 +86,8 @@ const EXPECTED_VERIFIED_ON_BY_SOURCE = {
 
 const batchProviders = dedicatedProviders.filter((provider) => EXPECTED_PROVIDER_SOURCES.includes(provider.source))
 
-test('workbook batch 05 provider extension registers specialized and generic fail-closed providers', () => {
+test('workbook batch 05 retains specialized provenance and current runnable routes', async (t) => {
+  installWorkbookOfflineGuard(t)
   assert.equal(batchProviders.length, EXPECTED_PROVIDER_SOURCES.length)
   assert.deepEqual(
     batchProviders.map((provider) => provider.source).sort((left, right) => left.localeCompare(right)),
@@ -93,26 +95,32 @@ test('workbook batch 05 provider extension registers specialized and generic fai
   )
 
   const catalog = getScraperCatalog()
+  const scrapersByName = new Map(buildScrapers().map(scraper => [scraper.name, scraper]))
   for (const source of EXPECTED_PROVIDER_SOURCES) {
     const provider = catalog.find((item) => item.source === source)
     assert.ok(provider, `Expected ${source} in hydrated scraper catalog`)
+    const historical = batchProviders.find(provider => provider.source === source)
+    await assertCurrentWorkbookRoute(provider, scrapersByName.get(source))
     assert.equal(provider.adapter, 'script')
-    assert.equal(provider.verifiedOn, EXPECTED_VERIFIED_ON_BY_SOURCE[source] || '2026-07-25')
+    assert.equal(historical.verifiedOn, EXPECTED_VERIFIED_ON_BY_SOURCE[source] || '2026-07-25')
     assert.equal(
-      String(provider.originalModulePath || '').includes('failClosedSentinel'),
+      String(historical.originalModulePath || '').includes('failClosedSentinel'),
       !NON_GENERIC_PROVIDER_SOURCES.has(source),
     )
     assert.match(provider.modulePath, new RegExp(`${source}[\\\\/]script\\.js$`, 'i'))
   }
 })
 
-test('workbook batch 05 unresolved providers stay fail-closed', async () => {
+test('workbook batch 05 executes only remaining empty implementations with an offline guard', async (t) => {
+  const forbidden = installWorkbookOfflineGuard(t)
+  const catalog = getScraperCatalog()
   const scrapers = buildScrapers()
-
   for (const source of EXPECTED_PROVIDER_SOURCES) {
-    if (NON_GENERIC_PROVIDER_SOURCES.has(source)) continue
-    const scraper = scrapers.find((item) => item.name === source)
-    assert.ok(scraper, `Expected scraper for ${source}`)
-    assert.deepEqual(await scraper.run(), [], `Expected ${source} to stay fail-closed`)
+    const scraper = scrapers.find(item => item.name === source)
+    const provider = catalog.find(item => item.source === source)
+    const implementation = await assertCurrentWorkbookRoute(provider, scraper)
+    if (['sentinel', 'static-empty'].includes(implementation)) {
+      assert.deepEqual(await scraper.run({ fetchText: forbidden, fetchJson: forbidden, fetchPage: forbidden }), [], source)
+    }
   }
 })

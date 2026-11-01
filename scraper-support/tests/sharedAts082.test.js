@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { gunzipSync } from 'node:zlib'
 globalThis.fetch = () => { throw new Error('OFFLINE shared ATS tests require injected transport') }
-const { createCatalogScraper, getScraperCatalog } = await import('../providers/index.js')
+const { createCatalogScraper, getScraperCatalog, hydrateProviderCatalogEntry } = await import('../providers/index.js')
 const { createPublishingGapAtsScraper } = await import('../utils/publishingGapAts.js')
 const { readInventoryEvidence, isFreshCompleteInventoryEvidence } = await import('../utils/inventoryEvidence.js')
 const { analyzePublishableJobs } = await import('../utils/publishableJobMetrics.js')
@@ -17,6 +17,9 @@ const fixtures = JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/share
 // source-local native tests retain the exact fresh registered responses.
 const ids = ['bugcrowd', 'cymulate', 'datagrail']
 const unresolvedScopes = new Set(['bugcrowd', 'cymulate'])
+// The single-feed captures predate the current Cymulate and DataGrail readers.
+const legacyDescriptors = JSON.parse(fs.readFileSync(new URL('../providers/providerExtensions/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz-verified-discovery-adapters-00082.json', import.meta.url)))
+const legacyCatalog = new Map(legacyDescriptors.map(row => [row.source, hydrateProviderCatalogEntry(row)]))
 
 for (const source of ['esw', 'extrahop']) test(`${source}: registered native adapter replaces the historical guarded feed with current corporate and geography evidence`, async () => {
   const provider = getScraperCatalog().find(row => row.source === source)
@@ -53,8 +56,8 @@ test('degreed: registered native source replaces the historical shared feed with
   assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
 })
 
-for (const source of ids) test(`${source}: registered shared adapter consumes the complete native feed with guarded scope`, async () => {
-  const provider = getScraperCatalog().find(row => row.source === source)
+for (const source of ids) test(`${source}: ${source === 'bugcrowd' ? 'registered' : 'historical'} shared adapter consumes the complete native feed with guarded scope`, async () => {
+  const provider = source === 'bugcrowd' ? getScraperCatalog().find(row => row.source === source) : legacyCatalog.get(source)
   assert.equal(provider.adapter, 'publicAts')
   assert.equal(classifyProviderImplementation(provider).type, 'shared-adapter')
   assert.equal(provider.bindingEvidence.verified, true)
@@ -84,10 +87,66 @@ for (const source of ids) test(`${source}: registered shared adapter consumes th
     assert.equal(job.sourceScopeComplete, false)
     assert.equal(job.lifecycleCleanupAllowed, false)
   }
-  const direct = await import(`../../scraper/${source}/script.js`)
+  const direct = source === 'bugcrowd' ? await import(`../../scraper/${source}/script.js`) : createPublishingGapAtsScraper(provider)
   const directJobs = await direct.run({ fetchJson: async () => structuredClone(fixtures[source]) })
   assert.equal(directJobs.length, expected)
   assert.equal(readInventoryEvidence(directJobs).status, 'discovery-only')
+})
+
+test('cymulate: registered native reader reconciles retained corporate, feed and role responses', async () => {
+  const { fixture, replay } = await import('../native-sources/declaredJobFeeds/fixtureReplay.js')
+  const provider = getScraperCatalog().find(row => row.source === 'cymulate')
+  assert.equal(provider.adapter, 'script')
+  assert.equal(provider.nativeJobFeedProfile, 'cymulate')
+  const retained = replay()
+  const jobs = await createCatalogScraper(provider).run(retained.options)
+  assert.equal(retained.audits.length, 1)
+  const audit = retained.audits[0]
+  assert.equal(audit.opening.publisherQualified, true)
+  assert.equal(audit.closing.publisherQualified, true)
+  assert.deepEqual(audit.observations.map(row => row.jobId), fixture.oracle.cymulate.records.map(row => row.id))
+  assert.equal(retained.records.length, 1)
+  assert.equal(jobs.length, 9, 'Current reader retains unresolved-country candidates without asserting India eligibility')
+  assert.ok(jobs.every(job => job.country !== 'India' && job.sourceCountryScopeUnresolved === true))
+  assert.ok(jobs.every(job => job.sourceScopeComplete === false && job.lifecycleCleanupAllowed === false))
+  assert.equal(readInventoryEvidence(jobs).status, 'discovery-only')
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
+  assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(jobs)), false)
+})
+
+test('datagrail: registered runtime reader requires employer role links before qualifying native scope', async () => {
+  const provider = getScraperCatalog().find(row => row.source === 'datagrail')
+  assert.equal(provider.adapter, 'publicAts')
+  assert.equal(provider.runtimeInventoryVerification.mode, 'role-links-exact')
+  const calls = []
+  // Synthetic employer markup binds the unchanged archived native response.
+  const page = {
+    status: 200, url: provider.companyCareerPage,
+    html: '<title>DataGrail Careers</title>' + fixtures.datagrail.jobs.map(row => `<a href="${row.absolute_url}">${row.title}</a>`).join(''),
+  }
+  const options = {
+    fetchPage: async url => { calls.push(url); assert.equal(url, provider.companyCareerPage); return page },
+    fetchJson: async url => {
+      calls.push(url)
+      assert.equal(url, `https://boards-api.greenhouse.io/v1/boards/${provider.boardToken}/jobs?content=true`)
+      return structuredClone(fixtures.datagrail)
+    },
+  }
+  const jobs = await createCatalogScraper(provider).run(options)
+  assert.deepEqual(calls, [provider.companyCareerPage, `https://boards-api.greenhouse.io/v1/boards/${provider.boardToken}/jobs?content=true`])
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, fixtures.datagrail.jobs.length)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
+  assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(jobs)), true)
+  const direct = await import('../../scraper/datagrail/script.js')
+  const directJobs = await direct.run(options)
+  // The standalone factory retains its conservative local descriptor.
+  assert.equal(readInventoryEvidence(directJobs).status, 'discovery-only')
+  assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(directJobs)), false)
+  await assert.rejects(createCatalogScraper(provider).run({
+    ...options, fetchPage: async () => ({ ...page, html: '<title>DataGrail Careers</title>' }),
+    fetchJson: async () => assert.fail('Unbound employer page must not request the native feed'),
+  }), /handoff|binding|scope/i)
 })
 
 test('explicit unresolved scope cannot be promoted to complete, including a truly empty native feed', async () => {

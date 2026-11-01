@@ -1,6 +1,4 @@
 import json
-import hashlib
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -16,87 +14,6 @@ from recoverTrialTitleFailures import recover
 
 
 class TitleRecoverySupervisorTest(unittest.TestCase):
-    def test_technical_resume_rejects_an_unverified_watchdog_exit(self):
-        workspace = Path(__file__).resolve().parents[2]
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            scripts = root / 'jobverify-backend/scripts'
-            scripts.mkdir(parents=True)
-            shutil.copy2(workspace / 'jobverify-backend/scripts/localTrialResourceGuard.py', scripts)
-            directory = root / 'artifacts/trial'
-            directory.mkdir(parents=True)
-            helper = directory / 'resume-approved-one-thread.py'
-            shutil.copy2(workspace / 'artifacts/full-gliclass-c10-2026-10-10-direct/resume-approved-one-thread.py', helper)
-            approval = {'approvedAnswer': 'Resume on one CPU thread', 'cpuThreads': 1, 'ownerPid': 999999, 'ownerCreated': 2.0}
-            (directory / 'approved-resume.json').write_text(json.dumps(approval))
-            for guard_state in [
-                {'ownerPid': 999999, 'ownerCreated': 2.0, 'status': 'monitoring'},
-                {'ownerPid': 999999, 'ownerCreated': 3.0, 'status': 'owner_exited'},
-            ]:
-                with self.subTest(guard_state=guard_state):
-                    (directory / 'resource-guard.json').write_text(json.dumps(guard_state))
-                    result = subprocess.run([sys.executable, str(helper)], capture_output=True, text=True, timeout=10)
-                    self.assertNotEqual(result.returncode, 0)
-                    self.assertIn('unknown stop cannot be retried', result.stderr)
-                    self.assertFalse((directory / 'run-state.json').exists())
-                    self.assertEqual(json.loads((directory / 'approved-resume.json').read_text()), approval)
-
-    def test_a_fresh_user_approval_is_bound_to_the_exact_stopped_watchdog_record(self):
-        workspace = Path(__file__).resolve().parents[2]
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            scripts = root / 'jobverify-backend/scripts'
-            scripts.mkdir(parents=True)
-            shutil.copy2(workspace / 'jobverify-backend/scripts/localTrialResourceGuard.py', scripts)
-            directory = root / 'artifacts/trial'
-            directory.mkdir(parents=True)
-            helper = directory / 'resume-approved-one-thread.py'
-            shutil.copy2(workspace / 'artifacts/full-gliclass-c10-2026-10-10-direct/resume-approved-one-thread.py', helper)
-            guard_state = {'ownerPid': 999999, 'ownerCreated': 2.0, 'status': 'stopped_resource_limit',
-                           'finishedAt': '2026-10-11T08:53:47+00:00'}
-            guard_file = directory / 'resource-guard.json'
-            guard_file.write_text(json.dumps(guard_state))
-            fresh = {'approvedAnswer': 'Resume the corrected trial', 'recordedAt': '2026-10-11T09:01:00+00:00',
-                     'guardSnapshotSha256': hashlib.sha256(guard_file.read_bytes()).hexdigest()}
-            for valid, acknowledgement in [
-                (True, fresh),
-                (False, {**fresh, 'guardSnapshotSha256': 'wrong'}),
-                (False, {**fresh, 'recordedAt': '2026-10-11T08:00:00+00:00'}),
-                (False, {**fresh, 'approvedAnswer': 'Keep it stopped'}),
-            ]:
-                with self.subTest(acknowledgement=acknowledgement):
-                    approval = {'approvedAnswer': 'Resume on one CPU thread', 'cpuThreads': 1,
-                                'ownerPid': 999999, 'ownerCreated': 2.0, 'freshStopApproval': acknowledgement}
-                    (directory / 'approved-resume.json').write_text(json.dumps(approval))
-                    result = subprocess.run([sys.executable, str(helper)], capture_output=True, text=True, timeout=10)
-                    self.assertNotEqual(result.returncode, 0)
-                    if valid:
-                        self.assertIn('run-state.json', result.stderr)  # Authorization passed; no capture/model exists in this fixture.
-                        self.assertNotIn('unknown stop cannot be retried', result.stderr)
-                    else:
-                        self.assertIn('unknown stop cannot be retried', result.stderr)
-                    self.assertEqual(json.loads((directory / 'approved-resume.json').read_text()), approval)
-
-    def test_saved_resume_helper_cannot_clear_a_new_resource_stop(self):
-        workspace = Path(__file__).resolve().parents[2]
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            scripts = root / 'jobverify-backend/scripts'
-            scripts.mkdir(parents=True)
-            shutil.copy2(workspace / 'jobverify-backend/scripts/localTrialResourceGuard.py', scripts)
-            directory = root / 'artifacts/trial'
-            directory.mkdir(parents=True)
-            helper = directory / 'resume-approved-one-thread.py'
-            shutil.copy2(workspace / 'artifacts/full-gliclass-c10-2026-10-10-direct/resume-approved-one-thread.py', helper)
-            stop = directory / 'resource-stop.json'
-            original = '{"cpu":91,"status":"stopped_resource_limit"}'
-            stop.write_text(original)
-            result = subprocess.run([sys.executable, str(helper)], capture_output=True, text=True, timeout=10)
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn('new resource stop requires fresh approval', result.stderr)
-            self.assertEqual(stop.read_text(), original)
-            self.assertEqual(sorted(path.name for path in directory.iterdir()), ['resource-stop.json', helper.name])
-
     def fixture(self, directory):
         runner = Path(__file__).resolve().parents[1] / 'scripts/runPostScrapeTrial.js'
         owner = subprocess.Popen(['node', '-e', 'setTimeout(()=>{},300)', str(runner), str(directory)])

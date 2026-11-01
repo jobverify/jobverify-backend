@@ -198,7 +198,7 @@ test('extractJobDetail pulls Tredence description, posting date, numbered skills
   assert.equal(detail.sourceUrl, tredence.buildDetailUrl('890548'))
 })
 
-test('normalizeScrapedJob composes Tredence junior full-time roles from RippleHire detail payloads', async () => {
+test('normalizeScrapedJob keeps Tredence zero-minimum experience eligible for fresher full-time roles', async () => {
   const tredence = await loadTredenceModule()
   assert.ok(tredence)
 
@@ -221,8 +221,13 @@ test('normalizeScrapedJob composes Tredence junior full-time roles from RippleHi
   })
 
   assert.equal(normalized.employmentType, 'Full-time')
-  assert.equal(normalized.experienceLevel, 'Junior Level')
-  assert.equal(normalized.jobType, 'Full-time Experienced')
+  assert.equal(normalized.experienceLevel, 'Entry Level')
+  assert.equal(normalized.jobType, 'Full-time Fresher')
+  assert.equal(detail.experienceRequired, '0 - 2 Years')
+  assert.equal(normalized.experienceRequired, detail.experienceRequired)
+  assert.equal(normalized.experienceProfile.minimumYears, 0)
+  assert.equal(normalized.experienceProfile.maximumYears, 2)
+  assert.equal(normalized.sourceDescription, detail.jobDescription)
 })
 
 test('run fetches the Tredence RippleHire listing and detail payloads, then decorates shared runner fields', async () => {
@@ -272,4 +277,16 @@ test('run fetches the Tredence RippleHire listing and detail payloads, then deco
     'https://tredence.ripplehire.com/candidate/?token=rzuz0vttMaz0VxxVzDiY&source=CAREERSITE#apply/job/890548',
   )
   assert.equal(typeof jobs[0].scrapedAt, 'string')
+
+  // The existing second fixture requires prior experience; no input is changed.
+  const experienced = normalizeScrapedJob(jobs[1], {
+    source: 'tredence', companyName: 'Tredence',
+    companyCareerPage: 'https://www.tredence.com/careers/greatest-of-ai', atsPlatform: 'ripplehire',
+  })
+  assert.equal(jobs[1].experienceRequired, '7 - 12 Years')
+  assert.equal(experienced.experienceRequired, '7 - 12 Years')
+  assert.equal(experienced.experienceProfile.minimumYears, 7)
+  assert.equal(experienced.experienceProfile.maximumYears, 12)
+  assert.equal(experienced.jobType, 'Full-time Experienced')
+  assert.equal(experienced.sourceDescription, jobs[1].jobDescription)
 })

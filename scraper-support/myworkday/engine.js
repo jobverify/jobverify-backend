@@ -241,7 +241,7 @@ const workdayHostCircuitBreaker = new WorkdayHostCircuitBreaker()
 
 const throwIfAborted = (signal) => {
   if (!signal?.aborted) return
-  throw signal.reason || new DOMException('The operation was aborted', 'AbortError')
+  throw signal.reason
 }
 
 const markWorkdayTransportFailure = (error) => {
@@ -1458,7 +1458,7 @@ const fetchDetailedJobPayload = async (
         }
       } catch (error) {
         throwIfAborted(signal)
-        if (['WORKDAY_NATIVE_DATE_INVALID', 'WORKDAY_NATIVE_ROLE_MISMATCH', 'WORKDAY_NATIVE_COUNTRY_MISMATCH'].includes(error?.code)) throw error
+        if (['WORKDAY_NATIVE_DATE_INVALID', 'WORKDAY_NATIVE_ROLE_MISMATCH', 'WORKDAY_NATIVE_COUNTRY_MISMATCH', 'WORKDAY_NATIVE_ROLE_UNAVAILABLE'].includes(error?.code)) throw error
         const status = Number(error?.jobsApiHttpStatus ?? error?.httpStatus)
         if (status === 429 || status >= 500) throw error
         // Missing, blocked, or malformed API descriptions use the existing page path.
@@ -1500,7 +1500,7 @@ const fetchDetailedJobPayload = async (
     }
   } catch (error) {
     throwIfAborted(signal)
-    if (['WORKDAY_NATIVE_DATE_INVALID', 'WORKDAY_NATIVE_ROLE_MISMATCH', 'WORKDAY_NATIVE_COUNTRY_MISMATCH'].includes(error?.code)) throw error
+    if (['WORKDAY_NATIVE_DATE_INVALID', 'WORKDAY_NATIVE_ROLE_MISMATCH', 'WORKDAY_NATIVE_COUNTRY_MISMATCH', 'WORKDAY_NATIVE_ROLE_UNAVAILABLE'].includes(error?.code)) throw error
     circuitBreaker.recordFailure(jobUrl, error)
     if (shouldFallbackToListingDataAfterDetailFailure(error)) {
       logRecoverableWorkdayNotice(`  [${source}] Failed to enrich details for ${jobUrl}; keeping listing data when summary location remains safely in scope: ${error.message}`)
@@ -2167,6 +2167,19 @@ const runWorkdayJobsApiScraper = async ({
           abortRetries: true, failureKind: 'parser_or_contract_error',
         })
       }
+      // A current, identity-bound explicit false cannot be replaced with an
+      // optional HTML/JD or listing fallback. It is not a closed-state proof.
+      const unavailableFields = ['posted', 'canApply'].filter(field => Object.hasOwn(info, field) && info[field] === false)
+      if ((reqMatches || postingIdentityMatches) && unavailableFields.length) {
+        // Preserve strict supplied native date failures before qualification.
+        extractWorkdayNativeDateMetadata(info)
+        throw Object.assign(new Error(`[${source}] Native Workday role is unavailable (${unavailableFields.join(', ')}:false): ${candidate.canonicalLink}`), {
+          name: 'WorkdayNativeRoleUnavailableError', code: 'WORKDAY_NATIVE_ROLE_UNAVAILABLE',
+          abortRetries: true, softFailure: true, partial: true, failureKind: 'native_role_unavailable',
+          sourceScopeComplete: false, sourceListingComplete: false, lifecycleCleanupAllowed: false,
+          nativeStatus: Object.fromEntries(['posted', 'canApply'].filter(field => Object.hasOwn(info, field)).map(field => [field, info[field]])),
+        })
+      }
     }
     const scopeController = new AbortController()
     const scopeSignal = signal ? AbortSignal.any([signal, scopeController.signal]) : scopeController.signal
@@ -2272,6 +2285,7 @@ const runWorkdayJobsApiScraper = async ({
           if (scopeLocations && !isWorkdayJobInPublicIndiaScope({ location, locations: scopeLocations })) return null
           const cached = scopePayload || countryProof ? null : readNativeDetailReceipt(nativeDetailRecovery, candidate.receiptKey)
           const cachedPayload = cached && matchesNativeRole(cached.payload, candidate) ? cached.payload : null
+          if (cachedPayload) validateNativeRole(cachedPayload, candidate)
           let verifiedNativePayload = scopePayload && matchesNativeRole(scopePayload, candidate) ? scopePayload : cachedPayload
           let verifiedAt = candidate.scopeFetchedAt || (cachedPayload ? cached.fetchedAt : null)
           let fromRecovery = candidate.fromRecovery || Boolean(cachedPayload)

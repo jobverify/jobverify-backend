@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import test,{after} from 'node:test'
+import {createReviewedProofRuntime} from './helpers/reviewedProofRuntime.js'
 import { gunzipSync } from 'node:zlib'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
@@ -9,8 +10,32 @@ import { buildPartialAttempt,recordPartialPublishingStatus } from '../scripts/pa
 import { isSuccessfulPublishingGapTrial } from '../scripts/publishPublishingGapRepairs.js'
 const now=new Date('2026-10-20T23:20:00Z'),sha=b=>createHash('sha256').update(b).digest('hex')
 const moduleURL=new URL('../scripts/naviPartialPublishingEvidence.js',import.meta.url)
-const load=async()=>{assert.ok(fs.existsSync(moduleURL),'Navi exact partial proof implementation is required');return import(moduleURL)}
+const load=async()=>{assert.ok(fs.existsSync(moduleURL),'Navi exact partial proof implementation is required');return import(runtime.url('scripts/naviPartialPublishingEvidence.js'))}
 const fixture=()=>{const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/naviPartial/reviewed-native-003.json.gz',import.meta.url)))),files=new Map(Object.entries(f.files).map(([key,value])=>[key,Buffer.from(value,'base64')]));return{source:'navi',httpEvidence:f.httpEvidence,files,readEvidence:async file=>files.get(file),now}}
+// Historical positive cases need their exact reviewed runtime.
+// The shared parser now retains experience ranges, and eligibility now uses
+// a one-month age limit. Replay with the actual October 21 policy sources.
+const reviewedMetrics=gunzipSync(fs.readFileSync(new URL('./fixtures/aeriesPartial/reviewed-publishableJobMetrics-7ebb487d0.js.gz',import.meta.url)))
+const reviewedSignals=gunzipSync(fs.readFileSync(new URL('./fixtures/eInfochipsPartial/reviewed-jobFilterSignals-7ebb487d0.js.gz',import.meta.url)))
+assert.equal(sha(reviewedMetrics),'f7d4baf7d52d6f3efd0fe23e5adbfff820f53194f3a3ddfbe7a0982d385b0621')
+assert.equal(sha(reviewedSignals),'2cce3c04654a68f27d654415e88186a0e7602cb261cd67c445491294893ee775')
+const runtime=createReviewedProofRuntime(fixture(),{prefix:'navi-reviewed-proof-',extraFiles:new Map([
+ ['scraper-support/utils/publishableJobMetrics.js',reviewedMetrics],
+ ['src/utils/jobFilterSignals.js',reviewedSignals],
+])})
+after(runtime.cleanup)
+test('Navi production verifier rejects archived source or shared-policy drift',async()=>{
+ const {deriveNaviPartialEvidence}=await import(moduleURL),f=fixture()
+ await assert.rejects(deriveNaviPartialEvidence(f),/current extraction code differs|current replay must equal all38 catalog-decorated original jobs|all selected jobs must remain eligible/)
+ const receipt=f.httpEvidence.receipts.find(r=>r.kind==='current-code'&&r.sourcePath==='scraper/navi/script.js')
+ const source=runtime.url(receipt.sourcePath),bytes=f.files.get(receipt.file)
+ try{
+  fs.writeFileSync(source,Buffer.concat([bytes,Buffer.from('\n// Controlled source drift for this isolated test.\n')]))
+  const reviewed=await load()
+  await assert.rejects(reviewed.deriveNaviPartialEvidence(f),/current extraction code differs/)
+ }finally{fs.writeFileSync(source,bytes)}
+})
+
 async function makeTrial(f=fixture()){
  const {deriveNaviPartialEvidence}=await load(),p=await deriveNaviPartialEvidence(f)
  const trial={schemaVersion:1,source:'navi',mode:'native-http-partial-positive-trial',outcome:'positive-extraction-incomplete-evidence',productionWrites:false,
@@ -60,7 +85,7 @@ test('caller-updated hashes cannot replace omitted anonymous token body, origina
 })
 
 test('Navi offline freezer preserves original timestamps and evidence bytes, refuses existing output and escaped paths',async()=>{
- const url=new URL('../scripts/freezeNaviPartialPublishingTrial.js',import.meta.url);assert.ok(fs.existsSync(url),'Navi immutable partial freezer is required')
+ const url=runtime.url('scripts/freezeNaviPartialPublishingTrial.js');assert.ok(fs.existsSync(url),'Navi immutable partial freezer is required')
  const {freezeNaviPartialTrial}=await import(url),parent=fs.mkdtempSync(path.join(os.tmpdir(),'navi-proof-')),outputDirectory=path.join(parent,'release')
  try{
   const f=fixture(),result=await freezeNaviPartialTrial({...f,outputDirectory}),trial=JSON.parse(fs.readFileSync(path.join(outputDirectory,'navi.json')))

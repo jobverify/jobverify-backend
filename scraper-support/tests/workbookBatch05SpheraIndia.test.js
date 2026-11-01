@@ -162,6 +162,10 @@ test('Sphera India verifies the first-party handoff and emits only India Workday
       method: 'POST',
     },
     {
+      url: 'https://sphera.wd1.myworkdayjobs.com/wday/cxs/sphera/careers/job/Bangalore-India/Senior-Software-Engineer_R12345',
+      method: 'GET',
+    },
+    {
       url: 'https://sphera.wd1.myworkdayjobs.com/careers/job/Bangalore-India/Senior-Software-Engineer_R12345',
       method: 'GET',
     },
