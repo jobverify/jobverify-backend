@@ -1,0 +1,9 @@
+{
+  "listingStrategy": "jobs-api",
+  "inventoryScope": "complete-board-country-proof",
+  "officialCareersUrl": "https://www.condenast.com/careers",
+  "jobsApiUrl": "https://condenast.wd115.myworkdayjobs.com/wday/cxs/condenast/CondeCareers/jobs",
+  "detailUrlBase": "https://condenast.wd115.myworkdayjobs.com/CondeCareers",
+  "locationCountry": null,
+  "searchText": ""
+}

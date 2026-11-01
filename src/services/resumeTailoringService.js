@@ -12,6 +12,7 @@ import { artifactBytes, readResumeArtifact } from './resumeArtifactService.js';
 import { activeResumeOwner, activeResumeStatuses, requirePreparedResume, drainResumePreparations, recoverResumePreparations, evidenceMatches } from './resumePreparationService.js';
 import { getCandidateEvidenceSnapshot } from './candidateEvidenceService.js';
 import { publishGeneratedCv } from './cvRevisionService.js';
+import { remainingBudget } from '../../resume-tailoring/resumeBudget.js';
 
 const recordId = (user, job) => `${user}:${job}`;
 
@@ -125,10 +126,11 @@ export async function drainTailoredResumes({ generate, deadline = Date.now() + 3
     const base = await readResumeArtifact(row.user, row.sourceBaseGenerationId, { kind: 'base', withSource: true });
     if (!base || base.sourceResumeSha !== row.sourceResumeSha) throw tailoringError('Prepare your current resume before tailoring it.', 409);
     const { extractResumeSource } = await import('./resumeSource.js');
-    const document = await extractResumeSource({ extension: source.resume.extension, data: artifactBytes(source.resume.data) });
+    const document = await extractResumeSource({ extension: source.resume.extension, data: artifactBytes(source.resume.data), deadline });
     const output = await generate({ mode: 'tailored', source: document, baseLatex: artifactBytes(base.latex).toString('utf8'), facts: base.facts,
-      jobSnapshot: source.jobSnapshot, candidateEvidence: source.evidence }, { deadline, onPhase: async phase => {
-      await TailoredResume.updateOne({ ...lease, leaseUntil: { $gt: new Date() } }, { $set: { phase: String(phase).slice(0, 100) } });
+      jobSnapshot: source.jobSnapshot, candidateEvidence: source.evidence }, { deadline, onPhase: async (phase, { signal } = {}) => {
+      await TailoredResume.updateOne({ ...lease, leaseUntil: { $gt: new Date() } }, { $set: { phase: String(phase).slice(0, 100) } },
+        { signal, timeoutMS: remainingBudget(deadline, 5000) });
     } });
     if (Date.now() >= deadline) throw tailoringError('Resume generation exceeded its time budget. Please retry.', 504);
     const fresh = await context({ _id: row.user }, row.job, { settings, requireResume: true });

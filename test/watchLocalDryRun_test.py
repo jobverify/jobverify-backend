@@ -185,14 +185,28 @@ class WatchLocalDryRunTest(unittest.TestCase):
             output.mkdir()
             summary = json.dumps({'status': 'complete', 'companies': {
                 'fixture': {'finished': True}}})
-            script = "const fs=require('node:fs');setTimeout(()=>fs.writeFileSync(process.argv[1],process.argv[2]),1500);"
+            script = (
+                "const fs=require('node:fs');"
+                "const deadline=setTimeout(()=>process.exit(1),30000);"
+                "const timer=setInterval(()=>{if(fs.existsSync(process.argv[3])){"
+                "fs.writeFileSync(process.argv[1],process.argv[2]);"
+                "clearInterval(timer);clearTimeout(deadline)}},10);"
+            )
             owner = subprocess.Popen(['node', '-e', script, str(output / 'summary.json'), summary,
+                str(directory / 'description-may-finish'),
                 str(ROOT / 'scripts/evaluateDryRunDescriptions.js'), '--run-dir', str(directory),
                 '--output', str(output)], cwd=ROOT)
+            samples = 0
+            def sample():
+                nonlocal samples
+                samples += 1
+                if samples > 1:
+                    # Discovery has adopted the owner and its monitor is sampling.
+                    (directory / 'description-may-finish').touch()
+                return {'cpu': 20, 'ram': 45}
             try:
                 outcome = watch.launch_monitored([sys.executable, '-c', "raise RuntimeError('duplicate')"],
-                    directory, 'descriptions', {'stages': {}}, {},
-                    lambda: {'cpu': 20, 'ram': 45}, .01)
+                    directory, 'descriptions', {'stages': {}}, {}, sample, .01)
                 self.assertEqual(outcome['ownerPid'], owner.pid)
                 self.assertEqual(outcome['exitCode'], 0)
                 self.assertIn('existing_stage_adopted', (directory / 'watchdog-events.ndjson').read_text())

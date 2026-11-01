@@ -23,7 +23,7 @@ const headingType = line => {
   if (/^(?:(?:professional|work|relevant|employment) )?(?:experience|history)|^(?:employment|internships?)$/.test(heading) && heading.length < 45) return 'employment';
   if (/^(?:education|academic(?: background| qualifications)?|qualifications)(?: and qualifications)?$/.test(heading)) return 'education';
   if (/^(?:(?:technical|key|core|professional) )?(?:skills|technologies|competencies)$/.test(heading)) return 'skills';
-  if (/^(?:projects|personal projects|selected projects|summary|professional summary|profile|objective|certifications?|achievements?|awards|publications?|interests|languages|volunteering|references)$/.test(heading)) return 'other';
+  if (/^(?:projects|personal projects|selected projects|summary|professional summary|profile|objective|certifications?|achievements?|awards|publications?|interests|languages|volunteering|references|links|contact|contact information)$/.test(heading)) return 'other';
   return null;
 };
 const titleWords = /\b(?:engineer|developer|intern|analyst|manager|consultant|designer|architect|scientist|specialist|associate|administrator|researcher|officer|lead|director|technician|executive)\b/i;
@@ -86,7 +86,7 @@ function metricTokens(text) {
 /** Deterministic anchors complement the independent semantic comparison. */
 export function buildSourceFacts(source) {
   const sourceText = clean(typeof source === 'string' ? source : source?.text);
-  if (sourceText.length < 40 || Buffer.byteLength(sourceText) > MAX_RESUME_TEXT_BYTES) throw tailoringError('Use a readable, shorter resume so all original candidate facts fit in the model context.', 422);
+  if (sourceText.length < 40 || Buffer.byteLength(sourceText) > MAX_RESUME_TEXT_BYTES) throw tailoringError('Use a readable, shorter resume so all original candidate facts can be preserved.', 422);
   const links = normalizeResumeLinks(source?.links);
   const emails = unique([...(sourceText.match(emailPattern) || []), ...links.filter(link => /^mailto:/i.test(link)).map(link => decodeURIComponent(new URL(link).pathname))].map(value => value.toLowerCase()));
   const phones = unique([...phoneNumbers(sourceText).map(phoneKey), ...links.filter(link => /^tel:/i.test(link)).map(phoneKey)]);
@@ -125,7 +125,7 @@ export function sourceWithCandidateEvidence(source, evidence) {
   const unattached = achievements.filter(row => !row.experienceId || !experiences.some(item => item.id === row.experienceId));
   if (unattached.length) entries.push('ACHIEVEMENTS', ...unattached.map(claim));
   if (skills.length) entries.push('SKILLS', skills.join(', '));
-  return { ...source, text: `${clean(source?.text)}\n\nPROFILE\nCandidate-confirmed evidence\n${entries.join('\n')}`, links: normalizeResumeLinks(source?.links) };
+  return { ...source, text: `${clean(source?.text)}\n\n${entries.join('\n')}`, links: normalizeResumeLinks(source?.links) };
 }
 const generationRules = [
   'Return ONLY one complete, self-contained LaTeX document, from \\documentclass through \\end{document}. Generate the entire document yourself; do not return JSON, Markdown fences, explanations, placeholders or fragments.',

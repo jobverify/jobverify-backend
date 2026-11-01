@@ -129,23 +129,27 @@ test('Canva run returns normalized India jobs from the verified first-party jobs
   ])
 })
 
-test('Canva returns [] when page 1 and page 2 both match the verified Cloudflare challenge shell', async () => {
+test('Canva stops on a verified Cloudflare challenge with unavailable inventory', async () => {
   const requestedUrls = []
 
   assert.equal(hasVerifiedCloudflareChallengeSignal(blockedChallengePage), true)
 
-  const jobs = await createCanvaScraper().run({
+  assert.equal(hasVerifiedCloudflareChallengeSignal(blockedSecondPage), true)
+  await assert.rejects(createCanvaScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
       if (url === CAREERS_URL) return blockedChallengePage
       if (url === buildJobsPageUrl({ page: 2 })) return blockedSecondPage
       throw new Error(`Unexpected URL: ${url}`)
     },
+  }), error => {
+    assert.equal(error.status, 403)
+    assert.equal(error.abortRetries, true)
+    assert.equal(error.inventoryEvidence.status, 'coverage-gap')
+    assert.equal(error.inventoryEvidence.listingComplete, false)
+    assert.equal(error.inventoryEvidence.reportedTotal, null)
+    assert.equal(error.inventoryEvidence.indiaFacetCount, null)
+    return true
   })
-
-  assert.deepEqual(requestedUrls, [
-    CAREERS_URL,
-    'https://www.lifeatcanva.com/en/jobs/?page=2',
-  ])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [CAREERS_URL])
 })

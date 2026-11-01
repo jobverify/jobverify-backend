@@ -1,3 +1,5 @@
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
 import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -124,12 +126,28 @@ export const createRenaultGroupScraper = ({
       scraperDir: currentDir,
     })
 
-    return jobs.map((job) => ({
+    const decorated = jobs.map((job) => ({
       ...job,
       company: COMPANY,
       source: SOURCE,
       scrapedAt: now(),
     }))
+    const inventory = readInventoryEvidence(jobs)
+    if (!inventory || inventory.surface !== WORKDAY_JOBS_API_URL
+      || jobs.some(job => job?.source !== SOURCE || job?.company !== COMPANY)) return decorated
+    // These are returned role observations, not the reported parent-board total.
+    attachSourceObservationEvidence(decorated, {
+      source: SOURCE, recordKind: 'vacancy-rows',
+      observedRecordCount: jobs.length, observedVacancyCount: jobs.length,
+      sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null,
+    })
+    return attachInventoryEvidence(decorated, {
+      ...inventory,
+      status: ['unverified', 'discovery-only', 'coverage-gap'].includes(inventory.status) ? inventory.status : 'coverage-gap',
+      listingComplete: false, reportedTotal: null, indiaFacetCount: null,
+      reason: 'Exact Renault Group company and India inventory scope remain unverified.'
+        + (inventory.reason ? ' Board diagnostic: ' + inventory.reason : ''),
+    })
   },
 })
 

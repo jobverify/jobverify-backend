@@ -1,3 +1,5 @@
+import {createNativeScraper,nativeProfile,nativeMetadata} from './native.js'
+export {nativeMetadata}
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -6,8 +8,8 @@ import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-const BASE_URL = 'https://tataelectrd.valhalla44.stage.jobs2web.com'
-const SEARCH_PATH = '/search/?createNewAlert=false&locationsearch=&q='
+const BASE_URL = 'https://careers.tataelectronics.com'
+const SEARCH_PATH = '/search'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -54,13 +56,7 @@ const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
 
-export const buildSearchUrl = (startRow = null) => {
-  const url = new URL(SEARCH_PATH, BASE_URL)
-  if (Number.isInteger(startRow) && startRow > 0) {
-    url.searchParams.set('startrow', String(startRow))
-  }
-  return url.toString()
-}
+export const buildSearchUrl = (startRow = null) => Number.isInteger(startRow) && startRow > 0 ? nativeProfile.apiPrefix + startRow : nativeProfile.searchURL
 
 export const extractCity = (location) => {
   const normalized = normalizeWhitespace(location)
@@ -103,7 +99,7 @@ export const extractSearchResults = (html) => {
         location,
         city: extractCity(location),
         jobId,
-        requisitionId: jobId,
+        requisitionId: null,
         sourceUrl,
         postingDate,
       }
@@ -170,7 +166,7 @@ export const extractJobDetail = (html, listing = {}) => {
     location,
     city: listing.city || extractCity(location),
     jobId,
-    requisitionId: listing.requisitionId || jobId,
+    requisitionId: null,
     employmentType,
     experienceRequired: null,
     jobDescription: stripTags(descriptionHtml),
@@ -203,76 +199,10 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-export const createTataElectronicsScraper = () => {
-  const run = async ({
-    maxPages = config.maxPages,
-    maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-    fetchText = defaultFetchText,
-  } = {}) => {
-    const jobs = []
-    const seenJobIds = new Set()
-    const pageLimit = Number.isInteger(maxPages) ? maxPages : Number.POSITIVE_INFINITY
-    let startRow = 0
-    let pageNumber = 1
-
-    while (pageNumber <= pageLimit) {
-      const listingHtml = await fetchText(buildSearchUrl(startRow || null))
-      const listings = extractSearchResults(listingHtml)
-      const summary = extractResultsSummary(listingHtml)
-
-      if (listings.length === 0) break
-
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailHtml = await fetchText(listing.sourceUrl)
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
-          jobId: detail.jobId || listing.jobId,
-          requisitionId: detail.requisitionId || listing.requisitionId,
-          title: detail.title || listing.title,
-          company: 'TATA Electronics Private Limited',
-          department: detail.department || listing.department || null,
-          location: detail.location || listing.location,
-          city: detail.city || listing.city,
-          link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-          applyUrl: detail.applyUrl || listing.sourceUrl,
-          sourceUrl: detail.sourceUrl || listing.sourceUrl,
-          source: 'tataelectronics',
-          employmentType: detail.employmentType,
-          experienceRequired: detail.experienceRequired,
-          jobDescription: detail.jobDescription,
-          minimumQualification: detail.minimumQualification,
-          preferredQualification: detail.preferredQualification,
-          requiredSkills: detail.requiredSkills,
-          postingDate: detail.postingDate || listing.postingDate,
-          closingDate: detail.closingDate,
-          scrapedAt: new Date().toISOString(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-
-      if (!summary.totalPages || pageNumber >= summary.totalPages) break
-      startRow += summary.pageSize || listings.length
-      pageNumber += 1
-    }
-
-    return jobs
-  }
-
-  return {
-    buildSearchUrl,
-    extractSearchResults,
-    extractResultsSummary,
-    extractJobDetail,
-    run,
-  }
-}
+export const createTataElectronicsScraper = (defaults = {}) => ({
+  ...createNativeScraper(defaults),
+  buildSearchUrl, extractSearchResults, extractResultsSummary, extractJobDetail,
+})
 
 const scraper = createTataElectronicsScraper()
 

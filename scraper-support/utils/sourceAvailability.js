@@ -95,7 +95,16 @@ function identity(job) {
 function scopes(html, role) {
   need(typeof html === 'string' && html.length > 0 && Buffer.byteLength(html) <= 3000000, 'complete native evidence snapshot is missing or oversized')
   const d = readVisibleNativeDocument(html, { strict: true, statusLayout: true }), canonical = d.nodes(n => n.tag === 'link' && n.attrs.rel === 'canonical')
-  const statusNodes = predicate => d.statusNodes(predicate)
+  const statusNodes = predicate => {
+    const nodes = d.statusNodes(predicate)
+    // Preserve specific layout uncertainty before generic scope cardinality
+    // errors can be handled as ordinary native shape drift by a caller.
+    if (nodes.some(node => readNativeStatusLayout(node)?.qualified === false)) {
+      throw Object.assign(Error('Native source availability: status layout is unqualified'),
+        { code: 'NATIVE_STATUS_LAYOUT_UNQUALIFIED' })
+    }
+    return nodes
+  }
   need(canonical.length === 1 && (canonical[0].attrs.href === role.canonicalUrl || role.source === 'datahub'
     && canonical[0].attrs.href === role.canonicalUrl.replace(/^https:/, 'http:')), 'snapshot canonical identity differs')
   const within = (n, target) => n === target || n.children?.some(c => typeof c !== 'string' && within(c, target))

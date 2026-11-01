@@ -112,3 +112,53 @@ test('removal from a complete closing feed holds the removed earlier posting',as
  const r=await run('huggingface',(u,p,n)=>u.includes('/widget/accounts/huggingface?')&&n===2?editJSON(p,v=>v.jobs=v.jobs.filter(j=>j.shortcode!==id)):p)
  assert.equal(r.audit.observations.length,6);assert.equal(r.audit.observations.find(o=>o.id===id).candidateEligible,false);assert.equal(r.jobs.length,2)
 })
+
+for(const fault of ['unrelated detail','null peer'])test('R1 removed posting remains held with '+fault,async()=>{
+ const removed='9E2A4C02C7',other='81B46579FE'
+ const r=await run('huggingface',(u,p,n)=>{
+  if(n===2&&u.includes('/widget/accounts/huggingface?'))return editJSON(p,v=>{v.jobs=v.jobs.filter(j=>j.shortcode!==removed);if(fault==='null peer')v.jobs.push(null)})
+  if(n===2&&u.endsWith('/jobs/'+other)&&fault==='unrelated detail')return {...p,status:503}
+  return p
+ })
+ assert.equal(r.audit.observations.find(o=>o.id===removed).candidateEligible,false)
+ assert.equal(r.audit.observations.find(o=>o.id==='DB4D7C0EC8').candidateEligible,true)
+})
+test('R2 malformed additional native location holds France post without creating fourth candidate',async()=>{
+ const r=await run('huggingface',(u,p)=>u.endsWith('/jobs/81B46579FE')?editJSON(p,n=>n.locations.push(null)):p)
+ assert.equal(r.audit.observations.find(o=>o.id==='81B46579FE').ownPairQualified,false);assert.equal(r.jobs.length,3)
+})
+test('R2 two null location elements cannot corroborate an own pair',async()=>{
+ const id='9E2A4C02C7',r=await run('huggingface',(u,p)=>u.endsWith('/jobs/'+id)?editJSON(p,n=>n.locations=[null]):u.includes('/widget/accounts/huggingface?')?editJSON(p,v=>Object.assign(v.jobs.find(j=>j.shortcode===id),{locations:[null],country:'',city:'',state:''})):p)
+ assert.deepEqual(r.audit.observations.find(o=>o.id===id).originalNative.locations,[null]);assert.equal(r.audit.observations.find(o=>o.id===id).ownPairQualified,false);assert.equal(r.jobs.length,2)
+})
+const badMD='\n| Broken peer | dept | US | Full-time | - | 2026-11-01 | [View](https://apply.workable.com/seeq/jobs/view/INVALID!.md) |\n'
+test('R3 malformed Markdown peer preserves all24 valid own Markdown pairs',async()=>{
+ const r=await run('seeq',(u,p)=>u==='https://apply.workable.com/seeq/jobs.md'?editHTML(p,h=>h+badMD):p)
+ assert.equal(r.audit.observations.length,24);assert.equal(r.audit.phases[0].markdownRows.length,24)
+ assert.equal(r.requests.filter(u=>/\/jobs\/view\/.+\.md$/.test(u)).length,48)
+ assert.ok(r.audit.observations.every(o=>o.originalOwnMarkdown?.bodyBase64&&o.ownPairQualified))
+ assert.equal(r.audit.selectedCollectionComplete,false)
+})
+test('R3 malformed peer cannot discard a valid Markdown-only posting',async()=>{
+ const id='1B6E0A1710',r=await run('seeq',(u,p)=>u==='https://apply.workable.com/seeq/jobs.md'?editHTML(p,h=>h+badMD):u.includes('/widget/accounts/seeq?')?editJSON(p,v=>v.jobs=v.jobs.filter(j=>j.shortcode!==id)):p)
+ assert.equal(r.audit.observations.length,24);assert.equal(r.audit.observations.find(o=>o.id===id).ownPairQualified,true)
+})
+test('R3 duplicate Markdown identity holds only that posting and retains all declarations',async()=>{
+ const id='1B6E0A1710',r=await run('seeq',(u,p)=>u==='https://apply.workable.com/seeq/jobs.md'?editHTML(p,h=>h+'\n'+h.split('\n').find(l=>l.startsWith('|')&&l.includes('/'+id+'.md'))+'\n'):p)
+ assert.equal(r.audit.observations.length,24);assert.equal(r.audit.observations.find(o=>o.id===id).ownPairQualified,false)
+ assert.equal(r.audit.observations.filter(o=>o.ownPairQualified).length,23);assert.equal(r.audit.observations.find(o=>o.id===id).markdownDeclarations.length,2)
+})
+
+test('R4 projected location labels satisfy the ordinary stored-location consumer contract',async()=>{
+ const r=await run('huggingface',undefined,{}, {...profile('huggingface'),countryFilter:'Global'})
+ const {getPrimaryStoredLocation}=await import('../../../src/utils/jobLocations.js')
+ const job=r.jobs.find(j=>j.jobId==='81B46579FE'),row=r.audit.observations.find(o=>o.id===job.jobId)
+ assert.ok(job.locations.every(v=>typeof v==='string'));assert.equal(getPrimaryStoredLocation(job),row.geography.locations[0].location)
+})
+
+test('R4 normalization retains public experience category and employment label as source evidence',async()=>{
+ const r=await run('huggingface'),{normalizeScrapedJob}=await import('../../utils/normalizeScrapedJob.js')
+ for(const job of r.jobs){const raw=r.audit.observations.find(o=>o.id===job.jobId).listingVariants[0],normalized=normalizeScrapedJob(job)
+  assert.equal(normalized.sourceExperienceRequired,raw.experience);assert.equal(normalized.sourceEmploymentType,raw.employment_type)
+ }
+})

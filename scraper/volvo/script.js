@@ -1,3 +1,4 @@
+import {createNativeScraper,nativeMetadata} from './native.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -93,22 +94,15 @@ const extractRssListings = (xml) => [...String(xml ?? '').matchAll(/<item\b[^>]*
   })
   .filter(Boolean)
 
-export const run = async ({ fetchText = defaultFetchText } = {}) => {
-  const xml = await fetchText(RSS_URL)
-  return normalizeListings(extractRssListings(xml)).map(buildJob)
-}
+export const run = async (options = {}) => createNativeScraper().run(options)
 
 export const getRunnerMetadata = () => ({
   name: SOURCE,
   dryRunFile: 'jobs.json',
   provider: {
-    source: SOURCE,
-    companyName: COMPANY,
-    companyCareerPage: CAREER_PAGE_URL,
+    ...nativeMetadata,
     baseUrl: JOBS_URL,
     adapter: 'script',
-    atsPlatform: 'successfactors',
-    countryFilter: 'India',
   },
 })
 

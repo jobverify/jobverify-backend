@@ -46,34 +46,6 @@ const normalizeWhitespace = (value) => {
 
 const normalizeOutputLocation = (value) => normalizeWhitespace(value)?.replace(/\s+,/g, ',') || null
 
-const createBlockedInventorySignalJob = ({ scrapedAt }) => ({
-  title: `Current openings at ${COMPANY_NAME}`,
-  company: COMPANY_NAME,
-  location: 'India',
-  city: null,
-  country: 'India',
-  link: PUBLIC_JOBS_URL,
-  applyUrl: PUBLIC_JOBS_URL,
-  sourceUrl: PUBLIC_JOBS_URL,
-  source: SOURCE,
-  jobId: `${SOURCE}-current-openings`,
-  requisitionId: `${SOURCE}-current-openings`,
-  department: null,
-  employmentType: null,
-  experienceRequired: null,
-  jobDescription:
-    `The official ${COMPANY_NAME} homepage and public Darwinbox shell remained reachable, `
-    + 'but the public Darwinbox inventory API returned HTTP 403 during this scrape. '
-    + `Review current openings directly on ${PUBLIC_JOBS_URL}.`,
-  minimumQualification: null,
-  preferredQualification: null,
-  requiredSkills: [],
-  remoteStatus: null,
-  postingDate: null,
-  closingDate: null,
-  scrapedAt,
-})
-
 const extractTitle = (html) => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return normalizeWhitespace(match?.[1])
@@ -137,17 +109,44 @@ export const isGreenkoCertificateVerificationError = (error) =>
       error?.code,
     ].filter(Boolean).join(' | '))
 
+// Caller cancellation is opaque and must settle even when an injected read
+// ignores its signal. This adds no timeout, retry, or inventory authority.
+export const withGreenkoCallerCancellation = async (signal, operation) => {
+  signal?.throwIfAborted()
+  if (!signal) return operation()
+  let onAbort
+  const aborted = new Promise((resolve, reject) => {
+    onAbort = () => reject(signal.reason)
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+  try {
+    const value = await Promise.race([
+      Promise.resolve().then(() => { signal.throwIfAborted(); return operation() }),
+      aborted,
+    ])
+    signal.throwIfAborted()
+    return value
+  } catch (error) {
+    if (signal.aborted) throw signal.reason
+    throw error
+  } finally {
+    signal.removeEventListener('abort', onAbort)
+  }
+}
+
 export const fetchOfficialGreenkoTextWithoutTlsVerification = (
   url,
   {
     headers = {},
     timeoutMs = OFFICIAL_FETCH_TIMEOUT_MS,
+    signal,
   } = {},
-) => new Promise((resolve, reject) => {
+) => withGreenkoCallerCancellation(signal, () => new Promise((resolve, reject) => {
   const request = https.request(url, {
     method: 'GET',
     headers,
     rejectUnauthorized: true,
+    ...(signal ? { signal } : {}),
   }, (response) => {
     let body = ''
     response.setEncoding('utf8')
@@ -168,25 +167,28 @@ export const fetchOfficialGreenkoTextWithoutTlsVerification = (
   })
   request.on('error', reject)
   request.end()
-})
+}))
 
 export const fetchOfficialGreenkoText = async (
   url,
   {
     headers = {},
     label = 'greenkohub-official',
+    signal,
     timeoutMs = OFFICIAL_FETCH_TIMEOUT_MS,
     fetchTextWithRetryImpl = fetchTextWithRetry,
     insecureHtmlFetch = fetchOfficialGreenkoTextWithoutTlsVerification,
   } = {},
-) => {
+) => withGreenkoCallerCancellation(signal, async () => {
   try {
     return await fetchTextWithRetryImpl(url, {
       headers,
       label,
       timeoutMs,
+      ...(signal ? { signal } : {}),
     })
   } catch (error) {
+    signal?.throwIfAborted()
     if (!isGreenkoOfficialUrl(url) || !isGreenkoCertificateVerificationError(error)) {
       throw error
     }
@@ -194,11 +196,13 @@ export const fetchOfficialGreenkoText = async (
     return insecureHtmlFetch(url, {
       headers,
       timeoutMs,
+      ...(signal ? { signal } : {}),
     })
   }
-}
+})
 
-const defaultFetchText = (url) => fetchOfficialGreenkoText(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchOfficialGreenkoText(url, {
+  ...(signal ? { signal } : {}),
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -215,43 +219,34 @@ export const createGreenkoHubScraper = ({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
     fetchListingPage,
+    fetchJobDetail,
+    signal,
   } = {}) {
-    const homepageHtml = await fetchText(OFFICIAL_HOMEPAGE_URL)
+    return withGreenkoCallerCancellation(signal, async () => {
+      const homepageHtml = await fetchText(OFFICIAL_HOMEPAGE_URL, { signal })
+      signal?.throwIfAborted()
 
-    if (!hasOfficialGreenkoHubHomepageSignals(homepageHtml)) {
-      throw new Error('Greenko Hub verified official homepage no longer matches the verified public jobs surface')
-    }
+      if (!hasOfficialGreenkoHubHomepageSignals(homepageHtml)) {
+        throw new Error('Greenko Hub verified official homepage no longer matches the verified public jobs surface')
+      }
 
-    let jobs
-    try {
-      jobs = await darwinboxScraper.run({
+      const jobs = await darwinboxScraper.run({
         maxPages,
         maxJobs,
         fetchListingPage,
+        fetchJobDetail,
+        signal,
       })
-    } catch (error) {
-      if (!isBlockedDarwinboxListingsError(error)) {
-        throw error
-      }
+      signal?.throwIfAborted()
 
-      const publicJobsShellHtml = await fetchText(PUBLIC_JOBS_URL)
-      if (
-        !hasBlockedDarwinboxShellSignal(publicJobsShellHtml)
-        && !hasMinimalDarwinboxShellSignal(publicJobsShellHtml)
-      ) {
-        throw error
-      }
+      const scrapedAt = now()
 
-      return [createBlockedInventorySignalJob({ scrapedAt: now() })]
-    }
-
-    const scrapedAt = now()
-
-    return mapJobsWithInventoryEvidence(jobs, (job) => ({
-      ...job,
-      location: normalizeOutputLocation(job.location),
-      scrapedAt,
-    }))
+      return mapJobsWithInventoryEvidence(jobs, (job) => ({
+        ...job,
+        location: normalizeOutputLocation(job.location),
+        scrapedAt,
+      }))
+    })
   },
 })
 

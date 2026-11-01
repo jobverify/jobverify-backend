@@ -2,15 +2,18 @@ import 'dotenv/config';
 import mongoose from 'mongoose';
 import { runTailoredResumeWorker } from '../resume-tailoring/tailoredResumeWorker.js';
 import { reportResumeDiagnostic } from '../resume-tailoring/resumeDiagnostics.js';
+import { remainingBudget, resumeWorkerDeadline } from '../resume-tailoring/resumeBudget.js';
 
 try {
   if (!process.env.MONGO_URI) throw new Error('Missing worker configuration.');
   const start = Date.parse(process.env.TAILORED_RESUME_WORKFLOW_STARTED_AT || '');
-  const deadline = Number.isFinite(start) ? start + 29 * 60000 : Date.now() + 27 * 60000;
-  await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 15000, autoIndex: false });
+  const deadline = resumeWorkerDeadline(process.env.TAILORED_RESUME_WORKFLOW_STARTED_AT);
+  await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: remainingBudget(deadline, 10000), autoIndex: false });
   const counts = await runTailoredResumeWorker({ deadline });
   // Only allowlisted stage codes and aggregate counts; no candidate content.
   console.log(JSON.stringify(counts));
+  reportResumeDiagnostic({ stage: 'worker', code: counts.failed ? 'processing_failed' : 'passed',
+    seconds: (Date.now() - (Number.isFinite(start) ? start : deadline - 60000)) / 1000 });
   if (counts.failed) process.exitCode = 1;
 } catch (error) {
   reportResumeDiagnostic({ stage: 'worker', code: error.code });

@@ -144,14 +144,9 @@ const fetchWithRetry = async (url, {
   ...requestInit
 } = {}) => {
   const throwCallerAbort = () => {
-    const reason = callerSignal?.reason
-      || new DOMException('The operation was aborted', 'AbortError')
-    const sentinel = new Error(
-      reason?.message || String(reason || 'The operation was aborted'),
-      { cause: reason },
-    )
-    sentinel.abortRetries = true
-    throw sentinel
+    // An aborted caller owns an opaque reason. Do not inspect, coerce, wrap
+    // or mutate it; withRetry checks this same signal before error handling.
+    throw callerSignal.reason
   }
 
   try {
@@ -207,7 +202,7 @@ const fetchWithRetry = async (url, {
     })
   } catch (error) {
     if (callerSignal?.aborted) {
-      throw callerSignal.reason || error
+      throw callerSignal.reason
     }
     if (attempts > 1 && error?.abortRetries !== true) {
       // Avoid multiplying shared fetch retries with the outer scraper-level retry loop.

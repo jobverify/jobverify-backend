@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { QUADEYE_CATALOG } from './catalog.js'
+import { hasRecognizedWorkdayCountry, explicitWorkdayCountryScope } from '../../scraper-support/myworkday/countryInventoryProof.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -72,23 +74,67 @@ const normalizeDate = (value) => {
 }
 
 const normalizeLocation = (record = {}) => {
-  const rawLocations = Array.isArray(record.Job_Location) ? record.Job_Location : record.Job_Location ? [record.Job_Location] : []
+  // Preserve uncertain native workplaces without relabelling the vacancy India.
+  const unknown = () => ({
+    location: null, city: null, state: null, country: null,
+    nativeGeographyQualified: false,
+    rawNativeWorkplaceEvidence: Object.fromEntries(['Country', 'Job_Location', 'City', 'State']
+      .filter(key => Object.hasOwn(record, key)).map(key => [key, structuredClone(record[key])])),
+  })
+  const plain = value => typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : null
+  const country = plain(record.Country)
+  const providedCountry = record.Country != null && country !== ''
+  if (providedCountry && (!country || !hasRecognizedWorkdayCountry(country))) return unknown()
+  const countryScope = country ? explicitWorkdayCountryScope(country) : null
+  const city = plain(record.City) || null
+  const state = plain(record.State) || null
+  if (record.City != null && typeof record.City !== 'string' || record.State != null && typeof record.State !== 'string') return unknown()
+  // These are existing native formats, including the captured Gurgaon Kty.
+  // City value. They check consistency; they never supply a missing country.
+  const indiaCity = /^(?:Gurugram|Gurgaon|Gurgaon Kty\.)$/i
+  const indiaState = /^(?:Haryana|Hariyana)$/i
+  const indiaComponentsAgree = (!city || indiaCity.test(city)) && (!state || indiaState.test(state))
+  const foreignComponentsConflict = [city, state].some(value => value && (
+    /\b(?:Gurugram|Gurgaon|Haryana|Hariyana)\b/i.test(value) || explicitWorkdayCountryScope(value) === 'india'
+  ))
+  const sameCountry = (left, right) => hasRecognizedWorkdayCountry({ descriptor: left, alpha2Code: right })
+  const indiaPlace = /^(Gurugram|Gurgaon)(,\s*(?:Haryana,\s*)?India)?$/i
+  const foreignPlace = /^(?:New York|Chicago|Hong Kong|Singapore|South Korea|Romania)$/i
+  const nativeLocations = record.Job_Location
+  const rawLocations = Array.isArray(nativeLocations) ? nativeLocations
+    : nativeLocations == null ? [] : [nativeLocations]
   if (rawLocations.length) {
-    const places = rawLocations.map(normalizeWhitespace)
-    if (places.some(place => !place)) throw new Error('QuadEye incomplete public location values')
-    const indiaPlaces = places.filter(place => /^(?:Gurugram|Gurgaon)(?:,\s*(?:Haryana,\s*)?India)?$/i.test(place))
-    const foreignPlaces = places.filter(place => /^(?:New York|Chicago|Hong Kong|Singapore|South Korea|Romania)$/i.test(place))
-    if (indiaPlaces.length + foreignPlaces.length !== places.length) throw Object.assign(new Error('QuadEye incomplete location scope'), { code: 'incomplete_location_scope' })
-    if (!indiaPlaces.length) return null
-    const cities = [...new Set(indiaPlaces.map(place => place.replace(/,.*$/, '')))]
-    return { city: cities.join(', '), state: null, country: 'India', location: cities.join(', ') + ', India' }
+    const places = rawLocations.map(plain)
+    if (places.some(place => !place)) return unknown()
+    const indiaMatches = places.map(place => place.match(indiaPlace))
+    if (indiaMatches.every(Boolean)) {
+      if (countryScope === 'foreign' || !country && !indiaMatches.every(match => match[2]) || !indiaComponentsAgree) return unknown()
+      const cities = [...new Set(indiaMatches.map(match => match[1]))]
+      return { city: cities.join(', '), state: null, country: 'India', location: cities.join(', ') + ', India' }
+    }
+    if (indiaMatches.some(Boolean) || places.some(place => !foreignPlace.test(place)) || countryScope === 'india' || foreignComponentsConflict) return unknown()
+    // The legacy New York/Chicago formats need the provided native US country;
+    // these bare city labels do not independently prove any country.
+    if (countryScope === 'foreign') {
+      if (!places.every(place => hasRecognizedWorkdayCountry(place)
+        ? sameCountry(country, place)
+        : /^(?:New York|Chicago)$/i.test(place) && sameCountry(country, 'United States'))) return unknown()
+      return null
+    }
+    // With no Country field, every foreign place must name the same country.
+    if (places.every(place => hasRecognizedWorkdayCountry(place))
+      && places.every(place => sameCountry(places[0], place))) return null
+    return unknown()
   }
-  const city = normalizeWhitespace(record.City)
-  const state = normalizeWhitespace(record.State)
-  const country = normalizeWhitespace(record.Country)
-  if (!country) throw Object.assign(new Error('QuadEye incomplete location scope'), { code: 'incomplete_location_scope' })
-  if (!/^India$/i.test(country)) return null
-  return { city, state, country: 'India', location: [city, state, 'India'].filter(Boolean).join(', ') }
+  if (countryScope === 'india') {
+    if (!indiaComponentsAgree) return unknown()
+    return { city, state, country: 'India', location: [city, state, 'India'].filter(Boolean).join(', ') }
+  }
+  if (countryScope === 'foreign') {
+    if (foreignComponentsConflict) return unknown()
+    return null
+  }
+  return unknown()
 }
 
 const normalizeQualification = (value) => {
@@ -178,16 +224,12 @@ export const extractIndiaJobs = (payload = {}) => {
       seen.add(jobId)
       const scope = normalizeLocation(record)
       if (!scope) return null
-      const { location, city, state, country } = scope
 
       return {
         title,
         company: COMPANY,
         department,
-        location,
-        city,
-        state,
-        country,
+        ...scope,
         jobId,
         requisitionId: jobId,
         sourceUrl,
@@ -297,12 +339,21 @@ export const createQuadEyeScraper = ({
     if (selectedJobs.length < jobs.length) for (const job of selectedJobs) job.sourceListingComplete = false
     const getNow = overrideNow || now
 
-    return selectedJobs.map((job) => ({
+    return attachInventoryEvidence(selectedJobs.map((job) => ({
       ...job,
+      sourceScopeComplete: false,
+      sourceListingComplete: false,
+      sourceGlobalJobCount: null,
+      sourceIndiaJobCount: null,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: getNow(),
-    }))
+    })), {
+      status: 'coverage-gap', surface: CAREERS_API_URL, firstParty: false,
+      listingComplete: false, pagesFetched: 1, reportedTotal: null,
+      indiaFacetCount: null, verifiedAt: null,
+      reason: 'QuadEye portal/API IDs were reconciled; company scope and complete role geography/details remain unverified',
+    })
   },
 })
 

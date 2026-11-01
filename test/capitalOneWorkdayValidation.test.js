@@ -4,8 +4,13 @@ import assert from'node:assert/strict'
 import test from'node:test'
 import{createCatalogScraper,getScraperCatalog}from'../scraper-support/providers/index.js'
 import{projectNativeWorkdayClocks}from'./helpers/nativeWorkdayClockProjection.js'
+import{readInventoryEvidence}from'../scraper-support/utils/inventoryEvidence.js'
 const frozen=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/capitalOne/source-native-005.json.gz',import.meta.url))))
 const stable=value=>{const j=structuredClone(value);delete j.scrapedAt;delete j.sourceOfficialBinding.verifiedAt;return j}
+// Current safety metadata is additive; the original12 native records stay exact.
+// Country reconciliation covers this captured board subset, not whole-company scope.
+const expectedPartialContract=value=>({...stable(value),sourceScopeComplete:false,lifecycleCleanupAllowed:false,
+  sourceBoardInventories:value.sourceBoardInventories.map(board=>({...board,countryScopeComplete:true,unresolvedCountryRoles:[],reconciliation:null}))})
 async function replay(t,change=()=>{}){
   const packets=structuredClone(frozen.packets);change(packets);let used=0
   t.mock.method(globalThis,'fetch',async(url,init={})=>{
@@ -20,8 +25,10 @@ async function replay(t,change=()=>{}){
   return{jobs,used}
 }
 test('all31 captured responses retain12 native jobs, original dates and unknown legal employers under partial coverage',async t=>{
-  const{jobs,used}=await replay(t);assert.equal(used,31);assert.deepEqual(projectNativeWorkdayClocks(jobs,frozen.trial.jobs,frozen.packets,stable,{listingLabel:true}),frozen.trial.jobs.map(stable))
+  const{jobs,used}=await replay(t);assert.equal(used,31);assert.deepEqual(projectNativeWorkdayClocks(jobs,frozen.trial.jobs,frozen.packets,stable,{listingLabel:true}),frozen.trial.jobs.map(expectedPartialContract))
   assert.ok(jobs.every(j=>j.nativeEmployer===null&&j.sourceDetailComplete&&j.sourceListingComplete===false))
+  const inventory=readInventoryEvidence(jobs);assert.equal(inventory.status,'coverage-gap');assert.equal(inventory.listingComplete,false)
+  assert.equal(inventory.reportedTotal,null);assert.equal(inventory.indiaFacetCount,null)
 })
 const lastDetail=(packets,change)=>{const p=packets.at(-1),body=JSON.parse(p.body);change(body);p.body=JSON.stringify(body)}
 for(const[name,change]of[

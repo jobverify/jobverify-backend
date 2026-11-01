@@ -115,7 +115,7 @@ test('extractJobDetail ignores Danfoss script templates when reading the title',
   assert.equal(detail.title, 'Software Engineer')
 })
 
-test('normalizeScrapedJob keeps Danfoss roles as experienced full-time opportunities', () => {
+test('normalizeScrapedJob keeps Danfoss experience unresolved without an employer requirement', () => {
   const detail = extractJobDetail(readFixture('job-detail-50011.html'), {
     title: 'Master Data Expert & Business Analyst, Procurement',
     location: 'Oragadam, Pune, India',
@@ -134,6 +134,13 @@ test('normalizeScrapedJob keeps Danfoss roles as experienced full-time opportuni
   })
 
   assert.equal(normalized.employmentType, 'Full-time')
-  assert.equal(normalized.experienceLevel, 'Mid Level')
-  assert.equal(normalized.jobType, 'Full-time Experienced')
+  assert.equal(normalized.experienceLevel, null)
+  assert.equal(normalized.jobType, 'Unspecified')
+  assert.equal(detail.experienceRequired, null)
+  assert.equal(normalized.experienceRequired, null)
+  assert.equal(normalized.experienceProfile.minimumYears, null)
+  assert.equal(normalized.experienceProfile.maximumYears, null)
+  assert.equal(normalized.experienceProfile.hasExplicitExperience, false)
+  assert.equal(normalized.seniority, 'Unknown')
+  assert.equal(normalized.sourceDescription, detail.jobDescription)
 })

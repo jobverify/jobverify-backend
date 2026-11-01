@@ -648,6 +648,13 @@ const parseExperienceProfile = (job = {}) => {
     evidence: null,
   };
 
+  // A selected month-based closed interval must be ordered before it can
+  // supply numeric filters. Preserve the authored raw text when it is not.
+  const hasReversedMonthBounds = (minimumYears, maximumYears, ...units) => (
+    maximumYears < minimumYears
+    && units.some((unit) => normalizeExperienceUnit(unit) === "months")
+  );
+
   if (!combinedText) {
     return {
       ...baseProfile,
@@ -676,11 +683,15 @@ const parseExperienceProfile = (job = {}) => {
   }
 
   const explicitFieldRangeMatch = explicitExperienceField?.match(
-    /^(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)$/,
+    /^(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)(?:\s*(months?))?$/i,
   );
   if (explicitFieldRangeMatch) {
-    const minimumYears = Number.parseFloat(explicitFieldRangeMatch[1]);
-    const maximumYears = Number.parseFloat(explicitFieldRangeMatch[2]);
+    const unit = explicitFieldRangeMatch[3] || "years";
+    const minimumYears = convertExperienceValueToYears(explicitFieldRangeMatch[1], unit);
+    const maximumYears = convertExperienceValueToYears(explicitFieldRangeMatch[2], unit);
+    if (explicitFieldRangeMatch[3] && maximumYears < minimumYears) {
+      return { ...baseProfile, experienceBucket: "unspecified" };
+    }
     return {
       ...baseProfile,
       minimumYears,
@@ -690,7 +701,7 @@ const parseExperienceProfile = (job = {}) => {
       evidence: formatExperienceRange(
         explicitFieldRangeMatch[1],
         explicitFieldRangeMatch[2],
-        "years",
+        unit,
       ),
       experienceBucket: bucketFromYears(Math.floor(minimumYears), Math.ceil(maximumYears)),
     };
@@ -817,6 +828,9 @@ const parseExperienceProfile = (job = {}) => {
     const maximumYears = convertExperienceValueToYears(labeledRangeMatch[3], unit);
     const evidence = formatExperienceRange(labeledRangeMatch[2], labeledRangeMatch[3], unit);
 
+    if (hasReversedMonthBounds(minimumYears, maximumYears, unit)) {
+      return { ...baseProfile, experienceBucket: "unspecified" };
+    }
     return {
       ...baseProfile,
       minimumYears,
@@ -878,7 +892,27 @@ const parseExperienceProfile = (job = {}) => {
   const bareExperienceLabelValueMatch = combinedText.match(
     /\b(?:experience|exp\.?)\s*[:\-]\s*(\d+(?:\.\d+)?)(?:\s*(\+|plus))?\b/i,
   );
-  if (bareExperienceLabelValueMatch) {
+  // A complete year interval in this same label is not an exact lower value.
+  // Reuse the canonical range reader without changing other field precedence.
+  const bareExperienceYearRangeTail = bareExperienceLabelValueMatch && !bareExperienceLabelValueMatch[2]
+    ? combinedText.slice(bareExperienceLabelValueMatch.index + bareExperienceLabelValueMatch[0].length)
+      .match(/^\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(years?|yrs?)\b/i)
+    : null;
+  if (bareExperienceYearRangeTail
+    && Number.isFinite(Number(bareExperienceLabelValueMatch[1]))
+    && Number.isFinite(Number(bareExperienceYearRangeTail[1]))
+    && Number(bareExperienceYearRangeTail[1]) >= Number(bareExperienceLabelValueMatch[1])) {
+    return {
+      ...parseExperienceProfile({ experienceRequired: `${bareExperienceLabelValueMatch[1]} - ${bareExperienceYearRangeTail[1]} ${bareExperienceYearRangeTail[2]}` }),
+      rawText: baseProfile.rawText,
+    };
+  }
+
+  // Leave a complete months range for the unit-aware range parser below;
+  // this untyped single-value rule must not consume only its lower bound.
+  if (bareExperienceLabelValueMatch && !/^\s*(?:-|to)\s*\d+(?:\.\d+)?\s*months?\b/i.test(
+    combinedText.slice(bareExperienceLabelValueMatch.index + bareExperienceLabelValueMatch[0].length),
+  )) {
     const exactValue = convertExperienceValueToYears(bareExperienceLabelValueMatch[1], "years");
     const openEnded = Boolean(bareExperienceLabelValueMatch[2]);
     const evidence = formatExperienceValueWithUnit(
@@ -916,6 +950,9 @@ const parseExperienceProfile = (job = {}) => {
       endUnit,
     );
 
+    if (hasReversedMonthBounds(minimumYears, maximumYears, startUnit, endUnit)) {
+      return { ...baseProfile, experienceBucket: "unspecified" };
+    }
     return {
       ...baseProfile,
       minimumYears,
@@ -949,6 +986,9 @@ const parseExperienceProfile = (job = {}) => {
       parenthesizedMinimumRangeMatch[4],
     );
 
+    if (hasReversedMonthBounds(minimumYears, maximumYears, parenthesizedMinimumRangeMatch[2], parenthesizedMinimumRangeMatch[4])) {
+      return { ...baseProfile, experienceBucket: "unspecified" };
+    }
     return {
       ...baseProfile,
       minimumYears,
@@ -977,6 +1017,9 @@ const parseExperienceProfile = (job = {}) => {
         endUnit,
       );
 
+      if (hasReversedMonthBounds(minimumYears, maximumYears, startUnit, endUnit)) {
+        return { ...baseProfile, experienceBucket: "unspecified" };
+      }
       return {
         ...baseProfile,
         minimumYears,
@@ -1007,6 +1050,9 @@ const parseExperienceProfile = (job = {}) => {
       betweenExperienceRangeMatch[3],
     );
 
+    if (hasReversedMonthBounds(minimumYears, maximumYears, betweenExperienceRangeMatch[3])) {
+      return { ...baseProfile, experienceBucket: "unspecified" };
+    }
     return {
       ...baseProfile,
       minimumYears,
@@ -1041,6 +1087,9 @@ const parseExperienceProfile = (job = {}) => {
       endUnit,
     );
 
+    if (hasReversedMonthBounds(minimumYears, maximumYears, startUnit, endUnit)) {
+      return { ...baseProfile, experienceBucket: "unspecified" };
+    }
     return {
       ...baseProfile,
       minimumYears,
@@ -1094,6 +1143,9 @@ const parseExperienceProfile = (job = {}) => {
       experienceWordTrailingUnitRangeMatch[3],
     );
 
+    if (hasReversedMonthBounds(minimumYears, maximumYears, experienceWordTrailingUnitRangeMatch[3])) {
+      return { ...baseProfile, experienceBucket: "unspecified" };
+    }
     return {
       ...baseProfile,
       minimumYears,
@@ -1123,6 +1175,9 @@ const parseExperienceProfile = (job = {}) => {
       minimumWordMidRangeMatch[3],
     );
 
+    if (hasReversedMonthBounds(minimumYears, maximumYears, minimumWordMidRangeMatch[3])) {
+      return { ...baseProfile, experienceBucket: "unspecified" };
+    }
     return {
       ...baseProfile,
       minimumYears,
@@ -1712,6 +1767,9 @@ const parseExperienceProfile = (job = {}) => {
       qualificationLineRangeMatch[3],
       qualificationLineRangeMatch[4],
     );
+    if (hasReversedMonthBounds(minimumYears, maximumYears, qualificationLineRangeMatch[2], qualificationLineRangeMatch[4])) {
+      return { ...baseProfile, experienceBucket: "unspecified" };
+    }
     return {
       ...baseProfile,
       minimumYears,

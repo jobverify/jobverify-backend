@@ -17,15 +17,17 @@ export function rewriteShardFilter(shard, shardCount) {
   return { $expr: { $regexMatch: { input: { $toString: '$_id' }, regex } } };
 }
 
-/** Plan all partitions in one workflow; GitHub queues them behind maxParallel. */
-export function buildRewritePlan(queued, { jobsPerShard = 1000, maxParallel = 8 } = {}) {
+/** Plan all partitions in one workflow, optionally using a fixed shard count. */
+export function buildRewritePlan(queued, { jobsPerShard = 1000, maxParallel = 4, shardCount } = {}) {
   if (!Number.isSafeInteger(queued) || queued < 0) throw new Error('Invalid rewrite queue count');
   if (!Number.isSafeInteger(jobsPerShard) || jobsPerShard < 1) throw new Error('Invalid rewrite partition target');
   if (!Number.isSafeInteger(maxParallel) || maxParallel < 1 || maxParallel > 16) throw new Error('Invalid rewrite parallel runner limit');
   const needed = Math.max(1, Math.ceil(queued / jobsPerShard));
-  let shardCount = 1;
-  while (shardCount < needed && shardCount < MAX_REWRITE_SHARDS) shardCount *= 2;
+  if (shardCount === undefined) {
+    shardCount = 1;
+    while (shardCount < needed && shardCount < MAX_REWRITE_SHARDS) shardCount *= 2;
+  } else validateRewriteShard(0, shardCount);
   return { queued, jobsPerShard, shardCount, maxParallel: Math.min(maxParallel, shardCount),
-    estimatedJobsPerShard: Math.ceil(queued / shardCount), capacityLimited: needed > MAX_REWRITE_SHARDS,
+    estimatedJobsPerShard: Math.ceil(queued / shardCount), capacityLimited: needed > shardCount,
     matrix: { shard: Array.from({ length: shardCount }, (_, index) => index) } };
 }

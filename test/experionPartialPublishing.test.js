@@ -2,14 +2,32 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import test,{after} from 'node:test'
+import {createReviewedProofRuntime,readReviewedSnapshot} from './helpers/reviewedProofRuntime.js'
 import {gunzipSync} from 'node:zlib'
 import {createHash} from 'node:crypto'
 import {buildPartialAttempt,recordPartialPublishingStatus} from '../scripts/partialPublishingGapEvidence.js'
 import {isSuccessfulPublishingGapTrial} from '../scripts/publishPublishingGapRepairs.js'
 const now=new Date('2026-10-21T00:55:00Z'),sha=b=>createHash('sha256').update(b).digest('hex'),url=new URL('../scripts/experionPartialPublishingEvidence.js',import.meta.url)
-const load=async()=>{assert.ok(fs.existsSync(url),'Experion exact partial proof implementation is required');return import(url)}
+const load=async()=>{assert.ok(fs.existsSync(url),'Experion exact partial proof implementation is required');return import(runtime.url('scripts/experionPartialPublishingEvidence.js'))}
 const fixture=()=>{const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/experionPartial/reviewed-native-001.json.gz',import.meta.url)))),files=new Map(Object.entries(f.files).map(([k,v])=>[k,Buffer.from(v,'base64')]));return{source:'experiontechnologies',httpEvidence:f.httpEvidence,files,readEvidence:async file=>files.get(file),now}}
+// Positive and mutation cases replay the immutable reviewed runtime, including
+// the actual Oct21 eligibility policy from git7ebb487d0, before posting-age filtering.
+const runtime=createReviewedProofRuntime(fixture(),{prefix:'experion-reviewed-proof-',extraFiles:new Map([['scraper-support/utils/publishableJobMetrics.js',readReviewedSnapshot(new URL('./fixtures/aeriesPartial/reviewed-publishableJobMetrics-7ebb487d0.js.gz',import.meta.url),'f7d4baf7d52d6f3efd0fe23e5adbfff820f53194f3a3ddfbe7a0982d385b0621')]])})
+after(runtime.cleanup)
+test('experion verifier rejects changed reviewed source bytes and checkout drift',async()=>{
+ const {deriveExperionPartialEvidence}=await import(url)
+ const f=fixture(),drift=f.httpEvidence.receipts.filter(r=>r.sourcePath).some(r=>sha(fs.readFileSync(new URL('../'+r.sourcePath,import.meta.url)))!==r.sha256)
+ if(drift)await assert.rejects(deriveExperionPartialEvidence(f),/current (?:source|extraction code).*differs/)
+ else await assert.rejects(deriveExperionPartialEvidence(f),/every selected role must remain eligible now/)
+ const receipt=f.httpEvidence.receipts.find(r=>r.kind==='current-code'),file=runtime.url(receipt.sourcePath),bytes=fs.readFileSync(file)
+ try {
+  fs.writeFileSync(file,Buffer.concat([bytes,Buffer.from('\n// changed source bytes\n')]))
+  const {deriveExperionPartialEvidence:deriveReviewed}=await load()
+  await assert.rejects(deriveReviewed(f),/current source.*differs/)
+ } finally {fs.writeFileSync(file,bytes)}
+})
+
 async function makeTrial(f=fixture()){
  const{deriveExperionPartialEvidence}=await load(),p=await deriveExperionPartialEvidence(f)
  const trial={schemaVersion:1,source:'experiontechnologies',mode:'native-http-partial-positive-trial',outcome:'positive-extraction-incomplete-evidence',productionWrites:false,
@@ -43,7 +61,7 @@ test('Experion stale, missing, duplicate, changed or caller-rehashed native/clie
 })
 
 test('Experion immutable freezer keeps29 original jobs/dates and all33 actual packets and refuses reused or escaping outputs',async()=>{
- const url=new URL('../scripts/freezeExperionPartialPublishingTrial.js',import.meta.url);assert.ok(fs.existsSync(url),'Experion immutable freezer is required')
+ const url=runtime.url('scripts/freezeExperionPartialPublishingTrial.js');assert.ok(fs.existsSync(url),'Experion immutable freezer is required')
  const{freezeExperionPartialTrial}=await import(url),parent=fs.mkdtempSync(path.join(os.tmpdir(),'experion-proof-')),outputDirectory=path.join(parent,'release')
  try{
   const f=fixture(),result=await freezeExperionPartialTrial({...f,outputDirectory}),bytes=fs.readFileSync(path.join(outputDirectory,'experiontechnologies.json')),trial=JSON.parse(bytes),original=JSON.parse(f.files.get('evidence/frozen-trials/experiontechnologies.json'))

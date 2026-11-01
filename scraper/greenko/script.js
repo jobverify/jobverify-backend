@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import {
   COMPANY_NAME as BASE_COMPANY,
@@ -8,6 +9,7 @@ import {
   PUBLIC_JOBS_URL as BASE_PUBLIC_JOBS_URL,
   SOURCE as BASE_SOURCE,
   createGreenkoHubScraper,
+  withGreenkoCallerCancellation,
   hasOfficialGreenkoHubHomepageSignals,
 } from '../greenkohub/script.js'
 
@@ -18,7 +20,8 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const defaultFetchText = (url) => fetchOfficialGreenkoText(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchOfficialGreenkoText(url, {
+  ...(signal ? { signal } : {}),
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -92,37 +95,46 @@ export const createGreenkoScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchListingPage,
+    fetchJobDetail,
+    signal,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    return withGreenkoCallerCancellation(signal, async () => {
+      const homepageHtml = await fetchText(HOMEPAGE_URL, { signal })
+      signal?.throwIfAborted()
 
-    if (!hasVerifiedGreenkoHomepageSignal(homepageHtml)) {
-      throw new Error('Greenko verified Greenko homepage no longer matches the pinned first-party surface')
-    }
+      if (!hasVerifiedGreenkoHomepageSignal(homepageHtml)) {
+        throw new Error('Greenko verified Greenko homepage no longer matches the pinned first-party surface')
+      }
 
-    const normalizedHomepageHtml = normalizeVerifiedHomepageHtml(homepageHtml)
-    const cachedFetchText = async (url) => {
-      if (url === HOMEPAGE_URL || url === BASE_HOMEPAGE_URL) return normalizedHomepageHtml
-      return fetchText(url)
-    }
-    const adaptedFetchListingPage = fetchListingPage
-      ? async (args = {}) => adaptListingPayload(await fetchListingPage(args), args)
-      : undefined
+      const normalizedHomepageHtml = normalizeVerifiedHomepageHtml(homepageHtml)
+      const cachedFetchText = async (url, options = {}) => {
+        signal?.throwIfAborted()
+        if (url === HOMEPAGE_URL || url === BASE_HOMEPAGE_URL) return normalizedHomepageHtml
+        return fetchText(url, options)
+      }
+      const adaptedFetchListingPage = fetchListingPage
+        ? async (args = {}) => adaptListingPayload(await fetchListingPage(args), args)
+        : undefined
 
-    const scrapedAt = now()
-    const baseRunOptions = {
-      fetchText: cachedFetchText,
-      fetchListingPage: adaptedFetchListingPage,
-    }
-    if (maxPages != null) {
-      baseRunOptions.maxPages = maxPages
-    }
+      const scrapedAt = now()
+      const baseRunOptions = {
+        fetchText: cachedFetchText,
+        fetchListingPage: adaptedFetchListingPage,
+        fetchJobDetail,
+        signal,
+      }
+      if (maxPages != null) {
+        baseRunOptions.maxPages = maxPages
+      }
 
-    const jobs = await createGreenkoHubScraper({
-      maxJobs,
-      now: () => scrapedAt,
-    }).run(baseRunOptions)
+      const jobs = await createGreenkoHubScraper({
+        maxJobs,
+        now: () => scrapedAt,
+      }).run(baseRunOptions)
+      signal?.throwIfAborted()
 
-    return jobs.map((job) => decorateGreenkoJob(job, scrapedAt))
+      return mapJobsWithInventoryEvidence(jobs, (job) => decorateGreenkoJob(job, scrapedAt))
+    })
   },
 })
 

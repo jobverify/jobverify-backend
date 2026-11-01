@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { remainingBudget } from './resumeRuntime.js';
+import { remainingBudget, withinResumeBudget } from './resumeBudget.js';
 import { resumeFailure } from './resumeDiagnostics.js';
 
 const context = fileURLToPath(new URL('./compiler/', import.meta.url));
@@ -56,18 +56,29 @@ export async function prepareResumeCompiler({ deadline = Date.now() + 600000 } =
   if (!/^sha256:[a-f0-9]{64}$/.test(preparedImage)) throw new Error('The compiler image identity is invalid.');
   return preparedImage;
 }
-export async function inspectResumePdf(pdf) {
+export async function inspectResumePdf(pdf, { deadline = Date.now() + 60000, signal } = {}) {
+  return withinResumeBudget(deadline, budgetSignal => inspectPdfWithinBudget(pdf, {
+    deadline, signal: signal ? AbortSignal.any([signal, budgetSignal]) : budgetSignal,
+  }));
+}
+async function inspectPdfWithinBudget(pdf, { deadline, signal }) {
+  signal.throwIfAborted();
   if (!Buffer.isBuffer(pdf) || pdf.length > 5 * 1024 * 1024 || !pdf.subarray(0, 5).equals(Buffer.from('%PDF-'))) throw new Error('The generated PDF is missing, invalid, or larger than 5 MB.');
   const { getDocument, Util, OPS } = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const { createCanvas } = await import('@napi-rs/canvas');
   const task = getDocument({ data: new Uint8Array(pdf), isEvalSupported: false, useSystemFonts: false, disableFontFace: true, stopAtErrors: true, verbosity: 0,
     standardFontDataUrl: fileURLToPath(new URL('../node_modules/pdfjs-dist/standard_fonts/', import.meta.url)).replaceAll('\\', '/') });
   let document;
+  let renderingTask;
+  const cancel = () => { renderingTask?.cancel(); void task.destroy().catch(() => {}); };
+  signal.addEventListener('abort', cancel, { once: true });
   try {
+    signal.throwIfAborted();
     document = await task.promise;
     if (!document.numPages || document.numPages > 30) throw new Error('The generated PDF has an invalid page count.');
     const texts = [], links = [], issues = [];
     for (let number = 1; number <= document.numPages; number++) {
+      remainingBudget(deadline, 60000);
       const page = await document.getPage(number);
       const content = await page.getTextContent();
       const viewport = page.getViewport({ scale: 1 });
@@ -114,10 +125,14 @@ export async function inspectResumePdf(pdf) {
       // path. Render every page before publication to check actual visibility.
       const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
       const renderingContext = canvas.getContext('2d');
-      await page.render({ canvasContext: renderingContext, viewport, background: 'white' }).promise;
+      renderingTask = page.render({ canvasContext: renderingContext, viewport, background: 'white' });
+      await renderingTask.promise;
+      renderingTask = undefined;
+      remainingBudget(deadline, 60000);
       const pixels = renderingContext.getImageData(0, 0, canvas.width, canvas.height).data;
       let ink = 0, edgeInk = 0;
       for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+        if (!x && y % 128 === 0) remainingBudget(deadline, 60000);
         const index = (y * canvas.width + x) * 4;
         if (pixels[index + 3] && Math.min(pixels[index], pixels[index + 1], pixels[index + 2]) < 210) {
           ink++;
@@ -158,7 +173,10 @@ export async function inspectResumePdf(pdf) {
     }
     if (issues.length) throw new Error([...new Set(issues)].join(' '));
     return { pdf, pageCount: document.numPages, text: texts.join('\n'), links: [...new Set(links)] };
-  } finally { await task.destroy(); }
+  } catch (error) {
+    if (signal.aborted || Date.now() >= deadline) throw resumeFailure('time_limit', { statusCode: 504 });
+    throw error;
+  } finally { signal.removeEventListener('abort', cancel); await task.destroy().catch(() => {}); }
 }
 export async function compileResumeLatex(latex, { deadline = Date.now() + 90000, image = preparedImage } = {}) {
   if (!image) throw new Error('The isolated PDF compiler has not been prepared.');

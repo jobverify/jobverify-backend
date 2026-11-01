@@ -8,7 +8,7 @@ import {
   pageIndicatesIndiaFalsePositive,
 } from '../../scraper/aosmith/script.js'
 
-test('pageIndicatesIndiaFalsePositive recognizes the current India keyword false-positive flow on A. O. Smith careers', () => {
+test('pageIndicatesIndiaFalsePositive recognizes the archived India keyword false-positive flow on A. O. Smith careers', () => {
   const html = `
     <html>
       <head><title>India - A. O. Smith Corporation Jobs</title></head>
@@ -47,40 +47,11 @@ test('pageIndicatesIndiaFalsePositive recognizes the current India keyword false
   )
 })
 
-test('run validates the current A. O. Smith public India false-positive flow and returns an empty result set', async () => {
-  const requestedUrls = []
-  const scraper = createAoSmithScraper()
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return `
-        <html>
-          <head><title>India - A. O. Smith Corporation Jobs</title></head>
-          <body>
-            <label>Showing 1 to 10 of 10 Jobs</label>
-            <ul id="job-tile-list">
-              <li class="job-tile" data-url="/job/Ashland-City-Production-Operator-TN-37015/1325760900/">
-                <a class="jobTitle-link" href="/job/Ashland-City-Production-Operator-TN-37015/1325760900/">Production Operator</a>
-              </li>
-            </ul>
-          </body>
-        </html>
-      `
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [INDIA_SEARCH_URL])
-  assert.deepEqual(jobs, [])
-})
-
-test('run throws when the A. O. Smith careers page no longer matches the expected India false-positive flow', async () => {
-  const scraper = createAoSmithScraper()
-
-  await assert.rejects(
-    scraper.run({
-      fetchText: async () => '<main>Unexpected careers experience</main>',
-    }),
-    /India false-positive flow/i,
-  )
-})
+test('current reader refuses text-only old India signal instead of treating it as completed native inventory', async () => {
+  let called=false;
+  await assert.rejects(createAoSmithScraper().run({fetchText:async()=>{called=true;return '<main>Archived India signal</main>'}}),/original HTTP fetchPage required/i);
+  assert.equal(called,false);
+});
+test('unexpected original HTML is rejected instead of becoming an empty native inventory',async()=>{
+  await assert.rejects(createAoSmithScraper().run({fetchPage:async url=>({url,status:200,headers:{},bodyBase64:Buffer.from('<main>Unexpected careers experience</main>').toString('base64')})}),/published pagination client/i);
+});

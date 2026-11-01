@@ -169,6 +169,17 @@ const UserSchema = new Schema(
     },
     onboardingCompleted: { type: Boolean, default: false },
     isVerified: { type: Boolean, default: false },
+    pendingEmailChange: {
+      type: new Schema({
+        email: { type: String, required: true },
+        tokenHash: { type: String, required: true },
+        expiresAt: { type: Date, required: true },
+        requestedAt: { type: Date, required: true },
+        sessionVersion: { type: Number, required: true },
+      }, { _id: false }),
+      select: false,
+      default: undefined,
+    },
     deactivated: { type: Boolean, default: false },
     // Block new work during account cleanup while allowing the owner to
     // retry an interrupted account deletion through the existing auth flow.
@@ -206,6 +217,7 @@ UserSchema.index(
   },
 );
 UserSchema.index({ resetPasswordTokenHash: 1 }, { sparse: true });
+UserSchema.index({ 'pendingEmailChange.tokenHash': 1 }, { sparse: true });
 UserSchema.index(
   { onboardingCompleted: 1 },
   { partialFilterExpression: { onboardingCompleted: false } }
@@ -215,6 +227,7 @@ UserSchema.set("toJSON", {
   // Transforms database document representation for API JSON responses.
   transform: (doc, ret) => {
     delete ret.password;
+    delete ret.pendingEmailChange;
     delete ret.__v;
     if (ret._id) {
       ret.id = ret._id;

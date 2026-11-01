@@ -18,7 +18,7 @@ const pageOneHtml = `
   </head>
   <body>
     <main>
-      <h1>Find your <strong>dream job</strong></h1>
+      <h1>Find <strong>Authentic Jobs</strong></h1>
       <form>
         <label>Keywords</label>
         <label>Team</label>
@@ -130,6 +130,12 @@ test('Canva helpers stay pinned to the verified first-party jobs board contract'
   assert.equal(canva.buildJobsPageUrl(), 'https://www.lifeatcanva.com/en/jobs/')
   assert.equal(canva.buildJobsPageUrl({ page: 2 }), 'https://www.lifeatcanva.com/en/jobs/?page=2')
   assert.equal(canva.hasOfficialJobsPageSignal(pageOneHtml), true)
+  assert.equal(canva.hasOfficialJobsPageSignal(pageOneHtml.replace(
+    '<h1>Find <strong>Authentic Jobs</strong></h1>', '<h1>Find your <strong>dream job</strong></h1>',
+  )), false)
+  assert.equal(canva.hasOfficialJobsPageSignal(pageOneHtml.replace(
+    '<h1>Find <strong>Authentic Jobs</strong></h1>', '',
+  )), false)
   assert.equal(
     canva.normalizeCanvaJobUrl(
       'https://www.lifeatcanva.com/en/jobs/6000000001111111/senior-software-engineer-editor-platform/?utm_source=careers#apply',

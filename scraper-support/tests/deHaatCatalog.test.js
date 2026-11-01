@@ -30,57 +30,7 @@ const loadDeHaatModule = async () => {
   }
 }
 
-test('DeHaat local catalog captures the verified first-party handoff to the public Workable surface', async () => {
-  const { DEHAAT_CATALOG } = await loadDeHaatCatalog()
-  const dehaat = await loadDeHaatModule()
 
-  assert.equal(DEHAAT_CATALOG.source, 'dehaat')
-  assert.equal(DEHAAT_CATALOG.companyName, 'DeHaat')
-  assert.equal(DEHAAT_CATALOG.officialBrandName, 'DeHaat')
-  assert.equal(DEHAAT_CATALOG.adapter, 'script')
-  assert.equal(DEHAAT_CATALOG.homepageUrl, 'https://agrevolution.in/')
-  assert.equal(DEHAAT_CATALOG.companyCareerPage, 'https://agrevolution.in/careers')
-  assert.equal(DEHAAT_CATALOG.careersPageUrl, 'https://agrevolution.in/careers')
-  assert.equal(DEHAAT_CATALOG.workableBoardUrl, 'https://apply.workable.com/agrevolution/')
-  assert.equal(DEHAAT_CATALOG.jobsFeedUrl, 'https://apply.workable.com/agrevolution/jobs.md')
-  assert.equal(
-    DEHAAT_CATALOG.widgetApiUrl,
-    'https://apply.workable.com/api/v1/widget/accounts/agrevolution',
-  )
-  assert.equal(DEHAAT_CATALOG.companyDomain, 'agrevolution.in')
-  assert.equal(DEHAAT_CATALOG.atsPlatform, 'first-party-handoff-workable')
-  assert.equal(DEHAAT_CATALOG.countryFilter, 'India')
-  assert.equal(
-    DEHAAT_CATALOG.paginationStrategy,
-    'first-party-homepage-handoff-plus-workable-markdown-feed',
-  )
-  assert.equal(
-    DEHAAT_CATALOG.extractionStrategy,
-    'verified-first-party-homepage+verified-first-party-careers-page+verified-workable-board+verified-workable-jobs-feed+widget-api-empty-state',
-  )
-  assert.equal(DEHAAT_CATALOG.parser, 'custom-script')
-  assert.equal(DEHAAT_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(DEHAAT_CATALOG.verifiedOn, '2026-08-01')
-  assert.equal(DEHAAT_CATALOG.dryRunFile, 'dehaat/jobs.json')
-  assert.equal(DEHAAT_CATALOG.modulePath, deHaatModulePath)
-  assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /https:\/\/agrevolution\.in\//i)
-  assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /https:\/\/agrevolution\.in\/careers/i)
-  assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /https:\/\/apply\.workable\.com\/agrevolution\//i)
-  assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /https:\/\/apply\.workable\.com\/agrevolution\/jobs\.md/i)
-  assert.match(
-    DEHAAT_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/apply\.workable\.com\/api\/v1\/widget\/accounts\/agrevolution/i,
-  )
-  assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
-  assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /Next\.js shell/i)
-  assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /0 current openings/i)
-  assert.match(DEHAAT_CATALOG.verifiedSurfaceSummary, /Workable/i)
-
-  assert.equal(dehaat.PROVIDER_METADATA.source, DEHAAT_CATALOG.source)
-  assert.equal(dehaat.PROVIDER_METADATA.companyName, DEHAAT_CATALOG.companyName)
-  assert.equal(dehaat.PROVIDER_METADATA.companyCareerPage, DEHAAT_CATALOG.companyCareerPage)
-  assert.equal(dehaat.PROVIDER_METADATA.jobsFeedUrl, DEHAAT_CATALOG.jobsFeedUrl)
-})
 
 test('DeHaat backlog row hydrates locally without needing a shared alias entry', async () => {
   const { DEHAAT_CATALOG } = await loadDeHaatCatalog()
@@ -127,3 +77,5 @@ test('buildScrapers and company coverage resolve DeHaat from the shared catalog'
     [['DeHaat', 'dehaat', 'DeHaat']],
   )
 })
+
+test('dehaat local and selected metadata expose current discovery-only GET policy without historical zero promotion',async()=>{const local=(await import('../../scraper/dehaat/catalog.js')).DEHAAT_CATALOG,selected=getScraperCatalog().find(p=>p.source==='dehaat');for(const p of [local,selected]){assert.equal(p.verifiedOn,null);assert.equal(p.verifiedPublicJobCount,null);assert.equal(p.verifiedIndiaJobCount,null);assert.equal(p.sourceScopeComplete,false);assert.equal(p.lifecycleCleanupAllowed,false);assert.equal(p.zeroResultPolicy,'coverage-gap');assert.equal(p.countryFilter,'India');assert.match(p.extractionStrategy,/original-all-country/)}assert.equal(selected.companyName,local.companyName);assert.equal(selected.companyCareerPage,local.companyCareerPage)})

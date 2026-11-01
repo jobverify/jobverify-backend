@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createBrowserNetworkFallback } from '../shared/browserNetworkFallback.js'
+import { createBrowserFetchSession } from '../shared/browserFetch.js'
+
+// Inert historical unit fixtures only. No retired source is imported or
+// registered; these shared HTTP transport checks claim no Klimb job parsing.
 
 const homepageHtml = `
 <!doctype html>
@@ -83,99 +88,76 @@ const detailHtml = `
 </html>
 `
 
-const loadModule = async () => {
-  try {
-    return await import('../../scraper/indiamart/script.js')
-  } catch {
-    assert.fail('Expected IndiaMART scraper module at ../../scraper/indiamart/script.js')
-  }
-}
-
-test('IndiaMART falls back to a browser-backed page loader when Node fetch times out', async () => {
-  const indiamart = await loadModule()
-  const requestedPrimaryUrls = []
-  const requestedBrowserUrls = []
-
-  const jobs = await indiamart.createIndiaMartScraper({ maxJobs: 1 }).run({
-    fetchPage: async (url) => {
-      requestedPrimaryUrls.push(url)
-      throw new TypeError('fetch failed | Connect Timeout Error')
-    },
-    fetchBrowserPage: async (url) => {
-      requestedBrowserUrls.push(url)
-
-      if (url === indiamart.CAREERS_HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === indiamart.LEADERSHIP_JOBS_PAGE_URL) {
-        return { status: 200, url, html: leadershipHtml }
-      }
-
-      if (url === indiamart.JOBS_BOARD_URL) {
-        return { status: 200, url, html: boardHtml }
-      }
-
-      if (url === 'https://joblist.klimb.io/indiamart/role-1?source=careers') {
-        return { status: 200, url, html: detailHtml }
-      }
-
-      throw new Error(`Unexpected browser URL: ${url}`)
-    },
-    fetchJson: async () => {
-      throw new Error('Pagination should not be requested for the single verified fixture page')
-    },
-    now: () => '2026-08-02T10:00:00.000Z',
-  })
-
-  assert.deepEqual(requestedPrimaryUrls, [
-    indiamart.CAREERS_HOMEPAGE_URL,
-    indiamart.LEADERSHIP_JOBS_PAGE_URL,
-    indiamart.JOBS_BOARD_URL,
-    'https://joblist.klimb.io/indiamart/role-1?source=careers',
-  ])
-  assert.deepEqual(requestedBrowserUrls, requestedPrimaryUrls)
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].jobId, 'role-1')
-  assert.equal(jobs[0].source, 'indiamart')
-})
-
-test('IndiaMART falls back to a browser-backed pagination loader when the Klimb JSON request times out', async () => {
-  const indiamart = await loadModule()
-  const requestedPrimaryJsonUrls = []
-  const requestedBrowserJsonUrls = []
-
-  await indiamart.createIndiaMartScraper({ maxJobs: 1, maxPages: 1 }).run({
-    fetchPage: async (url) => {
-      if (url === indiamart.CAREERS_HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
-      if (url === indiamart.LEADERSHIP_JOBS_PAGE_URL) return { status: 200, url, html: leadershipHtml }
-      if (url === indiamart.JOBS_BOARD_URL) return { status: 200, url, html: boardHtmlWithCursor }
-      if (url === 'https://joblist.klimb.io/indiamart/role-1?source=careers') {
-        return { status: 200, url, html: detailHtml }
-      }
-      throw new Error(`Unexpected page URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedPrimaryJsonUrls.push(url)
-      throw new TypeError('fetch failed | Connect Timeout Error')
-    },
-    fetchBrowserJson: async (url, landingUrl) => {
-      requestedBrowserJsonUrls.push({ url, landingUrl })
-      return {
+const CAREERS_HOMEPAGE_URL = 'https://careers.indiamart.com/'
+const LEADERSHIP_JOBS_PAGE_URL = 'https://careers.indiamart.com/leadership-product-tech-corporate-roles.html'
+const JOBS_BOARD_URL = 'https://joblist.klimb.io/indiamart'
+const DETAIL_URL = 'https://joblist.klimb.io/indiamart/role-1?source=careers'
+const PAGINATION_URL = `${JOBS_BOARD_URL}?lastPosId=cursor-1`
+const historicalPages = new Map([
+  [CAREERS_HOMEPAGE_URL, homepageHtml],
+  [LEADERSHIP_JOBS_PAGE_URL, leadershipHtml],
+  [JOBS_BOARD_URL, boardHtml],
+  [DETAIL_URL, detailHtml],
+])
+const paginationPayload = {
         jobs: { positions: [] },
         showLoadMore: false,
       }
-    },
-    now: () => '2026-08-02T10:30:00.000Z',
-  })
 
-  assert.deepEqual(requestedPrimaryJsonUrls, [
-    `${indiamart.JOBS_BOARD_URL}?lastPosId=cursor-1`,
-  ])
-  assert.deepEqual(requestedBrowserJsonUrls, [
-    {
-      url: `${indiamart.JOBS_BOARD_URL}?lastPosId=cursor-1`,
-      landingUrl: indiamart.JOBS_BOARD_URL,
+test('shared transport returns original historical HTML on Node success without invoking a fallback', async t => {
+  const primaryUrls = []
+  let alternateCalls = 0
+  t.mock.method(globalThis, 'fetch', async () => assert.fail('A successful injected primary transport needs no compatibility HTTP request'))
+  const fallback = createBrowserNetworkFallback({
+    fetchText: async url => { primaryUrls.push(url); assert.ok(historicalPages.has(url)); return historicalPages.get(url) },
+    fetchBrowserText: async () => { alternateCalls++; assert.fail('Node success must not invoke the alternate loader') },
+  })
+  try {
+    for (const [url, html] of historicalPages) assert.equal(await fallback.fetchText(url), html)
+    assert.deepEqual(primaryUrls, [...historicalPages.keys()])
+    assert.equal(alternateCalls, 0)
+  } finally { await fallback.close() }
+})
+
+test('shared Node-timeout fallback preserves all original historical HTML through an injected HTTP-only compatibility session', async t => {
+  const primaryUrls = [], alternateUrls = [], httpUrls = []
+  t.mock.method(globalThis, 'fetch', async url => {
+    const target = String(url); httpUrls.push(target); assert.ok(historicalPages.has(target))
+    return new Response(historicalPages.get(target), { status: 200, headers: { 'content-type': 'text/html' } })
+  })
+  const session = await createBrowserFetchSession()
+  const fallback = createBrowserNetworkFallback({
+    fetchText: async url => { primaryUrls.push(url); throw new TypeError('fetch failed | Connect Timeout Error') },
+    fetchBrowserText: async (url, options) => { alternateUrls.push(url); return session.fetchText(url, options) },
+  })
+  try {
+    for (const [url, html] of historicalPages) assert.equal(await fallback.fetchText(url), html)
+    assert.deepEqual(primaryUrls, [...historicalPages.keys()])
+    assert.deepEqual(alternateUrls, primaryUrls)
+    assert.deepEqual(httpUrls, primaryUrls)
+  } finally { await fallback.close(); await session.close() }
+})
+
+test('shared JSON-timeout fallback preserves the original historical pagination payload and explicit landing URL', async t => {
+  const primaryJsonUrls = [], alternateJsonUrls = [], httpUrls = []
+  t.mock.method(globalThis, 'fetch', async url => {
+    const target = String(url); httpUrls.push(target)
+    if (target === JOBS_BOARD_URL) return new Response(boardHtmlWithCursor, { status: 200, headers: { 'content-type': 'text/html' } })
+    assert.equal(target, PAGINATION_URL)
+    return new Response(JSON.stringify(paginationPayload), { status: 200, headers: { 'content-type': 'application/json' } })
+  })
+  const session = await createBrowserFetchSession()
+  const fallback = createBrowserNetworkFallback({
+    fetchJson: async url => { primaryJsonUrls.push(url); throw new TypeError('fetch failed | Connect Timeout Error') },
+    fetchBrowserJson: async (url, options) => {
+      alternateJsonUrls.push({ url, landingUrl: options.browserLandingUrl })
+      return session.fetchJson(url, { ...options, landingUrl: options.browserLandingUrl })
     },
-  ])
+  })
+  try {
+    assert.deepEqual(await fallback.fetchJson(PAGINATION_URL, { browserLandingUrl: JOBS_BOARD_URL }), paginationPayload)
+    assert.deepEqual(primaryJsonUrls, [PAGINATION_URL])
+    assert.deepEqual(alternateJsonUrls, [{ url: PAGINATION_URL, landingUrl: JOBS_BOARD_URL }])
+    assert.deepEqual(httpUrls, [JOBS_BOARD_URL, PAGINATION_URL])
+  } finally { await fallback.close(); await session.close() }
 })

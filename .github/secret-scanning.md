@@ -22,6 +22,14 @@ approve private user credentials or arbitrary replacement keys. Signed S3
 asset URLs contain temporary access identifiers, not AWS secret signing keys;
 their review reasons record the specific captured authorization and expiry.
 
+The 2026-11-01 review extends the existing Greenhouse browser-value exceptions
+to the two Biofourmis capture files, including the historical HTTP capture.
+It also covers the Byteridge/Monocept `publicMethodSHA256` checksums, the
+Excelacom Dropbox Chooser browser app key, the historical outreach model-cache
+labels, and the isolated outreach integration test's synthetic JWT value.
+These entries still require the exact rule, file, and detected-value digest;
+replacement values and additional findings in those files remain blocked.
+
 Exact comparison requires raw values locally. The workflow creates private
 temporary reports with `umask 077`, suppresses scanner output, and passes the
 reports directly to `filterSecretScan.js`. The filter never logs values, source

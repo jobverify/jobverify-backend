@@ -5,27 +5,25 @@ import {
   buildScrapers,
   getScraperCatalog,
 } from '../providers/index.js'
+import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 
-test('getScraperCatalog includes ADOR as a public careers-page scraper', () => {
+test('getScraperCatalog excludes the retired ADOR provider', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'ador')
 
-  assert.ok(provider)
-  assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-site')
-  assert.equal(provider.companyCareerPage, 'https://adorwelding.com/careers/')
-  assert.equal(provider.companyDomain, 'adorwelding.com')
-  assert.equal(provider.parser, 'custom-script')
-  assert.match(provider.modulePath, /ador[\\/]script\.js$/i)
+  assert.equal(provider, undefined)
 })
 
-test('buildScrapers exposes a runnable ADOR scraper without changing the runner contract', () => {
+test('buildScrapers and company coverage exclude retired ADOR', () => {
   const scrapers = buildScrapers()
   const provider = scrapers.find((scraper) => scraper.name === 'ador')
 
-  assert.ok(provider)
-  assert.equal(typeof provider.run, 'function')
-  assert.equal(provider.provider.adapter, 'script')
-  assert.equal(provider.provider.parser, 'custom-script')
-  assert.equal(provider.provider.companyCareerPage, 'https://adorwelding.com/careers/')
+  assert.equal(provider, undefined)
+
+  const report = generateCompanyCoverageReport({
+    csvText: 'ADOR\n',
+    catalog: getScraperCatalog(),
+  })
+  assert.equal(report.matchedCount, 0)
+  assert.deepEqual(report.unmatched.map((item) => item.companyName), ['ADOR'])
 })

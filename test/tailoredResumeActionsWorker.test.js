@@ -7,6 +7,19 @@ import { runTailoredResumeWorker } from '../resume-tailoring/tailoredResumeWorke
 const tailored = { kind: 'tailored', row: { _id: 'owner:job', user: 'owner', revision: 2, status: 'queued' } };
 const base = { kind: 'base', row: { _id: 'owner', user: 'owner', preparation: { revision: 3, status: 'queued' } } };
 
+test('the default worker deadline is bounded to one minute', async () => {
+  const before = Date.now();
+  let actualDeadline;
+  await runTailoredResumeWorker({ nextTask: async () => base,
+    prepareRuntime: async ({ deadline }) => {
+      actualDeadline = deadline;
+      return { stop() {} };
+    },
+    drain: async () => ({ attempted: 1, completed: 1, failed: 0 }),
+  });
+  assert.ok(actualDeadline >= before + 60000 && actualDeadline <= Date.now() + 60000);
+});
+
 test('an empty document queue never downloads or starts a model', async () => {
   assert.deepEqual(await runTailoredResumeWorker({ nextTask: async () => null,
     prepareRuntime: async () => assert.fail('empty queue must not start compute') }), { attempted: 0, completed: 0, failed: 0 });

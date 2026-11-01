@@ -27,7 +27,7 @@ test('registers CSG against the official first-party Workday careers source', ()
   assert.match(scraper.dryRunFile, /csg.workday[\\/]jobs\.json$/)
 })
 
-test('uses the CSG Workday jobs API with India search text so non-India roles collapse to an honest zero-job result', () => {
+test('uses the CSG Workday jobs API with complete-board native country proof', () => {
   const config = loadConfig(path.join(testsDir, '../../scraper/csg.workday'))
 
   assert.equal(config.listingStrategy, 'jobs-api')
@@ -37,11 +37,9 @@ test('uses the CSG Workday jobs API with India search text so non-India roles co
   )
   assert.equal(config.detailUrlBase, 'https://csgi.wd5.myworkdayjobs.com/en-US/CSGCareers')
   assert.equal(config.locationCountry, null)
-  assert.equal(config.searchText, 'India')
-  assert.match(
-    config.locationPattern,
-    /india|bengaluru|bangalore|hyderabad|pune|mumbai|gurgaon|gurugram|noida|chennai/i,
-  )
+  assert.equal(config.searchText, '')
+  assert.equal(config.inventoryScope, 'complete-board-country-proof')
+  assert.equal(config.officialCareersUrl, 'https://www.csgi.com/careers')
 })
 
 test('company coverage resolves CSG India Pvt Ltd. to the CSG scraper', () => {

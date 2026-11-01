@@ -17,13 +17,25 @@ test('1X enumerates its verified Ashby board and keeps foreign inventory distinc
   assert.equal(readInventoryEvidence(jobs)?.reportedTotal, 1)
 })
 
-test('Abridge uses the case-sensitive verified board and returns actual role content', async () => {
-  const jobs = await createCatalogScraper(provider('abridge')).run({ fetchJson: async url => {
-    assert.equal(url, 'https://api.ashbyhq.com/posting-api/job-board/Abridge')
-    return { apiVersion: '1', jobs: [{ id: 'fixture-in', title: 'Software Engineer', location: 'Bengaluru, India',
-      jobUrl: 'https://jobs.ashbyhq.com/Abridge/fixture-in', applyUrl: 'https://jobs.ashbyhq.com/Abridge/fixture-in/application',
-      descriptionPlain: 'Build reliable healthcare software.', isListed: true }] }
-  } })
+test('Abridge verifies the current handoff to its case-sensitive board and returns fixture role content', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => assert.fail('Abridge tests must use controlled transport'))
+  const abridge = provider('abridge')
+  const requests = []
+  const jobs = await createCatalogScraper(abridge).run({
+    fetchPage: async url => {
+      requests.push(url)
+      assert.equal(url, abridge.companyCareerPage)
+      return { status: 200, url, html: '<a href="https://jobs.ashbyhq.com/Abridge">All open roles</a>' }
+    },
+    fetchJson: async url => {
+      requests.push(url)
+      assert.equal(url, 'https://api.ashbyhq.com/posting-api/job-board/Abridge')
+      return { apiVersion: '1', jobs: [{ id: 'fixture-in', title: 'Software Engineer', location: 'Bengaluru, India',
+        jobUrl: 'https://jobs.ashbyhq.com/Abridge/fixture-in', applyUrl: 'https://jobs.ashbyhq.com/Abridge/fixture-in/application',
+        descriptionPlain: 'Build reliable healthcare software.', isListed: true }] }
+    },
+  })
+  assert.deepEqual(requests, [abridge.companyCareerPage, 'https://api.ashbyhq.com/posting-api/job-board/Abridge'])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'abridge')
   assert.match(jobs[0].jobDescription, /healthcare software/)

@@ -12,8 +12,9 @@ test('Canva provider metadata captures the verified blocked first-party jobs sta
   assert.equal(provider.atsPlatform, 'official-first-party-jobs-board')
   assert.equal(provider.companyDomain, 'lifeatcanva.com')
   assert.equal(provider.verifiedOn, '2026-08-14')
-  assert.match(provider.extractionStrategy, /verified-cloudflare-challenge-empty/i)
-  assert.match(provider.verifiedSurfaceSummary, /Just a moment/i)
+  assert.match(provider.extractionStrategy, /unavailable-inventory-gap/i)
+  assert.match(provider.verifiedSurfaceSummary, /Access-denied responses leave inventory unverified/i)
+  assert.match(provider.verifiedSurfaceSummary, /stops at the first non-success response/i)
 })
 
 test('Canva is runnable through the scraper provider catalog', () => {

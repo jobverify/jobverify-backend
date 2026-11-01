@@ -20,49 +20,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Ikya local catalog captures the verified SmartRecruiters empty-board sentinel contract', async () => {
-  const { IKYA_CATALOG } = await loadCatalogModule()
-  const ikya = await loadScriptModule()
-  const provider = hydrateProviderCatalogEntry(IKYA_CATALOG)
 
-  assert.equal(IKYA_CATALOG.source, 'ikya')
-  assert.equal(IKYA_CATALOG.companyName, 'Ikya')
-  assert.equal(IKYA_CATALOG.officialBrandName, 'Ikya')
-  assert.equal(IKYA_CATALOG.adapter, 'script')
-  assert.equal(IKYA_CATALOG.homepageUrl, 'http://www.ikya.com/')
-  assert.equal(IKYA_CATALOG.companyCareerPage, 'https://careers.smartrecruiters.com/Ikya1')
-  assert.equal(IKYA_CATALOG.companyDomain, 'ikya.com')
-  assert.equal(IKYA_CATALOG.atsPlatform, 'smartrecruiters-empty-board')
-  assert.equal(IKYA_CATALOG.countryFilter, 'India')
-  assert.equal(
-    IKYA_CATALOG.paginationStrategy,
-    'single-smartrecruiters-board-verification-plus-homepage-browser-check',
-  )
-  assert.equal(
-    IKYA_CATALOG.extractionStrategy,
-    'verified-empty-smartrecruiters-board+homepage-browser-check-return-empty',
-  )
-  assert.equal(IKYA_CATALOG.parser, 'custom-script')
-  assert.equal(IKYA_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(IKYA_CATALOG.modulePath, '../../scraper/ikya/script.js')
-  assert.equal(IKYA_CATALOG.dryRunFile, 'ikya/jobs.json')
-  assert.equal(IKYA_CATALOG.verifiedOn, '2026-09-03')
-  assert.match(IKYA_CATALOG.verifiedSurfaceSummary, /careers\.smartrecruiters\.com\/Ikya1/i)
-  assert.match(IKYA_CATALOG.verifiedSurfaceSummary, /No job postings are currently available/i)
-  assert.match(IKYA_CATALOG.verifiedSurfaceSummary, /Checking your browser/i)
-
-  assert.equal(provider.source, 'ikya')
-  assert.equal(provider.companyName, 'Ikya')
-  assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://careers.smartrecruiters.com/Ikya1')
-  assert.equal(provider.companyDomain, 'ikya.com')
-  assert.match(provider.modulePath, /ikya[\\/]script\.js$/i)
-  assert.match(provider.dryRunFile, /ikya[\\/]jobs\.json$/i)
-
-  assert.equal(ikya.PROVIDER_METADATA.source, provider.source)
-  assert.equal(ikya.CAREERS_URL, provider.companyCareerPage)
-  assert.equal(ikya.HOMEPAGE_URL, provider.homepageUrl)
-})
 
 test('Ikya exact-name backlog rows resolve directly from local provider metadata without shared aliases', async () => {
   const { IKYA_CATALOG } = await loadCatalogModule()
@@ -92,7 +50,7 @@ test('getScraperCatalog includes Ikya as a verified SmartRecruiters empty-board 
   assert.equal(provider.companyCareerPage, 'https://careers.smartrecruiters.com/Ikya1')
   assert.equal(provider.homepageUrl, 'http://www.ikya.com/')
   assert.equal(provider.companyDomain, 'ikya.com')
-  assert.equal(provider.atsPlatform, 'smartrecruiters-empty-board')
+  assert.equal(provider.atsPlatform, 'smartrecruiters')
   assert.match(provider.modulePath, /ikya[\\/]script\.js$/i)
 })
 
@@ -102,6 +60,8 @@ test('buildScrapers exposes a runnable Ikya scraper without changing the runner 
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'ikya')
-  assert.equal(scraper.provider.atsPlatform, 'smartrecruiters-empty-board')
+  assert.equal(scraper.provider.atsPlatform, 'smartrecruiters')
   assert.match(scraper.dryRunFile, /ikya[\\/]jobs\.json$/i)
 })
+
+test('ikya local and selected metadata expose current discovery-only GET policy without historical zero promotion',async()=>{const local=(await import('../../scraper/ikya/catalog.js')).IKYA_CATALOG,selected=getScraperCatalog().find(p=>p.source==='ikya');for(const p of [local,selected]){assert.equal(p.verifiedOn,null);assert.equal(p.verifiedPublicJobCount,null);assert.equal(p.verifiedIndiaJobCount,null);assert.equal(p.sourceScopeComplete,false);assert.equal(p.lifecycleCleanupAllowed,false);assert.equal(p.zeroResultPolicy,'coverage-gap');assert.equal(p.countryFilter,'India');assert.match(p.extractionStrategy,/original-all-country/)}assert.equal(selected.companyName,local.companyName);assert.equal(selected.companyCareerPage,local.companyCareerPage)})

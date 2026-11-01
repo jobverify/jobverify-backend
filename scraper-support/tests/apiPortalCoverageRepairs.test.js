@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { runApiPortalScraper } from '../apiPortal/engine.js'
+import { assertLegacyParsedOnlyRejected, replayCurrentDeclaredNative } from './declaredNativeCoverageCompatibility20261101.fixtures.js'
 import { getScraperCatalog, createCatalogScraper } from '../providers/index.js'
 import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { capturedWatchguardRecords, replayRegisteredWatchguard } from './watchguardRegistered20261031.fixture.js'
@@ -15,7 +17,8 @@ const runRegistered = (t, source, payload) => {
     assert.equal(endpoint.origin + endpoint.pathname, provider.config.discovery.listingApiUrl)
     return Response.json(payload)
   })
-  return createCatalogScraper(provider).run()
+  // Synthetic Lever records exercise the active shared API model, not current employer admission.
+  return source === 'asapp' ? runApiPortalScraper({ provider, fetchJson: async (url, options) => (await globalThis.fetch(url, options)).json() }) : createCatalogScraper(provider).run()
 }
 
 const leverJob = (board, id, location = 'Bengaluru, India') => ({
@@ -32,7 +35,7 @@ const leverJob = (board, id, location = 'Bengaluru, India') => ({
 })
 
 for (const [source, board] of [['asapp', 'asapp-2']]) {
-  test(`${source} registered scraper retains every native Lever description section`, async t => {
+  test(`${source} shared Lever API compatibility retains every native description section`, async t => {
     const jobs = await runRegistered(t, source, [leverJob(board, 'india-role'),
       { ...leverJob(board, 'foreign-role', 'Boston, United States'), country: 'US' }])
     assert.equal(jobs.length, 1)
@@ -43,7 +46,7 @@ for (const [source, board] of [['asapp', 'asapp-2']]) {
     assert.equal(isFreshCompleteInventoryEvidence(readInventoryEvidence(jobs)), true)
   })
 
-  test(`${source} native foreign countries cannot inflate the India facet or require foreign descriptions`, async t => {
+  test(`${source} shared Lever API compatibility native foreign countries cannot inflate the India facet or require foreign descriptions`, async t => {
     const record = { ...leverJob(board, 'foreign-only', 'Padova'), country: 'IT',
       descriptionPlain: '', description: '', lists: [], additionalPlain: '', additional: '' }
     const jobs = await runRegistered(t, source, [record])
@@ -52,11 +55,11 @@ for (const [source, board] of [['asapp', 'asapp-2']]) {
     assert.equal(readInventoryEvidence(jobs).listingComplete, true)
   })
 
-  test(`${source} contradictory native country and India location cannot certify a source check`, async t => {
+  test(`${source} shared Lever API compatibility contradictory native country and India location cannot certify a source check`, async t => {
     await assert.rejects(runRegistered(t, source, [{ ...leverJob(board, 'contradictory'), country: 'US' }]), /contradictory country\/location/i)
   })
 
-  test(`${source} an unresolved alternate location keeps the India facet unknown`, async t => {
+  test(`${source} shared Lever API compatibility an unresolved alternate location keeps the India facet unknown`, async t => {
     const record = { ...leverJob(board, 'ambiguous', 'Boston, United States'), country: 'US' }
     record.categories.allLocations = ['Boston, United States', 'Remote']
     const jobs = await runRegistered(t, source, [record])
@@ -190,4 +193,15 @@ test('Cloudflare does not select Indiana or Indianapolis through an India substr
     greenhouseJob(2, 'Indiana, United States'), greenhouseJob(3, 'Indianapolis, United States')], meta: { total: 3 } })
   assert.deepEqual(jobs.map(job => job.jobId), [1])
   assert.equal(readInventoryEvidence(jobs).reportedTotal, 3)
+})
+
+test('ASAPP registered reader rejects the retained parsed-only API fixture before transport', async () => {
+  await assertLegacyParsedOnlyRejected('asapp', { fetchJson: async () => [leverJob('asapp-2', 'india-role')] })
+})
+
+test('ASAPP registered original HTTP replay retains native criteria while source totals remain unknown', async () => {
+  const { audit } = await replayCurrentDeclaredNative('asapp')
+  assert.ok(audit.observations.length > 0)
+  assert.equal(audit.authoritativeSourceTotal, null)
+  assert.equal(audit.authoritativeIndiaFacetCount, null)
 })

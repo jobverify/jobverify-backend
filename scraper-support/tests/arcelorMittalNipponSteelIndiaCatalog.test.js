@@ -172,29 +172,22 @@ test('ArcelorMittal Nippon Steel India local catalog hydrates into coverage with
   )
 })
 
-test('buildScrapers and company coverage resolve ArcelorMittal Nippon Steel India from the shared catalog', () => {
+test('buildScrapers and shared company coverage exclude retired ArcelorMittal Nippon Steel India', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'arcelormittalnipponsteelindia')
   const scraper = buildScrapers().find((item) => item.name === 'arcelormittalnipponsteelindia')
 
-  assert.ok(provider)
-  assert.ok(scraper)
-  assert.equal(provider.companyName, 'ArcelorMittal Nippon Steel India')
-  assert.equal(provider.companyCareerPage, 'https://www.amns.in/careers')
-  assert.match(scraper.dryRunFile, /arcelormittalnipponsteelindia[\\/]jobs\.json$/i)
+  assert.equal(provider, undefined)
+  assert.equal(scraper, undefined)
 
   const report = generateCompanyCoverageReport({
     csvText: 'ArcelorMittal Nippon Steel India\n',
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.matchedCount, 1)
-  assert.equal(report.unmatchedCount, 0)
+  assert.equal(report.matchedCount, 0)
+  assert.equal(report.unmatchedCount, 1)
   assert.deepEqual(
-    report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
-    [[
-      'ArcelorMittal Nippon Steel India',
-      'arcelormittalnipponsteelindia',
-      'ArcelorMittal Nippon Steel India',
-    ]],
+    report.unmatched.map((item) => item.companyName),
+    ['ArcelorMittal Nippon Steel India'],
   )
 })

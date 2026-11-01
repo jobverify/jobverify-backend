@@ -9,7 +9,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const readScraperWorkflow = () => readFileSync(
   path.join(repoRoot, '.github/workflows/scraper.yml'),
   'utf8',
-)
+).replace(/\r\n/g, '\n')
 
 test('scraper workflow uses backend dispatch instead of GitHub cron', () => {
   assert.doesNotMatch(readScraperWorkflow(), /^  schedule:/m)

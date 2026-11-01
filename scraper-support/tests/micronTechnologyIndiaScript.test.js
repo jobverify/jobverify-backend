@@ -121,7 +121,11 @@ test('Micron Technology India run verifies the official careers page and maps pu
   const expectedIndiaDetailUrl = micron.buildDetailApiUrl(42296091)
   const expectedUsDetailUrl = micron.buildDetailApiUrl(42296092)
 
-  const jobs = await scraper.run({
+  // The original thin details have no listing-owned ID, title, workplace or
+  // positionURL. Keep those bytes unchanged and require an unavailable result.
+  let returnedJobs
+  await assert.rejects(async () => {
+    returnedJobs = await scraper.run({
     fetchText: async (url) => {
       requestedUrls.push(url)
 
@@ -148,7 +152,9 @@ test('Micron Technology India run verifies the official careers page and maps pu
 
       throw new Error(`Unexpected Micron Technology India JSON URL: ${url}`)
     },
-  })
+    })
+  }, error => error.incompleteScope === true && /identity mismatch/.test(error.message))
+  assert.equal(returnedJobs, undefined)
 
   assert.deepEqual(
     [...requestedUrls].sort(),
@@ -159,32 +165,17 @@ test('Micron Technology India run verifies the official careers page and maps pu
       expectedUsDetailUrl,
     ].sort(),
   )
-  assert.deepEqual(jobs, [
-    {
-      title: 'Principal Engineer- HIG HBM Layout',
-      company: 'Micron Technology India',
-      location: 'Hyderabad, Telangana, India',
-      city: 'Hyderabad',
-      country: 'India',
-      link: 'https://careers.micron.com/careers/job/42296091',
-      applyUrl: 'https://careers.micron.com/careers/job/42296091',
-      sourceUrl: 'https://careers.micron.com/careers/job/42296091',
-      source: 'microntechnologyindia',
-      jobId: 42296091,
-      requisitionId: 'JR102906',
-      department: 'HIG',
-      employmentType: null,
-      experienceRequired: '6 years',
-      postingDate: '2026-06-09T00:00:00.000Z',
-      jobDescription: '<p>Required Experience: 6 years in HBM layout design.</p>',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      remoteStatus: 'On-site',
-      publicExperienceChecked: true,
-      scrapedAt: jobs[0].scrapedAt,
-    },
+  // Original synthetic identity, JD, application and native-date facts remain
+  // explicit. Full successful DTO coverage uses the separately captured role.
+  assert.deepEqual(SEARCH_PAYLOAD.data.positions.map(row => [row.id, row.displayJobId, row.locations[0], row.postedTs]), [
+    [42296091, 'JR102906', 'Hyderabad, Telangana, India', 1780963200],
+    [42296092, 'JR102999', 'Boise, Idaho, United States', 1780963200],
   ])
+  assert.equal(DETAIL_PAYLOADS[42296091].data.jobDescription, '<p>Required Experience: 6 years in HBM layout design.</p>')
+  assert.equal(DETAIL_PAYLOADS[42296091].data.publicUrl, 'https://careers.micron.com/careers/job/42296091')
+  assert.equal(DETAIL_PAYLOADS[42296092].data.jobDescription, '<p>Required Experience: 4 years in US manufacturing operations.</p>')
+  assert.equal(DETAIL_PAYLOADS[42296092].data.publicUrl, 'https://careers.micron.com/careers/job/42296092')
+  assert.equal(new Date(DETAIL_PAYLOADS[42296091].data.postedTs * 1000).toISOString(), '2026-06-09T00:00:00.000Z')
 })
 
 test('Micron Technology India fails closed when the verified official careers page no longer matches the public jobs handoff', async () => {

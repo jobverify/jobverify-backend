@@ -7,7 +7,7 @@ import { buildScrapers, getScraperCatalog } from '../../scraper-support/provider
 
 const SOURCE = 'primesoftenterprise'
 const COMPANY = 'Primesoft Enterprise'
-const CAREERS_URL = 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs'
+const CAREERS_URL = 'https://primesoft.net/'
 
 test('Primesoft Enterprise is registered as a Darwinbox-backed first-party careers scraper without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
@@ -22,12 +22,16 @@ test('Primesoft Enterprise is registered as a Darwinbox-backed first-party caree
   assert.equal(provider.publicAllJobsUrl, 'https://primesoft.darwinbox.in/ms/candidatev2/main/careers/allJobs')
   assert.equal(provider.darwinboxOrigin, 'https://primesoft.darwinbox.in')
   assert.equal(provider.darwinboxCompanyId, 'main')
+  assert.equal(provider.bindingEvidence.verified, true)
+  assert.equal(provider.bindingEvidence.officialURL, provider.companyCareerPage)
+  assert.ok(provider.bindingEvidence.matchedLinks.includes(provider.officialCareersHandoffUrl))
+  assert.equal(provider.bindingEvidence.inventorySurface, 'https://primesoft.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main')
   assert.equal(provider.atsPlatform, 'darwinbox')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'browser-session-darwinbox-pagination')
+  assert.equal(provider.paginationStrategy, 'complete-native-public-pagination-with-total-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage-careers-handoff+official-darwinbox-handoff+darwinbox-listing-api+india-location-filter',
+    'verified-official-handoff+complete-public-darwinbox-inventory',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

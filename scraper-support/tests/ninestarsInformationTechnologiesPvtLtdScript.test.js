@@ -259,7 +259,12 @@ test('Ninestars scraper fetches the verified homepage, careers handoff shell, an
     'Deep Learning',
   ])
   assert.equal(jobs[1].location, 'Chennai')
-  assert.equal(jobs[1].jobType, 'Full-time Experienced')
+  assert.equal(jobs[1].jobType, 'Full-time Fresher')
+  assert.equal(jobs[1].experienceRequired, '0 to 3 Year (Freshers can also apply)')
+  assert.equal(jobs[1].experienceLevel, 'Entry Level')
+  assert.equal(jobs[1].experienceProfile.minimumYears, 0)
+  assert.equal(jobs[2].experienceRequired, '0 to 7 years (Freshers can also apply)')
+  // Maximum-range loss is a separate RED regression, never an accepted0 upper bound.
   assert.equal(jobs[2].minimumQualification, 'Any Degree / Diploma')
   assert.match(jobs[2].jobDescription, /Responsible for converting Doc files to XML format/i)
   assert.match(jobs[2].jobDescription, /Competitive salary/i)

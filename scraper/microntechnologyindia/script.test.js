@@ -20,14 +20,17 @@ const CAREERS_HTML = `<!DOCTYPE html>
 </body>
 </html>`
 
-const buildDetailPayload = (jobId) => ({
+// These generated positions and details are explicit synthetic controls. Their
+// full identity must agree; no fields are added to retained native captures.
+const buildDetailPayload = (position, { jobDescription = 'Requires 5+ years of experience building production silicon systems.' } = {}) => ({
   data: {
-    positionId: String(jobId),
-    jobDescription: 'Requires 5+ years of experience building production silicon systems.',
+    ...structuredClone(position),
+    publicUrl: `https://careers.micron.com/careers/job/${position.id}`,
+    jobDescription,
   },
 })
 
-const withMockedMicronDetailFetch = async (runTest) => {
+const withMockedMicronDetailFetch = async (positions, runTest) => {
   const originalFetch = globalThis.fetch
 
   globalThis.fetch = async (url) => {
@@ -36,13 +39,15 @@ const withMockedMicronDetailFetch = async (runTest) => {
       throw new Error(`Unexpected network fetch: ${detailUrl}`)
     }
 
-    const positionId = new URL(detailUrl).searchParams.get('position_id') || 'unknown'
+    const positionId = new URL(detailUrl).searchParams.get('position_id')
+    const position = positions.find(row => String(row.id) === positionId)
+    assert.ok(position, `Unmodeled synthetic Micron detail: ${detailUrl}`)
 
     return {
       ok: true,
       status: 200,
       headers: { get: () => null },
-      text: async () => JSON.stringify(buildDetailPayload(positionId)),
+      text: async () => JSON.stringify(buildDetailPayload(position)),
     }
   }
 
@@ -93,6 +98,7 @@ test('Micron Technology India paginates through 10-job Eightfold result pages', 
       },
     }],
   ])
+  const positions = [...listingResponses.values()].flatMap(payload => payload.data.positions)
 
   const jobs = await scraper.run({
     fetchText: async (url) => {
@@ -104,7 +110,9 @@ test('Micron Technology India paginates through 10-job Eightfold result pages', 
       seenApiUrls.push(url)
 
       if (/\/api\/pcsx\/position_details\b/i.test(parsedUrl.pathname)) {
-        return buildDetailPayload(parsedUrl.searchParams.get('position_id'))
+        const position = positions.find(row => String(row.id) === parsedUrl.searchParams.get('position_id'))
+        assert.ok(position)
+        return buildDetailPayload(position)
       }
 
       const start = parsedUrl.searchParams.get('start')
@@ -122,13 +130,19 @@ test('Micron Technology India paginates through 10-job Eightfold result pages', 
   })
 
   assert.deepEqual(
-    seenApiUrls,
+    seenApiUrls.filter(url => new URL(url).pathname === '/api/pcsx/search'),
     [
       'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=0&limit=10',
       'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=10&limit=10',
     ],
   )
+  assert.deepEqual(
+    seenApiUrls.filter(url => new URL(url).pathname === '/api/pcsx/position_details')
+      .map(url => Number(new URL(url).searchParams.get('position_id'))).sort((a, b) => a - b),
+    positions.map(position => position.id),
+  )
   assert.equal(jobs.length, 13)
+  assert.ok(jobs.every(job => job.jobDescription === buildDetailPayload(positions[0]).data.jobDescription))
   assert.deepEqual(
     jobs.slice(0, 2).map((job) => ({
       title: job.title,
@@ -150,9 +164,10 @@ test('Micron Technology India paginates through 10-job Eightfold result pages', 
   )
 })
 
-test('Micron Technology India avoids detail API fan-out so full listing pagination is not rate limited', async () => {
+test('Micron Technology India bounds detail hydration while preserving pagination and honestly missing descriptions', async () => {
   const scraper = createMicronTechnologyIndiaScraper()
   const seenApiUrls = []
+  let activeDetails = 0, maximumActiveDetails = 0
 
   const makePosition = (index) => ({
     id: 9000 + index,
@@ -172,6 +187,15 @@ test('Micron Technology India avoids detail API fan-out so full listing paginati
     fetchJson: async (url) => {
       seenApiUrls.push(url)
       const parsedUrl = new URL(url)
+      if (parsedUrl.pathname === '/api/pcsx/position_details') {
+        const index = Number(parsedUrl.searchParams.get('position_id')) - 9000
+        assert.ok(index >= 1 && index <= 12)
+        maximumActiveDetails = Math.max(maximumActiveDetails, ++activeDetails)
+        try {
+          await new Promise(resolve => setImmediate(resolve))
+          return buildDetailPayload(makePosition(index), { jobDescription: null })
+        } finally { activeDetails-- }
+      }
       assert.equal(parsedUrl.pathname, '/api/pcsx/search')
 
       const start = parsedUrl.searchParams.get('start')
@@ -197,10 +221,16 @@ test('Micron Technology India avoids detail API fan-out so full listing paginati
     },
   })
 
-  assert.deepEqual(seenApiUrls, [
+  assert.deepEqual(seenApiUrls.filter(url => new URL(url).pathname === '/api/pcsx/search'), [
     'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=0&limit=10',
     'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=10&limit=10',
   ])
+  assert.deepEqual(
+    seenApiUrls.filter(url => new URL(url).pathname === '/api/pcsx/position_details')
+      .map(url => Number(new URL(url).searchParams.get('position_id'))).sort((a, b) => a - b),
+    Array.from({ length: 12 }, (_, index) => 9001 + index),
+  )
+  assert.ok(maximumActiveDetails > 1 && maximumActiveDetails <= 6)
   assert.equal(jobs.length, 12)
   assert.equal(jobs[0].title, 'Memory Engineer 1')
   assert.equal(jobs[0].sourceUrl, 'https://careers.micron.com/careers/job/9001')
@@ -210,41 +240,44 @@ test('Micron Technology India avoids detail API fan-out so full listing paginati
 
 test('Micron Technology India keeps successful jobs when its owned browser session reports Target closed while closing', async () => {
   const closeError = new Error('Protocol error (Runtime.callFunctionOn): Target closed')
+  const position = {
+    id: 6001, displayJobId: 'JR96001', name: 'Principal Engineer',
+    locations: ['Hyderabad, Telangana, India'], positionUrl: '/careers/job/6001',
+    department: 'Engineering', postedTs: '2026-08-04T10:00:00Z',
+  }
+  let closeAttempts = 0
   const scraper = createMicronTechnologyIndiaScraper({
     createBrowserFetchSessionImpl: async () => ({
       fetchText: async () => JSON.stringify({
         data: {
           count: 1,
-          positions: [
-            {
-              id: 6001,
-              displayJobId: 'JR96001',
-              name: 'Principal Engineer',
-              locations: ['Hyderabad, Telangana, India'],
-              positionUrl: '/careers/job/6001',
-              department: 'Engineering',
-              postedTs: '2026-08-04T10:00:00Z',
-            },
-          ],
+          positions: [position],
         },
       }),
       close: async () => {
+        closeAttempts++
         throw closeError
       },
     }),
   })
 
-  const jobs = await withMockedMicronDetailFetch(async () => scraper.run({
+  const jobs = await withMockedMicronDetailFetch([position], async () => scraper.run({
     fetchText: async () => CAREERS_HTML,
   }))
 
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Principal Engineer')
   assert.equal(jobs[0].sourceUrl, 'https://careers.micron.com/careers/job/6001')
+  assert.equal(closeAttempts, 1)
 })
 
 test('Micron Technology India uses the shared browser text fetch with the India landing page when live browser auth is required', async () => {
   const calls = []
+  const position = {
+    id: 7001, displayJobId: 'JR97001', name: 'STAFF ENG-HIG-HBM-LAYOUT',
+    locations: ['Hyderabad, Telangana, India'], positionUrl: '/careers/job/7001',
+    department: 'Engineering', postedTs: '2026-08-04T10:00:00Z',
+  }
   const scraper = createMicronTechnologyIndiaScraper({
     createBrowserFetchSessionImpl: async () => ({
       fetchText: async (url, options) => {
@@ -252,17 +285,7 @@ test('Micron Technology India uses the shared browser text fetch with the India 
         return JSON.stringify({
           data: {
             count: 1,
-            positions: [
-              {
-                id: 7001,
-                displayJobId: 'JR97001',
-                name: 'STAFF ENG-HIG-HBM-LAYOUT',
-                locations: ['Hyderabad, Telangana, India'],
-                positionUrl: '/careers/job/7001',
-                department: 'Engineering',
-                postedTs: '2026-08-04T10:00:00Z',
-              },
-            ],
+            positions: [position],
           },
         })
       },
@@ -270,23 +293,25 @@ test('Micron Technology India uses the shared browser text fetch with the India 
     }),
   })
 
-  const jobs = await withMockedMicronDetailFetch(async () => scraper.run({
+  const jobs = await withMockedMicronDetailFetch([position], async () => scraper.run({
     fetchText: async () => CAREERS_HTML,
   }))
 
   assert.equal(jobs.length, 1)
-  assert.deepEqual(calls, [
-    {
-      url: 'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=0&limit=10',
-      options: {
-        referer: 'https://careers.micron.com/careers?domain=micron.com&location=India',
-      },
-    },
-  ])
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].url, 'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=0&limit=10')
+  assert.equal(calls[0].options.referer, 'https://careers.micron.com/careers?domain=micron.com&location=India')
+  assert.ok(calls[0].options.signal instanceof AbortSignal)
 })
 
 test('Micron Technology India recreates its browser session after a transient aborted navigation', async () => {
   let sessionCreations = 0
+  let sessionClosures = 0
+  const position = {
+    id: 8001, displayJobId: 'JR98001', name: 'Staff Engineer',
+    locations: ['Hyderabad, Telangana, India'], positionUrl: '/careers/job/8001',
+    department: 'Engineering', postedTs: '2026-08-04T10:00:00Z',
+  }
   const scraper = createMicronTechnologyIndiaScraper({
     createBrowserFetchSessionImpl: async () => {
       sessionCreations += 1
@@ -296,7 +321,7 @@ test('Micron Technology India recreates its browser session after a transient ab
           fetchText: async () => {
             throw new Error('net::ERR_ABORTED at https://careers.micron.com/api/pcsx/search')
           },
-          close: async () => {},
+          close: async () => { sessionClosures++ },
         }
       }
 
@@ -304,29 +329,20 @@ test('Micron Technology India recreates its browser session after a transient ab
         fetchText: async () => JSON.stringify({
           data: {
             count: 1,
-            positions: [
-              {
-                id: 8001,
-                displayJobId: 'JR98001',
-                name: 'Staff Engineer',
-                locations: ['Hyderabad, Telangana, India'],
-                positionUrl: '/careers/job/8001',
-                department: 'Engineering',
-                postedTs: '2026-08-04T10:00:00Z',
-              },
-            ],
+            positions: [position],
           },
         }),
-        close: async () => {},
+        close: async () => { sessionClosures++ },
       }
     },
   })
 
-  const jobs = await withMockedMicronDetailFetch(async () => scraper.run({
+  const jobs = await withMockedMicronDetailFetch([position], async () => scraper.run({
     fetchText: async () => CAREERS_HTML,
   }))
 
   assert.equal(sessionCreations, 2)
+  assert.equal(sessionClosures, 2)
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Staff Engineer')
   assert.equal(jobs[0].sourceUrl, 'https://careers.micron.com/careers/job/8001')

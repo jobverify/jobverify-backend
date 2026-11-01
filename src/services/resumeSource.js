@@ -7,7 +7,7 @@ export function normalizeResumeLinks(values = []) {
     try {
       const parsed = new URL(link);
       if (!['https:', 'http:', 'mailto:', 'tel:'].includes(parsed.protocol) || parsed.username || parsed.password) continue;
-      if (parsed.protocol === 'mailto:' && (!/^[^\s@?,;]+@[^\s@?,;]+\.[^\s@?,;]+$/.test(decodeURIComponent(parsed.pathname)) || /[?&](?:bcc|cc|attach|attachment)=/i.test(link))) continue;
+      if (parsed.protocol === 'mailto:' && (!/^[a-z\d.!#$%&'*+/=?^_`{|}~-]+@[a-z\d](?:[a-z\d.-]*[a-z\d])?\.[a-z]{2,}$/i.test(decodeURIComponent(parsed.pathname)) || /[?&](?:bcc|cc|attach|attachment)=/i.test(link))) continue;
       if (parsed.protocol === 'tel:' && !/^\+?[\d().-]{7,}$/.test(parsed.pathname)) continue;
       if (!output.includes(link)) output.push(link);
     } catch { /* Ignore malformed and non-web document actions. */ }

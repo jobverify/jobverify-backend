@@ -11,6 +11,15 @@ import * as runtime from '../rewriting/worker.js';
 
 const exec = promisify(execFile);
 
+const requireNativeTools = async (t, commands) => {
+  const available = await Promise.all(commands.map(command => exec(command, ['--version'], { timeout: 3000 }).then(() => true, () => false)));
+  if (available.every(Boolean)) return true;
+  const missing = commands.filter((_command, index) => !available[index]);
+  assert.notEqual(process.env.JOB_DESCRIPTION_REWRITE_REQUIRE_NATIVE_TESTS, '1', 'Required native test tools unavailable: ' + missing.join(', '));
+  t.skip('Native test tools unavailable: ' + missing.join(', '));
+  return false;
+};
+
 test('runtime diagnostics fingerprint the executable and record CPU and debugger availability', async () => {
   assert.equal(typeof runtime.collectRewriteRuntimeDiagnostics, 'function', 'runtime identity collection must be available to the runner');
   const details = await runtime.collectRewriteRuntimeDiagnostics({ binary: process.execPath, nativeBacktrace: false });
@@ -54,6 +63,54 @@ test('debugger capture enables only after its helper observes the inferior runni
     } });
   assert.equal(details.nativeBacktrace.enabled, true);
   assert.equal(details.nativeBacktrace.reason, 'available');
+});
+
+test('debugger preflight exercises JSON and paths with spaces before enabling capture', async () => {
+  let forwarded;
+  const details = await runtime.collectRewriteRuntimeDiagnostics({ binary: process.execPath, nativeBacktrace: true, platform: 'linux',
+    execute: async (command, args, options) => {
+      if (command !== 'gdb') return exec(command, args, options);
+      if (args[0] === '--version') return { stdout: 'GNU gdb fixture\n', stderr: '' };
+      forwarded = args.slice(args.indexOf('--args') + 2);
+      await fs.writeFile(options.env.JOB_DESCRIPTION_NATIVE_DIAGNOSTIC_FILE,
+        JSON.stringify({ pid: 123, debugger: 'gdb', state: 'running' }));
+      return exec(process.execPath, forwarded, options);
+    } });
+  assert.equal(details.nativeBacktrace.enabled, true);
+  assert.ok(forwarded.includes('{"enable_thinking":false}'));
+  assert.ok(forwarded.includes('model path with spaces.gguf'));
+});
+
+test('debugger preflight disables capture if the launcher corrupts its JSON argument', async () => {
+  const details = await runtime.collectRewriteRuntimeDiagnostics({ binary: process.execPath, nativeBacktrace: true, platform: 'linux',
+    execute: async (command, args, options) => {
+      if (command !== 'gdb') return exec(command, args, options);
+      if (args[0] === '--version') return { stdout: 'GNU gdb fixture\n', stderr: '' };
+      const forwarded = args.slice(args.indexOf('--args') + 2);
+      const json = forwarded.indexOf('{"enable_thinking":false}');
+      if (json >= 0) forwarded[json] = '\\' + forwarded[json];
+      await fs.writeFile(options.env.JOB_DESCRIPTION_NATIVE_DIAGNOSTIC_FILE,
+        JSON.stringify({ pid: 123, debugger: 'gdb', state: 'running' }));
+      return exec(process.execPath, forwarded, options);
+    } });
+  assert.equal(details.nativeBacktrace.enabled, false);
+  assert.equal(details.nativeBacktrace.reason, 'debugger_preflight_failed');
+});
+
+test('Linux debugger preserves JSON, spaces, empty arguments, and shell metacharacters', { skip: process.platform !== 'linux', timeout: 20000 }, async t => {
+  if (!await requireNativeTools(t, ['gdb'])) return;
+  const expected = ['{"enable_thinking":false}', 'model path with spaces.gguf', '\'"\\$HOME;$(false)`false`*[x]', ''];
+  let observed;
+  const details = await runtime.collectRewriteRuntimeDiagnostics({ binary: process.execPath, nativeBacktrace: true,
+    execute: async (command, args, options) => {
+      if (command !== 'gdb' || args[0] === '--version') return exec(command, args, options);
+      const script = 'console.log("ARGV:" + JSON.stringify(process.argv.slice(1)))';
+      const result = await exec(command, [...args.slice(0, args.indexOf('--args') + 2), '-e', script, '--', ...expected], options);
+      observed = JSON.parse(result.stdout.split('\n').find(line => line.startsWith('ARGV:')).slice(5));
+      return result;
+    } });
+  assert.equal(details.nativeBacktrace.enabled, true, JSON.stringify(details.nativeBacktrace));
+  assert.deepEqual(observed, expected);
 });
 
 test('native capture handler writes bounded argument-free frames and preserves fatal status', async t => {
@@ -108,8 +165,7 @@ print(status)
 });
 
 test('Linux debugger captures a real native crash and reports SIGSEGV as failure', { skip: process.platform !== 'linux', timeout: 20000 }, async t => {
-  const tools = await Promise.all(['gdb', 'cc'].map(command => exec(command, ['--version'], { timeout: 3000 }).then(() => true, () => false)));
-  if (tools.some(available => !available)) return t.skip('GDB and a C compiler are required for the native smoke test');
+  if (!await requireNativeTools(t, ['gdb', 'cc'])) return;
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'rewrite-native-smoke-'));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
   const source = path.join(directory, 'crash.c'), binary = path.join(directory, 'crash');

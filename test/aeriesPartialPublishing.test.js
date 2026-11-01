@@ -2,17 +2,40 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import test from 'node:test'
+import test, { after } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 import { createHash } from 'node:crypto'
-import { AERIES_PARTIAL_CONTRACTS, deriveAeriesPartialEvidence, verifyAeriesPartialPublishingTrial } from '../scripts/aeriesPartialPublishingEvidence.js'
-import { freezeAeriesPartialTrial } from '../scripts/freezeAeriesPartialTrial.js'
+import { AERIES_PARTIAL_CONTRACTS, deriveAeriesPartialEvidence as deriveCurrentAeriesPartialEvidence } from '../scripts/aeriesPartialPublishingEvidence.js'
 import { isSuccessfulPublishingGapTrial } from '../scripts/publishPublishingGapRepairs.js'
+import { analyzePublishableJobs } from '../scraper-support/utils/publishableJobMetrics.js'
+import { createReviewedProofRuntime } from './helpers/reviewedProofRuntime.js'
 
 const now = new Date('2026-10-21T03:00:00Z'), hash = bytes => createHash('sha256').update(bytes).digest('hex')
 const raw = JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/aeriesPartial/native-reviewed-002.json.gz', import.meta.url))))
 const baseFiles = new Map(Object.entries(raw.files).map(([file, body]) => [file, Buffer.from(body, 'base64')]))
 const fixture = () => { const files = new Map(baseFiles); return { source: raw.source, files, httpEvidence: structuredClone(raw.httpEvidence), readEvidence: async file => files.get(file), now } }
+// The October 21 proof predates both the one-month age limit and the policy
+// retaining jobs with missing descriptions. Keep its original success cases
+// tied to the actual policy implementation from that historical Git revision.
+const reviewedMetrics = gunzipSync(fs.readFileSync(new URL('./fixtures/aeriesPartial/reviewed-publishableJobMetrics-7ebb487d0.js.gz', import.meta.url)))
+assert.equal(hash(reviewedMetrics), 'f7d4baf7d52d6f3efd0fe23e5adbfff820f53194f3a3ddfbe7a0982d385b0621')
+const providerUrl = new URL('../scraper-support/providers/index.js', import.meta.url).href
+const relocatedCatalog = Buffer.from(`
+import { fileURLToPath } from 'node:url';
+import { getScraperCatalog as liveCatalog } from ${JSON.stringify(providerUrl)};
+export * from ${JSON.stringify(providerUrl)};
+export const getScraperCatalog = (...args) => liveCatalog(...args).map(provider =>
+  provider.source === 'aeriestechnology'
+    ? { ...provider, modulePath: fileURLToPath(new URL('../../scraper/aeriestechnology/script.js', import.meta.url)) }
+    : provider);
+`)
+const reviewedRuntime = createReviewedProofRuntime(fixture(), { prefix: 'aeries-reviewed-code-', extraFiles: new Map([
+  ['scraper-support/utils/publishableJobMetrics.js', reviewedMetrics],
+  ['scraper-support/providers/index.js', relocatedCatalog],
+]) })
+after(() => reviewedRuntime.cleanup())
+const { deriveAeriesPartialEvidence, verifyAeriesPartialPublishingTrial } = await import(reviewedRuntime.url('scripts/aeriesPartialPublishingEvidence.js'))
+const { freezeAeriesPartialTrial } = await import(reviewedRuntime.url('scripts/freezeAeriesPartialTrial.js'))
 const trialFor = async f => {
   const proof = await deriveAeriesPartialEvidence(f)
   const trial = { schemaVersion: 1, source: f.source, mode: 'native-http-partial-positive-trial', outcome: 'positive-extraction-incomplete-evidence', productionWrites: false,
@@ -22,7 +45,13 @@ const trialFor = async f => {
   return { trial, bytes: Buffer.from(JSON.stringify(trial)), readEvidence: f.readEvidence, now }
 }
 test('exact reviewed Aeries31 packets preserve original24 rows and two real placeholders while selecting all22 native full jobs', async () => {
-  const f = fixture(), args = await trialFor(f), result = await verifyAeriesPartialPublishingTrial(args)
+  const f = fixture()
+  const original = JSON.parse(f.files.get('evidence/frozen-trial.json'))
+  const generalEligibility = analyzePublishableJobs(original.jobs, { now })
+  assert.equal(generalEligibility.eligibleJobs.length, 6, 'current eligibility excludes the 18 archived roles older than one calendar month')
+  assert.equal(generalEligibility.filterCounts.old, 18)
+  assert.equal(generalEligibility.filterCounts.emptyDescription, 0)
+  const args = await trialFor(f), result = await verifyAeriesPartialPublishingTrial(args)
   assert.deepEqual(Object.keys(AERIES_PARTIAL_CONTRACTS), ['aeriestechnology'])
   assert.equal(result.eligibleJobs, 22)
   assert.equal(result.rawTotal, 24)
@@ -32,11 +61,14 @@ test('exact reviewed Aeries31 packets preserve original24 rows and two real plac
   assert.equal(result.detailHealth.complete, false)
   assert.equal(result.detailHealth.missingDescriptions, 2)
   assert.equal(result.selectedDetailHealth.complete, true)
-  const original = JSON.parse(f.files.get('evidence/frozen-trial.json'))
   assert.equal(args.trial.attemptedAt, original.attemptedAt)
   assert.equal(args.trial.completedAt, original.completedAt)
   for (const job of result.jobs) { assert.deepEqual(job, original.jobs.find(old => old.jobId === job.jobId)); assert.equal(job.sourceListingComplete, false); assert.equal(job.sourceDetailComplete, true) }
   assert.equal(isSuccessfulPublishingGapTrial(args.trial, { source: f.source, now }), false)
+})
+
+test('current publication policy rejects the historical Aeries proof without renewing its original job dates', async () => {
+  await assert.rejects(deriveCurrentAeriesPartialEvidence(fixture()), /all and only22 original full native descriptions may qualify/)
 })
 test('native selected identity, descriptions, dates, partial diagnostics and original clocks cannot be changed or truncated', async () => {
   const args = await trialFor(fixture())

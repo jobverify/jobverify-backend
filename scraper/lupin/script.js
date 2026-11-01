@@ -1,3 +1,4 @@
+import {createNativeScraper,nativeMetadata,readNativePosting as readPublishedNativePosting} from './native.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,7 +10,7 @@ import { LUPIN_CATALOG } from './catalog.js'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-export const PROVIDER_METADATA = LUPIN_CATALOG
+export const PROVIDER_METADATA = Object.freeze({...LUPIN_CATALOG,...nativeMetadata,verifiedSurfaceSummary:'First-party public native discovery with complete own models before caps; authoritative totals, own-model stability and employer-wide scope remain unverified.'})
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY_NAME = PROVIDER_METADATA.companyName
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
@@ -199,7 +200,7 @@ export const extractSearchResults = (html = '') => [...String(html ?? '').matchA
       city: extractCity(location),
       country,
       jobId,
-      requisitionId: jobId,
+      requisitionId: null,
       sourceUrl,
       postingDate,
     }
@@ -230,41 +231,19 @@ export const extractResultsSummary = (html = '') => {
   }
 }
 
-export const extractJobDetail = (html = '', listing = {}) => {
-  const title = normalizeWhitespace(
-    extractFirst(/itemprop="title"[^>]*>([\s\S]*?)<\/span>/i, html),
-  ) || listing.title || null
-  const location = normalizeLocation(
-    extractFirst(/class="jobGeoLocation"[^>]*>([\s\S]*?)<\/span>/i, html),
-  ) || listing.location || null
-  const applyPath = normalizeWhitespace(
-    extractFirst(/<a(?=[^>]*class="[^"]*\bdialogApplyBtn\b[^"]*")(?=[^>]*href="([^"]+)")[^>]*>/i, html),
-  )
-  const descriptionHtml = extractSectionHtml(html, 'Job Description')
-  const experienceHtml = extractSectionHtml(html, 'Work Experience')
-  const educationHtml = extractSectionHtml(html, 'Education')
-  const competenciesHtml = extractSectionHtml(html, 'Competencies')
-  const educationEntries = extractParagraphs(educationHtml)
-
-  return {
-    title,
-    company: COMPANY_NAME,
-    location,
-    city: extractCity(location),
-    country: extractCountry(location),
-    jobId: listing.jobId || extractJobIdFromUrl(listing.sourceUrl) || extractJobIdFromUrl(applyPath),
-    requisitionId: listing.requisitionId || listing.jobId || extractJobIdFromUrl(listing.sourceUrl),
-    sourceUrl: listing.sourceUrl || null,
-    applyUrl: toAbsoluteUrl(applyPath),
-    employmentType: null,
-    experienceRequired: stripTags(experienceHtml),
-    minimumQualification: educationEntries[0] || null,
-    preferredQualification: educationEntries[1] || null,
-    requiredSkills: extractListItems(competenciesHtml),
-    postingDate: normalizeDate(listing.postingDate),
-    closingDate: null,
-    jobDescription: stripTags(descriptionHtml),
-  }
+export const extractJobDetail = (html = '', listing = {}, observedAt = new Date().toISOString()) => {
+  const labels = listing.nativeLocations || listing.locations || [listing.location]
+  return readPublishedNativePosting(html, {
+    ...listing,
+    requisitionId: null,
+    nativeJobID: null,
+    nativeEmployer: null,
+    nativeDepartment: null,
+    nativeBusiness: null,
+    nativeLocations: labels,
+    nativeLocationLabels: listing.nativeLocationLabels || labels,
+    expectedLocationCount: listing.expectedLocationCount ?? labels.length,
+  }, observedAt)
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -276,74 +255,9 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
-export const createLupinScraper = ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : null,
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-  } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Lupin official homepage no longer matches the verified public surface')
-    }
-
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Lupin verified official careers page no longer matches the verified public surface')
-    }
-
-    const scrapedAt = now()
-    const jobs = []
-    const seenJobIds = new Set()
-    const pageLimit = Number.isInteger(maxPages) ? maxPages : Number.POSITIVE_INFINITY
-    let pageNumber = 1
-    let offset = 0
-
-    while (pageNumber <= pageLimit) {
-      const listingHtml = await fetchText(buildIndiaJobsUrl(offset))
-
-      if (pageNumber === 1 && !hasOfficialIndiaJobsPageSignal(listingHtml)) {
-        throw new Error('Lupin verified official India jobs page no longer matches the verified public surface')
-      }
-
-      const listings = extractSearchResults(listingHtml)
-      const summary = extractResultsSummary(listingHtml)
-
-      if (listings.length === 0) {
-        return jobs
-      }
-
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailHtml = await fetchText(listing.sourceUrl)
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt,
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-
-      if (!summary.totalResults || offset + summary.pageSize >= summary.totalResults) {
-        break
-      }
-
-      offset += summary.pageSize
-      pageNumber += 1
-    }
-
-    return jobs
-  },
+export const createLupinScraper = (defaults = {}) => createNativeScraper({
+  maxJobs: Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  ...defaults,
 })
 
 export const run = async (options = {}) => createLupinScraper().run(options)

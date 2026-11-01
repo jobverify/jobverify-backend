@@ -82,6 +82,19 @@ export const sendVerificationEmail = async (to, magicLink) => sendEmail(
   "Verification email",
 );
 
+export const sendEmailChangeVerificationEmail = async (to, link) => sendEmail(
+  to,
+  'Verify your new Jobverify email address',
+  `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+    <h2>Verify your new email address</h2>
+    <p>Click the link below to use this email address for your Jobverify account. This link expires in 30 minutes.</p>
+    <p><a href="${link}">Verify new email address</a></p>
+    <p>Your current email address stays active until you verify. After verification, sign in with your new email address. If you use Google sign-in, use Google with the new email, or choose Forgot password to set a password.</p>
+    <p>If you did not request this change, ignore this email.</p>
+  </div>`,
+  'Email change verification',
+);
+
 // Sends a password reset email containing a time-limited reset link.
 export const sendPasswordResetEmail = async (to, resetLink) => sendEmail(
   to,

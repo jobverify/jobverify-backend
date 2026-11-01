@@ -7,18 +7,18 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Volvo Group as a SuccessFactors RSS script provider', () => {
+test('getScraperCatalog includes Volvo Group as a public native HTML discovery provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'volvo')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'Volvo Group')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'successfactors')
+  assert.equal(provider.atsPlatform, 'successfactors-public-native-get')
   assert.equal(provider.companyCareerPage, 'https://www.volvogroup.com/en/careers.html')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-rss-feed')
-  assert.equal(provider.extractionStrategy, 'successfactors-rss-feed+india-location-filter+detail-apply-handoff')
-  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.paginationStrategy, 'published-native-table-ranges')
+  assert.equal(provider.extractionStrategy, 'native-listings-and-complete-own-models-before-caps')
+  assert.equal(provider.parser, 'volvo-native-public-get')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'volvogroup.com')
   assert.match(provider.modulePath, /volvo[\\/]script\.js$/i)

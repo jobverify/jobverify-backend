@@ -13,7 +13,7 @@ const load=async()=>{assert.ok(fs.existsSync(url),'Boston Scientific exact parti
 const fixture=(version='002')=>{const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/bostonScientificPartial/reviewed-native-'+version+'.json.gz',import.meta.url)))),files=new Map(Object.entries(f.files).map(([k,v])=>[k,Buffer.from(v,'base64')]));return{source:'bostonscientific',httpEvidence:f.httpEvidence,files,readEvidence:async file=>files.get(file),now}}
 // Positive historical proofs require their exact reviewed runtime, while the
 // production verifier must continue rejecting those proofs after source drift.
-// Restore only the three attested source files in a disposable offline tree;
+// Restore the attested source and provider files in a disposable offline tree;
 // the immutable receipt bundle and the live checkout are never rewritten.
 const backendRoot=fileURLToPath(new URL('..',import.meta.url)),reviewedRoot=fs.mkdtempSync(path.join(os.tmpdir(),'boston-reviewed-code-')),junctions=[]
 fs.mkdirSync(path.join(reviewedRoot,'scripts'));fs.mkdirSync(path.join(reviewedRoot,'scraper/bostonscientific'),{recursive:true});fs.mkdirSync(path.join(reviewedRoot,'scraper-support/providers'),{recursive:true})
@@ -21,7 +21,7 @@ fs.writeFileSync(path.join(reviewedRoot,'package.json'),'{"type":"module"}')
 for(const name of ['bostonScientificPartialPublishingEvidence.js','freezeBostonScientificPartialPublishingTrial.js','officialRecruitmentLinks.js']){
  fs.copyFileSync(path.join(backendRoot,'scripts',name),path.join(reviewedRoot,'scripts',name))
 }
-for(const name of ['src','scraper-support/utils','scraper-support/apiPortal','scraper-support/providers/providerExtensions']){
+for(const name of ['src','scraper-support/utils','scraper-support/apiPortal']){
  const link=path.join(reviewedRoot,name);fs.symlinkSync(path.join(backendRoot,name),link,'junction');junctions.push(link)
 }
 for(const name of ['scripts/partialPublishingGapEvidence.js','scraper-support/providers/index.js']){
@@ -36,6 +36,15 @@ const reviewed=fixture()
 for(const receipt of reviewed.httpEvidence.receipts.filter(r=>r.kind==='current-code')){
  assert.ok(['scraper/bostonscientific/script.js','scraper/bostonscientific/nativeContract.js','scraper/bostonscientific/nativeContent.js'].includes(receipt.sourcePath))
  fs.writeFileSync(path.join(reviewedRoot,receipt.sourcePath),reviewed.files.get(receipt.file))
+}
+// The complete reviewed historical closure includes this exact provider file.
+// Current production metadata/source checks remain untouched and fail closed.
+const providerReceipts=reviewed.httpEvidence.receipts.filter(r=>r.kind==='provider-extension')
+assert.equal(providerReceipts.length,1)
+for(const receipt of providerReceipts){
+ assert.equal(receipt.sourcePath,'scraper-support/providers/providerExtensions/zzzzzzzzzzzzzzzzzzz-verified-discovery-adapters-014.json')
+ const bytes=reviewed.files.get(receipt.file);assert.equal(sha(bytes),receipt.sha256)
+ const destination=path.join(reviewedRoot,receipt.sourcePath);fs.mkdirSync(path.dirname(destination),{recursive:true});fs.writeFileSync(destination,bytes)
 }
 after(()=>{
  assert.equal(path.dirname(reviewedRoot),fs.realpathSync(os.tmpdir()));assert.ok(path.basename(reviewedRoot).startsWith('boston-reviewed-code-'))

@@ -1,3 +1,4 @@
+import {replay as currentReplay} from '../../scraper-support/native-sources/publicNativeGetSources/fixtureReplay.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -86,7 +87,7 @@ test('extractAshbyJobs returns listed Odin jobs with normalized Ashby fields', (
     state: null,
     country: 'United Kingdom',
     jobId: '286f6bba-b3f8-4473-a0ed-38e9d8b9e3d5',
-    requisitionId: '286f6bba-b3f8-4473-a0ed-38e9d8b9e3d5',
+    requisitionId: null,
     sourceUrl: 'https://jobs.ashbyhq.com/odin/286f6bba-b3f8-4473-a0ed-38e9d8b9e3d5',
     applyUrl: 'https://jobs.ashbyhq.com/odin/286f6bba-b3f8-4473-a0ed-38e9d8b9e3d5/application',
     employmentType: 'Full Time',
@@ -106,20 +107,6 @@ test('extractAshbyJobs returns listed Odin jobs with normalized Ashby fields', (
   assert.equal(jobs[1].workplaceType, 'Remote')
 })
 
-test('run fetches the official Ashby board and adds scraper metadata', async () => {
-  const requests = []
-  const scraper = createOdinScraper()
 
-  const jobs = await scraper.run({
-    fetchJson: async (url) => {
-      requests.push(url)
-      return ashbyPayload
-    },
-  })
 
-  assert.deepEqual(requests, [ASHBY_JOB_BOARD_URL])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'odin')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.match(jobs[0].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
-})
+test('Odin live factory accepts original HTTP injection, preserves Global own observations and current binding hold',async()=>{const r=currentReplay(),jobs=await createOdinScraper().run(r.options);assert.equal(jobs.length,0);assert.equal(r.audits.length,1);assert.equal(r.records[0].length,6);assert.equal(r.audits[0].countryFilter,'Global');assert.ok(r.records[0].every(r=>r.requisitionId===null&&r.sourceNativeDetailQualified))})

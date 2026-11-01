@@ -376,6 +376,7 @@ test('Prism RMC scraper fails closed when the verified public surface drifts', a
 
         throw new Error(`Unexpected URL: ${url}`)
       },
+      fetchPageSitemap: async () => assert.fail('invalid homepage must stop before the sitemap request'),
     }),
     /verified official homepage/i,
   )
@@ -390,6 +391,10 @@ test('Prism RMC scraper fails closed when the verified public surface drifts', a
         }
 
         throw new Error(`Unexpected URL: ${url}`)
+      },
+      fetchPageSitemap: async (url) => {
+        assert.equal(url, prismRmc.PAGE_SITEMAP_URL)
+        return { status: 200, text: PAGE_SITEMAP_XML }
       },
     }),
     /sitemap|detail urls/i,
@@ -407,6 +412,10 @@ test('Prism RMC scraper fails closed when the verified public surface drifts', a
         if (url === 'https://www.rmcindia.com/rmc-jobs-sales-executive/') return SALES_DETAIL_HTML
 
         throw new Error(`Unexpected URL: ${url}`)
+      },
+      fetchPageSitemap: async (url) => {
+        assert.equal(url, prismRmc.PAGE_SITEMAP_URL)
+        return { status: 200, text: PAGE_SITEMAP_XML }
       },
     }),
     /job detail page changed materially|apply/i,

@@ -1,3 +1,4 @@
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -14,6 +15,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const DETAIL_API_PATTERN = /\/api\/pcsx\/position_details\b/i
 const DETAIL_FETCH_CONCURRENCY = 6
+const NATIVE_CAREERS_URL = 'https://careers.micron.com/careers'
 
 export const SEARCH_PAGE_SIZE = 10
 export const SEARCH_TIMEOUT_MS = 120000
@@ -48,7 +50,7 @@ const parseJsonText = (rawText, url) => {
   }
 }
 
-const fetchMicronDetailJson = async (url) => parseJsonText(
+const fetchMicronDetailJson = async (url, { signal } = {}) => parseJsonText(
   await fetchTextWithRetry(url, {
     headers: {
       'User-Agent': USER_AGENT,
@@ -57,10 +59,47 @@ const fetchMicronDetailJson = async (url) => parseJsonText(
       Origin: 'https://careers.micron.com',
     },
     label: `${SOURCE}-detail-json`,
+    signal,
+    attempts: 1,
     timeoutMs: 20000,
   }),
   url,
 )
+
+const failMicronDetailPublicUrl = () => {
+  throw Object.assign(new Error('Micron detail identity mismatch: publicUrl'), {
+    incompleteScope: true, abortRetries: true,
+  })
+}
+
+const readMicronDetailRequestId = (value) => {
+  let request
+  try { request = new URL(value) } catch { failMicronDetailPublicUrl() }
+  const ids = request.searchParams.getAll('position_id')
+  if (request.origin !== new URL(NATIVE_CAREERS_URL).origin
+    || request.pathname !== '/api/pcsx/position_details'
+    || request.username || request.password || request.hash
+    || request.searchParams.size !== 3 || ids.length !== 1 || !/^[1-9]\d*$/.test(ids[0])
+    || request.searchParams.getAll('domain').length !== 1 || request.searchParams.get('domain') !== API_QUERY.domain
+    || request.searchParams.getAll('hl').length !== 1 || request.searchParams.get('hl') !== 'en') failMicronDetailPublicUrl()
+  return ids[0]
+}
+
+// A successful native endpoint alone cannot qualify a description. The native
+// public URL must independently bind the same request ID and position path;
+// the existing Eightfold guard checks the exact listing identity and workplace.
+const assertMicronDetailPublicUrl = (id, payload) => {
+  const detail = payload?.data
+  let publicUrl, positionUrl
+  try {
+    if (typeof detail?.publicUrl !== 'string' || typeof detail?.positionUrl !== 'string') failMicronDetailPublicUrl()
+    publicUrl = new URL(detail.publicUrl)
+    positionUrl = new URL(detail.positionUrl, NATIVE_CAREERS_URL)
+  } catch { failMicronDetailPublicUrl() }
+  const expected = new URL(NATIVE_CAREERS_URL).origin + '/careers/job/' + id
+  if (publicUrl.protocol !== 'https:' || publicUrl.username || publicUrl.password
+    || publicUrl.href !== expected || positionUrl.href !== expected) failMicronDetailPublicUrl()
+}
 
 const normalizeMicronExperienceRequired = (jobDescription) => {
   const normalizedDescription = normalizeWhitespace(jobDescription)
@@ -104,7 +143,8 @@ const decorateMicronJob = (job = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -145,6 +185,31 @@ export const hasOfficialMicronIndiaCareersSignal = (html = '') => {
   )
 }
 
+// A caller or engine request signal remains authoritative even if a supplied
+// reader ignores it. This adds no timer or retry, and never inspects its reason.
+const withMicronSignal = async (signal, operation) => {
+  signal?.throwIfAborted()
+  if (!signal) return operation()
+  let onAbort
+  const aborted = new Promise((resolve, reject) => {
+    onAbort = () => reject(signal.reason)
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+  try {
+    const value = await Promise.race([
+      Promise.resolve().then(() => { signal.throwIfAborted(); return operation() }),
+      aborted,
+    ])
+    signal.throwIfAborted()
+    return value
+  } catch (error) {
+    signal.throwIfAborted()
+    throw error
+  } finally {
+    signal.removeEventListener('abort', onAbort)
+  }
+}
+
 const isTargetClosedError = (error) =>
   /Target closed/i.test(String(error?.message || error))
 
@@ -172,15 +237,21 @@ const parseBrowserJsonText = (rawText, url) => {
 
 const createMicronBrowserJsonFetcher = async ({
   createBrowserFetchSessionImpl = createBrowserFetchSession,
+  signal,
 } = {}) => {
   let browserSession = null
 
-  const ensureSession = async () => {
+  const ensureSession = async (requestSignal) => {
     if (!browserSession) {
-      browserSession = await createBrowserFetchSessionImpl({
+      const created = await createBrowserFetchSessionImpl({
         userAgent: USER_AGENT,
         timeoutMs: SEARCH_TIMEOUT_MS,
+        signal,
       })
+      if (requestSignal?.aborted) {
+        try { await closeBrowserSession(created) } finally { requestSignal.throwIfAborted() }
+      }
+      browserSession = created
     }
 
     return browserSession
@@ -194,22 +265,27 @@ const createMicronBrowserJsonFetcher = async ({
   }
 
   return {
-    fetchJson: async (url) => {
+    fetchJson: async (url, options = {}) => {
+      const requestSignal = options.signal || signal
       let lastError = null
 
       for (let attempt = 1; attempt <= 2; attempt += 1) {
-        const activeSession = await ensureSession()
+        requestSignal?.throwIfAborted()
+        const activeSession = await ensureSession(requestSignal)
+        requestSignal?.throwIfAborted()
 
         try {
-          return parseBrowserJsonText(
-            await activeSession.fetchText(url, {
-              referer: API_CAREERS_LANDING_URL,
-            }),
-            url,
-          )
+          const rawText = await activeSession.fetchText(url, {
+            referer: API_CAREERS_LANDING_URL,
+            signal: requestSignal,
+          })
+          requestSignal?.throwIfAborted()
+          return parseBrowserJsonText(rawText, url)
         } catch (error) {
+          requestSignal?.throwIfAborted()
           lastError = error
           await resetSession()
+          requestSignal?.throwIfAborted()
 
           if (!isRetriableBrowserFetchError(error) || attempt === 2) {
             throw error
@@ -225,8 +301,9 @@ const createMicronBrowserJsonFetcher = async ({
 
 export const buildMicronTechnologyIndiaApiProvider = () => ({
   source: SOURCE,
+  atsPlatform: MICRON_TECHNOLOGY_INDIA_CATALOG.atsPlatform,
   companyName: COMPANY,
-  companyCareerPage: OFFICIAL_CAREERS_URL,
+  companyCareerPage: NATIVE_CAREERS_URL,
   countryFilter: 'India',
   config: {
     discovery: {
@@ -246,7 +323,8 @@ export const buildMicronTechnologyIndiaApiProvider = () => ({
     },
     mapping: {
       title: 'name',
-      location: 'locations.0',
+      location: { strategy: 'eightfold-location' },
+      country: { strategy: 'eightfold-country' },
       jobId: 'id',
       requisitionId: 'displayJobId',
       sourceUrl: {
@@ -267,7 +345,8 @@ export const buildMicronTechnologyIndiaApiProvider = () => ({
       postingDate: 'postedTs',
     },
     detail: {
-      enabled: false,
+      enabled: true,
+      requireListingIdentity: true,
       concurrency: DETAIL_FETCH_CONCURRENCY,
       urlTemplate: buildDetailApiUrl('{{jobId}}'),
       method: 'GET',
@@ -278,8 +357,8 @@ export const buildMicronTechnologyIndiaApiProvider = () => ({
     resultFilter: {
       include: [
         {
-          field: 'location',
-          pattern: 'india|hyderabad|bengaluru|bangalore|gujarat',
+          field: 'country',
+          pattern: '^India$',
         },
       ],
       exclude: [],
@@ -293,8 +372,9 @@ export const createMicronTechnologyIndiaScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson,
+    signal,
   } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    const careersHtml = await withMicronSignal(signal, () => fetchText(OFFICIAL_CAREERS_URL, { signal }))
 
     if (!hasOfficialMicronIndiaCareersSignal(careersHtml)) {
       throw new Error('The verified Micron India careers page no longer matches the public jobs handoff')
@@ -306,36 +386,46 @@ export const createMicronTechnologyIndiaScraper = ({
       const liveFetchJson = fetchJson || await (async () => {
         browserFetcher = await createMicronBrowserJsonFetcher({
           createBrowserFetchSessionImpl,
+          signal,
         })
 
-        return async (url) => {
+        return async (url, options) => {
           if (DETAIL_API_PATTERN.test(url)) {
-            try {
-              return await fetchMicronDetailJson(url)
-            } catch {
-              return browserFetcher.fetchJson(url)
-            }
+            return fetchMicronDetailJson(url, options)
           }
 
-          return browserFetcher.fetchJson(url)
+          return browserFetcher.fetchJson(url, options)
         }
       })()
 
       const jobs = await runApiPortalScraper({
         provider: buildMicronTechnologyIndiaApiProvider(),
-        fetchJson: liveFetchJson,
+        signal,
+        fetchJson: async (url, options = {}) => withMicronSignal(options.signal || signal, async () => {
+          const detailId = DETAIL_API_PATTERN.test(url) ? readMicronDetailRequestId(url) : null
+          const payload = await liveFetchJson(url, options)
+          if (detailId) assertMicronDetailPublicUrl(detailId, payload)
+          return payload
+        }),
       })
 
-      return jobs.map(decorateMicronJob)
+      return mapJobsWithInventoryEvidence(jobs, decorateMicronJob)
     } finally {
-      if (browserFetcher) {
-        await browserFetcher.close()
+      try {
+        if (browserFetcher) {
+          // Start cleanup once and observe it even when caller settlement wins.
+          const closing = Promise.resolve().then(() => browserFetcher.close())
+          closing.catch(() => {})
+          await withMicronSignal(signal, () => closing)
+        }
+      } finally {
+        signal?.throwIfAborted()
       }
     }
   },
 })
 
-export const run = async () => createMicronTechnologyIndiaScraper().run()
+export const run = async (options = {}) => createMicronTechnologyIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

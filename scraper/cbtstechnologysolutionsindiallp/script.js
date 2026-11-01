@@ -1,3 +1,4 @@
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -167,7 +168,7 @@ export const createCbtstechnologysolutionsindiallpScraper = () => ({
         config: {mapping: {location: ['standardizedLocations.0', 'locations.0']}},
       })
       const jobs = await runApiPortalScraper({provider, fetchJson})
-      return jobs.map(job => ({...job, scrapedAt: now()}))
+      return mapJobsWithInventoryEvidence(jobs, job => ({...job, scrapedAt: now()}))
     }
 
     const scrapedAt = now()

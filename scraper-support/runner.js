@@ -42,7 +42,12 @@ import { openRunCheckpoint } from './utils/runCheckpoint.js'
 import { saveRawSourceCapture, saveRawSourceFailure } from './utils/rawCapture.js'
 import { LocalJobOutboxPersistenceError, saveLocalJobOutbox } from './utils/localJobOutbox.js'
 import { buildClassificationInput } from '../src/services/jobClassificationPolicy.js'
-import { acquireMongoRunLease } from './utils/runLease.js'
+import {
+  acquireMongoRunLease,
+  DEFAULT_RUN_LEASE_WAIT_MS,
+  MongoRunLeaseHeldError,
+  waitForMongoRunLease,
+} from './utils/runLease.js'
 import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
 import { isMongoOperationalError, retryMongoOperation } from '../src/utils/mongoOperationalError.js'
 import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
@@ -1092,31 +1097,67 @@ const runScraperAttemptWithRetryPolicy = async (scraper, { signal = null } = {})
   }
 }
 
-// Runs all scrapers sequentially and saves results to MongoDB.
-export const runAll = async ({ stopSignal = null } = {}) => {
-  assertLiveMongoUriConfigured()
-  initializeScraperProxyEnvironment()
-
-  const selected = selectScrapersForRun(buildScrapers())
+// Prepare local recovery state before remote lease acquisition can stop startup.
+export const prepareScraperRun = ({
+  scrapers = buildScrapers(),
+  checkpointFile = process.env.SCRAPER_CHECKPOINT_FILE,
+  runId = process.env.SCRAPER_RUN_ID || process.env.PIPELINE_ID || process.env.GITHUB_RUN_ID,
+} = {}) => {
+  const selected = selectScrapersForRun(scrapers)
   selected.scrapers = isolateDryRunSnapshots(selected.scrapers)
-  const checkpoint = process.env.SCRAPER_CHECKPOINT_FILE
+  const checkpoint = checkpointFile
     ? openRunCheckpoint({
-        filePath: process.env.SCRAPER_CHECKPOINT_FILE,
+        filePath: checkpointFile,
         sources: selected.scrapers.map((scraper) => scraper.name),
         mode: isDryRun ? 'dry-run' : 'live',
         parallel: isParallel,
-        runId: process.env.SCRAPER_RUN_ID,
+        runId,
       })
     : null
   const pendingSourceNames = new Set(
     checkpoint?.pendingSources(selected.scrapers.map((scraper) => scraper.name))
       ?? selected.scrapers.map((scraper) => scraper.name),
   )
-  const scrapers = selected.scrapers.filter((scraper) => pendingSourceNames.has(scraper.name))
-  const resumeMessage = checkpoint && scrapers.length < selected.scrapers.length
-    ? `Checkpoint resume: ${scrapers.length}/${selected.scrapers.length} sources remain.`
+  const pendingScrapers = selected.scrapers.filter((scraper) => pendingSourceNames.has(scraper.name))
+  const resumeMessage = checkpoint && pendingScrapers.length < selected.scrapers.length
+    ? `Checkpoint resume: ${pendingScrapers.length}/${selected.scrapers.length} sources remain.`
     : selected.resumeMessage
   const summary = checkpoint?.completedSummary() || {}
+  return { scrapers: pendingScrapers, checkpoint, summary, resumeMessage }
+}
+
+export const finishStoppedScraperRun = (error, {
+  checkpoint = null, summary = {}, scrapers = null, interruptedBy = null,
+} = {}) => {
+  const stopReason = interruptedBy ? 'interrupted'
+    : error instanceof MongoRunLeaseHeldError ? 'run_lease_held'
+      : isMongoOperationalError(error) ? 'database_unavailable' : 'runner_error'
+  checkpoint?.finish({
+    interruptedBy: interruptedBy || stopReason,
+    error: stopReason === 'run_lease_held' ? error.message : stopReason,
+    persistencePending: Boolean(summary.persistencePending),
+  })
+  const result = summarizeScraperRun(Object.values(summary), { interrupted: true, persistencePending: summary.persistencePending })
+  return {
+    ...result,
+    pendingEstimate: Math.max(result.pendingEstimate, checkpoint?.snapshot().remainingCount ?? scrapers?.length ?? 1),
+    stopReason,
+    retryable: ['run_lease_held', 'database_unavailable', 'interrupted'].includes(stopReason),
+    processingComplete: false,
+    handoffReady: false,
+    checkpointRetained: Boolean(checkpoint && fs.existsSync(checkpoint.filePath)),
+    ...(stopReason === 'run_lease_held' ? {
+      lease: Object.fromEntries(['ownerId', 'runId', 'hostname', 'pid', 'expiresAt'].map(key => [key, error.lease[key] ?? null])),
+      leaseWaitedMs: error.waitedMs ?? 0,
+    } : {}),
+  }
+}
+
+// Runs all scrapers sequentially and saves results to MongoDB.
+export const runAll = async ({ stopSignal = null, preparedRun = null } = {}) => {
+  assertLiveMongoUriConfigured()
+  initializeScraperProxyEnvironment()
+  const { scrapers, checkpoint, summary, resumeMessage } = preparedRun || prepareScraperRun()
   const startTime = Date.now()
   const startedAt = new Date(startTime)
   const lifecycleAttemptId = checkpoint?.snapshot().createdAt || startedAt.toISOString()
@@ -1737,21 +1778,29 @@ const directExecutionModulePath = resolveExecutionPath(fileURLToPath(import.meta
 if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
   const shutdown = installGracefulShutdownHandlers()
   let runLease = null
+  let preparedRun = null
   try {
     // Validate bounded dry-run selection before preparing the database runtime.
     if (String(process.env.SCRAPER_FIRST_N || '').trim()) selectScrapersForRun([], { dryRun: isDryRun })
+    assertLiveMongoUriConfigured()
+    preparedRun = prepareScraperRun()
     if (!isDryRun && !/^(?:0|false|no)$/i.test(String(process.env.SCRAPER_RUN_LEASE || '1'))) {
-      runLease = await retryAfterMongoQuotaRecovery(() => acquireMongoRunLease({
-        runId: process.env.SCRAPER_RUN_ID || null,
-        onLost: (error) => {
-          console.error(`[runner] MongoDB run lease lost: ${error.message}`)
-          shutdown.request('SIGTERM')
-        },
-      }))
+      runLease = await waitForMongoRunLease({
+        waitTimeoutMs: Number(String(process.env.SCRAPER_RUN_LEASE_WAIT_MS || '').trim() || DEFAULT_RUN_LEASE_WAIT_MS),
+        signal: shutdown.signal,
+        onWait: (error, { delayMs }) => console.warn(`[runner] Waiting for live-run lease; retrying in ${delayMs}ms. ${error.message}`),
+        acquire: () => retryAfterMongoQuotaRecovery(() => acquireMongoRunLease({
+          runId: process.env.SCRAPER_RUN_ID || process.env.PIPELINE_ID || process.env.GITHUB_RUN_ID || null,
+          onLost: (error) => {
+            console.error(`[runner] MongoDB run lease lost: ${error.message}`)
+            shutdown.request('SIGTERM')
+          },
+        }), { signal: shutdown.signal }),
+      })
       console.log(`[runner] Acquired exclusive live-run lease (${runLease.ownerId}).`)
     }
 
-    const summary = await runAll({ stopSignal: shutdown.signal })
+    const summary = await runAll({ stopSignal: shutdown.signal, preparedRun })
     const legacyTableData = Object.keys(summary).map((source) => ({
       Source: source,
       Status: summary[source].success ? '✅ OK' : (summary[source].skipped ? '⏭️ Skip' : '❌ Fail'),
@@ -1798,9 +1847,17 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
     if (shutdown.requested) process.exitCode = shutdown.exitCode
     writePipelineSummary(pipelineSummary)
   } catch (err) {
-    if (isMongoOperationalError(err)) {
-      console.warn('[runner] Database unavailable; checkpoint retained for recovery:', err.message)
-      writePipelineSummary({ ...summarizeScraperRun([], { interrupted: true }), pendingEstimate: 1, stopReason: 'database_unavailable' })
+    const stopped = finishStoppedScraperRun(err, { ...preparedRun, interruptedBy: shutdown.signalName })
+    writePipelineSummary(stopped)
+    const recovery = stopped.checkpointRetained ? 'checkpoint saved for recovery' : 'no resumable checkpoint was saved'
+    if (err instanceof MongoRunLeaseHeldError) {
+      console.warn(`[runner] Run lease unavailable; ${recovery}:`, err.message)
+      process.exitCode = err.exitCode
+    } else if (shutdown.requested) {
+      console.warn(`[runner] Startup interrupted; ${recovery}.`)
+      process.exitCode = shutdown.exitCode
+    } else if (isMongoOperationalError(err)) {
+      console.warn(`[runner] Database unavailable; ${recovery}:`, err.message)
       process.exitCode = 0
     } else {
       console.error('Pipeline error:', err)

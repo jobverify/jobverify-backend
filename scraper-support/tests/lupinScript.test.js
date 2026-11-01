@@ -1,3 +1,4 @@
+import {originalHTML,originalOptions,listing,CLOCK} from './helpers/lupinVolvoOriginalFixture.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -208,7 +209,7 @@ test('Lupin scraper keeps the verified first-party India jobs board surface expl
     lupin.buildIndiaJobsUrl(50),
     'https://careers.lupin.com/go/Lupin-India/9891200/50/?q=&sortColumn=referencedate&sortDirection=desc',
   )
-  assert.equal(lupin.VERIFIED_ON, '2026-07-16')
+  assert.equal(lupin.VERIFIED_ON, null)
   assert.equal(lupin.hasOfficialHomepageSignal(officialHomepageHtml), true)
   assert.equal(
     lupin.hasOfficialHomepageSignal(
@@ -239,7 +240,7 @@ test('Lupin scraper keeps the verified first-party India jobs board surface expl
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /verified official India jobs page no longer matches the verified public surface/i,
+    /original HTTP fetchPage required/i,
   )
 })
 
@@ -254,7 +255,7 @@ test('extractSearchResults parses Lupin India listings from the official public 
       city: 'Santacruz',
       country: 'India',
       jobId: '1400152900',
-      requisitionId: '1400152900',
+      requisitionId: null,
       sourceUrl: 'https://careers.lupin.com/job/Santacruz-Manager-Tech-Transfer-%28project-managemen%29-MH/1400152900/',
       postingDate: '2026-07-16',
     },
@@ -264,7 +265,7 @@ test('extractSearchResults parses Lupin India listings from the official public 
       city: 'Sikkim',
       country: 'India',
       jobId: '1399686500',
-      requisitionId: '1399686500',
+      requisitionId: null,
       sourceUrl: 'https://careers.lupin.com/job/Sikkim-Officer-Quality-Control-SK/1399686500/',
       postingDate: '2026-07-15',
     },
@@ -286,136 +287,12 @@ test('extractResultsSummary reads Lupin India pagination totals from the officia
   })
 })
 
-test('extractJobDetail reads Lupin detail pages into normalized Jobverify job fields', async () => {
-  const lupin = await loadLupinModule()
-  const detail = lupin.extractJobDetail(detailPageOfficerHtml, {
-    title: 'Officer -Quality Control',
-    location: 'Sikkim, SK, IN',
-    city: 'Sikkim',
-    country: 'India',
-    jobId: '1399686500',
-    requisitionId: '1399686500',
-    sourceUrl: 'https://careers.lupin.com/job/Sikkim-Officer-Quality-Control-SK/1399686500/',
-    postingDate: '2026-07-15',
-  })
-
-  assert.deepEqual(detail, {
-    title: 'Officer -Quality Control',
-    company: 'Lupin',
-    location: 'Sikkim, SK, IN',
-    city: 'Sikkim',
-    country: 'India',
-    jobId: '1399686500',
-    requisitionId: '1399686500',
-    sourceUrl: 'https://careers.lupin.com/job/Sikkim-Officer-Quality-Control-SK/1399686500/',
-    applyUrl: 'https://careers.lupin.com/talentcommunity/apply/1399686500/?locale=en_US',
-    employmentType: null,
-    experienceRequired: '3-5 years in pharma quality control.',
-    minimumQualification: 'B.Pharm',
-    preferredQualification: 'M.Sc Chemistry preferred.',
-    requiredSkills: ['HPLC', 'Documentation'],
-    postingDate: '2026-07-15',
-    closingDate: null,
-    jobDescription: 'Handle in-process and finished-product quality checks.',
-  })
-})
-
-test('run validates the official Lupin surfaces, paginates the India board, and decorates results from detail pages', async () => {
-  const lupin = await loadLupinModule()
-  const requestedUrls = []
-
-  const jobs = await lupin.createLupinScraper({
-    maxJobs: 3,
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === lupin.HOMEPAGE_URL) return officialHomepageHtml
-      if (url === lupin.CAREERS_URL) return officialCareersHtml
-      if (url === lupin.INDIA_JOBS_URL) return indiaSearchPage1Html
-      if (url === lupin.buildIndiaJobsUrl(25)) return indiaSearchPage2Html
-      if (url === 'https://careers.lupin.com/job/Santacruz-Manager-Tech-Transfer-%28project-managemen%29-MH/1400152900/') {
-        return detailPageManagerHtml
-      }
-      if (url === 'https://careers.lupin.com/job/Sikkim-Officer-Quality-Control-SK/1399686500/') {
-        return detailPageOfficerHtml
-      }
-      if (url === 'https://careers.lupin.com/job/Airoli-Senior-Executive-GPO-MH/1399679300/') {
-        return detailPageGpoHtml
-      }
-
-      throw new Error(`Unexpected Lupin URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    lupin.HOMEPAGE_URL,
-    lupin.CAREERS_URL,
-    lupin.INDIA_JOBS_URL,
-    'https://careers.lupin.com/job/Santacruz-Manager-Tech-Transfer-%28project-managemen%29-MH/1400152900/',
-    'https://careers.lupin.com/job/Sikkim-Officer-Quality-Control-SK/1399686500/',
-    lupin.buildIndiaJobsUrl(25),
-    'https://careers.lupin.com/job/Airoli-Senior-Executive-GPO-MH/1399679300/',
-  ])
-  assert.deepEqual(
-    jobs.map((job) => ({
-      jobId: job.jobId,
-      title: job.title,
-      company: job.company,
-      location: job.location,
-      city: job.city,
-      country: job.country,
-      sourceUrl: job.sourceUrl,
-      applyUrl: job.applyUrl,
-      link: job.link,
-      postingDate: job.postingDate,
-      source: job.source,
-      scrapedAt: job.scrapedAt,
-    })),
-    [
-      {
-        jobId: '1400152900',
-        title: 'Manager - Tech Transfer (project management)',
-        company: 'Lupin',
-        location: 'Santacruz, MH, IN',
-        city: 'Santacruz',
-        country: 'India',
-        sourceUrl: 'https://careers.lupin.com/job/Santacruz-Manager-Tech-Transfer-%28project-managemen%29-MH/1400152900/',
-        applyUrl: 'https://careers.lupin.com/talentcommunity/apply/1400152900/?locale=en_US',
-        link: 'https://careers.lupin.com/talentcommunity/apply/1400152900/?locale=en_US',
-        postingDate: '2026-07-16',
-        source: 'lupin',
-        scrapedAt: FIXED_SCRAPED_AT,
-      },
-      {
-        jobId: '1399686500',
-        title: 'Officer -Quality Control',
-        company: 'Lupin',
-        location: 'Sikkim, SK, IN',
-        city: 'Sikkim',
-        country: 'India',
-        sourceUrl: 'https://careers.lupin.com/job/Sikkim-Officer-Quality-Control-SK/1399686500/',
-        applyUrl: 'https://careers.lupin.com/talentcommunity/apply/1399686500/?locale=en_US',
-        link: 'https://careers.lupin.com/talentcommunity/apply/1399686500/?locale=en_US',
-        postingDate: '2026-07-15',
-        source: 'lupin',
-        scrapedAt: FIXED_SCRAPED_AT,
-      },
-      {
-        jobId: '1399679300',
-        title: 'Senior Executive - GPO',
-        company: 'Lupin',
-        location: 'Airoli, MH, IN',
-        city: 'Airoli',
-        country: 'India',
-        sourceUrl: 'https://careers.lupin.com/job/Airoli-Senior-Executive-GPO-MH/1399679300/',
-        applyUrl: 'https://careers.lupin.com/talentcommunity/apply/1399679300/?locale=en_US',
-        link: 'https://careers.lupin.com/talentcommunity/apply/1399679300/?locale=en_US',
-        postingDate: '2026-07-15',
-        source: 'lupin',
-        scrapedAt: FIXED_SCRAPED_AT,
-      },
-    ],
-  )
-})
+test('extractJobDetail preserves the actual complete own criteria and explicit unknown rankings',async()=>{
+ const lupin=await loadLupinModule(),row=listing('lupin','1416479500'),detail=lupin.extractJobDetail(originalHTML(row.sourceUrl),row,CLOCK);
+ assert.equal(detail.title,'Executive');assert.equal(detail.company,'Lupin');assert.equal(detail.country,'India');assert.equal(detail.requisitionId,null);assert.equal(detail.internalJobId,null);assert.match(detail.jobDescription,/5 to 10 years/);assert.match(detail.jobDescription,/Graduation in Pharmacy/);assert.equal(detail.minimumQualification,null);assert.equal(detail.preferredQualification,null);assert.equal(detail.sourceNativeDetailQualified,true);
+ assert.throws(()=>lupin.extractJobDetail(detailPageOfficerHtml,row,CLOCK),/token|company|tenant/i);
+});
+test('default Lupin run reads all original global pages and details before applying a result cap',async()=>{
+ const lupin=await loadLupinModule(),options=originalOptions('lupin'),jobs=await lupin.createLupinScraper({maxJobs:3}).run(options);
+ assert.equal(jobs.length,3);assert.ok(jobs.every(j=>j.country==='India'&&j.sourceNativeDetailQualified&&j.sourceScopeComplete===false));assert.equal(options.audits[0].observations.length,66);assert.equal(options.records[0].length,66);assert.ok(options.audits[0].observations.some(j=>j.country==='United States'));assert.equal(options.audits[0].nativeCandidateCount,42);assert.equal(options.audits[0].authoritativeIndiaCount,null);
+});

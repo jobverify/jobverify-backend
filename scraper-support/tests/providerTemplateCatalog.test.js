@@ -21,7 +21,9 @@ test('expandApiPortalProviderTemplate hydrates lever providers from a compact te
   assert.equal(provider.config.discovery.listingApiUrl, 'https://api.lever.co/v0/postings/bazaarvoice')
   assert.equal(provider.config.request.query.mode, 'json')
   assert.equal(provider.config.mapping.title, 'text')
-  assert.equal(provider.config.mapping.location, 'categories.location')
+  assert.deepEqual(provider.config.mapping.location, { strategy: 'lever-location' })
+  assert.deepEqual(provider.config.mapping.country, { strategy: 'lever-country' })
+  assert.deepEqual(provider.config.mapping.jobDescription, { strategy: 'lever-description' })
   assert.equal(provider.config.resultFilter.include[0].pattern, 'india|bengaluru|bangalore|hyderabad')
 })
 

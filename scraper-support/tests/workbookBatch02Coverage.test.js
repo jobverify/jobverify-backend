@@ -1,3 +1,4 @@
+import { assertCurrentWorkbookRoute, installWorkbookOfflineGuard } from './helpers/workbookBatchCatalogAssertions20261102.js'
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import test from 'node:test'
@@ -68,28 +69,27 @@ const EXPECTED_NON_SENTINEL_PROVIDERS = {
   },
   allohealth: {
     modulePath: '../../scraper/allohealth/script.js',
-    companyCareerPage: 'https://www.allohealth.com/about',
+    companyCareerPage: 'https://airtable.com/app3JO79fwEz4srgJ/shrD53PpCm2BKq5O9',
     companyDomain: 'allohealth.com',
     atsPlatform: 'official-company-site-no-public-careers',
-    paginationStrategy: 'verified-homepage-plus-about-page-plus-missing-careers-route-and-non-www-alias-validation',
+    paginationStrategy: 'verified-homepage-plus-about-page-plus-team-form-and-missing-careers-route-validation',
     extractionStrategy:
-      'verified-exact-name-homepage+verified-about-page+verified-missing-careers-route-return-empty',
-    verifiedOn: '2026-07-30',
+      'verified-exact-name-homepage+verified-team-intake+verified-about-page+verified-missing-careers-route-return-empty',
+    verifiedOn: '2026-10-03',
     verifiedPublicJobCount: 0,
     verifiedIndiaJobCount: 0,
-    verifiedSurfaceSummaryPattern: /structured healthcare ecosystem/i,
+    verifiedSurfaceSummaryPattern: /general application form/i,
   },
   amberstudent: {
     modulePath: '../../scraper/amberstudent/script.js',
     companyCareerPage: 'https://amberstudent.com/career',
     companyDomain: 'amberstudent.com',
-    atsPlatform: 'smartrecruiters',
-    paginationStrategy: 'official-first-party-page-plus-smartrecruiters-board-and-api',
-    extractionStrategy: 'verified-first-party-careers-page+public-smartrecruiters-board+detail-api+india-filter',
-    verifiedOn: '2026-07-30',
-    verifiedPublicJobCount: 1,
-    verifiedIndiaJobCount: 1,
-    verifiedSurfaceSummaryPattern: /Sales Associate in Pune, Maharashtra, India/i,
+    atsPlatform: 'keka',
+    paginationStrategy: 'complete-public-keka-active-inventory',
+    extractionStrategy: 'verified-first-party-jobs-route+public-bundle-keka-handoff+explicit-india-positives',
+    verifiedOn: '2026-10-03',
+    partialGeography: true,
+    verifiedSurfaceSummaryPattern: /sourceListingComplete:false prevents lifecycle reconciliation while any geography is unknown/i,
   },
   aranca: {
     modulePath: '../../scraper/aranca/script.js',
@@ -355,7 +355,7 @@ test('workbook batch 02 registers the expected providers and the scoped Cibil al
     assert.equal(provider.countryFilter, 'India')
     assert.equal(provider.parser, 'custom-script')
     assert.equal(provider.normalizationProfile, 'engineering-default')
-    assert.match(provider.verifiedSurfaceSummary, new RegExp(provider.companyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+    assert.match(provider.verifiedSurfaceSummary, new RegExp(provider.companyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'))
 
     if (Object.hasOwn(EXPECTED_NON_SENTINEL_PROVIDERS, provider.source)) {
       const expectedProvider = EXPECTED_NON_SENTINEL_PROVIDERS[provider.source]
@@ -366,8 +366,13 @@ test('workbook batch 02 registers the expected providers and the scoped Cibil al
       assert.equal(provider.paginationStrategy, expectedProvider.paginationStrategy)
       assert.equal(provider.extractionStrategy, expectedProvider.extractionStrategy)
       assert.equal(provider.verifiedOn, expectedProvider.verifiedOn)
-      assert.equal(provider.verifiedPublicJobCount, expectedProvider.verifiedPublicJobCount)
-      assert.equal(provider.verifiedIndiaJobCount, expectedProvider.verifiedIndiaJobCount)
+      if (expectedProvider.partialGeography) {
+        assert.ok(Number.isSafeInteger(provider.verifiedPublicJobCount))
+        assert.ok(provider.verifiedIndiaJobCount > 0 && provider.verifiedIndiaJobCount < provider.verifiedPublicJobCount)
+      } else {
+        assert.equal(provider.verifiedPublicJobCount, expectedProvider.verifiedPublicJobCount)
+        assert.equal(provider.verifiedIndiaJobCount, expectedProvider.verifiedIndiaJobCount)
+      }
       assert.match(provider.verifiedSurfaceSummary, expectedProvider.verifiedSurfaceSummaryPattern)
       assert.doesNotMatch(provider.verifiedSurfaceSummary, /exact-name sentinel/i)
       if (provider.source === 'aranca') {
@@ -424,7 +429,8 @@ test('workbook batch 02 expected workbook companies resolve fully from the share
   )
 })
 
-test('workbook batch 02 active sentinel scrapers stay registered in the global catalog and fail closed with zero jobs', async () => {
+test('workbook batch 02 active sentinel scrapers stay registered in the global catalog and fail closed with zero jobs', async (t) => {
+  const forbidden = installWorkbookOfflineGuard(t)
   const scrapers = buildScrapers().filter((scraper) =>
     EXPECTED_ACTIVE_SENTINEL_SOURCES.includes(scraper.name),
   )
@@ -435,9 +441,10 @@ test('workbook batch 02 active sentinel scrapers stay registered in the global c
   )
 
   for (const scraper of scrapers) {
+    await assertCurrentWorkbookRoute(scraper.provider, scraper)
     assert.equal(scraper.provider.modulePath, hydratedScriptModulePathFor(scraper.name))
     assert.equal(scraper.provider.originalModulePath, '../workbookbatch02/failClosedSentinel.js')
     assert.equal(scraper.provider.atsPlatform, 'workbook-exact-name-sentinel')
-    assert.deepEqual(await scraper.run(), [])
+    assert.deepEqual(await scraper.run({ fetchText: forbidden, fetchJson: forbidden, fetchPage: forbidden }), [])
   }
 })

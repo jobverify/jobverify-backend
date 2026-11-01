@@ -46,13 +46,14 @@ test('Nektar AI catalog captures the verified first-party careers redirect and C
   assert.equal(provider.paginationStrategy, 'first-party-careers-redirect-plus-coda-surface-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-coda-handoff+explicit-current-empty-statement-required',
+    'verified-first-party-coda-handoff+no-public-listings-discovery-only-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.verifiedOn, '2026-09-13')
   assert.match(provider.verifiedSurfaceSummary, /September 13, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /culture and contact copy/i)
+  assert.match(provider.verifiedSurfaceSummary, /discovery-only evidence, not an authoritative empty-opening statement/i)
   assert.match(provider.verifiedSurfaceSummary, /docs\.superhuman\.com/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /nektarai[\\/]jobs\.json$/i)

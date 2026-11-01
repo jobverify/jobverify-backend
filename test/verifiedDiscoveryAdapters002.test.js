@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
+import { fileURLToPath } from 'node:url'
+import { createPublishingGapAtsScraper } from '../scraper-support/utils/publishingGapAts.js'
 import test from 'node:test'
 import { getScraperCatalog, createCatalogScraper } from '../scraper-support/providers/index.js'
 import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 
-const expected = { aspentechnology: ['workday', 'aspentech'], assembled: ['publicAts', 'assembledhq'], assemblyai: ['publicAts', 'assemblyai'] }
+const expected = { aspentechnology: ['workday', 'aspentech'], assembled: ['publicAts', 'assembledhq'], assemblyai: ['script', 'assemblyai'] }
 const providerFor = source => getScraperCatalog().find(row => row.source === source)
 
 test('batch 002 replaces only three exact source sentinels without duplicate boards', () => {
@@ -20,6 +22,18 @@ test('batch 002 replaces only three exact source sentinels without duplicate boa
     } else {
       assert.equal(rows[0].boardToken, token)
       assert.equal(catalog.filter(row => row.adapter === adapter && row.atsPlatform === rows[0].atsPlatform && row.boardToken === token).length, 1)
+      if (adapter === 'script') {
+        assert.equal(rows[0].modulePath, fileURLToPath(new URL('../scraper/assemblyai/currentNative.js', import.meta.url)))
+        assert.equal(rows[0].sourceScopeComplete, false)
+        assert.equal(rows[0].zeroResultPolicy, 'evidence-required')
+        // A source-review date and an older handoff capture do not approve whole-source inventory.
+        assert.equal(rows[0].verifiedOn, '2026-10-30')
+        assert.equal(rows[0].bindingEvidence.checkedAt, '2026-10-20T19:33:54.950Z')
+        assert.equal(rows[0].verifiedAt, null)
+        assert.equal(rows[0].verifiedInventoryStatus, 'unverified')
+        assert.equal(rows[0].verifiedPublicJobCount, null)
+        assert.equal(rows[0].verifiedIndiaJobCount, null)
+      }
     }
   }
 })
@@ -40,9 +54,11 @@ test('batch 002 binds exact hashed official HTTP captures without asserting runt
 })
 
 for (const source of ['assembled', 'assemblyai']) {
-  test(`${source} uses exact native board and excludes generic Remote from India`, async () => {
+  test(source === 'assemblyai' ? 'assemblyai generic API-model compatibility uses the configured board and excludes generic Remote from India' : `${source} uses exact native board and excludes generic Remote from India`, async () => {
     const provider = providerFor(source)
-    const jobs = await createCatalogScraper(provider).run({ fetchJson: async url => {
+    // AssemblyAI payloads below remain generic active API-model controls, not current native admission.
+    const scraper = source === 'assemblyai' ? createPublishingGapAtsScraper(provider) : createCatalogScraper(provider)
+    const jobs = await scraper.run({ fetchJson: async url => {
       assert.equal(url, source === 'assembled' ? 'https://api.ashbyhq.com/posting-api/job-board/assembledhq' : 'https://boards-api.greenhouse.io/v1/boards/assemblyai/jobs?content=true')
       const records = ['Remote', 'Bengaluru, India'].map((location, index) => source === 'assembled' ? {
         id: `role-${index}`, title: 'Software Engineer', location, isListed: true,
@@ -62,6 +78,13 @@ for (const source of ['assembled', 'assemblyai']) {
   })
 }
 
+test('assemblyai current registered native runtime rejects parsed-only injection before reading a feed', async () => {
+  let reads = 0
+  await assert.rejects(createCatalogScraper(providerFor('assemblyai')).run({
+    fetchJson: async () => { reads++; assert.fail('Parsed-only controls cannot supply current native HTTP provenance') },
+  }), /body-only or legacy transport unsupported; observed HTTP fetchImpl required/)
+  assert.equal(reads, 0)
+})
 test('AspenTech enumerates its native board without inventing an absent country facet', async t => {
   let calls = 0
   t.mock.method(globalThis, 'fetch', async (url, options = {}) => {

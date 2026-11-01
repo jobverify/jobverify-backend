@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { installWorkbookOfflineGuard } from './helpers/workbookBatchCatalogAssertions20261102.js'
+
+test.beforeEach((t) => installWorkbookOfflineGuard(t))
+
 
 const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
 
@@ -30,6 +34,7 @@ const nuventoIndiaCareersHtml = `
   </head>
   <body>
     <h2>Nuvento - India</h2>
+    <h2>Build your Career with Nuvento</h2>
     <p>For all the enquiries and resume submission please email to naseeba.parvin@nuvento.com</p>
     <p>anindita.ghosal@nuvento.com</p>
 

@@ -15,7 +15,7 @@ const proof = () => ({ source: 'auth0', verifiedAt: packets[1].capturedAt,
   sources: ['okta'], preservesChildSourceAndCompany: true,
   evidence: { method: 'official-careers-redirect', url: packets[0].url,
     responses: packets.map(p => ({ url: p.url, finalUrl: p.finalUrl, status: p.status, sha256: p.sha256 })) } })
-const report = (evidence = proof(), changeAttempt = x => x) => buildPublishingGapReport({ catalog, now,
+const report = (evidence = proof(), changeAttempt = x => x, selectedCatalog = catalog) => buildPublishingGapReport({ catalog: selectedCatalog, now,
   runtime: { databaseAvailable: true, generatedAt: now.toISOString(), publicCompanyNames: ['Okta'],
     inventory: [{ source: 'auth0', savedJobs: 0, visibleJobs: 0, visibleCompanies: [] },
       { source: 'okta', savedJobs: 3, visibleJobs: 3, visibleCompanies: ['Okta'] }],
@@ -43,6 +43,46 @@ test('fresh completed-attempt relationship proof supersedes an expired catalog d
   assert.equal(wrapper(result).visibleJobs, 0)
   assert.equal(result.rows.find(r => r.source === 'okta').visibleJobs, 3)
   assert.equal(result.summary.distinctVisibleCompanies, 1)
+  assert.equal(wrapper(result).gapExplanation, 'delegated-inventory-published-under-other-sources')
+  const backlog = result.backlog.find(row => row.source === 'auth0')
+  assert.equal(backlog.reason, 'reconcile-delegated-source-coverage')
+  assert.equal(backlog.priority, 3)
+  assert.equal(backlog.discoveryRequired, false)
+})
+
+test('a current failed production attempt remains visible despite valid relationship proof', () => {
+  const value = report(proof(), attempt => ({ ...attempt, success: false, failureKind: 'network_or_timeout' }))
+  assert.equal(wrapper(value).gapExplanation, 'latest-persisted-check-failed')
+})
+
+for (const independentDeclaration of [false, true]) {
+  for (const [label, changes] of [
+    ['coverage gap', { success: false, softFailure: true, failureKind: 'coverage_gap' }],
+    ['partial positive', { success: false, partial: true, failureKind: 'partial_positive' }],
+  ]) test(`${label} cannot hide behind delegated publication with ${independentDeclaration ? 'fresh' : 'expired'} independent catalog evidence`, () => {
+    const selectedCatalog = independentDeclaration ? catalog.map(row => row.source === 'auth0'
+      ? { ...row, inventoryDelegation: { ...row.inventoryDelegation, verifiedAt: packets[1].capturedAt } } : row) : catalog
+    const value = report(proof(), attempt => ({ ...attempt, ...changes }), selectedCatalog)
+    const row = wrapper(value)
+    assert.equal(row.gapExplanation, 'latest-persisted-check-incomplete')
+    assert.equal(row.attemptSuccessful, false)
+    const backlog = value.backlog.find(row => row.source === 'auth0')
+    assert.notEqual(backlog.reason, 'reconcile-delegated-source-coverage')
+    assert.notEqual(backlog.priority, 3)
+    assert.equal(row.inventoryDelegation.evidenceOrigin, 'catalog-declaration')
+    assert.equal(row.inventoryDelegation.fresh, independentDeclaration)
+    assert.equal(value.rows.find(row => row.source === 'okta').visibleJobs, 3)
+  })
+}
+
+test('future-dated completion cannot refresh expired catalog relationship evidence', () => {
+  const value = report(proof(), attempt => ({ ...attempt, completedAt: '2099-01-01T00:00:00Z' }))
+  const row = wrapper(value)
+  assert.equal(row.attemptFresh, false)
+  assert.equal(row.inventoryDelegation.evidenceOrigin, 'catalog-declaration')
+  assert.equal(row.inventoryDelegation.fresh, false)
+  assert.notEqual(row.gapExplanation, 'delegated-inventory-published-under-other-sources')
+  assert.equal(value.rows.find(row => row.source === 'okta').visibleJobs, 3)
 })
 
 for (const [label, change] of [
@@ -65,6 +105,7 @@ for (const [label, change] of [
   const candidate = proof();change(candidate)
   assert.equal(wrapper(report(candidate)).inventoryDelegation.evidenceFresh, false)
   assert.equal(wrapper(report(candidate)).inventoryDelegation.fresh, false)
+  assert.notEqual(wrapper(report(candidate)).gapExplanation, 'delegated-inventory-published-under-other-sources')
 })
 
 test('relationship evidence does not create a live public-inventory snapshot or company-empty proof', () => {

@@ -9,7 +9,7 @@ test('Lendingkart is registered as a verified Darwinbox script provider', () => 
   assert.ok(provider, 'Expected Lendingkart provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Lendingkart')
-  assert.equal(provider.companyCareerPage, 'https://www.lendingkart.com/job/')
+  assert.equal(provider.companyCareerPage, 'https://www.lendingkart.com/job')
   assert.equal(provider.officialCareersPage, 'https://www.lendingkart.com/careers/')
   assert.equal(provider.darwinboxOrigin, 'https://hrlendingkart.darwinbox.in')
   assert.equal(provider.darwinboxCompanyId, 'main')
@@ -23,11 +23,14 @@ test('Lendingkart is registered as a verified Darwinbox script provider', () => 
   )
   assert.equal(provider.atsPlatform, 'darwinbox')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'browser-session-darwinbox-pagination')
+  assert.equal(provider.paginationStrategy, 'complete-native-public-pagination-with-total-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+public-job-listing-page+darwinbox-jobdetail-links+browser-session-darwinbox-pagination',
+    'verified-official-handoff+complete-public-darwinbox-inventory',
   )
+  assert.equal(provider.bindingEvidence.verified, true)
+  assert.equal(provider.bindingEvidence.officialURL, provider.companyCareerPage)
+  assert.equal(provider.bindingEvidence.inventorySurface, 'https://hrlendingkart.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'lendingkart.com')
   assert.equal(provider.verifiedOn, '2026-08-07')
@@ -45,6 +48,6 @@ test('Lendingkart is runnable through the shared scraper catalog', () => {
   assert.ok(scraper, 'Expected buildScrapers() to return the Lendingkart scraper')
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'lendingkart')
-  assert.equal(scraper.provider.companyCareerPage, 'https://www.lendingkart.com/job/')
+  assert.equal(scraper.provider.companyCareerPage, 'https://www.lendingkart.com/job')
   assert.match(scraper.dryRunFile, /lendingkart[\\/]jobs\.json$/i)
 })

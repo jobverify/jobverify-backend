@@ -12,6 +12,21 @@ node_modules
 /scraper-support/tests/fixtures/hashicorp/*
 !/scraper-support/tests/fixtures/hashicorp/hashicorp-india-search.json
 
+# Keep the exact historical source archives required by publishing-proof tests.
+!/test/fixtures/
+/test/fixtures/*
+!/test/fixtures/aeriesPartial/
+/test/fixtures/aeriesPartial/*
+!/test/fixtures/aeriesPartial/reviewed-publishableJobMetrics-7ebb487d0.js.gz
+!/test/fixtures/bostonScientificPartial/
+/test/fixtures/bostonScientificPartial/*
+!/test/fixtures/bostonScientificPartial/reviewed-apiPortalTemplates.js.gz
+!/test/fixtures/eInfochipsPartial/
+/test/fixtures/eInfochipsPartial/*
+!/test/fixtures/eInfochipsPartial/reviewed-jobFilterSignals-7ebb487d0.js.gz
+!/test/fixtures/eInfochipsPartial/reviewed-workday-detail-7ebb487d0.js.gz
+!/test/fixtures/eInfochipsPartial/reviewed-workday-engine-7ebb487d0.js.gz
+
 # Environment
 .env
 .env.*

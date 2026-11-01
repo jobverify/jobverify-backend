@@ -7,20 +7,27 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Tata Electronics as a SuccessFactors jobs2web script provider', () => {
+test('Tata Electronics catalog exposes native public discovery while retaining incomplete source scope', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'tataelectronics')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'TATA Electronics Private Limited')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'successfactors')
-  assert.equal(provider.companyCareerPage, 'https://careers.tataelectronics.com/')
+  assert.equal(provider.atsPlatform, 'successfactors-public-native-get')
+  assert.equal(provider.companyCareerPage, 'https://www.tataelectronics.com/work-with-us')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'startrow-query')
-  assert.equal(provider.extractionStrategy, 'successfactors-search-page+detail-pages')
-  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.paginationStrategy, 'corporate-published-native-public-get')
+  assert.equal(provider.extractionStrategy, 'all-country-native-listings-and-complete-own-models-before-caps')
+  assert.equal(provider.parser, 'tataelectronics-native-public-get')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'careers.tataelectronics.com')
+  assert.equal(provider.companyDomain, 'tataelectronics.com')
+  assert.equal(provider.backfillMode, 'discovery-only')
+  assert.equal(provider.zeroResultPolicy, 'coverage-gap')
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
+  assert.equal(provider.verifiedInventoryStatus, 'unverified')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
   assert.match(provider.modulePath, /tataelectronics[\\/]script\.js$/i)
 })
 

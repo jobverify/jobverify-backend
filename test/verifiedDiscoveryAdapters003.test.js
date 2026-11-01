@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
+import { createPublishingGapAtsScraper } from '../scraper-support/utils/publishingGapAts.js'
 import test from 'node:test'
 import { getScraperCatalog, createCatalogScraper } from '../scraper-support/providers/index.js'
 import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
@@ -65,8 +66,11 @@ test('batch 003 hashes current corporate proof chains and keeps runtime counts u
 })
 
 for (const source of ['ataccama', 'automox']) {
-  test(`${source} preserves native descriptions and excludes generic or US Remote`, async () => {
-    const jobs = await createCatalogScraper(providerFor(source)).run({ fetchJson: async url => {
+  test(source === 'automox' ? 'automox generic API-model compatibility preserves descriptions and excludes generic or US Remote' : `${source} preserves native descriptions and excludes generic or US Remote`, async () => {
+    // Automox payloads below model the active generic API mapper; employer provenance is separate.
+    const provider = providerFor(source)
+    const scraper = source === 'automox' ? createPublishingGapAtsScraper(provider) : createCatalogScraper(provider)
+    const jobs = await scraper.run({ fetchJson: async url => {
       assert.equal(url, source === 'ataccama' ? 'https://api.lever.co/v0/postings/ataccama?mode=json'
         : 'https://boards-api.greenhouse.io/v1/boards/automox/jobs?content=true')
       const rows = ['Remote', 'Remote, United States', 'Pune, India'].map((location, index) => source === 'ataccama'
@@ -88,6 +92,21 @@ for (const source of ['ataccama', 'automox']) {
   })
 }
 
+test('automox current registered runtime requires employer provenance before parsed-only feed access', async () => {
+  const provider = providerFor('automox'), reason = Object.freeze(new Error('Current employer packet was not supplied'))
+  const pageCalls = []; let feedCalls = 0
+  await assert.rejects(createCatalogScraper(provider).run({
+    fetchPage: async url => { pageCalls.push(url); throw reason },
+    fetchJson: async () => { feedCalls++; assert.fail('An unqualified employer surface cannot authorize native feed access') },
+  }), error => error === reason)
+  assert.deepEqual(pageCalls, [provider.companyCareerPage])
+  assert.equal(feedCalls, 0)
+  assert.equal(provider.runtimeInventoryVerification.mode, 'role-links-exact')
+  assert.equal(provider.runtimeInventoryVerification.boardUrl, 'https://job-boards.greenhouse.io/automox')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.verifiedAt, null)
+})
 test('Workday geography config follows the observed native country facets', () => {
   assert.equal(providerFor('aurecon').locationCountry, null)
   const config = JSON.parse(readFileSync(new URL('../scraper/aurecon.workday/config.json', import.meta.url)))

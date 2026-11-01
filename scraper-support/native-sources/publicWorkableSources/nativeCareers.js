@@ -52,7 +52,7 @@ export const createPublicWorkableSource=(profile,defaults={})=>({name:profile.so
  }
  const phases=[]
  for(const phaseName of ['opening','closing']){
-  const phase={name:phaseName,issues:[],records:[],listingRows:[],markdownRows:[],originalPrimaryPages:[],employerBindingQualified:false,companyDeclaredHandoff:false,selectedCollectionComplete:true};phases.push(phase)
+  const phase={name:phaseName,issues:[],records:[],listingRows:[],markdownRows:[],originalPrimaryPages:[],employerBindingQualified:false,companyDeclaredHandoff:false,listingReadQualified:false,markdownReadQualified:false,selectedCollectionComplete:true};phases.push(phase)
   const protect=async(label,fn)=>{try{return await fn()}catch(error){signal?.throwIfAborted();phase.issues.push(label+': '+error.message);return null}}
   let companyHandoff=false,accountGood=false,boardGood=false
   for(const url of profile.primaryURLs)await protect('company primary',async()=>{
@@ -69,10 +69,10 @@ export const createPublicWorkableSource=(profile,defaults={})=>({name:profile.so
    const page=await follow(u.collection);phase.originalCollectionResponse=page;ensure(original(page),'original collection unavailable');const model=io.json(page);phase.originalCollection=model
    ensure(model&&model.name===profile.companyName&&Array.isArray(model.jobs)&&!model.error&&model.success!==false&&model.ok!==false&&model.status!=='error','invalid public collection/error envelope');return model.jobs
   })
-  phase.listingRows=collection||[];phase.listingRowCount=phase.listingRows.length
+  phase.listingReadQualified=collection!==null;phase.listingRows=collection||[];phase.listingRowCount=phase.listingRows.length
   if(!collection)phase.selectedCollectionComplete=false
-  if(profile.markdownURL){const rows=await protect('markdown collection',async()=>{const page=await follow(profile.markdownURL);phase.originalMarkdownCollection=page;ensure(original(page),'original markdown collection unavailable');return markdownRows(profile,page.originalText)});phase.markdownRows=rows||[];if(!rows)phase.selectedCollectionComplete=false}
-  const groups=new Map(),mdByID=new Map(phase.markdownRows.map(r=>[r.id,r]))
+  if(profile.markdownURL){const parsed=await protect('markdown collection',async()=>{const page=await follow(profile.markdownURL);phase.originalMarkdownCollection=page;ensure(original(page),'original markdown collection unavailable');return markdownRows(profile,page.originalText)});phase.markdownRows=parsed?.rows||[];phase.markdownPeerIssues=parsed?.issues||[];phase.markdownReadQualified=parsed!==null;if(!parsed||parsed.issues.length)phase.selectedCollectionComplete=false;phase.issues.push(...phase.markdownPeerIssues.map(i=>i.kind+(i.id?': '+i.id:'')))}
+  const groups=new Map(),mdByID=new Map();for(const row of phase.markdownRows)if(!mdByID.has(row.id))mdByID.set(row.id,row)
   for(const row of phase.listingRows){
    if(!row||typeof row!=='object'||Array.isArray(row)||!codeValid(row.shortcode)){phase.issues.push('malformed native listing peer');phase.selectedCollectionComplete=false;continue}
    if(!groups.has(row.shortcode))groups.set(row.shortcode,[]);groups.get(row.shortcode).push(row)
@@ -81,7 +81,7 @@ export const createPublicWorkableSource=(profile,defaults={})=>({name:profile.so
   if(profile.markdownURL)for(const id of groups.keys())if(!mdByID.has(id)){phase.selectedCollectionComplete=false;phase.issues.push('widget-only-native-post: '+id)}
   await parallel([...groups],async([id,variants])=>{
    const urls=publicURLs(profile,id),md=mdByID.get(id),row={id,listingVariants:variants,originalNative:null,originalOwnHTML:null,originalOwnAPIResponse:null,originalOwnMarkdown:null,
-    markdownDeclaration:md??null,ownPairQualified:false,issues:[],requisitionId:null,fieldProvenance:{publication:'native.published+listing.published_on',geography:'native.locations; hidden visibility retained',criteria:'native.description+requirements+benefits; original listing/markdown retained',salary:'native.salary_*; original own markdown corroboration',identity:'native.accountUid+shortcode+published own redirect/canonical/title',employerJobCode:'native.code; not a requisition ID'}}
+    markdownDeclaration:md??null,markdownDeclarations:phase.markdownRows.filter(r=>r.id===id),ownPairQualified:false,issues:[],requisitionId:null,fieldProvenance:{publication:'native.published+listing.published_on',geography:'native.locations; hidden visibility retained',criteria:'native.description+requirements+benefits; original listing/markdown retained',salary:'native.salary_*; original own markdown corroboration',identity:'native.accountUid+shortcode+published own redirect/canonical/title',employerJobCode:'native.code; not a requisition ID'}}
    phase.records.push(row)
    for(const url of [urls.generic,urls.own,urls.own+'/',urls.ownAPI,...(md?[md.url]:[])])allowedURLs.add(url)
    try{
@@ -106,7 +106,7 @@ export const createPublicWorkableSource=(profile,defaults={})=>({name:profile.so
  }
  const observations=[...merged.values()]
  for(const row of observations){
-  if(phases.some(p=>p.selectedCollectionComplete&&!p.records.some(r=>r.id===row.id))){row.stableAcrossPhases=false;row.issues.push('native-post-missing-from-complete-phase')}
+  if(phases.some(p=>(p.listingReadQualified||p.markdownReadQualified)&&!p.records.some(r=>r.id===row.id))){row.stableAcrossPhases=false;row.issues.push('native-post-missing-from-complete-phase')}
   row.employerBindingQualified=employerBindingQualified;row.discoveryQualified=employerBindingQualified&&row.ownPairQualified&&row.stableAcrossPhases
   row.countrySelected=profile.countryFilter==='Global'||row.geography.countries.includes('India')||row.geography.unresolved
   row.candidateEligible=row.discoveryQualified&&row.countrySelected}

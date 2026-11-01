@@ -1,63 +1,58 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createCatalogScraper, getScraperCatalog } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { PROVIDER_METADATA } from '../../scraper/valgenesis/script.js'
 
-const careersHtml = `
-  <html>
-    <head><title>Careers - ValGenesis</title></head>
-    <body>
-      <h1>Careers</h1>
-      <h2>Join the team, we're hiring!</h2>
-      <p>Enough about us. We're looking forward to meeting you!</p>
-      <p>Santa Clara | Toronto | Lisbon | Schiphol | Chennai | Bengaluru | Hyderabad</p>
-    </body>
-  </html>
-`
-
-const loadProviderModule = async () => {
-  try {
-    return await import('../../scraper/valgenesis/provider.js')
-  } catch {
-    assert.fail('Expected ValGenesis provider module at ../../scraper/valgenesis/provider.js')
-  }
+const nativeRole = (id, location, country) => ({
+  id, text: 'Software Engineer', country, categories: { location },
+  hostedUrl: 'https://jobs.lever.co/valgenesis/' + id,
+  applyUrl: 'https://jobs.lever.co/valgenesis/' + id + '/apply',
+  descriptionPlain: 'Build reliable validation services.',
+})
+const provider = getScraperCatalog().find(item => item.source === 'valgenesis')
+const getScraper = (t) => {
+  t.mock.method(globalThis, 'fetch', async () => assert.fail('ValGenesis tests require controlled native transport'))
+  return createCatalogScraper(provider)
 }
 
-const loadScriptModule = async () => {
-  try {
-    return await import('../../scraper/valgenesis/script.js')
-  } catch {
-    assert.fail('Expected ValGenesis scraper module at ../../scraper/valgenesis/script.js')
-  }
-}
-
-test('ValGenesis exports a fail-closed local provider for the official careers page without a trustworthy public jobs feed', async () => {
-  const providerModule = await loadProviderModule()
-  const scriptModule = await loadScriptModule()
-
-  assert.equal(providerModule.provider.source, 'valgenesis')
-  assert.equal(providerModule.provider.companyName, 'ValGenesis')
-  assert.equal(providerModule.provider.adapter, 'script')
-  assert.equal(providerModule.provider.companyCareerPage, 'https://www.valgenesis.com/careers')
-  assert.equal(providerModule.provider.atsPlatform, 'official-company-site-no-public-jobs-feed')
-  assert.equal(providerModule.provider.countryFilter, 'India')
-  assert.equal(providerModule.provider.verifiedOn, '2026-07-18')
-  assert.match(providerModule.provider.verifiedSurfaceSummary, /Join the team, we're hiring!/i)
-  assert.match(providerModule.provider.verifiedSurfaceSummary, /no trustworthy public jobs feed/i)
-  assert.deepEqual(scriptModule.PROVIDER_METADATA, providerModule.provider)
+test('ValGenesis catalog selects its verified native Lever source instead of the historical sentinel', () => {
+  assert.ok(provider)
+  assert.equal(provider.companyName, 'ValGenesis')
+  assert.equal(provider.companyCareerPage, 'https://www.valgenesis.com/careers')
+  assert.equal(provider.atsPlatform, 'lever')
+  assert.equal(provider.boardToken, 'valgenesis')
+  assert.equal(provider.bindingEvidence.verified, true)
+  assert.equal(PROVIDER_METADATA.source, provider.source)
+  assert.equal(PROVIDER_METADATA.atsPlatform, provider.atsPlatform)
+  assert.equal(PROVIDER_METADATA.boardToken, provider.boardToken)
 })
 
-test('ValGenesis sentinel accepts the verified careers marketing page and returns no jobs', async () => {
-  const valGenesis = await loadScriptModule()
+test('ValGenesis registered source maps native India roles and excludes foreign roles', async (t) => {
+  const requests = []
+  const jobs = await getScraper(t).run({ fetchJson: async url => {
+    requests.push(url)
+    return [nativeRole('india-role', 'Bengaluru, India', 'IN'), nativeRole('foreign-role', 'Boston, United States', 'US')]
+  } })
+  assert.deepEqual(requests, ['https://api.lever.co/v0/postings/valgenesis?mode=json'])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].company, 'ValGenesis')
+  assert.equal(jobs[0].source, 'valgenesis')
+  assert.equal(jobs[0].applyUrl, 'https://jobs.lever.co/valgenesis/india-role/apply')
+  assert.match(jobs[0].jobDescription, /reliable validation services/)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 2)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 1)
+})
 
-  assert.equal(valGenesis.hasVerifiedValGenesisCareersSignal(careersHtml), true)
-  assert.equal(valGenesis.hasPublicJobOpeningSignal(careersHtml), false)
-
-  const jobs = await valGenesis.createValGenesisScraper().run({
-    fetchPage: async () => ({
-      status: 200,
-      url: 'https://www.valgenesis.com/careers',
-      html: careersHtml,
-    }),
-  })
-
+test('ValGenesis empty inventory requires a complete native response', async (t) => {
+  const jobs = await getScraper(t).run({ fetchJson: async () => [] })
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+})
+
+test('ValGenesis native errors cannot become an empty success', async (t) => {
+  const scraper = getScraper(t)
+  await assert.rejects(scraper.run({ fetchJson: async () => { throw new Error('HTTP 503') } }), /HTTP 503/)
+  await assert.rejects(scraper.run({ fetchJson: async () => ({ error: 'unavailable' }) }), /inventory/i)
 })

@@ -86,20 +86,20 @@ const detailHtml = `
 </html>
 `
 
-test('extractSearchResults keeps only India-facing CARIAD search rows from the public jobs host', async () => {
+test('parsed CARIAD rows retain both countries and never invent native requisitions from public IDs', async () => {
   const cariad = await loadCariadModule()
   assert.ok(cariad)
 
   const results = cariad.extractSearchResults(searchHtml)
 
-  assert.equal(results.length, 1)
+  assert.equal(results.length, 2)
   assert.deepEqual(results[0], {
     title: 'Software Engineer',
     department: 'Engineering',
     location: 'Bengaluru, IN, 560001',
     city: 'Bengaluru',
     jobId: '1400000000',
-    requisitionId: '1400000000',
+    requisitionId: null,
     sourceUrl: 'https://jobs.volkswagen-group.com/cariad/job/Bengaluru-Software-Engineer-560001/1400000000/',
     postingDate: 'Jul 1, 2026',
   })
@@ -125,7 +125,7 @@ test('extractJobDetail maps CARIAD SuccessFactors detail pages into shared scrap
     location: 'Bengaluru, IN, 560001',
     city: 'Bengaluru',
     jobId: '1400000000',
-    requisitionId: '1400000000',
+    requisitionId: null,
     employmentType: null,
     experienceRequired: null,
     jobDescription: 'Build connected vehicle platforms for CARIAD India. - Design backend services. - Collaborate with product teams.',
@@ -142,39 +142,8 @@ test('extractJobDetail maps CARIAD SuccessFactors detail pages into shared scrap
   })
 })
 
-test('run fetches CARIAD search results, skips non-India rows, and decorates shared runner fields', async () => {
+test('CARIAD native execution refuses parsed-only legacy transport instead of claiming current original HTTP proof', async () => {
   const cariad = await loadCariadModule()
   assert.ok(cariad)
-
-  const requestedUrls = []
-  const scraper = cariad.createCariadScraper()
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === cariad.buildSearchUrl()) return searchHtml
-      if (url === 'https://jobs.volkswagen-group.com/cariad/job/Bengaluru-Software-Engineer-560001/1400000000/') {
-        return detailHtml
-      }
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(
-    requestedUrls,
-    [
-      'https://jobs.volkswagen-group.com/cariad/search/?createNewAlert=false&q=&locationsearch=&optionsFacetsDD_country=&optionsFacetsDD_department=&optionsFacetsDD_shifttype=&locale=en_US',
-      'https://jobs.volkswagen-group.com/cariad/job/Bengaluru-Software-Engineer-560001/1400000000/',
-    ],
-  )
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].company, 'CARIAD')
-  assert.equal(jobs[0].source, 'cariad')
-  assert.equal(jobs[0].department, 'Engineering')
-  assert.equal(jobs[0].city, 'Bengaluru')
-  assert.equal(
-    jobs[0].link,
-    'https://jobs.volkswagen-group.com/talentcommunity/apply/1400000000/?locale=en_US',
-  )
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
+  await assert.rejects(cariad.createCariadScraper().run({fetchText: async () => searchHtml}), /original|fetchPage/i)
 })

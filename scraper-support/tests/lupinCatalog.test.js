@@ -25,7 +25,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Lupin local catalog captures the verified first-party India jobs board surface', async () => {
+test('Lupin historical local descriptor preserves its original declared surface', async () => {
   const { LUPIN_CATALOG } = await loadCatalogModule()
   const lupin = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(LUPIN_CATALOG)
@@ -70,6 +70,9 @@ test('Lupin local catalog captures the verified first-party India jobs board sur
 
   assert.equal(lupin.PROVIDER_METADATA.source, provider.source)
   assert.equal(lupin.PROVIDER_METADATA.indiaJobsPageUrl, LUPIN_CATALOG.indiaJobsPageUrl)
+  assert.equal(lupin.PROVIDER_METADATA.verifiedPublicJobCount,null)
+  assert.equal(lupin.PROVIDER_METADATA.verifiedOn,null)
+  assert.equal(lupin.PROVIDER_METADATA.sourceScopeComplete,false)
 })
 
 test('Lupin exact-name backlog rows resolve directly from local provider metadata without aliases', async () => {

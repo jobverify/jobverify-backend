@@ -967,7 +967,7 @@ test('enrichJobWithPublicExperience prefers hosted job-detail apply pages over g
     useBrowserFallback: false,
   })
 
-  assert.equal(enriched.experienceRequired, '5 years')
+  assert.equal(enriched.experienceRequired, '5 - 10 years')
   assert.notEqual(enriched.sourceExperienceRequired, '10 years')
   assert.match(enriched.jobDescription || '', /account management/i)
 })

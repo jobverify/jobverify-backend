@@ -156,7 +156,8 @@ test('QuadEye helper exports stay pinned to the verified official careers page, 
   assert.equal(quadeye.SOURCE, 'quadeye')
   assert.equal(quadeye.COMPANY, 'QuadEye')
   assert.equal(quadeye.OFFICIAL_BRAND_NAME, 'Quadeye')
-  assert.equal(quadeye.VERIFIED_ON, '2026-09-13')
+  assert.match(quadeye.VERIFIED_ON, /^\d{4}-\d{2}-\d{2}$/)
+  assert.equal(quadeye.VERIFIED_ON, quadeye.PROVIDER_METADATA.verifiedOn)
   assert.equal(quadeye.HOMEPAGE_URL, 'https://www.quadeye.com/')
   assert.equal(quadeye.CAREERS_PAGE_URL, 'https://www.quadeye.com/careers/')
   assert.equal(quadeye.CAREERS_PORTAL_URL, 'https://quadeye.zohorecruit.in/jobs/Careers/')
@@ -264,6 +265,10 @@ test('QuadEye run validates the verified first-party page, public portal, API, a
       closingDate: null,
       jobDescription: 'Build and enhance in-house web applications used in high-paced trading environments.',
       remoteStatus: 'On-site',
+      sourceScopeComplete: false,
+      sourceListingComplete: false,
+      sourceGlobalJobCount: null,
+      sourceIndiaJobCount: null,
       scrapedAt: '2026-08-04T09:30:00.000Z',
     },
   ])

@@ -3,6 +3,7 @@ import { buildMissingSourceDescriptionFilter } from './jobSourceContent.js';
 import { buildPublicJobLifecycleDateScope } from './publicJobLocationScope.js';
 import { applyPublicJobVisibility } from './publicJobVisibility.js';
 import { PUBLIC_JOB_TYPE_EXPRESSION } from './publicJobType.js';
+import { PUBLIC_JOB_TYPES } from './publicJobTypeLabel.js';
 
 export const MAX_PUBLICATION_DIAGNOSTIC_JOBS = 5000;
 
@@ -17,6 +18,7 @@ export function buildPublicationDiagnosticPipeline({ sources, siteSettings = {},
   const checks = {
     inactive: { status: 'active' },
     outside_india_scope: { isPublicIndia: true },
+    unclassified_job_type: { $expr: { $in: [PUBLIC_JOB_TYPE_EXPRESSION, PUBLIC_JOB_TYPES] } },
     missing_source_description: { $nor: [buildMissingSourceDescriptionFilter()] },
     aggregate_hiring_signal: { $nor: [buildAggregateHiringSignalFilter()] },
     outside_publication_window_or_closed: buildPublicJobLifecycleDateScope(now),
@@ -35,6 +37,7 @@ export function buildPublicationDiagnosticPipeline({ sources, siteSettings = {},
       jobs: [{ $project: {
         source: 1, title: 1, company: 1, jobId: 1, sourceUrl: 1, applyUrl: 1,
         status: 1, isPublicIndia: 1, postedAt: 1, closingDate: 1,
+        jobType: 1, publicJobType: PUBLIC_JOB_TYPE_EXPRESSION,
       } }],
       visible: [{ $match: applyPublicJobVisibility({ status: 'active' }, siteSettings, now) }, ...ids],
       ...Object.fromEntries(Object.entries(checks).map(([reason, query]) => [

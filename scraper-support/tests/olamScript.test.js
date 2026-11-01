@@ -107,7 +107,7 @@ test('extractSearchResults keeps only India rows from the public Olam search tab
     location: 'Chennai-GBSoff, India',
     city: 'Chennai-GBSoff',
     jobId: '1332302466',
-    requisitionId: '1332302466',
+    requisitionId: null,
     sourceUrl: 'https://careers.olamgroup.com/job/Chennai-GBSoff-General-Manager-Consolidation-&-Financial-Reporting/1332302466/',
     postingDate: '2026-07-04',
   }])
@@ -141,7 +141,7 @@ test('extractJobDetail falls back to the listing location and builds the public 
       location: 'Chennai-GBSoff, India',
       city: 'Chennai-GBSoff',
       jobId: '1332302466',
-      requisitionId: '1332302466',
+      requisitionId: null,
       sourceUrl: 'https://careers.olamgroup.com/job/Chennai-GBSoff-General-Manager-Consolidation-&-Financial-Reporting/1332302466/',
       postingDate: '2026-07-04',
     }),
@@ -150,7 +150,7 @@ test('extractJobDetail falls back to the listing location and builds the public 
       location: 'Chennai-GBSoff, India',
       city: 'Chennai-GBSoff',
       jobId: '1332302466',
-      requisitionId: '1332302466',
+      requisitionId: null,
       employmentType: null,
       experienceRequired: null,
       jobDescription:

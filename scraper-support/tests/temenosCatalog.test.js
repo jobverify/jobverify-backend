@@ -26,7 +26,7 @@ test('registers Temenos against the official first-party Workday careers source'
   assert.match(scraper.dryRunFile, /temenos.workday[\\/]jobs\.json$/)
 })
 
-test('uses the Temenos Workday jobs API with India search text and a tenant-specific location pattern', () => {
+test('uses the Temenos Workday jobs API with complete-board native country proof', () => {
   const config = loadConfig(path.join(testsDir, '../../scraper/temenos.workday'))
 
   assert.equal(config.listingStrategy, 'jobs-api')
@@ -36,9 +36,7 @@ test('uses the Temenos Workday jobs API with India search text and a tenant-spec
   )
   assert.equal(config.detailUrlBase, 'https://temenos.wd103.myworkdayjobs.com/en-US/Temenoscareers')
   assert.equal(config.locationCountry, null)
-  assert.equal(config.searchText, 'India')
-  assert.match(
-    config.locationPattern,
-    /india|bangalore|bengaluru|hyderabad|chennai|perungudi|pune|gurgaon|gurugram|mumbai|noida/i,
-  )
+  assert.equal(config.searchText, '')
+  assert.equal(config.inventoryScope, 'complete-board-country-proof')
+  assert.equal(config.officialCareersUrl, 'https://www.temenos.com/about-us/careers/')
 })

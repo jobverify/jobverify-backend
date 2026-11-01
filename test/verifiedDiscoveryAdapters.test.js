@@ -5,6 +5,9 @@ import test from 'node:test'
 import { getScraperCatalog, createCatalogScraper } from '../scraper-support/providers/index.js'
 import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 
+const discoveryRows = JSON.parse(readFileSync(new URL('../scraper-support/providers/providerExtensions/zzzzz-verified-discovery-adapters.json', import.meta.url)))
+const discoveryArchiveDir = new URL('../../artifacts/full-catalog/official-discovery/', import.meta.url)
+
 const boards = {
   amgen: ['amgen.wd1.myworkdayjobs.com', 'Careers'],
   alfalaval: ['alfalaval.wd3.myworkdayjobs.com', 'Alfa_Laval_jobs'],
@@ -37,14 +40,14 @@ test('verified discoveries replace exact sentinels without adding sources or dup
   assert.equal(armorcode.boardToken, 'armorcode')
 })
 
-test('new bindings retain actual official proof and keep runtime counts unknown', () => {
-  const rows = JSON.parse(readFileSync(new URL('../scraper-support/providers/providerExtensions/zzzzz-verified-discovery-adapters.json', import.meta.url)))
+test('new bindings retain official proof references and keep runtime counts unknown', () => {
+  const rows = discoveryRows
   assert.equal(rows.length, 10)
   for (const row of rows) {
     assert.equal(row.bindingEvidence.verified, true)
     assert.ok(row.bindingEvidence.matchedLinks.length)
     for (const proof of row.bindingEvidence.proofFiles) {
-      assert.ok(existsSync(path.resolve('../artifacts/full-catalog/official-discovery', proof)), proof)
+      assert.match(proof, /^proof\/[a-z\d-]+\.json$/i, `${row.source}: proof should reference a discovery archive file`)
     }
     assert.ok(row.bindingEvidence.proofFiles.length)
     assert.equal(row.verifiedPublicJobCount, null)
@@ -55,6 +58,18 @@ test('new bindings retain actual official proof and keep runtime counts unknown'
   assert.match(rows.find(row => row.source === 'amgen').bindingEvidence.bindingMethod, /application/)
   assert.match(rows.find(row => row.source === 'aig').verifiedSurfaceSummary, /Tata/i)
   assert.match(rows.find(row => row.source === 'aiagroup').verifiedSurfaceSummary, /Tata/i)
+})
+
+test('official binding proof files exist when the external discovery archive is available', (t) => {
+  if (!existsSync(discoveryArchiveDir)) {
+    t.skip('Optional artifacts/full-catalog/official-discovery archive is not present')
+    return
+  }
+  for (const row of discoveryRows) {
+    for (const proof of row.bindingEvidence.proofFiles) {
+      assert.ok(existsSync(new URL(proof, discoveryArchiveDir)), `${row.source}: ${proof}`)
+    }
+  }
 })
 
 test('Amgen has bounded source-specific detail and runner budgets for its observed large India inventory', () => {

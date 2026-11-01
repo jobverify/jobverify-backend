@@ -236,19 +236,19 @@ const TECHNICAL_ACCOUNT_MANAGER_DETAIL_HTML = `
 </html>
 `
 
-test('Locus catalog entry points to the verified careers handoff and Freshteam board', async () => {
+test('Locus registry selects native Darwinbox while legacy Freshteam parser compatibility remains', async () => {
   const locus = await loadModule()
   const provider = getScraperCatalog().find((entry) => entry.source === locus.SOURCE)
   const listings = locus.extractListingJobs(VERIFIED_LISTING_HTML)
 
   assert.equal(locus.SOURCE, 'locus')
   assert.equal(locus.COMPANY, 'Locus')
-  assert.equal(locus.VERIFIED_ON, '2026-07-30')
+  assert.equal(locus.VERIFIED_ON, provider?.verifiedOn)
   assert.equal(locus.CAREERS_URL, 'https://locus.sh/careers/')
   assert.equal(locus.FRESHTEAM_JOBS_URL, 'https://locus.freshteam.com/jobs')
   assert.equal(
     locus.DISPOSITION,
-    'verified-first-party-careers-page-plus-public-freshteam-jobs-board',
+    'verified-public-darwinbox-inventory',
   )
   assert.equal(
     locus.extractFreshteamJobsUrl(VERIFIED_CAREERS_HTML),
@@ -286,10 +286,12 @@ test('Locus catalog entry points to the verified careers handoff and Freshteam b
     ],
   )
   assert.match(provider?.modulePath || '', /[\\/]locus[\\/]script\.js$/i)
-  assert.equal(provider?.verifiedPublicJobCount, 12)
+  assert.equal(provider?.bindingEvidence.verified, true)
+  assert.equal(provider?.bindingEvidence.inventorySurface, 'https://locus.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main')
+  assert.ok(provider?.bindingEvidence.matchedLinks.includes(locus.DARWINBOX_CAREERS_URL))
   assert.equal(provider?.companyCareerPage, locus.CAREERS_URL)
   assert.equal(provider?.companyDomain, 'locus.sh')
-  assert.equal(provider?.atsPlatform, locus.DISPOSITION)
+  assert.equal(provider?.atsPlatform, 'darwinbox')
 })
 
 test('Locus extracts normalized India jobs from the verified Freshteam board and detail pages', async () => {

@@ -13,18 +13,22 @@ test('Lakshmi Machine Works is registered as a Darwinbox scraper without aliases
   assert.equal(provider.companyName, 'Lakshmi Machine Works')
   assert.equal(
     provider.companyCareerPage,
-    'https://lmwanubhav.darwinbox.in/ms/candidate/careers',
+    'https://www.lmwglobal.com/',
   )
   assert.equal(provider.atsPlatform, 'darwinbox')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'browser-session-darwinbox-pagination')
+  assert.equal(provider.paginationStrategy, 'complete-native-public-pagination-with-total-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'official-homepage-careers-handoff+darwinbox-listing-api',
+    'verified-official-handoff+complete-public-darwinbox-inventory',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'lmwglobal.com')
+  assert.equal(provider.bindingEvidence.verified, true)
+  assert.equal(provider.bindingEvidence.officialURL, provider.companyCareerPage)
+  assert.ok(provider.bindingEvidence.matchedLinks.includes('https://lmwanubhav.darwinbox.in/ms/candidate/careers'))
+  assert.equal(provider.bindingEvidence.inventorySurface, 'https://lmwanubhav.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main')
   assert.match(provider.modulePath, /lakshmimachineworks[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Lakshmi Machine Works'), false)
 })
@@ -51,7 +55,7 @@ test('Lakshmi Machine Works is runnable through the scraper provider catalog', (
   assert.equal(scraper.provider.source, 'lakshmimachineworks')
   assert.equal(
     scraper.provider.companyCareerPage,
-    'https://lmwanubhav.darwinbox.in/ms/candidate/careers',
+    'https://www.lmwglobal.com/',
   )
   assert.match(scraper.dryRunFile, /lakshmimachineworks[\\/]jobs\.json$/i)
 })

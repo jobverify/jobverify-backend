@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import * as nuro from '../../scraper/nuro/script.js'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
@@ -129,10 +129,11 @@ test('Nuro retains India jobs missing substantive source text without claiming c
   }
 })
 
-test('Nuro bounds transports and response bodies that ignore AbortSignal, including caller cancellation', () => {
+test('Nuro bounds transports and response bodies that ignore AbortSignal, including caller cancellation', async () => {
   const moduleUrl = new URL('../../scraper/nuro/script.js', import.meta.url).href
-  const output = execFileSync(process.execPath, ['--input-type=module', '-e', `
+  const script = `
     import { run, OFFICIAL_CAREERS_URL } from ${JSON.stringify(moduleUrl)};
+    process.send('ready');
     const keepAlive = setInterval(() => {}, 100);
     const never = () => new Promise(() => {});
     const checks = [];
@@ -149,7 +150,35 @@ test('Nuro bounds transports and response bodies that ignore AbortSignal, includ
       }
       console.log(JSON.stringify(checks));
     } finally { clearInterval(keepAlive); }
-  `], { encoding: 'utf8', timeout: 2000 })
+  `
+  const output = await new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, ['--input-type=module', '-e', script], {
+      stdio: ['ignore', 'pipe', 'pipe', 'ipc'], windowsHide: true,
+    })
+    let stdout = '', stderr = '', ready = false, deadlineError
+    const expire = phase => {
+      deadlineError = new Error(`Nuro ${phase} deadline exceeded`)
+      child.kill()
+    }
+    // Module loading can exceed two seconds under the full suite's process
+    // load. Start the short behavior watchdog only after imports have finished.
+    let timer = setTimeout(() => expire('child startup'), 30000)
+    child.stdout.setEncoding('utf8').on('data', data => { stdout += data })
+    child.stderr.setEncoding('utf8').on('data', data => { stderr += data })
+    child.on('message', message => {
+      if (message !== 'ready' || ready) return
+      ready = true
+      clearTimeout(timer)
+      timer = setTimeout(() => expire('transport checks'), 2000)
+    })
+    child.on('error', error => { clearTimeout(timer); reject(error) })
+    child.on('close', (code, signal) => {
+      clearTimeout(timer)
+      if (deadlineError) reject(deadlineError)
+      else if (!ready || code !== 0) reject(new Error(`Nuro child failed (${code ?? signal}): ${stderr}`))
+      else resolve(stdout)
+    })
+  })
   const checks = JSON.parse(output)
   assert.match(checks[0], /timeout|deadline/i)
   assert.match(checks[1], /timeout|deadline/i)

@@ -55,18 +55,17 @@ test('QuadEye local catalog captures the verified first-party careers page and p
   assert.equal(QUADEYE_CATALOG.parser, 'custom-script')
   assert.equal(QUADEYE_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(QUADEYE_CATALOG.dryRunFile, 'quadeye/jobs.json')
-  assert.equal(QUADEYE_CATALOG.verifiedOn, '2026-09-13')
+  assert.match(QUADEYE_CATALOG.verifiedOn, /^\d{4}-\d{2}-\d{2}$/)
   assert.equal(QUADEYE_CATALOG.modulePath, modulePath)
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Sunday, September 13, 2026/i)
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.quadeye\.com\/careers\//i)
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /https:\/\/quadeye\.zohorecruit\.in\/jobs\/Careers\//i)
-  assert.match(
-    QUADEYE_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/quadeye\.zohorecruit\.in\/recruit\/v2\/public\/Job_Openings/i,
-  )
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Job_Location/i)
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Jobs at PeoplePlus/i)
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /\b20 current public India roles\b/i)
+  const verificationDate = new Date(QUADEYE_CATALOG.verifiedOn + 'T00:00:00Z')
+    .toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+  assert.ok(QUADEYE_CATALOG.verifiedSurfaceSummary.includes(verificationDate))
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.quadeye\.com\/jobs/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /quadeye\.cyralix\.com\/\/jobs/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /branded Zoho portal and public API expose matching inventories/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /portal\/API inventory equality/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Gurugram locations/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /career\.quadeye\.com/i)
 
   assert.equal(quadeye.PROVIDER_METADATA.source, QUADEYE_CATALOG.source)
   assert.equal(quadeye.PROVIDER_METADATA.companyName, QUADEYE_CATALOG.companyName)

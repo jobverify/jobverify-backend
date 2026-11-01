@@ -145,50 +145,23 @@ test('Greenko fails closed when the verified homepage drifts materially', async 
   )
 })
 
-test('Greenko returns [] when the shared verified Darwinbox allJobs shell is now Turnstile-guarded and the listings API is 403-blocked', async () => {
+test('Greenko propagates listing HTTP403 without reading the Turnstile shell or inventing an alias vacancy', async () => {
   const greenko = await loadGreenkoModule()
-
-  const jobs = await greenko.createGreenkoScraper({
-    now: () => '2026-08-13T17:45:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      if (url === greenko.HOMEPAGE_URL) return homepageHtml
-      if (url === greenko.PUBLIC_JOBS_URL) return blockedDarwinboxShellHtml
-      throw new Error(`Unexpected Greenko URL: ${url}`)
-    },
-    fetchListingPage: async () => {
-      throw new Error(`HTTP 403 for ${greenko.PUBLIC_JOBS_URL}`)
-    },
-  })
-
-  assert.deepEqual(jobs, [
-    {
-      title: 'Current openings at Greenko Hub',
-      company: 'Greenko',
-      location: 'India',
-      city: null,
-      country: 'India',
-      link: 'https://greenkogroup.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-      applyUrl: 'https://greenkogroup.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-      sourceUrl: 'https://greenkogroup.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-      source: 'greenko',
-      jobId: 'greenkohub-current-openings',
-      requisitionId: 'greenkohub-current-openings',
-      department: null,
-      employmentType: null,
-      experienceRequired: null,
-      jobDescription:
-        'The official Greenko Hub homepage and public Darwinbox shell remained reachable, but the public Darwinbox inventory API returned HTTP 403 during this scrape. Review current openings directly on https://greenkogroup.darwinbox.in/ms/candidatev2/main/careers/allJobs.',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      remoteStatus: null,
-      postingDate: null,
-      closingDate: null,
-      scrapedAt: '2026-08-13T17:45:00.000Z',
-      companyCareerPage: 'https://www.greenkogroup.com/',
-      companyDomain: 'greenkogroup.com',
-      atsPlatform: 'darwinbox',
-    },
-  ])
+  const requestedUrls = []
+  const denial = Object.freeze(Object.assign(
+    new Error(`HTTP 403 for ${greenko.PUBLIC_JOBS_URL}`), { status: 403 },
+  ))
+  await assert.rejects(
+    greenko.createGreenkoScraper({ now: () => '2026-08-13T17:45:00.000Z' }).run({
+      fetchText: async (url) => {
+        requestedUrls.push(url)
+        if (url === greenko.HOMEPAGE_URL) return homepageHtml
+        if (url === greenko.PUBLIC_JOBS_URL) return blockedDarwinboxShellHtml
+        throw new Error(`Unexpected Greenko URL: ${url}`)
+      },
+      fetchListingPage: async () => { throw denial },
+    }),
+    (error) => error.name === 'DarwinboxUpstreamUnavailableError' && error.cause === denial,
+  )
+  assert.deepEqual(requestedUrls, [greenko.HOMEPAGE_URL])
 })
