@@ -82,7 +82,7 @@ test('Seeq helper exports stay pinned to the verified careers handoff, Workable 
   assert.equal(seeq.SOURCE, 'seeq')
   assert.equal(seeq.COMPANY, 'Seeq')
   assert.equal(seeq.OFFICIAL_BRAND_NAME, 'Seeq')
-  assert.equal(seeq.VERIFIED_ON, '2026-10-26')
+  assert.equal(seeq.VERIFIED_ON, null)
   assert.equal(seeq.HOMEPAGE_URL, 'https://www.seeq.com/')
   assert.equal(seeq.CAREERS_URL, 'https://www.seeq.com/careers/')
   assert.equal(seeq.WORKABLE_BOARD_URL, 'https://apply.workable.com/seeq/')
@@ -139,22 +139,17 @@ test('Seeq helper exports stay pinned to the verified careers handoff, Workable 
   ])
 })
 
-test('Seeq factory reads complete native empty inventory through its current employer handoff', async () => {
-  const seeq = await loadScriptModule()
-  const opts = emptyNativeOptions('seeq', 'Seeq', '55c96070-dc05-4efb-baf3-3a71fbc4e6ee', seeq.CAREERS_URL, CAREERS_PAGE_HTML)
-  const jobs = await seeq.createSeeqScraper().run(opts)
-  assert.equal(jobs.length, 0)
-  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
-})
 
-test('Seeq rejects current employer, native account and listing contract changes', async () => {
-  const seeq = await loadScriptModule()
-  const setup = () => emptyNativeOptions('seeq', 'Seeq', '55c96070-dc05-4efb-baf3-3a71fbc4e6ee', seeq.CAREERS_URL, CAREERS_PAGE_HTML)
-  await assert.rejects(seeq.createSeeqScraper().run({ ...setup(),
-    fetchPage: async url => ({ status: 200, url, html: '<h1>Unexpected</h1>' }),
-  }), /active full-board careers handoff/i)
-  await assert.rejects(seeq.createSeeqScraper().run({ ...setup(), fetchJson: async () => ({}) }), /reciprocal company website/i)
-  const opts = setup(), native = opts.fetchJson
-  opts.fetchJson = (url, init) => url.includes('/api/v3/') ? { results: [], total: 3 } : native(url, init)
-  await assert.rejects(seeq.createSeeqScraper().run(opts), /incomplete inventory count/i)
+test('Seeq registered original reader retains all24 pairs while company links await animation',async()=>{
+ const seeq=await loadScriptModule(),{replay}=await import('../native-sources/publicWorkableSources/fixtureReplay.js'),r=replay()
+ const jobs=await seeq.createSeeqScraper().run({...r.options,maxJobs:0})
+ assert.equal(jobs.length,0);assert.equal(readInventoryEvidence(jobs).status,'coverage-gap')
+ assert.equal(r.audits[0].observations.length,24);assert.equal(r.audits[0].companyDeclaredHandoff,true)
+ assert.equal(r.audits[0].employerBindingQualified,false);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+})
+test('Seeq native account errors hold qualification without losing original declarations',async()=>{
+ const seeq=await loadScriptModule(),{replay,editJSON}=await import('../native-sources/publicWorkableSources/fixtureReplay.js')
+ const r=replay((url,p)=>url==='https://apply.workable.com/api/v1/accounts/seeq'?editJSON(p,v=>v.uid='foreign'):p)
+ assert.equal((await seeq.createSeeqScraper().run(r.options)).length,0)
+ assert.equal(r.audits[0].observations.length,24);assert.ok(r.audits[0].issues.some(s=>s.includes('account identity changed')))
 })

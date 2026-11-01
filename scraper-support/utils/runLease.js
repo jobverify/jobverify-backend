@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import os from 'node:os'
+import { setTimeout as delay } from 'node:timers/promises'
 import mongoose from 'mongoose'
 
 import connectDB from '../../db/db.js'
@@ -7,6 +8,8 @@ import connectDB from '../../db/db.js'
 export const DEFAULT_RUN_LEASE_ID = 'jobverify-live-scraper'
 export const DEFAULT_RUN_LEASE_MS = 2 * 60 * 1000
 export const DEFAULT_RUN_LEASE_HEARTBEAT_MS = 30 * 1000
+export const DEFAULT_RUN_LEASE_WAIT_MS = 5 * 60 * 1000
+export const DEFAULT_RUN_LEASE_RETRY_MS = 5 * 1000
 
 export class MongoRunLeaseHeldError extends Error {
   constructor(lease = {}) {
@@ -17,7 +20,50 @@ export class MongoRunLeaseHeldError extends Error {
     )
     this.name = 'MongoRunLeaseHeldError'
     this.exitCode = 75
+    this.failureKind = 'run_lease_held'
+    this.retryable = true
     this.lease = lease
+  }
+}
+
+// Recheck ownership through the atomic acquisition query. Never delete another
+// owner's record or assume an observed expiry cannot be renewed while waiting.
+export const waitForMongoRunLease = async ({
+  acquire = () => acquireMongoRunLease(),
+  waitTimeoutMs = DEFAULT_RUN_LEASE_WAIT_MS,
+  retryIntervalMs = DEFAULT_RUN_LEASE_RETRY_MS,
+  signal,
+  wait = (milliseconds, stopSignal) => delay(milliseconds, undefined, { signal: stopSignal }),
+  clock = () => performance.now(),
+  onWait = () => {},
+} = {}) => {
+  if (!Number.isSafeInteger(waitTimeoutMs) || waitTimeoutMs < 0
+    || !Number.isSafeInteger(retryIntervalMs) || retryIntervalMs <= 0) {
+    throw new RangeError('Lease wait must be a nonnegative integer and retry interval a positive integer in milliseconds.')
+  }
+  const startedAt = clock()
+  for (;;) {
+    signal?.throwIfAborted()
+    try {
+      const lease = await acquire()
+      if (signal?.aborted) {
+        try { await lease.release() } finally { signal.throwIfAborted() }
+      }
+      return lease
+    } catch (error) {
+      signal?.throwIfAborted()
+      if (!(error instanceof MongoRunLeaseHeldError)) throw error
+      const waitedMs = Math.max(0, clock() - startedAt)
+      const remainingMs = waitTimeoutMs - waitedMs
+      if (remainingMs <= 0) {
+        error.waitedMs = waitedMs
+        throw error
+      }
+      const delayMs = Math.min(retryIntervalMs, remainingMs)
+      onWait(error, { waitedMs, remainingMs, delayMs })
+      try { await wait(delayMs, signal) }
+      catch (waitError) { signal?.throwIfAborted(); throw waitError }
+    }
   }
 }
 

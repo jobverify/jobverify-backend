@@ -47,6 +47,7 @@ test("retired-company purge removes only the selected provider data", async (t) 
         fingerprint: "retired-discovery-fingerprint",
         status: "active",
         isPublicIndia: true,
+        jobType: "Full-time Experienced",
       },
       {
         _id: retiredHimalayasJobId,
@@ -57,6 +58,7 @@ test("retired-company purge removes only the selected provider data", async (t) 
         fingerprint: "retired-himalayas-fingerprint",
         status: "active",
         isPublicIndia: true,
+        jobType: "Full-time Experienced",
       },
       {
         _id: keptJobId,
@@ -67,6 +69,7 @@ test("retired-company purge removes only the selected provider data", async (t) 
         fingerprint: "kept-fingerprint",
         status: "active",
         isPublicIndia: true,
+        jobType: "Full-time Experienced",
       },
     ]);
     await database.collection("scraperstatuses").insertMany([

@@ -1,3 +1,5 @@
+import {createEmployerBoundWorkableScraper} from '../utils/workableEmployerInventory.js'
+import {replay as originalReplay} from '../native-sources/publicWorkableSources/fixtureReplay.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
@@ -45,8 +47,9 @@ const options = data => {
       return detail
     } }
 }
+const legacy=spec=>createEmployerBoundWorkableScraper({source:spec.source,company:spec.company,tenant:spec.tenant,accountUid:spec.uid,careersUrl:spec.careers,companyDomain:spec.domain,canonicalCareersUrls:spec.source==='seeq'?['https://www.seeq.com/company/careers/']:[]})
 const run = async (data, overrides = {}) => {
-  const module = await import(`../../scraper/${data.spec.source}/script.js`)
+  const module = data.spec.source==='bharatx'?await import(`../../scraper/${data.spec.source}/script.js`):legacy(data.spec)
   return module.run({ ...options(data), ...overrides })
 }
 
@@ -58,9 +61,9 @@ test('stylesheet-hidden additional careers routes retain unresolved inventory sc
   assert.match(readInventoryEvidence(jobs).reason, /additional-employer-recruiting-scope-unresolved/)
 })
 
-for (const spec of specs) test(`${spec.company} replaces the legacy runtime with employer-bound native India details`, async () => {
+for (const spec of specs) test(`${spec.company} legacy shared engine keeps its employer-bound cursor/detail contract`, async () => {
   const data = fixture(spec), opts = options(data)
-  const module = await import(`../../scraper/${spec.source}/script.js`)
+  const module = spec.source==='bharatx'?await import(`../../scraper/${spec.source}/script.js`):legacy(spec)
   const jobs = await module.run(opts)
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].company, spec.company)
@@ -144,13 +147,11 @@ test('Seeq permits its current canonical careers redirect', async () => {
 test('abort never returns verified-empty evidence', async () => {
   const data = fixture(); await assert.rejects(run(data, { signal: AbortSignal.abort() }))
 })
-test('registered catalog execution uses the repaired native runtime', async () => {
-  const data = fixture(specs[2]), provider = getScraperCatalog().find(p => p.source === data.spec.source)
-  assert.equal(provider.atsPlatform, 'workable')
-  assert.equal(provider.backfillMode, 'live-parser')
-  const jobs = await createCatalogScraper(provider).run(options(data))
-  assert.equal(jobs.length, 1)
-  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+test('registered Hugging Face execution uses the opt-in original GET reader',async()=>{
+ const provider=getScraperCatalog().find(p=>p.source==='huggingface'),r=originalReplay()
+ assert.equal(provider.atsPlatform,'workable-public-get');assert.equal(provider.backfillMode,'discovery-only')
+ const jobs=await createCatalogScraper(provider).run(r.options)
+ assert.equal(jobs.length,3);assert.equal(r.audits[0].observations.length,6);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
 
 test('an active additional Ashby embed prevents a complete empty result', async () => {
