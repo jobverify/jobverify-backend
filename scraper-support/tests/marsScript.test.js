@@ -231,7 +231,10 @@ test('run keeps Mars jobs on the verified public Phenom search route and returns
       requestedUrls.push(url)
 
       if (url === buildSearchResultsPageUrl()) {
-        return MARS_SEARCH_HTML
+        // Synthetic matching-pair setup; the original mismatched fixtures stay intact.
+        const matchingSearch = MARS_SEARCH_HTML.replace("https://mars.wd3.myworkdayjobs.com/en-US/External/job/Hyderabad-Telangana-India/Senior-Data-Engineer_R129167/apply", "https://mars.wd3.myworkdayjobs.com/en-US/External/job/Hyderabad-Telangana-India/Senior-Data-Engineer_R129167-1/apply")
+        assert.notEqual(matchingSearch, MARS_SEARCH_HTML)
+        return matchingSearch
       }
 
       if (url === 'https://careers.mars.com/global/en/job/R129167/Senior-Data-Engineer') {
@@ -247,6 +250,8 @@ test('run keeps Mars jobs on the verified public Phenom search route and returns
     'https://careers.mars.com/global/en/job/R129167/Senior-Data-Engineer',
   ])
   assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].sourceDetailComplete, true)
+  assert.equal(jobs[0].sourceDetailFailureKind, undefined)
   assert.deepEqual(jobs[0].requiredSkills, ['Python', 'AWS', 'Airflow'])
   assert.equal(jobs[0].company, 'Mars')
   assert.equal(jobs[0].source, 'mars')
@@ -272,4 +277,34 @@ test('run keeps Mars jobs on the verified public Phenom search route and returns
   assert.equal(jobs[0].experienceRequired, '5+ years')
   assert.match(jobs[0].minimumQualification, /Bachelor degree/i)
   assert.match(jobs[0].jobDescription, /Mars digital platforms/i)
+})
+
+
+for (const [name, replacement] of [
+  ['the original differently suffixed apply URL', null],
+  ['an unrelated Workday role URL', 'https://mars.wd3.myworkdayjobs.com/en-US/External/job/Delhi/Other_R999999/apply'],
+  ['an unrelated apply host', 'https://careers.other.example/apply/R129167'],
+]) test('Mars retains an unqualified listing when detail supplies ' + name, async () => {
+  const { run, extractSearchResults, extractSearchPayload } = await loadMarsModule()
+  const originalDetailURL = 'https://mars.wd3.myworkdayjobs.com/en-US/External/job/Hyderabad-Telangana-India/Senior-Data-Engineer_R129167-1/apply'
+  const html = replacement ? MARS_DETAIL_HTML.replace(originalDetailURL, replacement) : MARS_DETAIL_HTML
+  if (replacement) assert.notEqual(html, MARS_DETAIL_HTML)
+  const requested = []
+  const jobs = await run({ maxPages: 1, maxJobs: 5, fetchText: async url => {
+    requested.push(url)
+    if (url === 'https://careers.mars.com/global/en/search-results') return MARS_SEARCH_HTML
+    if (url === 'https://careers.mars.com/global/en/job/R129167/Senior-Data-Engineer') return html
+    throw Error('Unexpected synthetic fixture request: ' + url)
+  } })
+  const listing = extractSearchResults(extractSearchPayload(MARS_SEARCH_HTML)).find(job => job.jobId === 'R129167')
+  assert.deepEqual(requested, ['https://careers.mars.com/global/en/search-results', 'https://careers.mars.com/global/en/job/R129167/Senior-Data-Engineer'])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.equal(jobs[0].sourceDetailFailureKind, 'identity-mismatch')
+  assert.equal(jobs[0].applyUrl, listing.applyUrl)
+  assert.equal(jobs[0].link, listing.applyUrl)
+  assert.equal(jobs[0].jobDescription, null)
+  assert.equal(jobs[0].sourceListingTeaser, listing.jobDescription)
+  assert.equal(jobs[0].jobId, listing.jobId)
+  assert.equal(jobs[0].country, listing.country)
 })

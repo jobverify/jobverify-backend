@@ -6,7 +6,8 @@ import { text, decode, plain, content, dayDate, offsetDate } from '../cisVeeam/p
 
 export const requireNative = (ok, reason) => { if (!ok) throw Error('Declared Greenhouse: ' + reason) }
 export const nativeJSON = page => {
-  requireNative(page?.usable && page.transportQualified && typeof page.originalText === 'string', 'original public JSON unavailable')
+  requireNative(page?.usable && page.transportQualified && typeof page.bodyBase64 === 'string'
+    && typeof page.bodySHA256 === 'string' && typeof page.originalText === 'string', 'original public JSON unavailable')
   return readLiteralModel(page.originalText).value
 }
 const executable = node => !Object.hasOwn(node.attrs, 'nomodule')
@@ -32,6 +33,13 @@ export const postURI = (value, id, profile) => {
   try {
     const url = new URL(value)
     if (url.protocol !== 'https:' || url.username || url.password || url.hash) return false
+    if (['pathai-first-party-gh-jid', 'lyft-careerpuck-gh-jid'].includes(profile.postURIProfile)) {
+      if (url.port || url.searchParams.getAll('gh_jid').length !== 1 || url.searchParams.get('gh_jid') !== String(id)
+        || [...url.searchParams.keys()].some(key => key !== 'gh_jid')) return false
+      return profile.postURIProfile === 'pathai-first-party-gh-jid'
+        ? url.origin === 'https://www.pathai.com' && ['/careers/' + id, '/career/job-post'].includes(url.pathname)
+        : url.origin === 'https://app.careerpuck.com' && url.pathname === '/job-board/lyft/job/' + id
+    }
     if (['job-boards.greenhouse.io', 'boards.greenhouse.io', 'job-boards.eu.greenhouse.io', 'boards.eu.greenhouse.io'].includes(url.hostname)) {
       return !url.port && !url.search && url.pathname === '/' + profile.boardToken + '/jobs/' + id
     }

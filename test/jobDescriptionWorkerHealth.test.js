@@ -68,7 +68,14 @@ test('worker exit diagnostics and warning logs survive a child process failure',
   assert.equal(workerArgs[workerArgs.indexOf('-np') + 1], '4');
   assert.equal(workerArgs[workerArgs.indexOf('-c') + 1], '32768');
   assert.equal(worker.diagnostics().status, 'running');
-  assert.match(await fs.readFile(logFile, 'utf8'), /worker warning retained/);
+  const workerLog = await fs.readFile(logFile, 'utf8');
+  assert.match(workerLog, /worker warning retained/);
+  const launch = JSON.parse(workerLog.split(/\r?\n/).find(line => line.startsWith('{')));
+  assert.equal(launch.event, 'worker_start');
+  assert.equal(launch.arguments[launch.arguments.indexOf('-np') + 1], '4');
+  assert.equal(launch.arguments[launch.arguments.indexOf('-c') + 1], '32768');
+  assert.equal(launch.debugger, 'none');
+  assert.equal(launch.environment, undefined);
   await fetch('http://127.0.0.1:' + port + '/crash').catch(() => {});
   for (let i = 0; i < 100 && child.exitCode === null; i++) await delay(5);
   assert.throws(() => worker.assertAlive(), error => error.name === 'RewriteWorkerError' && error.workerExitCode === 17);

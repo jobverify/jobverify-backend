@@ -66,6 +66,18 @@ test('observers are awaited, receive detached serializable full observations, an
   const e = Error('sink failed')
   await assert.rejects(run('plivo', replay(), { onRecords: async () => { throw e } }), error => error === e)
 })
+test('Greenhouse audit observers cannot change the independent complete-record sink', async () => {
+  const r = replay();let received
+  await run('cymulate', r, { onAudit: audit => { audit.observations[0].title = 'sink mutation' }, onRecords: rows => { received = rows } })
+  assert.equal(received[0].title, fixture.oracle.cymulate.records[0].originalOwnRecord.title)
+})
+test('schema employment conflict is retained and held rather than choosing one hours claim', async () => {
+  const r = replay((url, page) => url === roleURL ? mutateHTML(page, (data, schemas) => { schemas[0].employmentType = 'PART_TIME' }) : page)
+  const jobs = await run('datafold', r), row = r.audits[0].observations.find(row => row.jobId === ashbyRole.id)
+  assert.equal(row.sourceNativeJobPosting.employmentType, 'PART_TIME')
+  assert.equal(row.sourceCurrentNativeRoleQualified, false)
+  assert.ok(!jobs.some(job => job.jobId === ashbyRole.id))
+})
 test('abort drains in-flight work and rejects without releasing background GETs or callbacks', async () => {
   const controller = new AbortController();let completed = 0
   const r = replay(async (url, page) => { if (url === roleURL) controller.abort(Error('stop'));await Promise.resolve();completed++;return page })
@@ -86,6 +98,53 @@ test('unknown regions remain unresolved and Minnesota state labels are not count
   const us = fixture.oracle.delphixindia.records.find(row => row.originalFeedRecord.categories.location === 'Minneapolis, MN')
   const known = geography(profiles.delphixindia, us.originalFeedRecord, us.originalSchema)
   assert.equal(known.country, 'United States');assert.equal(known.sourceNativeCountryConflict, false)
+})
+test('R1: untyped state/country codes cannot invent India and visible multi-country scopes cannot collapse to a typed country', () => {
+  for (const location of ['IN','CA','Georgia']) {
+    const geo=geography(profiles.datafold,{location,address:null,secondaryLocations:[]},{})
+    assert.equal(geo.country,null,location);assert.equal(geo.sourceCountryScopeUnresolved,true)
+    assert.equal(isIndiaJob(normalizeScrapedJob({source:'datafold',title:'Software Engineer',company:'Datafold',jobDescription:'Published criteria.',...geo},{countryFilter:'India'})),false)
+  }
+  for(const location of ['US/Canada','United States and Canada','United States or Canada']){
+    const geo=geography(profiles.datafold,{location,address:{postalAddress:{addressCountry:'IN'}},secondaryLocations:[]},{})
+    assert.equal(geo.country,null);assert.equal(geo.sourceNativeCountryConflict,true);assert.deepEqual(geo.locations,[])
+  }
+  const native=fixture.oracle.redpanda.records.find(row=>row.originalFeedRecord.location==='US/Canada - Eastern Region')
+  const geo=geography(profiles.redpanda,native.originalFeedRecord,native.originalSchema)
+  assert.equal(geo.country,null);assert.equal(geo.sourceCountryScopeUnresolved,true)
+  assert.ok(geo.sourceNativeCountries.includes('Canada'))
+})
+test('R4: Lever board failure and changed Delphix brand handoff remain visible and hold source qualification', async()=>{
+  for(const source of ['plivo','delphixindia']){
+    const r=replay((url,page)=>url===profiles[source].boardURL?{...page,status:502}:page)
+    await run(source,r)
+    assert.ok(r.requests.includes(profiles[source].boardURL))
+    assert.equal(r.audits[0].opening.qualified,false)
+    assert.equal(r.audits[0].closing.qualified,false)
+  }
+  const r=replay((url,page)=>url==='https://www.delphix.com/'?{...page,status:302,headers:{location:'https://www.perforce.com/other'}}:page)
+  await run('delphixindia',r)
+  assert.ok(r.requests.includes('https://www.delphix.com/'))
+  assert.equal(r.audits[0].opening.publisherQualified,false)
+})
+test('R4: a Lever board-only role retains independently supported identity while wider inventory remains held',async()=>{
+  const source='delphixindia',first=fixture.oracle[source].records[0]
+  const r=replay((url,page)=>url===profiles[source].publicAPIURL?mutateJSON(page,rows=>{rows.splice(0,1)}):page)
+  const jobs=await run(source,r),audit=r.audits[0],row=audit.observations.find(j=>j.jobId===first.id)
+  assert.equal(audit.observations.length,8);assert.equal(audit.opening.nativeListingComplete,false)
+  assert.equal(row.sourceNativeListingRecord,null);assert.deepEqual(row.sourceNativeRecord,first.originalOwnRecord)
+  assert.ok(row.jobDescription.includes(first.bodyText));assert.equal(row.sourceCurrentNativeRoleQualified,true)
+  assert.equal(audit.sourceScopeComplete,false);assert.equal(audit.authoritativeSourceTotal,null)
+  assert.equal(jobs.length,0)
+})
+test('R2/R3: a changed closing Greenhouse title cannot keep the earlier temporal identity qualification',async()=>{
+  const source='cymulate',first=fixture.oracle[source].records[0],p=profiles[source]
+  const r=replay((url,page,visit)=>visit===2&&url===p.publicAPIURL?mutateJSON(page,value=>{value.jobs[0].title+=' (Updated)'})
+    :visit===2&&url===p.publicAPIBase+'/jobs/'+first.id+'?pay_transparency=true'?mutateJSON(page,value=>{value.title+=' (Updated)'}):page)
+  await run(source,r)
+  const row=r.audits[0].observations.find(j=>j.jobId===first.id)
+  assert.equal(row.title,first.originalOwnRecord.title+' (Updated)');assert.equal(row.sourceCurrentNativeRoleQualified,false)
+  assert.ok(row.jobDescription.includes(first.bodyText));assert.equal(r.audits[0].observationHistory.length,14)
 })
 test('known India worksite survives other unknown sites; same-worksite and visible country contradictions hold the public projection', () => {
   const record = { location:'Bengaluru, India', address:{ postalAddress:{ addressCountry:'IN', addressLocality:'Bengaluru' } }, secondaryLocations:[] }
@@ -122,5 +181,9 @@ test('Lever documented pagination consumes a later short page; malformed synthet
   }
   await run('asapp', r)
   assert.equal(seen.length, 4);assert.ok(seen.some(url => new URL(url).searchParams.get('skip')==='100'))
-  assert.equal(r.audits[0].observations.length, 100);assert.ok(r.audits[0].observations.every(row => !row.sourceCurrentNativeRoleQualified))
+  assert.equal(r.audits[0].observations.length, 113, 'All13 real board-only roles also remain in the audit')
+  const syntheticIds=new Set(synthetic.map(row=>row.id)),observations=r.audits[0].observations
+  assert.ok(observations.filter(row=>syntheticIds.has(row.jobId)).every(row=>!row.sourceCurrentNativeRoleQualified))
+  assert.ok(observations.filter(row=>!syntheticIds.has(row.jobId)).every(row=>row.sourceNativeDetailQualified&&row.sourceCurrentNativePostingIdentityQualified))
+  assert.equal(r.audits[0].sourceScopeComplete,false)
 })

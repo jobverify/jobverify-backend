@@ -1,3 +1,4 @@
+import {createPublicLeverSource, PUBLIC_LEVER_PROFILES} from '../../scraper-support/native-sources/publicLeverChannels/nativeCareers.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
@@ -202,70 +203,7 @@ const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createVeryGoodSecurityIndiaScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-    signal,
-  } = {}) {
-    signal?.throwIfAborted()
-    const careersHtml = await fetchText(CAREERS_URL, { signal })
-    signal?.throwIfAborted()
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Very Good Security India official careers surface changed materially')
-    }
-
-    const boardHtml = await fetchText(LEVER_BOARD_URL, { signal })
-    signal?.throwIfAborted()
-    if (!hasOfficialLeverBoardSignal(boardHtml)) {
-      throw new Error('Very Good Security India Lever board changed materially')
-    }
-
-    const expectedIds = new Set()
-    for (const match of boardHtml.matchAll(/<a\b[^>]*href=["']([^"']+)["']/gi)) {
-      const url = normalizeLeverUrl(match[1])
-      const id = url && new URL(url).pathname.match(/^\/verygoodsecurity\/([^/]+)(?:\/apply)?$/)?.[1]
-      if (id) expectedIds.add(id)
-    }
-    if (!expectedIds.size) throw new Error('VGS incomplete public board inventory')
-    const records = []
-    const seen = new Set()
-    let finished = false, apiPagesFetched = 0
-    for (let page = 0; page < 100; page += 1) {
-      const url = new URL(LEVER_API_URL)
-      url.searchParams.set('limit', '100')
-      url.searchParams.set('skip', String(page * 100))
-      const batch = await fetchJson(url.toString(), { signal })
-      signal?.throwIfAborted()
-      apiPagesFetched += 1
-      if (!Array.isArray(batch) || batch.length > 100) throw new Error('VGS invalid public API page')
-      for (const record of batch) {
-        if (!record || typeof record.id !== 'string') throw new Error('VGS invalid Lever role identity')
-        if (seen.has(record.id)) throw new Error('VGS duplicate or repeated API page')
-        seen.add(record.id)
-        records.push(record)
-      }
-      if (batch.length < 100) { finished = true; break }
-    }
-    if (!finished || seen.size !== expectedIds.size || [...seen].some(id => !expectedIds.has(id))) throw new Error('VGS incomplete API/board inventory')
-    const scrapedAt = now()
-    // Validate all role identities and locations together after pagination.
-    // A later page can own the explicit country for an earlier secondary label.
-    const jobs = extractIndiaLeverJobs(records).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-    }))
-    return attachInventoryEvidence(jobs, {
-      status: 'complete-inventory', surface: LEVER_BOARD_URL, firstParty: true,
-      listingComplete: true, pagesFetched: apiPagesFetched + 1,
-      reportedTotal: expectedIds.size, indiaFacetCount: jobs.length, verifiedAt: scrapedAt,
-      reason: 'official-careers-binding-and-matching-public-lever-board-api-inventory',
-    })
-  },
-})
+export const createVeryGoodSecurityIndiaScraper = (options = {}) => createPublicLeverSource(PUBLIC_LEVER_PROFILES.verygoodsecurityindia, options)
 
 export const run = async (options = {}) =>
   createVeryGoodSecurityIndiaScraper().run(options)

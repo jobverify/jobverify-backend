@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { resolveZeroJobOutcome, buildCoverageGapResult } from '../runner.js'
+import { readInventoryEvidence, isVerifiedEmptyEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { inventoryCleanupOptions } from '../utils/scraperOutcome.js'
 
 const careersHtml = `
 <!doctype html>
@@ -53,16 +57,16 @@ test('Napier Healthcare Solutions exports the verified fail-closed careers contr
     modulePath: '../../scraper/napierhealthcaresolutions/script.js',
     homepageUrl: 'http://www.napierhealthcare.com/v2/',
     companyCareerPage: 'http://www.napierhealthcare.com/v2/careers/',
-    atsPlatform: 'official-careers-marketing-page-no-live-public-openings',
+    atsPlatform: "official-company-careers-unavailable",
     countryFilter: 'India',
-    paginationStrategy: 'single-first-party-careers-page-validation',
-    extractionStrategy: 'verified-first-party-careers-marketing-copy+no-live-same-domain-opening-links+fail-closed-sentinel',
+    paginationStrategy: "single-first-party-careers-route-unavailable-validation",
+    extractionStrategy: "verified-unavailable-first-party-careers-route+typed-upstream-failure",
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'napierhealthcare.com',
-    verifiedOn: '2026-08-03',
+    verifiedOn: "2026-09-13",
     verifiedSurfaceSummary:
-      'Verified on Monday, August 3, 2026 that the Napier /v2/ first-party site is currently reachable over http://www.napierhealthcare.com/v2/ and http://www.napierhealthcare.com/v2/careers/ because the corresponding https certificate is expired. The live careers page still exposed the VIEW ALL OPENINGS and current openings marketing copy, but did not expose any live same-domain public opening cards or role-detail links. This provider now validates the reachable http first-party careers page and stays fail-closed until Napier publishes a trustworthy public jobs surface again.',
+      "Verified on Sunday, September 13, 2026 that the last trusted Napier first-party route http://www.napierhealthcare.com/v2/careers/ now returns HTTP 404, adjacent http://www.napierhealthcare.com/v2/ and http://www.napierhealthcare.com/careers/ routes also return HTTP 404, the bare/root domain redirects to http://www.thetransformationhub.com.au/, and the https variants still fail with certificate-expired errors. This scraper now reports typed upstream_unavailable instead of returning [] until a trustworthy Napier public jobs surface reappears.",
     dryRunFile: 'napierhealthcaresolutions/jobs.json',
   })
 
@@ -96,4 +100,45 @@ test('Napier Healthcare Solutions returns [] only while the official page stays 
     }),
     /public jobs surface/i,
   )
+})
+
+test('Napier unavailable runtime and historical descriptor remain distinct with unknown totals', async () => {
+  const napier = await loadScriptModule()
+  const effective = getScraperCatalog().find(item => item.source === 'napierhealthcaresolutions')
+  const scraper = buildScrapers().find(item => item.name === 'napierhealthcaresolutions')
+  assert.equal(napier.CAREERS_URL, 'http://www.napierhealthcare.com/v2/careers/')
+  assert.equal(effective.companyCareerPage, 'https://www.napierhealthcare.com/v2/careers/')
+  assert.notEqual(napier.CAREERS_URL, effective.companyCareerPage)
+  assert.equal(napier.PROVIDER_METADATA.verifiedOn, '2026-09-13')
+  assert.equal(effective.verifiedOn, '2026-07-18')
+  assert.equal(effective.zeroResultPolicy, 'coverage-gap')
+  const calls = [], clock = '2026-09-13T00:00:00.000Z'
+  const native404 = Object.assign(new Error('controlled unavailable route'), { status: 404 })
+  const wrapped404 = new Error('controlled transport wrapper', { cause: native404 })
+  const jobs = await scraper.run({ fetchText: async url => { calls.push(url); throw wrapped404 }, now: () => clock })
+  assert.deepEqual(calls, [napier.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'discovery-only')
+  assert.equal(evidence.surface, napier.CAREERS_URL)
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.pagesFetched, 0)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
+  assert.equal(evidence.verifiedAt, clock) // Controlled observation time, never completeness.
+  assert.equal(isVerifiedEmptyEvidence(evidence), false)
+  assert.equal(isFreshCompleteInventoryEvidence(evidence, { now: clock }), false)
+  assert.equal(resolveZeroJobOutcome(scraper, jobs, jobs), 'blocked-zero')
+  assert.equal(buildCoverageGapResult(scraper.name, 'blocked-zero').success, false)
+  assert.deepEqual(inventoryCleanupOptions({ success: true, inventoryEvidence: evidence, zeroJobEvidence: 'blocked-zero' }), { replaceExisting: false })
+})
+
+test('Napier non-404 failures remain errors rather than successful zero inventories', async () => {
+  const napier = await loadScriptModule()
+  for (const status of [401, 403, 429, 503]) {
+    const error = Object.assign(new Error('controlled denied response'), { status })
+    let calls = 0
+    await assert.rejects(napier.run({ fetchText: async () => { calls++; throw error } }), value => value === error)
+    assert.equal(calls, 1)
+  }
 })

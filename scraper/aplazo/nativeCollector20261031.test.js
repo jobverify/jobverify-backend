@@ -32,6 +32,7 @@ test('effective and local catalog metadata select the real native script with un
   for (const provider of [effective, local]) {
     assert.equal(provider.atsPlatform, 'ashby'); assert.equal(provider.companyName, 'Aplazo'); assert.equal(provider.companyDomain, 'aplazo.mx')
     assert.equal(provider.companyCareerPage, careers.url); assert.equal(provider.sourceScopeComplete, false)
+    assert.equal(provider.paginationStrategy, 'validated-native-single-response-and-independent-closing')
     assert.equal(provider.verifiedPublicJobCount, null); assert.equal(provider.verifiedIndiaJobCount, null)
     assert.match(provider.modulePath.replaceAll('\\', '/'), /\/aplazo\/script\.js$/)
   }
@@ -41,25 +42,27 @@ test('registered default transport reads current native employer and all nine ex
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     calls.push(String(url)); const packet = packets.find(p => p.url === String(url)); assert.ok(packet, 'No unadvertised URL')
     assert.ok(options.signal instanceof AbortSignal)
-    const response = new Response(packet.body, { status: packet.status }); Object.defineProperty(response, 'url', { value: packet.finalUrl }); return response
+      const response = new Response(packet.body, { status: packet.status, headers: { 'Content-Type': packet.url === api.url ? 'application/json' : 'text/html' } }); Object.defineProperty(response, 'url', { value: packet.finalUrl }); return response
   })
-  const jobs = await createCatalogScraper(getScraperCatalog().find(p => p.source === 'aplazo')).run()
-  assert.deepEqual(calls, [careers.url, api.url]); assert.equal(jobs.length, 0)
+  // Repeated packets form an offline protocol closing; keep their old clock.
+  const jobs = await createCatalogScraper(getScraperCatalog().find(p => p.source === 'aplazo')).run({ now: () => api.capturedAt })
+  assert.deepEqual(calls, [careers.url, api.url, api.url, careers.url]); assert.equal(jobs.length, 0)
   const observations = readSourceObservationEvidence(jobs, 'aplazo')
   assert.equal(observations.observedVacancyCount, 9); assert.equal(observations.observedRecordCount, 9)
   assert.equal(observations.sourceScopeComplete, false); assert.equal(observations.companyGlobalTotal, null); assert.equal(observations.companyIndiaTotal, null)
   const inventory = readInventoryEvidence(jobs)
-  assert.equal(inventory.listingComplete, false); assert.equal(inventory.reportedTotal, null); assert.equal(inventory.indiaFacetCount, null)
+  assert.equal(inventory.listingComplete, true); assert.equal(inventory.reportedTotal, null); assert.equal(inventory.indiaFacetCount, 0)
+  assert.equal(inventory.status, 'complete-inventory'); assert.equal(inventory.verifiedAt, api.capturedAt)
 })
 test('controlled explicit native India role keeps the original full native description, ID, dates and application URLs', async () => {
   const payload = controlledIndiaPayload(), { jobs, calls } = await collect({ payload })
-  assert.equal(calls.length, 2); assert.equal(jobs.length, 1)
+  assert.equal(calls.length, 4); assert.equal(jobs.length, 1)
   const job = jobs[0], native = payload.jobs[0]
   assert.equal(job.jobId, native.id); assert.equal(job.title, native.title); assert.equal(job.country, 'India')
   assert.equal(job.sourceDescription, native.descriptionHtml); assert.equal(job.jobDescription, native.descriptionHtml)
   assert.equal(job.applyUrl, native.applyUrl); assert.equal(job.sourceUrl, native.jobUrl)
   assert.equal(job.postingDate, native.publishedAt); assert.equal(job.sourceDetailComplete, true)
-  assert.equal(job.sourceScopeComplete, false); assert.equal(job.sourceListingComplete, false); assert.equal(job.lifecycleCleanupAllowed, false)
+  assert.equal(job.sourceScopeComplete, true); assert.equal(job.sourceListingComplete, true); assert.equal(job.lifecycleCleanupAllowed, true)
 })
 for (const [label, alter] of [
   ['hidden employer body', html => html.replace(/<body\b/i, '<body hidden')],
@@ -84,7 +87,7 @@ for (const [label, alter] of [
 })
 test('unqualified generic remote cannot be converted to India by a source country filter', async () => {
   const payload = structuredClone(original); payload.jobs[0].location = 'Remote'; payload.jobs[0].address = {}
-  const { jobs, calls } = await collect({ payload }); assert.equal(calls.length, 2); assert.equal(jobs.length, 0)
+  const { jobs, calls } = await collect({ payload }); assert.equal(calls.length, 4); assert.equal(jobs.length, 0)
   assert.equal(readSourceObservationEvidence(jobs, 'aplazo').observedVacancyCount, 9)
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
 })

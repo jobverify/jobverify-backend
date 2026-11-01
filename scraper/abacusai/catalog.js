@@ -1,30 +1,18 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
-  "source": "abacusai",
-  "companyName": "Abacus.AI",
-  "adapter": "script",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json'),
-  "atsPlatform": "workbook-exact-name-sentinel",
-  "countryFilter": "India",
-  "paginationStrategy": "none",
-  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-  "parser": "custom-script",
-  "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-29",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
-  "verifiedSurfaceSummary": "Workbook batch 08 exact-name sentinel for Abacus.AI added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-  "backfillMode": "sentinel",
-  "originalAdapter": "script",
-  "originalAtsPlatform": "workbook-exact-name-sentinel",
-  "originalModulePath": "../workbookbatch08/failClosedSentinel.js",
-  "originalDryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\workbookbatch08\\abacusai.jobs.json"
+export const PROVIDER_METADATA = {
+  source: 'abacusai', companyName: 'Abacus.AI', adapter: 'script',
+  homepageUrl: 'https://abacus.ai/', companyCareerPage: 'https://abacus.ai/jobs', companyDomain: 'abacus.ai',
+  modulePath: path.join(currentDir, 'script.js'), dryRunFile: 'abacusai/jobs.json',
+  atsPlatform: 'official-first-party-authored-role-observations', countryFilter: 'India',
+  paginationStrategy: 'one-advertised-jobs-page-company-scope-unproved',
+  extractionStrategy: 'primary-homepage-handoff+authored-role-cards+raw-criteria+native-email-application',
+  parser: 'custom-script', normalizationProfile: 'engineering-default',
+  backfillMode: 'native-partial-observations', zeroResultPolicy: 'coverage-gap', unverifiedInventoryStatus: 'coverage-gap',
+  verifiedOn: null, verifiedPublicJobCount: null, verifiedIndiaJobCount: null,
+  historicalSentinel: { verifiedOn: '2026-07-29', verifiedPublicJobCount: 0, verifiedIndiaJobCount: 0,
+    note: 'Historical workbook placeholder counters; no current vacancy or company-empty authority.' },
+  verifiedSurfaceSummary: 'Primary homepage and its advertised /jobs route captured on 2026-11-01. Three authored role cards, descriptions and jobs@abacus.ai email applications were observed. Role locations, publication dates, native role IDs, legal employer, current availability and whole-company scope remain unknown. Unqualified descriptions remain raw evidence; public description fields are null. Capture date is not a vacancy publication date.',
 }
-
 export default PROVIDER_METADATA
-export { PROVIDER_METADATA }

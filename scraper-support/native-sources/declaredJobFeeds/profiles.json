@@ -20,7 +20,8 @@
     "declaration": {
       "kind": "active-native-board-link",
       "boardURL": "https://jobs.ashbyhq.com/contrast-security"
-    }
+    },
+    "countryFilter": "India"
   },
   "datafold": {
     "source": "datafold",
@@ -43,7 +44,8 @@
       "kind": "active-literal-native-inline-profile",
       "scriptSHA256": "cfd436b251cd15ac37cdfb3f92036482def218bb002eceb1566e8faf12ed2b84",
       "literalPublicURI": "datafold"
-    }
+    },
+    "countryFilter": "India"
   },
   "redpanda": {
     "source": "redpanda",
@@ -66,7 +68,8 @@
       "kind": "active-literal-native-inline-profile",
       "scriptSHA256": "6f82899e05c396dc98c1940addc6f5497420425ffac63cca5b6e0169e9687157",
       "literalPublicURI": "redpanda-data"
-    }
+    },
+    "countryFilter": "India"
   },
   "clearco": {
     "source": "clearco",
@@ -89,7 +92,8 @@
     "declaration": {
       "kind": "active-native-embed-script",
       "scriptURL": "https://jobs.ashbyhq.com/clearco/embed"
-    }
+    },
+    "countryFilter": "India"
   },
   "asapp": {
     "source": "asapp",
@@ -110,7 +114,8 @@
       "kind": "active-literal-native-inline-profile",
       "scriptSHA256": "924db237928f548fe691350d24a41338f233fb91c3d784c4d8cc65f760ce6c71",
       "literalPublicURI": "https://api.lever.co/v0/postings/asapp-2"
-    }
+    },
+    "countryFilter": "India"
   },
   "sandboxaq": {
     "source": "sandboxaq",
@@ -133,7 +138,8 @@
     "declaration": {
       "kind": "active-native-embed-script",
       "scriptURL": "https://jobs.ashbyhq.com/sandboxaq/embed?version=2"
-    }
+    },
+    "countryFilter": "Global"
   },
   "delphixindia": {
     "source": "delphixindia",
@@ -154,7 +160,12 @@
       "kind": "active-native-board-link",
       "boardURL": "https://jobs.lever.co/perforce"
     },
-    "brandKeyword": "delphix"
+    "brandKeyword": "delphix",
+    "identityPages": [
+      "https://www.delphix.com/",
+      "https://www.perforce.com/products/delphix"
+    ],
+    "countryFilter": "India"
   },
   "plivo": {
     "source": "plivo",
@@ -176,7 +187,9 @@
       "scriptURL": "https://www.plivo.com/_astro/JobsPage.-GAK2gps.js",
       "scriptSHA256": "5ae28d27614a49163b0278006144f90a65c197ab5560322572e63fd32b447cd9",
       "scriptSpecifier": "/_astro/JobsPage.-GAK2gps.js"
-    }
+    },
+    "allowMissingNativeBoard": true,
+    "countryFilter": "Global"
   },
   "prefect": {
     "source": "prefect",
@@ -201,7 +214,8 @@
       "scriptURL": "https://www.prefect.io/_next/static/immutable/chunks/052ped2bd1jzg.js",
       "scriptSHA256": "88847dd8f5eef8cef5eef5a0547d3b3be5807961a0bd3087e515dc5c1e587982",
       "scriptSpecifier": "/_next/static/immutable/chunks/052ped2bd1jzg.js"
-    }
+    },
+    "countryFilter": "India"
   },
   "dagster": {
     "source": "dagster",
@@ -227,7 +241,8 @@
       "scriptSHA256": "88847dd8f5eef8cef5eef5a0547d3b3be5807961a0bd3087e515dc5c1e587982",
       "scriptSpecifier": "/_next/static/immutable/chunks/052ped2bd1jzg.js"
     },
-    "sourceAliasPublisherShift": "Configured Dagster careers URI currently redirects to Prefect; keep literal Prefect publisher, without product-specific or legal-employer attribution."
+    "sourceAliasPublisherShift": "Configured Dagster careers URI currently redirects to Prefect; keep literal Prefect publisher, without product-specific or legal-employer attribution.",
+    "countryFilter": "India"
   },
   "affirm": {
     "source": "affirm",
@@ -249,7 +264,8 @@
       "scriptURL": "https://www.affirm.com/sections-Jobs-895ebc840a0b26051eaf.js",
       "scriptSHA256": "e0e03254f43c30e4a5b10a3283181065bf610b065af9da9e8a1104998384a1f7",
       "scriptSpecifier": "/sections-Jobs-895ebc840a0b26051eaf.js"
-    }
+    },
+    "countryFilter": "India"
   },
   "cymulate": {
     "source": "cymulate",
@@ -271,7 +287,8 @@
       "scriptURL": "https://cymulate.com/wp-content/cache/min/1/wp-content/themes/cymulateTheme/app/blocks/cy-careers-search/assets/block.js?ver=1793360255",
       "scriptSHA256": "45dd1d0101af2a6753528f0a7818036d65bf9d76322730653be6b41150910801",
       "scriptSpecifier": "https://cymulate.com/wp-content/cache/min/1/wp-content/themes/cymulateTheme/app/blocks/cy-careers-search/assets/block.js?ver=1793360255"
-    }
+    },
+    "countryFilter": "India"
   },
   "tailscale": {
     "source": "tailscale",
@@ -293,6 +310,7 @@
       "scriptURL": "https://tailscale.com/_next/static/chunks/44640-dc80d7b513269eaf.js",
       "scriptSHA256": "0cf5bfc726c7f188abc708a98770550d742858b5a1e9ff2b425aa7b4732bd689",
       "scriptSpecifier": "/_next/static/chunks/44640-dc80d7b513269eaf.js"
-    }
+    },
+    "countryFilter": "India"
   }
 }

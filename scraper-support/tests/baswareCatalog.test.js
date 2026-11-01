@@ -25,7 +25,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Basware local catalog captures the verified first-party Jobylon shell and fail-closed contract', async () => {
+test('Basware local catalog describes current native extraction without asserting inventory totals', async () => {
   const { BASWARE_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const basware = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(BASWARE_CATALOG)
@@ -39,17 +39,17 @@ test('Basware local catalog captures the verified first-party Jobylon shell and 
   assert.equal(provider.companyCareerPage, 'https://careers.basware.com/')
   assert.equal(provider.officialCareersPageUrl, 'https://careers.basware.com/')
   assert.equal(provider.companyDomain, 'basware.com')
-  assert.equal(provider.atsPlatform, 'official-careers-page-jobylon-shell-sentinel')
+  assert.equal(provider.atsPlatform, 'jobylon-native-widget')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-careers-page-jobylon-shell-validation')
+  assert.equal(provider.paginationStrategy, 'complete-inline-widget-array-and-closing-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-jobylon-shell-without-trusted-public-enumeration+return-empty',
+    'current-first-party-group-binding+native-widget-records+verified-full-role-details',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.verifiedPublicJobCount, null)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.basware\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /jobylon-jobs-widget/i)
   assert.match(provider.verifiedSurfaceSummary, /cdn\.jobylon\.com\/embedder\.js/i)

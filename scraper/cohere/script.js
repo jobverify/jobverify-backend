@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createDeclaredAshbyScraper } from '../../scraper-support/native-sources/declaredAshby/nativeCareers.js'
+import { createCoherePublicScraper } from './publicInventory.js'
 export const NATIVE_CONTRACT = {
   "source": "cohere",
   "companyName": "Cohere",
@@ -14,7 +14,7 @@ export const NATIVE_CONTRACT = {
 export const SOURCE = NATIVE_CONTRACT.source
 export const COMPANY = NATIVE_CONTRACT.companyName
 export const CAREERS_URL = NATIVE_CONTRACT.primaryURL
-export const run = options => createDeclaredAshbyScraper(NATIVE_CONTRACT).run(options)
+export const run = options => createCoherePublicScraper(NATIVE_CONTRACT).run(options)
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()

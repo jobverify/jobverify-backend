@@ -32,8 +32,6 @@ import { normalizePublicWorkArrangement, PUBLIC_WORK_ARRANGEMENT_EXPRESSION } fr
 import { withSemanticExperienceConstraint } from '../utils/classifiedExperienceFilters.js';
 import { applyPublicJobVisibility } from "../utils/publicJobVisibility.js";
 import { recordApplicationOpen } from '../services/applicationService.js';
-import { buildAggregateHiringSignalFilter } from "../utils/jobListingEvidence.js";
-import { buildMissingSourceDescriptionFilter } from "../utils/jobSourceContent.js";
 import { canUsePremiumFilters } from "../utils/accessControl.js";
 import {
   formatStoredLocationLabel,
@@ -44,6 +42,7 @@ import {
 import { normalizeJobSearchKey } from "../utils/jobSearchKeys.js";
 import { getValidIndiaCityForJob } from "../utils/publicJobLocationScope.js";
 import { normalizeLifecycleDate, startOfUtcDay } from "../utils/jobLifecycle.js";
+import { safeSourceUrl } from '../utils/jobProvenance.js';
 import { hasWorkdayOutageSignal } from "../../scraper-support/myworkday/engine.js";
 import {
   SearchInputError,
@@ -230,11 +229,7 @@ const resolvePublicJobDatasetTotals = async (siteSettings) => {
 };
 
 const isDefaultPublicJobListFilter = (filters = {}) => (
-  filters?.status === "active"
-  && filters?.isPublicIndia === true
-  && Object.keys(filters).length === 4
-  && Object.hasOwn(filters, "$expr")
-  && isDeepStrictEqual(filters.$nor, [buildAggregateHiringSignalFilter(), buildMissingSourceDescriptionFilter()])
+  isDeepStrictEqual(filters, { status: "active" })
 );
 
 const workdayApplicationStatusCache = new Map();
@@ -1285,7 +1280,9 @@ export const getAllJobs = async (req, res) => {
       });
     }
 
-    const filters = jobFilters(req.query, undefined, req.siteSettings);
+    // Check effective selections before visibility wraps them in nested expressions.
+    const filterConditions = buildJobFilterConditions(req.query);
+    const filters = applyPublicJobVisibility(filterConditions, req.siteSettings);
     const hasTextSearch = Boolean(filters.$text);
 
     const DEFAULT_PAGE = 1;
@@ -1300,7 +1297,7 @@ export const getAllJobs = async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     const sortOption = resolveJobListSortOption({ sort, hasTextSearch });
-    const canUseSummaryTotals = isDefaultPublicJobListFilter(filters);
+    const canUseSummaryTotals = isDefaultPublicJobListFilter(filterConditions);
     if (sort === "recommended") {
       const recommendationPipeline = buildRecommendationPipeline(
         filters,
@@ -1938,16 +1935,17 @@ export const getJobSeoFeed = async (req, res) => {
       applyPublicJobVisibility({
         status: "active",
         sourceUrl: { $exists: true, $ne: null },
+        description: { $type: 'string', $regex: /\S[\s\S]{118,}\S/ },
         $and: [{ $or: [{ closingDate: null }, { closingDate: { $gt: new Date() } }] }],
       }, req.siteSettings),
     )
       .sort({ sortDate: -1, _id: -1 })
-      .select("title company postedAt updatedAt closingDate city location locations jobType")
+      .select("title company postedAt updatedAt closingDate city location locations jobType sourceUrl applyUrl workdayApplicationStatus workdayApplicationStatusReason workdayApplicationStatusCheckedAt")
       .select({ _publicJobType: PUBLIC_JOB_TYPE_EXPRESSION })
       .lean()
       .exec();
 
-    const data = jobs.map((job) => {
+    const data = jobs.filter(job => safeSourceUrl(job.sourceUrl) && buildApplicationState(job).applicationStatus === 'available').map((job) => {
       const path = `/jobs/${job._id}/${slugifyJob(job.title, job.company)}`;
 
       return {

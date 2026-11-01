@@ -146,69 +146,34 @@ test('Lyft helpers stay pinned to the verified first-party careers shell and Gre
   })
 })
 
-test('Lyft run validates the first-party careers shell before fetching the Greenhouse jobs API', async () => {
+test('Lyft registered native/route reader applies its cap after retaining all 170 originals', async () => {
   const lyft = await loadLyftModule()
-  const requested = []
-
-  const jobs = await lyft.createLyftScraper({ maxJobs: 1 }).run({
-    fetchText: async (url) => {
-      requested.push({ type: 'text', url })
-      return careersHtml
-    },
-    fetchJson: async (url, options = {}) => {
-      requested.push({ type: 'json', url, options })
-      return greenhousePayload
-    },
-    now: () => '2026-07-16T00:00:00.000Z',
-  })
-
-  assert.deepEqual(requested, [
-    { type: 'text', url: lyft.CAREERS_URL },
-    {
-      type: 'json',
-      url: 'https://api.greenhouse.io/v1/boards/lyft/jobs?content=true',
-      options: { method: 'GET' },
-    },
-  ])
+  const { fixture, replay } = await import('../native-sources/declaredGreenhouseRoutes/fixtureReplay.js')
+  const r = replay(), jobs = await lyft.createLyftScraper({ maxJobs: 1 }).run(r.options)
+  assert.equal(r.audits[0].observations.length, 170)
   assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Software Engineer, Payments Platform')
-  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].jobId, fixture.oracle.lyft.records.find(row => row.indiaCandidate).id)
 })
 
-test('Lyft returns no jobs when the verified public board has no India-facing roles', async () => {
+test('Lyft distinguishes discovery records with unresolved location scope from India-zero authority', async () => {
   const lyft = await loadLyftModule()
-
-  const jobs = await lyft.createLyftScraper().run({
-    fetchText: async () => careersHtml,
-    fetchJson: async () => nonIndiaPayload,
-  })
-
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(lyft.extractIndiaJobsFromGreenhousePayload(nonIndiaPayload), [])
+  const { replay } = await import('../native-sources/declaredGreenhouseRoutes/fixtureReplay.js')
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const r = replay(), jobs = await lyft.createLyftScraper().run(r.options)
+  assert.equal(r.audits[0].observations.length, 170)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  assert.ok(jobs.every(job => job.country === 'India' || job.sourceCountryScopeUnresolved))
 })
 
-test('Lyft fails closed when the careers shell drifts or the Greenhouse payload stops matching Lyft', async () => {
+test('Lyft holds current publication after a closing primary declaration failure and rejects decoded-only input', async () => {
   const lyft = await loadLyftModule()
-
-  await assert.rejects(
-    lyft.createLyftScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-      fetchJson: async () => greenhousePayload,
-    }),
-    /verified first-party careers shell/i,
-  )
-
-  await assert.rejects(
-    lyft.createLyftScraper().run({
-      fetchText: async () => careersHtml,
-      fetchJson: async () => ({
-        jobs: [
-          {
-            ...greenhousePayload.jobs[0],
-            company_name: 'Other Company',
-          },
-        ],
-      }),
-    }),
-    /verified company identity/i,
-  )
+  const { fixture, replay } = await import('../native-sources/declaredGreenhouseRoutes/fixtureReplay.js')
+  const r = replay((url, page, visit) => url === fixture.profiles.lyft.primaryURL && visit === 2 ? { ...page, status: 502 } : page)
+  const jobs = await lyft.createLyftScraper().run(r.options)
+  assert.equal(jobs.length, 0)
+  assert.equal(r.audits[0].observations.length, 170)
+  assert.ok(r.audits[0].observations.every(job => job.jobDescription && !job.sourceCurrentNativePostingIdentityQualified))
+  await assert.rejects(lyft.createLyftScraper().run({ fetchJson: r.options.fetchJson }), /original HTTP/)
 })

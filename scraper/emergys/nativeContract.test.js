@@ -10,8 +10,9 @@ const fixture=JSON.parse(zlib.gunzipSync(fs.readFileSync(new URL('./fixtures/nat
 const BOARD='https://www.emergys.com/careers/',INDIA=BOARD+'infrastructure-engineer/',now=()=> '2026-10-23T17:30:00.000Z'
 globalThis.fetch=()=>{throw Error('Public HTTP forbidden in source fixture tests')}
 function replay({edit=(html,url,kind)=>html,statusFor=()=>200}={}){
- const reads=[];let boardReads=0
- return{reads,fetchImpl:async(url,request)=>{
+ const reads=[],attempts=[];let boardReads=0
+ return{reads,attempts,fetchImpl:async(url,request)=>{
+  attempts.push({url,method:request.method,redirect:request.redirect})
   const p=fixture.inputs.find(p=>p.url===url);assert.ok(p,'Unlisted resource:'+url)
   const kind=url===BOARD?(++boardReads===1?'listing':'closing'):'detail',body=Buffer.from(edit(Buffer.from(p.bodyBase64,'base64').toString('utf8'),url,kind))
   reads.push({url,method:request.method,redirect:request.redirect})
@@ -22,10 +23,13 @@ function replay({edit=(html,url,kind)=>html,statusFor=()=>200}={}){
 const run=r=>source.run({fetchImpl:r.fetchImpl,now})
 function replaceDescription(html){const d=document(html),main=d.nodes(n=>n.tag==='main')[0],block=d.nodes(n=>n.tag==='div'&&d.hasClass(n,'fusion-text'),main).find(n=>d.text(n).length>300);assert.ok(block);return html.slice(0,block.start)+'<div class="fusion-text"></div>'+html.slice(block.end)}
 const batch=jobs=>jobs[0].nativeCollectionEvidence
-test('Emergys reads all advertised pages and preserves old native page-publication clocks and complete authored descriptions',async()=>{
+test('Emergys preserves captured role content and clocks while reporting uncaptured advertised pages',async()=>{
  const r=replay(),jobs=await run(r);assert.equal(jobs.length,2);const b=batch(jobs)
- assert.equal(b.observedListingCount,15);assert.equal(b.nativeReportedTotal,null);assert.equal(b.candidateDetails,15);assert.equal(b.jobs.length,2);assert.equal(b.exclusions.length,13);assert.equal(b.failures.length,0)
- assert.equal(b.listingPaginationComplete,true);assert.equal(b.closingInventoryMatches,true);assert.equal(b.sourceScopeComplete,false);assert.equal(b.cleanupAllowed,false)
+ assert.equal(b.observedListingCount,15);assert.equal(b.nativeReportedTotal,null);assert.equal(b.candidateDetails,15);assert.equal(b.jobs.length,2);assert.equal(b.exclusions.length,13);assert.equal(b.failures.length,1)
+ assert.equal(b.listingPaginationComplete,false);assert.equal(b.closingInventoryMatches,true);assert.equal(b.sourceScopeComplete,false);assert.equal(b.cleanupAllowed,false)
+ assert.deepEqual(b.failures.map(failure=>failure.stage),['native-pagination'])
+ assert.deepEqual(b.unknownRawFailures.map(failure=>({stage:failure.stage,url:failure.candidate.url,expectedPage:failure.candidate.expectedPage})),[{stage:'native-pagination',url:BOARD+'page/2/',expectedPage:2}])
+ assert.equal(r.attempts.length,18);assert.equal(r.attempts.filter(read=>read.url===BOARD+'page/2/').length,1)
  assert.equal(r.reads.length,17);assert.ok(r.reads.every(r=>r.method==='GET'&&r.redirect==='manual'))
  const job=jobs.find(j=>j.jobId==='infrastructure-engineer');assert.equal(job.company,'Emergys');assert.equal(job.location,'Pune, India');assert.equal(job.country,'India');assert.equal(job.postingDate,'2026-08-28T12:12:01+00:00')
  assert.equal(job.nativeFacts.firstEverPublication,null);assert.equal(job.nativePublication.field,'Article.datePublished');assert.equal(job.nativePublication.isExplicitJobPostingDate,false)
@@ -36,7 +40,7 @@ test('Emergys reads all advertised pages and preserves old native page-publicati
 })
 test('Emergys preserves country-unknown role gaps separately from the explicitly non-India role',async()=>{
  const jobs=await run(replay()),b=batch(jobs)
- assert.deepEqual(b.nativeDetailCountryCounts,{observedIndiaRows:2,excludedNonIndiaRows:1,unresolvedCountryRows:12,reconciled:true})
+ assert.deepEqual(b.nativeDetailCountryCounts,{observedIndiaRows:2,excludedNonIndiaRows:1,unresolvedCountryRows:12,reconciled:false})
  assert.equal(b.exclusions.filter(r=>r.exclusionReason==='native-country-unknown').length,12)
  assert.equal(b.exclusions.filter(r=>r.exclusionReason==='native-explicit-non-India-country').length,1)
 })

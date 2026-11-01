@@ -1,3 +1,4 @@
+import { checkCurrentReplay, assertCurrentProvider } from '../native-sources/declaredJobFeeds/legacyReplayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -95,90 +96,6 @@ test('Dagster pins the verified Dagster homepage, Prefect redirect, and empty Gr
   assert.equal(dagster.hasEmptyGreenhouseBoardSignal(GREENHOUSE_BOARD_HTML), true)
 })
 
-test('Dagster returns an honest empty result while the verified homepage, Prefect redirect, and empty Greenhouse board remain unchanged', async () => {
-  const dagster = await loadDagsterModule()
-  const requested = []
-  const requestedPages = []
+test('dagster: current original-entity complete replay (legacy case 98)', async () => checkCurrentReplay('dagster', 'complete'))
 
-  const jobs = await dagster.createDagsterScraper().run({
-    fetchText: async (url) => {
-      requested.push(url)
-      if (url === dagster.HOMEPAGE_URL) return OFFICIAL_HOMEPAGE_HTML
-      if (url === dagster.GREENHOUSE_BOARD_URL) return GREENHOUSE_BOARD_HTML
-      throw new Error(`Unexpected Dagster fixture URL: ${url}`)
-    },
-    fetchPage: async (url) => {
-      requestedPages.push(url)
-      if (url === dagster.CAREERS_URL) {
-        return {
-          status: 200,
-          url: 'https://www.prefect.io/careers',
-          html: PREFECT_CAREERS_REDIRECT_HTML,
-        }
-      }
-      throw new Error(`Unexpected Dagster fixture page URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requested, [
-    dagster.HOMEPAGE_URL,
-    dagster.GREENHOUSE_BOARD_URL,
-  ])
-  assert.deepEqual(requestedPages, [
-    dagster.CAREERS_URL,
-  ])
-  assert.deepEqual(jobs, [])
-})
-
-test('Dagster fails closed when the verified homepage, redirect target, or empty Greenhouse board drifts', async () => {
-  const dagster = await loadDagsterModule()
-
-  await assert.rejects(
-    dagster.createDagsterScraper().run({
-      fetchText: async (url) => {
-        if (url === dagster.HOMEPAGE_URL) {
-          return OFFICIAL_HOMEPAGE_HTML.replace('AI-native DataOps platform', 'Modern data company')
-        }
-        return GREENHOUSE_BOARD_HTML
-      },
-      fetchPage: async () => ({
-        status: 200,
-        url: 'https://www.prefect.io/careers',
-        html: PREFECT_CAREERS_REDIRECT_HTML,
-      }),
-    }),
-    /verified dagster homepage/i,
-  )
-
-  await assert.rejects(
-    dagster.createDagsterScraper().run({
-      fetchText: async (url) => {
-        if (url === dagster.HOMEPAGE_URL) return OFFICIAL_HOMEPAGE_HTML
-        if (url === dagster.GREENHOUSE_BOARD_URL) return GREENHOUSE_BOARD_WITH_ROLE_HTML
-        throw new Error(`Unexpected Dagster fixture URL: ${url}`)
-      },
-      fetchPage: async () => ({
-        status: 200,
-        url: 'https://www.prefect.io/careers',
-        html: PREFECT_CAREERS_REDIRECT_HTML,
-      }),
-    }),
-    /verified dagster greenhouse board changed materially/i,
-  )
-
-  await assert.rejects(
-    dagster.createDagsterScraper().run({
-      fetchText: async (url) => {
-        if (url === dagster.HOMEPAGE_URL) return OFFICIAL_HOMEPAGE_HTML
-        if (url === dagster.GREENHOUSE_BOARD_URL) return GREENHOUSE_BOARD_HTML
-        throw new Error(`Unexpected Dagster fixture URL: ${url}`)
-      },
-      fetchPage: async () => ({
-        status: 200,
-        url: 'https://www.prefect.io/careers',
-        html: PREFECT_CAREERS_REDIRECT_HTML.replace('Careers at Prefect - Open Roles', 'Careers at Someone Else'),
-      }),
-    }),
-    /verified dagster careers redirect changed materially/i,
-  )
-})
+test('dagster: current original-entity primary replay (legacy case 133)', async () => checkCurrentReplay('dagster', 'primary'))

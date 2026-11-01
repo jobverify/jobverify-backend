@@ -1,4 +1,5 @@
 import { withSourceDescription } from './jobSourceContent.js';
+import { mainExperienceRequirement, alternativeExperienceRequirement } from './mainExperienceRequirement.js';
 import { JOB_CLASSIFICATION_POLICY_VERSION } from './jobClassificationVersion.js';
 import {
   EXPERIENCE_BUCKET_VALUES,
@@ -629,8 +630,9 @@ const parseExperienceProfile = (job = {}) => {
       .filter(Boolean)
       .join(" "),
   );
+  const canonicalExplicitRequirement = /^\d+(?:\.\d+)?(?:\s*(?:\+|plus|(?:-|to)\s*\d+(?:\.\d+)?))?\s*(?:months?|years?|yrs?)$/i.test(explicitExperienceField || '');
   const combinedText = normalizeExperienceNumberForms(
-    [titleText, explicitText, descriptiveText]
+    (canonicalExplicitRequirement ? [explicitExperienceField] : [titleText, explicitText, descriptiveText])
       .filter(Boolean)
       .join(" "),
   );
@@ -651,6 +653,26 @@ const parseExperienceProfile = (job = {}) => {
       ...baseProfile,
       experienceBucket: "unspecified",
     };
+  }
+
+  const requirementText = normalizeExperienceNumberForms([
+    job.minimumQualification && `Required qualifications: ${normalizeText(job.minimumQualification)}`,
+    descriptiveText,
+    job.preferredQualification && `Preferred qualifications: ${normalizeText(job.preferredQualification)}`,
+  ].filter(Boolean).join(' '));
+  const alternativeRequirement = alternativeExperienceRequirement(explicitExperienceField || requirementText);
+  if (alternativeRequirement) {
+    return { ...baseProfile, hasExplicitExperience: true, confidence: 'high', evidence: alternativeRequirement, experienceBucket: 'unspecified' };
+  }
+
+  if (!explicitExperienceField) {
+    const primaryRequirement = mainExperienceRequirement(requirementText);
+    if (primaryRequirement) {
+      return {
+        ...parseExperienceProfile({ experienceRequired: primaryRequirement }),
+        rawText: baseProfile.rawText,
+      };
+    }
   }
 
   const explicitFieldRangeMatch = explicitExperienceField?.match(
@@ -1968,7 +1990,7 @@ const parseExperienceProfile = (job = {}) => {
       minimumYears: exactYears,
       maximumYears: exactYears,
       hasExplicitExperience: true,
-      confidence: "medium",
+      confidence: canonicalExplicitRequirement ? "high" : "medium",
       evidence,
       experienceBucket: bucketFromYears(Math.floor(exactYears), Math.ceil(exactYears)),
     };

@@ -1,7 +1,6 @@
-import { githubRequest } from './github.js';
+import ScraperSchedule from '../models/ScraperSchedule.js';
 import { pipelineError } from './execution.js';
 
-const path = '/contents/.github/workflows/scraper.yml';
 const clock = minutes => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 
 export function intervalSettings(hours, startAt) {
@@ -47,53 +46,51 @@ export function parseSchedule(source) {
   return { block: block[0], mode: 'daily', cron: `${Number(entry[2])} ${Number(entry[3])} * * *`, time: clock((Number(entry[3]) * 60 + Number(entry[2]) + 330) % 1440) };
 }
 
-async function load(request) {
-  const repo = process.env.GITHUB_REPO;
-  const repository = await request(repo, '');
-  const branch = repository.default_branch;
-  const file = await request(repo, `${path}?ref=${encodeURIComponent(branch)}`);
-  if (file.encoding !== 'base64' || !file.content || !file.sha) throw pipelineError('GitHub did not return the scraper workflow file.', 502);
-  const source = Buffer.from(file.content, 'base64').toString('utf8');
-  return { repo, branch, file, source, parsed: parseSchedule(source) };
+// Strictly after now: editing a schedule never starts a past occurrence.
+export function nextScheduleRun(schedule, now = Date.now()) {
+  if (schedule.mode === 'interval') return nextIntervalRun(schedule, now + 1);
+  dailyCron(schedule.time);
+  const [hour, minute] = schedule.time.split(':').map(Number);
+  const offset = ((hour * 60 + minute - 330 + 1440) % 1440) * 60000;
+  const candidate = Math.floor(now / 86400000) * 86400000 + offset;
+  return new Date(candidate > now ? candidate : candidate + 86400000).toISOString();
 }
 
-const view = ({ branch, file, parsed: { block: _block, ...settings } }) => ({ ...settings, ...(settings.mode === 'interval' ? { nextRunAt: nextIntervalRun(settings) } : {}), timezone: 'Asia/Kolkata', sha: file.sha, branch });
-export async function getScraperSchedule({ request = githubRequest } = {}) {
-  return view(await load(request));
-}
+export const scheduleView = row => ({
+  mode: row.mode, ...(row.mode === 'daily' ? { time: row.time } : { hours: row.hours, startAt: row.startAt }),
+  revision: row.revision, timezone: 'Asia/Kolkata', nextRunAt: new Date(row.nextRunAt).toISOString(),
+  lastRunAt: row.lastRunAt ? new Date(row.lastRunAt).toISOString() : null,
+  lastRunId: row.lastRunId || null, lastError: row.lastError || null,
+});
 
-export async function updateScraperSchedule({ mode = 'daily', time, hours, startAt, sha } = {}, { request = githubRequest } = {}) {
-  if (!['daily', 'interval'].includes(mode)) throw pipelineError('Choose daily or interval scheduling.', 400);
-  const settings = mode === 'daily' ? { mode, time, cron: dailyCron(time) } : intervalSettings(hours, startAt);
-  if (typeof sha !== 'string' || !/^[a-f0-9]{40,64}$/.test(sha)) throw pipelineError('Reload the schedule before saving.', 400);
-  const current = await load(request);
-  if (sha !== current.file.sha) throw pipelineError('The workflow changed. Reload the schedule and try again.', 409);
-  if (settings.cron === current.parsed.cron && settings.mode === current.parsed.mode && settings.hours === current.parsed.hours && settings.startAt === current.parsed.startAt) return view(current);
-  if (mode === 'interval' && !current.source.includes('steps.register.outputs.should_run')) throw pipelineError('Deploy the interval-capable scraper workflow on the default branch before enabling interval scheduling.', 409);
-  const newline = current.parsed.block.endsWith('\r\n') ? '\r\n' : '\n';
-  const description = mode === 'daily' ? `Every day at ${time} IST` : `jobverify-interval ${JSON.stringify({ hours: settings.hours, startAt: settings.startAt })}`;
-  const content = current.source.replace(current.parsed.block, `  schedule:${newline}    - cron: '${settings.cron}' # ${description}${newline}`);
-  let result;
+export async function getScraperSchedule({ now = Date.now() } = {}) {
+  const initial = { mode: 'daily', time: '08:30', revision: 0 };
+  // The singleton primary key also serializes concurrent first startup.
+  let row;
   try {
-    result = await request(current.repo, path, { method: 'PUT', body: {
-      message: mode === 'daily' ? `Set daily scraper schedule to ${time} IST` : `Set scraper interval to every ${hours} hours`, branch: current.branch,
-      sha, content: Buffer.from(content).toString('base64'),
-    } });
+    row = await ScraperSchedule.findOneAndUpdate({ _id: 'global' }, { $setOnInsert: {
+      ...initial, nextRunAt: new Date(nextScheduleRun(initial, now)),
+    } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
   } catch (error) {
-    // A lost response can follow a successful commit. Read back before reporting
-    // an uncertain save; never retry the write with the old SHA.
-    if (!error.githubStatus || error.githubStatus >= 500) {
-      try {
-        const confirmed = await load(request);
-        if (confirmed.branch === current.branch && confirmed.source === content) return view(confirmed);
-      } catch { /* Keep the original save failure if confirmation also fails. */ }
-    }
-    if (error.githubStatus === 401) throw pipelineError('GitHub rejected GITHUB_PAT: it may be expired or revoked. Update the backend token before saving again.', 502);
-    if (error.githubStatus === 403 || /without.*workflow.*scope/i.test(error.githubMessage || '')) throw pipelineError('GitHub denied the schedule update. The backend GITHUB_PAT needs Contents and Workflows write permissions for this repository (classic tokens need repo and workflow scopes). Also check branch rules and token approval.', 502);
-    if (error.githubStatus === 404) throw pipelineError('GitHub could not access the workflow for writing. Check the backend GITHUB_REPO and GITHUB_PAT repository selection and write access.', 502);
-    if (error.githubStatus === 409) throw pipelineError('The workflow changed or the branch rejected the update. Reload the schedule before retrying and check branch rules.', 409);
-    if (error.githubStatus === 422) throw pipelineError('GitHub rejected the workflow update. Check workflow validation and branch rules before retrying.', 502);
-    throw pipelineError('Schedule was not confirmed saved. Reload before retrying. Check GitHub Contents and Workflows write permissions and branch protection.', 502);
+    if (error.code !== 11000) throw error;
+    row = await ScraperSchedule.findById('global').lean();
   }
-  return view({ ...current, file: { sha: result.content.sha }, parsed: settings });
+  return scheduleView(row);
+}
+
+export async function updateScraperSchedule({ mode = 'daily', time, hours, startAt, revision } = {}, { now = Date.now() } = {}) {
+  if (!['daily', 'interval'].includes(mode)) throw pipelineError('Choose daily or interval scheduling.', 400);
+  if (!Number.isSafeInteger(revision) || revision < 0) throw pipelineError('Reload the schedule before saving.', 400);
+  let settings;
+  if (mode === 'daily') { dailyCron(time); settings = { mode, time }; }
+  else { const validated = intervalSettings(hours, startAt); settings = { mode, hours: validated.hours, startAt: validated.startAt }; }
+  const current = await getScraperSchedule({ now });
+  if (revision !== current.revision) throw pipelineError('The schedule changed. Reload the schedule and try again.', 409);
+  const row = await ScraperSchedule.findOneAndUpdate({ _id: 'global', revision, leaseUntil: { $lte: new Date(now) } }, {
+    $set: { ...settings, nextRunAt: new Date(nextScheduleRun(settings, now)), lastError: null },
+    $unset: mode === 'daily' ? { hours: 1, startAt: 1 } : { time: 1 },
+    $inc: { revision: 1 },
+  }, { new: true, runValidators: true }).lean();
+  if (!row) throw pipelineError('The schedule changed or a scheduled start is in progress. Reload and try again.', 409);
+  return scheduleView(row);
 }

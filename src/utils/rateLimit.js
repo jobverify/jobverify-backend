@@ -1,4 +1,5 @@
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import { isTrustedPublishingRequest } from './publishingAccess.js';
 
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const FALSE_VALUES = new Set(["0", "false", "no", "off"]);
@@ -19,6 +20,10 @@ export const isReadOnlyRequest = (req = {}) => READ_ONLY_METHODS.has(normalizeMe
 
 export const getApiRateLimitProfile = (req = {}) => {
   const path = getRequestPath(req);
+
+  // Server-rendered public pages share a frontend egress IP. Authenticate that
+  // narrow read path instead of charging all visitors to one visitor's quota.
+  if (isTrustedPublishingRequest(req)) return 'publishing-render';
 
   if (
     path === "/api/billing/webhook"

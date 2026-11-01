@@ -96,7 +96,8 @@ test('experienced job visibility is reversible and consistent across public surf
   const ids = categories.map(() => new mongoose.Types.ObjectId());
   await Job.collection.insertMany(categories.map((jobType, index) => ({
     fingerprint: String(ids[index]), _id: ids[index], title: `Opportunity ${index}`, company: `Company ${index}`, companyKey: `company ${index}`,
-    jobType, status: 'active', isPublicIndia: true, city: 'Bangalore', country: 'India', description: 'Deliver software features and support the engineering team.',
+    jobType, status: 'active', isPublicIndia: true, city: 'Bangalore', country: 'India',
+    description: 'Deliver software features and support the engineering team. Review requirements, investigate defects, write automated checks and collaborate with colleagues to maintain reliable applications.',
     sourceUrl: `https://example.com/jobs/${index}`, applyUrl: `https://example.com/jobs/${index}`,
     postedAt: new Date(), sortDate: new Date(),
   })));

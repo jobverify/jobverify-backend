@@ -5,7 +5,8 @@ import {gunzipSync} from 'node:zlib'
 import {getScraperCatalog,createCatalogScraper} from '../../scraper-support/providers/index.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
-const fixture=source=>JSON.parse(gunzipSync(readFileSync(new URL(`../${source}/fixtures/native-20261030.json.gz`,import.meta.url))))
+// Exact original fixture bytes are packaged in a trackable test directory.
+const fixture=source=>JSON.parse(gunzipSync(readFileSync(new URL(`./native-captures/legacy-${source}-20261030.json.gz`,import.meta.url))))
 async function execute(t,source,change=()=>{},options={}){
  const data=fixture(source),calls=[]
  const transport=async(url,init={})=>{init.signal?.throwIfAborted();const entry=data.entries[url];assert.ok(entry,`Unexpected native request ${url}`);calls.push(url);const response={...entry};change(response,url,calls);return{status:response.status,url:response.url,ok:response.status===200,text:async()=>response.body,json:async()=>JSON.parse(response.body),headers:{get:()=>null}}}
@@ -20,7 +21,8 @@ for(const [source,count]of[['dataiku',15],['assemblyai',18]]){
   const {jobs,audit,calls,evidence}=await execute(t,source)
   const provider=getScraperCatalog().find(p=>p.source===source)
   assert.equal(provider.adapter,'script')
-  assert.ok(provider.modulePath.endsWith(`${source}/currentNative.js`)||provider.modulePath.endsWith(`${source}\\currentNative.js`))
+  const entry=source==='dataiku'?'publicInventory.js':'currentNative.js'
+  assert.ok(provider.modulePath.endsWith(`${source}/${entry}`)||provider.modulePath.endsWith(`${source}\\${entry}`))
   assert.equal(provider.sourceScopeComplete,false)
   assert.match(provider.extractionStrategy,/partial-country-scope/)
   assert.match(provider.verifiedSurfaceSummary,/partial source recovery/)
@@ -129,13 +131,24 @@ for(const [source,count]of[['dataiku',15],['assemblyai',18]]){
    const p=JSON.parse(r.body);for(const row of p.jobs||[p])if(row.id===target){row.location={name:'Bengaluru, India'};row.offices=[]}r.body=JSON.stringify(p)
   }),/visible.*(?:delegation|handoff)/i)
  })
- test(`${source} hidden closing employer handoff cannot retain earlier India extraction`,async t=>{
+ test(`${source} hidden closing employer handoff cannot certify earlier India extraction`,async t=>{
   const target=JSON.parse(Object.entries(fixture(source).entries).find(([u])=>u.endsWith('/jobs?content=true'))[1].body).jobs[0].id
-  await assert.rejects(execute(t,source,(r,u,calls)=>{
+  const collect=()=>execute(t,source,(r,u,calls)=>{
    if(!u.includes('boards-api')&&calls.filter(value=>value===u).length===2)
     r.body=r.body.replace(/<\/style\s*>/i,'a[href*="greenhouse.io"]{opacity:0!important}</style>')
    if(u.includes('boards-api')){const p=JSON.parse(r.body);for(const row of p.jobs||[p])if(row.id===target){row.location={name:'Bengaluru, India'};row.offices=[]}r.body=JSON.stringify(p)}
-  }),/visible.*(?:delegation|handoff)/i)
+  })
+  if(source==='dataiku'){
+   const {jobs,evidence,audit}=await collect()
+   assert.equal(jobs.length,1)
+   assert.equal(jobs[0].sourceNativePayload.id,target)
+   assert.equal(jobs[0].sourceDetailComplete,true)
+   assert.equal(jobs[0].sourceListingComplete,false)
+   assert.equal(jobs[0].lifecycleCleanupAllowed,false)
+   assert.equal(evidence.listingComplete,false)
+   assert.equal(evidence.verifiedAt,null)
+   assert.equal(audit.details.length,15)
+  }else await assert.rejects(collect(),/visible.*(?:delegation|handoff)/i)
  })
  test(`${source} changed existing style content stays explicitly unknown even with visible native delegation`,async t=>{
   const target=JSON.parse(Object.entries(fixture(source).entries).find(([u])=>u.endsWith('/jobs?content=true'))[1].body).jobs[0].id

@@ -24190,7 +24190,7 @@
     "companyDomain": "flatgigs.com",
     "officialHomepageUrl": "https://flatgigs.com/",
     "companyCareerPage": "https://flatgigs.com/career/",
-    "remediationStatus": "official-identity-investigated-discovery-only",
+    "remediationStatus": "native-widget-partial-observations-with-unqualified-company-scope",
     "officialBindingVerifiedAt": "2026-10-21T19:47:29.051Z",
     "verifiedOn": null,
     "verifiedAt": null,
@@ -24215,13 +24215,18 @@
       "bindingMethod": "scoped-primary-official-discovery-only",
       "evidenceOrigin": "current-public-primary-research-no-source-runtime"
     },
-    "verifiedSurfaceSummary": "Current Flatgigs official homepage describes a Dubai MENA recruitment/talent operator and links Career. Raw careers embeds whr_embed(542477), and exact advertised Workable embed script derives public widget GET; followed widget names Flatgigs and supplies typed role locations and separate created_at/published_on clocks. Agency listings may represent clients; role employers stay unknown. Native fullJDs separately checked where available. Discovery only; registered scrapers and eligibility extractors were not executed. Public, India and eligible counts remain null. Shells, blocked pages, snippets, UI totals, and bounded samples do not prove inventory completeness or zero jobs. Role legal employers and original publication provenance remain unverified.",
+    "verifiedSurfaceSummary": "Publisher-bound widget observations only; legal employers, reciprocal domain, authoritative company totals, current availability and lifecycle scope remain unknown. The retained native cohort lacks an actual sixth same-mode closing response.",
     "discoveryAliases": [
       {
         "name": "Flatgigs recruiting operator and unnamed client employers are distinct",
         "relation": "Relationship/collision context only; no source alias, legal-employer equivalence or inventory merge."
       }
-    ]
+    ],
+    "atsPlatform": "workable-widget-v1",
+    "paginationStrategy": "native-widget-location-variants-and-same-mode-closing-observations",
+    "extractionStrategy": "official-publisher-account-observations-with-unqualified-company-scope",
+    "backfillMode": "native-partial-observations",
+    "zeroResultPolicy": "coverage-gap"
   },
   {
     "source": "flatironhealth",

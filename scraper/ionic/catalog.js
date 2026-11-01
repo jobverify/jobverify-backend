@@ -1,4 +1,5 @@
-﻿export const IONIC_CATALOG = {
+import {publicLeverMetadata, PUBLIC_LEVER_PROFILES} from '../../scraper-support/native-sources/publicLeverChannels/nativeCareers.js'
+const IONIC_CATALOG_HISTORICAL = {
   source: 'ionic',
   companyName: 'Ionic',
   officialBrandName: 'Ionic',
@@ -21,6 +22,8 @@
   verifiedSurfaceSummary:
     'Verified on July 16, 2026 that https://ionic.io/about/jobs is the live first-party Ionic careers page, that its runtime jobs contract points to the first-party proxy https://ionic.io/api/lever, and that this proxy currently returns {"ok":true,"data":{"ok":false,"error":"Document not found"}} instead of a live openings array. Verified that the public Lever root https://jobs.lever.co/Ionic and sample job detail URLs embedded in the current jobs-page bundle return 404, so the page exposes no trustworthy public jobs surface and this provider fails closed with an empty array.',
 }
+
+export const IONIC_CATALOG = publicLeverMetadata(PUBLIC_LEVER_PROFILES.ionic, IONIC_CATALOG_HISTORICAL)
 
 export default IONIC_CATALOG
 

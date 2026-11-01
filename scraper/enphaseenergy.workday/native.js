@@ -119,8 +119,9 @@ export function parseDetail(html,row,{now=new Date().toISOString()}={}){
  // Closure is authoritative within the active role header as well as its JD.
  // The document reader excludes inherited hidden/inert and noncontent nodes;
  // unrelated footer/page text cannot close this role.
- let availabilityQualified=false,notice=null
- try{notice=nativeRoleClosureNotice({source:'enphaseenergy',company:'Enphase Energy',jobId:row.jid,title,sourceUrl:roleURL(row)},html);availabilityQualified=true}catch{}
+ let availabilityQualified=false,availabilityUnqualified=false,notice=null
+ try{notice=nativeRoleClosureNotice({source:'enphaseenergy',company:'Enphase Energy',jobId:row.jid,title,sourceUrl:roleURL(row)},html);availabilityQualified=true}
+ catch(error){availabilityUnqualified=error?.code==='NATIVE_STATUS_LAYOUT_UNQUALIFIED'}
  const closed=availabilityQualified?Boolean(notice):CLOSED.test(d.text(intro))||CLOSED.test(selected||'')||CLOSED.test(nativeText)
  const full=!closed&&same&&usable(selected)&&usable(nativeText)?selected:null
  const reason=full?'complete':closed?'native-role-closed':texts.length>1?'contradictory-native-description':!same?'missing-unscoped-or-conflicting-native-description':'closed-instruction-only-or-unusable-native-description'
@@ -139,6 +140,7 @@ export function parseDetail(html,row,{now=new Date().toISOString()}={}){
   sourceOfficialHtmlFetchedAtRuntime:true,scrapedAt:now,
  }
  if(availabilityQualified&&(full||closed))job.sourceAvailabilityEvidence=createNativeRoleAvailability(job,{state:closed?'closed':'open',observedAt:now,evidenceHtml:html})
+ else if(availabilityUnqualified)job.sourceAvailabilityEvidence={state:'unavailable',reason:'native-status-layout-unqualified'}
  else if(closed)job.sourceAvailabilityEvidence={state:'unavailable',reason:'native-closure-identity-unqualified'}
  return job
 }

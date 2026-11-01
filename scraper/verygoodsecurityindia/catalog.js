@@ -1,9 +1,10 @@
+import {publicLeverMetadata, PUBLIC_LEVER_PROFILES} from '../../scraper-support/native-sources/publicLeverChannels/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-const PROVIDER_METADATA = {
+const PROVIDER_METADATA_HISTORICAL = {
   "source": "verygoodsecurityindia",
   "companyName": "Very Good Security India",
   "adapter": "script",
@@ -21,6 +22,8 @@ const PROVIDER_METADATA = {
   "originalModulePath": "../workbookbatch05/verygoodsecurityindia.js",
   "originalDryRunFile": null
 }
+
+const PROVIDER_METADATA = publicLeverMetadata(PUBLIC_LEVER_PROFILES.verygoodsecurityindia, PROVIDER_METADATA_HISTORICAL)
 
 export default PROVIDER_METADATA
 export { PROVIDER_METADATA }

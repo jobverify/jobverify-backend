@@ -1,3 +1,4 @@
+import {createPublicWorkableSource,PUBLIC_WORKABLE_PROFILES} from '../../scraper-support/native-sources/publicWorkableSources/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -342,65 +343,7 @@ const normalizeScrapedAt = (value) => {
   return parsed.toISOString()
 }
 
-export const createTravisCiScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  now = () => new Date(),
-} = {}) => ({
-  async run(options = {}) {
-    const fetchPage = options.fetchPage || defaultFetchPage
-    const fetchText = options.fetchText || defaultFetchText
-    const fetchJson = options.fetchJson || defaultFetchJson
-
-    const homepagePage = await fetchPage(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepagePage)) {
-      throw new Error('Travis CI verified official homepage no longer matches the trusted public surface')
-    }
-
-    const aboutPage = await fetchPage(ABOUT_PAGE_URL)
-    if (!hasAboutPageSignal(aboutPage)) {
-      throw new Error('Travis CI verified about page no longer matches the trusted public surface')
-    }
-
-    const imprintPage = await fetchPage(IMPRINT_PAGE_URL)
-    if (!hasImprintSignal(imprintPage)) {
-      throw new Error('Travis CI verified imprint handoff no longer matches the trusted public surface')
-    }
-
-    for (const url of NO_PUBLIC_JOB_ROUTE_URLS) {
-      const page = await fetchPage(url)
-      if (!hasVerifiedMissingJobRoute(page, url)) {
-        throw new Error(`Travis CI verified main-domain missing careers route changed materially: ${url}`)
-      }
-    }
-
-    const workableBoardPage = await fetchPage(WORKABLE_BOARD_URL)
-    if (!hasWorkableBoardSignal(workableBoardPage)) {
-      throw new Error('Travis CI verified Workable board no longer matches the trusted public surface')
-    }
-
-    const jobsMarkdown = await fetchText(JOBS_FEED_URL)
-    if (!hasOfficialJobsFeedSignal(jobsMarkdown)) {
-      throw new Error('Travis CI verified Workable jobs feed no longer matches the trusted public surface')
-    }
-
-    const widgetPayload = await fetchJson(WIDGET_API_URL)
-    if (!hasWidgetApiSignal(widgetPayload)) {
-      throw new Error('Travis CI verified Workable widget payload no longer matches the trusted public surface')
-    }
-
-    const limit = Number.isInteger(options.maxJobs) ? options.maxJobs : maxJobs
-    const jobs = extractJobsFromMarkdown(jobsMarkdown)
-    const selectedJobs = limit ? jobs.slice(0, limit) : jobs
-    const scrapedAt = normalizeScrapedAt((options.now || now)())
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-    }))
-  },
-})
+export const createTravisCiScraper = (options = {}) => createPublicWorkableSource(PUBLIC_WORKABLE_PROFILES.find(p => p.source === 'travisci'), options)
 
 export const run = async (options = {}) => createTravisCiScraper().run(options)
 

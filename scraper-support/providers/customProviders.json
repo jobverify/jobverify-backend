@@ -6492,13 +6492,13 @@
     "companyCareerPage": "https://www.lifeatcanva.com/en/jobs/",
     "atsPlatform": "official-first-party-jobs-board",
     "countryFilter": "India",
-    "paginationStrategy": "page-query-or-verified-cloudflare-challenge-empty",
-    "extractionStrategy": "first-party-jobs-html+pagination+india-location-filter-or-verified-cloudflare-challenge-empty",
+    "paginationStrategy": "page-query-stop-on-http-denial",
+    "extractionStrategy": "first-party-jobs-html+pagination+india-location-filter-with-unavailable-inventory-gap",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "lifeatcanva.com",
     "verifiedOn": "2026-08-14",
-    "verifiedSurfaceSummary": "Verified on Friday, August 14, 2026 that both https://www.lifeatcanva.com/en/jobs/ and https://www.lifeatcanva.com/en/jobs/?page=2 return Cloudflare-managed HTTP 403 challenge pages titled \"Just a moment...\" with cf-mitigated: challenge from this environment. Public search results may still reference Canva jobs, but the blocked responses expose no trustworthy fetchable jobs HTML here today, so the scraper returns [] only while those paginated first-party jobs routes remain on that exact challenge shell."
+    "verifiedSurfaceSummary": "Access-denied responses leave inventory unverified. The scraper stops at the first non-success response; current listing HTML, job details and company totals remain unverified. The retained August 14 verification date describes historical evidence."
   },
   {
     "source": "capgemini",

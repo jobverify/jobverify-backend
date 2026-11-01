@@ -5,7 +5,10 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { hydrateProviderCatalogEntry, getScraperCatalog, buildScrapers } from '../providers/index.js'
+import { resolveZeroJobOutcome, buildCoverageGapResult } from '../runner.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { inventoryCleanupOptions } from '../utils/scraperOutcome.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const modulePath = path.resolve(currentDir, '../../scraper/ravetechnologies/script.js')
@@ -184,7 +187,7 @@ test('Rave Technologies catalog tracks the NEC rename evidence, forbidden succes
   assert.equal(provider.officialBrandName, 'Rave Technologies')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.rave-tech.com/')
-  assert.equal(provider.companyCareerPage, 'https://www.necsws.com/careers')
+  assert.equal(provider.companyCareerPage, 'https://www.necsws.com/careers/')
   assert.equal(provider.successorHomepageUrl, 'https://www.necsws.com/india')
   assert.equal(
     provider.transitionEvidenceUrl,
@@ -214,7 +217,8 @@ test('Rave Technologies catalog tracks the NEC rename evidence, forbidden succes
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /ravetechnologies[\\/]jobs\.json$/i)
 
-  assert.equal(customProvider.companyCareerPage, provider.companyCareerPage)
+  assert.equal(customProvider.companyCareerPage, 'https://www.necsws.com/careers')
+  assert.notEqual(customProvider.companyCareerPage, provider.companyCareerPage)
   assert.equal(customProvider.atsPlatform, provider.atsPlatform)
   assert.equal(customProvider.verifiedOn, provider.verifiedOn)
   assert.equal(customProvider.smartRecruitersBoardUrl, provider.smartRecruitersBoardUrl)
@@ -430,4 +434,32 @@ test('Rave Technologies tolerates the verified successor homepage interstitial w
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'ravetechnologies')
   assert.equal(jobs[0].jobId, '744000140869519')
+})
+
+test('Rave exact runtime and effective descriptor URLs remain separate and do not certify empty inventory', async () => {
+  const rave = await loadScriptModule()
+  const effective = getScraperCatalog().find(item => item.source === 'ravetechnologies')
+  const scraper = buildScrapers().find(item => item.name === 'ravetechnologies')
+  assert.equal(rave.CAREERS_URL, 'https://www.necsws.com/careers/')
+  assert.equal(effective.companyCareerPage, 'https://www.necsws.com/careers')
+  assert.notEqual(rave.CAREERS_URL, effective.companyCareerPage)
+  assert.equal(effective.verifiedOn, '2026-08-04')
+  assert.equal(effective.smartRecruitersCompanyIdentifier, 'NECSWS')
+  assert.equal(effective.smartRecruitersBoardUrl, 'https://jobs.smartrecruiters.com/NECSWS')
+  assert.equal(effective.zeroResultPolicy, 'evidence-required')
+  const jobs = []
+  assert.equal(readInventoryEvidence(jobs), null)
+  assert.equal(resolveZeroJobOutcome(scraper, jobs, jobs), 'unverified-zero')
+  assert.equal(buildCoverageGapResult(scraper.name, 'unverified-zero').success, false)
+  assert.deepEqual(inventoryCleanupOptions({ success: true, zeroJobEvidence: 'unverified-zero', inventoryEvidence: null }), { replaceExisting: false })
+})
+
+test('Rave historical rename metadata cannot admit a foreign SmartRecruiters handoff', async () => {
+  const rave = await loadScriptModule()
+  let jsonCalls = 0
+  await assert.rejects(rave.createRaveTechnologiesScraper().run({
+    fetchText: async url => url === rave.SUCCESSOR_HOMEPAGE_URL ? SUCCESSOR_HOMEPAGE_HTML : SUCCESSOR_CAREERS_HTML.replaceAll('NECSWS', 'UNRELATED_EMPLOYER'),
+    fetchJson: async () => { jsonCalls++; throw new Error('Foreign handoff must stop before listing') },
+  }), /trusted SmartRecruiters handoff/i)
+  assert.equal(jsonCalls, 0)
 })

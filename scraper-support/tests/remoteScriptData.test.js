@@ -40,8 +40,40 @@ test('Sucuri rejects unknown decoded challenge programs and oversized scripts', 
 })
 
 test('Astra rejects an unknown Sucuri challenge rather than treating it as an empty careers gate', async () => {
+  const { createAstraMicrowaveScraper, isSucuriJavascriptGatePage, HOMEPAGE_URL, ROBOTS_URL } = await import('../../scraper/astramicrowave/script.js')
+  const page = {status:307, html:'<title>You are being redirected...</title><noscript>Javascript is required. Please enable javascript before you are allowed to see this page.</noscript><script>String.constructor("return globalThis")();</script>'}
+  // Gate classification is independent of decoding the opaque challenge. The
+  // data-only decoder still rejects its program; the scraper records a gap.
+  assert.throws(() => parseSucuriCookieScript('String.constructor("return globalThis")();'))
+  assert.equal(isSucuriJavascriptGatePage(page), true)
+  const requested = []
+  await assert.rejects(createAstraMicrowaveScraper().run({ fetchPage: async url => {
+    requested.push(url)
+    return { ...page, url }
+  } }), error => {
+    assert.equal(error.code, 'ASTRA_MICROWAVE_COVERAGE_GAP')
+    assert.equal(error.abortRetries, true)
+    assert.equal(error.status, 307)
+    assert.equal(error.inventoryEvidence.listingComplete, false)
+    assert.equal(error.inventoryEvidence.reportedTotal, null)
+    assert.equal(error.inventoryEvidence.indiaFacetCount, null)
+    assert.equal(error.lifecycleCleanupAllowed, false)
+    return true
+  })
+  assert.deepEqual(requested, [HOMEPAGE_URL, ROBOTS_URL])
+})
+
+test('Astra opaque challenge classification never executes a sentinel program', async () => {
   const { isSucuriJavascriptGatePage } = await import('../../scraper/astramicrowave/script.js')
-  assert.throws(() => isSucuriJavascriptGatePage({status:307, html:'<title>You are being redirected...</title><noscript>Javascript is required. Please enable javascript before you are allowed to see this page.</noscript><script>String.constructor("return globalThis")();</script>'}))
+  delete globalThis.__jobverifyAstraChallengeExecuted
+  try {
+    const html = '<title>You are being redirected...</title><noscript>Javascript is required. Please enable javascript before you are allowed to see this page.</noscript><script>globalThis.__jobverifyAstraChallengeExecuted=true;</script>'
+    assert.equal(isSucuriJavascriptGatePage({ status: 307, html }), true)
+    assert.equal(globalThis.__jobverifyAstraChallengeExecuted, undefined)
+    assert.equal(isSucuriJavascriptGatePage({ status: 200, html }), false)
+    assert.equal(isSucuriJavascriptGatePage({ status: 307, html: html + '<h1>Current openings</h1>' }), false)
+    assert.equal(globalThis.__jobverifyAstraChallengeExecuted, undefined)
+  } finally { delete globalThis.__jobverifyAstraChallengeExecuted }
 })
 
 test('bounded literal conversion returns only inert data and preserves supported compiled values', () => {

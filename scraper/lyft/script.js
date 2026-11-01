@@ -1,3 +1,4 @@
+import { createNativeRouteScraper, NATIVE_ROUTE_PROFILES } from '../../scraper-support/native-sources/declaredGreenhouseRoutes/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -211,50 +212,9 @@ export const extractIndiaJobsFromGreenhousePayload = (
     })
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+export const createLyftScraper = (options = {}) => createNativeRouteScraper(NATIVE_ROUTE_PROFILES.lyft, options)
 
-const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
-  method: options.method,
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json,text/plain,*/*',
-    Referer: CAREERS_URL,
-    ...(options.headers || {}),
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-export const createLyftScraper = ({
-  maxJobs = null,
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasVerifiedCareersShellSignal(careersHtml)) {
-      throw new Error('Lyft verified first-party careers shell no longer matches the current public surface')
-    }
-
-    const jobs = extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' }),
-      { scrapedAt: now() },
-    )
-
-    return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-  },
-})
-
-export const run = async (options = {}) => createLyftScraper().run(options)
+export const run = async (options = {}) => createLyftScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

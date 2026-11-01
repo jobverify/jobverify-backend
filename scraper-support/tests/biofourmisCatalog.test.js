@@ -21,6 +21,12 @@ test('getScraperCatalog includes Biofourmis on the official careers page backed 
   )
   assert.equal(provider.parser, 'current-declared-native-post-models')
   assert.match(provider.modulePath, /biofourmis[\\/]script\.js$/i)
+  assert.equal(provider.publicInventoryVerification.policy, 'biofourmis-current-advertised-public-source')
+  assert.equal(provider.publicInventoryVerification.currentDisposition, 'coverage-gap')
+  assert.equal(provider.publicInventoryVerification.companyGlobalTotal, null)
+  assert.equal(provider.publicInventoryVerification.wholeCompanyScope, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
 })
 
 test('buildScrapers and company coverage resolve Biofourmis without aliases', () => {

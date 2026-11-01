@@ -14,10 +14,10 @@ test('Manatec Electronics Private Limited is registered with the verified first-
   assert.equal(provider.companyCareerPage, 'https://manatec.in/career/')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-page-sitemap-plus-careers-page-plus-missing-route-validation')
+  assert.equal(provider.paginationStrategy, 'bounded-homepage-plus-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-page-sitemap+verified-application-only-careers-page+verified-missing-route',
+    'verified-official-homepage+application-only-careers+typed-unavailable-inventory',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -48,4 +48,20 @@ test('Manatec Electronics is runnable through the scraper provider catalog', () 
   assert.equal(scraper.provider.source, 'manatecelectronics')
   assert.equal(scraper.provider.companyCareerPage, 'https://manatec.in/career/')
   assert.match(scraper.dryRunFile, /manatecelectronics[\\/]jobs\.json$/i)
+})
+
+test('registered Manatec ordinary denial remains unknown inventory with saved-vacancy cleanup disabled', async () => {
+  const { readInventoryEvidence, isVerifiedEmptyEvidence } = await import('../../scraper-support/utils/inventoryEvidence.js')
+  const { inventoryCleanupOptions } = await import('../../scraper-support/utils/scraperOutcome.js')
+  const requestedUrls = [], scraper = buildScrapers().find(item => item.name === 'manatecelectronics')
+  const jobs = await scraper.run({ fetchPage: async url => { requestedUrls.push(url); return { status: 403, url, html: 'Forbidden' } } })
+  assert.deepEqual(requestedUrls, ['https://manatec.in/'])
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'discovery-only')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
+  assert.equal(isVerifiedEmptyEvidence(evidence), false)
+  assert.deepEqual(inventoryCleanupOptions({ inventoryEvidence: evidence }), { replaceExisting: false })
 })

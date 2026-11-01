@@ -1,3 +1,4 @@
+import {createPublicLeverSource, PUBLIC_LEVER_PROFILES} from '../../scraper-support/native-sources/publicLeverChannels/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -229,53 +230,7 @@ export const extractLeverJobs = (leverJobs = []) => {
   })
 }
 
-export const createNetomiScraper = ({
-  maxJobs = Number.POSITIVE_INFINITY,
-  now: defaultNow = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchPage,
-    fetchText,
-    fetchJson = defaultFetchJson,
-    now = defaultNow,
-  } = {}) {
-    const effectiveFetchPage = typeof fetchPage === 'function'
-      ? fetchPage
-      : typeof fetchText === 'function'
-        ? createFetchPageFromText(fetchText)
-        : defaultFetchPage
-    const careersPage = await effectiveFetchPage(CAREERS_URL)
-
-    if (isVerifiedReferralOnlyHomepageRedirect(careersPage)) {
-      return []
-    }
-
-    const careersHtml = String(careersPage?.html ?? '')
-
-    if (!hasOfficialNetomiCareersSignal(careersHtml)) {
-      throw new Error('Netomi verified official careers surface changed materially')
-    }
-
-    const leverApiUrl = extractLeverApiUrl(careersHtml)
-    if (leverApiUrl !== LEVER_API_URL) {
-      throw new Error('Netomi verified official careers surface no longer references the verified Lever API')
-    }
-
-    const scrapedAt = now()
-    const jobs = extractLeverJobs(await fetchJson(LEVER_API_URL))
-    const selectedJobs = Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-      companyCareerPage: CAREERS_URL,
-      companyDomain: COMPANY_DOMAIN,
-      atsPlatform: NETOMI_CATALOG.atsPlatform,
-    }))
-  },
-})
+export const createNetomiScraper = (options = {}) => createPublicLeverSource(PUBLIC_LEVER_PROFILES.netomi, options)
 
 export const run = async (options = {}) => createNetomiScraper(options).run(options)
 

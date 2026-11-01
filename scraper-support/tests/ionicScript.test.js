@@ -1,3 +1,5 @@
+import {fixture,replay,editHTML,editJSON,mutateNativePost} from '../native-sources/publicLeverChannels/fixtureReplay.js'
+import {syntheticPaginatedVgs} from '../native-sources/publicLeverChannels/testSupport.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -93,7 +95,7 @@ test('Ionic pins the verified first-party careers and broken Lever proxy contrac
   assert.equal(ionic.CAREERS_URL, 'https://ionic.io/about/jobs')
   assert.equal(ionic.LEVER_PROXY_URL, 'https://ionic.io/api/lever')
   assert.equal(ionic.LEVER_BOARD_URL, 'https://jobs.lever.co/Ionic')
-  assert.equal(ionic.VERIFIED_ON, '2026-07-16')
+  assert.equal(ionic.VERIFIED_ON, null)
   assert.equal(ionic.hasOfficialIonicCareersSignal(officialCareersHtml), true)
   assert.equal(ionic.hasOfficialIonicCareersSignal(driftedCareersHtml), false)
   assert.equal(ionic.hasBrokenLeverProxySignal(brokenLeverProxyPayload), true)
@@ -104,63 +106,25 @@ test('Ionic pins the verified first-party careers and broken Lever proxy contrac
   assert.equal(ionic.isMissingLeverBoardPage(liveBoardPage), false)
 })
 
-test('Ionic returns [] only while the official page stays intact and the first-party Lever surface remains broken', async () => {
-  const ionic = await loadIonicModule()
-  const requested = []
-
-  const jobs = await ionic.createIonicScraper().run({
-    fetchText: async (url) => {
-      requested.push({ type: 'text', url })
-      if (url === ionic.CAREERS_URL) return officialCareersHtml
-      throw new Error(`Unexpected Ionic text URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requested.push({ type: 'json', url })
-      if (url === ionic.LEVER_PROXY_URL) return brokenLeverProxyPayload
-      throw new Error(`Unexpected Ionic JSON URL: ${url}`)
-    },
-    fetchPage: async (url) => {
-      requested.push({ type: 'page', url })
-      if (url === ionic.LEVER_BOARD_URL) return notFoundBoardPage
-      throw new Error(`Unexpected Ionic page URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requested, [
-    { type: 'text', url: ionic.CAREERS_URL },
-    { type: 'json', url: ionic.LEVER_PROXY_URL },
-    { type: 'page', url: ionic.LEVER_BOARD_URL },
-  ])
-  assert.deepEqual(jobs, [])
+test("Ionic retains the original proxy failure and missing roles instead of claiming a source zero",async()=>{
+   const ionic=await loadIonicModule(),r=replay(),jobs=await ionic.createIonicScraper().run(r.options)
+   assert.equal(jobs.length,0);assert.equal(r.audits.length,1);const a=r.audits[0]
+   assert.deepEqual(a.closing.originalNativeProxy,fixture.oracle.ionic.originalProxy)
+   assert.equal(a.closing.nativeFeedUnavailable,true);assert.equal(a.closing.nativeListingComplete,false)
+   assert.equal(a.closing.originalCachedRoleAvailability.length,4)
+   assert.ok(a.closing.originalCachedRoleAvailability.every(page=>page.status===404))
+   assert.equal(a.sourceScopeComplete,false);assert.equal(a.authoritativeSourceTotal,null)
+  
 })
 
-test('Ionic fails closed when the careers page drifts, the Lever proxy revives, or the Lever board comes back', async () => {
-  const ionic = await loadIonicModule()
-
-  await assert.rejects(
-    ionic.createIonicScraper().run({
-      fetchText: async () => driftedCareersHtml,
-      fetchJson: async () => brokenLeverProxyPayload,
-      fetchPage: async () => notFoundBoardPage,
-    }),
-    /verified first-party careers page/i,
-  )
-
-  await assert.rejects(
-    ionic.createIonicScraper().run({
-      fetchText: async () => officialCareersHtml,
-      fetchJson: async () => liveLeverProxyPayload,
-      fetchPage: async () => notFoundBoardPage,
-    }),
-    /public jobs feed/i,
-  )
-
-  await assert.rejects(
-    ionic.createIonicScraper().run({
-      fetchText: async () => officialCareersHtml,
-      fetchJson: async () => brokenLeverProxyPayload,
-      fetchPage: async () => liveBoardPage,
-    }),
-    /lever board/i,
-  )
+test("Ionic retains primary and board identity changes and permits a restored supported proxy array",async()=>{
+   const ionic=await loadIonicModule()
+   const drift=replay((url,page)=>url===ionic.CAREERS_URL?editHTML(page,html=>html.replace('<title>Jobs</title>','<title>Other</title>')):page)
+   assert.equal((await ionic.run(drift.options)).length,0);assert.equal(drift.audits[0].closing.publisherQualified,false)
+   const restored=replay((url,page)=>url===ionic.LEVER_PROXY_URL?editJSON(page,model=>{model.ok=true;model.data=[]}):page)
+   await ionic.run(restored.options);assert.equal(restored.audits[0].closing.nativeFeedUnavailable,false)
+   assert.equal(restored.audits[0].sourceScopeComplete,false)
+   const board=replay((url,page)=>url===ionic.LEVER_BOARD_URL?{...editHTML(page,()=>'<title>Unrelated Company</title>'),status:200}:page)
+   await ionic.run(board.options);assert.equal(board.audits[0].closing.publisherQualified,false)
+  
 })

@@ -195,6 +195,7 @@ export async function runNativeFinix({
   signal?.throwIfAborted()
   return attachInventoryEvidence(jobs, {
     ...evidence, status: incomplete ? 'coverage-gap' : evidence.status, listingComplete: !incomplete,
+    verifiedAt: incomplete ? null : evidence?.verifiedAt ?? null,
     reportedTotal: records.length, indiaFacetCount: unknownReasons.size ? null : jobs.length,
     reason: incomplete ? `finix-native-scope-incomplete:${[...unknownReasons,
       evidence?.listingComplete ? '' : evidence?.reason].filter(Boolean).join(';')}` : evidence.reason,

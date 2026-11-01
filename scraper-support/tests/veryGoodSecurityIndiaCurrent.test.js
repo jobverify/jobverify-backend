@@ -1,3 +1,5 @@
+import {fixture,replay,editHTML,editJSON,mutateNativePost} from '../native-sources/publicLeverChannels/fixtureReplay.js'
+import {syntheticPaginatedVgs} from '../native-sources/publicLeverChannels/testSupport.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -70,26 +72,14 @@ test('VGS maps only explicit India jobs from the Lever API', () => {
   })
 })
 
-test('VGS run validates first-party and Lever surfaces before loading jobs', async () => {
-  const requested = []
-  const jobs = await vgs.run({
-    now: () => '2026-09-13T04:00:00.000Z',
-    fetchText: async (url) => {
-      requested.push(url)
-      return url === vgs.CAREERS_URL ? careersHtml : boardHtml
-    },
-    fetchJson: async (url) => {
-      requested.push(url)
-      return payload
-    },
-  })
-  const apiUrl = new URL(vgs.LEVER_API_URL)
-  apiUrl.searchParams.set('limit', '100')
-  apiUrl.searchParams.set('skip', '0')
-  assert.deepEqual(requested, [vgs.CAREERS_URL, vgs.LEVER_BOARD_URL, apiUrl.toString()])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, vgs.SOURCE)
-  assert.equal(jobs[0].scrapedAt, '2026-09-13T04:00:00.000Z')
+test("VGS run validates the actual current route chain and all original roles before India selection",async()=>{
+   const r=replay(),jobs=await vgs.run(r.options),a=r.audits[0]
+   assert.equal(a.observations.length,18);assert.equal(jobs.length,0)
+   assert.ok(r.requests.includes('https://www.verygoodsecurity.com/careers/engineering'))
+   assert.ok(r.requests.includes('https://api.lever.co/v0/postings/verygoodsecurity?group=team&mode=json'))
+   assert.equal(a.closing.originalCurrentNativeRoutes.length,2);assert.equal(a.closing.publisherQualified,true)
+   assert.equal(a.authoritativeIndiaFacetCount,null)
+  
 })
 
 test('VGS fails closed on malformed Lever data', () => {

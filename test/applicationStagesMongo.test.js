@@ -144,7 +144,8 @@ test('application stages and durable events preserve submission, concurrency and
     await User.collection.insertOne({ _id: owner, email: 'filters@example.test' });
     let interview = await applicationService.recordApplicationOpen(owner, job());
     interview = await applicationService.changeApplicationStage(owner, interview._id, { stage: 'interview', expectedVersion: interview.version, eventKey: 'filter-interview' });
-    await applicationService.recordApplicationOpen(owner, job());
+    const preparing = await applicationService.recordApplicationOpen(owner, job());
+    await TailoredResume.collection.insertMany([interview, preparing].map(row => ({ _id: `${owner}:${row.job}`, user: owner, job: row.job, status: 'completed' })));
     const response = () => ({ statusCode: 200, status(code) { this.statusCode = code; return this; }, json(body) { this.body = body; return this; } });
     const res = response();
     await getApplications({ user: { _id: owner }, query: { stage: 'interview', status: 'opened' } }, res);

@@ -34,7 +34,7 @@ test('saved-job tailoring persists, isolates owners, retries and rejects stale g
   const owner = { _id: user };
   const job = String(jobId);
   await User.collection.insertMany([{ _id: user, email: 'asha@example.test', role: 'user', sessionVersion: 0, savedJobs: [jobId] }, { _id: other, email: 'other@example.test', role: 'user', sessionVersion: 0, savedJobs: [] }]);
-  await Job.collection.insertOne({ _id: jobId, title: 'React Engineer', company: 'Example', location: 'Pune, India', isPublicIndia: true, status: 'active', description: 'Build React applications.', fingerprint: 'tailoring-job' });
+  await Job.collection.insertOne({ _id: jobId, title: 'React Engineer', company: 'Example', location: 'Pune, India', isPublicIndia: true, jobType: 'Full-time Experienced', status: 'active', description: 'Build React applications.', fingerprint: 'tailoring-job' });
   let dispatched = 0;
   const options = { dispatch: async () => { dispatched++; } };
   await assert.rejects(requestTailoredResume({ _id: other }, job, options), /saved job/i);

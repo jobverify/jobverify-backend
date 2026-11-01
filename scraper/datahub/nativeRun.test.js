@@ -76,7 +76,10 @@ test('a current role-scoped native header closure overrides an unchanged full JD
 
 for(const notice of['<p hidden>This position is closed.</p>','<p inert>This position is closed.</p>',
  '<p>If this position is closed, please browse other vacancies.</p>'])test('inactive or conditional DataHub header does not create closure: '+notice,async()=>{
- const jobs=await replay(p=>{currentDate(p);const start=p[4].body.indexOf('class="job__header"');assert.ok(start>=0);const end=p[4].body.indexOf('>',start);p[4].body=p[4].body.slice(0,end+1)+notice+p[4].body.slice(end+1)+'<footer>This position is closed.</footer>'})
+ const replayStatus=()=>replay(p=>{currentDate(p);const start=p[4].body.indexOf('class="job__header"');assert.ok(start>=0);const end=p[4].body.indexOf('>',start);p[4].body=p[4].body.slice(0,end+1)+notice+p[4].body.slice(end+1)+'<footer>This position is closed.</footer>'})
+ // Bare inert leaves text visually present; it cannot establish OPEN availability.
+ if(notice==='<p inert>This position is closed.</p>'){await assert.rejects(replayStatus,error=>error.code==='NATIVE_STATUS_LAYOUT_UNQUALIFIED');return}
+ const jobs=await replayStatus()
  assert.equal(jobs[0].sourceDetailComplete,true);assert.equal(jobs[0].sourceAvailabilityEvidence.state,'open')
  assert.equal(analyzePublishableJobs(jobs,{now:NOW}).eligibleJobs.length,1)
 })

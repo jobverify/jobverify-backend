@@ -1,3 +1,4 @@
+import {publicLeverMetadata, PUBLIC_LEVER_PROFILES} from '../../scraper-support/native-sources/publicLeverChannels/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -6,7 +7,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, August 15, 2026 that https://www.netomi.com/careers now redirects to the live first-party homepage at https://www.netomi.com/, that the homepage exposes the referral-only marketing copy "We create intelligent experiences for the world\'s most ambitious companies." and "New engagements are by referral.", and that the first-party HTML no longer embeds or links a public careers or Lever handoff. The standalone Lever API at https://api.lever.co/v0/postings/netomi?mode=json remained reachable on Saturday, August 15, 2026 and exposed 22 public jobs including India roles, but without a current first-party careers proof this scraper returns [] until Netomi restores a trustworthy public jobs surface.'
 
-export const NETOMI_CATALOG = {
+const NETOMI_CATALOG_HISTORICAL = {
   source: 'netomi',
   companyName: 'Netomi',
   officialBrandName: 'Netomi',
@@ -30,5 +31,7 @@ export const NETOMI_CATALOG = {
   verifiedOn: '2026-08-15',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
+
+export const NETOMI_CATALOG = publicLeverMetadata(PUBLIC_LEVER_PROFILES.netomi, NETOMI_CATALOG_HISTORICAL)
 
 export default NETOMI_CATALOG

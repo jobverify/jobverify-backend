@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { parseSchedule, dailyCron, intervalSettings } from '../src/pipeline/schedule.js'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -12,11 +11,9 @@ const readScraperWorkflow = () => readFileSync(
   'utf8',
 )
 
-test('scraper workflow has a supported daily or interval schedule', () => {
-  const workflow = readScraperWorkflow()
-
-  const schedule = parseSchedule(workflow)
-  assert.equal(schedule.mode === 'daily' ? dailyCron(schedule.time) : intervalSettings(schedule.hours, schedule.startAt).cron, schedule.cron)
+test('scraper workflow uses backend dispatch instead of GitHub cron', () => {
+  assert.doesNotMatch(readScraperWorkflow(), /^  schedule:/m)
+  assert.match(readScraperWorkflow(), /^  workflow_dispatch:/m)
 })
 
 test('scheduled no-op checks skip scraping, checkpoints, artifacts and reporting', () => {

@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { createReadStream, createWriteStream } from 'node:fs';
+import { createReadStream, createWriteStream, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +9,7 @@ import { promisify } from 'node:util';
 import { pipeline } from 'node:stream/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
+import { captureRewriteError, redactRewriteDiagnostic } from './failureDiagnostics.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const exec = promisify(execFile);
@@ -90,50 +91,125 @@ export function rewriteWorkerConfiguration({ threads = REWRITE_MODEL.cpuThreads,
   return { threads: Math.min(cpus, Number(threads)), parallelism: slots, contextTokens: REWRITE_MODEL.contextTokens * slots };
 }
 
+const nativeDebuggerArguments = (binary, args) => ['--nx', '--quiet', '--batch', '--return-child-result',
+  '-iex', 'set auto-load off', '-iex', 'set debuginfod enabled off', '-ex', 'set startup-with-shell off',
+  '-x', path.join(root, 'rewriting/nativeBacktrace.py'), '-ex', 'run', '-ex', 'python finish_rewrite_debugging()', '--args', binary, ...args];
+
+export const collectRewriteRuntimeDiagnostics = async ({ binary, nativeBacktrace = false, platform = process.platform, execute = exec } = {}) => {
+  const details = { platform, arch: process.arch, osRelease: os.release(), runtimeTag: REWRITE_MODEL.runtimeTag,
+    cpu: { model: os.cpus()[0]?.model || 'unknown', flags: [] }, binary: { file: path.basename(binary) },
+    nativeBacktrace: { requested: nativeBacktrace, enabled: false, reason: nativeBacktrace ? 'unsupported_platform' : 'not_requested' } };
+  if (platform === 'linux') {
+    try { details.cpu.flags = (await fs.readFile('/proc/cpuinfo', 'utf8')).match(/^flags\s*:\s*(.*)$/m)?.[1].trim().split(/\s+/).slice(0, 256) || []; }
+    catch { details.cpu.flagsUnavailable = true; }
+  }
+  try { details.binary.sha256 = await sha256File(binary); }
+  catch (error) { details.binary.hashError = captureRewriteError(error, { phase: 'runtime_identity' }); }
+  try {
+    const result = await execute(binary, ['--version'], { windowsHide: true, timeout: 3000, maxBuffer: 16384 });
+    details.binary.version = redactRewriteDiagnostic((result.stdout || result.stderr).trim(), { limit: 2048 });
+  } catch (error) { details.binary.versionError = captureRewriteError(error, { phase: 'runtime_identity' }); }
+  if (nativeBacktrace && platform === 'linux') {
+    let temporary;
+    try {
+      const result = await execute('gdb', ['--version'], { timeout: 3000, maxBuffer: 16384 });
+      details.nativeBacktrace.version = redactRewriteDiagnostic(result.stdout.split('\n')[0]);
+      details.nativeBacktrace.reason = 'debugger_preflight_failed';
+      temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'rewrite-debugger-preflight-'));
+      const file = path.join(temporary, 'native.json');
+      await execute('gdb', nativeDebuggerArguments(process.execPath, ['--version']), { timeout: 5000, maxBuffer: 16384,
+        env: { ...process.env, JOB_DESCRIPTION_NATIVE_DIAGNOSTIC_FILE: file } });
+      const observed = JSON.parse(await fs.readFile(file, 'utf8'));
+      if (observed.state !== 'running' || !Number.isInteger(observed.pid) || observed.pid <= 0) throw new Error('Debugger preflight did not observe a running inferior');
+      details.nativeBacktrace.enabled = true;
+      details.nativeBacktrace.reason = 'available';
+    } catch (error) {
+      if (details.nativeBacktrace.reason !== 'debugger_preflight_failed') details.nativeBacktrace.reason = 'debugger_unavailable';
+      details.nativeBacktrace.error = captureRewriteError(error, { phase: 'runtime_identity' });
+    } finally {
+      if (temporary) await fs.rm(temporary, { recursive: true, force: true }).catch(error => {
+        details.nativeBacktrace.cleanupError = captureRewriteError(error, { phase: 'runtime_identity' });
+      });
+    }
+  }
+  return details;
+};
+
 export class RewriteWorkerError extends Error {
-  constructor(workerFailure, { exitCode, signal } = {}) {
+  constructor(workerFailure, { exitCode, signal, workerDiagnostics } = {}) {
     super('CPU generator failure: ' + workerFailure);
     this.name = 'RewriteWorkerError';
     this.workerFailure = workerFailure;
     if (Number.isInteger(exitCode)) this.workerExitCode = exitCode;
     if (typeof signal === 'string') this.workerSignal = signal;
+    if (workerDiagnostics) this.workerDiagnostics = workerDiagnostics;
   }
 }
 
-export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threads = REWRITE_MODEL.cpuThreads, parallelism = 1, gpuLayers = 0, deadline = Date.now() + 120000, signal, logFile = path.join(root, '.cache/scraper-actions/description-worker.log'), spawnProcess = spawn, fetchImpl = fetch }) => {
+export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threads = REWRITE_MODEL.cpuThreads, parallelism = 1, gpuLayers = 0, deadline = Date.now() + 120000, signal, logFile = path.join(root, '.cache/scraper-actions/description-worker.log'), spawnProcess = spawn, fetchImpl = fetch, nativeBacktrace = false }) => {
   const config = rewriteWorkerConfiguration({ threads, parallelism });
   const requestedGpuLayers = rewriteGpuLayers(gpuLayers);
   const model = 'job-description-' + randomUUID();
   await fs.mkdir(path.dirname(logFile), { recursive: true });
   const log = await fs.open(logFile, 'w');
+  const debugging = nativeBacktrace && process.platform === 'linux';
+  const nativeFile = path.resolve(logFile + '.native.json');
+  if (debugging) await fs.rm(nativeFile, { force: true });
+  const args = ['-m', modelFile, '--host', '127.0.0.1', '--port', String(port),
+    '--alias', model, '-c', String(config.contextTokens), '-np', String(config.parallelism), '-t', String(config.threads), '-tb', String(config.threads),
+    '-ngl', String(requestedGpuLayers), '--sleep-idle-seconds', '-1', '--jinja', '--no-context-shift', '--no-webui', '--log-verbosity', '3',
+    '--chat-template-kwargs', JSON.stringify({ enable_thinking: REWRITE_MODEL.enableThinking === true }),
+    '--reasoning', 'off', '--no-reasoning-preserve', '--cache-ram', '128'];
+  const launch = { event: 'worker_start', timestamp: new Date().toISOString(), executable: path.basename(binary),
+    arguments: args, debugger: debugging ? 'gdb' : 'none' };
+  await log.writeFile(JSON.stringify(launch) + '\n');
   let child;
   try {
-    child = spawnProcess(binary, ['-m', modelFile, '--host', '127.0.0.1', '--port', String(port),
-      '--alias', model, '-c', String(config.contextTokens), '-np', String(config.parallelism), '-t', String(config.threads), '-tb', String(config.threads),
-      '-ngl', String(requestedGpuLayers), '--sleep-idle-seconds', '-1', '--jinja', '--no-context-shift', '--no-webui', '--log-verbosity', '2',
-      '--chat-template-kwargs', JSON.stringify({ enable_thinking: REWRITE_MODEL.enableThinking === true }),
-      '--reasoning', 'off', '--no-reasoning-preserve',
-      '--cache-ram', '128'], { cwd: path.dirname(binary), windowsHide: true,
-      env: { ...process.env, LD_LIBRARY_PATH: path.dirname(binary) + path.delimiter + (process.env.LD_LIBRARY_PATH || '') },
+    const command = debugging ? 'gdb' : binary;
+    const commandArgs = debugging ? nativeDebuggerArguments(binary, args) : args;
+    child = spawnProcess(command, commandArgs, { cwd: path.dirname(binary), windowsHide: true, detached: debugging,
+      env: { ...process.env, LD_LIBRARY_PATH: path.dirname(binary) + path.delimiter + (process.env.LD_LIBRARY_PATH || ''),
+        ...(debugging && { JOB_DESCRIPTION_NATIVE_DIAGNOSTIC_FILE: nativeFile }) },
       stdio: ['ignore', log.fd, log.fd] });
-  } catch {
+  } catch (error) {
     await log.close();
-    throw new RewriteWorkerError('spawn_error');
+    throw Object.assign(new RewriteWorkerError('spawn_error', { workerDiagnostics: { launch } }), { errorDiagnostic: captureRewriteError(error, { phase: 'start_worker' }) });
   }
   let error, exited = false;
   let exitCode = null, exitSignal = null;
   // Install listeners before awaiting anything: spawn errors can arrive on the next tick.
   child.on('error', value => { error = value; });
   const exit = new Promise(resolve => child.once('exit', (code, signal) => { exited = true; exitCode = code; exitSignal = signal; resolve(); }));
-  const diagnostics = () => ({ pid: child.pid, status: error ? 'spawn_error'
-    : exited || child.exitCode != null || child.signalCode != null ? 'exited' : 'running',
-    exitCode: exitCode ?? child.exitCode ?? null, signal: exitSignal ?? child.signalCode ?? null });
+  const nativeDiagnostics = () => {
+    if (!debugging) return undefined;
+    try {
+      if (statSync(nativeFile).size > 65536) return { backtraceUnavailable: 'size_limit' };
+      const value = JSON.parse(readFileSync(nativeFile, 'utf8'));
+      return { ...(Number.isInteger(value.pid) && value.pid > 0 && { pid: value.pid }),
+        ...(['SIGSEGV', 'SIGABRT', 'SIGBUS', 'SIGILL', 'SIGFPE'].includes(value.signal) && { signal: value.signal }),
+        ...(typeof value.backtrace === 'string' && { backtrace: redactRewriteDiagnostic(value.backtrace, { limit: 32768 }) }),
+        ...(['capture_failed', 'unexpected_stop'].includes(value.backtraceUnavailable) && { backtraceUnavailable: value.backtraceUnavailable }) };
+    } catch { return { backtraceUnavailable: 'not_recorded' }; }
+  };
+  const diagnostics = () => {
+    const native = nativeDiagnostics();
+    return { pid: native?.pid || child.pid, status: error ? 'spawn_error'
+      : exited || child.exitCode != null || child.signalCode != null ? 'exited' : 'running',
+    exitCode: debugging ? null : exitCode ?? child.exitCode ?? null,
+    signal: debugging ? native?.signal || null : exitSignal ?? child.signalCode ?? null,
+    launch, ...(debugging && { native, debugger: { pid: child.pid, exitCode: exitCode ?? child.exitCode ?? null, signal: exitSignal ?? child.signalCode ?? null } }) };
+  };
   const assertAlive = () => {
     const state = diagnostics();
-    if (state.status !== 'running') throw new RewriteWorkerError(error ? 'spawn_error' : 'process_exit', state);
+    if (state.status !== 'running') throw Object.assign(new RewriteWorkerError(error ? 'spawn_error' : 'process_exit', { ...state, workerDiagnostics: state }),
+      error && { errorDiagnostic: captureRewriteError(error, { phase: 'start_worker' }) });
+  };
+  const kill = signal => {
+    if (debugging && child.pid) { try { process.kill(-child.pid, signal); return; } catch { /* already reaped or unsupported */ } }
+    child.kill(signal);
   };
   const stop = async () => {
-    if (!exited && child.pid) { child.kill(); await Promise.race([exit, delay(5000, undefined, { ref: false })]); if (!exited) child.kill('SIGKILL'); }
+    if (!exited && child.pid) { kill('SIGTERM'); await Promise.race([exit, delay(5000, undefined, { ref: false })]); if (!exited) kill('SIGKILL'); }
   };
   const endpoint = 'http://127.0.0.1:' + port;
   try {
@@ -147,7 +223,7 @@ export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threa
         const health = response.ok ? await response.json() : null;
         if (health?.data?.some(row => row.id === model)) {
           assertAlive();
-          return { endpoint, model, pid: child.pid, stop, assertAlive, diagnostics, parallelism: config.parallelism, gpuLayers: requestedGpuLayers };
+          return { endpoint, model, pid: diagnostics().pid, stop, assertAlive, diagnostics, parallelism: config.parallelism, gpuLayers: requestedGpuLayers };
         }
       } catch { /* bounded readiness poll */ }
       await delay(200, undefined, { signal });

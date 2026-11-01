@@ -27,10 +27,10 @@ test('getScraperCatalog includes Canva as a verified first-party jobs-board scra
   assert.equal(provider.companyDomain, 'lifeatcanva.com')
   assert.equal(provider.atsPlatform, 'official-first-party-jobs-board')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'page-query-or-verified-cloudflare-challenge-empty')
+  assert.equal(provider.paginationStrategy, 'page-query-stop-on-http-denial')
   assert.equal(
     provider.extractionStrategy,
-    'first-party-jobs-html+pagination+india-location-filter-or-verified-cloudflare-challenge-empty',
+    'first-party-jobs-html+pagination+india-location-filter-with-unavailable-inventory-gap',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

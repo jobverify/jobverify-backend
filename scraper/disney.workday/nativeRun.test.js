@@ -93,7 +93,10 @@ test('native Disney role-header closure retains the unchanged raw JD and explici
 
 for(const notice of['<p hidden>This position is closed.</p>','<p inert>This position is closed.</p>',
  '<p>If this position is closed, please browse other vacancies.</p>'])test('inactive or conditional Disney header does not create closure: '+notice,async()=>{
- const jobs=await replay(p=>{const start=p[5].body.indexOf('id="job-details-1"');assert.ok(start>=0);const end=p[5].body.indexOf('>',start);p[5].body=p[5].body.slice(0,end+1)+notice+p[5].body.slice(end+1)+'<footer>This position is closed.</footer>'})
+ const replayStatus=()=>replay(p=>{const start=p[5].body.indexOf('id="job-details-1"');assert.ok(start>=0);const end=p[5].body.indexOf('>',start);p[5].body=p[5].body.slice(0,end+1)+notice+p[5].body.slice(end+1)+'<footer>This position is closed.</footer>'})
+ // Bare inert leaves text visually present; neither availability state is qualified.
+ if(notice==='<p inert>This position is closed.</p>'){await assert.rejects(replayStatus,error=>error.code==='NATIVE_STATUS_LAYOUT_UNQUALIFIED');return}
+ const jobs=await replayStatus()
  assert.equal(jobs[0].sourceDetailComplete,true);assert.equal(jobs[0].sourceAvailabilityEvidence.state,'open')
  assert.equal(analyzePublishableJobs(jobs,{now}).eligibleJobs.length,9)
 })

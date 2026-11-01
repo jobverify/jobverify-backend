@@ -1664,15 +1664,23 @@ export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
     .filter(Boolean)
     .join('\n\n') || null
 
-  const normalized = normalizeScrapedJob({
+  const normalizationInput = {
     ...sourceJob,
     title: !recoveredPosting && hasUsablePublicEvidence && hasJobSpecificPageTitle ? (preferredPublicTitle || job.title) : job.title,
-    experienceRequired: job.experienceRequired || explicitExperience,
+    experienceRequired: job.experienceRequired || null,
     description: composedPublicDescription,
     jobDescription: composedPublicDescription,
-  }, {
-    source: job.source || null,
-  })
+  }
+  const provider = { source: job.source || null }
+  let normalized = normalizeScrapedJob(normalizationInput, provider)
+  // Whole-page labels may describe a summary above the actual job requirements.
+  // Use them only when the selected job description has no usable requirement.
+  if (!normalized.experienceRequired && explicitExperience) {
+    normalized = normalizeScrapedJob({
+      ...normalizationInput,
+      experienceRequired: explicitExperience,
+    }, provider)
+  }
 
   return {
     ...sourceJob,
@@ -1683,7 +1691,8 @@ export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
       || relevantPageSummary
       || null,
     experienceRequired: normalized.experienceRequired,
-    ...(explicitExperience && { sourceExperienceRequired: explicitExperience }),
+    ...(explicitExperience && normalized.experienceRequired === explicitExperience
+      && { sourceExperienceRequired: explicitExperience }),
     publicExperienceChecked: hasTrustedPriorPublicEvidence || hasVerifiedPublicJobEvidence,
   }
 }

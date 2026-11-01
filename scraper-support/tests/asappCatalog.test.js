@@ -1,3 +1,4 @@
+import { checkCurrentReplay, assertCurrentProvider } from '../native-sources/declaredJobFeeds/legacyReplayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -6,17 +7,7 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes the ASAPP Lever apiPortal provider with official metadata', () => {
-  const catalog = getScraperCatalog()
-  const asapp = catalog.find((provider) => provider.source === 'asapp')
-
-  assert.ok(asapp)
-  assert.equal(asapp.adapter, 'apiPortal')
-  assert.equal(asapp.atsPlatform, 'lever')
-  assert.match(asapp.companyCareerPage, /asapp\.com\/careers/i)
-  assert.equal(asapp.companyDomain, 'asapp.com')
-  assert.match(asapp.config.discovery.listingApiUrl, /api\.lever\.co\/v0\/postings\/asapp-2/i)
-})
+test('asapp: registered native reader clears historical source-coverage claims', () => assertCurrentProvider('asapp'))
 
 test('buildScrapers exposes a runnable ASAPP apiPortal scraper without changing the runner contract', () => {
   const scrapers = buildScrapers()

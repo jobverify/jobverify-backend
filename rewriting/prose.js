@@ -3,6 +3,7 @@ import { checkProseStatements, proseSectionRole } from './proseValidation.js';
 import { buildProseBlocks, proseHeadings } from './proseBlocks.js';
 import { createGenerationPool } from './sharedGeneration.js';
 import { RewriteWorkerError } from './worker.js';
+import { captureRewriteError } from './failureDiagnostics.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
@@ -137,7 +138,7 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
     const cacheFile = planCacheDir && path.join(path.resolve(planCacheDir), cacheKey + '.json');
     const partialFile = cacheFile && cacheFile + '.partial';
     let generationRequests = 0, rawText, diagnostic;
-    let currentGeneration, activeFragment, activeOffset;
+    let currentGeneration, activeFragment, activeOffset, requestContext;
     let reusedChunks = 0;
     const generations = [], usage = {}, timings = {};
     const telemetry = () => ({ generations, usage, timings, reusedChunks });
@@ -150,10 +151,12 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
         await fs.rename(temporary, file);
       } catch { await fs.rm(temporary, { force: true }).catch(() => {}); }
     };
-    const post = async (route, body) => {
+    const post = async (route, body, phase) => {
+      requestContext = { phase, route };
       combined.throwIfAborted(); assertAlive();
       const response = await fetch(origin + route, { method: 'POST', signal: combined,
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      requestContext.httpStatus = response.status;
       if (!response.ok) throw new GenerationError('Local generator HTTP ' + response.status);
       return response;
     };
@@ -176,9 +179,9 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       const sectionContext = contextAt(offset);
       const promptMessages = messages(fragment, sectionContext, validationFeedback);
       const rendered = await (await post('/apply-template', { messages: promptMessages, add_generation_prompt: true,
-        chat_template_kwargs: { enable_thinking: false } })).json();
+        chat_template_kwargs: { enable_thinking: false } }, 'apply_template')).json();
       if (typeof rendered.prompt !== 'string' || !rendered.prompt) throw new GenerationError('Missing generator prompt template');
-      const counted = await (await post('/tokenize', { content: rendered.prompt, add_special: true, parse_special: true })).json();
+      const counted = await (await post('/tokenize', { content: rendered.prompt, add_special: true, parse_special: true }, 'tokenize_prompt')).json();
       if (!Array.isArray(counted.tokens) || !counted.tokens.length || counted.tokens.some(token => !Number.isInteger(token))) throw new GenerationError('Malformed generator token count');
       const headroom = REWRITE_MODEL.contextTokens - counted.tokens.length - 64;
       const split = async reason => {
@@ -193,7 +196,7 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       // Count the complete source-shaped response, including JSON escaping.
       // Formatting room scales with this source, never with unused context.
       const sourceCounted = await (await post('/tokenize', { content: JSON.stringify({ text: fragment }),
-        add_special: false, parse_special: false })).json();
+        add_special: false, parse_special: false }, 'tokenize_source')).json();
       if (!Array.isArray(sourceCounted.tokens) || !sourceCounted.tokens.length
         || sourceCounted.tokens.some(token => !Number.isInteger(token))) throw new GenerationError('Malformed generator token count');
       const outputAllowance = Math.min(headroom, Math.max(128, Math.ceil(sourceCounted.tokens.length * 1.5) + 64));
@@ -207,7 +210,8 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       const response = await post('/v1/chat/completions', { model, messages: promptMessages,
         temperature: 0, top_p: .8, seed: validationFeedback ? 42 : 41, max_tokens: outputAllowance,
         chat_template_kwargs: { enable_thinking: false }, cache_prompt: true, stream: true, stream_options: { include_usage: true },
-        response_format: { type: 'json_schema', json_schema: { name: 'job_description_prose', strict: true, schema } } });
+        response_format: { type: 'json_schema', json_schema: { name: 'job_description_prose', strict: true, schema } } }, 'generate');
+      requestContext.phase = 'read_completion';
       const result = response.headers.get('content-type')?.includes('text/event-stream')
         ? await readCompletion(response, fragment, preview => onProgress?.({ rawText: preview, generationRequests })) : await response.json();
       combined.throwIfAborted(); assertAlive();
@@ -231,6 +235,7 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
         if (!validationFeedback) return process(fragment, offset, { reason: 'malformed_output' });
         throw new GenerationError('Malformed generator response');
       }
+      requestContext.phase = 'validate_fragment';
       const reason = validateProsePart(fragment, value.text, { sectionContext });
       if (reason) {
         const mismatch = typeof value.text === 'string' ? checkProseStatements(fragment, value.text, { sectionContext }).diagnostic : null;
@@ -291,6 +296,7 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       }
       combined.throwIfAborted();
       const value = { inputHash: input.inputHash, sourceHash, parts };
+      requestContext = { phase: 'validate_assembly' };
       const finalCheck = validateProseRewrite(value, input, 'stop');
       if (!finalCheck.ok) {
         // Individually valid chunks can still interact after assembly. Do not
@@ -313,16 +319,19 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       return { format: 'prose', value, finishReason: 'stop', generationRequests,
         ...(generationRequests === 0 && { renderedWithoutInference: true }), ...telemetry() };
     } catch (error) {
+      const errorDiagnostic = captureRewriteError(error, { ...requestContext, sourceOffset: activeOffset,
+        sourceTexts: [input.sourceDescription, source, activeFragment] });
+      error.errorDiagnostic = errorDiagnostic;
       if (currentGeneration && !currentGeneration.detail.finishReason) Object.assign(currentGeneration.detail, {
         finishReason: error.reason || 'error', durationMs: Date.now() - currentGeneration.started });
       assertAlive();
-      if (error.cause?.code === 'ECONNREFUSED') throw new RewriteWorkerError('connection_refused');
+      if (error.cause?.code === 'ECONNREFUSED') throw Object.assign(new RewriteWorkerError('connection_refused'), { errorDiagnostic });
       if (combined.aborted) throw Object.assign(combined.reason, { generationRequests });
       if (error.reason) return { format: 'prose', value: null, finishReason: 'stop', generationRequests, rawText: error.rawText || rawText,
         validationFailure: { ok: false, reason: error.reason, diagnostic: diagnostic || { code: error.reason,
           evidence: activeFragment?.slice(0, 1800), sourceOffset: activeOffset } }, ...telemetry() };
       if (error instanceof GenerationError) throw Object.assign(error, { generationRequests, rawText: error.rawText || rawText, ...telemetry() });
-      if (error instanceof SyntaxError || error.cause?.code) throw Object.assign(new GenerationError('Malformed or interrupted generator response'), { generationRequests, rawText: error.rawText || rawText, ...telemetry() });
+      if (error instanceof SyntaxError || error.cause?.code) throw Object.assign(new GenerationError('Malformed or interrupted generator response', { cause: error }), { generationRequests, rawText: error.rawText || rawText, errorDiagnostic, ...telemetry() });
       throw error;
     }
   };

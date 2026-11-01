@@ -1,4 +1,5 @@
-import { checkCurrentFactory,checkChangedPublisher } from '../native-sources/declaredGreenhouse/replayControls.js'
+import { fixture, replay } from '../native-sources/declaredGreenhouse/fixtureReplay.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -104,5 +105,15 @@ test('Biofourmis extracts India jobs from the verified Greenhouse payload', asyn
 })
 
 test('biofourmis actual factory retains complete original native models before selection',async()=>{
- const biofourmis=await loadBiofourmisModule();await checkCurrentFactory('biofourmis',biofourmis.createBiofourmisScraper)
+ const biofourmis=await loadBiofourmisModule(),r=replay(),jobs=await biofourmis.createBiofourmisScraper().run(r.options),audit=r.audits[0]
+ assert.equal(audit.opening.publisherQualified,true);assert.equal(audit.closing.publisherQualified,true)
+ assert.equal(audit.observations.length,fixture.oracle.biofourmis.records.length)
+ for(const row of fixture.oracle.biofourmis.records){
+   const job=audit.observations.find(job=>job.jobId===String(row.postId))
+   assert.deepEqual(job.sourceNativeRecord,row.nativeOwnPostRecord);assert.equal(job.jobDescription,row.fullCriteriaText)
+ }
+ assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
+ assert.equal(audit.sourceScopeComplete,false);assert.equal(audit.lifecycleCleanupAllowed,false)
+ assert.equal(audit.publicInventoryProof.complete,false)
+ assert.ok(r.requests.indexOf(fixture.profiles.biofourmis.primaryURL)<r.requests.findIndex(url=>url.includes('/v1/boards/')))
 })

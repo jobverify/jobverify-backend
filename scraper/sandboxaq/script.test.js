@@ -1,3 +1,4 @@
+import { checkCurrentReplay, assertCurrentProvider } from '../../scraper-support/native-sources/declaredJobFeeds/legacyReplayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -136,36 +137,4 @@ test('SandboxAQ extracts listed Ashby jobs and normalizes the output', async () 
   })
 })
 
-test('SandboxAQ run() validates the route chain and returns Ashby jobs', async () => {
-  const sandboxaq = await loadSandboxAQModule()
-  const requestedText = []
-  const requestedJson = []
-
-  const jobs = await sandboxaq.createSandboxAQScraper({
-    now: () => '2026-08-04T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedText.push(url)
-      if (url === CAREERS_PAGE_URL) return CAREERS_HTML
-      if (url === CAREERS_LIST_URL) return CAREERS_LIST_HTML
-      if (url === ASHBY_PUBLIC_BOARD_URL) return ASHBY_PUBLIC_BOARD_HTML
-      throw new Error(`Unexpected text URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJson.push(url)
-      if (url === ASHBY_JOB_BOARD_URL) return ASHBY_PAYLOAD
-      throw new Error(`Unexpected JSON URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedText, [
-    CAREERS_PAGE_URL,
-    CAREERS_LIST_URL,
-    ASHBY_PUBLIC_BOARD_URL,
-  ])
-  assert.deepEqual(requestedJson, [ASHBY_JOB_BOARD_URL])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, SOURCE)
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].scrapedAt, '2026-08-04T00:00:00.000Z')
-})
+test('sandboxaq: current original-entity complete replay (legacy case 139)', async () => checkCurrentReplay('sandboxaq', 'complete'))

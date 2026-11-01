@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { sagCareersHtml, sagApplicationHtmlByUrl, sagExpectedRequests } from './fixtures/saginfotechLegacyCurrentOpenings.mjs'
 
 const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
 
@@ -136,7 +137,7 @@ const cognusCurrentJobsPayload = [
   },
 ]
 
-const sagCareersHtml = `
+const legacyWeakSagCareersHtml = `
 <!doctype html>
 <html lang="en">
   <body>
@@ -350,20 +351,56 @@ test('SAG Infotech run returns normalized jobs from the verified first-party cur
     'Angular Developer',
   ])
 
+  const requestedUrls = []
   const jobs = await sag.createSagInfotechScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
     fetchText: async (url) => {
-      assert.equal(url, sag.CAREERS_URL)
-      return sagCareersHtml
+      requestedUrls.push(url)
+      if (url === sag.CAREERS_URL) {
+        assert.equal(url, sag.CAREERS_URL)
+        return sagCareersHtml
+      }
+      assert.ok(Object.hasOwn(sagApplicationHtmlByUrl, url), `Unexpected SAG application URL: ${url}`)
+      return sagApplicationHtmlByUrl[url]
     },
   })
 
+  assert.deepEqual(requestedUrls, sagExpectedRequests)
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].title, 'Angular Developer')
   assert.equal(jobs[0].applyUrl, 'https://saginfotech.com/ApplyCareer.aspx?code=0019')
   assert.equal(jobs[1].title, 'Tech Support Executive')
   assert.equal(jobs[1].openingsCount, 2)
+  assert.match(jobs[0].jobDescription, /Proficiency with JavaScript and HTML5/)
+  assert.ok(jobs.every(job => job.jobDescription.length > 200 && job.rawNativeRoleEvidence.applicationLandingIdentityQualified === true))
+  assert.ok(jobs.every(job => job.country === null && job.location === null && job.city === null))
+  assert.ok(jobs.every(job => job.postingDate === null && job.closingDate === null && job.scrapedAt === FIXED_SCRAPED_AT))
+  assert.equal(jobs[0].nativeCollectionEvidence.sourceScopeComplete, false)
+})
+
+test('SAG Infotech legacy weak careers markup cannot certify employer, role requirements or application identity', async () => {
+  const sag = await loadModule('../../scraper/saginfotech/script.js')
+  assert.equal(sag.hasOfficialCareersSignal(legacyWeakSagCareersHtml), true)
+  assert.throws(() => sag.extractOpeningCards(legacyWeakSagCareersHtml), /employer careers identity/)
+  const requestedUrls = []
+  await assert.rejects(sag.createSagInfotechScraper({ now: () => FIXED_SCRAPED_AT }).run({
+    fetchText: async url => { requestedUrls.push(url); assert.equal(url, sag.CAREERS_URL); return legacyWeakSagCareersHtml },
+  }), /employer careers identity/)
+  assert.deepEqual(requestedUrls, [sag.CAREERS_URL])
+})
+
+test('SAG Infotech requires the corresponding exact native application landing identity', async () => {
+  const sag = await loadModule('../../scraper/saginfotech/script.js'), requestedUrls = []
+  await assert.rejects(sag.createSagInfotechScraper({ now: () => FIXED_SCRAPED_AT }).run({
+    fetchText: async url => {
+      requestedUrls.push(url)
+      if (url === sag.CAREERS_URL) return sagCareersHtml
+      assert.equal(url, 'https://saginfotech.com/ApplyCareer.aspx?code=0023')
+      return sagApplicationHtmlByUrl['https://saginfotech.com/ApplyCareer.aspx?code=0019']
+    },
+  }), /application role title\/code contradiction/)
+  assert.deepEqual(requestedUrls, [sag.CAREERS_URL, 'https://saginfotech.com/ApplyCareer.aspx?code=0023'])
 })
 
 test('Intech Creative Services card helpers retain the verified older native URL route', async () => {

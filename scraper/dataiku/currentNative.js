@@ -162,3 +162,6 @@ export async function runCurrentGreenhouseSource(config,options={}){
    :'current-native-inventory-incomplete:'+scopeReasons.join(';')})
 }
 export const run=options=>runCurrentGreenhouseSource(config,options)
+// Source wrappers reuse the existing strict native validators without changing
+// the shared Dataiku/AssemblyAI collection or mapping behavior.
+export { unknownNativeShape as inspectNativeRecordShape, nativeDescription as readNativeCriteria }

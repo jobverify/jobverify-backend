@@ -10,17 +10,19 @@ export const LINEAR_CATALOG = {
   adapter: 'script',
   companyCareerPage: 'https://linear.app/careers',
   companyDomain: 'linear.app',
-  atsPlatform: 'official-first-party-careers-page',
+  atsPlatform: 'ashby-via-bound-first-party-careers-data',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-open-roles-page-current-empty-india-slice',
+  paginationStrategy: 'bound-first-party-role-groups-and-reconciled-native-posting-response',
   extractionStrategy:
-    'verified-first-party-open-roles-page+same-domain-role-links+return-empty-when-no-india-locations',
+    'active-bound-careers-model+native-role-identity+typed-geography+validated-native-india-details',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   dryRunFile: 'linear/jobs.json',
-  verifiedOn: '2026-07-25',
+  verifiedOn: null,
+  sourceScopeComplete: false,
+  zeroResultPolicy: 'evidence-required',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 25, 2026 that https://linear.app/careers was the live first-party Linear careers page, that it publicly exposed 20 open roles on same-domain /careers/{uuid} detail links, and that the visible location labels on the verified page covered Europe, North America, and London with zero India locations.',
+    'The current careers component binds grouped native Ashby role identities and public application URLs. The checked public board and native geography are reconciled at runtime. Whole-company scope and lifecycle cleanup remain unverified; a checked-board zero is not company-wide absence.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

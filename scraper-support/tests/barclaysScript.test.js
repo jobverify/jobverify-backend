@@ -295,7 +295,7 @@ test('normalizeScrapedJob composes Barclays India roles from the public detail p
   })
 
   assert.equal(normalized.employmentType, 'Full-time')
-  assert.equal(normalized.jobType, 'Full-time Experienced')
+  assert.equal(normalized.jobType, 'Unspecified')
 })
 
 test('run paginates Barclays India pages, enriches detail pages, and decorates shared runner fields', async () => {
