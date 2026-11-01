@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto'
-import { readNativeDocument, extractActiveDescription } from './activeNativeHtml.js'
+import { decodeHTML } from 'entities'
+import { extractActiveDescription } from './activeNativeHtml.js'
+import { readVisibleNativeDocument, readNativeStatusLayout } from './visibleNativeHtml.js'
 
 const PROVENANCE = 'source-validated-native-role-availability-v1'
 const CONFIG = {
@@ -16,21 +18,50 @@ export const supportsNativeRoleAvailability = source => Object.hasOwn(CONFIG, so
 // A role-specific declarative notice is different from instructions about what
 // to do if a vacancy closes. Callers supply only the already-bound role scope.
 export function findExplicitNativeClosure(blocks) {
-  const closed = /^(?:(?:this|the)\s+(?:job|role|position|vacancy)\s+(?:(?:is|has been|has)\s+)?(?:closed|filled|expired|removed|no longer (?:available|open|active)|not available)(?=[.!?]|\s*(?:$|for applications\b))|no longer accepting applications\b|applications (?:are |have been )?closed\b)/i
+  const role = String.raw`(?:this|the)\s+(?:job|role|position|vacancy)`
+  const accepting = String.raw`(?:not|no longer)\s+accepting applications`
+  const stopped = String.raw`(?:closed|filled|expired|removed|no longer (?:available|open|active)|not available)`
+  // A leading declaration can carry a reason or further instructions. Its
+  // immediate qualifier must not turn it into conditional process copy.
+  const closed = new RegExp(String.raw`^(?:${role}\s+(?:(?:is|has been|has)\s+)?(?:${stopped}|${accepting})(?:\s+for applications)?|(?:we are\s+)?${accepting}(?:\s+for\s+${role})?|applications\s+(?:are\s+|have been\s+)?closed(?:\s+for\s+${role})?)(?=$|[\s.!?,;:\u2013\u2014-])`, 'i')
   for (const block of Array.isArray(blocks) ? blocks : [blocks]) {
     for (const statement of norm(block).replace(/^Job Summary:\s*/i, '').split(/(?<=[.!?])\s+/)) {
-      if (closed.test(statement)) return statement
+      const match = closed.exec(statement)
+      if (!match) continue
+      const tail = statement.slice(match[0].length).trimStart()
+      // Questions about the leading status cannot establish closure. Later
+      // semicolon clauses and explanatory URL queries do not erase it.
+      const leadingClause = statement.split(';', 1)[0].replace(/\bhttps?:\/\/[^\s;]+/gi, '[reference]')
+      if (tail.startsWith('?') || /\?[.!'")\]]*\s*$/.test(leadingClause)) continue
+      const qualifier = tail.replace(/^[,\u2013\u2014-]\s*/, '')
+      if (/^(?:automatically|only|if|when(?:ever)?|unless|once|after|until|means|as soon as)\b/i.test(qualifier)) continue
+      return statement
     }
   }
   return null
 }
 
-function textBlocks(node) {
-  const blockTags = new Set(['div', 'p', 'li', 'section', 'header', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br'])
+// Consume raw active DOM nodes only; plain matcher strings and attributes
+// retain their existing semantics. Decode each source fragment once, never
+// a recursively assembled result.
+export function readNativeStatusTextBlocks(node) {
+  need(node && typeof node === 'object' && !Array.isArray(node)
+    && typeof node.tag === 'string' && Array.isArray(node.children), 'raw active DOM status scope required')
+  const blockTags = new Set(['address', 'article', 'aside', 'blockquote', 'dd', 'details', 'dialog', 'div', 'dl', 'dt', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'li', 'main', 'menu', 'nav', 'ol', 'p', 'pre', 'section', 'summary', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul'])
+  const qualifiedLayout = ok => {
+    if (!ok) throw Object.assign(Error('Native source availability: status layout is unqualified'),
+      { code: 'NATIVE_STATUS_LAYOUT_UNQUALIFIED' })
+  }
   const visit = n => {
-    if (n.inert || n.tag === 'script') return ''
-    const content = n.children.map(child => typeof child === 'string' ? child : visit(child)).join(' ')
-    return blockTags.has(n.tag) ? '\n' + content + '\n' : content
+    if (typeof n === 'string') return decodeHTML(n).replace(/\s+/g, ' ')
+    const layout = readNativeStatusLayout(n)
+    qualifiedLayout(!(n.inert && layout?.visibility === 'uncertain'))
+    if (layout?.visibility === 'excluded' || n.inert || n.tag === 'script') return ''
+    if (n.tag === 'br') return ' '
+    const content = n.children.map(visit).join('')
+    if (!content.trim()) return content
+    qualifiedLayout(layout?.qualified !== false)
+    return (layout ? layout.boundary === 'block' : blockTags.has(n.tag)) ? '\n' + content + '\n' : content
   }
   return visit(node).split(/\n+/).map(norm).filter(Boolean)
 }
@@ -63,17 +94,18 @@ function identity(job) {
 
 function scopes(html, role) {
   need(typeof html === 'string' && html.length > 0 && Buffer.byteLength(html) <= 3000000, 'complete native evidence snapshot is missing or oversized')
-  const d = readNativeDocument(html), canonical = d.nodes(n => n.tag === 'link' && n.attrs.rel === 'canonical')
+  const d = readVisibleNativeDocument(html, { strict: true, statusLayout: true }), canonical = d.nodes(n => n.tag === 'link' && n.attrs.rel === 'canonical')
+  const statusNodes = predicate => d.statusNodes(predicate)
   need(canonical.length === 1 && (canonical[0].attrs.href === role.canonicalUrl || role.source === 'datahub'
     && canonical[0].attrs.href === role.canonicalUrl.replace(/^https:/, 'http:')), 'snapshot canonical identity differs')
   const within = (n, target) => n === target || n.children?.some(c => typeof c !== 'string' && within(c, target))
   let header, descriptions
   if (role.source === 'enphaseenergy') {
-    header = d.nodes(n => d.hasClass(n, 'jobvite-detail__intro'))
-    descriptions = d.nodes(n => d.hasClass(n, 'jobvite-detail__content'))
+    header = statusNodes(n => d.hasClass(n, 'jobvite-detail__intro'))
+    descriptions = statusNodes(n => d.hasClass(n, 'jobvite-detail__content'))
   } else if (role.source === 'disney') {
-    header = d.nodes(n => n.attrs.id === 'job-details-1')
-    const root = d.nodes(n => n.attrs.id === 'job-details-3')
+    header = statusNodes(n => n.attrs.id === 'job-details-1')
+    const root = statusNodes(n => n.attrs.id === 'job-details-3')
     need(header.length === 1 && root.length === 1, 'Disney native role/description identity scope is missing or ambiguous')
     const expected = { 'data-org-id': '391', 'data-job-id': role.canonicalRoleId,
       'data-tm-job-id': role.jobId, 'data-tm-job-name': role.title,
@@ -92,10 +124,10 @@ function scopes(html, role) {
       && ['391,', '391,' + role.employer].includes(meta('gtm_tbcn_division')), 'Disney native requisition/title/employer metadata differs')
     need(meta('gtm_tbcn_location') === (role.nativeListingLocation === 'Mumbai, India'
       ? 'Mumbai~Maharashtra~India' : 'Bengaluru~Karnataka~India'), 'Disney typed native country metadata differs')
-    descriptions = d.nodes(n => d.hasClass(n, 'ats-description') && root.some(r => within(r, n)))
+    descriptions = statusNodes(n => d.hasClass(n, 'ats-description') && root.some(r => within(r, n)))
   } else {
-    header = d.nodes(n => d.hasClass(n, 'job__header'))
-    descriptions = d.nodes(n => d.hasClass(n, 'job__description'))
+    header = statusNodes(n => d.hasClass(n, 'job__header'))
+    descriptions = statusNodes(n => d.hasClass(n, 'job__description'))
     const models = d.nodes(n => n.tag === 'script' && !n.attrs.src && n.raw?.includes('window.__remixContext'))
     need(models.length === 1, 'DataHub native role model is missing or ambiguous')
     const match = /^\s*window\.__remixContext\s*=\s*([\s\S]+);\s*$/.exec(models[0].raw)
@@ -104,14 +136,14 @@ function scopes(html, role) {
     need(payload.state?.errors === null && model?.jobPostId === role.jobId && model.jobPost?.public_url === role.canonicalUrl
       && norm(model.jobPost.title) === role.title && model.jobPost.company_name === role.employer, 'DataHub model role identity differs')
     if (typeof model.jobPost.content === 'string') {
-      const content = readNativeDocument(model.jobPost.content)
-      descriptions = [...descriptions, ...content.nodes(n => n.tag === 'root')]
+      const content = readVisibleNativeDocument(model.jobPost.content, { strict: true, statusLayout: true })
+      descriptions = [...descriptions, ...content.statusNodes(n => n.tag === 'root')]
     }
   }
   need(header.length === 1, 'native role header scope is missing or ambiguous')
   const headings = d.nodes(n => n.tag === 'h1' && within(header[0], n))
   need(headings.length === 1 && d.text(headings[0]) === role.title, 'snapshot visible native role title differs')
-  return { blocks: [...header, ...descriptions].flatMap(textBlocks), descriptionText: descriptions.map(n => d.text(n)).join(' ') }
+  return { blocks: [...header, ...descriptions].flatMap(readNativeStatusTextBlocks), descriptionText: descriptions.map(n => d.text(n)).join(' ') }
 }
 
 function explicitOpen(status) {

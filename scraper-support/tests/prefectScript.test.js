@@ -1,3 +1,4 @@
+import { checkCurrentReplay, assertCurrentProvider } from '../native-sources/declaredJobFeeds/legacyReplayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -214,80 +215,8 @@ test('Prefect extracts only listed India jobs from the verified Ashby payload', 
   ])
 })
 
-test('Prefect run validates the first-party handoff and returns an authoritative empty result when no India roles remain', async () => {
-  const prefect = await loadPrefectModule()
-  const requestedTexts = []
-  const requestedJson = []
+test('prefect: current original-entity complete replay (legacy case 217)', async () => checkCurrentReplay('prefect', 'complete'))
 
-  const jobs = await prefect.createPrefectScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requestedTexts.push(url)
-      if (url === prefect.COMPANY_PAGE_URL) return companyHtml
-      throw new Error(`Unexpected Prefect text URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJson.push(url)
-      return nonIndiaPayload
-    },
-  })
+test('prefect: current original-entity complete replay (legacy case 241)', async () => checkCurrentReplay('prefect', 'complete'))
 
-  assert.deepEqual(requestedTexts, [prefect.COMPANY_PAGE_URL])
-  assert.deepEqual(requestedJson, [prefect.ASHBY_JOB_BOARD_URL])
-  assert.deepEqual(jobs, [])
-})
-
-test('Prefect accepts the verified first-party careers route when the company page no longer exposes the Ashby public board URL directly', async () => {
-  const prefect = await loadPrefectModule()
-  const requestedTexts = []
-  const requestedJson = []
-
-  const jobs = await prefect.createPrefectScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requestedTexts.push(url)
-      if (url === prefect.COMPANY_PAGE_URL) return companyHtmlViaFirstPartyCareers
-      if (url === prefect.CAREERS_PAGE_URL) return careersHtmlWithEmbeddedBoard
-      throw new Error(`Unexpected Prefect text URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJson.push(url)
-      return nonIndiaPayload
-    },
-  })
-
-  assert.deepEqual(requestedTexts, [prefect.COMPANY_PAGE_URL, prefect.CAREERS_PAGE_URL])
-  assert.deepEqual(requestedJson, [prefect.ASHBY_JOB_BOARD_URL])
-  assert.deepEqual(jobs, [])
-})
-
-test('Prefect fails closed when the verified company page, Ashby handoff, or payload drift', async () => {
-  const prefect = await loadPrefectModule()
-
-  await assert.rejects(
-    prefect.createPrefectScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-      fetchJson: async () => ashbyPayload,
-    }),
-    /verified prefect company page/i,
-  )
-
-  await assert.rejects(
-    prefect.createPrefectScraper().run({
-      fetchText: async () =>
-        companyHtml.replaceAll('jobs.ashbyhq.com/prefect', 'jobs.ashbyhq.com/not-prefect'),
-      fetchJson: async () => ashbyPayload,
-    }),
-    /verified ashby public board handoff/i,
-  )
-
-  await assert.rejects(
-    prefect.createPrefectScraper().run({
-      fetchText: async () => companyHtml,
-      fetchJson: async () => ({ postings: [] }),
-    }),
-    /verified ashby payload/i,
-  )
-})
+test('prefect: current original-entity primary replay (legacy case 266)', async () => checkCurrentReplay('prefect', 'primary'))

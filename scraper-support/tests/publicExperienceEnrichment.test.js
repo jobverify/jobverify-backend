@@ -198,7 +198,11 @@ test('inferExperienceFromPublicPageHtml captures Workday experience from job-det
     </html>
   `)
 
-  assert.equal(enriched.experienceRequired, '3-5 years')
+  assert.match(enriched.experienceRequired, /Bachelor's degree.*3-5 years professional experience/i)
+  assert.match(enriched.experienceRequired, /Master's degree.*2-3 years professional experience/i)
+  const normalized = normalizeScrapedJob(enriched)
+  assert.equal(normalized.experienceProfile.minimumYears, null)
+  assert.deepEqual(normalized.experienceYears, [])
   assert.equal(enriched.publicExperienceChecked, true)
   assert.match(enriched.jobDescription || '', /validate and debug multiple so\s*c interfaces/i)
 })
@@ -964,6 +968,7 @@ test('enrichJobWithPublicExperience prefers hosted job-detail apply pages over g
   })
 
   assert.equal(enriched.experienceRequired, '5 years')
+  assert.notEqual(enriched.sourceExperienceRequired, '10 years')
   assert.match(enriched.jobDescription || '', /account management/i)
 })
 

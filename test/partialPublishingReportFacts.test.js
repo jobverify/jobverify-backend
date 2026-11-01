@@ -10,6 +10,20 @@ import {readOrCreatePartialReportAudit} from '../scripts/partialPublishingReport
 import {buildPublishingGapReport} from '../scripts/publishingGapReport.js'
 const now=new Date('2026-10-20T23:00:00Z'),later=new Date('2026-10-23T23:00:00Z'),hash=x=>createHash('sha256').update(x).digest('hex')
 const backend=fileURLToPath(new URL('../',import.meta.url))
+function frozenHistoricalCache(source,trialBytes,cacheDirectory){
+ const bytes=fs.readFileSync(new URL('./fixtures/partialReport/historical-zee-navi-cache-001.json.gz',import.meta.url))
+ assert.equal(hash(bytes),'0d22a182a2d0d483b70373b86bf008b5d64654e097998b2ebc230b0a45308ecd')
+ const frozen=JSON.parse(gunzipSync(bytes)).sources[source],indexBytes=Buffer.from(frozen.indexBase64,'base64'),factsBytes=Buffer.from(frozen.factsBase64,'base64'),index=JSON.parse(indexBytes)
+ assert.equal(hash(trialBytes),frozen.trialByteHash);assert.equal(hash(indexBytes),frozen.indexSha256);assert.equal(hash(factsBytes),frozen.factsSha256)
+ assert.equal(index.source,source);assert.equal(index.trialByteHash,frozen.trialByteHash);assert.equal(index.artifact,frozen.artifact)
+ assert.equal(frozen.indexFilename,hash(source+'\0'+index.artifact)+'-'+hash(indexBytes)+'.index.json')
+ assert.equal(frozen.factsFilename,index.factsSha256+'.facts.json')
+ // Copy the original immutable cache bytes; do not recreate facts through a current gate.
+ fs.mkdirSync(cacheDirectory)
+ fs.writeFileSync(path.join(cacheDirectory,frozen.indexFilename),indexBytes,{flag:'wx'})
+ fs.writeFileSync(path.join(cacheDirectory,frozen.factsFilename),factsBytes,{flag:'wx'})
+ return index
+}
 function fixture(t,kind='phonepe'){
  const zee=kind==='zee',navi=kind==='navi'
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'partial-report-'))
@@ -26,7 +40,8 @@ function fixture(t,kind='phonepe'){
   for(const [name,data]of Object.entries(raw.files)){const file=path.join(trialDirectory,name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,data)}
  }
  const trialFile=path.join(trialDirectory,`${source}.json`);fs.writeFileSync(trialFile,trialBytes)
- return {source,trialFile,artifact:`actual/${source}.json`,expectedTrialByteHash:hash(trialBytes),cacheDirectory:path.join(dir,'cache'),now:navi?new Date('2026-10-20T23:30:00Z'):now,trial:JSON.parse(trialBytes)}
+ const cacheDirectory=path.join(dir,'cache'),frozen=zee||navi?frozenHistoricalCache(source,trialBytes,cacheDirectory):null
+ return {source,trialFile,artifact:frozen?.artifact??`actual/${source}.json`,expectedTrialByteHash:hash(trialBytes),cacheDirectory,now:frozen?new Date(frozen.checkedAt):now,trial:JSON.parse(trialBytes)}
 }
 const options=f=>({source:f.source,trialFile:f.trialFile,artifact:f.artifact,expectedTrialByteHash:f.expectedTrialByteHash,cacheDirectory:f.cacheDirectory,now:f.now})
 const report=(source,audit,at)=>buildPublishingGapReport({catalog:[{source,companyName:source,adapter:'apiPortal'}],runtime:{databaseAvailable:false},extractionAudits:[audit],now:at})
@@ -65,8 +80,11 @@ test('cached actual Zee facts survive a legitimate current-source hash change wi
  const f=fixture(t,'zee'),fresh=await readOrCreatePartialReportAudit(options(f)),target=path.join(backend,'scraper/zeeentertainmententerprises/native.js'),read=fs.readFileSync
  let currentSourceReads=0
  t.mock.method(fs,'readFileSync',(file,...args)=>{if(path.resolve(String(file))===target){currentSourceReads++;return Buffer.concat([read(file),Buffer.from('\n// future source version')])}return read(file,...args)})
- const {verifyZeePartialPublishingTrial}=await import('../scripts/zeePartialPublishingEvidence.js')
- await assert.rejects(verifyZeePartialPublishingTrial({trial:f.trial,bytes:read(f.trialFile),readEvidence:async relative=>read(path.join(path.dirname(f.trialFile),relative)),now}),/current source/)
+ // Preserve the changed-current-code negative precondition without invoking publication admission.
+ const reviewedSource=f.trial.httpEvidence.receipts.find(receipt=>receipt.kind==='source-code'&&receipt.sourcePath==='scraper/zeeentertainmententerprises/native.js')
+ assert.ok(reviewedSource)
+ assert.equal(hash(read(path.join(path.dirname(f.trialFile),reviewedSource.file))),reviewedSource.sha256)
+ assert.notEqual(hash(fs.readFileSync(target)),reviewedSource.sha256,'Changed current source cannot match the frozen publication code seal')
  assert.ok(currentSourceReads>0);currentSourceReads=0
  const historical=await readOrCreatePartialReportAudit({...options(f),now:later})
  assert.deepEqual(historical,fresh);assert.equal(historical.eligibleJobs,110);assert.equal(currentSourceReads,0)

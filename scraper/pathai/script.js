@@ -1,3 +1,4 @@
+import { createNativeRouteScraper, NATIVE_ROUTE_PROFILES } from '../../scraper-support/native-sources/declaredGreenhouseRoutes/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -183,44 +184,7 @@ export const extractIndiaJobsFromGreenhousePayload = (
   })
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
-  method: options.method,
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json,text/plain,*/*',
-    Referer: CAREERS_URL,
-    ...(options.headers || {}),
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-export const createPathAiScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('PathAI verified first-party careers page no longer matches the trusted public surface')
-    }
-
-    return extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' }),
-      { scrapedAt: now() },
-    )
-  },
-})
+export const createPathAiScraper = (options = {}) => createNativeRouteScraper(NATIVE_ROUTE_PROFILES.pathai, options)
 
 export const run = async (options = {}) => createPathAiScraper(options).run(options)
 

@@ -1,3 +1,5 @@
+import {fixture,replay,editHTML,editJSON,mutateNativePost} from '../native-sources/publicLeverChannels/fixtureReplay.js'
+import {syntheticPaginatedVgs} from '../native-sources/publicLeverChannels/testSupport.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -96,7 +98,7 @@ test('Netomi scraper pins the verified first-party careers page and embedded Lev
   assert.equal(netomi.LEVER_BOARD_URL, 'https://jobs.lever.co/netomi')
   assert.equal(netomi.LEVER_API_URL, 'https://api.lever.co/v0/postings/netomi?mode=json')
   assert.equal(netomi.COMPANY_DOMAIN, 'netomi.com')
-  assert.equal(netomi.VERIFIED_ON, '2026-08-15')
+  assert.equal(netomi.VERIFIED_ON, null)
   assert.equal(netomi.hasOfficialNetomiCareersSignal(officialCareersHtml), true)
   assert.equal(netomi.hasReferralOnlyHomepageSignal(referralOnlyHomepageHtml), true)
   assert.equal(
@@ -138,104 +140,32 @@ test('Netomi extracts the live Lever payload shape into shared scraper job field
   assert.equal(jobs[1].title, 'Agentic Engineer')
 })
 
-test('Netomi run validates the first-party careers page and decorates public Lever jobs', async () => {
-  const netomi = await loadNetomiModule()
-  const requestedPages = []
-  const requestedJson = []
-
-  const jobs = await netomi.createNetomiScraper({
-    maxJobs: 1,
-    now: () => '2026-07-16T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedPages.push(url)
-      if (url === netomi.CAREERS_URL) return officialCareersHtml
-      throw new Error(`Unexpected page URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJson.push(url)
-      if (url === netomi.LEVER_API_URL) return sampleLeverJobs
-      throw new Error(`Unexpected json URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedPages, [netomi.CAREERS_URL])
-  assert.deepEqual(requestedJson, [netomi.LEVER_API_URL])
-  assert.deepEqual(jobs, [
-    {
-      title: 'Agentic AI Forward Deployment Engineering Lead',
-      company: 'Netomi',
-      department: 'Agentic Delivery',
-      location: 'Toronto, Canada',
-      city: 'Toronto',
-      country: 'Canada',
-      jobId: '8fa09624-2464-4e19-a56d-2c38323ce49d',
-      requisitionId: '8fa09624-2464-4e19-a56d-2c38323ce49d',
-      sourceUrl: 'https://jobs.lever.co/netomi/8fa09624-2464-4e19-a56d-2c38323ce49d',
-      applyUrl: 'https://jobs.lever.co/netomi/8fa09624-2464-4e19-a56d-2c38323ce49d/apply',
-      employmentType: 'Full-time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '2026-06-20T11:09:16.907Z',
-      closingDate: null,
-      jobDescription:
-        'About the Role As an Agentic AI Forward Deployment Engineering Lead at Netomi, you will lead enterprise deployments.',
-      remoteStatus: 'Remote',
-      source: 'netomi',
-      link: 'https://jobs.lever.co/netomi/8fa09624-2464-4e19-a56d-2c38323ce49d/apply',
-      scrapedAt: '2026-07-16T00:00:00.000Z',
-      companyCareerPage: 'https://www.netomi.com/careers',
-      companyDomain: 'netomi.com',
-      atsPlatform: 'lever',
-    },
-  ])
+test("Netomi restored public handoff qualifies full original models and applies caps after complete audit",async()=>{
+   const netomi=await loadNetomiModule(),r=replay((url,page)=>url===netomi.HOMEPAGE_URL?editHTML(page,html=>html+'<a href="https://jobs.lever.co/netomi">Open roles</a>'):page)
+   const jobs=await netomi.createNetomiScraper({maxJobs:1}).run(r.options)
+   assert.equal(r.audits[0].observations.length,20);assert.equal(jobs.length,1)
+   assert.equal(jobs[0].jobId,fixture.oracle.netomi.records[0].id)
+   assert.deepEqual(jobs[0].sourceNativeRecord,fixture.oracle.netomi.records[0].originalNative)
+   assert.equal(jobs[0].scrapedAt,'2026-10-31T21:51:00.000Z')
+  
 })
 
-test('Netomi returns [] when the careers route now resolves to the verified referral-only homepage redirect', async () => {
-  const netomi = await loadNetomiModule()
-  const requestedPages = []
-
-  const jobs = await netomi.createNetomiScraper().run({
-    fetchPage: async (url) => {
-      requestedPages.push(url)
-      return {
-        status: 200,
-        url: netomi.HOMEPAGE_URL,
-        html: referralOnlyHomepageHtml,
-      }
-    },
-    fetchJson: async () => {
-      throw new Error('Lever API should not be called for the referral-only empty state')
-    },
-  })
-
-  assert.deepEqual(requestedPages, [netomi.CAREERS_URL])
-  assert.deepEqual(jobs, [])
+test("Netomi retains configured native observations while the current referral homepage lacks a binding",async()=>{
+   const netomi=await loadNetomiModule(),r=replay(),jobs=await netomi.createNetomiScraper().run(r.options)
+   assert.equal(jobs.length,0);assert.equal(r.audits[0].observations.length,20)
+   assert.equal(r.audits[0].closing.publisherQualified,false)
+   assert.ok(r.requests.some(url=>url.startsWith('https://api.lever.co/v0/postings/netomi')))
+   assert.ok(r.audits[0].observations.every(row=>row.jobDescription&&!row.sourceCurrentNativePostingIdentityQualified))
+  
 })
 
-test('Netomi fails closed when the verified careers page disappears or the Lever payload shape drifts', async () => {
-  const netomi = await loadNetomiModule()
-
-  await assert.rejects(
-    netomi.createNetomiScraper().run({
-      fetchText: async () => '<html><body><h1>Join Netomi</h1></body></html>',
-      fetchJson: async () => sampleLeverJobs,
-    }),
-    /verified official careers surface/i,
-  )
-
-  await assert.rejects(
-    netomi.createNetomiScraper().run({
-      fetchText: async () => officialCareersHtml,
-      fetchJson: async () => [
-        {
-          id: 'broken-role',
-          text: 'Broken Role',
-        },
-      ],
-    }),
-    /lever postings payload/i,
-  )
+test("Netomi retains unqualified publisher and feed errors while preserving independently readable role criteria",async()=>{
+   const netomi=await loadNetomiModule()
+   const primary=replay((url,page)=>url===netomi.HOMEPAGE_URL?editHTML(page,html=>html.replace('<title>Netomi</title>','<title>Other</title>')):page)
+   assert.equal((await netomi.run(primary.options)).length,0);assert.equal(primary.audits[0].closing.publisherQualified,false)
+   const feed=replay((url,page)=>url.includes('/postings/netomi?')?editJSON(page,()=>{}):page)
+   const broken=replay((url,page)=>url.includes('/postings/netomi?')?{...page,bodyBase64:Buffer.from('{"error":"unavailable"}').toString('base64'),html:'{"error":"unavailable"}',text:'{"error":"unavailable"}'}:page)
+   assert.equal((await netomi.run(broken.options)).length,0);assert.equal(broken.audits[0].closing.nativeListingComplete,false)
+   assert.equal(broken.audits[0].observations.length,20);assert.ok(broken.audits[0].observations.every(row=>row.jobDescription))
+  
 })

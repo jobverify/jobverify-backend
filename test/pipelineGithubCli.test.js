@@ -102,11 +102,10 @@ test('GitHub CLI registers direct roots, reports work and dispatches separate co
  assert.equal(await PipelineRun.countDocuments(),before);
  await fs.writeFile(eventFile,JSON.stringify({schedule:cron}));
  await run('register','scraper',1202,{GITHUB_EVENT_NAME:'schedule',TEST_SCHEDULE_START:due});
- const scheduled=await PipelineRun.findOne({scheduleSlot:{$exists:true}}).lean();
- assert.ok(scheduled);assert.equal(scheduled.stages[0].githubRunId,1202);
- await failPipeline(scheduled._id,'cancelled','Test duplicate tick');
+ // Every legacy GitHub cron tick is ignored after backend scheduling takes over.
+ assert.equal(await PipelineRun.countDocuments(),before);
  await run('register','scraper',1203,{GITHUB_EVENT_NAME:'schedule',TEST_SCHEDULE_START:due});
- assert.equal(await PipelineRun.countDocuments({scheduleSlot:{$exists:true}}),1);
+ assert.equal(await PipelineRun.countDocuments({scheduleSlot:{$exists:true}}),0);
  await run('register','scraper',1204,{GITHUB_EVENT_NAME:'workflow_dispatch'});
  const manual=await PipelineRun.findOne({activeKey:'database'}).lean();
  assert.equal(manual.stages[0].githubRunId,1204);assert.equal(manual.scheduleSlot,undefined);

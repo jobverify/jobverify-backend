@@ -101,7 +101,7 @@ test('extractJobDetail reads Siemens Avature detail metadata and apply links', (
   )
 })
 
-test('normalizeScrapedJob composes Siemens experienced job types from Avature detail pages', () => {
+test('normalizeScrapedJob preserves native Siemens employment and experience labels', () => {
   const html = readFixture('job-detail-511056.html')
   const detail = extractJobDetail(html, {
     title: 'Solution Engineering - Control and Protection Testing',
@@ -124,5 +124,5 @@ test('normalizeScrapedJob composes Siemens experienced job types from Avature de
 
   assert.equal(normalized.employmentType, 'Full-time')
   assert.equal(normalized.experienceLevel, 'Mid-level Professional')
-  assert.equal(normalized.jobType, 'Full-time Experienced')
+  assert.equal(normalized.jobType, 'Unspecified')
 })

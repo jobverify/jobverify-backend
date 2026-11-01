@@ -41,49 +41,51 @@ const loadModule = async () => {
   }
 }
 
-test('Basware sentinel helpers stay pinned to the verified first-party Jobylon shell from Saturday, July 18, 2026', async () => {
+test('Basware legacy shell detectors remain available without supplying current inventory authority', async () => {
   const basware = await loadModule()
 
   assert.equal(basware.SOURCE, 'basware')
   assert.equal(basware.COMPANY, 'Basware')
   assert.equal(basware.OFFICIAL_BRAND_NAME, 'Basware')
-  assert.equal(basware.VERIFIED_ON, '2026-07-18')
+  assert.equal(basware.VERIFIED_ON, null)
   assert.equal(basware.CAREERS_URL, 'https://careers.basware.com/')
   assert.equal(basware.hasOfficialJobylonShellSignal(CAREERS_PAGE_HTML), true)
   assert.equal(basware.hasPublicJobsSignal(CAREERS_PAGE_HTML), false)
   assert.equal(basware.hasPublicJobsSignal(PUBLIC_JOBS_HTML), true)
 })
 
-test('Basware returns [] only while the verified first-party careers page stays Jobylon-shell-only', async () => {
+test('Basware no longer accepts a widget shell without a current employer group binding as an empty inventory', async () => {
   const basware = await loadModule()
   const requestedUrls = []
 
-  const jobs = await basware.createBaswareScraper().run({
-    fetchText: async (url) => {
+  await assert.rejects(basware.createBaswareScraper().run({
+    transport: async (url) => {
       requestedUrls.push(url)
-      if (url === basware.CAREERS_URL) return CAREERS_PAGE_HTML
+      if (url === basware.CAREERS_URL) return { url, status: 200, headers: { 'content-type': 'text/html' },
+        body: Buffer.from(CAREERS_PAGE_HTML), bodyComplete: true }
       throw new Error(`Unexpected Basware URL: ${url}`)
     },
-  })
+  }), error => error.code === 'NATIVE_HTML_INCOMPLETE' && error.nativeEvidence.handoffVerified !== true)
 
   assert.deepEqual(requestedUrls, [basware.CAREERS_URL])
-  assert.deepEqual(jobs, [])
 })
 
-test('Basware fails closed when the verified Jobylon shell drifts or starts exposing public jobs', async () => {
+test('Basware rejects changed or unbound careers HTML without requesting a guessed feed', async () => {
   const basware = await loadModule()
 
   await assert.rejects(
     basware.createBaswareScraper().run({
-      fetchText: async () => '<html><body><h1>Careers</h1></body></html>',
+      transport: async url => ({ url, status: 200, headers: { 'content-type': 'text/html' },
+        body: Buffer.from('<html><body><h1>Careers</h1></body></html>'), bodyComplete: true }),
     }),
-    /trusted Jobylon shell/i,
+    error => error.code === 'NATIVE_HTML_INCOMPLETE',
   )
 
   await assert.rejects(
     basware.createBaswareScraper().run({
-      fetchText: async () => PUBLIC_JOBS_HTML,
+      transport: async url => ({ url, status: 200, headers: { 'content-type': 'text/html' },
+        body: Buffer.from(PUBLIC_JOBS_HTML), bodyComplete: true }),
     }),
-    /surface now appears to expose public jobs/i,
+    error => error.code === 'NATIVE_HTML_INCOMPLETE',
   )
 })

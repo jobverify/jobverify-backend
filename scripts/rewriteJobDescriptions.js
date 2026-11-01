@@ -7,7 +7,7 @@ import { configureMongoDns } from '../src/utils/mongoDns.js';
 import Job from '../src/models/Job.js';
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
 import { rewriteDeadline, rewriteStopDetails, rewriteQueueQuery, rewriteQueuePages, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient, rewriteWhenReady, rewriteProgress } from '../rewriting/runner.js';
-import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration, rewriteGpuLayers } from '../rewriting/worker.js';
+import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration, rewriteGpuLayers, collectRewriteRuntimeDiagnostics } from '../rewriting/worker.js';
 import { createRewriteDiagnostics } from '../rewriting/diagnostics.js';
 import { summarizeRewriteCapacity } from '../rewriting/capacity.js';
 import { createProgressLogger } from './lib/progressLogger.js';
@@ -71,13 +71,26 @@ try {
     else {
         signal.throwIfAborted();
         setPhase('prepare_runtime');
+        if (process.env.JOB_DESCRIPTION_REWRITE_REQUIRE_CUSTOM_BINARY === '1' && (!binaryOverride || !binarySha256)) {
+          throw new Error('The rewrite workflow requires its verified portable runtime before processing a nonempty queue');
+        }
         const runtime = await prepareRewriteRuntime({ signal, binaryOverride, binarySha256 });
+        summary.workerRuntime = await collectRewriteRuntimeDiagnostics({ binary: runtime.binary,
+          nativeBacktrace: process.env.JOB_DESCRIPTION_REWRITE_NATIVE_BACKTRACE === '1' });
+        summary.workerRuntime.runtimeKind = runtime.runtimeKind;
+        if (binaryOverride && process.env.JOB_DESCRIPTION_REWRITE_RUNTIME_PROFILE) {
+          summary.workerRuntime.profile = process.env.JOB_DESCRIPTION_REWRITE_RUNTIME_PROFILE;
+          summary.workerRuntime.sourceRevision = process.env.JOB_DESCRIPTION_REWRITE_RUNTIME_SOURCE_REVISION;
+        }
         setPhase('start_worker');
         worker = await startRewriteWorker({ ...runtime, signal, deadline,
+          nativeBacktrace: summary.workerRuntime.nativeBacktrace.enabled,
           logFile: path.join(path.dirname(summaryFile), `description-worker${shardSuffix}.log`),
           threads: workerConfig.threads, parallelism: workerConfig.parallelism, gpuLayers });
         setPhase('probe_worker');
-        summary.workerProbe = await probeRewriteClient(createRewriteClient(worker), { concurrency: worker.parallelism, deadline, signal, onRejection });
+        summary.workerProbe = await probeRewriteClient(createRewriteClient(worker), { concurrency: worker.parallelism, deadline, signal, onRejection,
+          onProbeComplete: details => { summary.workerProbe = details; },
+          onProbeEvent: event => console.log(JSON.stringify({ mode: summary.mode, shard, shardCount, ...event })) });
         summary.results = [];
         Object.assign(summary, await rewriteWhenReady(summary.workerProbe, async () => {
         setPhase('process_queue');

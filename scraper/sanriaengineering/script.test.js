@@ -245,7 +245,7 @@ test('SANRIA Engineering extracts only the public first-party opening and ignore
     countryFilter: 'India',
   })
 
-  assert.equal(normalized.jobType, 'Full-time Experienced')
+  assert.equal(normalized.jobType, 'Unspecified')
   assert.equal(normalized.remoteStatus, 'On-site')
   assert.equal(normalized.companyDomain, 'sanriaengineering.com')
 })

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that https://careers.basware.com/ was the live first-party Basware careers page and exposed an Open Positions section backed by a Jobylon embed shell (`jobylon-jobs-widget` loading `https://cdn.jobylon.com/embedder.js`). Because the public jobs inventory was not trustworthily enumerable from the first-party page in this environment, this local provider is pinned as a fail-closed sentinel that returns an empty set until Basware exposes a stable public listing surface.'
+  'Current https://careers.basware.com/ configuration binds jobylon-jobs-widget to native group 195 via https://cdn.jobylon.com/embedder.js. Public inventory completeness is evaluated per run from the unfiltered employer binding, reviewed live loader/controller, all-row country-office partition, complete India details and matching closing inventory. Failed proof retains verified roles and forbids cleanup. Legal-company universality remains unknown; observed rows are not publisher-reported totals.'
 
 export const BASWARE_CATALOG = {
   source: 'basware',
@@ -15,15 +15,18 @@ export const BASWARE_CATALOG = {
   companyCareerPage: 'https://careers.basware.com/',
   officialCareersPageUrl: 'https://careers.basware.com/',
   companyDomain: 'basware.com',
-  atsPlatform: 'official-careers-page-jobylon-shell-sentinel',
+  atsPlatform: 'jobylon-native-widget',
   countryFilter: 'India',
-  paginationStrategy: 'single-careers-page-jobylon-shell-validation',
+  zeroResultPolicy: 'evidence-required',
+  sourceScopeComplete: false,
+  paginationStrategy: 'complete-inline-widget-array-and-closing-reconciliation',
   extractionStrategy:
-    'verified-first-party-careers-page+verified-jobylon-shell-without-trusted-public-enumeration+return-empty',
+    'current-first-party-group-binding+native-widget-records+verified-full-role-details',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
-  verifiedPublicJobCount: 0,
+  verifiedOn: null,
+  verifiedPublicJobCount: null,
+  verifiedIndiaJobCount: null,
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'basware/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

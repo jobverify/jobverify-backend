@@ -31,7 +31,7 @@ test('CV revisions retain immutable documents, scope history and restore atomica
   const id = new mongoose.Types.ObjectId(); const other = new mongoose.Types.ObjectId(); const jobId = new mongoose.Types.ObjectId(); const otherJob = new mongoose.Types.ObjectId();
   const user = { _id: id }; const baseScope = { kind: 'base' }; const tailoredScope = { kind: 'tailored', jobId: String(jobId) };
   await User.collection.insertMany([{ _id: id, email: 'cv@example.test', savedJobs: [jobId] }, { _id: other, email: 'other-cv@example.test' }]);
-  await Job.collection.insertOne({ _id: jobId, title: 'React Engineer', company: 'Example', location: 'Pune, India', isPublicIndia: true, status: 'active', postedAt: new Date(), description: 'Build React applications.', fingerprint: 'cv-history-job' });
+  await Job.collection.insertOne({ _id: jobId, title: 'React Engineer', company: 'Example', location: 'Pune, India', isPublicIndia: true, jobType: 'Full-time Experienced', status: 'active', postedAt: new Date(), description: 'Build React applications.', fingerprint: 'cv-history-job' });
   await Resume.create({ _id: id, user: id, ...inspectResume('original.tex', source), data: source });
   async function prepare(label) {
     await requestResumePreparation(user, { regenerate: true, dispatch });

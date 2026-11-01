@@ -1,3 +1,5 @@
+import { captureRewriteError } from './failureDiagnostics.js';
+
 const clip = (value, limit) => typeof value === 'string' ? value.slice(0, limit) : undefined;
 
 /** Bounded employer-text samples belong only in the diagnostic artifact, never console summaries. */
@@ -38,6 +40,7 @@ export const createRewriteDiagnostics = ({ maxSamples = 10, maxBytes = 65536 } =
         sourceOffset: Number.isInteger(diagnostic.sourceOffset) ? diagnostic.sourceOffset : undefined,
         text: clip(diagnostic.text, 1200), evidence: clip(diagnostic.evidence, 1800), scope: clip(diagnostic.scope, 32) } : undefined,
       generationRequests: response?.generationRequests, finishReason: response?.finishReason, retrySkipped: response?.retrySkipped };
+    if (response?.errorDiagnostic) sample.error = captureRewriteError(response.errorDiagnostic, { sourceTexts: [input?.sourceDescription] });
     state.samples.push(sample);
     // Reserve space for all bounded reason counters as the run continues.
     while (state.samples.length && Buffer.byteLength(JSON.stringify(state)) > maxBytes - 4096) state.samples.pop();

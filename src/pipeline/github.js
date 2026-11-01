@@ -72,10 +72,24 @@ export async function reconcileGithub(run,{token=process.env.GITHUB_PAT,advance=
       if(remote.status==='completed'){current.status='preparing';current.startedAt=new Date(remote.run_started_at||remote.created_at);}
     });
   }
+  // Downtime before the first recovery attempt must not exhaust the retry
+  // window: an undispatched weekly occurrence still deserves a start.
+  const waitingSince=run.origin==='scheduler'&&stage.status==='queued'?stage.recoveryStartedAt:stage.queuedAt;
   if(remote?.status==='completed'&&advance) {
     await completeWorkflow(remote.id,remote.conclusion,(row,next)=>dispatchGithubStage(row,next,token));
-  } else if(!remote&&Date.now()-new Date(stage.queuedAt).getTime()>24*60*60*1000) {
+  } else if(!remote&&waitingSince&&Date.now()-new Date(waitingSince).getTime()>24*60*60*1000) {
     await failPipeline(run._id,'failed','No matching GitHub run appeared within 24 hours.');
+  } else if(!remote&&advance&&run.origin==='scheduler'&&stage.status==='queued') {
+    // Recover a crash after queue persistence but before the POST. Redeliver
+    // the same token: claimStage allows only one GitHub worker to execute it.
+    const retry=await changeRun(run._id,row=>{
+      const current=row.stages.find(s=>s.key===stage.key);
+      if(isTerminal(row.status)||current?.status!=='queued'||current.githubRunId
+        ||Date.now()-new Date(current.lastDispatchAttemptAt||current.queuedAt).getTime()<5*60*1000)return false;
+      current.lastDispatchAttemptAt=new Date();
+      current.recoveryStartedAt ||= new Date();
+    });
+    if(retry)await dispatchGithubStage(retry,retry.stages.find(s=>s.key===stage.key),token);
   }
   return PipelineRun.findById(run._id).lean();
 }

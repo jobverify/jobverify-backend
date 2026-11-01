@@ -41,3 +41,29 @@ test('rewrite sizes its runner matrix from the queue between one registration an
  assert.equal((workflow.match(/pipelineGithub.js register/g)||[]).length,1);
  assert.equal((workflow.match(/pipelineGithub.js report/g)||[]).length,1);
 });
+
+test('rewrite builds one portable runtime and activates the verified artifact before publishing',()=>{
+ const workflow=read('rewrite-descriptions.yml');
+ const register=workflow.split('  register:\n')[1].split('  rewrite_descriptions:\n')[0];
+ const shards=workflow.split('  rewrite_descriptions:\n')[1].split('  report:\n')[0];
+ assert.match(register,/runs-on: ubuntu-24\.04/);
+ assert.match(shards,/runs-on: ubuntu-24\.04/);
+ assert.match(register,/repository: ggml-org\/llama\.cpp/);
+ assert.match(register,/ref: 7fe450e19305b828c199d602c23a8337aaa1f03b/);
+ assert.match(register,/portableRewriteRuntime\.sh build/);
+ assert.match(register,/portableRewriteRuntime\.sh activate/);
+ assert.match(register,/description-runtime-avx2-ubuntu24-x64-/);
+ assert.match(register,/hashFiles\('scripts\/portableRewriteRuntime\.sh'\)/);
+ assert.match(register,/node --test test\/descriptionRewriteWorkflow\.test\.js/);
+ assert.match(register,/test\/jobDescriptionPortableRuntime\.test\.js/);
+ assert.match(register,/runtime_artifact: description-runtime-avx2-\$\{\{ github.run_id \}\}-\$\{\{ github.run_attempt \}\}/);
+ assert.match(register,/name: description-runtime-avx2-\$\{\{ github.run_id \}\}-\$\{\{ github.run_attempt \}\}/);
+ assert.match(shards,/name: \$\{\{ needs.register.outputs.runtime_artifact \}\}/);
+ for(const section of [register,shards]) assert.match(section,/steps\.description_queue\.outputs\.queued != '0'/);
+ assert.match(shards,/portableRewriteRuntime\.sh activate/);
+ assert.ok(shards.indexOf('portableRewriteRuntime.sh activate')<shards.indexOf('rewriteJobDescriptions.js --apply'));
+ assert.doesNotMatch(shards,/description-lfm12b-cpu-/);
+ assert.match(shards,/JOB_DESCRIPTION_REWRITE_REQUIRE_CUSTOM_BINARY: '1'/);
+ assert.match(shards,/JOB_DESCRIPTION_REWRITE_NATIVE_BACKTRACE: '1'/);
+ assert.match(shards,/description-worker-\$\{\{ matrix.shard \}\}.log.native.json/);
+});

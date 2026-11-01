@@ -278,7 +278,7 @@ test('normalizeScrapedJob suppresses unsupported part-time employment types', ()
   )
 
   assert.equal(normalized.employmentType, null)
-  assert.equal(normalized.jobType, 'Full-time Experienced')
+  assert.equal(normalized.jobType, 'Unspecified')
 })
 
 test('normalizeScrapedJob respects explicit experienceLevel cues for full-time apiPortal roles', () => {

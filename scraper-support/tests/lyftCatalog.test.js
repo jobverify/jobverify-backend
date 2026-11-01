@@ -17,7 +17,7 @@ const loadLyftCatalog = async () => {
   }
 }
 
-test('Lyft local catalog captures the verified first-party careers shell and Greenhouse board without alias churn', async () => {
+test('Lyft local catalog captures the current declared first-party careers shell and Greenhouse board without alias churn', async () => {
   const {
     LYFT_CATALOG,
     default: defaultCatalog,
@@ -37,28 +37,23 @@ test('Lyft local catalog captures the verified first-party careers shell and Gre
   )
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-greenhouse-jobs-api-content-page')
+  assert.equal(provider.paginationStrategy, 'paired-current-native-and-published-own-route-original-GETs')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-shell+verified-greenhouse-jobs-api+india-location-filter',
+    'full-native-and-published-route-models-before-country-selection',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'lyft.com')
-  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.equal(provider.verifiedOn, null)
   assert.match(provider.dryRunFile, /lyft[\\/]jobs\.json$/i)
   assert.match(provider.modulePath, /lyft[\\/]script\.js$/i)
   assert.equal(provider.modulePath, lyftModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.lyft\.com\/careers/i)
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/api\.greenhouse\.io\/v1\/boards\/lyft\/jobs\?content=true/i,
-  )
-  assert.match(provider.verifiedSurfaceSummary, /160 public roles/i)
-  assert.match(provider.verifiedSurfaceSummary, /0 India-facing roles/i)
-  assert.match(provider.verifiedSurfaceSummary, /Mexico City, Mexico/i)
-  assert.match(provider.verifiedSurfaceSummary, /app\.careerpuck\.com/i)
+  assert.match(provider.verifiedSurfaceSummary, /unqualified/i)
+  assert.equal(provider.verifiedInventoryStatus, 'unverified')
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
+  assert.equal(provider.zeroResultPolicy, 'coverage-gap')
 })
 
 test('Lyft backlog row matches directly from the local catalog metadata without aliases', async () => {

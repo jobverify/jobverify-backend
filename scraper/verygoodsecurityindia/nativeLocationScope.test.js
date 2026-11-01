@@ -1,3 +1,5 @@
+import {fixture,replay,editJSON,editHTML,mutateNativePost} from '../../scraper-support/native-sources/publicLeverChannels/fixtureReplay.js'
+import {syntheticPaginatedVgs} from '../../scraper-support/native-sources/publicLeverChannels/testSupport.js'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
@@ -14,21 +16,22 @@ const runWith = (records, pages = [records]) => run({
   fetchJson: async url => pages[Number(new URL(url).searchParams.get('skip')) / 100],
 })
 
-test('VGS resolves an exact secondary label from explicit native primary location-country evidence', async () => {
-  assert.deepEqual(await runWith(native), [])
+test("VGS resolves the actual current secondary Bay Area from explicit native own-country references",async()=>{
+   const r=replay(),jobs=await run(r.options),a=r.audits[0]
+   const row=a.observations.find(row=>row.jobId==='4f565c0a-7a1c-4f43-ba97-0559658661dc')
+   assert.equal(row.country,'United States');assert.equal(row.sourceCountryScopeUnresolved,false)
+   assert.ok(row.sourceNativeLocationCountryCorroborations.some(value=>value.location==='San Francisco Bay Area'&&value.nativePostingIds.length))
+   assert.equal(jobs.length,0)
+  
 })
 
-test('VGS retains fresh complete native inventory evidence when every corroborated posting is foreign', async () => {
-  const jobs = await runWith(native)
-  const evidence = readInventoryEvidence(jobs)
-  assert.equal(evidence?.status, 'complete-inventory')
-  assert.equal(evidence.firstParty, true)
-  assert.equal(evidence.listingComplete, true)
-  assert.equal(evidence.reportedTotal, 2)
-  assert.equal(evidence.indiaFacetCount, 0)
-  assert.equal(evidence.pagesFetched, 2)
-  assert.equal(evidence.surface, LEVER_BOARD_URL)
-  assert.match(evidence.verifiedAt, /^\d{4}-\d{2}-\d{2}T/)
+test("VGS retains all current corroborated foreign observations without complete-employer inventory claims",async()=>{
+   const r=replay(),jobs=await run(r.options),evidence=readInventoryEvidence(jobs)
+   assert.equal(r.audits[0].observations.length,18)
+   assert.equal(evidence.status,'discovery-only');assert.equal(evidence.listingComplete,false)
+   assert.equal(evidence.reportedTotal,null);assert.equal(evidence.indiaFacetCount,null)
+   assert.equal(r.audits[0].sourceScopeComplete,false)
+  
 })
 
 test('VGS rejects country conflicts on explicit primary country names', () => {
@@ -62,9 +65,15 @@ test('VGS preserves genuine secondary India locations alongside corroborated for
   assert.equal(jobs[0].location, 'Bengaluru, India')
 })
 
-test('VGS resolves secondary geography across native pagination before completing inventory', async () => {
-  const first = Array.from({ length: 100 }, (_, i) => ({ ...secondary(), id: `secondary-${i}`, hostedUrl: `https://jobs.lever.co/verygoodsecurity/secondary-${i}`, applyUrl: `https://jobs.lever.co/verygoodsecurity/secondary-${i}/apply` }))
-  assert.deepEqual(await runWith([...first, primary()], [first, [primary()]]), [])
+test("VGS resolves secondary geography only after reading all native pages and their own models",async()=>{
+   const r=syntheticPaginatedVgs(),jobs=await run(r.options),a=r.audits[0]
+   assert.equal(a.observations.length,101);assert.equal(jobs.length,0)
+   for(const native of r.first){const job=a.observations.find(row=>row.jobId===native.id)
+    assert.equal(job.country,'United States');assert.equal(job.sourceCountryScopeUnresolved,false)
+    assert.ok(job.sourceNativeLocationCountryCorroborations.some(value=>value.nativePostingIds.includes(r.reference.id)))
+   }
+   assert.equal(a.sourceScopeComplete,false)
+  
 })
 
 

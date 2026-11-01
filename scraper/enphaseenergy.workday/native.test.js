@@ -5,6 +5,8 @@ import {gunzipSync} from 'node:zlib'
 import * as adapter from './script.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {getScraperCatalog,buildScrapers} from '../../scraper-support/providers/index.js'
+import {readNativeRoleAvailability,createNativeRoleAvailability} from '../../scraper-support/utils/sourceAvailability.js'
+import {analyzePublishableJobs} from '../../scraper-support/utils/publishableJobMetrics.js'
 const fixture=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/native-002.json.gz',import.meta.url))))
 const receipts=fixture.receipts,api=receipts.filter(r=>r.kind.startsWith('listing-page-')).sort((a,b)=>Number(a.kind.split('-').at(-1))-Number(b.kind.split('-').at(-1)))
 const pages=api.map(r=>JSON.parse(r.storedBodyUTF8)),row=pages.flatMap(p=>p.rows).find(r=>r.jid==='o9tUAfwQ'),native=receipts.find(r=>r.kind==='india-detail-'+row.jid)
@@ -92,6 +94,13 @@ test('inactive closure text inside the native header and unrelated active footer
   const html=native.storedBodyUTF8.replace('<div class="jobvite-detail__intro">','<div class="jobvite-detail__intro">'+notice)+'<footer>This position is closed.</footer>'
   const job=adapter.parseDetail(html,row,{now:at})
   assert.equal(job.sourceDetailComplete,true);assert.equal(job.sourceDetailStatus,'complete');assert.ok(job.jobDescription.length>6000)
+  const availability=readNativeRoleAvailability(job),metrics=analyzePublishableJobs([job],{now:at})
+  if(notice==='<p inert>This position is closed.</p>'){
+   // Inert affects interaction, not visual absence: retain JD facts and withhold availability.
+   assert.deepEqual(job.sourceAvailabilityEvidence,{state:'unavailable',reason:'native-status-layout-unqualified'})
+   assert.equal(availability.state,'unavailable');assert.equal(availability.validated,false);assert.equal(metrics.eligibleJobs.length,0)
+  }else{assert.equal(availability.validated,true);assert.equal(availability.state,'open');assert.equal(metrics.eligibleJobs.length,1)}
+  assert.equal(metrics.filterCounts.closed,0)
  }
 })
 test('stable active header closure remains unpublishable through full source reconciliation',async()=>{
@@ -192,4 +201,19 @@ test('source deadline and explicit truncation cannot return partial candidates',
 test('default transport sends appropriate Accept through actual fetch path',async()=>{
  const original=globalThis.fetch,t=transport();globalThis.fetch=t.fetchImpl
  try{const jobs=await adapter.run({now:at});assert.equal(jobs.length,23);assert.ok(t.calls.some(c=>c.url.endsWith('.js?v=1.x')&&c.init.headers.Accept==='application/javascript'))}finally{globalThis.fetch=original}
+})
+
+const attributeAvailabilityCases=[['hidden restored block','hidden style="display:block"'],['bare inert','inert'],['aria hidden','aria-hidden="true"']]
+for(const[name,attributes]of attributeAvailabilityCases)test('status attribute uncertainty preserves raw facts and blocks publication: '+name,()=>{
+ const html=native.storedBodyUTF8.replace('<div class="jobvite-detail__intro">','<div class="jobvite-detail__intro"><p '+attributes+'>This role is closed.</p>'),now=native.completedAt,healthy=adapter.parseDetail(native.storedBodyUTF8,row,{now}),job=adapter.parseDetail(html,row,{now})
+ assert.deepEqual(job.sourceAvailabilityEvidence,{state:'unavailable',reason:'native-status-layout-unqualified'})
+ assert.equal(job.jobDescription,healthy.jobDescription);assert.equal(job.sourceDescription,healthy.sourceDescription);assert.equal(job.nativeDescriptionOriginal,row.description__value)
+ assert.deepEqual(job.nativeListingOriginal,healthy.nativeListingOriginal);assert.equal(job.sourceDetailComplete,true);assert.equal(job.scrapedAt,native.completedAt)
+ const proof=readNativeRoleAvailability(job),metrics=analyzePublishableJobs([job],{now});assert.equal(proof.validated,false);assert.equal(proof.state,'unavailable');assert.equal(metrics.eligibleJobs.length,0);assert.equal(metrics.filterCounts.closed,0);assert.equal(metrics.filterCounts.unavailable,1)
+ for(const state of['open','closed'])assert.throws(()=>createNativeRoleAvailability(job,{state,observedAt:now,evidenceHtml:html}),error=>error.code==='NATIVE_STATUS_LAYOUT_UNQUALIFIED')
+ assert.equal(job.postedAt,null);assert.equal(job.closingDate,null);assert.equal(job.nativeLegalEmployer,null);assert.equal(job.sourceScopeComplete,false)
+})
+test('status attribute confidence retains healthy validated OPEN and native clocks',()=>{
+ const now=native.completedAt,job=adapter.parseDetail(native.storedBodyUTF8,row,{now}),proof=readNativeRoleAvailability(job),metrics=analyzePublishableJobs([job],{now})
+ assert.equal(proof.validated,true);assert.equal(proof.state,'open');assert.equal(proof.observedAt,native.completedAt);assert.equal(metrics.eligibleJobs.length,1);assert.equal(metrics.filterCounts.closed,0);assert.equal(job.nativeDescriptionOriginal,row.description__value)
 })

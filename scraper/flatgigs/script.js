@@ -1,27 +1,16 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export const SOURCE = "flatgigs"
-export const COMPANY = "Flatgigs"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Flatgigs added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
-
-export const run = async () => createFailClosedSentinelScraper().run()
+import { collect, SOURCE, COMPANY, CAREERS_URL } from './native.js'
+export { SOURCE, COMPANY, CAREERS_URL }
+export const DISPOSITION = 'native-widget-partial-observations'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Official publisher widget account observations with unknown reciprocal legal-employer and whole-company scope; native dates and all location variants retained.'
+export const createFlatgigsScraper = (configuration = {}) => ({ run: (options = {}) => collect({ ...configuration, ...options }) })
+export const run = (options = {}) => createFlatgigsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
-  }
+  if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs.json'))
+  else await saveToDB(jobs, SOURCE)
 }

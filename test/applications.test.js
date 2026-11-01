@@ -6,6 +6,7 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import Application from '../src/models/Application.js';
 import ApplicationEvent from '../src/models/ApplicationEvent.js';
 import User from '../src/models/User.js';
+import TailoredResume from '../src/models/TailoredResume.js';
 import { recordApplicationOpen } from '../src/services/applicationService.js';
 import { getApplications, markApplicationApplied } from '../src/controllers/applicationController.js';
 
@@ -23,7 +24,7 @@ before(async () => {
   await User.collection.insertOne({ _id: new mongoose.Types.ObjectId(user), email: 'applications-unit@example.test' });
 });
 after(async () => { await mongoose.disconnect(); await mongo?.stop(); });
-beforeEach(async () => { await Application.deleteMany({}); await ApplicationEvent.deleteMany({}); });
+beforeEach(async () => { await Application.deleteMany({}); await ApplicationEvent.deleteMany({}); await TailoredResume.deleteMany({}); });
 
 test('application schema requires ownership and has one record per user and job', () => {
   assert.ok(new Application({}).validateSync().errors.user);
@@ -79,10 +80,11 @@ test('another user cannot confirm an application or create one by confirmation',
 });
 
 test('application history is paginated, owner-scoped and retains snapshots without a live job', async () => {
-  await Application.insertMany(Array.from({ length: 25 }, (_, index) => ({
+  const rows = await Application.insertMany(Array.from({ length: 25 }, (_, index) => ({
     user, job: new mongoose.Types.ObjectId(), status: index < 2 ? 'applied' : 'opened',
     jobSnapshot: { ...job, applicationUrl: job.sourceUrl }, firstOpenedAt: new Date(Date.UTC(2026, 9, index + 1)),
   })));
+  await TailoredResume.collection.insertMany(rows.map(row => ({ _id: `${user}:${row.job}`, user: new mongoose.Types.ObjectId(user), job: row.job, status: 'completed' })));
   const res = response();
   await getApplications({ user: { _id: user }, query: { page: '2', status: 'opened' } }, res);
   assert.equal(res.statusCode, 200);

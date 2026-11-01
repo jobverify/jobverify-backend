@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
 import { BASWARE_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -16,9 +14,6 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.officialCareersPageUrl
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -28,15 +23,6 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 20000,
-})
 
 export const hasOfficialJobylonShellSignal = (html = '') => {
   const page = String(html ?? '')
@@ -52,21 +38,8 @@ export const hasPublicJobsSignal = (html = '') => /jobs\.jobylon\.com\//i.test(S
   || /class=["'][^"']*jobylon-job/i.test(String(html ?? ''))
   || /data-job-id=["']/i.test(String(html ?? ''))
 
-export const createBaswareScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (hasPublicJobsSignal(careersHtml)) {
-      throw new Error('Basware surface now appears to expose public jobs')
-    }
-
-    if (!hasOfficialJobylonShellSignal(careersHtml)) {
-      throw new Error('Basware verified first-party careers page no longer matches the trusted Jobylon shell')
-    }
-
-    return []
-  },
-})
+import { createBaswareScraper } from './native.js'
+export { createBaswareScraper } from './native.js'
 
 export const run = async (options = {}) => createBaswareScraper().run(options)
 

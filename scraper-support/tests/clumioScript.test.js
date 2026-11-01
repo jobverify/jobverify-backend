@@ -202,38 +202,17 @@ test('Clumio detail parsing enriches first-party Commvault listings during run()
   assert.match(detail.minimumQualification, /8\+ years of professional experience/i)
   assert.match(detail.preferredQualification, /secure system design principles/i)
 
-  const requestedUrls = []
-  const jobs = await clumio.createClumioScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
+  const { replay, fixture } = await import('../native-sources/commvaultClumio/fixtureReplay.js')
+  const r = replay(), jobs = await clumio.createClumioScraper().run(r.options)
+  assert.equal(r.audits[0].observations.length, 61)
+  assert.deepEqual(jobs.map(job => job.jobId), fixture.records.filter(row => row.brandQualified).map(row => row.id))
+  assert.equal(jobs.length, 9)
+  assert.ok(jobs.every(job => job.company === 'Commvault' && job.source === 'clumio'))
+  assert.ok(jobs.some(job => job.country === 'South Korea'))
+  assert.ok(jobs.some(job => job.jobId === '5137752008' && job.remoteStatus === 'Hybrid'))
+  assert.equal(jobs[0].scrapedAt, '2026-10-31T19:00:00.000Z')
+  await assert.rejects(clumio.createClumioScraper().run({ fetchText: r.options.fetchText }), /original HTTP/)
 
-      if (url === clumio.CAREERS_URL) return officialCareersHtml
-      if (url === clumio.buildJobDetailUrl('5116017008')) return clumioDetailHtml
-
-      throw new Error(`Unexpected Clumio fixture URL: ${url}`)
-    },
-    now: () => '2026-07-14T13:00:00.000Z',
-  })
-
-  assert.deepEqual(requestedUrls, [
-    clumio.CAREERS_URL,
-    clumio.buildJobDetailUrl('5116017008'),
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].company, 'Clumio')
-  assert.equal(jobs[0].source, 'clumio')
-  assert.equal(jobs[0].country, 'Korea, Republic Of')
-  assert.equal(jobs[0].location, 'Seoul, South Korea')
-  assert.equal(jobs[0].remoteStatus, 'Hybrid')
-  assert.equal(
-    jobs[0].applyUrl,
-    'https://www.commvault.com/careers/jobs/5116017008',
-  )
-  assert.match(jobs[0].jobDescription, /<h2>About the Team<\/h2>/)
-  assert.match(jobs[0].jobDescription, /Clumio’s SaaS platform/i)
-  assert.match(jobs[0].minimumQualification, /Kubernetes/i)
-  assert.match(jobs[0].preferredQualification, /platform team/i)
-  assert.equal(jobs[0].scrapedAt, '2026-07-14T13:00:00.000Z')
 })
 
 test('Clumio detail parsing decodes HTML entities in first-party job titles before title handoff validation', async () => {

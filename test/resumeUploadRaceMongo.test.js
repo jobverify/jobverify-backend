@@ -29,7 +29,7 @@ test('a delayed upload cleans up only the source it replaced and preserves a new
   const newJob = new mongoose.Types.ObjectId();
   const owner = { _id: id };
   await User.collection.insertOne({ _id: id, email: 'race@example.test', savedJobs: [oldJob, newJob] });
-  await Job.collection.insertOne({ _id: newJob, title: 'React Engineer', company: 'Example', location: 'Pune, India', isPublicIndia: true, status: 'active', description: 'Build React applications.', fingerprint: 'upload-race-job' });
+  await Job.collection.insertOne({ _id: newJob, title: 'React Engineer', company: 'Example', location: 'Pune, India', isPublicIndia: true, jobType: 'Full-time Experienced', status: 'active', description: 'Build React applications.', fingerprint: 'upload-race-job' });
   const original = source('Original');
   const initialFile = inspectResume('original.tex', original);
   const priorBase = await createResumeArtifact({ user: id, kind: 'base', sourceResumeSha: initialFile.sha256 }, output(original));

@@ -1,9 +1,9 @@
+import {createPublicWorkableSource,PUBLIC_WORKABLE_PROFILES} from '../../scraper-support/native-sources/publicWorkableSources/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { createEmployerBoundWorkableScraper } from '../../scraper-support/utils/workableEmployerInventory.js'
 
 import { SEEQ_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -268,14 +268,7 @@ export const extractJobsFromMarkdown = (markdown = '') => {
   return jobs
 }
 
-export const createSeeqScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  now = () => new Date(),
-} = {}) => createEmployerBoundWorkableScraper({
-  source: SOURCE, company: COMPANY, tenant: 'seeq',
-  accountUid: '55c96070-dc05-4efb-baf3-3a71fbc4e6ee', careersUrl: CAREERS_URL,
-  canonicalCareersUrls: ['https://www.seeq.com/company/careers/'], companyDomain: 'seeq.com',
-}, { now, maxJobs: Number.isInteger(maxJobs) && maxJobs > 0 ? maxJobs : 0 })
+export const createSeeqScraper = (options = {}) => createPublicWorkableSource(PUBLIC_WORKABLE_PROFILES.find(p => p.source === 'seeq'), options)
 
 export const run = async (options = {}) => createSeeqScraper(options).run(options)
 

@@ -10,8 +10,6 @@ import { redactLog } from '../src/pipeline/local.js';
 import { aggregateClassificationSummaries } from '../classification/reporting.js';
 import { aggregateRewriteSummaries } from '../rewriting/reporting.js';
 import { validateRewriteShard } from '../rewriting/partitioning.js';
-import { getScraperSchedule } from '../src/pipeline/schedule.js';
-import { startScheduledPipeline } from '../src/pipeline/scheduled.js';
 
 const command=process.argv[2],key=process.env.PIPELINE_STAGE;
 const token=process.env.GH_TOKEN;
@@ -27,14 +25,9 @@ try {
         repo:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF_NAME,sha:process.env.GITHUB_SHA,initialRunId:Number(process.env.GITHUB_RUN_ID)};
       let run;
       if(key==='scraper'&&process.env.GITHUB_EVENT_NAME==='schedule') {
-        const schedule=await getScraperSchedule({request:(_repo,endpoint,opts)=>githubRequest(options.repo,endpoint,{...opts,token})});
-        const event=JSON.parse(await fs.readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
-        // Ignore ticks queued before a schedule change. Manual/admin runs bypass the gate.
-        if(event.schedule===schedule.cron)run=await startScheduledPipeline(schedule,options,{token});
-        if(!run) {
-          await fs.appendFile(process.env.GITHUB_OUTPUT,'should_run=false\n');
-          console.log('Scheduled scraper skipped: not due, already started, schedule changed, or another pipeline is active.');
-        }
+        // Ignore old cron events queued before the backend scheduler rollout.
+        await fs.appendFile(process.env.GITHUB_OUTPUT,'should_run=false\n');
+        console.log('GitHub cron skipped: scraper scheduling is owned by the backend.');
       } else run=await createDirectGithubPipeline(options,{token});
       if(run)id=run._id;
     } else {

@@ -401,7 +401,12 @@ test("live hiring companies return a safe server error when the query fails", as
 
 test("job metadata hides the legacy NA date-posted option from public filters", async () => {
   const originalFindOne = JobDatasetSummary.findOne;
-  JobDatasetSummary.findOne = () => ({
+  JobDatasetSummary.findOne = (filter) => ({
+    sort(spec) {
+      assert.deepEqual(filter, { key: "public-active" });
+      assert.deepEqual(spec, { _id: 1 });
+      return this;
+    },
     lean() { return this; },
     exec: async () => ({
       key: "public-active",

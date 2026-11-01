@@ -8,9 +8,9 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = "aplazo"
 export const COMPANY = "Aplazo"
 export const CAREERS_URL = NATIVE_CAREERS_URL
-export const DISPOSITION = "native-ashby-current-employer-handoff-partial-scope"
+export const DISPOSITION = "native-ashby-current-public-inventory-conditional"
 export const VERIFIED_ON = null
-export const VERIFIED_SURFACE_SUMMARY = "Reads the active employer Aplazo careers handoff and exact Ashby tenant, preserving native role identity and full descriptions. Whole-company and India totals remain unproved."
+export const VERIFIED_SURFACE_SUMMARY = "Checks the current Aplazo careers handoff, all native Ashby countries and full selected India descriptions, then reconciles an independent closing inventory and careers handoff. Only a complete current public check can qualify; whole-company totals remain unknown."
 
 export const run = async (options = {}) => runNativeAplazo(options)
 

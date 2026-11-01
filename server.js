@@ -12,6 +12,7 @@ import { recoverQueuedJobAlerts } from "./src/services/jobAlertService.js";
 import { downgradeExpiredPlans } from "./src/services/planService.js";
 import { captureHiringObservation } from './src/services/hiringObservationService.js';
 import { reconcileActivePipeline } from './src/pipeline/recovery.js';
+import { tickScraperSchedule, scraperSchedulerEnabled } from './src/pipeline/scheduler.js';
 import { recoverTailoredResumes } from './src/services/resumeTailoringService.js';
 import { processAutoApplyQueue } from './src/services/autoApplyService.js';
 import { recoverJobAlertOutbox } from './src/services/jobAlertOutboxService.js';
@@ -40,6 +41,10 @@ async function main() {
   console.log(`Server is running on 0.0.0.0:${port}`);
 
   const stopTasks = [
+    ...(scraperSchedulerEnabled() ? [createPeriodicTask(tickScraperSchedule, {
+      intervalMs: 60_000, runImmediately: true,
+      onError: error => console.error('[Scraper scheduler]', error.message),
+    })] : []),
     createPeriodicTask(recoverJobAlertOutbox, {
       intervalMs: 5000, runImmediately: true,
       onError: () => console.error('[Job Alerts] Pending alert creation will retry.'),

@@ -1,3 +1,4 @@
+import { checkCurrentReplay, assertCurrentProvider } from '../../scraper-support/native-sources/declaredJobFeeds/legacyReplayControls.js'
 import fs from 'node:fs'
 import { gunzipSync } from 'node:zlib'
 import test from 'node:test'
@@ -6,27 +7,9 @@ import { run } from './script.js'
 import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const fixture = JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/current-native-20261024.json.gz', import.meta.url))))
-test('Affirm reads its complete current225-role native feed and resolves every explicit non-India country scope', async () => {
-  let calls = 0
-  const jobs = await run({ fetchJson: async url => {
-    calls++; assert.equal(url, 'https://boards-api.greenhouse.io/v1/boards/affirm/jobs?content=true')
-    return structuredClone(fixture.inventory)
-  } })
-  assert.equal(calls, 1)
-  assert.equal(jobs.length, 0)
-  assert.equal(readInventoryEvidence(jobs).reportedTotal, 225)
-  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
-  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
-})
+test('affirm: current original-entity complete replay (legacy case 9)', async () => checkCurrentReplay('affirm', 'complete'))
 
-test('the Affirm extractor supports explicit India postings with actual native descriptions and role-specific HTTP links', async () => {
-  const record = { ...structuredClone(fixture.inventory.jobs[0]), location: { name: 'Bengaluru, India' } }
-  const jobs = await run({ fetchJson: async () => ({ jobs: [record], meta: { total: 1 } }) })
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].company, 'Affirm')
-  assert.ok(jobs[0].jobDescription.length > 100)
-  assert.equal(jobs[0].applyUrl, record.absolute_url)
-})
+test('affirm: current original-entity india replay (legacy case 22)', async () => checkCurrentReplay('affirm', 'india'))
 
 for (const [name, change] of [
   ['generic remote', j => { j.location.name = 'Remote' }],
@@ -50,7 +33,4 @@ for (const [name, change] of [
   await assert.rejects(run({ fetchJson: async () => payload }))
 })
 
-test('Affirm never returns complete zero evidence after cancellation at the native response boundary', async () => {
-  const controller = new AbortController(), reason = new Error('cancel Affirm after inventory response')
-  await assert.rejects(run({ signal: controller.signal, fetchJson: async () => { controller.abort(reason); return structuredClone(fixture.inventory) } }), error => error === reason)
-})
+test('affirm: current original-entity abort replay (legacy case 53)', async () => checkCurrentReplay('affirm', 'abort'))

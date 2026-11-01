@@ -5,6 +5,7 @@
 
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { isDeepStrictEqual } from 'node:util'
 
 import Job from '../src/models/Job.js'
 import { PUBLIC_JOB_TYPE_EXPRESSION } from '../src/utils/publicJobType.js'
@@ -171,6 +172,29 @@ const matchesJobTypeCondition = (job, condition) => {
 
 const containsPublicCategory = expression => expression === PUBLIC_JOB_TYPE_EXPRESSION
   || (expression && typeof expression === 'object' && Object.values(expression).some(containsPublicCategory))
+
+const collectPublicCategoryPredicates = (expression) => {
+  if (['$in', '$eq', '$ne'].some(operator => expression?.[operator]?.[0] === PUBLIC_JOB_TYPE_EXPRESSION)) {
+    return [expression]
+  }
+  return ['$and', '$or'].flatMap(operator => (
+    Array.isArray(expression?.[operator])
+      ? expression[operator].flatMap(collectPublicCategoryPredicates)
+      : []
+  ))
+}
+
+const assertPublicCategoryPredicates = (expression, selectedAliases = null) => {
+  const predicates = collectPublicCategoryPredicates(expression)
+  const expected = [{
+    $in: [PUBLIC_JOB_TYPE_EXPRESSION, ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract']],
+  }]
+  if (selectedAliases) expected.push({ $in: [PUBLIC_JOB_TYPE_EXPRESSION, selectedAliases] })
+  assert.equal(predicates.length, expected.length)
+  for (const predicate of expected) {
+    assert.ok(predicates.some(actual => isDeepStrictEqual(actual, predicate)), 'Retain both category selection and public visibility')
+  }
+}
 
 // These controller doubles evaluate category predicates through the response
 // normalizer. Isolated Mongo tests cover expression parity and lifecycle dates.
@@ -350,7 +374,7 @@ test('getAllJobs selects internship and unspecified categories without broadenin
   try {
     for (const [selection, expectedIds, expectedAliases] of [
       ['Intern', ['intern'], ['Intern', 'Internship']],
-      ['Unspecified', ['unknown'], ['Unspecified']],
+      ['Unspecified', [], ['Unspecified']],
     ]) {
       const res = createResponseDouble()
       await getAllJobs({
@@ -367,13 +391,11 @@ test('getAllJobs selects internship and unspecified categories without broadenin
       }, res)
 
       assert.equal(res.statusCode, 200)
-      assert.equal(res.body.pagination.total, 1)
+      assert.equal(res.body.pagination.total, expectedIds.length)
       assert.deepEqual(res.body.data.map(job => job._id), expectedIds)
       const coreFilter = getCoreFilter(capturedFilter)
       assert.equal(coreFilter.jobType, undefined)
-      assert.deepEqual(coreFilter.$expr.$and[1], {
-        $in: [PUBLIC_JOB_TYPE_EXPRESSION, expectedAliases],
-      })
+      assertPublicCategoryPredicates(coreFilter.$expr, expectedAliases)
     }
   } finally {
     Job.countDocuments = originalCountDocuments
@@ -743,7 +765,7 @@ test('getJobMeta scopes each option group by the other active filters', async ()
     assert.ok(res.body.data.companies.length <= 24)
     assert.equal(companyFilter.companyKey, undefined)
     assert.equal(companyFilter.locationKeys, 'bangalore')
-    assert.deepEqual(companyFilter.$expr.$and[1], { $in: [PUBLIC_JOB_TYPE_EXPRESSION, ['Intern', 'Internship']] })
+    assertPublicCategoryPredicates(companyFilter.$expr, ['Intern', 'Internship'])
     assert.equal(companyFilter.primaryRoleDomain, 'Data Science & AI')
     assert.ok(JSON.stringify(companyFilter).includes('$workArrangement'))
     assert.ok(companyFilter.postedAt.$gte instanceof Date)
@@ -752,11 +774,11 @@ test('getJobMeta scopes each option group by the other active filters', async ()
     const cityFilter = capturedFilters.get('city')
     assert.equal(cityFilter.locationKeys, undefined)
     assert.equal(cityFilter.companyKey, 'acme labs')
-    assert.deepEqual(cityFilter.$expr.$and[1], { $in: [PUBLIC_JOB_TYPE_EXPRESSION, ['Intern', 'Internship']] })
+    assertPublicCategoryPredicates(cityFilter.$expr, ['Intern', 'Internship'])
 
     const jobTypeFilter = capturedFilters.get('jobType')
     assert.equal(jobTypeFilter.jobType, undefined)
-    assert.equal(containsPublicCategory(jobTypeFilter.$expr), false)
+    assertPublicCategoryPredicates(jobTypeFilter.$expr)
     assert.equal(jobTypeFilter.companyKey, 'acme labs')
     assert.equal(jobTypeFilter.locationKeys, 'bangalore')
 
@@ -917,9 +939,7 @@ test('getAllJobs applies multiselect arrays for visible filters', async () => {
       $in: ['Data Science & AI', 'Sales & Customer Success'],
     })
     assert.ok(coreFilter.$and.some(clause => clause.$expr?.$in?.[0] === PUBLIC_WORK_ARRANGEMENT_EXPRESSION))
-    assert.deepEqual(coreFilter.$expr.$and[1], {
-      $in: [PUBLIC_JOB_TYPE_EXPRESSION, ['Intern', 'Internship', 'Full-time Experienced', 'Full-time']],
-    })
+    assertPublicCategoryPredicates(coreFilter.$expr, ['Intern', 'Internship', 'Full-time Experienced', 'Full-time'])
     assert.deepEqual(
       coreFilter.locationKeys,
       { $in: ['bangalore', 'pune'] },

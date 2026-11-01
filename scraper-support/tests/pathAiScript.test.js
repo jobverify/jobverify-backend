@@ -118,63 +118,26 @@ test('PathAI pins the verified first-party careers page and first-party Greenhou
   )
 })
 
-test('PathAI returns an honest zero-job result while the verified public Greenhouse feed exposes no India roles', async () => {
+test('PathAI registered run retains all originals and treats unresolved India scope as discovery, never employer zero', async () => {
   const pathAi = await loadPathAiModule()
-
-  const extractedJobs = pathAi.extractIndiaJobsFromGreenhousePayload(greenhousePayload, {
-    scrapedAt: FIXED_SCRAPED_AT,
-  })
-
-  assert.deepEqual(extractedJobs, [])
-
-  const requested = []
-  const jobs = await pathAi.createPathAiScraper().run({
-    fetchText: async (url) => {
-      requested.push({ type: 'text', url })
-      return verifiedCareersHtml
-    },
-    fetchJson: async (url, options = {}) => {
-      requested.push({ type: 'json', url, options })
-      return greenhousePayload
-    },
-    now: () => FIXED_SCRAPED_AT,
-  })
-
-  assert.deepEqual(requested, [
-    { type: 'text', url: pathAi.CAREERS_URL },
-    {
-      type: 'json',
-      url: 'https://boards-api.greenhouse.io/v1/boards/pathai/jobs?content=true',
-      options: { method: 'GET' },
-    },
-  ])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(pathAi.extractIndiaJobsFromGreenhousePayload(greenhousePayload, { scrapedAt: FIXED_SCRAPED_AT }), [])
+  const { fixture, replay } = await import('../native-sources/declaredGreenhouseRoutes/fixtureReplay.js')
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const r = replay(), jobs = await pathAi.createPathAiScraper().run(r.options)
+  assert.equal(r.audits[0].observations.length, 10)
+  assert.deepEqual(jobs.map(job => job.jobId), fixture.oracle.pathai.records.filter(row => row.indiaCandidate).map(row => row.id))
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
 })
 
-test('PathAI fails closed when the verified careers page or Greenhouse company identity drifts', async () => {
+test('PathAI holds a changed current publisher while preserving all complete native observations', async () => {
   const pathAi = await loadPathAiModule()
-
-  await assert.rejects(
-    pathAi.createPathAiScraper().run({
-      fetchText: async () => '<html><body><h1>Careers</h1></body></html>',
-      fetchJson: async () => greenhousePayload,
-    }),
-    /verified first-party careers page/i,
-  )
-
-  await assert.rejects(
-    pathAi.createPathAiScraper().run({
-      fetchText: async () => verifiedCareersHtml,
-      fetchJson: async () => ({
-        jobs: [
-          {
-            ...greenhousePayload.jobs[0],
-            company_name: 'Different Company',
-          },
-        ],
-        meta: { total: 1 },
-      }),
-    }),
-    /verified company identity/i,
-  )
+  const { fixture, replay, editJSON } = await import('../native-sources/declaredGreenhouseRoutes/fixtureReplay.js')
+  const p = fixture.profiles.pathai
+  const r = replay((url, page, visit) => url === p.publicAPIBase && visit === 2 ? editJSON(page, value => { value.name = 'Other Company' }) : page)
+  const jobs = await pathAi.createPathAiScraper().run(r.options)
+  assert.equal(jobs.length, 0)
+  assert.equal(r.audits[0].observations.length, 10)
+  assert.ok(r.audits[0].observations.every(job => job.jobDescription && !job.sourceCurrentNativePostingIdentityQualified))
+  await assert.rejects(pathAi.createPathAiScraper().run({ fetchJson: r.options.fetchJson }), /original HTTP/)
 })

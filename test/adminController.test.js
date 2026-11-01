@@ -25,6 +25,10 @@ import {
 } from "../src/controllers/adminController.js";
 import { getScraperCatalog } from "../scraper-support/providers/index.js";
 import { getDiskBackedScraperSources } from "../scraper-support/providers/sourceInventory.js";
+import { JOB_DATASET_LIFECYCLE_VERSION } from "../src/services/jobDatasetSummaryService.js";
+import { applyPublicJobLocationScope } from "../src/utils/publicJobLocationScope.js";
+import { PUBLIC_JOB_TYPE_EXPRESSION } from "../src/utils/publicJobType.js";
+import { PUBLIC_JOB_TYPES } from "../src/utils/publicJobTypeLabel.js";
 
 const createResponseDouble = () => {
   const result = {
@@ -79,6 +83,61 @@ const getDiskBackedCatalogSources = () => getDiskBackedScraperSources({
   catalog: getScraperCatalog(),
 });
 
+// This double models exactly one initial sequential reservation/publication.
+// It is not a Mongo evaluator and does not certify concurrent refresh ordering.
+const createInitialSummaryWriteDouble = (summaryWrites) => {
+  let reservation;
+  const query = value => ({ lean: () => ({ exec: async () => value }) });
+  return (filter, update, options) => {
+    assert.equal(filter.key, "public-active");
+    assert.ok(filter._id);
+    if (!Array.isArray(update)) {
+      assert.equal(reservation, undefined);
+      assert.deepEqual(update, { $inc: { refreshSequence: 1 }, $setOnInsert: { key: "public-active" } });
+      assert.deepEqual(options, { upsert: true, new: true, setDefaultsOnInsert: true });
+      reservation = { _id: filter._id, refreshSequence: 1 };
+      return query(reservation);
+    }
+    assert.ok(reservation);
+    assert.equal(summaryWrites.length, 0);
+    assert.equal(String(filter._id), String(reservation._id));
+    assert.deepEqual(options, { upsert: false, new: true, setDefaultsOnInsert: true });
+    assert.equal(update.length, 1);
+    const summary = Object.fromEntries(Object.entries(update[0].$set).map(([key, expression]) => {
+      assert.equal(expression.$cond.length, 3);
+      const [guard, previous, literal] = expression.$cond;
+      assert.deepEqual(guard.$and[0], { $eq: ["$lifecycleVersion", JOB_DATASET_LIFECYCLE_VERSION] });
+      assert.deepEqual(guard.$and.at(-1), { $gt: ["$publishedSequence", reservation.refreshSequence] });
+      assert.equal(previous, "$" + key);
+      assert.deepEqual(Object.keys(literal), ["$literal"]);
+      return [key, literal.$literal];
+    }));
+    assert.equal(summary.publishedSequence, reservation.refreshSequence);
+    assert.equal(summary.lifecycleVersion, JOB_DATASET_LIFECYCLE_VERSION);
+    summaryWrites.push(summary);
+    return query({ ...reservation, ...summary });
+  };
+};
+
+const assertPublicSummaryRefreshPipeline = (pipeline) => {
+  const visible = pipeline[1].$facet.visible;
+  const lifecycle = visible[0].$match.$expr.$and[0];
+  const observedAt = lifecycle.$and[0].$lte[1];
+  assert.ok(observedAt instanceof Date && Number.isFinite(+observedAt));
+  const { $expr, ...baseScope } = applyPublicJobLocationScope({ status: "active" }, observedAt);
+  assert.deepEqual(pipeline[0], { $match: baseScope });
+  assert.deepEqual(visible[0], { $match: { $expr: { $and: [$expr, { $in: [PUBLIC_JOB_TYPE_EXPRESSION, PUBLIC_JOB_TYPES] }] } } });
+  assert.equal(visible[1].$group.totalJobs.$sum, 1);
+  assert.deepEqual(visible[1].$group.jobTypes.$addToSet, PUBLIC_JOB_TYPE_EXPRESSION);
+  assert.deepEqual(pipeline[1].$facet.futurePublications[0], { $match: {
+    postedAt: { $gt: observedAt },
+    $expr: { $or: [
+      { $eq: [{ $ifNull: ["$closingDate", null] }, null] },
+      { $gt: ["$closingDate", "$postedAt"] },
+    ] },
+  } });
+};
+
 test("updateJobStatus refreshes the public filter summary after hiding a job", async () => {
   const originalFindById = Job.findById;
   const originalAggregate = Job.aggregate;
@@ -95,19 +154,19 @@ test("updateJobStatus refreshes the public filter summary after hiding a job", a
   const summaryWrites = [];
 
   Job.findById = async () => activeJob;
-  Job.aggregate = () => ({
-    exec: async () => (activeJob.status === "active" ? [{
+  Job.aggregate = (pipeline) => {
+    assertPublicSummaryRefreshPipeline(pipeline);
+    return {
+      exec: async () => [{ visible: activeJob.status === "active" ? [{
       totalJobs: 1,
       companies: ["Example Labs"],
       cities: ["Pune, India"],
       jobTypes: ["Full-time"],
-    }] : []),
-  });
-  AdminAudit.create = async () => ({});
-  JobDatasetSummary.findOneAndUpdate = (_filter, update) => {
-    summaryWrites.push(update.$set);
-    return { lean: () => ({ exec: async () => update.$set }) };
+    }] : [], futurePublications: [] }],
+    };
   };
+  AdminAudit.create = async () => ({});
+  JobDatasetSummary.findOneAndUpdate = createInitialSummaryWriteDouble(summaryWrites);
 
   try {
     const res = createResponseDouble();
@@ -216,15 +275,15 @@ test("purgeAllJobs deletes every job, refreshes the summary, and records the act
   const summaryWrites = [];
 
   Job.deleteMany = async () => ({ deletedCount: 37 });
-  Job.aggregate = () => ({ exec: async () => [] });
+  Job.aggregate = (pipeline) => {
+    assertPublicSummaryRefreshPipeline(pipeline);
+    return { exec: async () => [{ visible: [], futurePublications: [] }] };
+  };
   AdminAudit.create = async (payload) => {
     audits.push(payload);
     return payload;
   };
-  JobDatasetSummary.findOneAndUpdate = (_filter, update) => {
-    summaryWrites.push(update.$set);
-    return { lean: () => ({ exec: async () => update.$set }) };
-  };
+  JobDatasetSummary.findOneAndUpdate = createInitialSummaryWriteDouble(summaryWrites);
 
   try {
     const res = createResponseDouble();

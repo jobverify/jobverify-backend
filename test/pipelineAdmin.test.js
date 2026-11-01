@@ -51,10 +51,10 @@ test('pipeline API authorizes configuration, exact dispatch, tracking and confli
   assert.equal((await request('pipeline/schedule',{method,id:null})).status,401);
   assert.equal((await request('pipeline/schedule',{method,id:'member'})).status,403);
  }
- assert.equal((await request('pipeline/schedule')).body.data.time,'22:30');
- assert.equal((await request('pipeline/schedule',{method:'PUT',body:{time:'24:00',sha:'a'.repeat(40)}})).status,400);
- const schedule=await request('pipeline/schedule',{method:'PUT',body:{time:'02:08',sha:'a'.repeat(40)}});
- assert.equal(schedule.status,200);assert.equal(schedule.body.data.cron,'38 20 * * *');
+ assert.equal((await request('pipeline/schedule')).body.data.time,'08:30');
+ assert.equal((await request('pipeline/schedule',{method:'PUT',body:{time:'24:00',revision:0}})).status,400);
+ const schedule=await request('pipeline/schedule',{method:'PUT',body:{time:'02:08',revision:0}});
+ assert.equal(schedule.status,200);assert.equal(schedule.body.data.revision,1);
  assert.equal((await request('pipeline/runs/missing/download',{id:null})).status,401);
  assert.equal((await request('pipeline/runs/missing/download',{id:'member'})).status,403);
  assert.equal((await request('pipeline/runs/missing/download')).status,404);

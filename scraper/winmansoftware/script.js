@@ -1,7 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { composeAbortSignals, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { readVisibleNativeDocument } from '../../scraper-support/utils/visibleNativeHtml.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
 
 import { WINMAN_SOFTWARE_CATALOG } from './catalog.js'
 
@@ -51,7 +54,8 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || null
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -111,6 +115,35 @@ export const extractCurrentListings = (html = '') => {
   return { freshers, experienced }
 }
 
+// A native city label is an observation, not proof of country/state or public
+// India scope. Bind it to the same visible role header without normalizing it.
+const readNativeWorkplaceObservation = (html, listing) => {
+  const document = readVisibleNativeDocument(String(html ?? ''), { strict: true })
+  const hasClass = (node, value) => (node.attrs.class || '').split(/\s+/).includes(value)
+  const within = (node, predicate) => node.inert ? [] : [
+    ...(predicate(node) ? [node] : []),
+    ...node.children.filter(child => typeof child !== 'string').flatMap(child => within(child, predicate)),
+  ]
+  const headers = document.nodes(node => hasClass(node, 'job-header'))
+  if (headers.length !== 1) return null
+  const header = headers[0], titles = within(header, node => node.tag === 'h1' && hasClass(node, 'job-title'))
+  if (titles.length !== 1 || document.text(titles[0]) !== listing.title) return null
+  const infos = within(header, node => hasClass(node, 'job-info'))
+  if (infos.filter(node => document.text(node) === 'Winman Software India LLP').length !== 1) return null
+  const labels = infos.filter(node => within(node, child => child.tag === 'img'
+    && child.attrs.src === '../../../images/JobDescription-location.png'
+    && child.attrs.alt === 'location-icon').length === 1).map(node => document.text(node)).filter(Boolean)
+  if (!labels.length) return null
+  const literal = labels.length === 1 ? labels[0] : null
+  return {
+    roleTitle: listing.title, sourceUrl: listing.detailUrl,
+    carrier: 'job-header/job-info[location-icon]', roleHeaderText: document.text(header),
+    observedLocationLiterals: labels, locationLiteral: literal, cityLiteral: literal,
+    country: null, state: null, publicGeographyQualified: false,
+    reason: literal ? 'native-country-and-state-not-published' : 'ambiguous-native-location-carrier',
+  }
+}
+
 export const extractCurrentFresherDetail = (html, listing) => {
   const page = String(html ?? '')
   const title = normalizeWhitespace(page.match(/<h1\b[^>]*class=["']job-title["'][^>]*>([\s\S]*?)<\/h1>/i)?.[1])
@@ -121,15 +154,16 @@ export const extractCurrentFresherDetail = (html, listing) => {
     || !/Winman Software India LLP/i.test(page) || !/Mangalore/i.test(page)) {
     throw new Error(`Winman current job detail changed: ${listing.detailUrl}`)
   }
-  return { title, description, qualification }
+  return { title, description, qualification, rawNativeWorkplaceEvidence: readNativeWorkplaceObservation(page, listing) }
 }
 
-const buildCurrentJob = ({ title, description, qualification = null, experienceRequired = null, sourceUrl, scrapedAt }) => {
+const buildCurrentJob = ({ title, description, qualification = null, experienceRequired = null, sourceUrl, scrapedAt, rawNativeWorkplaceEvidence = null }) => {
   const jobId = slugify(title)
   if (!jobId) throw new Error('Winman current job ID is missing')
   return {
     title, company: COMPANY, department: null,
-    location: 'Mangaluru, Karnataka, India', city: 'Mangaluru', country: 'India',
+    location: null, city: null, state: null, country: null,
+    nativeGeographyQualified: false, rawNativeWorkplaceEvidence,
     jobId, requisitionId: jobId, sourceUrl, applyUrl: APPLY_URL,
     employmentType: null, experienceRequired,
     minimumQualification: qualification, preferredQualification: null,
@@ -139,7 +173,89 @@ const buildCurrentJob = ({ title, description, qualification = null, experienceR
   }
 }
 
+// These are distinct demonstrated literal application routes, not aliases.
+const LEGACY_APPLICATION_URLS = new Set([
+  'https://winman.in/jobs/resume.aspx',
+  'https://winman.in/jobs/resumedetail.aspx',
+])
+
+// Opening-attribute provenance only. Visibility belongs to the shared reader.
+// Skip comments/raw bodies so JS strings cannot supply or conflict with links.
+const legacyAnchorAttributes = (page) => {
+  const raw = new Set(['script', 'style', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes', 'plaintext', 'noscript'])
+  const tags = /<!--[\s\S]*?(?:-->|$)|<![^>]*>|<\/?([a-z][a-z0-9:_-]*)\b((?:[^"'<>]|"[^"]*"|'[^']*')*)>/gi
+  const anchors = []
+  let match
+  while ((match = tags.exec(page))) {
+    if (!match[1] || match[0].startsWith('</')) continue
+    const tag = match[1].toLowerCase()
+    if (tag === 'a') anchors.push(match[2])
+    if (raw.has(tag)) {
+      if (tag === 'plaintext') break
+      const closing = new RegExp('</' + tag + '\\s*>', 'ig')
+      closing.lastIndex = tags.lastIndex
+      const end = closing.exec(page)
+      tags.lastIndex = end ? closing.lastIndex : page.length
+    }
+  }
+  return anchors
+}
+
+const readLegacyApplicationUrl = (html) => {
+  const page = String(html ?? ''), document = readVisibleNativeDocument(page, { strict: true })
+  const invalid = () => { throw new Error('Winman legacy application binding is missing, ambiguous or unsupported') }
+  const root = document.nodes(node => node.tag === 'root')[0]
+  if (!root) return invalid()
+  const allAnchors = [], parents = new Map()
+  const collect = (node, parent = null) => {
+    parents.set(node, parent)
+    if (node.tag === 'a') allAnchors.push(node)
+    for (const child of node.children || []) if (typeof child !== 'string') collect(child, node)
+  }
+  collect(root)
+  const openingAttributes = legacyAnchorAttributes(page)
+  if (openingAttributes.length !== allAnchors.length) return invalid()
+  const provenance = new Map(allAnchors.map((node, index) => [node, openingAttributes[index]]))
+  const isApply = node => /^apply\s+now$/i.test(document.text(node))
+  const candidates = document.nodes(node => node.tag === 'a' && (isApply(node) || LEGACY_APPLICATION_URLS.has(node.attrs.href)))
+  if (!candidates.length) return invalid()
+  // A label child can intercept the click before the anchor default action.
+  // Inspect only projected active descendants; never evaluate handler bodies.
+  const hasActiveDescendantHandler = node => (node.children || []).some(child =>
+    typeof child !== 'string' && !child.inert && (Object.keys(child.attrs || {}).some(key => /^on/i.test(key))
+      || hasActiveDescendantHandler(child)))
+  const urls = candidates.map(node => {
+    if (!isApply(node) || Object.hasOwn(node.attrs, 'download') || hasActiveDescendantHandler(node)) return invalid()
+    // An authored link is unqualified if an active ancestor can intercept it.
+    // Do not interpret handler bodies or inspect unrelated/inert descendants.
+    for (let owner = node; owner; owner = parents.get(owner)) {
+      if (Object.keys(owner.attrs || {}).some(key => /^on/i.test(key))) return invalid()
+    }
+    const raw = provenance.get(node), attributes = []
+    const attribute = /([^\t\n\f\r =/>\u0000"'<>`]+)(?:[\t\n\f\r ]*=[\t\n\f\r ]*(?:"([^"]*)"|'([^']*)'|([^\t\n\f\r "'=<>`\u0000]+)))?/y
+    let cursor = 0
+    while (cursor < raw.length) {
+      while (cursor < raw.length && /[\t\n\f\r ]/.test(raw[cursor])) cursor++
+      if (cursor === raw.length) break
+      attribute.lastIndex = cursor
+      const match = attribute.exec(raw)
+      // Never search past unsupported input (e.g. =href) to invent a href.
+      if (!match) return invalid()
+      attributes.push(match)
+      cursor = attribute.lastIndex
+    }
+    const hrefs = attributes.filter(attribute => attribute[1].toLowerCase() === 'href')
+    const authored = hrefs[0] && (hrefs[0][2] ?? hrefs[0][3] ?? hrefs[0][4] ?? '')
+    // No trimming, URL normalization, entity/query/fragment stripping or guesses.
+    if (hrefs.length !== 1 || authored !== node.attrs.href || !LEGACY_APPLICATION_URLS.has(authored)) return invalid()
+    return authored
+  })
+  if (new Set(urls).size !== 1) return invalid()
+  return urls[0]
+}
+
 export const extractJobs = (html = '') => {
+  const applyUrl = readLegacyApplicationUrl(html)
   const jobs = []
 
   for (const rowMatch of String(html ?? '').matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
@@ -160,13 +276,16 @@ export const extractJobs = (html = '') => {
       title,
       company: COMPANY,
       department: null,
-      location: 'Mangaluru, Karnataka, India',
-      city: 'Mangaluru',
-      country: 'India',
+      location: null,
+      city: null,
+      state: null,
+      country: null,
+      nativeGeographyQualified: false,
+      rawNativeWorkplaceEvidence: null,
       jobId,
       requisitionId: jobId,
       sourceUrl: CAREERS_URL,
-      applyUrl: APPLY_URL,
+      applyUrl,
       employmentType: null,
       experienceRequired,
       minimumQualification: null,
@@ -182,22 +301,85 @@ export const extractJobs = (html = '') => {
   return jobs
 }
 
+const finishNativeObservations = (jobs, { observedListingCount, pagesFetched }) => {
+  const audit = {
+    source: SOURCE, observedListingCount, sourceScopeComplete: false,
+    reportedTotal: null, indiaFacetCount: null, companyGlobalTotal: null, companyIndiaTotal: null,
+    listingPaginationComplete: null, closingInventoryMatches: null,
+    observedUnknownCountries: jobs.length,
+    rawProvenanceLimit: 'Native observations only; role country/state, employer-wide totals and independent closing remain unqualified',
+  }
+  for (const job of jobs) job.sourceListingComplete = false
+  if (jobs.length) jobs[0].nativeCollectionEvidence = audit
+  Object.defineProperty(jobs, 'nativeCollectionEvidence', { value: audit })
+  attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows', observedRecordCount: observedListingCount, observedVacancyCount: observedListingCount, sourceScopeComplete: false })
+  return attachInventoryEvidence(jobs, { status: 'coverage-gap', surface: CAREERS_URL,
+    firstParty: true, listingComplete: false, pagesFetched, reportedTotal: null,
+    indiaFacetCount: null, verifiedAt: null, reason: 'role-country-and-employer-scope-unqualified' })
+}
+
+// Race the source request so injected noncooperative work can settle on abort.
+// Retry policy and per-attempt deadlines remain owned by fetchTextWithRetry.
+const withWinmanCancellation = async (fetchText, signal, collect) => {
+  signal?.throwIfAborted()
+  const stopped = new AbortController()
+  const requestSignal = composeAbortSignals(signal, stopped.signal)
+  const fail = (error) => {
+    const reason = signal?.aborted ? signal.reason : error
+    if (!stopped.signal.aborted) stopped.abort(reason)
+    throw reason
+  }
+  const readText = (url) => {
+    signal?.throwIfAborted()
+    requestSignal.throwIfAborted()
+    let work
+    try {
+      work = Promise.resolve(fetchText(url, { signal: requestSignal }))
+      // A fetcher may abort synchronously before returning a rejecting promise.
+      // Keep that late settlement observed even when the following check throws.
+      work.catch(() => {})
+      signal?.throwIfAborted()
+      requestSignal.throwIfAborted()
+    } catch (error) { return fail(error) }
+    let onAbort
+    const aborted = new Promise((_, reject) => {
+      onAbort = () => reject(requestSignal.reason)
+      requestSignal.addEventListener('abort', onAbort, { once: true })
+      if (requestSignal.aborted) onAbort()
+    })
+    return Promise.race([work, aborted]).then(value => {
+      signal?.throwIfAborted()
+      requestSignal.throwIfAborted()
+      return value
+    }).catch(fail).finally(() => requestSignal.removeEventListener('abort', onAbort))
+  }
+  try {
+    const jobs = await collect(readText)
+    signal?.throwIfAborted()
+    requestSignal.throwIfAborted()
+    return jobs
+  } catch (error) { return fail(error) }
+}
+
 export const createWinmanSoftwareScraper = ({
   maxJobs = null,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    signal,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    return withWinmanCancellation(fetchText, signal, async (readText) => {
+      const careersHtml = await readText(CAREERS_URL)
     if (hasCurrentCareersSignal(careersHtml)) {
       const { freshers, experienced } = extractCurrentListings(careersHtml)
       const scrapedAt = new Date().toISOString()
       const freshJobs = []
       for (let index = 0; index < freshers.length; index += 4) {
         const batch = await Promise.all(freshers.slice(index, index + 4).map(async listing => {
-          const detail = extractCurrentFresherDetail(await fetchText(listing.detailUrl), listing)
+          const detail = extractCurrentFresherDetail(await readText(listing.detailUrl), listing)
           return buildCurrentJob({ title: detail.title, description: detail.description,
-            qualification: detail.qualification, sourceUrl: listing.detailUrl, scrapedAt })
+            qualification: detail.qualification, sourceUrl: listing.detailUrl, scrapedAt,
+            rawNativeWorkplaceEvidence: detail.rawNativeWorkplaceEvidence })
         }))
         freshJobs.push(...batch)
       }
@@ -207,21 +389,23 @@ export const createWinmanSoftwareScraper = ({
       }))]
       if (new Set(jobs.map(job => job.jobId)).size !== jobs.length) throw new Error('Winman current job IDs are duplicated')
       const selected = maxJobs ? jobs.slice(0, maxJobs) : jobs
-      return selected.map(job => ({ ...job, ...(selected.length < jobs.length ? { sourceListingComplete: false } : {}) }))
+      return finishNativeObservations(selected.map(job => ({ ...job, ...(selected.length < jobs.length ? { sourceListingComplete: false } : {}) })),
+        { observedListingCount: freshers.length + experienced.length, pagesFetched: 1 + freshers.length })
     }
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Winman Software careers surface no longer matches the trusted first-party page')
-    }
-
-    const jobs = extractJobs(careersHtml)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+      }
+  
+      const jobs = extractJobs(careersHtml)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+  
+      return finishNativeObservations(selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      })), { observedListingCount: jobs.length, pagesFetched: 1 })
+    })
   },
 })
 

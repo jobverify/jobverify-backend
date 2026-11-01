@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { getScraperCatalog, hydrateProviderCatalogEntry } from '../providers/index.js'
 
 const loadSyrmaSgsCatalog = async () => {
   try {
@@ -12,7 +12,7 @@ const loadSyrmaSgsCatalog = async () => {
   }
 }
 
-test('Syrma SGS catalog metadata captures the verified first-party jobs archive and detail-page surface', async () => {
+test('Syrma SGS historical July catalog retains its captured archive metadata', async () => {
   const { SYRMA_SGS_CATALOG } = await loadSyrmaSgsCatalog()
   const provider = hydrateProviderCatalogEntry(SYRMA_SGS_CATALOG)
 
@@ -51,11 +51,19 @@ test('Syrma SGS catalog metadata captures the verified first-party jobs archive 
   assert.match(provider.verifiedSurfaceSummary, /Apply for this position/i)
 })
 
-test('Syrma SGS matches exact-name backlog coverage from the local catalog contract alone', async () => {
-  const { SYRMA_SGS_CATALOG } = await loadSyrmaSgsCatalog()
+test('Syrma SGS current routing preserves exact-name backlog coverage without static inventory authority', () => {
+  const provider = getScraperCatalog().find(item => item.source === 'syrmasgs')
+  assert.ok(provider)
+  assert.equal(provider.adapter, 'script')
+  assert.match(provider.modulePath, /syrmasgs[\\/]script\.js$/i)
+  assert.equal(provider.companyCareerPage, 'https://syrmasgs.com/job-listing/')
+  assert.equal(provider.officialCareersPageUrl, 'https://syrmasgs.com/job-listing/')
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  for (const key of ['verifiedOn', 'verifiedAt', 'verifiedPublicJobCount', 'verifiedIndiaJobCount', 'companyGlobalTotal', 'companyIndiaTotal']) assert.equal(provider[key], null)
   const report = generateCompanyCoverageReport({
     csvText: 'Syrma SGS\n',
-    catalog: [hydrateProviderCatalogEntry(SYRMA_SGS_CATALOG)],
+    catalog: [provider],
   })
 
   assert.equal(report.matchedCount, 1)

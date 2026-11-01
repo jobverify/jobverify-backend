@@ -1,3 +1,4 @@
+import {createPublicLeverSource, PUBLIC_LEVER_PROFILES} from '../../scraper-support/native-sources/publicLeverChannels/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -102,40 +103,7 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-export const createIonicScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    fetchPage = defaultFetchPage,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialIonicCareersSignal(careersHtml)) {
-      throw new Error(
-        'Ionic verified first-party careers page no longer matches the trusted public surface',
-      )
-    }
-
-    const leverProxyPayload = await fetchJson(LEVER_PROXY_URL)
-    const liveJobs = extractLeverJobs(leverProxyPayload)
-    if (liveJobs.length > 0) {
-      throw new Error('Ionic careers surface now exposes a public jobs feed')
-    }
-
-    if (!hasBrokenLeverProxySignal(leverProxyPayload)) {
-      throw new Error(
-        'Ionic first-party Lever proxy no longer matches the verified broken public surface',
-      )
-    }
-
-    const leverBoardPage = await fetchPage(LEVER_BOARD_URL)
-    if (!isMissingLeverBoardPage(leverBoardPage)) {
-      throw new Error('Ionic Lever board no longer matches the verified missing-board surface')
-    }
-
-    return []
-  },
-})
+export const createIonicScraper = (options = {}) => createPublicLeverSource(PUBLIC_LEVER_PROFILES.ionic, options)
 
 export const run = async (options = {}) => createIonicScraper().run(options)
 

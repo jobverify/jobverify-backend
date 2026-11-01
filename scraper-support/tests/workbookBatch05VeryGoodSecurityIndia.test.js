@@ -1,3 +1,5 @@
+import {fixture,replay,editHTML,editJSON,mutateNativePost} from '../native-sources/publicLeverChannels/fixtureReplay.js'
+import {syntheticPaginatedVgs} from '../native-sources/publicLeverChannels/testSupport.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -27,31 +29,18 @@ const boardHtml = `
   </body></html>
 `
 
-test('Very Good Security India returns zero when the verified Lever inventory has no India roles', async () => {
-  const jobs = await run({
-    fetchText: async (url) => url === CAREERS_URL ? careersHtml : boardHtml,
-    fetchJson: async () => [{
-      id: 'us-role',
-      text: 'Strategic Finance Manager',
-      country: 'US',
-      hostedUrl: 'https://jobs.lever.co/verygoodsecurity/us-role',
-      categories: { location: 'United States / Canada' },
-    }],
-  })
-  assert.deepEqual(jobs, [])
+test("Very Good Security retains current foreign-role observations without an employer-wide India-zero claim",async()=>{
+   const r=replay(),jobs=await run(r.options);assert.equal(jobs.length,0)
+   assert.equal(r.audits[0].observations.length,18);assert.equal(r.audits[0].sourceScopeComplete,false)
+   assert.equal(r.audits[0].authoritativeIndiaFacetCount,null)
+  
 })
 
-test('Very Good Security India rejects stale careers copy and mismatched Lever identity', async () => {
-  await assert.rejects(
-    run({ fetchText: async () => '<h1>It Takes Exceptional People to Create VGS</h1>' }),
-    /official careers/i,
-  )
-  await assert.rejects(
-    run({
-      fetchText: async (url) => url === LEVER_BOARD_URL
-        ? '<title>Another company</title>'
-        : careersHtml,
-    }),
-    /Lever board/i,
-  )
+test("Very Good Security holds changed current careers and board identities while retaining native criteria",async()=>{
+   for(const changed of ['primary','board']){
+    const r=replay((url,page)=>changed==='primary'&&url===CAREERS_URL?editHTML(page,html=>html.replace('id="lever-jobs-container"','id="old-target"')):changed==='board'&&url===LEVER_BOARD_URL?editHTML(page,html=>html.replace('<title>VGS</title>','<title>Other</title>')):page)
+    assert.equal((await run(r.options)).length,0);assert.equal(r.audits[0].closing.publisherQualified,false)
+    assert.equal(r.audits[0].observations.length,18);assert.ok(r.audits[0].observations.every(row=>row.jobDescription))
+   }
+  
 })

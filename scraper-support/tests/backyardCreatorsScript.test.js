@@ -108,7 +108,7 @@ test('Backyard Creators run fetches the verified homepage and careers page and r
   assert.equal(jobs[0].normalizedTitle, 'Multiphysics Simulation Expert')
   assert.equal(jobs[0].engineeringDomain, 'Unknown')
   assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].jobType, 'Full-time Experienced')
+  assert.equal(jobs[0].jobType, 'Unspecified')
   assert.equal(jobs[0].companyCareerPage, 'https://www.backyardcreators.com/careers')
   assert.equal(jobs[0].companyDomain, 'backyardcreators.com')
   assert.equal(jobs[0].atsPlatform, 'official-company-careers')
