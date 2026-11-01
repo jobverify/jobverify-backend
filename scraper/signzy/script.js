@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SIGNZY_CATALOG from './catalog.js'
+import {run as runCurrentNative} from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -113,7 +114,7 @@ export const createSignzyScraper = () => ({
   },
 })
 
-export const run = async (options = {}) => createSignzyScraper(options).run(options)
+export const run = async (options = {}) => runCurrentNative(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

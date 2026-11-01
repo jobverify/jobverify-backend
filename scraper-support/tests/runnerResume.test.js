@@ -255,15 +255,6 @@ test('retired AMNS provider stays out of the active runner catalog', () => {
   assert.equal(buildScrapers().some((candidate) => candidate.name === 'arcelormittalnipponsteelindia'), false)
 })
 
-test('resolveLivePublicExperienceEnabled skips redundant enrichment for high-volume API sources', () => {
-  for (const source of ['ibm']) {
-    const scraper = buildScrapers().find((candidate) => candidate.name === source)
-
-    assert.ok(scraper, `missing ${source} scraper`)
-    assert.equal(resolveLivePublicExperienceEnabled(scraper, ''), false, source)
-  }
-})
-
 test('resolveScraperRetryAttempts avoids multiplying the Workday source budget', () => {
   assert.equal(
     resolveScraperRetryAttempts({

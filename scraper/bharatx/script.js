@@ -161,6 +161,7 @@ export const createBharatXScraper = ({
   source: SOURCE, company: COMPANY_NAME, tenant: 'bharatx',
   accountUid: 'db2cc781-d7bb-431d-ba2d-62a131069447',
   careersUrl: OFFICIAL_CAREERS_URL, companyDomain: 'bharatx.tech',
+  reconcileClosingInventory: true,
 }, { now, maxJobs: Number.isInteger(maxJobs) && maxJobs > 0 ? maxJobs : 0 })
 
 export const run = async (options = {}) => createBharatXScraper(options).run(options)

@@ -1,3 +1,4 @@
+import { checkCurrentReplay, assertCurrentProvider } from '../native-sources/declaredJobFeeds/legacyReplayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -165,53 +166,6 @@ test('Redpanda extracts only listed India jobs from the verified embedded Ashby 
   ])
 })
 
-test('Redpanda run validates the first-party jobs page and returns an authoritative empty India result when no India roles remain', async () => {
-  const redpanda = await loadModule()
-  const requestedTextUrls = []
-  const requestedJsonUrls = []
+test('redpanda: current original-entity complete replay (legacy case 168)', async () => checkCurrentReplay('redpanda', 'complete'))
 
-  const jobs = await redpanda.createRedpandaScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requestedTextUrls.push(url)
-      return JOBS_PAGE_HTML
-    },
-    fetchJson: async (url) => {
-      requestedJsonUrls.push(url)
-      return nonIndiaPayload
-    },
-  })
-
-  assert.deepEqual(requestedTextUrls, [redpanda.JOBS_PAGE_URL])
-  assert.deepEqual(requestedJsonUrls, [redpanda.ASHBY_JOB_BOARD_URL])
-  assert.deepEqual(jobs, [])
-})
-
-test('Redpanda fails closed when the verified jobs page, embedded Ashby handoff, or payload drift', async () => {
-  const redpanda = await loadModule()
-
-  await assert.rejects(
-    redpanda.createRedpandaScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-      fetchJson: async () => ashbyPayload,
-    }),
-    /verified redpanda first-party jobs page/i,
-  )
-
-  await assert.rejects(
-    redpanda.createRedpandaScraper().run({
-      fetchText: async () => JOBS_PAGE_HTML.replaceAll('redpanda-data', 'other-board'),
-      fetchJson: async () => ashbyPayload,
-    }),
-    /verified redpanda ashby handoff/i,
-  )
-
-  await assert.rejects(
-    redpanda.createRedpandaScraper().run({
-      fetchText: async () => JOBS_PAGE_HTML,
-      fetchJson: async () => ({ postings: [] }),
-    }),
-    /verified redpanda ashby payload/i,
-  )
-})
+test('redpanda: current original-entity primary replay (legacy case 191)', async () => checkCurrentReplay('redpanda', 'primary'))

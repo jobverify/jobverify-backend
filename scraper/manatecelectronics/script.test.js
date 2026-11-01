@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence, isVerifiedEmptyEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { inventoryCleanupOptions } from '../../scraper-support/utils/scraperOutcome.js'
 
 import {
   CAREERS_URL,
@@ -133,6 +135,18 @@ const blockedShellHtml = `
   </html>
 `
 
+// These retained legacy templates are controlled inputs, not fresh native evidence.
+const assertDiscoveryOnly = (jobs, surface) => {
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence.surface, surface)
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
+  assert.equal(isVerifiedEmptyEvidence(evidence), false)
+  assert.deepEqual(inventoryCleanupOptions({ inventoryEvidence: evidence }), { replaceExisting: false })
+}
+
 test('Manatec Electronics recognizes the verified homepage, sitemap, careers page, and missing-route shell', () => {
   assert.equal(SOURCE, 'manatecelectronics')
   assert.equal(COMPANY, 'Manatec Electronics Private Limited')
@@ -184,13 +198,9 @@ test('Manatec Electronics run() validates the verified application-only public s
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    HOMEPAGE_URL,
-    PAGE_SITEMAP_URL,
-    CAREERS_URL,
-    MISSING_ROUTE_URL,
-  ])
+  assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
   assert.deepEqual(jobs, [])
+  assertDiscoveryOnly(jobs, CAREERS_URL)
 })
 
 test('Manatec Electronics returns no jobs when the verified public site is uniformly blocked by the current 403 shell', async () => {
@@ -208,13 +218,9 @@ test('Manatec Electronics returns no jobs when the verified public site is unifo
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    HOMEPAGE_URL,
-    PAGE_SITEMAP_URL,
-    CAREERS_URL,
-    MISSING_ROUTE_URL,
-  ])
+  assert.deepEqual(requestedUrls, [HOMEPAGE_URL])
   assert.deepEqual(jobs, [])
+  assertDiscoveryOnly(jobs, HOMEPAGE_URL)
 })
 
 test('Manatec Electronics fails closed when the careers surface drifts or starts exposing structured openings', async () => {
@@ -247,9 +253,12 @@ test('Manatec Electronics fails closed when the careers surface drifts or starts
     /application-only/i,
   )
 
-  await assert.rejects(
-    createManatecElectronicsScraper().run({
+  const requestedUrls = []
+  // The historical missing-route input stays below as an unvisited route and
+  // a direct negative helper control, never as evidence of complete inventory.
+  const jobs = await createManatecElectronicsScraper().run({
       fetchPage: async (url) => {
+        requestedUrls.push(url)
         if (url === HOMEPAGE_URL) {
           return { status: 200, url, html: homepageHtml }
         }
@@ -268,9 +277,10 @@ test('Manatec Electronics fails closed when the careers surface drifts or starts
 
         throw new Error(`Unexpected URL: ${url}`)
       },
-    }),
-    /missing-route/i,
-  )
+    })
+  assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
+  assert.equal(isVerifiedMissingRoute({ status: 200, url: MISSING_ROUTE_URL, html: careersHtml }), false)
+  assertDiscoveryOnly(jobs, CAREERS_URL)
 })
 
 test('Manatec Electronics retries the public site through the www host when the canonical host connect-times out', async () => {
@@ -303,4 +313,13 @@ test('Manatec Electronics retries the public site through the www host when the 
   assert.equal(snapshot.status, 200)
   assert.equal(snapshot.url, HOMEPAGE_URL)
   assert.equal(snapshot.html, homepageHtml)
+})
+
+test('Manatec homepage identity drift stays an error before any careers or legacy route read', async () => {
+  const requestedUrls = []
+  await assert.rejects(createManatecElectronicsScraper().run({ fetchPage: async url => {
+    requestedUrls.push(url)
+    return { status: 200, url, html: homepageHtml.replace('Manatec Group of Companies', '') }
+  } }), /homepage no longer matches/)
+  assert.deepEqual(requestedUrls, [HOMEPAGE_URL])
 })

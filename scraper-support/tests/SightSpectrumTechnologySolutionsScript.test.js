@@ -48,90 +48,30 @@ const loadModule = async () => {
   }
 }
 
-test('SightSpectrum Technology Solutions helpers stay pinned to the verified inline careers sections', async () => {
+test('SightSpectrum historical helpers preserve identities and unknown country without invented experience', async () => {
   const sightspectrum = await loadModule()
-
   assert.equal(sightspectrum.SOURCE, 'sightspectrumtechnologysolutions')
   assert.equal(sightspectrum.COMPANY, 'SightSpectrum Technology Solutions')
   assert.equal(sightspectrum.CAREERS_URL, 'https://www.sightspectrum.com/careers')
   assert.equal(sightspectrum.VERIFIED_ON, '2026-07-18')
   assert.equal(sightspectrum.hasOfficialCareersSignal(careersHtml), true)
-  assert.equal(sightspectrum.extractJobs(careersHtml).length, 2)
+  const jobs = sightspectrum.extractJobs(careersHtml)
+  assert.deepEqual(jobs.map(job => job.title), ['Data Engineer', 'UI/UX Designer', 'Sales Lead'])
+  assert.ok(jobs.every(job => job.country === null && job.experienceRequired === null && job.sourceDetailComplete === false))
+  assert.match(jobs[0].jobDescription, /SQL Python Spark/)
+  assert.equal(jobs[1].remoteStatus, 'Remote')
 })
 
-test('SightSpectrum Technology Solutions run validates the official careers page and returns India jobs', async () => {
+test('SightSpectrum current runtime refuses obsolete body-only transport instead of manufacturing India jobs', async () => {
   const sightspectrum = await loadModule()
-  const requestedUrls = []
-
-  const jobs = await sightspectrum.createSightSpectrumTechnologySolutionsScraper({
-    now: () => '2026-07-18T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return careersHtml
-    },
-  })
-
-  assert.deepEqual(requestedUrls, ['https://www.sightspectrum.com/careers'])
-  assert.deepEqual(jobs, [
-    {
-      title: 'Data Engineer',
-      company: 'SightSpectrum Technology Solutions',
-      department: null,
-      location: 'chennai',
-      city: 'chennai',
-      country: 'India',
-      jobId: 'data-engineer',
-      requisitionId: 'data-engineer',
-      sourceUrl: 'https://www.sightspectrum.com/careers#data-engineer',
-      applyUrl: 'https://www.sightspectrum.com/careers#data-engineer',
-      employmentType: null,
-      experienceRequired: '2+ years',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: ['SQL', 'Python', 'Spark'],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: 'Build and manage scalable data pipelines and infrastructure to support analytics and business insights.',
-      remoteStatus: 'On-site',
-      source: 'sightspectrumtechnologysolutions',
-      link: 'https://www.sightspectrum.com/careers#data-engineer',
-      scrapedAt: '2026-07-18T00:00:00.000Z',
-    },
-    {
-      title: 'UI/UX Designer',
-      company: 'SightSpectrum Technology Solutions',
-      department: null,
-      location: 'Remote',
-      city: 'Remote',
-      country: 'India',
-      jobId: 'ui-ux-designer',
-      requisitionId: 'ui-ux-designer',
-      sourceUrl: 'https://www.sightspectrum.com/careers#ui-ux-designer',
-      applyUrl: 'https://www.sightspectrum.com/careers#ui-ux-designer',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: ['React', 'Vue.js', 'HTML/CSS'],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: 'We are looking for a talented Frontend Engineer to join our dynamic team.',
-      remoteStatus: 'Remote',
-      source: 'sightspectrumtechnologysolutions',
-      link: 'https://www.sightspectrum.com/careers#ui-ux-designer',
-      scrapedAt: '2026-07-18T00:00:00.000Z',
-    },
-  ])
+  await assert.rejects(sightspectrum.run({ fetchText: async () => careersHtml }), /metadata|transport/i)
 })
 
-test('SightSpectrum Technology Solutions run fails closed when the verified careers surface drifts', async () => {
+test('SightSpectrum current runtime fails closed when the official careers surface drifts', async () => {
   const sightspectrum = await loadModule()
-
-  await assert.rejects(
-    sightspectrum.createSightSpectrumTechnologySolutionsScraper().run({
-      fetchText: async () => '<html><body><h1>SightSpectrum</h1></body></html>',
-    }),
-    /verified sightspectrum technology solutions careers surface/i,
-  )
+  await assert.rejects(sightspectrum.run({ fetchImpl: async url => {
+    const response = new Response('<html><body><h1>SightSpectrum</h1></body></html>', { headers: { 'content-type': 'text/html' } })
+    Object.defineProperty(response, 'url', { value: url })
+    return response
+  } }), /verified sightspectrum technology solutions careers surface/i)
 })

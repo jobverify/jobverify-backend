@@ -1,3 +1,4 @@
+import { checkCurrentReplay, assertCurrentProvider } from '../native-sources/declaredJobFeeds/legacyReplayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -63,19 +64,4 @@ test('Dagster local catalog captures the verified homepage, Prefect redirect, an
   assert.equal(dagster.GREENHOUSE_BOARD_URL, provider.greenhouseBoardUrl)
 })
 
-test('getScraperCatalog and buildScrapers expose Dagster as a runnable empty-board provider', () => {
-  const provider = getScraperCatalog().find((item) => item.source === 'dagster')
-  const scraper = buildScrapers().find((item) => item.name === 'dagster')
-
-  assert.ok(provider, 'Expected Dagster provider to be registered in customProviders.json')
-  assert.ok(scraper)
-  assert.equal(provider.companyName, 'Dagster')
-  assert.equal(provider.homepageUrl, 'https://dagster.io/')
-  assert.equal(provider.companyCareerPage, 'https://dagster.io/company/careers')
-  assert.equal(provider.greenhouseBoardUrl, 'https://job-boards.greenhouse.io/dagsterlabs')
-  assert.equal(provider.verifiedPublicJobCount, 0)
-  assert.equal(typeof scraper.run, 'function')
-  assert.match(scraper.dryRunFile, /dagster[\\/]jobs\.json$/i)
-  assert.equal(scraper.provider.source, 'dagster')
-  assert.equal(scraper.provider.atsPlatform, 'dagster-homepage-plus-empty-greenhouse-board')
-})
+test('dagster: registered native reader clears historical source-coverage claims', () => assertCurrentProvider('dagster'))

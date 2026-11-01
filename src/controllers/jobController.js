@@ -4,6 +4,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { isProductionEnvironment } from "../utils/runtimeConfig.js";
 import { isDeepStrictEqual } from "node:util";
 import mongoose from "mongoose";
 import Job from "../models/Job.js";
@@ -24,17 +25,13 @@ import {
   WORK_ARRANGEMENT_OPTIONS,
   resolveSkillTokens,
 } from "../constants/jobFilterTaxonomy.js";
-import { resolveJobType } from "../../scraper-support/utils/normalizeScrapedJob.js";
 
 import { PUBLIC_JOB_TYPE_EXPRESSION } from "../utils/publicJobType.js";
-import { normalizePublicJobType } from '../utils/publicJobTypeLabel.js';
+import { normalizePublicJobCategory as normalizeResponseJobType, normalizePublicExperienceLevel as normalizeResponseExperienceLevel } from '../utils/publicJobNormalization.js';
 import { normalizePublicWorkArrangement, PUBLIC_WORK_ARRANGEMENT_EXPRESSION } from '../utils/publicWorkArrangement.js';
-import { getAuthoritativeClassification } from '../services/jobClassificationPolicy.js';
 import { withSemanticExperienceConstraint } from '../utils/classifiedExperienceFilters.js';
 import { applyPublicJobVisibility } from "../utils/publicJobVisibility.js";
 import { recordApplicationOpen } from '../services/applicationService.js';
-import { buildAggregateHiringSignalFilter } from "../utils/jobListingEvidence.js";
-import { buildMissingSourceDescriptionFilter } from "../utils/jobSourceContent.js";
 import { canUsePremiumFilters } from "../utils/accessControl.js";
 import {
   formatStoredLocationLabel,
@@ -45,6 +42,7 @@ import {
 import { normalizeJobSearchKey } from "../utils/jobSearchKeys.js";
 import { getValidIndiaCityForJob } from "../utils/publicJobLocationScope.js";
 import { normalizeLifecycleDate, startOfUtcDay } from "../utils/jobLifecycle.js";
+import { safeSourceUrl } from '../utils/jobProvenance.js';
 import { hasWorkdayOutageSignal } from "../../scraper-support/myworkday/engine.js";
 import {
   SearchInputError,
@@ -63,7 +61,6 @@ const MAX_REGEX_FILTER_LENGTH = 80;
 const MAX_TEXT_QUERY_LENGTH = 200;
 const MAX_RECOMMENDATION_TERMS = 20;
 const CLICK_DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
-const MAX_REASONABLE_EXPERIENCE_YEARS = 40;
 const PUBLIC_CACHE_HEADER =
   "no-store";
 const PRIVATE_CACHE_HEADER = "no-store";
@@ -232,11 +229,7 @@ const resolvePublicJobDatasetTotals = async (siteSettings) => {
 };
 
 const isDefaultPublicJobListFilter = (filters = {}) => (
-  filters?.status === "active"
-  && filters?.isPublicIndia === true
-  && Object.keys(filters).length === 4
-  && Object.hasOwn(filters, "$expr")
-  && isDeepStrictEqual(filters.$nor, [buildAggregateHiringSignalFilter(), buildMissingSourceDescriptionFilter()])
+  isDeepStrictEqual(filters, { status: "active" })
 );
 
 const workdayApplicationStatusCache = new Map();
@@ -455,149 +448,6 @@ const resolveFrontendOrigin = () =>
     .trim()
     .replace(/\/+$/, "");
 
-const isPartTimeJobType = (value) => /part[\s_-]?time/i.test(String(value || ""));
-
-const normalizeJobTypeLabel = (value) => {
-  const normalized = String(value || "").trim().toLowerCase();
-
-  if (!normalized) return null;
-  if (normalized === "intern" || normalized === "internship") return "Intern";
-  if (normalized === "contract") return "Contract";
-  if (normalized === "others") return "Others";
-  if (normalized === "unspecified") return "Unspecified";
-  if (normalized === "full-time fresher") return "Full-time Fresher";
-  if (normalized === "full-time experienced") return "Full-time Experienced";
-  if (normalized === "full-time") return "Full-time";
-  return null;
-};
-
-const deriveExperienceLevelFromYears = (minimumYears) => {
-  if (!Number.isFinite(minimumYears) || minimumYears < 0) return null;
-  if (minimumYears === 0) return "Entry Level";
-  if (minimumYears <= 2) return "Junior Level";
-  if (minimumYears >= 8) return "Senior Level";
-  return "Mid Level";
-};
-
-const getStructuredExperienceMinimumYears = (job = {}) => {
-  const minimumYears = Number(job?.experienceProfile?.minimumYears);
-
-  return Number.isFinite(minimumYears)
-    && minimumYears >= 0
-    && minimumYears <= MAX_REASONABLE_EXPERIENCE_YEARS
-    ? minimumYears
-    : null;
-};
-
-const hasPositiveExperienceSignal = (job = {}) => {
-  const minimumYears = Number(job?.experienceProfile?.minimumYears);
-  const maximumYears = Number(job?.experienceProfile?.maximumYears);
-  const experienceYears = extractExperienceYears(job?.experienceRequired);
-  const normalizedExperienceText = String(job?.experienceRequired || "")
-    .replace(/[â€“â€”âˆ’]/g, "-")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return (
-    (Number.isFinite(minimumYears) && minimumYears > 0)
-    || (!Number.isFinite(minimumYears) && Number.isFinite(maximumYears) && maximumYears > 0)
-    || (
-      job?.experienceProfile?.isOpenEnded === true
-      && Number.isFinite(minimumYears)
-      && minimumYears > 0
-    )
-    || experienceYears[0] > 0
-    || (
-      experienceYears.length === 0
-      && /\b(?:[1-9]\d*(?:\.\d+)?|0?\.\d*[1-9]\d*)\s*(?:\+|plus)?\s*(?:years?|yrs?)\b/i.test(normalizedExperienceText)
-    )
-  );
-};
-
-const normalizeResponseExperienceLevel = (job = {}) => {
-  const classified = getAuthoritativeClassification(job);
-  if (classified) return classified.experienceLevel ?? null;
-  const derivedFromProfile = deriveExperienceLevelFromYears(
-    getStructuredExperienceMinimumYears(job),
-  );
-  const derivedFromText = deriveExperienceLevelFromYears(
-    extractExperienceYears(job?.experienceRequired)[0],
-  );
-  const derivedExperienceLevel = derivedFromProfile || derivedFromText;
-  const storedExperienceLevel = String(job?.experienceLevel || "").trim();
-
-  if (!derivedExperienceLevel) {
-    return storedExperienceLevel || null;
-  }
-
-  if (
-    !storedExperienceLevel
-    || (
-      ["Entry Level", "Junior Level"].includes(storedExperienceLevel)
-      && ["Mid Level", "Senior Level"].includes(derivedExperienceLevel)
-    )
-  ) {
-    return derivedExperienceLevel;
-  }
-
-  return storedExperienceLevel;
-};
-
-const resolveResponseJobType = (job = {}) => {
-  const classified = getAuthoritativeClassification(job);
-  if (classified) return classified.jobType;
-  if (Object.hasOwn(job, "_publicJobType")) return job._publicJobType;
-  const normalizedLabel = normalizeJobTypeLabel(job.jobType);
-  const normalizedExperienceLevel = normalizeResponseExperienceLevel(job);
-  const resolved = resolveJobType({
-    ...job,
-    experienceLevel: normalizedExperienceLevel,
-  });
-  const normalizedResolved = resolved
-    ? normalizeJobTypeLabel(resolved) || resolved
-    : null;
-
-  if (
-    hasPositiveExperienceSignal(job)
-    && normalizedLabel !== "Contract"
-    && normalizedLabel !== "Others"
-    && (
-      normalizedLabel === "Full-time Fresher"
-      || normalizedLabel === "Full-time Experienced"
-      || normalizedLabel === "Full-time"
-      || normalizedLabel === "Intern"
-      || normalizedResolved === "Full-time Fresher"
-    )
-  ) {
-    return "Full-time Experienced";
-  }
-
-  if (
-    normalizedLabel
-    && normalizedResolved
-    && normalizedLabel !== "Full-time"
-    && normalizedResolved !== "Full-time"
-    && normalizedLabel !== normalizedResolved
-    && (
-      normalizedLabel === "Full-time Fresher"
-      || normalizedLabel === "Full-time Experienced"
-    )
-  ) {
-    return isPartTimeJobType(normalizedResolved) ? null : normalizedResolved;
-  }
-
-  if (normalizedLabel && normalizedLabel !== "Full-time") {
-    return isPartTimeJobType(normalizedLabel) ? null : normalizedLabel;
-  }
-
-  if (normalizedResolved) {
-    return isPartTimeJobType(normalizedResolved) ? null : normalizedResolved;
-  }
-
-  return isPartTimeJobType(job.jobType) ? null : job.jobType || null;
-};
-
-const normalizeResponseJobType = job => normalizePublicJobType(resolveResponseJobType(job));
 
 const getSafeExternalApplicationUrl = (value) => {
   try {
@@ -831,7 +681,7 @@ const scheduleWorkdayApplicationAvailabilityRefresh = (job = {}) => {
     try {
       await persistWorkdayApplicationAvailability(job, nextState);
     } catch (error) {
-      if (process.env.NODE_ENV !== "production") {
+      if (!isProductionEnvironment()) {
         console.warn("Unable to persist Workday application availability", error);
       }
     }
@@ -913,61 +763,8 @@ const normalizeJobTypeFilters = (value) => {
 const EXPERIENCE_FILTER_OPTIONS = Object.freeze(
   Array.from({ length: MAX_EXPERIENCE_FILTER_YEAR + 1 }, (_, index) => index),
 );
-const EXPERIENCE_RANGE_PATTERN = /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i;
-const EXPERIENCE_PLUS_PATTERN = /(\d+(?:\.\d+)?)\s*(?:\+|plus)\s*(?:years?|yrs?)\b/i;
-const EXPERIENCE_ABOVE_PATTERN = /(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\s*(?:and above|or above)\b/i;
-const EXPERIENCE_MINIMUM_PATTERN = /(?:at least|min(?:imum)?(?: of)?|minimum|required|preferred)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i;
-const EXPERIENCE_VALUE_PATTERN = /(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i;
 const EXPERIENCE_YEAR_UNIT_REGEX_SOURCE = "(?:years?|yrs?)";
 const EXPERIENCE_TEXT_HINT_PATTERN = /(^|[^0-9.])(?:\d+(?:\.\d+)?\s*(?:(?:-|to)\s*\d+(?:\.\d+)?\s*)?(?:(?:\+|plus)\s*)?(?:years?|yrs?)\b|\d+(?:\.\d+)?\s*(?:years?|yrs?)\s*(?:and above|or above)\b|(?:at least|min(?:imum)?(?: of)?|minimum|required|preferred)\s*\d+(?:\.\d+)?\s*(?:years?|yrs?)\b|no prior experience required|no experience required|freshers? can apply|freshers?|entry[- ]level applicants are encouraged|experienced(?: professionals?)?|entry[- ]level|junior level|mid(?:-| )level|senior(?:-| )level|associate(?: level)?)/i;
-const clampExperienceYear = (value) => {
-  const normalized = Number.parseFloat(value);
-  if (!Number.isFinite(normalized)) return null;
-  return Math.min(MAX_EXPERIENCE_FILTER_YEAR, Math.max(0, normalized));
-};
-
-const extractExperienceYears = (value) => {
-  const normalized = String(value || "")
-    .replace(/[–—−]/g, "-")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!normalized) return [];
-
-  if (/\b(no prior experience required|no experience required|freshers? can apply|freshers?|entry[- ]level applicants are encouraged)\b/i.test(normalized)) {
-    return [0];
-  }
-
-  const rangeMatch = normalized.match(EXPERIENCE_RANGE_PATTERN);
-  if (rangeMatch) {
-    const start = clampExperienceYear(Math.ceil(Number.parseFloat(rangeMatch[1])));
-    const end = clampExperienceYear(Math.floor(Number.parseFloat(rangeMatch[2])));
-    if (start == null || end == null || end < start) return [];
-    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
-  }
-
-  const plusMatch = (
-    normalized.match(EXPERIENCE_PLUS_PATTERN)
-    || normalized.match(EXPERIENCE_ABOVE_PATTERN)
-    || normalized.match(EXPERIENCE_MINIMUM_PATTERN)
-  );
-  if (plusMatch) {
-    const start = clampExperienceYear(Math.ceil(Number.parseFloat(plusMatch[1])));
-    if (start == null) return [];
-    return Array.from(
-      { length: MAX_EXPERIENCE_FILTER_YEAR - start + 1 },
-      (_, index) => start + index,
-    );
-  }
-
-  const valueMatch = normalized.match(EXPERIENCE_VALUE_PATTERN);
-  if (valueMatch) {
-    const year = clampExperienceYear(Math.round(Number.parseFloat(valueMatch[1])));
-    return year == null ? [] : [year];
-  }
-
-  return [];
-};
 
 const normalizeExperienceFilterValues = (value) => normalizeList(value, {
   maxItems: MAX_EXPERIENCE_FILTER_YEAR + 2,
@@ -1483,7 +1280,9 @@ export const getAllJobs = async (req, res) => {
       });
     }
 
-    const filters = jobFilters(req.query, undefined, req.siteSettings);
+    // Check effective selections before visibility wraps them in nested expressions.
+    const filterConditions = buildJobFilterConditions(req.query);
+    const filters = applyPublicJobVisibility(filterConditions, req.siteSettings);
     const hasTextSearch = Boolean(filters.$text);
 
     const DEFAULT_PAGE = 1;
@@ -1498,7 +1297,7 @@ export const getAllJobs = async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     const sortOption = resolveJobListSortOption({ sort, hasTextSearch });
-    const canUseSummaryTotals = isDefaultPublicJobListFilter(filters);
+    const canUseSummaryTotals = isDefaultPublicJobListFilter(filterConditions);
     if (sort === "recommended") {
       const recommendationPipeline = buildRecommendationPipeline(
         filters,
@@ -1695,7 +1494,7 @@ export const getJobSearch = async (req, res) => {
       : null;
 
     res.set("Server-Timing", `total;dur=${queryMs}`);
-    if (process.env.NODE_ENV !== "production") {
+    if (!isProductionEnvironment()) {
       console.info(JSON.stringify({
         event: "job_search",
         requestId,
@@ -1947,14 +1746,10 @@ export const getJobMeta = async (req, res) => {
       hasScopedFilters
         ? resolveScopedDistinctValues(queryParams, "city", ["city", "location"], { city: { $ne: null } }, req.siteSettings)
         : Job.distinct("city", applyPublicJobVisibility({ status: "active", city: { $ne: null } }, req.siteSettings)),
-      req.siteSettings?.experiencedJobsEnabled === false
-        ? Job.aggregate([
+      Job.aggregate([
           { $match: buildJobMetaFilter(queryParams, ["jobType"], { status: "active" }, req.siteSettings) },
           { $group: { _id: PUBLIC_JOB_TYPE_EXPRESSION } },
-        ]).exec().then(rows => rows.map(row => row._id))
-        : (hasScopedFilters
-          ? resolveScopedDistinctValues(queryParams, "jobType", ["jobType"], { jobType: { $ne: null } }, req.siteSettings)
-          : Job.distinct("jobType", applyPublicJobVisibility({ status: "active", jobType: { $ne: null } }, req.siteSettings))),
+        ]).exec().then(rows => rows.map(row => row._id)),
       hasScopedFilters
         ? resolveScopedExperienceYearOptions(queryParams, req.siteSettings)
         : Promise.resolve(EXPERIENCE_FILTER_OPTIONS),
@@ -2140,16 +1935,17 @@ export const getJobSeoFeed = async (req, res) => {
       applyPublicJobVisibility({
         status: "active",
         sourceUrl: { $exists: true, $ne: null },
+        description: { $type: 'string', $regex: /\S[\s\S]{118,}\S/ },
         $and: [{ $or: [{ closingDate: null }, { closingDate: { $gt: new Date() } }] }],
       }, req.siteSettings),
     )
       .sort({ sortDate: -1, _id: -1 })
-      .select("title company postedAt updatedAt closingDate city location locations jobType")
+      .select("title company postedAt updatedAt closingDate city location locations jobType sourceUrl applyUrl workdayApplicationStatus workdayApplicationStatusReason workdayApplicationStatusCheckedAt")
       .select({ _publicJobType: PUBLIC_JOB_TYPE_EXPRESSION })
       .lean()
       .exec();
 
-    const data = jobs.map((job) => {
+    const data = jobs.filter(job => safeSourceUrl(job.sourceUrl) && buildApplicationState(job).applicationStatus === 'available').map((job) => {
       const path = `/jobs/${job._id}/${slugifyJob(job.title, job.company)}`;
 
       return {

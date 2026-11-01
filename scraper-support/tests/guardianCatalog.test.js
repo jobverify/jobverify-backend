@@ -17,7 +17,7 @@ test('getScraperCatalog includes Guardian on the official careers pages backed b
   const provider = getScraperCatalog().find((item) => item.source === 'guardian')
 
   assert.ok(provider)
-  assert.equal(provider.adapter, 'workday')
+  assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'workday')
   assert.equal(provider.companyName, 'Guardian')
   assert.equal(provider.companyCareerPage, 'https://www.guardianlife.com/careers/corporate')
@@ -36,22 +36,12 @@ test('getScraperCatalog includes Guardian on the official careers pages backed b
   assert.equal(provider.companyDomain, 'guardianlife.com')
   assert.equal(provider.baseUrl, 'https://guardianlife.wd5.myworkdayjobs.com/Guardian-Life-Careers')
   assert.equal(provider.locationCountry, null)
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.guardianlife\.com\/careers\/corporate/i)
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/www\.guardianlife\.com\/about-guardian\/where-we-work\/india/i,
-  )
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/guardianlife\.wd5\.myworkdayjobs\.com\/Guardian-Life-Careers/i,
-  )
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/guardianlife\.wd5\.myworkdayjobs\.com\/wday\/cxs\/guardianlife\/Guardian-Life-Careers\/jobs/i,
-  )
-  assert.match(provider.verifiedSurfaceSummary, /Chennai|Gurgaon|Gurugram/i)
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.historicalIndiaDiscovery.lastObservedStatus, 308)
+  assert.equal(provider.publicInventoryVerification.wholeCompanyScope, null)
+  assert.match(provider.modulePath, /guardian\.workday[\\/]script\.js$/)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Guardian'), false)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Guardian India'), false)
 })
@@ -82,7 +72,7 @@ test('buildScrapers and company coverage resolve both Guardian and Guardian Indi
   )
 })
 
-test('Guardian local Workday config uses the verified India hiring-company facet', () => {
+test('Guardian local Workday config enumerates the complete current board without the obsolete India hiring-company facet', () => {
   const config = loadConfig(path.join(testsDir, '../../scraper/guardian.workday'))
 
   assert.equal(config.listingStrategy, 'jobs-api')
@@ -94,8 +84,11 @@ test('Guardian local Workday config uses the verified India hiring-company facet
     config.detailUrlBase,
     'https://guardianlife.wd5.myworkdayjobs.com/en-US/Guardian-Life-Careers',
   )
-  assert.equal(config.countryFacetParameter, 'hiringCompany')
-  assert.equal(config.locationCountry, '4d442d4f5d091032118fe34e0ae8f401')
+  assert.equal(config.countryFacetParameter, undefined)
+  assert.equal(config.locationCountry, null)
+  assert.equal(config.inventoryScope, 'complete-board-country-proof')
+  assert.equal(config.officialCareersUrl, 'https://www.guardianlife.com/careers/corporate')
+  assert.equal(config.retainProvenIndiaOnUnresolvedLocations, true)
   assert.equal(config.searchText, undefined)
   assert.equal(config.locationPattern, 'india|chennai|gurgaon|gurugram')
 })

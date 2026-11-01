@@ -2,6 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
+import { readJoshNativeRoleFields } from './nativeRoleFields.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -204,16 +207,17 @@ export const extractListings = (html) => {
       throw new Error('Josh Technology Group verified official careers surface changed or disappeared')
     }
 
-    const jobId = buildJobId(title)
+    // The exact advertised URL supplies a stable observation key, not a native requisition.
+    const jobId = SOURCE + '-' + new URL(sourceUrl).pathname.split('/').filter(Boolean).at(-1)
     items.push({
       title,
       company: COMPANY,
       department: currentDepartment,
       location: null,
       city: null,
-      country: 'India',
+      country: null,
       jobId,
-      requisitionId: jobId,
+      requisitionId: null,
       sourceUrl,
       applyUrl: sourceUrl,
       employmentType: null,
@@ -236,6 +240,7 @@ export const extractListings = (html) => {
 
 export const extractJobDetail = (html, listing = {}) => {
   const page = String(html ?? '')
+  const native = readJoshNativeRoleFields(page, listing)
   const title = cleanBulletText(stripTags(
     page.match(/<span class="career-list__title flex-align-center">\s*([\s\S]*?)\s*<\/span>/i)?.[1],
   )) || listing.title || null
@@ -278,32 +283,38 @@ export const extractJobDetail = (html, listing = {}) => {
     preferredQualification: listing.preferredQualification || null,
     requiredSkills,
     jobDescription: jobDescription || listing.jobDescription || null,
+    ...native,
+    experienceRequired: native.experienceRequired || experienceRequired || null,
+    minimumQualification: minimumQualification || native.minimumQualification || null,
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  attempts: 1,
+  signal: options.signal,
 })
 
 export const createJoshTechnologyGroupScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString(), signal } = {}) {
+    const read = async url => { signal?.throwIfAborted(); const html = await fetchText(url, { signal }); signal?.throwIfAborted(); return html }
+    const homepageHtml = await read(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Josh Technology Group verified official homepage no longer matches the known public surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersHtml = await read(CAREERS_URL)
     const listings = extractListings(careersHtml)
     const selectedListings = Number.isInteger(maxJobs) ? listings.slice(0, maxJobs) : listings
     const jobs = []
 
     for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
+      const detailHtml = await read(listing.sourceUrl)
       const detail = extractJobDetail(detailHtml, listing)
 
       jobs.push({
@@ -317,7 +328,12 @@ export const createJoshTechnologyGroupScraper = ({ maxJobs = null } = {}) => ({
       })
     }
 
-    return jobs
+    attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows', observedRecordCount: listings.length,
+      observedVacancyCount: listings.length, sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null })
+    return attachInventoryEvidence(jobs, { status: 'discovery-only', surface: CAREERS_URL, firstParty: true,
+      listingComplete: false, pagesFetched: 2 + selectedListings.length, reportedTotal: null, indiaFacetCount: null,
+      verifiedAt: null, reason: 'josh-native-vacancy-observations-company-scope-unconfirmed;closing-not-read'
+        + (selectedListings.length < listings.length ? ';output-cap' : '') })
   },
 })
 

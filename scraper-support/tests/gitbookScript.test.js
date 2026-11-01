@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
 
 const FIXED_SCRAPED_AT = '2026-07-25T00:00:00.000Z'
 
@@ -181,12 +183,12 @@ test('GitBook extracts listed jobs from the verified Ashby payload into shared s
   ])
 })
 
-test('GitBook run validates the official careers handoff and returns normalized public Ashby jobs', async () => {
+test('GitBook rejects a legacy body-only employer response without HTTP identity evidence', async () => {
   const gitbook = await loadModule()
   const requestedTexts = []
   const requestedJson = []
 
-  const jobs = await gitbook.createGitBookScraper({
+  await assert.rejects(gitbook.createGitBookScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
     fetchText: async (url) => {
@@ -198,14 +200,10 @@ test('GitBook run validates the official careers handoff and returns normalized 
       requestedJson.push(url)
       return ASHBY_PAYLOAD
     },
-  })
+  }),/employer response unavailable/i)
 
   assert.deepEqual(requestedTexts, [gitbook.CAREERS_PAGE_URL])
-  assert.deepEqual(requestedJson, [gitbook.ASHBY_JOB_BOARD_URL])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'gitbook')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.deepEqual(requestedJson, [])
 })
 
 test('GitBook fails closed when the verified careers page, Ashby handoff, or payload drift', async () => {
@@ -216,24 +214,28 @@ test('GitBook fails closed when the verified careers page, Ashby handoff, or pay
       fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
       fetchJson: async () => ASHBY_PAYLOAD,
     }),
-    /verified gitbook official careers page/i,
+    /employer response unavailable/i,
   )
 
   await assert.rejects(
     gitbook.createGitBookScraper().run({
-      fetchText: async () =>
-        CAREERS_HTML.replaceAll('jobs.ashbyhq.com/GitBook', 'jobs.ashbyhq.com/Other'),
+      fetchPage: async () => ({status:200,url:gitbook.CAREERS_PAGE_URL,
+        html:CAREERS_HTML.replaceAll('jobs.ashbyhq.com/GitBook', 'jobs.ashbyhq.com/Other')}),
       fetchJson: async () => ASHBY_PAYLOAD,
     }),
-    /verified ashby public board handoff/i,
+    /employer.*handoff/i,
   )
 
   await assert.rejects(
     gitbook.createGitBookScraper().run({
-      fetchText: async () => CAREERS_HTML,
+      fetchPage: async () => {
+        const fixture=JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/gitbook/fixtures/current-http-20261030.json.gz',import.meta.url))))
+        const row=fixture.responses.find(value=>value.url===gitbook.CAREERS_PAGE_URL)
+        return{status:row.status,url:row.finalUrl,html:row.body}
+      },
       fetchJson: async () => ({ postings: [] }),
     }),
-    /verified ashby payload/i,
+    /invalid ashby inventory/i,
   )
 })
 

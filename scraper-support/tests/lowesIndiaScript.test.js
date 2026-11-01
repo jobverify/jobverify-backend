@@ -71,7 +71,7 @@ test("extractSearchResults normalizes Lowe's India listings into the shared scra
     requiredSkills: [],
     postingDate: '2026-06-18T00:00:00.000+0000',
     applyUrl: 'https://lowes.wd5.myworkdayjobs.com/LWS_External_CS/job/Bengaluru/Senior-Analyst---Paid-Social_JR-02563681/apply',
-    sourceUrl: 'https://talent.lowes.com/in/en/job/JR-02563681/Senior-Analyst-Paid-Social',
+    sourceUrl: 'https://talent.lowes.com/in/en/job/LOWEUSJR02563681EXTERNALENIN/Senior-Analyst-Paid-Social',
   })
 
   assert.ok(paidSocialRole.requiredSkills.includes('facebook ad manager'))
@@ -130,7 +130,7 @@ test("run keeps Lowe's India jobs on the official Phenom search route and decora
       if (url === buildSearchResultsPageUrl()) {
         return readFixture('search-results-page-0.html')
       }
-      if (url === 'https://talent.lowes.com/in/en/job/JR-02563681/Senior-Analyst-Paid-Social') {
+      if (url === 'https://talent.lowes.com/in/en/job/LOWEUSJR02563681EXTERNALENIN/Senior-Analyst-Paid-Social') {
         return readFixture('job-detail-JR-02563681.html')
       }
       throw new Error(`Unexpected Lowe's fixture URL: ${url}`)
@@ -139,7 +139,7 @@ test("run keeps Lowe's India jobs on the official Phenom search route and decora
 
   assert.deepEqual(requestedUrls, [
     buildSearchResultsPageUrl(),
-    'https://talent.lowes.com/in/en/job/JR-02563681/Senior-Analyst-Paid-Social',
+    'https://talent.lowes.com/in/en/job/LOWEUSJR02563681EXTERNALENIN/Senior-Analyst-Paid-Social',
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].company, 'Lowes India')

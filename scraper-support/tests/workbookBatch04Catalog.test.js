@@ -6,7 +6,6 @@ import { generateCompanyCoverageReport, getCompanyAliasMap } from '../providers/
 import { getScraperCatalog } from '../providers/index.js'
 
 const VERIFIED_CAREERS_EMPTY_SOURCES = [
-  'nomuraindia',
   'openprise',
   'redcliffelabs',
   'securonixindia',
@@ -82,7 +81,7 @@ test('workbook batch 04 alias extensions route the known renamed companies to ex
   })
 })
 
-test('workbook batch 04 promotes only verified exact-company careers snapshots from the generic sentinel', () => {
+test('workbook batch 04 retains the other historical exact-company empty snapshots', () => {
   const providers = getScraperCatalog().filter((provider) =>
     VERIFIED_CAREERS_EMPTY_SOURCES.includes(provider.source),
   )
@@ -100,4 +99,14 @@ test('workbook batch 04 promotes only verified exact-company careers snapshots f
     assert.equal(provider.atsPlatform, 'verified-first-party-careers-empty-result')
     assert.match(provider.modulePath, new RegExp(`${provider.source}[\\\\/]script\\.js$`, 'i'))
   }
+})
+
+test('Nomura current native reader replaces only its historical verified-zero claim', () => {
+  const provider = PROVIDERS_BY_SOURCE.get('nomuraindia')
+  assert.equal(provider.atsPlatform, 'successfactors-rmk-public-native')
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
 })

@@ -221,27 +221,29 @@ const ionideaCareersHtml = `
 <html lang="en">
   <body>
     <h2>Jobs at IonIdea</h2>
-    <h3>APM Consultant/Sr Consultant for Dynatrace</h3>
+    <!-- Current native role titles are paragraph cards, not footer headings. -->
+    <div class="col-lg-12 border py-4 rounded-5"><p class="careers-job-title">APM Consultant/Sr Consultant for Dynatrace</p>
     <p>Experience: 3-5 years</p>
     <p>Education: BE/BTECH/MCA/ MTECH from Computer Science</p>
     <p>Location: Bangalore/ Hyderabad/ Chennai/ Delhi</p>
     <p>Summary:</p>
     <p>Lead implementation activities and quarterly business reviews with Dynatrace customers.</p>
-    <p>Apply Here</p>
-    <h3>Software Engineer - APM</h3>
+    <a href="/careers-apply.php?id=252368">Apply Here</a></div>
+    <div class="col-lg-12 border py-4 rounded-5"><p class="careers-job-title">Software Engineer - APM</p>
     <p>Experience: 3-5 years</p>
     <p>Education: BE/BTECH/MCA/ MTECH from Computer Science</p>
     <p>Location: Bangalore/ Hyderabad/ Chennai/ Delhi</p>
     <p>Required Technical Skills:</p>
     <p>Performance Engineering with APM tools</p>
     <p>Proficient in Java, J2ee/ Python</p>
-    <p>Apply Here</p>
-    <h3>Consultant (Devops Engineer)</h3>
+    <a href="/careers-apply.php?id=252367">Apply Here</a></div>
+    <div class="col-lg-12 border py-4 rounded-5"><p class="careers-job-title">Consultant (Devops Engineer)</p>
     <p>IonIdea, Inc. - Fairfax, VA is looking for a Consultant (Devops Engineer)</p>
     <p>Will take part in AWS Cloud implementations and Azure migration.</p>
     <p>Will use Terraform, Terragrunt, and Cloudformation Infrastructure automation.</p>
+    <p>Will provide services at unanticipated client worksites throughout the U.S.</p>
     <p>Salary: $114,026/year.</p>
-    <p>Apply Here</p>
+    <a href="https://www.jobpostingtoday.com/application/15567/apply/">Apply Here</a></div>
   </body>
 </html>
 `
@@ -313,7 +315,7 @@ test('BUSINESSNEXT run returns normalized jobs from the verified first-party cur
   assert.equal(jobs.at(-1).experienceRequired, '4 - 6 years')
 })
 
-test('RGBSI run validates the exact-name SmartRecruiters board and returns [] when no India jobs are present', async () => {
+test('RGBSI run keeps unavailable current handoffs and details partial while excluding explicit US legacy records', async () => {
   const rgbsi = await loadModule('../../scraper/rgbsi/script.js')
   const requestedUrls = []
 
@@ -322,12 +324,12 @@ test('RGBSI run validates the exact-name SmartRecruiters board and returns [] wh
   const jobs = await rgbsi.createRgbsiScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      assert.equal(url, rgbsi.BOARD_URL)
-      return rgbsiBoardHtml
+      if (url === rgbsi.BOARD_URL) return rgbsiBoardHtml
+      throw new Error('No retained current corporate reply in this legacy-only fixture')
     },
     fetchJson: async (url) => {
       requestedUrls.push(url)
-      if (url === 'https://api.smartrecruiters.com/v1/companies/RGBSI/postings?limit=100&country=in&offset=0') {
+      if (url === 'https://api.smartrecruiters.com/v1/companies/RGBSI/postings?limit=100&offset=0') {
         return rgbsiListingPayload
       }
       throw new Error(`Unexpected RGBSI URL: ${url}`)
@@ -336,9 +338,15 @@ test('RGBSI run validates the exact-name SmartRecruiters board and returns [] wh
 
   assert.deepEqual(requestedUrls, [
     rgbsi.BOARD_URL,
-    'https://api.smartrecruiters.com/v1/companies/RGBSI/postings?limit=100&country=in&offset=0',
+    'https://api.smartrecruiters.com/v1/companies/RGBSI/postings?limit=100&offset=0',
+    'https://api.smartrecruiters.com/v1/companies/RGBSI/postings/743999999000001',
+    'https://api.smartrecruiters.com/v1/companies/RGBSI/postings/743999999000002',
+    'https://www.rgbsi.com/',
   ])
   assert.deepEqual(jobs, [])
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
 })
 
 test('LocoNav sentinel validates the first-party LinkedIn handoff page and returns []', async () => {
@@ -380,5 +388,8 @@ test('IonIdea run returns normalized inline jobs from the verified first-party c
   ])
   assert.equal(jobs[0].location, 'Bangalore/ Hyderabad/ Chennai/ Delhi')
   assert.match(jobs[1].jobDescription, /AWS Cloud implementations/i)
-  assert.equal(jobs[2].applyUrl, 'https://www.ionidea.com/careers-apply.php')
+  assert.equal(jobs[2].applyUrl, 'https://www.ionidea.com/careers-apply.php?id=252367')
+  assert.equal(jobs[0].country, null)
+  assert.equal(jobs[1].country, 'U.S.')
+  assert.equal(jobs[1].requisitionId, null)
 })

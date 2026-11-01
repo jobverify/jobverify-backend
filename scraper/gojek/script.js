@@ -1,5 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { attachInventoryEvidence, normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { GojekCoverageGapError, inspectGojekCareersPage } from './nativeObservations.js'
+
+export { inspectGojekCareersPage } from './nativeObservations.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -27,29 +31,9 @@ export const extractGotoBundleUrl = (html) => {
   return new URL(match[0], GOTO_CAREERS_URL).toString()
 }
 
-const pageIndicatesGojekLabel = (html) => {
-  const normalized = normalizeWhitespace(html).toLowerCase()
-
-  return normalized.includes('karier di gojek')
-}
-
-const pageIndicatesAllJobsUrl = (html) => {
-  const normalized = normalizeWhitespace(html).toLowerCase()
-
-  return normalized.includes(ALL_JOBS_URL.toLowerCase())
-}
-
-const bundleIndicatesHoldCoOnly = (html) => {
-  const normalized = normalizeWhitespace(html)
-
-  return (
-    normalized.includes('company=HoldCo')
-    && normalized.includes('https://www.gojek.io/careers/all')
-  )
-}
-
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -58,43 +42,43 @@ const defaultFetchPage = async (url) => {
 
   return {
     status: response.status,
+    url: response.url,
     text: await response.text(),
   }
 }
 
 export const createGojekScraper = () => ({
-  async run(options = {}) {
-    const fetchPage = options.fetchPage || defaultFetchPage
-    const gojekPage = await fetchPage(buildSearchUrl())
-
-    if (gojekPage.status === 429 && pageIndicatesSecurityCheckpoint(gojekPage.text)) {
-      const gotoPage = await fetchPage(GOTO_CAREERS_URL)
-      const bundleUrl = extractGotoBundleUrl(gotoPage.text)
-
-      if (!bundleUrl) {
-        throw new Error('Gojek public careers signals no longer prove the expected checkpointed HoldCo-only Gojek state')
-      }
-
-      const bundlePage = await fetchPage(bundleUrl)
-      const gojekCardStillPointsToCheckpointedBoard = (
-        (pageIndicatesGojekLabel(gotoPage.text) || pageIndicatesGojekLabel(bundlePage.text))
-        && (pageIndicatesAllJobsUrl(gotoPage.text) || pageIndicatesAllJobsUrl(bundlePage.text))
-      )
-
-      if (
-        bundlePage.status === 200
-        && bundleIndicatesHoldCoOnly(bundlePage.text)
-        && gojekCardStillPointsToCheckpointedBoard
-      ) {
-        return []
-      }
+  async run({ fetchPage = defaultFetchPage, signal, onAudit = () => {}, now = () => new Date().toISOString() } = {}) {
+    signal?.throwIfAborted()
+    const gojekPage = await fetchPage(buildSearchUrl(), { signal })
+    signal?.throwIfAborted()
+    if (gojekPage?.status !== 200 || gojekPage.url != null && gojekPage.url !== CAREER_PAGE_URL || typeof gojekPage.text !== 'string') {
+      const reason = 'Careers HTTP response is blocked, unavailable or has a changed final URL; parent HoldCo signals cannot establish an empty Gojek inventory'
+      throw Object.assign(new GojekCoverageGapError(reason), {
+        status: gojekPage?.status ?? null, requestUrl: CAREER_PAGE_URL, finalUrl: gojekPage?.url ?? null,
+        failureKind: 'incomplete_listing', source: 'gojek', sourceListingComplete: false, sourceScopeComplete: false,
+        inventoryEvidence: normalizeInventoryEvidence({status: 'coverage-gap', surface: CAREER_PAGE_URL,
+          firstParty: false, listingComplete: false, pagesFetched: 1, reportedTotal: null, indiaFacetCount: null,
+          verifiedAt: now(), reason}),
+      })
     }
-
-    throw new Error('Gojek public careers signals no longer prove the expected checkpointed HoldCo-only Gojek state')
+    const audit = inspectGojekCareersPage(gojekPage.text)
+    await onAudit(structuredClone(audit))
+    signal?.throwIfAborted()
+    if (!audit.expectedPageTitleObserved || audit.observations.length === 0) {
+      throw new GojekCoverageGapError('Careers identity or declared native models changed; inventory requires verification')
+    }
+    const jobs = []
+    Object.defineProperty(jobs, 'sourceAudit', { value: audit })
+    return attachInventoryEvidence(jobs, {
+      status: 'discovery-only', surface: CAREER_PAGE_URL, firstParty: false, listingComplete: false,
+      pagesFetched: 1, reportedTotal: null, indiaFacetCount: null, verifiedAt: now(),
+      reason: 'gojek-declared-model-criteria-retained-employer-country-rendering-and-closing-scope-unresolved',
+    })
   },
 })
 
-export const run = async () => createGojekScraper().run()
+export const run = async (options = {}) => createGojekScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

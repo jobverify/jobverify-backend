@@ -4,6 +4,26 @@ import test from 'node:test'
 import { fetchJsonWithRetry, fetchTextWithRetry, parseRetryAfterHeader } from '../utils/fetch.js'
 import { withRetry } from '../utils/retry.js'
 
+test('text fetch metadata retains the actual response URL for detail redirect validation', async () => {
+  const result = await fetchTextWithRetry('https://example.com/jobs/R1', {
+    includeResponseMetadata: true, attempts: 1,
+    fetchImpl: async (_url, init) => {
+      assert.equal(Object.hasOwn(init, 'includeResponseMetadata'), false)
+      return { ok: true, status: 200, url: 'https://example.com/', text: async () => '<h1>Careers</h1>' }
+    },
+  })
+  assert.deepEqual(result, { html: '<h1>Careers</h1>', status: 200, url: 'https://example.com/' })
+})
+
+test('JSON fetch metadata retains the native endpoint and payload for detail identity checks', async () => {
+  const url = 'https://example.com/api/jobs/R1'
+  const result = await fetchJsonWithRetry(url, {
+    includeResponseMetadata: true, attempts: 1,
+    fetchImpl: async () => ({ ok: true, status: 200, url, json: async () => ({ Id: 'R1' }) }),
+  })
+  assert.deepEqual(result, { payload: { Id: 'R1' }, status: 200, url })
+})
+
 test('fetchJsonWithRetry retries transient fetch failures before returning JSON', async () => {
   let attempts = 0
 

@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { runCurrentAllcargoInventory } from './nativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -86,10 +88,10 @@ export const hasBrokenDarwinboxTenantSignal = ({ status, body }) => {
 }
 
 export const createAllcargoLogisticsScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    probeListingApi = defaultProbeListingApi,
-  } = {}) {
+  async run(options = {}) {
+    if (options.fetchImpl || (!options.fetchText && !options.probeListingApi)) return runCurrentAllcargoInventory(options)
+    const { fetchText = defaultFetchText, probeListingApi = defaultProbeListingApi, signal } = options
+    signal?.throwIfAborted()
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
 
     if (!hasOfficialCareersSignal(careersHtml)) {
@@ -98,14 +100,16 @@ export const createAllcargoLogisticsScraper = () => ({
 
     const probeResult = await probeListingApi(LISTING_API_URL)
     if (hasBrokenDarwinboxTenantSignal(probeResult)) {
-      return []
+      return attachInventoryEvidence([], { status: 'discovery-only', firstParty: true, listingComplete: false,
+        surface: CAREERS_PAGE_URL, pagesFetched: 2, verifiedAt: new Date().toISOString(),
+        reason: 'historical-gatikwe-tenant-unavailable-current-inventory-unknown' })
     }
 
     throw new Error('Allcargo Logistics Darwinbox tenant no longer matches the verified broken Darwinbox tenant state')
   },
 })
 
-export const run = async () => createAllcargoLogisticsScraper().run()
+export const run = async (options = {}) => createAllcargoLogisticsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

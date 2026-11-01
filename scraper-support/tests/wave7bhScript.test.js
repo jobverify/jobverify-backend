@@ -685,6 +685,7 @@ test('Smart IMS parses the current first-party openings accordion', async () => 
       openingsCount: null,
       jobDescription: 'Experience: 3-5 Years Location: Hyderabad (or as applicable) Team: Data Platform & Engineering To apply send your profile to [email protected]',
       detailUrl: 'https://www.smartims.com/careers/',
+      sourceUrl: 'https://www.smartims.com/careers/',
     },
     {
       title: 'Java Backend Software Development Engineer (SDE-2)',
@@ -695,6 +696,7 @@ test('Smart IMS parses the current first-party openings accordion', async () => 
       openingsCount: '10',
       jobDescription: 'Location: Hyderabad Experience: Minimum 4 - 6 Years No of Positions: 10 To apply send your profile to [email protected]',
       detailUrl: 'https://www.smartims.com/careers/',
+      sourceUrl: 'https://www.smartims.com/careers/',
     },
     {
       title: 'Front End Developer',
@@ -705,6 +707,7 @@ test('Smart IMS parses the current first-party openings accordion', async () => 
       openingsCount: '10',
       jobDescription: 'Location: Hyderabad Experience: Minimum 3 - 6 Years No of Positions: 10 To apply send your profile to [email protected]',
       detailUrl: 'https://www.smartims.com/careers/',
+      sourceUrl: 'https://www.smartims.com/careers/',
     },
   ])
 })

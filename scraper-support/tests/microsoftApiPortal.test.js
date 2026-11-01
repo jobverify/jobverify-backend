@@ -39,7 +39,7 @@ test('runApiPortalScraper maps Microsoft India Eightfold jobs with the public te
     fetchJson: async (url) => {
       requests.push(url)
 
-      if (url === 'https://apply.careers.microsoft.com/api/pcsx/search?domain=microsoft.com&query=&location=India&start=0&limit=10') {
+      if (url === 'https://apply.careers.microsoft.com/api/pcsx/search?domain=microsoft.com&query=&location=India&sort_by=timestamp&start=0&limit=10') {
         return combinedFirstPage
       }
 
@@ -56,7 +56,7 @@ test('runApiPortalScraper maps Microsoft India Eightfold jobs with the public te
   })
 
   assert.deepEqual(requests, [
-    'https://apply.careers.microsoft.com/api/pcsx/search?domain=microsoft.com&query=&location=India&start=0&limit=10',
+    'https://apply.careers.microsoft.com/api/pcsx/search?domain=microsoft.com&query=&location=India&sort_by=timestamp&start=0&limit=10',
     'https://apply.careers.microsoft.com/api/pcsx/position_details?position_id=1970393556911730&domain=microsoft.com&hl=en&queried_location=India',
     'https://apply.careers.microsoft.com/api/pcsx/position_details?position_id=1970393556750481&domain=microsoft.com&hl=en&queried_location=India',
   ])

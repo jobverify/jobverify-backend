@@ -9,6 +9,7 @@
     "e2e:local-stack": "node scripts/startLocalE2EStack.js",
     "clean:workspace": "node scripts/cleanWorkspace.js",
     "lint": "node scripts/lintSyntax.js",
+    "audit:dependencies": "node scripts/auditDependencies.js",
     "test": "node --test --test-concurrency=4 \"test/**/*.test.js\" \"scraper/**/*.test.js\" \"scraper-support/**/*.test.js\"",
     "classify:jobs": "node scripts/classifySavedJobs.js",
     "scrape": "node --use-system-ca scraper-support/runner.js",
@@ -36,6 +37,7 @@
     "backfill:job-types": "node scripts/backfillJobTypes.js",
     "db:clear": "node scripts/clearJobs.js",
     "db:purge-retired-companies": "node scripts/purgeRetiredCompanyJobs.js",
+    "db:repair-unspecified-job-types": "node scripts/repairUnspecifiedPublicJobTypes.js",
     "db:purge-expired": "node scripts/purgeExpiredJobs.js",
     "db:clean-non-india": "node scripts/removeNonIndiaJobs.js",
     "db:delete-user": "node scripts/sweepDeleteUser.js",
@@ -80,6 +82,7 @@
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "entities": "9.0.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
     "express-validator": "^7.3.1",
@@ -89,18 +92,33 @@
     "jszip": "^3.10.2",
     "mammoth": "^1.13.0",
     "mongoose": "^8.24.4",
-    "nodemailer": "^9.1.1",
+    "nodemailer": "^10.3.1",
     "pdfjs-dist": "^6.2.108",
+    "playwright": "1.60.0",
     "razorpay": "^2.9.8",
     "tesseract.js": "^7.0.0",
-    "word-extractor": "^1.0.4",
-    "playwright": "1.60.0"
+    "word-extractor": "^1.0.4"
   },
   "devDependencies": {
     "mongodb-memory-server": "^11.2.0",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.14"
+  },
+  "overrides": {
+    "nodemon": {
+      "minimatch": "^11.0.1"
+    }
   },
   "private": true,
+  "config": {
+    "mongodbMemoryServer": {
+      "downloadDir": ".cache/mongodb-binaries",
+      "runtimeDownload": false
+    }
+  },
+  "allowScripts": {
+    "mongodb-memory-server": false,
+    "tesseract.js": false
+  },
   "engines": {
     "node": ">=24.14.0 <25"
   }

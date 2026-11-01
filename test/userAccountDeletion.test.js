@@ -15,7 +15,7 @@ import AdminAudit from "../src/models/AdminAudit.js";
 import SiteSettings from "../src/models/SiteSettings.js";
 import Application from '../src/models/Application.js';
 import Resume from '../src/models/Resume.js';
-import { mockOutreachDeletion } from './helpers/outreachDeletionDoubles.js';
+import { mockAccountDeletion } from './helpers/accountDeletionDoubles.js';
 
 const createResponseDouble = () => ({
   statusCode: 200,
@@ -35,7 +35,7 @@ const createResponseDouble = () => ({
 });
 
 test("deleteUserAccount removes the authenticated user's account-linked data and clears their session", async (t) => {
-  mockOutreachDeletion(t);
+  mockAccountDeletion(t);
   const resumeDeletion = t.mock.method(Resume, 'deleteMany', async () => ({ deletedCount: 1 }));
   const userId = "507f1f77bcf86cd799439011";
   const email = "deleted.account@gmail.com";

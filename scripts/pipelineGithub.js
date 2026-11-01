@@ -8,6 +8,8 @@ import { directConfiguration, stageOutcome, describeStageCompletion, WORKFLOWS, 
 import { createDirectGithubPipeline, dispatchGithubStage, githubRequest, matchesGithubStage } from '../src/pipeline/github.js';
 import { redactLog } from '../src/pipeline/local.js';
 import { aggregateClassificationSummaries } from '../classification/reporting.js';
+import { aggregateRewriteSummaries } from '../rewriting/reporting.js';
+import { validateRewriteShard } from '../rewriting/partitioning.js';
 
 const command=process.argv[2],key=process.env.PIPELINE_STAGE;
 const token=process.env.GH_TOKEN;
@@ -19,16 +21,24 @@ try {
     if(process.env.GITHUB_REF_NAME!==process.env.PIPELINE_DEFAULT_BRANCH)throw new Error('Production pipelines run only on the repository default branch.');
     let id=process.env.PIPELINE_ID,dispatchToken=process.env.PIPELINE_DISPATCH_TOKEN;
     if(!id) {
-      const run=await createDirectGithubPipeline({configuration:directConfiguration(key),target:'github',origin:'github',
-        repo:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF_NAME,sha:process.env.GITHUB_SHA,initialRunId:Number(process.env.GITHUB_RUN_ID)},{token});
-      id=run._id;
+      const options={configuration:directConfiguration(key),target:'github',origin:'github',
+        repo:process.env.GITHUB_REPOSITORY,ref:process.env.GITHUB_REF_NAME,sha:process.env.GITHUB_SHA,initialRunId:Number(process.env.GITHUB_RUN_ID)};
+      let run;
+      if(key==='scraper'&&process.env.GITHUB_EVENT_NAME==='schedule') {
+        // Ignore old cron events queued before the backend scheduler rollout.
+        await fs.appendFile(process.env.GITHUB_OUTPUT,'should_run=false\n');
+        console.log('GitHub cron skipped: scraper scheduling is owned by the backend.');
+      } else run=await createDirectGithubPipeline(options,{token});
+      if(run)id=run._id;
     } else {
       const expected=await PipelineRun.findById(id).lean();
       if(expected?.repo!==process.env.GITHUB_REPOSITORY||expected.target!=='github')throw new Error('Repository identity mismatch.');
       await claimStage(id,key,{runId:Number(process.env.GITHUB_RUN_ID),token:dispatchToken});
     }
-    await fs.appendFile(process.env.GITHUB_OUTPUT,`pipeline_id=${id}\n`);
-    await updateStage(id,key,{status:'running'});
+    if(id) {
+      await fs.appendFile(process.env.GITHUB_OUTPUT,`pipeline_id=${id}\nshould_run=true\n`);
+      await updateStage(id,key,{status:'running'});
+    }
   } else if(command==='report') {
     const run=await PipelineRun.findOne({'stages.githubRunId':Number(process.env.GITHUB_RUN_ID)}).lean();
     if(!run)throw new Error('Unregistered workflow cannot report results.');
@@ -36,7 +46,21 @@ try {
     if(key==='scraper') {
       try{summary=JSON.parse(await fs.readFile('.cache/scraper-actions/pipeline-scraper-summary.json','utf8'));}catch{code=1;}
     } else if(key==='rewrite') {
-      try{summary=JSON.parse(await fs.readFile('.cache/scraper-actions/description-summary.json','utf8'));}catch{code=1;}
+      try {
+        const shardCount=Number(process.env.JOB_DESCRIPTION_REWRITE_SHARD_COUNT||1);
+        validateRewriteShard(0,shardCount);
+        if(!process.env.JOB_DESCRIPTION_REWRITE_SHARD_COUNT)summary=JSON.parse(await fs.readFile('.cache/scraper-actions/description-summary.json','utf8'));
+        else {
+          const parts=[];
+          for(let shard=0;shard<shardCount;shard++) {
+            try{parts.push(JSON.parse(await fs.readFile(`.cache/scraper-actions/description-summary-${shard}.json`,'utf8')));}
+            catch{code=1;}
+          }
+          summary=aggregateRewriteSummaries(parts,{shardCount});
+        }
+      } catch(error) {
+        code=1;summary={reason:'worker_error',errorType:error.name,errorPhase:'aggregate_shards'};
+      }
     } else if(key==='classification') {
       const parts=[];
       for(let i=0;i<4;i++) {
@@ -47,6 +71,10 @@ try {
     }
     const outcome=stageOutcome(key,summary,code);
     summary=describeStageCompletion(key,summary,outcome);
+    if(key==='rewrite') {
+      await fs.mkdir('.cache/scraper-actions',{recursive:true});
+      await fs.writeFile('.cache/scraper-actions/description-summary.json',JSON.stringify(summary,null,2)+'\n');
+    }
     await recordStageResult(run._id,key,{outcome,summary});
     console.log(`Pipeline stage ${key} outcome: ${outcome}; summary: ${redactLog(JSON.stringify(summary))}`);
     if(outcome==='failed'||(outcome!=='completed'&&key!=='scraper'))process.exitCode=1;

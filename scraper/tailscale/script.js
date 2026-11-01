@@ -1,3 +1,4 @@
+import { createDeclaredJobFeedScraper, DECLARED_JOB_FEED_PROFILES } from '../../scraper-support/native-sources/declaredJobFeeds/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -172,27 +173,7 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createTailscaleScraper = ({
-  maxJobs = null,
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Tailscale verified first-party careers page no longer matches the official surface')
-    }
-
-    const jobs = extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' }),
-      { scrapedAt: now() },
-    )
-
-    return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-  },
-})
+export const createTailscaleScraper = (options = {}) => createDeclaredJobFeedScraper(DECLARED_JOB_FEED_PROFILES.tailscale, options)
 
 export const run = async (options = {}) => createTailscaleScraper(options).run(options)
 

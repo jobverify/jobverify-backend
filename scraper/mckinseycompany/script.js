@@ -134,7 +134,8 @@ const toJob = (record = {}, { now = () => new Date().toISOString() } = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -143,7 +144,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -158,8 +160,31 @@ export const createMckinseyCompanyScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run(override = {}) {
-    const effectiveFetchText = override.fetchText || fetchText
-    const effectiveFetchJson = override.fetchJson || fetchJson
+    const { signal } = override
+    const rawFetchText = override.fetchText || fetchText
+    const rawFetchJson = override.fetchJson || fetchJson
+    const effectiveFetchText = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const value = await rawFetchText(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return value
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
+    const effectiveFetchJson = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const value = await rawFetchJson(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return value
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
 
     const indiaCareersHtml = await effectiveFetchText(INDIA_CAREERS_URL)
     if (!hasOfficialIndiaCareersSignal(indiaCareersHtml)) {
@@ -198,7 +223,7 @@ export const createMckinseyCompanyScraper = ({
   },
 })
 
-export const run = async (options = {}) => createMckinseyCompanyScraper(options).run()
+export const run = async (options = {}) => createMckinseyCompanyScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

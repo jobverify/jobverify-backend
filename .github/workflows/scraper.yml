@@ -1,8 +1,6 @@
 name: Jobverify Scraper Cron
 run-name: 'Scraper #${{ github.run_number }}'
 on:
-  schedule:
-    - cron: '0 17 * * *' # Every day at 10:30 PM IST
   workflow_dispatch:
     inputs:
       pipeline_id:
@@ -39,10 +37,10 @@ jobs:
     steps:
       - name: ${{ inputs.dispatch_token && format('Scraper [dispatch:{0}]', inputs.dispatch_token) || 'Scraper' }}
         run: echo 'Pipeline dispatch identity recorded'
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.pipeline_sha || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'npm'
@@ -54,13 +52,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Restore source checkpoint on rerun
-        uses: actions/cache/restore@v4
+        if: steps.register.outputs.should_run == 'true'
+        uses: actions/cache/restore@v6
         with:
           path: .cache/scraper-actions/run-state.json
           key: scraper-state-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             scraper-state-${{ github.run_id }}-
       - name: Run Scraper
+        if: steps.register.outputs.should_run == 'true'
         id: scraper_run
         run: timeout --signal=TERM --kill-after=60s 310m node --use-system-ca scraper-support/runner.js --parallel
         env:
@@ -80,7 +80,7 @@ jobs:
           WORKDAY_REQUEST_TIMEOUT_MS: '20000'
       - name: Save resumable source checkpoint
         if: always() && steps.scraper_run.outcome != 'skipped'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .cache/scraper-actions/run-state.json
           key: scraper-state-${{ github.run_id }}-${{ github.run_attempt }}
@@ -93,7 +93,7 @@ jobs:
             node scripts/analyzeCoverageJobGaps.js --publishing --mongo --output .cache/scraper-actions/publishing-coverage
           fi
       - name: Upload scraper diagnostics
-        if: always()
+        if: always() && steps.register.outputs.should_run == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: scraper-run-${{ github.run_id }}-${{ github.run_attempt }}
@@ -105,7 +105,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Record stage outcome
-        if: always() && steps.register.outcome == 'success'
+        if: always() && steps.register.outputs.should_run == 'true'
         run: node scripts/pipelineGithub.js report
         env:
           PIPELINE_JOB_RESULT: ${{ job.status }}

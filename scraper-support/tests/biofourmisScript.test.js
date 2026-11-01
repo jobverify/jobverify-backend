@@ -1,3 +1,5 @@
+import { fixture, replay } from '../native-sources/declaredGreenhouse/fixtureReplay.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -102,31 +104,16 @@ test('Biofourmis extracts India jobs from the verified Greenhouse payload', asyn
   assert.equal(jobs[0].source, 'biofourmis')
 })
 
-test('Biofourmis run validates the official page before fetching the Greenhouse jobs API', async () => {
-  const biofourmis = await loadBiofourmisModule()
-  const requested = []
-
-  const jobs = await biofourmis.createBiofourmisScraper({ maxJobs: 1 }).run({
-    fetchText: async (url) => {
-      requested.push({ type: 'text', url })
-      if (url === biofourmis.CAREERS_URL) return officialCareersHtml
-      throw new Error(`Unexpected Biofourmis fixture URL: ${url}`)
-    },
-    fetchJson: async (url, options = {}) => {
-      requested.push({ type: 'json', url, options })
-      return greenhousePayload
-    },
-    now: () => '2026-07-14T12:00:00.000Z',
-  })
-
-  assert.deepEqual(requested, [
-    { type: 'text', url: biofourmis.CAREERS_URL },
-    {
-      type: 'json',
-      url: 'https://boards-api.greenhouse.io/v1/boards/biofourmis/jobs?content=true',
-      options: { method: 'GET' },
-    },
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'biofourmis')
+test('biofourmis actual factory retains complete original native models before selection',async()=>{
+ const biofourmis=await loadBiofourmisModule(),r=replay(),jobs=await biofourmis.createBiofourmisScraper().run(r.options),audit=r.audits[0]
+ assert.equal(audit.opening.publisherQualified,true);assert.equal(audit.closing.publisherQualified,true)
+ assert.equal(audit.observations.length,fixture.oracle.biofourmis.records.length)
+ for(const row of fixture.oracle.biofourmis.records){
+   const job=audit.observations.find(job=>job.jobId===String(row.postId))
+   assert.deepEqual(job.sourceNativeRecord,row.nativeOwnPostRecord);assert.equal(job.jobDescription,row.fullCriteriaText)
+ }
+ assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
+ assert.equal(audit.sourceScopeComplete,false);assert.equal(audit.lifecycleCleanupAllowed,false)
+ assert.equal(audit.publicInventoryProof.complete,false)
+ assert.ok(r.requests.indexOf(fixture.profiles.biofourmis.primaryURL)<r.requests.findIndex(url=>url.includes('/v1/boards/')))
 })

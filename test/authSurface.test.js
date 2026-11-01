@@ -94,7 +94,7 @@ test("auth routes keep logout protected and split verify-email GET and POST hand
       (layer) => layer.route?.path === "/logout" && layer.route.methods.post,
     );
     assert.ok(logoutLayer);
-    assert.equal(logoutLayer.route.stack[0].name, "protect");
+    assert.equal(logoutLayer.route.stack[0].name, "protectLogout");
     assert.equal(logoutLayer.route.stack.at(-1).name, "logout");
 
     const verifyGetLayer = router.stack.find(

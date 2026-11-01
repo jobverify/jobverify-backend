@@ -88,7 +88,15 @@ export function isDiscoveryOnlyExecutable(code,{modulePath,evidenceModulePath}={
     const finish=end(object);let statuses=0
     for(let i=object+1;i<finish;){
       if(v(i)==='...'||v(i)==='[')return false
-      const key=v(i);if(!['word','string'].includes(t[i]?.kind)||v(i+1)!==':')return false
+      const key=v(i);if(!['word','string'].includes(t[i]?.kind))return false
+      // An ordinary shorthand field cannot replace the explicit status key.
+      // Unknown/duplicate shorthand status, methods, computed keys and spreads
+      // remain inconclusive; only non-status identifier properties are skipped.
+      if(v(i+1)!==':'){
+        if(t[i]?.kind!=='word'||!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)||key==='status'
+          ||!['}',','].includes(v(i+1)))return false
+        i+=2;continue
+      }
       const start=i+2;let next=start;while(next<finish&&v(next)!==',')next=skip(next)
       if(key==='status'){statuses++;if(t[start]?.kind!=='string'||v(start)!=='discovery-only'||start+1!==next)return false}
       i=next+1

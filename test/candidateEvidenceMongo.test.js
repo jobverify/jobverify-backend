@@ -115,13 +115,14 @@ test('candidate evidence HTTP workflow and publication fences use real MongoDB',
     const snapshot = await getCandidateEvidenceSnapshot(owner);
     assert.deepEqual(snapshot.skills, ['React', 'SQL']); assert.deepEqual(snapshot.achievements, []);
     const now = new Date();
-    const common = { company: 'Local fixture', city: 'Bengaluru', country: 'India', isPublicIndia: true, postedAt: now, sortDate: now, sourceDescription: 'Build accessible reporting tools using React, SQL and Rust.', status: 'active' };
+    const common = { company: 'Local fixture', city: 'Bengaluru', country: 'India', isPublicIndia: true, jobType: 'Full-time Experienced', postedAt: now, sortDate: now, sourceDescription: 'Build accessible reporting tools using React, SQL and Rust.', status: 'active' };
     const jobs = await Job.collection.insertMany([
       { ...common, title: 'Frontend engineer', fingerprint: 'evidence-front', requiredSkills: ['React', 'Rust'] },
       { ...common, title: 'Rust engineer', fingerprint: 'evidence-rust', requiredSkills: ['Rust'] },
       { ...common, title: 'Expired engineer', fingerprint: 'evidence-expired', requiredSkills: ['React'], status: 'expired' },
       { ...common, title: 'Hidden engineer', fingerprint: 'evidence-hidden', requiredSkills: ['React'], status: 'hidden' },
       { ...common, title: 'Closed engineer', fingerprint: 'evidence-closed', requiredSkills: ['React'], closingDate: new Date(now.getTime() - 1000) },
+      { ...common, title: 'Unclassified engineer', fingerprint: 'evidence-unclassified', requiredSkills: ['React'], jobType: 'Unspecified' },
     ]);
     const matches = await request(owner, '/matches');
     assert.equal(matches.status, 200, JSON.stringify(matches.body));
@@ -167,7 +168,7 @@ test('candidate evidence HTTP workflow and publication fences use real MongoDB',
         await User.findById(owner).session(session).lean();
         if (!deletionStarted) {
           deletionStarted = true;
-          await User.updateOne({ _id: owner }, { $set: { outreachDeletingAt: new Date() } });
+          await User.updateOne({ _id: owner }, { $set: { accountDeletingAt: new Date() } });
           await CandidateEvidence.deleteMany({ user: owner });
         }
         await mutateCandidateEvidence(owner, { collection: 'experiences', action: 'create', body: { version: 0, ...experience } }, { session });

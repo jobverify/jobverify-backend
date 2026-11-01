@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runNativeInventory } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -9,9 +9,6 @@ export const SOURCE = 'iamneo'
 export const COMPANY = 'iamneo'
 export const CAREERS_URL = 'https://iamneo.ai/careers/'
 export const EXTERNAL_HANDOFF_URL = 'https://iamneo.keka.com/careers'
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -91,29 +88,9 @@ export const hasOfficialCareersSignal = (html) => {
     && normalized.includes('no guilt leave policy')
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
 export const createIamneoScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    const firstPartyJobRecordUrls = extractFirstPartyJobRecordUrls(careersHtml)
-
-    if (firstPartyJobRecordUrls.length > 0) {
-      throw new Error('iamneo first-party careers page now exposes public job records')
-    }
-
-    if (!hasOfficialCareersSignal(careersHtml) || extractExternalHandoffUrl(careersHtml) !== EXTERNAL_HANDOFF_URL) {
-      throw new Error('iamneo verified first-party careers shell no longer matches the external Keka handoff sentinel')
-    }
-
-    return []
+  async run(options = {}) {
+    return runNativeInventory(options)
   },
 })
 

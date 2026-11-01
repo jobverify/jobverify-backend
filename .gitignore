@@ -1,6 +1,17 @@
 # Dependencies
 node_modules
 
+# Saved scraper and test fixtures
+**/fixtures/
+**/test-fixtures/
+
+# Keep the shared HashiCorp search contract fixture with its tests.
+!/scraper-support/tests/fixtures/
+/scraper-support/tests/fixtures/*
+!/scraper-support/tests/fixtures/hashicorp/
+/scraper-support/tests/fixtures/hashicorp/*
+!/scraper-support/tests/fixtures/hashicorp/hashicorp-india-search.json
+
 # Environment
 .env
 .env.*
@@ -36,3 +47,8 @@ lerna-debug.log*
 *.sw?
 docs
 .tmp
+
+# Generated Python bytecode and interrupted scraper writes
+__pycache__/
+*.pyc
+**/.jobs.json.*.tmp

@@ -235,9 +235,6 @@ const hasTrustedPublicExperienceSurface = (job = {}, provider = {}) => {
       return /^https:\/\/bitsilica\.com\/(?!careers(?:\/|$)).+/i.test(sourceUrl)
     case 'buyhatke':
       return /^https:\/\/compare\.buyhatke\.com\/company\/.+\.php$/i.test(sourceUrl)
-    case 'ibm':
-      return /^https:\/\/careers\.ibm\.com\//i.test(sourceUrl)
-        && /^https:\/\/careers\.ibm\.com\//i.test(applyUrl)
     case 'innovaccer':
       return (
         isAccountWorkableJobUrl(sourceUrl, 'innovaccer-analytics')
@@ -297,7 +294,7 @@ const filterSkillNamesTagsForSource = (skills = [], source) => {
 }
 
 const isPartTimeLabel = (value) => /part[\s_-]?time/i.test(String(value ?? ''))
-const hasInternshipCue = (value) => /intern|internship|trainee|apprentice/i.test(String(value ?? ''))
+const hasInternshipCue = (value) => /\b(?:intern(?:ship)?s?|trainee(?:ship)?s?|apprentice(?:ship)?s?)\b/i.test(String(value ?? ''))
 
 const normalizeEmploymentType = (value) => {
   const label = normalizeString(value)
@@ -334,7 +331,10 @@ const inferEmploymentType = (job = {}) => {
   const normalizedTitle = title.toLowerCase()
   if (/contract|contractor|freelance/i.test(title)) return 'Contract'
   if (/part.?time/i.test(normalizedTitle)) return null
-  return 'Full-time'
+  if (/\bfull[\s-]*time\b/i.test(title) && !/\b(?:not|non|no)[-\s]+(?:a\s+)?full[\s-]*time\b/i.test(title)) return 'Full-time'
+  // Literal native readers can preserve an absent source field without taking
+  // the legacy generic default. Explicit field/title evidence above still works.
+  return job.sourceEmploymentTypeUnresolved === true ? null : 'Full-time'
 }
 
 const hasFresherCue = (job = {}) => {
@@ -461,7 +461,7 @@ const inferExperienceLevel = (job = {}) => {
 
   if (/\b(junior|jr\.?|associate)\b/.test(title)) return 'Junior Level'
   if (/\b(ii|iii|iv|2|3|4)\b/.test(title)) return 'Mid Level'
-  return 'Mid Level'
+  return null
 }
 
 const composeJobType = ({ employmentType, experienceLevel, hasPositiveExperienceYears = false }) => {
@@ -471,13 +471,16 @@ const composeJobType = ({ employmentType, experienceLevel, hasPositiveExperience
   if (hasPositiveExperienceYears) return 'Full-time Experienced'
   return experienceLevel === 'Entry Level'
     ? 'Full-time Fresher'
-    : 'Full-time Experienced'
+    : ['Junior Level', 'Mid Level', 'Senior Level'].includes(experienceLevel)
+      ? 'Full-time Experienced'
+      : 'Unspecified'
 }
 
 export const resolveJobType = (job = {}) => {
   job = withSourceDescription(job);
   const classified = getAuthoritativeClassification(job)
   if (classified) return classified.jobType
+  if (normalizeString(job.jobType)?.toLowerCase() === 'unspecified') return 'Unspecified'
   const employmentType = inferEmploymentType(job)
   const experienceLevel = inferExperienceLevel(job)
   const hasPositiveExperienceYears = hasPositiveExperienceRequirement(getExperienceBounds(job))
@@ -1198,12 +1201,23 @@ const inferRemoteStatus = (job = {}) => {
     .toLowerCase()
 
   if (!values) return null
+  if (job.sourceRemoteStatusUnresolved === true) {
+    // Opted-in literal readers require bounded positive arrangement markers.
+    // Remove locally negated markers before combining distinct arrangements.
+    const positive = values.replace(/\b(?:not|non|no)[-\s]+(?:an?[-\s]+)?(?:remote|hybrid|on[\s-]*site|office)\b/g, ' ')
+    const remote = /\bremote\b/.test(positive), hybrid = /\bhybrid\b/.test(positive)
+    const onsite = /\bon[\s-]*site\b/.test(positive), office = /\boffice\b/.test(positive)
+    if (hybrid || remote && (onsite || office)) return 'Hybrid'
+    if (remote) return 'Remote'
+    return onsite ? 'On-site' : null
+  }
   if (values.includes('remote') && (values.includes('hybrid') || values.includes('office') || values.includes('on-site') || values.includes('onsite'))) {
     return 'Hybrid'
   }
   if (values.includes('hybrid')) return 'Hybrid'
   if (values.includes('remote')) return 'Remote'
-  return 'On-site'
+  if (/\bon[\s-]*site\b/i.test(values) && !/\b(?:not|non|no)[-\s]+(?:an?\s+)?on[\s-]*site\b/i.test(values)) return 'On-site'
+  return job.sourceRemoteStatusUnresolved === true ? null : 'On-site'
 }
 
 const inferCountry = (job = {}, provider = {}) => {

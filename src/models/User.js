@@ -45,19 +45,6 @@ const ProfilePreferenceFiltersSchema = new Schema(
 const ProfileSchema = new Schema(
   {
     name: { type: String, maxlength: MAX_PROFILE_TEXT_LENGTH },
-    aboutYou: { type: String, trim: true, maxlength: 4000, default: '' },
-    experienceProjects: { type: String, trim: true, maxlength: 4000, default: '' },
-    portfolioUrl: {
-      type: String, trim: true, maxlength: 2048, default: '',
-      validate: {
-        validator(value) {
-          if (!value) return true;
-          try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password; }
-          catch { return false; }
-        },
-        message: 'Portfolio must be a public http(s) link without credentials.',
-      },
-    },
     graduateEducation: {
       type: String,
       enum: ["Undergraduate", "Postgraduate", "PhD", ""],
@@ -183,9 +170,9 @@ const UserSchema = new Schema(
     onboardingCompleted: { type: Boolean, default: false },
     isVerified: { type: Boolean, default: false },
     deactivated: { type: Boolean, default: false },
-    // Block new outreach during account cleanup while allowing the owner to
+    // Block new work during account cleanup while allowing the owner to
     // retry an interrupted account deletion through the existing auth flow.
-    outreachDeletingAt: { type: Date, default: null, select: false },
+    accountDeletingAt: { type: Date, default: null, select: false },
     lastLoginAt: { type: Date },
     passwordChangedAt: { type: Date, default: null },
     sessionVersion: { type: Number, default: 0 },
@@ -197,6 +184,13 @@ const UserSchema = new Schema(
     strict: true,
   },
 );
+
+// Mongoose includes hydrated defaults in an existing document's save. A stale
+// legacy document must not write its absent-version default over a concurrent
+// password reset. Explicit increments and defaults on new accounts still save.
+UserSchema.pre('save', function preserveSessionRevocation() {
+  if (!this.isNew && this.$isDefault('sessionVersion')) this.$ignore('sessionVersion');
+});
 
 UserSchema.index({ role: 1 });
 UserSchema.index({ accessRole: 1 });

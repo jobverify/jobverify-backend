@@ -1,3 +1,4 @@
+import { createDeclaredJobFeedScraper, DECLARED_JOB_FEED_PROFILES } from '../../scraper-support/native-sources/declaredJobFeeds/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -228,109 +229,7 @@ export const extractLeverJobs = (leverJobs = []) => {
   })
 }
 
-export const createPlivoScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    fetchPage = defaultFetchPage,
-    signal,
-  } = {}) {
-    signal?.throwIfAborted()
-    const jobsPageHtml = await fetchText(CAREERS_URL, { signal })
-    signal?.throwIfAborted()
-
-    if (!hasOfficialPlivoJobsSignal(jobsPageHtml)) {
-      throw new Error('Plivo verified official jobs page changed materially')
-    }
-
-    const jobsBundleUrl = extractJobsBundleUrl(jobsPageHtml)
-    if (!jobsBundleUrl) {
-      throw new Error('Plivo official jobs page no longer exposes the verified JobsPage bundle')
-    }
-    if (new URL(jobsBundleUrl).origin !== new URL(CAREERS_URL).origin) {
-      throw new Error('Plivo official jobs bundle changed employer origin')
-    }
-
-    const jobsBundleJs = await fetchText(jobsBundleUrl, { signal })
-    signal?.throwIfAborted()
-    if (extractLeverApiUrl(jobsBundleJs) !== LEVER_API_URL) {
-      throw new Error('Plivo jobs bundle no longer exposes the verified Lever API')
-    }
-
-    const leverBoardPage = await fetchPage(LEVER_BOARD_URL, { signal })
-    signal?.throwIfAborted()
-    const leverBoardHtml = leverBoardPage?.html || ''
-    const hasVerifiedLeverBoard = Number(leverBoardPage?.status) === 200
-      && String(leverBoardPage?.url || '').replace(/\/+$/, '') === LEVER_BOARD_URL
-      && hasOfficialLeverBoardSignal(leverBoardHtml)
-    const hasVerifiedMissingLeverBoard = hasMissingLeverBoardSignal(leverBoardPage)
-
-    if (!hasVerifiedLeverBoard && !hasVerifiedMissingLeverBoard) {
-      throw new Error('Plivo verified public Lever board changed materially')
-    }
-
-    const payload = await fetchJson(LEVER_API_URL, { signal })
-    signal?.throwIfAborted()
-    const leverJobs = await createPublishingGapAtsScraper({ source: SOURCE, companyName: COMPANY,
-      companyCareerPage: CAREERS_URL, atsPlatform: 'lever', boardToken: SOURCE,
-      ...(hasVerifiedMissingLeverBoard ? { sourceScopeComplete: false } : {}),
-    }).run({ fetchJson: async () => payload, signal })
-    if (payload.length === 0 && !hasEmptyLeverBoardSignal(leverBoardHtml) && !hasVerifiedMissingLeverBoard) {
-      throw new Error('Plivo verified public Lever board no longer matches the live no-openings state')
-    }
-
-    if (Array.isArray(payload) && payload.length > 0 && hasVerifiedMissingLeverBoard) {
-      throw new Error('Plivo Lever board is missing while the Lever API still exposes jobs')
-    }
-    if (payload.length > 0 && hasEmptyLeverBoardSignal(leverBoardHtml)) {
-      throw new Error('Plivo public empty board contradicts the Lever API inventory')
-    }
-    if (hasVerifiedMissingLeverBoard) attachInventoryEvidence(leverJobs, {
-      ...readInventoryEvidence(leverJobs), status: 'discovery-only', listingComplete: false,
-      indiaFacetCount: null, reason: 'plivo-public-board-missing;provider-source-scope-unresolved',
-    })
-
-    const advertisedIds = readNativeDocument(leverBoardHtml).nodes(node => node.tag === 'a' && node.attrs.href)
-      .flatMap(node => {
-        try {
-          const url = new URL(node.attrs.href, LEVER_BOARD_URL)
-          return url.origin === 'https://jobs.lever.co' && !url.username && !url.password
-            ? url.pathname.match(/^\/plivo\/([^/]+)(?:\/apply)?\/?$/)?.[1] || [] : []
-        } catch { return [] }
-      })
-    if (advertisedIds.some(id => !payload.some(row => row.id === id))) {
-      attachInventoryEvidence(leverJobs, { ...readInventoryEvidence(leverJobs), status: 'discovery-only',
-        listingComplete: false, reason: 'plivo-official-role-links-not-reconciled' })
-      for (const job of leverJobs) job.sourceListingComplete = false
-    }
-
-    const capped = Number.isInteger(maxJobs) && maxJobs >= 0 && maxJobs < leverJobs.length
-    const selectedJobs = capped ? attachInventoryEvidence(leverJobs.slice(0, maxJobs), {
-      ...readInventoryEvidence(leverJobs), status: 'discovery-only', listingComplete: false,
-      reason: 'plivo-source-job-limit',
-    }) : leverJobs
-    if (capped) for (const job of selectedJobs) job.sourceListingComplete = false
-    const scrapedAt = now()
-    const byId = new Map(payload.map(row => [row.id, row]))
-
-    return mapJobsWithInventoryEvidence(selectedJobs, (job) => ({
-      ...job,
-      department: normalizeWhitespace(byId.get(job.jobId)?.categories?.team || byId.get(job.jobId)?.categories?.department),
-      city: extractCity(job.location),
-      postingDate: toIsoDateTime(byId.get(job.jobId)?.createdAt),
-      remoteStatus: toRemoteStatus(byId.get(job.jobId)?.workplaceType, job.location),
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-      companyCareerPage: CAREERS_URL,
-      companyDomain: PLIVO_CATALOG.companyDomain,
-      atsPlatform: PLIVO_CATALOG.atsPlatform,
-    }))
-  },
-})
+export const createPlivoScraper = (options = {}) => createDeclaredJobFeedScraper(DECLARED_JOB_FEED_PROFILES.plivo, options)
 
 export const run = async (options = {}) => createPlivoScraper(options).run(options)
 

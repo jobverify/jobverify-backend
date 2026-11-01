@@ -34,7 +34,7 @@ test('saved-job tailoring persists, isolates owners, retries and rejects stale g
   const owner = { _id: user };
   const job = String(jobId);
   await User.collection.insertMany([{ _id: user, email: 'asha@example.test', role: 'user', sessionVersion: 0, savedJobs: [jobId] }, { _id: other, email: 'other@example.test', role: 'user', sessionVersion: 0, savedJobs: [] }]);
-  await Job.collection.insertOne({ _id: jobId, title: 'React Engineer', company: 'Example', location: 'Pune, India', isPublicIndia: true, status: 'active', description: 'Build React applications.', fingerprint: 'tailoring-job' });
+  await Job.collection.insertOne({ _id: jobId, title: 'React Engineer', company: 'Example', location: 'Pune, India', isPublicIndia: true, jobType: 'Full-time Experienced', status: 'active', description: 'Build React applications.', fingerprint: 'tailoring-job' });
   let dispatched = 0;
   const options = { dispatch: async () => { dispatched++; } };
   await assert.rejects(requestTailoredResume({ _id: other }, job, options), /saved job/i);
@@ -109,8 +109,8 @@ test('saved-job tailoring persists, isolates owners, retries and rejects stale g
     assert.equal((await getTailoredResume(owner, job)).status, 'failed');
   });
 
-  await t.test('the real request path dispatches the dedicated GitHub workflow with outreach disabled', async t => {
-    const config = { GITHUB_PAT: 'tailoring-test-token', GITHUB_REPO: 'example/backend', OUTREACH_ACTIONS_ENABLED: 'false', OUTREACH_ACTIONS_FREE_CONFIRMED: 'false', TAILORED_RESUME_ACTIONS_ENABLED: 'true' };
+  await t.test('the real request path dispatches the dedicated GitHub workflow independently', async t => {
+    const config = { GITHUB_PAT: 'tailoring-test-token', GITHUB_REPO: 'example/backend', TAILORED_RESUME_ACTIONS_ENABLED: 'true' };
     for (const [key, value] of Object.entries(config)) {
       const old = process.env[key]; process.env[key] = value;
       t.after(() => { if (old === undefined) delete process.env[key]; else process.env[key] = old; });

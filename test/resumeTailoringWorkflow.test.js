@@ -1,19 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
-import OutreachUsage from '../src/models/OutreachUsage.js';
+import ResumeUsage from '../src/models/ResumeUsage.js';
 import { dispatchTailoredResumes, tailoredResumeActionsConfigured } from '../src/services/resumeTailoringWorkflow.js';
 
 function configure(t, values = {}) {
-  const config = { GITHUB_PAT: 'test-token-only', GITHUB_REPO: 'example/backend', OUTREACH_ACTIONS_ENABLED: 'false', OUTREACH_ACTIONS_FREE_CONFIRMED: 'false',
+  const config = { GITHUB_PAT: 'test-token-only', GITHUB_REPO: 'example/backend', 
     TAILORED_RESUME_ACTIONS_ENABLED: 'true', TAILORED_RESUME_ACTIONS_MONTHLY_RUN_LIMIT: '10', ...values };
   for (const [key, value] of Object.entries(config)) {
     const before = process.env[key];
     if (value === undefined) delete process.env[key]; else process.env[key] = value;
     t.after(() => { if (before === undefined) delete process.env[key]; else process.env[key] = before; });
   }
-  t.mock.method(OutreachUsage, 'updateOne', async () => ({}));
-  t.mock.method(OutreachUsage, 'findOneAndUpdate', async () => ({ used: 1 }));
+  t.mock.method(ResumeUsage, 'updateOne', async () => ({}));
+  t.mock.method(ResumeUsage, 'findOneAndUpdate', async () => ({ used: 1 }));
 }
 
 test('tailoring dispatches its own workflow on the default branch with no candidate data or free API gate', async t => {
@@ -65,14 +65,14 @@ test('missing configuration and explicit disablement reject before GitHub or quo
       configure(t, values);
       assert.equal(tailoredResumeActionsConfigured(), false);
       await assert.rejects(dispatchTailoredResumes({ request: async () => assert.fail('GitHub must not be called') }), { statusCode: 503 });
-      assert.equal(OutreachUsage.updateOne.mock.callCount(), 0);
+      assert.equal(ResumeUsage.updateOne.mock.callCount(), 0);
     });
   }
 });
 
 test('the monthly Actions cap is reserved before dispatch and cannot be bypassed by retries', async t => {
   configure(t);
-  t.mock.method(OutreachUsage, 'findOneAndUpdate', async filter => {
+  t.mock.method(ResumeUsage, 'findOneAndUpdate', async filter => {
     assert.equal(filter.key, 'actions:tailored-resumes:2026-10');
     assert.equal(filter.used.$lte, 9);
     return null;
@@ -97,7 +97,7 @@ test('invalid GitHub responses and failed dispatches are retryable and do not le
   assert.equal(posts, 1, 'a rejected dispatch must release the in-process lock');
 });
 
-test('dedicated workflow runs local inference without outreach enablement, inference APIs or private artifacts', async () => {
+test('dedicated workflow runs local inference without inference APIs or private artifacts', async () => {
   const workflow = await readFile(new URL('../.github/workflows/tailored-resumes.yml', import.meta.url), 'utf8');
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /group: jobverify-tailored-resumes/);
@@ -108,7 +108,5 @@ test('dedicated workflow runs local inference without outreach enablement, infer
   assert.doesNotMatch(workflow, /LFM2.5/);
   assert.match(workflow, /secrets\.MONGO_URI/);
   assert.match(workflow, /node scripts\/runTailoredResumes\.js/);
-  assert.doesNotMatch(workflow, /OUTREACH_ACTIONS|upload-artifact|GITHUB_PAT|INFERENCE_API|OPENAI_API/);
-  const outreach = await readFile(new URL('../scripts/runOutreachDrafts.js', import.meta.url), 'utf8');
-  assert.doesNotMatch(outreach, /TailoredResume|drainGenerationQueues/);
+  assert.doesNotMatch(workflow, /upload-artifact|GITHUB_PAT|INFERENCE_API|OPENAI_API/);
 });

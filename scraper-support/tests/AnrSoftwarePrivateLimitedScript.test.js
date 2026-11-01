@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
+import { createHash } from 'node:crypto'
+import { createCatalogScraper, getScraperCatalog } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
+// Legacy synthetic wording below does not constitute native vacancy evidence.
 const careersHtml = `
 <!doctype html>
 <html lang="en">
@@ -24,28 +30,67 @@ const loadModule = async () => {
   }
 }
 
-test('ANR Software Private Limited returns [] only while the official careers page remains contradictory and non-trustworthy', async () => {
+test('registered ANR retains actual card criteria while country and vacancy identity remain unresolved', async () => {
   const anr = await loadModule()
 
   assert.equal(anr.SOURCE, 'anrsoftwareprivatelimited')
   assert.equal(anr.COMPANY, 'ANR Software Private Limited')
   assert.equal(anr.CAREERS_URL, 'https://www.anrsoftware.com/career/')
-  assert.equal(anr.hasVerifiedCareersPageSignal(careersHtml), true)
-
-  const jobs = await anr.createAnrsoftwareprivatelimitedScraper().run({
-    fetchText: async () => careersHtml,
+  const archive = JSON.parse(gunzipSync(readFileSync(
+    new URL('../../scraper/anrsoftwareprivatelimited/fixtures/retained-http-20261029.json.gz', import.meta.url),
+  )))
+  const bytes = Buffer.from(archive.bodyBase64, 'base64')
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), archive.receipt.sha256)
+  const html = bytes.toString('utf8'), calls = [], audits = []
+  const provider = getScraperCatalog().find(row => row.source === anr.SOURCE)
+  assert.equal(provider.adapter, 'script')
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.verificationIsHistorical, true)
+  const controller = new AbortController()
+  const jobs = await createCatalogScraper(provider).run({
+    signal: controller.signal,
+    fetchText: async (url, { signal }) => {
+      assert.equal(signal, controller.signal)
+      calls.push(url)
+      return html
+    },
+    onAudit: audit => audits.push(audit),
   })
 
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(calls, [anr.CAREERS_URL])
+  assert.equal(jobs.length, 0)
+  assert.equal(audits.length, 1)
+  const audit = audits[0]
+  assert.equal(audit.originalCareersHTML, html)
+  assert.equal(audit.observations.length, 47)
+  assert.equal(audit.applicationForms.length, 2)
+  assert.ok(audit.observations.every(row => row.country === null && row.jobId === null && !row.sourceDetailComplete))
+  const writer = audit.observations[0]
+  assert.equal(writer.title, 'Content Writer')
+  assert.equal(writer.openingCountText, '02 openings')
+  assert.ok(writer.descriptionBranches.some(branch => branch.text.includes('Eligibility:') && branch.text.includes('Job Description:')))
+  assert.ok(audit.nativeIdCollisions.some(row => row.id === 'apply_3' && row.occurrences > 2))
+  assert.equal(audit.lifecycleCleanupAllowed, false)
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'discovery-only')
+  assert.equal(evidence.firstParty, false)
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
 })
 
-test('ANR Software Private Limited fails closed when the contradictory no-vacancy contract drifts', async () => {
+test('ANR no-vacancy wording cannot establish empty inventory or replace publisher identity', async () => {
   const anr = await loadModule()
 
+  for (const html of [careersHtml, careersHtml.replace('No vacancy for this position now. Visit again!', 'Apply now')]) {
+    const jobs = await anr.run({ fetchText: async () => html })
+    assert.equal(readInventoryEvidence(jobs).status, 'discovery-only')
+    assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
+  }
   await assert.rejects(
     anr.createAnrsoftwareprivatelimitedScraper().run({
-      fetchText: async () => careersHtml.replace('No vacancy for this position now. Visit again!', 'Apply now'),
+      fetchText: async () => careersHtml.replace('Career - ANR Software Pvt Ltd.', 'Another publisher'),
     }),
-    /verified contradictory careers page/i,
+    /ANR careers identity\/headings changed/i,
   )
 })

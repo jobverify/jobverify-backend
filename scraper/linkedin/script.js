@@ -303,7 +303,8 @@ export const extractJobDetail = (html = '', listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -318,8 +319,15 @@ export const createLinkedInScraper = ({
   async run({
     fetchText = defaultFetchText,
     now = () => new Date().toISOString(),
+    signal,
   } = {}) {
-    const searchHtml = await fetchText(LINKEDIN_JOBS_URL)
+    const read = async url => {
+      signal?.throwIfAborted()
+      const html = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      return html
+    }
+    const searchHtml = await read(LINKEDIN_JOBS_URL)
     if (!hasVerifiedJobsPageSignal(searchHtml)) {
       throw new Error('LinkedIn jobs search page no longer matches the verified public company-filtered shell')
     }
@@ -337,7 +345,7 @@ export const createLinkedInScraper = ({
     const jobs = []
 
     for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
+      const detailHtml = await read(listing.sourceUrl)
       const detail = extractJobDetail(detailHtml, listing)
       if (detail.country !== 'India') throw new Error('LinkedIn detail India country is unverified')
 

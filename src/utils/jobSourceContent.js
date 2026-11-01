@@ -10,9 +10,10 @@ const EMPTY_DESCRIPTION_TOKEN = String.raw`[\s\u00a0\u1680\u2000-\u200d\u2028\u2
 // possessive repeat supplies the same behavior without recursive match frames.
 // This keeps large whitespace/script/tag prefixes from causing backtracking or
 // Mongo's matching-depth limit when real source text follows them.
-const EMPTY_DESCRIPTION = new RegExp(String.raw`^(?:(?=(${EMPTY_DESCRIPTION_TOKEN}))\1)*$`, 'i');
+const MISSING_DESCRIPTION_TOKEN = String.raw`${EMPTY_DESCRIPTION_TOKEN}|enter\s+(?:the\s+)?job\s+description\b[.!…]*`;
+const EMPTY_DESCRIPTION = new RegExp(String.raw`^(?:(?=(${MISSING_DESCRIPTION_TOKEN}))\1)*$`, 'i');
 // MongoDB PCRE accepts literal Unicode characters, not JavaScript \u escapes.
-const MONGO_EMPTY_DESCRIPTION = String.raw`^(?:${EMPTY_DESCRIPTION_TOKEN})*+$`.replace(/\\u([a-f\d]{4})/gi,
+const MONGO_EMPTY_DESCRIPTION = String.raw`^(?:${MISSING_DESCRIPTION_TOKEN})*+$`.replace(/\\u([a-f\d]{4})/gi,
   (_match, hex) => String.fromCharCode(Number.parseInt(hex, 16)));
 
 export const hasSourceDescription = (job = {}) => !EMPTY_DESCRIPTION.test(getSourceDescription(job));

@@ -1,3 +1,4 @@
+import { createNativeGreenhouseScraper, NATIVE_GREENHOUSE_PROFILES, nativeSourceMetadata } from '../../scraper-support/native-sources/declaredGreenhouse/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -78,23 +79,9 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createTripadvisorScraper = () => ({
-  async run({ fetchJson = defaultFetchJson, now = () => new Date().toISOString(), signal } = {}) {
-    signal?.throwIfAborted()
-    const payload = await fetchJson(GREENHOUSE_API_URL)
+export const createTripadvisorScraper = (defaults = {}) => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["tripadvisor"], defaults)
 
-    const jobs = extractJobsFromGreenhousePayload(payload).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
-    return attachGreenhouseSourceEvidence(jobs, { source: SOURCE, companyName: COMPANY,
-      companyCareerPage: TRIPADVISOR_CATALOG.companyCareerPage, boardToken: 'tripadvisor', payload, signal })
-  },
-})
-
-export const run = async (options = {}) => createTripadvisorScraper().run(options)
+export const run = options => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["tripadvisor"]).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

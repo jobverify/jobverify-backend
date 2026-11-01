@@ -50,18 +50,14 @@ test('extractSearchResults maps visible Achira Labs career cards into shared job
   ])
 })
 
-test('run fetches the official careers page and decorates extracted jobs', async () => {
-  const requestedUrls = []
-  const jobs = await createAxiraLabsScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return careerPageHtml
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [CAREER_PAGE_URL])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'axiralabs')
-  assert.equal(jobs[0].link, 'https://achiralabs.com/contact')
-  assert.match(jobs[0].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
+// The live official page now delegates to Keka; static cards are no longer an inventory.
+test('run verifies the current native embedded inventory instead of publishing historical cards', async () => {
+  const { transport } = await import('./native.fixture.js')
+  const { readInventoryEvidence } = await import('../../scraper-support/utils/inventoryEvidence.js')
+  const jobs = await createAxiraLabsScraper().run({ fetchImpl: transport() })
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
+})
+test('run rejects legacy text transport without observed HTTP metadata', async () => {
+  await assert.rejects(createAxiraLabsScraper().run({ fetchText: async () => careerPageHtml }), /unsupported legacy transport/)
 })

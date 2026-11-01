@@ -37,6 +37,10 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+// Employer handoffs may render typographic dashes while the native API uses
+// ASCII hyphens. Preserve all title words, case and punctuation beyond dashes.
+const normalizeDetailTitle = (value) => normalizeWhitespace(value)?.replace(/\s*[-\u2010-\u2015]\s*/g, '-')
+
 const normalizeOrigin = (value) =>
   (normalizeWhitespace(value) || DEFAULT_ORIGIN).replace(/\/+$/g, '')
 
@@ -66,12 +70,25 @@ const extractSetCookieValues = (headers) => {
   return singleValue ? [singleValue] : []
 }
 
-const buildCookieHeader = (setCookieValues = []) => {
-  const cookieValues = setCookieValues
-    .map((value) => normalizeWhitespace(String(value).split(';')[0]))
-    .filter(Boolean)
+const updateSessionCookies = (cookies, setCookieValues, now = Date.now()) => {
+  for (const value of setCookieValues) {
+    const [pair, ...attributes] = value.split(';').map(part => part.trim())
+    const separator = pair.indexOf('=')
+    if (separator <= 0) continue
+    const name = pair.slice(0, separator)
+    const maxAge = attributes.find(part => /^max-age=/i.test(part))?.slice(8)
+    const expires = attributes.find(part => /^expires=/i.test(part))?.slice(8)
+    const maxAgeSeconds = maxAge != null && /^-?\d+$/.test(maxAge) ? Number(maxAge) : NaN
+    // Max-Age takes precedence over Expires; absent/invalid expiry is a session cookie.
+    const expiresAt = Number.isFinite(maxAgeSeconds) ? now + maxAgeSeconds * 1000 : Date.parse(expires)
+    if (expiresAt <= now) cookies.delete(name)
+    else cookies.set(name, { pair, expiresAt })
+  }
+}
 
-  return cookieValues.length > 0 ? cookieValues.join('; ') : null
+const buildCookieHeader = (cookies, now = Date.now()) => {
+  for (const [name, cookie] of cookies) if (cookie.expiresAt <= now) cookies.delete(name)
+  return [...cookies.values()].map(cookie => cookie.pair).join('; ') || null
 }
 
 const isRetryableDarwinboxListingError = (error) => {
@@ -167,7 +184,7 @@ export const createDarwinboxScraper = ({
 } = {}) => {
   const portalOrigin = normalizeOrigin(origin)
   const requestTimeoutMs = Math.max(Number(config.jobListingTimeoutMs) || 0, 30000)
-  let publicSessionCookieHeader = null
+  const publicSessionCookies = new Map()
   const invokeFetchImpl = (url, requestInit) => (
     fetchImpl === globalThis.fetch
       ? globalThis.fetch(url, requestInit)
@@ -187,11 +204,8 @@ export const createDarwinboxScraper = ({
     `${portalOrigin}/ms/candidateapi/job/${encodeURIComponent(normalizeWhitespace(jobId) || '')}?companyId=${encodeURIComponent(targetCompanyId)}`
 
   const updatePublicSessionCookieHeader = (headers) => {
-    const nextCookieHeader = buildCookieHeader(extractSetCookieValues(headers))
-    if (nextCookieHeader) {
-      publicSessionCookieHeader = nextCookieHeader
-    }
-    return publicSessionCookieHeader
+    updateSessionCookies(publicSessionCookies, extractSetCookieValues(headers))
+    return buildCookieHeader(publicSessionCookies)
   }
 
   const cookieAwareFetchImpl = async (url, requestInit) => {
@@ -205,7 +219,11 @@ export const createDarwinboxScraper = ({
     { forceRefresh = false, signal, timeoutMs = requestTimeoutMs } = {},
   ) => {
     signal?.throwIfAborted()
-    if (!forceRefresh && publicSessionCookieHeader) return publicSessionCookieHeader
+    // A forced shell refresh must obtain a new public challenge token rather
+    // than replay the token rejected by the API. Retain the tenant's app session.
+    if (forceRefresh) publicSessionCookies.delete('__cf_bm')
+    const cookieHeader = buildCookieHeader(publicSessionCookies)
+    if (!forceRefresh && cookieHeader) return cookieHeader
 
     try {
       const response = await cookieAwareFetchImpl(buildCareersPageUrl(targetCompanyId), {
@@ -213,6 +231,7 @@ export const createDarwinboxScraper = ({
         headers: {
           'User-Agent': USER_AGENT,
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          ...(cookieHeader ? { cookie: cookieHeader } : {}),
         },
         signal: composeAbortSignals(signal, createTimeoutSignal(timeoutMs)),
       })
@@ -224,7 +243,7 @@ export const createDarwinboxScraper = ({
       // Best effort only; some tenants may still allow the API without a seeded cookie.
     }
 
-    return publicSessionCookieHeader
+    return buildCookieHeader(publicSessionCookies)
   }
 
   const extractSearchResults = (payload = {}) => (
@@ -364,7 +383,8 @@ export const createDarwinboxScraper = ({
     if (!record || typeof record !== 'object' || Array.isArray(record)
       || (payload.status != null && !['success', true, 200].includes(payload.status))
       || normalizeWhitespace(record.id) !== job.jobId
-      || normalizeWhitespace(record.title) !== job.title
+      || !normalizeDetailTitle(record.title) || !normalizeDetailTitle(job.title)
+      || normalizeDetailTitle(record.title) !== normalizeDetailTitle(job.title)
       || typeof record.officelocation_show_arr !== 'string' || !validPrimaryLocation || invalidAddressList
       || (locationList != null && (!Array.isArray(locationList)
         || locationList.some((value) => !isExplicitIndiaLocation(value) && !(groupedLocation && isGroupedLocation(value)))))
@@ -378,6 +398,27 @@ export const createDarwinboxScraper = ({
       throw error
     }
     return normalizeWhitespace(record.jd)
+  }
+
+  const extractJobDetailFacts = (payload, job) => {
+    validateJobDetail(payload, job)
+    const record = payload.message.job[0]
+    const posted = record.posted_on
+    const careersFrom = record.job_posting?.careers?.from
+    // created_on is a different event and cannot replace the native public
+    // posting instant. Older bodies remain useful without becoming new jobs.
+    if (posted == null && careersFrom == null) return {}
+    const date = new Date(posted * 1000)
+    if (typeof posted !== 'number' || !Number.isSafeInteger(posted) || posted <= 0
+      || typeof careersFrom !== 'number' || careersFrom !== posted
+      || !Number.isSafeInteger(posted * 1000) || !Number.isFinite(date.getTime())) {
+      const error = new Error(`[${source}] Darwinbox native publication epochs are malformed or inconsistent for ${job.jobId}`)
+      error.name = 'DarwinboxDetailContractError'
+      error.abortRetries = true
+      error.failureKind = 'parser_or_contract_error'
+      throw error
+    }
+    return { postingDate: date.toISOString(), sourcePostingDate: date.toISOString(), sourceDateEvidence: 'darwinbox-native-posted-on-v1' }
   }
 
   const run = async ({
@@ -420,6 +461,7 @@ export const createDarwinboxScraper = ({
           continue
         }
         const description = validateJobDetail(payload, job)
+        Object.assign(job, extractJobDetailFacts(payload, job))
         if (hasSourceDescription({ jobDescription: description })) {
           job.jobDescription = description
           job.sourceDetailComplete = true
@@ -501,6 +543,8 @@ export const createDarwinboxScraper = ({
     extractSearchResults,
     fetchListingPageFromApi,
     fetchJobDetailFromApi,
+    validateJobDetail,
+    extractJobDetailFacts,
     run,
   }
 }

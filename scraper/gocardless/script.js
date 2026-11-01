@@ -1,8 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createPublishingGapAtsScraper } from '../../scraper-support/utils/publishingGapAts.js'
-import { verifyOfficialAtsBinding } from '../../scraper-support/utils/officialAtsBinding.js'
+import { createRuntimeVerifiedPublicAtsScraper } from '../../scraper-support/utils/publicAtsRuntimeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -12,8 +11,10 @@ export const CAREERS_URL = 'https://gocardless.com/about/careers'
 export const BOARD_URL = 'https://job-boards.greenhouse.io/gocardless'
 
 export const run = async ({ fetchPage, fetchJson, signal } = {}) => {
-  await verifyOfficialAtsBinding({ source: SOURCE, officialUrl: CAREERS_URL, boardUrl: BOARD_URL }, { fetchPage, signal })
-  return createPublishingGapAtsScraper({ source: SOURCE, companyName: COMPANY, atsPlatform: 'greenhouse', boardToken: 'gocardless' }).run({ fetchJson, signal })
+  return createRuntimeVerifiedPublicAtsScraper({ source: SOURCE, companyName: COMPANY,
+    companyCareerPage: CAREERS_URL, atsPlatform: 'greenhouse', boardToken: 'gocardless',
+    runtimeInventoryVerification: { mode: 'board-handoff', boardUrl: BOARD_URL },
+  }).run({ fetchPage, fetchJson, signal })
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

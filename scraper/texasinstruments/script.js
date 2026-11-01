@@ -2,6 +2,9 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { hydrateSourceDescriptions } from '../../scraper-support/utils/sourceDescriptionHydration.js'
+import { enrichJobWithOracleCandidateExperienceDetail } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -91,6 +94,8 @@ const toJob = (record = {}) => {
     preferredQualification: null,
     requiredSkills: [],
     postingDate: normalizeWhitespace(record.PostedDate),
+    ...(typeof record.PostedDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(record.PostedDate)
+      ? { sourcePostingDateIsExact: false } : {}),
     closingDate: null,
     jobDescription: joinDescriptionParts(
       record.ShortDescriptionStr,
@@ -115,28 +120,23 @@ export const extractSearchResults = (payload) => getRequisitionList(payload)
   .filter((record) => isIndiaJob(record))
   .map((record) => toJob(record))
 
-const fetchJson = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'application/json,text/plain,*/*',
-    },
-  })
+const fetchJson = (url, { signal, includeResponseMetadata = false } = {}) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+    Accept: 'application/json,text/plain,*/*',
+  },
+  signal, includeResponseMetadata, timeoutMs: 15000, label: 'texasinstruments',
+})
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.json()
-}
-
-export const run = async () => {
-  const maxPages = Number.isInteger(config.maxPages) ? config.maxPages : 1
-  const maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null
+export const run = async (options = {}) => {
+  const maxPages = options.maxPages ?? (Number.isInteger(config.maxPages) ? config.maxPages : 1)
+  const maxJobs = options.maxJobs ?? (Number.isInteger(config.maxJobs) ? config.maxJobs : null)
+  const getJson = options.fetchJson || fetchJson
   const jobs = []
 
   for (let page = 0; page < maxPages; page += 1) {
-    const payload = await fetchJson(buildSearchUrl({ page }))
+    options.signal?.throwIfAborted()
+    const payload = await getJson(buildSearchUrl({ page }), { signal: options.signal })
     const pageJobs = extractSearchResults(payload)
 
     jobs.push(...pageJobs)
@@ -156,12 +156,19 @@ export const run = async () => {
 
   const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
-  return selectedJobs.map((job) => ({
+  const decorated = selectedJobs.map((job) => ({
     ...job,
     source: 'texasinstruments',
     link: job.applyUrl || job.sourceUrl,
     scrapedAt: new Date().toISOString(),
   }))
+  return hydrateSourceDescriptions(decorated, {
+    signal: options.signal, detailEnrichmentBudgetMs: options.detailEnrichmentBudgetMs,
+    fetchDetail: (job, { signal }) => enrichJobWithOracleCandidateExperienceDetail(job, {
+      signal,
+      fetchJson: (url, { signal }) => getJson(url, { signal, includeResponseMetadata: true }),
+    }),
+  })
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

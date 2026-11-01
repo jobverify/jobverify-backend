@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import { runApiPortalScraper } from '../apiPortal/engine.js'
 import { getScraperCatalog } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const listingsPayload = {
   requesterTitle: '',
@@ -40,7 +41,7 @@ const listingsPayload = {
   ],
 }
 
-test('runApiPortalScraper filters Amagi MynextHire jobs to India and maps the shared scraper fields', async () => {
+test('Amagi maps India jobs while a missing configured continuation keeps the fixture partial', async () => {
   const provider = getScraperCatalog().find((item) => item.source === 'amagi')
   assert.ok(provider)
 
@@ -83,7 +84,14 @@ test('runApiPortalScraper filters Amagi MynextHire jobs to India and maps the sh
     experienceLevel: 'Mid Level',
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'discovery-only')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.pagesFetched, 1)
+  assert.equal(evidence.reason, 'api-portal-incomplete-listing-or-role-details:configured-continuation-unavailable')
   assert.match(jobs[0].sourceUrl, /^https:\/\/amagi\.mynexthire\.com\/employer\/jobs\/careers\?src%3Dcareers/i)
   assert.equal(jobs[0].sourceUrl, jobs[0].link)
   assert.match(jobs[0].applyUrl, /^https:\/\/amagi\.mynexthire\.com\/employer\/jobs\/careers\/apply\?src%3Dcareers/i)

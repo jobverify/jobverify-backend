@@ -4,7 +4,10 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { hydrateProviderCatalogEntry, getScraperCatalog, buildScrapers } from '../providers/index.js'
+import { resolveZeroJobOutcome, buildCoverageGapResult } from '../runner.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { inventoryCleanupOptions } from '../utils/scraperOutcome.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const modulePath = path.resolve(currentDir, '../../scraper/kumaransystems/script.js')
@@ -49,11 +52,11 @@ test('Kumaran Systems local catalog captures the verified first-party careers pa
     'verified-first-party-careers-page+public-zoho-recruit-api+india-country-filter',
   )
   assert.equal(provider.companyDomain, 'kumaran.com')
-  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.equal(provider.verifiedOn, '2026-09-13')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /careers\.kumaran\.com/i)
-  assert.match(provider.verifiedSurfaceSummary, /Associate Product Manager - Interns/i)
-  assert.match(provider.verifiedSurfaceSummary, /QA Test Lead/i)
+  assert.match(provider.verifiedSurfaceSummary, /Astro careers component/i)
+  assert.match(provider.verifiedSurfaceSummary, /published India openings/i)
   assert.equal(kumaran.JOBS_API_URL, provider.jobsApiUrl)
 })
 
@@ -67,4 +70,24 @@ test('Kumaran Systems exact backlog row resolves from the local catalog without 
 
   assert.equal(report.matchedCount, 1)
   assert.equal(report.unmatchedCount, 0)
+})
+
+// Local and central descriptors retain separate historical observations.
+test('Kumaran local and effective catalog dates do not certify a fresh zero inventory', async () => {
+  const { KUMARAN_SYSTEMS_CATALOG } = await loadCatalogModule()
+  const effective = getScraperCatalog().find(item => item.source === 'kumaransystems')
+  const scraper = buildScrapers().find(item => item.name === 'kumaransystems')
+  assert.equal(KUMARAN_SYSTEMS_CATALOG.verifiedOn, '2026-09-13')
+  assert.equal(effective.verifiedOn, '2026-07-18')
+  assert.notEqual(KUMARAN_SYSTEMS_CATALOG.verifiedOn, effective.verifiedOn)
+  assert.equal(effective.jobsApiUrl, 'https://careers.kumaran.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite')
+  assert.equal(effective.companyCareerPage, 'https://kumaran.com/careers/')
+  assert.equal(effective.modulePath, modulePath)
+  assert.equal(effective.zeroResultPolicy, 'evidence-required')
+  assert.equal(effective.verifiedAt ?? null, null)
+  const jobs = []
+  assert.equal(readInventoryEvidence(jobs), null)
+  assert.equal(resolveZeroJobOutcome(scraper, jobs, jobs), 'unverified-zero')
+  assert.equal(buildCoverageGapResult(scraper.name, 'unverified-zero').success, false)
+  assert.deepEqual(inventoryCleanupOptions({ success: true, zeroJobEvidence: 'unverified-zero', inventoryEvidence: null }), { replaceExisting: false })
 })

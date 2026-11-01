@@ -84,7 +84,12 @@ export const collectNative=async({read,official})=>{
     const refs=valuesFor(detail,content[0],"Référence de l'offre")
     requireProof(refs.length===1&&refs[0]===row.reference,'Native detail requisition identity changed')
     const locations=valuesFor(detail,content[0],'Localisation')
-    requireProof(locations.length===1&&(locations[0]==='France'||locations[0].startsWith('France, ')),'Native primary country changed or incomplete; employer, India and secondary-scope review required')
+    // Talentsoft publishes either a France country/region path or an
+    // International/country/city path. USA is an explicit country value, not
+    // an inference from Little Rock or from the role's marketing prose.
+    const geography=locations.length===1?locations[0].split(',').map(value=>value.trim()):[]
+    const primaryCountry=geography[0]==='France'?'France':geography[0]==='International'&&geography[1]==='USA'?'United States':null
+    requireProof(primaryCountry,'Native primary country changed or incomplete; employer, India and secondary-scope review required')
     const locationLabels=detail.nodes(n=>n.tag==='div'&&/font-weight:\s*bold/.test(n.attrs.style||'')&&detail.text(n)&&n.children.every(c=>typeof c==='string'),content[0]).map(n=>detail.text(n))
     requireProof(locationLabels.filter(v=>/localis|pays|country|location|geograph/i.test(v)).every(v=>v==='Localisation'),'Unreviewed native secondary geography field')
     const apply=detail.nodes(n=>n.tag==='input'&&n.attrs.type==='submit'&&n.attrs.value==='Je postule à cette offre'&&detail.hasClass(n,'btnPostuler')&&!Object.hasOwn(n.attrs,'disabled')&&n.attrs['aria-disabled']!=='true')
@@ -94,10 +99,10 @@ export const collectNative=async({read,official})=>{
     const prose=detail.text(content[0])
     const mentions=prose.match(/.{0,120}\b(?:Inde|India|Egypte|Égypte|Egypt)\b.{0,160}/gi)||[]
     const indiaMention=/\b(?:Inde|India)\b/i.test(prose)
-    if(indiaMention)requireProof(row.id==='15678'&&prose.includes('Vous êtes également ouvert à une expatriation en Inde à moyen terme.')
-      || row.id==='15661'&&prose.includes('les projets industriels de la Société en Inde'),'Unreviewed India secondary-country wording')
-    exclusions.push({...row,nativeLocations:locations,country:'France',nativeSecondaryCountryMentions:mentions,
-      countryScopeComplete:row.id!=='15678',reason:row.id==='15678'?'France-primary-future-India-expatriation-scope-unresolved':'explicit-native-primary-country-outside-India'})
+    const currentIndiaClaim=/\b(?:poste|emploi|stage|position|role|rôle)\s+(?:(?:actuellement|currently)\s+)?(?:en|in)\s+(?:Inde|India)\b|\b(?:poste|emploi|stage|position|role|rôle)\s+(?:est\s+|is\s+)?(?:basé[es]?|situé[es]?|localisé[es]?|based|located)\s+(?:en|in)\s+(?:Inde|India)\b/i.test(prose)
+    requireProof(!currentIndiaClaim,'Native current India claim conflicts with explicit non-India primary geography')
+    exclusions.push({...row,nativeLocations:locations,country:primaryCountry,nativeSecondaryCountryMentions:mentions,
+      countryScopeComplete:!indiaMention,reason:indiaMention?primaryCountry+'-primary-India-secondary-scope-unresolved':'explicit-native-primary-country-outside-India'})
   }
   return {nativeBoardComplete:true,nativePublicJobCount:total,nativePrimaryIndiaJobCount:0,nativeIndiaJobCount:null,
     nativeSecondaryCountryScopeComplete:false,nativePagesFetched:seenPages.size,exclusions}

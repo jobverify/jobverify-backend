@@ -261,12 +261,13 @@ export const verifyPersistentBinding = async ({ fetchTextImpl, fetchJsonImpl, si
 
 const nativeSnapshot = row => ({ id: row.id, jobCode: row.jobCode, companyId: row.companyId, jobUrl: row.jobUrl,
   jobTitle: row.jobTitle, referenceNumber: row.referenceNumber, text1: row.text1, jobLocationRecord: row.jobLocationRecord,
-  status: row.status, displayStatus: row.displayStatus, location: row.location, modifiedDate: row.modifiedDate, startDate: row.startDate, endtDate: row.endtDate })
+  status: row.status, displayStatus: row.displayStatus, location: row.location, locationDisplayForManageJobs: row.locationDisplayForManageJobs,
+  modifiedDate: row.modifiedDate, startDate: row.startDate, endtDate: row.endtDate })
 const manifest = rows => rows.map(nativeSnapshot).sort((a, b) => String(a.id).localeCompare(String(b.id)))
 const formData = payload => { const f = new FormData(); for (const [key, value] of Object.entries(payload)) f.append(key, value); return f }
 const readInventory = async ({ binding, fetchJsonImpl, signal }) => {
   const rows = [], seen = new Set(), reasons = []
-  let offset = 0, pages = 0, reportedTotal = null, indiaFacetCount = null, pageSize = null, publicFailure = null
+  let offset = 0, pages = 0, reportedTotal = null, indiaFacetCount = null, pageSize = null, publicFailure = null, enumerationComplete = true
   while (true) {
     abort(signal)
     let payload
@@ -274,6 +275,7 @@ const readInventory = async ({ binding, fetchJsonImpl, signal }) => {
       payload = await fetchJsonImpl(SEARCH_URL, { method: 'POST', headers, body: formData(buildSearchPayload({ offset, companyId: binding.encodedCompanyId })), signal })
     } catch (error) {
       abort(signal)
+      enumerationComplete = false
       publicFailure = publicFailureStatus(error)
       reasons.push(`native-listing-request-unavailable:${String(error.message).slice(0, 160)}`)
       break
@@ -282,7 +284,7 @@ const readInventory = async ({ binding, fetchJsonImpl, signal }) => {
     pages++
     const config = payload.data.facetedSearchConfig
     if (String(config.companyId) !== binding.companyId || config.domain !== DOMAIN || config.facetsMapping?.Location !== 'text1') throw contractError('listing response account/country configuration mismatch')
-    if (reportedTotal !== null && reportedTotal !== summary.totalCount) reasons.push('native-total-changed-during-pagination')
+    if (reportedTotal !== null && reportedTotal !== summary.totalCount) { enumerationComplete = false; reasons.push('native-total-changed-during-pagination') }
     reportedTotal ??= summary.totalCount
     pageSize ??= summary.pageSize
     const countryFacet = payload.data.facets?.Location
@@ -294,34 +296,69 @@ const readInventory = async ({ binding, fetchJsonImpl, signal }) => {
     else indiaFacetCount = count
     let additions = 0
     for (const record of pageRows) {
-      if (!record || String(record.companyId) !== binding.companyId || !Number.isInteger(record.id) || !norm(record.jobCode) || !/^[a-zA-Z0-9._~-]+$/.test(record.jobUrl || '')) { reasons.push('native-listing-identity-fields-missing-or-invalid'); continue }
-      if (seen.has(record.id)) { reasons.push('native-listing-id-repeated'); continue }
+      if (!record || String(record.companyId) !== binding.companyId || !Number.isInteger(record.id) || !norm(record.jobCode) || !/^[a-zA-Z0-9._~-]+$/.test(record.jobUrl || '')) { enumerationComplete = false; reasons.push('native-listing-identity-fields-missing-or-invalid'); continue }
+      if (seen.has(record.id)) { enumerationComplete = false; reasons.push('native-listing-id-repeated'); continue }
       seen.add(record.id); additions++; rows.push(record)
     }
     if (!summary.hasNext) break
-    if (!additions || pageRows.length !== summary.pageSize || rows.length >= summary.totalCount) { reasons.push('native-pagination-did-not-reconcile'); break }
+    if (!additions || pageRows.length !== summary.pageSize || rows.length >= summary.totalCount) { enumerationComplete = false; reasons.push('native-pagination-did-not-reconcile'); break }
     offset = summary.nextOffset
   }
-  if (rows.length !== reportedTotal) reasons.push('native-total-distinct-id-count-mismatch')
+  if (rows.length !== reportedTotal) { enumerationComplete = false; reasons.push('native-total-distinct-id-count-mismatch') }
   const actualIndia = rows.filter(r => classifyPersistentCountry(r).india).length
   if (indiaFacetCount !== null && indiaFacetCount !== actualIndia) reasons.push('native-india-facet-distinct-count-mismatch')
-  return { rows, reasons, reportedTotal, indiaFacetCount, pages, pageSize, publicFailure }
+  // Country-facet reconciliation is separate from whether every native ID was
+  // read. A scope gap must not hide a role absent from complete closing pages.
+  return { rows, reasons, reportedTotal, indiaFacetCount, pages, pageSize, publicFailure, enumerationComplete: enumerationComplete && pages > 0 }
 }
 const matchesDetail = (detail, listing, binding) => String(detail?.id) === String(listing.id)
   && String(detail?.jobCode) === String(listing.jobCode) && String(detail?.companyId) === binding.companyId
   && detail?.jobUrl === listing.jobUrl && norm(detail?.jobTitle) === norm(listing.jobTitle)
   && norm(detail?.referenceNumber) === norm(listing.referenceNumber)
-  && norm(detail?.locationDisplayForManageJobs || detail?.location) === norm(listing.locationDisplayForManageJobs || listing.location)
+  && norm(detail?.location) === norm(listing.location)
 
 const matchesNativeGeography = (detail, record) => {
   const typed = classifyPersistentCountry(record)
   if (!typed.known) return false
   const fields = detail?.jobConfigurationData || {}
+  const canonical = norm(detail?.location)
+  if (!canonical || canonical !== norm(record.location)) return false
   const nativeLocation = norm(detail.locationDisplayForManageJobs || detail.location)
   const displayed = Object.hasOwn(fields, 'Location') ? plain(fields.Location) : nativeLocation
   if (!displayed || displayed.toLowerCase() !== nativeLocation?.toLowerCase()) return false
-  const displayedCountries = displayed.split(/[;|/]/).map(location => countryCode(location.split(',').at(-1))).filter(Boolean)
-  return displayedCountries.every(code => typed.countryCodes.includes(code))
+  const label = value => norm(value)?.normalize('NFC').toLowerCase()
+  const offices = record.jobLocationRecord
+  if (!Array.isArray(offices) || !offices.length || offices.some(office => {
+    if (!office || typeof office !== 'object' || Array.isArray(office)
+      || String(office.jobId) !== String(record.id) || String(office.companyId) !== String(record.companyId)
+      || !countryCode(office.country)
+      || ['city', 'state', 'location', 'formattedLocation'].some(key => office[key] != null && typeof office[key] !== 'string')) return true
+    const country = countryCode(office.country)
+    for (const location of [office.location, office.formattedLocation].filter(value => norm(value))) {
+      const suppliedCountry = countryCode(location.split(',').at(-1))
+      if (suppliedCountry && suppliedCountry !== country) return true
+    }
+    const formatted = csv(office.formattedLocation)
+    if (formatted.length && countryCode(formatted.at(-1))) {
+      const prefix = formatted.slice(0, -1), city = label(office.city), state = label(office.state)
+      if (city && label(prefix[0]) !== city || state && prefix.length > (city ? 1 : 0)
+        && label(prefix[city ? 1 : 0]) !== state) return true
+    }
+    return false
+  })) return false
+  const boundDisplay = value => typeof value === 'string' && value.split(/[;|/]/).every(component => {
+    const candidate = label(component)
+    return candidate && offices.some(office => {
+      const city = label(office.city)
+      return city && candidate === city || !city && candidate === label(office.state)
+        || [office.location, office.formattedLocation].some(location => candidate === label(location))
+    })
+  })
+  // Each supplied display is checked independently. A primary-city listing
+  // may select a subset of the complete, identical canonical office list.
+  // No unknown fragment, city alias or unbound country is discarded.
+  return [canonical, record.locationDisplayForManageJobs, detail.locationDisplayForManageJobs, displayed]
+    .filter(value => value != null && value !== '').every(boundDisplay)
 }
 
 export const createPersistentScraper = ({ fetchJsonImpl = fetchJson, fetchTextImpl = fetchText, maxJobs = null, maxPages = null, requestIntervalMs = 1000 } = {}) => ({
@@ -380,14 +417,14 @@ export const createPersistentScraper = ({ fetchJsonImpl = fetchJson, fetchTextIm
       }
     }
     abort(signal)
-    const closing = publicFailure ? { rows: [], reasons: ['native-closing-not-read-public-access-unavailable'], pages: 0, reportedTotal: null, indiaFacetCount: null }
+    const closing = publicFailure ? { rows: [], reasons: ['native-closing-not-read-public-access-unavailable'], pages: 0, reportedTotal: null, indiaFacetCount: null, enumerationComplete: false }
       : await readInventory({ binding, fetchJsonImpl: pacedFetchJson, signal })
     reasons.push(...closing.reasons)
     const startHash = sha(JSON.stringify(manifest(initial.rows))), closingHash = sha(JSON.stringify(manifest(closing.rows)))
-    const stable = closing.pages > 0 && closing.reasons.length === 0 && startHash === closingHash && initial.reportedTotal === closing.reportedTotal && initial.indiaFacetCount === closing.indiaFacetCount
+    const stable = initial.enumerationComplete && closing.enumerationComplete && startHash === closingHash && initial.reportedTotal === closing.reportedTotal && initial.indiaFacetCount === closing.indiaFacetCount
     if (!stable) reasons.push('native-closing-ids-count-countries-status-or-content-changed')
     const closingById = new Map(closing.rows.map(row => [String(row.id), row]))
-    const closingReadComplete = closing.pages > 0 && closing.reasons.length === 0
+    const closingReadComplete = closing.enumerationComplete
     const sorted = retained.filter(job => {
       const current = closingById.get(job.nativePostingId)
       if (!current) return !closingReadComplete
@@ -399,11 +436,11 @@ export const createPersistentScraper = ({ fetchJsonImpl = fetchJson, fetchTextIm
     const complete = reasons.length === 0
     const proof = { reportedTotal: initial.reportedTotal, indiaFacetCount: initial.indiaFacetCount, distinctIds: initial.rows.length,
       indiaRecords: initial.rows.filter(r => classifyPersistentCountry(r).india).length, unknownCountries, nonIndia,
-      pagesFetched: initial.pages + closing.pages, detailsFetched, detailBodiesFetched, requisitionBodiesFetched, detailsUnattempted: initial.rows.length - detailsFetched, completeDetails, failedDetails, publicFailureStatus: publicFailure || closing.publicFailure || null, closingStable: stable, droppedStaleClosingRows: retained.length - sorted.length,
+      pagesFetched: initial.pages + closing.pages, detailsFetched, detailBodiesFetched, requisitionBodiesFetched, detailsUnattempted: initial.rows.length - detailsFetched, completeDetails, failedDetails, publicFailureStatus: publicFailure || closing.publicFailure || null, initialEnumerationComplete: initial.enumerationComplete, closingEnumerationComplete: closing.enumerationComplete, closingStable: stable, droppedStaleClosingRows: retained.length - sorted.length,
       initialManifestSha256: startHash, closingManifestSha256: closingHash, reasons: [...new Set(reasons)], returned: selected.length }
     const now = new Date().toISOString()
     return attachInventoryEvidence(selected.map(({ index, ...job }) => ({ ...job, sourceNativeInventory: proof,
-      sourceEnumerationComplete: initial.reasons.length === 0 && closing.reasons.length === 0 && stable,
+      sourceEnumerationComplete: initial.enumerationComplete && closing.enumerationComplete && stable,
       sourceScopeComplete: complete, sourceListingComplete: complete, lifecycleCleanupAllowed: false })), {
       status: complete ? (initial.rows.length ? 'complete-inventory' : 'verified-empty') : 'coverage-gap', surface: `${CAREERS_URL}/explore-opportunities`,
       firstParty: true, listingComplete: complete, pagesFetched: proof.pagesFetched, reportedTotal: initial.reportedTotal,

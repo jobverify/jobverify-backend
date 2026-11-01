@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { setImmediate } from 'node:timers/promises'
 import { WorkdayRequestScheduler } from '../myworkday/requestScheduler.js'
 
 import { fetchWorkdayJobsApiPage, runWorkdayScraper } from '../myworkday/engine.js'
@@ -12,15 +13,21 @@ const page = (tenant, shard = 'wd901', extra = {}) => fetchWorkdayJobsApiPage({
 const empty = () => Response.json({ total: 0, jobPostings: [] })
 
 test('Workday spaces requests across tenants on the same shard while other shards remain independent', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 })
   const starts = new Map()
   t.mock.method(globalThis, 'fetch', async (url) => {
     starts.set(new URL(url).hostname.split('.')[0], Date.now())
     return empty()
   })
 
-  await Promise.all([page('first'), page('second'), page('independent', 'wd902')])
-  assert.ok(starts.get('second') - starts.get('first') >= 200, 'same-shard requests must be paced')
-  assert.ok(starts.get('independent') - starts.get('first') < 150, 'another shard must not share the queue')
+  const pending = Promise.all([page('first'), page('second'), page('independent', 'wd902')])
+  await setImmediate()
+  assert.equal(starts.get('first'), 0)
+  assert.equal(starts.get('independent'), 0, 'another shard must not share the queue')
+  assert.equal(starts.has('second'), false, 'the second tenant must wait for its shard interval')
+  t.mock.timers.tick(250)
+  await pending
+  assert.equal(starts.get('second'), 250, 'same-shard requests must retain the configured pacing')
 })
 
 test('Workday shares a server cooldown with the next tenant on that shard', async (t) => {

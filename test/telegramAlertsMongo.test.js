@@ -6,6 +6,7 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import User from '../src/models/User.js';
 import Job from '../src/models/Job.js';
 import Subscription from '../src/models/Subscription.js';
+import SiteSettings from '../src/models/SiteSettings.js';
 import JobAlertDelivery from '../src/models/JobAlertDelivery.js';
 import { queueJobAlertsForJobs, recoverQueuedJobAlerts, buildTelegramMessageBody } from '../src/services/jobAlertService.js';
 import { updateAlertSchedule } from '../src/services/alertScheduleService.js';
@@ -45,6 +46,19 @@ test('Telegram alert delivery through matching, durable scheduling and provider 
     });
     return requests;
   }
+
+  await t.test('free mode delivers to linked opted-in free accounts and premium mode blocks them', async st => {
+    await reset();
+    await user({ premium: { planId: 'free', status: 'inactive', telegramAlertsEnabled: true } });
+    const requests = provider(st);
+    st.mock.method(SiteSettings, 'findById', () => ({ lean: async () => ({ billingEnabled: true }) }));
+    await queueJobAlertsForJobs([await job()]);
+    assert.equal(requests.length, 0);
+    st.mock.method(SiteSettings, 'findById', () => ({ lean: async () => ({ billingEnabled: false }) }));
+    await queueJobAlertsForJobs([await job()]);
+    assert.equal(requests.length, 1);
+    assert.equal(await JobAlertDelivery.countDocuments(), 0);
+  });
 
   await t.test('long job descriptions produce deliverable alerts without disabling the subscriber', async st => {
     await reset(); const owner = await user();

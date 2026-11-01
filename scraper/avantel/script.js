@@ -1,5 +1,5 @@
 import path from 'node:path'
-import vm from 'node:vm'
+import { parseRemoteLiteral } from '../../scraper-support/utils/remoteScriptData.js'
 import { fileURLToPath } from 'node:url'
 
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
@@ -309,7 +309,7 @@ export const extractEmbeddedJobListings = (bundle = '') => {
 
   let parsed
   try {
-    parsed = vm.runInNewContext(arrayLiteral, Object.create(null), { timeout: 1000 })
+    parsed = parseRemoteLiteral(arrayLiteral)
   } catch {
     return []
   }

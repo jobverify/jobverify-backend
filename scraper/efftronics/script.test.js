@@ -209,6 +209,7 @@ test('extractPublicListings parses the verified public Efftronics vacancy cards'
     'Embedded or Resource-constraint environments',
   ])
   assert.match(jobs[0].jobDescription, /design & build IoT based smart solutions/i)
+  assert.match(jobs.find((job) => job.title === 'Software Engineer').jobDescription, /M\.Sc Computers/)
 })
 
 test('scraper run fetches the official homepage and careers page and returns normalized jobs', async () => {

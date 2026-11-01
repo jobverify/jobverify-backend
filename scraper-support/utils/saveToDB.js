@@ -33,6 +33,7 @@ import { saveLocalJobOutbox } from './localJobOutbox.js'
 import { buildDescriptionSourceUpdate } from '../../src/services/jobDescriptionPolicy.js'
 import { getSourceDescription, hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { postScrapePersistencePatch } from '../../src/services/postScrapeClassification.js'
+import { getAuthoritativeClassification } from '../../src/services/jobClassificationPolicy.js'
 import { correctExistingSourceLifecycleDates } from './sourceLifecycleCorrection.js'
 import { correctExistingNativeAvailability, nativeAvailabilityTransition } from './sourceAvailabilityPersistence.js'
 import { supportsNativeRoleAvailability } from './sourceAvailability.js'
@@ -307,9 +308,23 @@ export const saveToDB = async (jobs, source, options = {}) => {
   const identities = coalesceApplicationIdentities(resolveApplicationIdentities(normalizedJobs, existingJobs))
   const existingByKey = new Map(identities.filter(identity => identity.previous).map(identity => [identity.fingerprint, identity.previous]))
   const sourceJobs = identities.map(({ job, previous }) => {
-    return job.preserveExistingSourceContent === true && previous
-      ? { ...previous, ...job, sourceDescription: getSourceDescription(previous), jobDescription: getSourceDescription(previous) }
-      : job
+    if (job.preserveExistingSourceContent !== true) return job
+    // A fresh detail response supersedes the fallback flag and prior decision.
+    if (hasSourceDescription(job)) return { ...job, preserveExistingSourceContent: false }
+    if (!previous) return job
+    return { ...previous, ...job,
+      sourceDescription: getSourceDescription(previous), jobDescription: getSourceDescription(previous),
+      sourceEmploymentType: previous.sourceEmploymentType,
+      sourceExperienceRequired: previous.sourceExperienceRequired,
+      minimumQualification: previous.minimumQualification,
+      preferredQualification: previous.preferredQualification,
+      eligibleBatches: previous.eligibleBatches,
+      eligibleBatchesProvenance: previous.eligibleBatchesProvenance,
+      employmentType: previous.employmentType,
+      experienceRequired: previous.experienceRequired,
+      // A partial listing has no new eligibility evidence. Retain the last
+      // source-backed category, including an authoritative unknown result.
+      jobType: getAuthoritativeClassification(previous)?.jobType ?? previous.jobType }
   })
   const jobsForPersistence = sourceJobs
   emitStage(source, onStage, { stage: 'classification', status: 'deferred', jobs: sourceJobs.length })
@@ -318,7 +333,9 @@ export const saveToDB = async (jobs, source, options = {}) => {
   const observationInitializations = []
   const availabilityTransitions = []
   const operations = jobsForPersistence.map((job, index) => {
-    const normalizedJob = normalizeScrapedJob({ ...job, classification: undefined }, { source })
+    const normalizedJob = normalizeScrapedJob({ ...job,
+      classification: job.preserveExistingSourceContent === true ? identities[index].previous?.classification : undefined,
+    }, { source })
     const fingerprint = generateFingerprint(normalizedJob)
     const sourceUrl = normalizeHttpUrl(normalizedJob.sourceUrl)
     const applyUrl = normalizeHttpUrl(normalizedJob.applyUrl) || sourceUrl

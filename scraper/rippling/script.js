@@ -2,6 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { RIPPLING_CATALOG } from './catalog.js'
+import { isExactPublicJobUrl } from '../../rewriting/publicPostingDescription.js'
+import { ripplingPostingDescription } from '../../rewriting/ripplingPostingDescription.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -131,8 +134,12 @@ const normalizeHit = (
   }
 }
 
-const defaultFetchText = async (url) => {
+const requestSignal = signal => signal
+  ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000)
+
+const defaultFetchText = async (url, { signal, includeResponseMetadata = false } = {}) => {
   const response = await fetch(url, {
+    signal: requestSignal(signal),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -143,11 +150,13 @@ const defaultFetchText = async (url) => {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return response.text()
+  const html = await response.text()
+  return includeResponseMetadata ? { status: response.status, url: response.url, html } : html
 }
 
 const defaultFetchJson = async (url, options = {}) => {
   const response = await fetch(url, {
+    signal: requestSignal(options.signal),
     method: options.method || 'GET',
     headers: {
       'User-Agent': USER_AGENT,
@@ -240,13 +249,17 @@ export const createRipplingScraper = ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
+    signal,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasVerifiedCareersPageSignal(careersHtml)) {
       throw new Error('Rippling verified careers page no longer matches the known first-party jobs surface')
     }
 
-    const { algoliaIndexName } = extractOpenRolesSearchConfig(await fetchText(OPEN_ROLES_URL))
+    const { algoliaIndexName } = extractOpenRolesSearchConfig(await fetchText(OPEN_ROLES_URL, { signal }))
+    signal?.throwIfAborted()
     const scrapedAt = now()
     const jobs = []
     const seenKeys = new Set()
@@ -254,10 +267,13 @@ export const createRipplingScraper = ({
     let totalPages = 1
 
     while (page < totalPages) {
+      signal?.throwIfAborted()
       const payload = await fetchJson(buildAlgoliaQueryUrl(algoliaIndexName), {
         method: 'POST',
         body: JSON.stringify(buildAlgoliaQueryBody({ page, hitsPerPage })),
+        signal,
       })
+      signal?.throwIfAborted()
 
       totalPages = Number(payload?.nbPages) > 0 ? Number(payload.nbPages) : 1
 
@@ -271,6 +287,39 @@ export const createRipplingScraper = ({
       page += 1
     }
 
+    // Capture native descriptions before the runner measures detail health.
+    // Search hits supply identity/location only; they do not contain role HTML.
+    let nextJob = 0
+    const detailPages = new Map()
+    await Promise.all(Array.from({ length: Math.min(4, jobs.length) }, async () => {
+      while (nextJob < jobs.length) {
+        signal?.throwIfAborted()
+        const job = jobs[nextJob++]
+        job.sourceDetailComplete = false
+        job.sourceDetailFailureKind = 'unverified-native-role'
+        const url = new URL(job.sourceUrl)
+        if (url.protocol !== 'https:' || url.host !== 'ats.rippling.com' || url.username || url.password
+          || url.pathname !== `/rippling/jobs/${encodeURIComponent(job.jobId)}`) continue
+        try {
+          if (!detailPages.has(job.sourceUrl)) detailPages.set(job.sourceUrl,
+            Promise.resolve().then(() => fetchText(job.sourceUrl, { signal, includeResponseMetadata: true })))
+          const page = await detailPages.get(job.sourceUrl)
+          signal?.throwIfAborted()
+          const recovered = page && page.status >= 200 && page.status < 300 && isExactPublicJobUrl(job.sourceUrl, page.url)
+            ? ripplingPostingDescription(job, readNativeDocument(page.html), page.url) : null
+          if (recovered) {
+            job.sourceDescription = recovered.description
+            job.jobDescription = recovered.description
+            job.sourceDetailComplete = true
+            job.publicExperienceChecked = true
+            delete job.sourceDetailFailureKind
+          }
+        } catch {
+          signal?.throwIfAborted()
+          job.sourceDetailFailureKind = 'upstream'
+        }
+      }
+    }))
     return jobs
   },
 })

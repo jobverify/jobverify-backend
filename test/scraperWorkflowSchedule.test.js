@@ -11,11 +11,21 @@ const readScraperWorkflow = () => readFileSync(
   'utf8',
 )
 
-test('scraper workflow runs every day at 02:08 AM IST', () => {
-  const workflow = readScraperWorkflow()
+test('scraper workflow uses backend dispatch instead of GitHub cron', () => {
+  assert.doesNotMatch(readScraperWorkflow(), /^  schedule:/m)
+  assert.match(readScraperWorkflow(), /^  workflow_dispatch:/m)
+})
 
-  assert.match(workflow, /cron:\s*['"]38 20 \* \* \*['"]/)
-  assert.match(workflow, /Every day at 02:08 AM IST/)
+test('scheduled no-op checks skip scraping, checkpoints, artifacts and reporting', () => {
+  const workflow = readScraperWorkflow()
+  for (const name of ['Restore source checkpoint on rerun', 'Run Scraper', 'Upload scraper diagnostics', 'Record stage outcome']) {
+    const step = workflow.split(`- name: ${name}`)[1]?.split(/\r?\n      - /)[0]
+    assert.match(step || '', /if: .*steps\.register\.outputs\.should_run == 'true'/)
+  }
+  for (const name of ['Save resumable source checkpoint', 'Report publishing coverage']) {
+    const step = workflow.split(`- name: ${name}`)[1]?.split(/\r?\n      - /)[0]
+    assert.match(step || '', /steps\.scraper_run\.outcome != 'skipped'/)
+  }
 })
 
 test('scraper workflow leaves failure-abort handling disabled', () => {

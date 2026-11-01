@@ -69,12 +69,18 @@
     "https://monocept.turbohire.co/30.812b9abed47cf2099f54.chunk.js": "562f337b1298c5f56db392bd54e8c2a9e0e32d79275a627d9f90a4ed05c8352a",
     "https://monocept.turbohire.co/main.4d05cc901a9accc19b6c.chunk.js": "34c0fc6d7212a392b097bd164f8f2518fe117a608a71eafd683573823e2c2a2d",
     "https://monocept.turbohire.co/40.b0012ccb8c40664b145a.chunk.js": "d8c2807d2c42a8f74c36dbd95d6ac56e7a802bf3a055bb4cb5768cb7da15ab50",
-    "https://monocept.turbohire.co/24.85c22af30f828391297b.chunk.js": "025120f3eacd287ecd516d7000fe9d32975a486dbe8cdd6b8f01f37cb0ee34bf"
+    "https://monocept.turbohire.co/24.85c22af30f828391297b.chunk.js": "025120f3eacd287ecd516d7000fe9d32975a486dbe8cdd6b8f01f37cb0ee34bf",
+    "https://monocept.turbohire.co/runtime-main.9522a0a57370b3c3a0b4.js": "00069ddd2ba5c5a8c5288108f7653619737e4458308a7bd08e72ad9a30b9fc0a",
+    "https://monocept.turbohire.co/18.686c2629fe7c78598547.chunk.js": "f55534162eaa5bead6075e1fd43daee27afa923b4190f20617357849655f4c22",
+    "https://monocept.turbohire.co/main.83be12cc773959e07faa.chunk.js": "f3f55186e17a8c158beaa9c2a69fe1be9771599fc1b9842c1d52f00879e15a30",
+    "https://monocept.turbohire.co/40.6ed27c85e25326405617.chunk.js": "ff0cd8a3ea18232662b9d6c26921455f8180b7d4ea7e0b6faddc6ef294dc5324",
+    "https://monocept.turbohire.co/24.9fff1bffe9bc7be39b14.chunk.js": "e5e266915fdaa39749295784040b4e723db059dda81d74fbc697f0120140b29c"
   },
   "cssSHA256": {
     "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.6a01eb9f1a479fcac0481c05.d9e7abae8.opt.min.css": "818041ebe4ea8077c36512005327b0a4f4e0b78ed0102adc1ad993ac462fb22b",
     "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.shared.986c02e95.min.css": "28e64b56d5456cb53130f52c539cfbaeaa31dff1c0af16797baad1765b5d2b6a",
-    "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.6a01eb9f1a479fcac0481c05.682938860.opt.min.css": "11b6198b76b25c4342360e69ee729e22f145700b33babd584eb54d55c6a33ad2"
+    "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.6a01eb9f1a479fcac0481c05.682938860.opt.min.css": "11b6198b76b25c4342360e69ee729e22f145700b33babd584eb54d55c6a33ad2",
+    "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.shared.04749834d.min.css": "0aeeb1c936f27a724b8ae1de1543931bec2ce345551cdc53eafb80b2b8220e4c"
   },
   "corporateStyleVersions": [
     {
@@ -88,6 +94,66 @@
       "stylesheets": [
         "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.6a01eb9f1a479fcac0481c05.682938860.opt.min.css",
         "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.shared.986c02e95.min.css"
+      ]
+    },
+    {
+      "reviewedAt": "2026-10-31T05:12:22.203Z",
+      "sourceCapture": "scraper/monocept/test-inputs/corporate-20261031.json.gz",
+      "reviewSummary": "Shared Webflow CSS changes only .w-popover positioning to :where(.w-popover) with position-anchor:auto and position-area:top. No visibility rule, employer identity, executable client or careers handoff changes.",
+      "inlineStyleSHA256": [
+        "1c18e1ed650efd17ebfdd300c9f06955fb829f24595d023c8eb67523e249ee0c",
+        "44a0106f2665a336620352adba113f19e239d6b2062c49f4c20e62804cf0c5e0",
+        "cf74a8431814cc9fe05cb17c6f31669bb80d2c1546d5607a74a6e8fae3ed87d5"
+      ],
+      "stylesheets": [
+        "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.6a01eb9f1a479fcac0481c05.682938860.opt.min.css",
+        "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.shared.04749834d.min.css"
+      ]
+    }
+  ],
+  "nativeClientVersions": [
+    {
+      "scriptURLs": [
+        "https://monocept.turbohire.co/runtime-main.b10416b6ebb29396fa10.js",
+        "https://monocept.turbohire.co/18.2f7a4ef555996d432497.chunk.js",
+        "https://monocept.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://monocept.turbohire.co/main.4d05cc901a9accc19b6c.chunk.js"
+      ],
+      "clientURLs": [
+        "https://monocept.turbohire.co/runtime-main.b10416b6ebb29396fa10.js",
+        "https://monocept.turbohire.co/18.2f7a4ef555996d432497.chunk.js",
+        "https://monocept.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://monocept.turbohire.co/main.4d05cc901a9accc19b6c.chunk.js",
+        "https://monocept.turbohire.co/40.b0012ccb8c40664b145a.chunk.js",
+        "https://monocept.turbohire.co/24.85c22af30f828391297b.chunk.js"
+      ]
+    },
+    {
+      "reviewedAt": "2026-10-31T05:35:29.986Z",
+      "reviewSummary": "Seven public API/session methods (including API origins, token/noauth, organization lookup/detail, filtered listing and public role detail) are byte-for-byte unchanged. Public filtered-list and application-template call sites in the lazy client are unchanged. Native CSS, executable inline clients and active root/schema checks remain pinned.",
+      "publicMethodSHA256": {
+        "getUnauthenticatedAccessToken": "d50db8d34d43d41eca8fc2f1403cec1661391d41d6dde960d7d1baec9be7f857",
+        "constructor": "9a47aeb91fb9ee7bd685848c37ffaadc054ff843ea96a6451fd9a612d52becb1",
+        "getUnAuthenticatedAccessToken": "75b78c537edf926ce6a024e37ccd9b587641b2c1698b5fb3dac6619c513142d0",
+        "getOrgDetailsFromAccountName": "22e61ca681921aa255ce15df19193ec4e4ab97bbe4f718f37863b001bf68c1a8",
+        "getPublicOrgInfo": "c930e4bc62256d242ac81f814296659ed963f86331fdf8ce82a183e796f54e50",
+        "getPublicJobRefsForOrgFiltered": "b9a164010d28e4ef3cc9fdb9f4a65c4dcec9e6b1b16e6f0ffb1533dc666cd7bc",
+        "getJobInfo": "15c91e4a0a8ddcd940e6df83f4c249a7ab945bfbecfa1b6e8edadef13f6bb5df"
+      },
+      "sourceCapture": "scraper/monocept/test-inputs/native-build-20261031.json.gz",
+      "scriptURLs": [
+        "https://monocept.turbohire.co/runtime-main.9522a0a57370b3c3a0b4.js",
+        "https://monocept.turbohire.co/18.686c2629fe7c78598547.chunk.js",
+        "https://monocept.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://monocept.turbohire.co/main.83be12cc773959e07faa.chunk.js"
+      ],
+      "clientURLs": [
+        "https://monocept.turbohire.co/runtime-main.9522a0a57370b3c3a0b4.js",
+        "https://monocept.turbohire.co/18.686c2629fe7c78598547.chunk.js",
+        "https://monocept.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://monocept.turbohire.co/main.83be12cc773959e07faa.chunk.js",
+        "https://monocept.turbohire.co/40.6ed27c85e25326405617.chunk.js",
+        "https://monocept.turbohire.co/24.9fff1bffe9bc7be39b14.chunk.js"
       ]
     }
   ]

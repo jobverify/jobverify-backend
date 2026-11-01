@@ -1,5 +1,5 @@
 import path from 'node:path'
-import vm from 'node:vm'
+import { parseRemoteLiteral } from '../../scraper-support/utils/remoteScriptData.js'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -158,7 +158,7 @@ const evaluateArrayLiteral = (literal, label) => {
     throw new Error(`Sketch Brahma verified public jobs surface no longer exposes the ${label} array`)
   }
 
-  const value = vm.runInNewContext(`(${literal})`, Object.create(null), { timeout: 1000 })
+  const value = parseRemoteLiteral(literal)
   if (!Array.isArray(value)) {
     throw new Error(`Sketch Brahma verified public jobs surface no longer exposes a valid ${label} array`)
   }

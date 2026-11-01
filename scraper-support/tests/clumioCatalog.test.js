@@ -7,7 +7,7 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Clumio as a verified Commvault-backed first-party Greenhouse source', () => {
+test('getScraperCatalog includes Clumio as a discovery-only Commvault-backed corporate and native source', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'clumio')
 
   assert.ok(provider)
@@ -16,11 +16,15 @@ test('getScraperCatalog includes Clumio as a verified Commvault-backed first-par
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.companyCareerPage, 'https://www.commvault.com/careers/jobs')
   assert.equal(provider.countryFilter, 'Global')
-  assert.equal(provider.paginationStrategy, 'verified-commvault-first-party-inline-greenhouse-list')
-  assert.equal(provider.extractionStrategy, 'verified-commvault-greenhouse-list-plus-first-party-detail-pages')
+  assert.equal(provider.paginationStrategy, 'paired-current-corporate-and-native-public-GETs')
+  assert.equal(provider.extractionStrategy, 'all-original-corporate-native-roles-before-brand-and-country-selection')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'clumio.com')
+  assert.equal(provider.companyDomain, 'commvault.com')
+  assert.equal(provider.verifiedInventoryStatus, 'unverified')
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
   assert.match(provider.modulePath, /clumio[\\/]script\.js$/i)
 })
 

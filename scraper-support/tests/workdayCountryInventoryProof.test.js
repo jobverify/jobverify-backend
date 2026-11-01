@@ -7,8 +7,10 @@ import nodeTest from 'node:test'
 import { gunzipSync } from 'node:zlib'
 
 import { runWorkdayScraper } from '../myworkday/engine.js'
+import { runVerifiedWorkdayBoardUnion } from '../shared/workdayBoardUnion.js'
 import { resolveZeroJobOutcome } from '../runner.js'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { decorateJobsWithProviderMetadata } from '../providers/index.js'
 
 const test = (name, run) => nodeTest(name, { concurrency: false }, run)
 const capture = JSON.parse(gunzipSync(fs.readFileSync(new URL(
@@ -42,7 +44,7 @@ const asResponse = ({ url, body, status = 200, contentType = 'application/json' 
 
 // Exercise the real engine and zero-outcome consumer; only external HTTP is replaced.
 // Each run reads a real local config, so no shared companies metadata is mocked.
-const exercise = async (t, { source = 'csg', change = () => {}, options = {} } = {}) => {
+const exercise = async (t, { source = 'csg', change = () => {}, options = {}, configOverrides = {}, boardUnion = null } = {}) => {
   const spec = sources[source]
   const initialReceipt = capturedResponse(`${source}-initial`)
   const state = {
@@ -71,6 +73,7 @@ const exercise = async (t, { source = 'csg', change = () => {}, options = {} } =
     // Proof mode must inspect unresolved offices even if an old city filter remains.
     locationPattern: 'india|bengaluru|bangalore|hyderabad|pune|mumbai|gurgaon|gurugram|noida|chennai',
     inventoryScope: 'complete-board-country-proof', officialCareersUrl: spec.corporateUrl,
+    ...configOverrides,
   }))
   const calls = []
   let listingCalls = 0
@@ -86,7 +89,7 @@ const exercise = async (t, { source = 'csg', change = () => {}, options = {} } =
       assert.equal(request.offset, 0)
       assert.equal(request.limit, 20)
       listingCalls++
-      assert.ok(listingCalls <= 2, 'Only the initial and closing complete snapshots are expected')
+      assert.ok(listingCalls <= (boardUnion ? 3 : 2), 'Only captured initial, closing and optional union recheck snapshots are expected')
       return asResponse({ url, body: JSON.stringify(listingCalls === 1 ? state.initial : state.closing),
         ...(listingCalls === 2 ? state.closingResponse : {}),
       })
@@ -104,12 +107,16 @@ const exercise = async (t, { source = 'csg', change = () => {}, options = {} } =
   })
   let jobs, error
   try {
-    jobs = await runWorkdayScraper({
+    const runOptions = {
       company: spec.company, source, baseUrl: spec.boardUrl, scraperDir: directory,
       requestTimeoutMs: 1000, retryBaseDelayMs: 0,
       requestScheduler: { acquire: async () => () => {}, recordRateLimit: () => {} },
       ...options,
-    })
+    }
+    jobs = boardUnion ? await runVerifiedWorkdayBoardUnion({ source, company: spec.company,
+      boards: [{ tenant: 'csgi', site: 'CSGCareers', baseUrl: spec.boardUrl, scraperDir: directory }],
+      employerPattern: /^BR10 - Intec Brazil$/, completeSourceScope: false, ...boardUnion }, runOptions)
+      : await runWorkdayScraper(runOptions)
   } catch (failure) {
     error = failure
   } finally {
@@ -287,6 +294,274 @@ test('CSG cannot invent a country for an opaque native office without country ev
   assertNoCertifiedZero(result)
 })
 
+test('native India country fields remain authoritative for an office with an Indian state suffix', async t => {
+  const result = await exercise(t, { change: state => {
+    addProofIndiaOffice(state, { listingLocation: 'Powai, Mumbai, MH' })
+    const info = [...state.details.values()].find(detail => detail.jobPostingInfo.jobReqId === 'R90001').jobPostingInfo
+    info.location = 'Powai, Mumbai, MH'
+    info.jobRequisitionLocation.descriptor = info.location
+  } })
+  assert.ifError(result.error)
+  assert.deepEqual(result.jobs.map(job => job.requisitionId), ['R90001'])
+  assert.equal(result.jobs[0].location, 'Powai, Mumbai, MH')
+})
+
+for (const location of ['Lafayette, IN', 'Bengaluru, India']) {
+  test('native US country fields ' + (location.endsWith('IN') ? 'resolve an Indiana state suffix' : 'still reject an explicit India country conflict'), async t => {
+    const result = await exercise(t, { change: state => {
+      const info = state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265').jobPostingInfo
+      const country = { descriptor: 'United States of America', id: 'bc33aa3152ec42d4995f4791a106ed09', alpha2Code: 'US' }
+      Object.assign(info, { location, additionalLocations: ['Indianapolis, United States of America'], country,
+        jobRequisitionLocation: { descriptor: location, country } })
+    } })
+    if (location.endsWith('IN')) {
+      assert.ifError(result.error)
+      assert.deepEqual(result.jobs, [])
+      assert.equal(result.evidence.listingComplete, true)
+      assert.equal(result.evidence.indiaFacetCount, 0)
+    } else {
+      assert.ok(result.error)
+      assertNoCertifiedZero(result)
+    }
+  })
+}
+
+for (const nested of [null, { descriptor: 'Campus_42' }]) {
+  test('a board union accepts a proven native India primary office without a redundant nested country: ' + (nested ? 'office only' : 'absent office'), async t => {
+    const result = await exercise(t, { boardUnion: {}, change: state => {
+      addProofIndiaOffice(state)
+      const info = [...state.details.values()].find(detail => detail.jobPostingInfo.jobReqId === 'R90001').jobPostingInfo
+      info.location = 'Mumbai, India'
+      info.jobRequisitionLocation = nested
+    } })
+    assert.ifError(result.error)
+    assert.deepEqual(result.jobs.map(job => job.jobId), ['R90001'])
+    assert.equal(result.jobs[0].country, 'India')
+    assert.equal(result.jobs[0].sourceListingComplete, false)
+    assert.equal(result.jobs[0].lifecycleCleanupAllowed, false)
+  })
+}
+
+test('a typed native requisition country proves a foreign office when its redundant top-level country is absent', async t => {
+  const result = await exercise(t, { change: state => {
+    const info = state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265').jobPostingInfo
+    assert.equal(info.jobRequisitionLocation.country.alpha2Code, 'BR')
+    delete info.country
+  } })
+  assert.ifError(result.error)
+  assert.deepEqual(result.jobs, [])
+  assert.equal(result.evidence?.reportedTotal, 15)
+  assert.equal(result.evidence?.listingComplete, true)
+})
+
+test('an invalid present native country cannot be ignored in favor of a valid requisition country', async t => {
+  const result = await exercise(t, { change: state => {
+    const info = state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265').jobPostingInfo
+    info.country = { id: 'unknown-country-without-label' }
+  } })
+  assertNoCertifiedZero(result)
+})
+
+for (const [label, additionalLocations] of [['array', ['Another opaque public campus']], ['empty array', []], ['null', null], ['absent', undefined]])
+test('a lone nested country cannot be borrowed from an unlisted office with ' + label + ' additional locations', async t => {
+  const result = await exercise(t, { change: state => {
+    const info = state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265').jobPostingInfo
+    delete info.country
+    info.location = 'Opaque public campus'
+    info.additionalLocations = additionalLocations
+    for (const inventory of [state.initial, state.closing]) {
+      inventory.jobPostings.find(row => row.externalPath.endsWith('_32265')).locationsText = 'Opaque public campus'
+    }
+    info.jobRequisitionLocation = { descriptor: 'Unlisted requisition office',
+      country: { descriptor: 'India', id: 'c4f78be1a8f14da0ab49ce1162348a5e', alpha2Code: 'IN' } }
+  } })
+  assert.ok(result.error, 'An unlisted office must not supply a country for a different public location')
+  assertNoCertifiedZero(result)
+})
+
+test('opt-in partial country proof retains verified India roles and records unresolved foreign-role secondary offices', async t => {
+  const result = await exercise(t, { configOverrides: { retainProvenIndiaOnUnresolvedLocations: true }, change: state => {
+    addProofIndiaOffice(state)
+    state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265')
+      .jobPostingInfo.additionalLocations.push('Unresolved secondary campus')
+  } })
+  assert.ifError(result.error)
+  assert.deepEqual(result.jobs.map(job => job.requisitionId), ['R90001'])
+  assert.equal(result.evidence?.status, 'coverage-gap')
+  assert.equal(result.evidence?.listingComplete, false)
+  assert.equal(result.evidence?.reportedTotal, 16)
+  assert.equal(result.evidence?.indiaFacetCount, null)
+  assert.equal(result.jobs[0].sourceListingComplete, false)
+  assert.equal(result.jobs[0].lifecycleCleanupAllowed, false)
+  const audit = result.jobs[Symbol.for('jobverify.workday.country-inventory-proof')]
+  assert.equal(audit.initial.count, 16)
+  assert.equal(audit.initial.sha256, audit.closing.sha256)
+  assert.equal(audit.unresolvedRoles.length, 1)
+  assert.equal(audit.unresolvedRoles[0].requisitionId, '32265')
+  assert.ok(audit.unresolvedRoles[0].locations.includes('Unresolved secondary campus'))
+  assert.notEqual(resolveZeroJobOutcome({ provider: {} }, result.jobs, []), 'fetched-zero')
+})
+
+test('partial country proof cannot certify empty inventory while secondary offices remain unresolved', async t => {
+  const result = await exercise(t, { configOverrides: { retainProvenIndiaOnUnresolvedLocations: true }, change: state => {
+    state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265')
+      .jobPostingInfo.additionalLocations.push('Unresolved secondary campus')
+  } })
+  assert.ifError(result.error)
+  assert.deepEqual(result.jobs, [])
+  assert.equal(result.evidence?.status, 'coverage-gap')
+  assert.equal(result.evidence?.listingComplete, false)
+  assert.notEqual(resolveZeroJobOutcome({ provider: {} }, result.jobs, []), 'fetched-zero')
+})
+
+for (const missing of ['all native geography', 'primary office', 'native countries']) {
+  test('opt-in partial proof retains proven India roles while recording missing ' + missing, async t => {
+    const result = await exercise(t, { configOverrides: { retainProvenIndiaOnUnresolvedLocations: true }, change: state => {
+      addProofIndiaOffice(state)
+      const info = state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265').jobPostingInfo
+      if (missing !== 'native countries') Object.assign(info, { location: '', additionalLocations: null, jobRequisitionLocation: null })
+      if (missing !== 'primary office') { info.country = null; info.jobRequisitionLocation = null }
+    } })
+    assert.ifError(result.error)
+    assert.deepEqual(result.jobs.map(job => job.requisitionId), ['R90001'])
+    assert.equal(result.evidence.status, 'coverage-gap')
+    assert.equal(result.evidence.listingComplete, false)
+    assert.equal(result.jobs[0].lifecycleCleanupAllowed, false)
+    const audit = result.jobs[Symbol.for('jobverify.workday.country-inventory-proof')]
+    assert.equal(audit.initial.count, 16)
+    assert.equal(audit.initial.sha256, audit.closing.sha256)
+    assert.deepEqual(audit.unresolvedRoles.map(role => role.requisitionId), ['32265'])
+    assert.ok(audit.unresolvedRoles[0].reason)
+  })
+}
+
+for (const [label, mutate] of [
+  ['strict missing geography', info => Object.assign(info, { location: '', additionalLocations: null, country: null, jobRequisitionLocation: null })],
+  ['invalid supplied country despite missing geography', info => Object.assign(info, { location: '', additionalLocations: null,
+    country: { descriptor: 'India', alpha2Code: 'US' }, jobRequisitionLocation: null })],
+  ['malformed secondary locations', info => { info.additionalLocations = { office: 'Unknown' } }],
+  ['unbound requisition despite missing geography', info => Object.assign(info, { jobReqId: 'UNRELATED', location: '',
+    additionalLocations: null, country: null, jobRequisitionLocation: null })],
+]) test('missing-geography handling still rejects ' + label, async t => {
+  const result = await exercise(t, { configOverrides: { retainProvenIndiaOnUnresolvedLocations: label !== 'strict missing geography' }, change: state => {
+    addProofIndiaOffice(state)
+    mutate(state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265').jobPostingInfo)
+  } })
+  assert.ok(result.error)
+  assertNoCertifiedZero(result)
+})
+
+for (const [label, mutate] of [
+  ['conflicting country', state => {
+    state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265')
+      .jobPostingInfo.country.descriptor = 'India'
+  }],
+  ['changed closing inventory', state => { state.closing.jobPostings[0].title = 'Changed role' }],
+]) test('partial country proof still rejects ' + label, async t => {
+  const result = await exercise(t, { configOverrides: { retainProvenIndiaOnUnresolvedLocations: true }, change: state => {
+    addProofIndiaOffice(state)
+    mutate(state)
+  } })
+  assert.ok(result.error)
+  assertNoCertifiedZero(result)
+})
+
+test('an explicitly partial board union retains proven India jobs and unresolved-country receipts', async t => {
+  const result = await exercise(t, { boardUnion: { allowUnresolvedCountryScope: true },
+    configOverrides: { retainProvenIndiaOnUnresolvedLocations: true }, change: state => {
+      addProofIndiaOffice(state)
+      state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265')
+        .jobPostingInfo.additionalLocations.push('Unresolved secondary campus')
+    } })
+  assert.ifError(result.error)
+  assert.deepEqual(result.jobs.map(job => job.jobId), ['R90001'])
+  assert.equal(result.jobs[0].sourceBoardInventories[0].countryScopeComplete, false)
+  assert.equal(result.jobs[0].sourceBoardInventories[0].unresolvedCountryRoles[0].requisitionId, '32265')
+  assert.equal(result.jobs[0].sourceBoardInventories[0].reportedTotal, 16)
+  assert.equal(result.jobs[0].sourceListingComplete, false)
+  assert.equal(result.evidence?.listingComplete, false)
+})
+
+test('a board union independently rechecks the live detail after its closing inventory', async t => {
+  const result = await exercise(t, { boardUnion: {}, change: addProofIndiaOffice })
+  assert.ifError(result.error)
+  assert.deepEqual(result.jobs.map(job => job.jobId), ['R90001'])
+  const detailUrl = result.jobs[0].link.replace('/CSGCareers/job/', '/wday/cxs/csgi/CSGCareers/job/')
+  assert.equal(result.calls.filter(call => call.url === detailUrl).length, 2,
+    'The closing detail read is independent of the earlier country proof')
+  assert.equal(result.calls.filter(call => call.method === 'POST').length, 3,
+    'Initial, full closing reconciliation and union first-page recheck remain required')
+})
+
+test('a board union never reuses an earlier invocation detail when the current role identity changes', async t => {
+  const earlier = await exercise(t, { boardUnion: {}, change: addProofIndiaOffice })
+  assert.ifError(earlier.error)
+  const current = await exercise(t, { boardUnion: {}, change: state => {
+    addProofIndiaOffice(state)
+    const detail = [...state.details.values()].find(payload => payload.jobPostingInfo.jobReqId === 'R90001')
+    detail.jobPostingInfo.externalUrl = detail.jobPostingInfo.externalUrl.replace('_R90001', '_R90002')
+  } })
+  assert.ok(current.error)
+  assert.equal(current.error.failureKind, 'incomplete_location_scope')
+  assert.ok(current.calls.some(call => call.url.includes('/job/') && call.url.includes('_R90001')))
+  assertNoCertifiedZero(current)
+})
+
+test('each board union invocation reads the current native description for an unchanged role identity', async t => {
+  const earlier = await exercise(t, { boardUnion: {}, change: addProofIndiaOffice })
+  assert.ifError(earlier.error)
+  const description = '<p>Updated native engineering responsibilities for this current invocation, with the same public requisition and board.</p>'
+  const current = await exercise(t, { boardUnion: {}, change: state => {
+    addProofIndiaOffice(state)
+    const detail = [...state.details.values()].find(payload => payload.jobPostingInfo.jobReqId === 'R90001')
+    detail.jobPostingInfo.jobDescription = description
+  } })
+  assert.ifError(current.error)
+  assert.equal(current.jobs[0].sourceDescription, description)
+  assert.notEqual(current.jobs[0].sourceDescription, earlier.jobs[0].sourceDescription)
+  assert.equal(current.calls.filter(call => call.url.includes('/wday/cxs/') && call.url.includes('/job/') && call.url.includes('_R90001')).length, 2)
+})
+
+test('the closing detail pass does not bypass complete closing inventory reconciliation', async t => {
+  const result = await exercise(t, { boardUnion: {}, change: state => {
+    addProofIndiaOffice(state)
+    state.closing.jobPostings[0].title += ' changed'
+  } })
+  assert.ok(result.error)
+  assert.equal(result.error.name, 'WorkdayIncompleteListingError')
+  assertNoCertifiedZero(result)
+})
+
+test('an empty partial board union preserves unresolved-country diagnostics through the registered adapter decorator', async t => {
+  const result = await exercise(t, { boardUnion: { allowUnresolvedCountryScope: true },
+    configOverrides: { retainProvenIndiaOnUnresolvedLocations: true }, change: state => {
+      state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265')
+        .jobPostingInfo.additionalLocations.push('Unresolved secondary campus')
+    } })
+  assert.ifError(result.error)
+  assert.deepEqual(result.jobs, [])
+  const decorated = decorateJobsWithProviderMetadata(result.jobs, { source: 'csg', companyName: 'CSG' })
+  const audit = decorated[Symbol.for('jobverify.workday.country-inventory-proof')]
+  assert.ok(audit?.boards?.length, 'An empty result must retain its board inventory independently of jobs')
+  assert.equal(audit.boards.length, 1)
+  assert.equal(audit.boards[0].reportedTotal, 15)
+  assert.equal(audit.boards[0].countryScopeComplete, false)
+  assert.equal(audit.boards[0].unresolvedCountryRoles[0].requisitionId, '32265')
+  assert.ok(audit.boards[0].unresolvedCountryRoles[0].locations.includes('Unresolved secondary campus'))
+  assert.equal(readInventoryEvidence(decorated).listingComplete, false)
+})
+
+test('a partial board union cannot opt into complete company inventory while countries are unresolved', async t => {
+  const result = await exercise(t, { boardUnion: { allowUnresolvedCountryScope: true, completeSourceScope: true },
+    configOverrides: { retainProvenIndiaOnUnresolvedLocations: true }, change: state => {
+      addProofIndiaOffice(state)
+      state.details.get('https://csgi.wd5.myworkdayjobs.com/wday/cxs/csgi/CSGCareers/job/Brazil-Remote/Software-Development-Engineer_32265')
+        .jobPostingInfo.additionalLocations.push('Unresolved secondary campus')
+    } })
+  assert.ok(result.error)
+  assertNoCertifiedZero(result)
+})
+
 test('CSG resolves conflicting explicit listing country codes through native India details', async t => {
   const result = await exercise(t, { change: state => addProofIndiaOffice(state, { listingLocation: 'US.Campus42, IN' }) })
   assert.ifError(result.error)
@@ -298,6 +573,25 @@ test('CSG resolves conflicting explicit listing country codes through native Ind
 })
 
 const corporateAnchor = '<a href="https://csgi.wd5.myworkdayjobs.com/CSGCareers">Jobs</a>'
+for (const [label, markup] of [
+  ['unmatched descendant hiding rule', '<style>.unused div{display:none}</style><div>' + corporateAnchor + '</div>'],
+  ['unmatched conditional HTML ancestor', '<style>html.w-mod-js:not(.ready) :is([data-hidden], .menu, .drawer){opacity:0}</style>' + corporateAnchor],
+  ['partially transparent visible link', '<div style="opacity:0.5">' + corporateAnchor + '</div>'],
+]) test('current Workday corporate binding accepts ' + label, async t => {
+  const result = await exercise(t, { change: state => { state.corporate.body = '<html><body>' + markup + '</body></html>' } })
+  assert.ifError(result.error)
+  assert.equal(result.evidence?.listingComplete, true)
+  assert.equal(result.evidence?.reportedTotal, 15)
+})
+
+for (const [label, markup] of [
+  ['matching conditional target', '<style>.jobs:not(.disabled){display:none}</style><a class="jobs" href="https://csgi.wd5.myworkdayjobs.com/CSGCareers">Jobs</a>'],
+  ['matching attribute target', '<style>[data-private]{display:none}</style><a data-private href="https://csgi.wd5.myworkdayjobs.com/CSGCareers">Jobs</a>'],
+]) test('current Workday corporate binding rejects ' + label, async t => {
+  const result = await exercise(t, { change: state => { state.corporate.body = '<html><body>' + markup + '</body></html>' } })
+  assertNoCertifiedZero(result)
+})
+
 for (const [label, markup] of [
   ['xmp raw text', '<xmp>' + corporateAnchor + '</xmp>'],
   ['iframe fallback', '<iframe>' + corporateAnchor + '</iframe>'],

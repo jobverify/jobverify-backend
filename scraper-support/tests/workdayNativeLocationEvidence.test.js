@@ -228,6 +228,9 @@ test('Workday retains nested native India locations in both required scope and o
 
 test('Workday never substitutes a nested descriptor for a nonblank valid primary location', async t => {
   const row = nestedLocationRole('R1', 'AlternateCampus', 'India', 'IN', 'PrimaryCampus')
+  // The display-label assertion needs a country bound to this public primary
+  // office; a different internal office cannot supply that proof.
+  row.detail.jobPostingInfo.country = { descriptor: 'India', alpha2Code: 'IN' }
   const { jobs } = await exercise(t, [row])
   assert.equal(jobs[0].location, 'PrimaryCampus, India')
 })

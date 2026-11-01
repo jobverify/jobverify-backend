@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { createSigtupleNativeScraper } from './native.js'
+export { HOMEPAGE_URL } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -11,11 +12,6 @@ export const BOARD_URL = 'https://apply.workable.com/sigtuple/'
 export const JOBS_FEED_URL = 'https://apply.workable.com/sigtuple/jobs.md'
 
 const COMPANY_NAME = 'Sigtuple'
-const SOURCE = 'sigtuple'
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  label: 'sigtuple workable feed',
-})
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\r/g, '')
@@ -61,6 +57,8 @@ const extractJobId = (url) => {
   }
 }
 
+// Archive compatibility only. Runtime requires a current employer handoff and
+// reads the native cursor inventory and full role details instead of this feed.
 export const extractJobsFromMarkdown = (markdown) => {
   const normalized = String(markdown ?? '')
   if (!normalized.trim() || /\b0 current openings\b/i.test(normalized)) return []
@@ -112,35 +110,9 @@ export const extractJobsFromMarkdown = (markdown) => {
     }))
 }
 
-const normalizeScrapedAt = (value) => {
-  if (value instanceof Date) return value.toISOString()
-
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error('Invalid now() value supplied to Sigtuple scraper')
-  }
-
-  return parsed.toISOString()
-}
-
 export const createSigtupleScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : 0,
   now = () => new Date(),
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const limit = Number.isInteger(options.maxJobs) ? options.maxJobs : maxJobs
-    const jobs = extractJobsFromMarkdown(await fetchText(JOBS_FEED_URL))
-    const selected = limit ? jobs.slice(0, limit) : jobs
-    const scrapedAt = normalizeScrapedAt((options.now || now)())
-
-    return selected.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-    }))
-  },
-})
+} = {}) => createSigtupleNativeScraper({ maxJobs, now })
 
 export const run = async (options = {}) => createSigtupleScraper().run(options)

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
-import { runTailoredResumeWorker } from '../outreach/tailoredResumeWorker.js';
-import { reportResumeDiagnostic } from '../outreach/resumeDiagnostics.js';
+import { runTailoredResumeWorker } from '../resume-tailoring/tailoredResumeWorker.js';
+import { reportResumeDiagnostic } from '../resume-tailoring/resumeDiagnostics.js';
 
 try {
   if (!process.env.MONGO_URI) throw new Error('Missing worker configuration.');

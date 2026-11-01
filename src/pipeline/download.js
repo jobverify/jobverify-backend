@@ -113,6 +113,6 @@ export async function createPipelineBundle(run,{root=backendRoot,token=process.e
     zip.file('manifest.json',JSON.stringify(manifest,null,2));
     zip.file('README.txt',`Pipeline ${kind==='all'?'logs and artifacts':kind}\n\nSee manifest.json for stage states, included files and unavailable resources.\nOnly the requested resource types are included. GitHub downloads are preserved as ZIPs inside each stage folder.\nLocal logs are fully redacted; local artifacts contain saved per-run summaries. Shared caches are excluded.\nDownloads of active pipelines are snapshots. Files may still be generated.\nExpired/deleted GitHub resources cannot be recovered. Remote downloads have a 2 GiB total limit.\n`);
     const stream=new Readable().wrap(zip.generateNodeStream({streamFiles:true,compression:'STORE'}));
-    return {filename:`pipeline-${run._id}${requestedStage===undefined?'':`-${requestedStage}`}${kind==='all'?'':`-${kind}`}-${manifest.createdAt.replace(/[:.]/g,'-')}.zip`,stream,cleanup};
+    return {filename:`${requestedStage==='classification'?'classify':requestedStage||'pipeline'}${kind==='all'?'':`-${kind}`}-${manifest.createdAt.replace(/[:.]/g,'-')}.zip`,stream,cleanup};
   }catch(error){await cleanup();throw error;}
 }

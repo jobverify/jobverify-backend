@@ -228,14 +228,16 @@ test('extractPublicJobs returns the public first-party Precision Precast Solutio
   const jobs = extractPublicJobs(careersHtml)
 
   assert.equal(jobs.length, 6)
-  assert.deepEqual(jobs[0], {
+  const {rawNativeRoleEvidence,...firstJob}=jobs[0]
+  assert.match(rawNativeRoleEvidence.descriptionHtml,/Broad Responsibilities/)
+  assert.deepEqual(firstJob, {
     title: 'Structural Design Engineer',
     company: 'Precision Precast Solutions',
     location: null,
     city: null,
-    country: 'India',
+    country: null,
     jobId: 'precisionprecastsolutions-structural-design-engineer',
-    requisitionId: 'precisionprecastsolutions-structural-design-engineer',
+    requisitionId: null,
     sourceUrl: 'https://ppspl.com/career.php',
     applyUrl: 'https://ppspl.com/resume.php',
     employmentType: 'Full-time',
@@ -245,7 +247,7 @@ test('extractPublicJobs returns the public first-party Precision Precast Solutio
     requiredSkills: [],
     postingDate: null,
     closingDate: null,
-    jobDescription: 'Broad Responsibilities\nRequired minimum 2 yrs of Experience\n- Designing structures such as buildings and industrial structures.\n- Performing structural analysis to calculate loads.',
+    jobDescription: 'Designation- Structural Design Engineer Qualification- M Tech Structures/ Civil Broad Responsibilities Required minimum 2 yrs of Experience - Designing structures such as buildings and industrial structures. - Performing structural analysis to calculate loads.',
   })
   assert.equal(jobs[1].title, 'Tekla Precast Modeller / Detailer')
   assert.equal(jobs[1].minimumQualification, 'B.E. (Civil) / Diploma')

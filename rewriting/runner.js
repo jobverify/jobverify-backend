@@ -5,9 +5,11 @@ import { factPlanMessages, factPlanSchema, factPlanRanges, validateFactPlan, ass
 import { REWRITE_MODEL, REWRITE_SCHEMA, MAX_REWRITE_SECTION_ITEMS, buildRewriteInput, rewriteMessages, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
 import { reconcileRewriteCandidate, rewriteSnapshotFilter } from './queue.js';
 import { RewriteWorkerError } from './worker.js';
+import { captureRewriteError } from './failureDiagnostics.js';
 import { buildReferencedSections, expandReferencedSections } from './sectionProtocol.js';
 import { buildSourceEdits, expandSourceEdits } from './editProtocol.js';
 import { createProseRewriteClient, validateProseRewrite } from './prose.js';
+import { rewriteShardFilter } from './partitioning.js';
 
 export const rewriteDeadline = ({ now = Date.now(), budgetSeconds = 1200, workflowStartedAt, workflowSeconds = 9000, cleanupSeconds = 120 } = {}) => {
   const budget = Number(budgetSeconds);
@@ -257,32 +259,55 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
 };
 
 /** Exercise fresh inference before any production queue entry can consume an attempt. */
-export const probeRewriteClient = async (client, { concurrency = 1, deadline = Date.now() + 180000, signal, onRejection = () => {} } = {}) => {
+export const probeRewriteClient = async (client, { concurrency = 1, deadline = Date.now() + 180000, signal, onRejection = () => {}, onProbeEvent = () => {}, onProbeComplete = () => {} } = {}) => {
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw new Error('Invalid probe concurrency');
   const started = Date.now();
+  const records = [];
+  const emit = value => { try { onProbeEvent(value); } catch { /* diagnostics must not change readiness */ } };
   const probes = await Promise.allSettled(Array.from({ length: concurrency }, async (_, slot) => {
+    const probeStarted = Date.now();
+    const record = { slot, startedAt: new Date(probeStarted).toISOString() };
+    records[slot] = record;
+    emit({ event: 'probe_started', slot, timestamp: record.startedAt });
+    try {
     signal?.throwIfAborted();
     const input = buildRewriteInput({ title: 'Software Engineer', company: 'Worker health check',
       sourceDescription: `Role overview: Build Python services for customer group ${slot + 1}. Responsibilities: Design reliable APIs and maintain Python services. Required qualifications: At least 2 years of software development experience is required. Preferred qualifications: AWS experience is nice to have.` });
-    const response = await client.generate(input, { signal, remainingMs: Math.max(1, deadline - Date.now()) });
+    const response = await client.generate(input, { signal, remainingMs: Math.max(1, deadline - Date.now()), cacheMode: 'refresh', allowSourceFallback: false });
     signal?.throwIfAborted();
-    if (response.cachedModelPlan) throw new RewriteWorkerError('generation_probe');
+    if (response.cachedModelPlan || response.renderedWithoutInference) throw new RewriteWorkerError('generation_probe');
     const checked = response.finishReason === 'stop' && response.validationFailure
       ? response.validationFailure : validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
     if (!checked.ok) {
       await onRejection({ id: 'worker-probe-' + slot, input, response, reason: checked.reason, diagnostic: checked.diagnostic });
-      throw new RewriteGenerationError('Model readiness output was rejected');
+      throw Object.assign(new RewriteGenerationError('Model readiness output was rejected'), { validationReason: checked.reason });
+    }
+    record.outcome = 'passed';
+    } catch (error) {
+      record.outcome = error instanceof RewriteGenerationError ? 'rejected' : 'failed';
+      if (error.validationReason) record.reason = error.validationReason;
+      record.error = error.errorDiagnostic || captureRewriteError(error, { phase: 'probe_worker' });
+      throw error;
+    } finally {
+      record.finishedAt = new Date().toISOString();
+      record.durationMs = Date.now() - probeStarted;
+      emit({ event: 'probe_finished', ...record });
     }
   }));
   const rejections = probes.filter(result => result.status === 'rejected');
+  const details = { requests: concurrency, durationMs: Date.now() - started, ready: rejections.length === 0, probes: records,
+    ...(rejections.length ? { warnings: rejections.length } : {}) };
+  try { onProbeComplete(details); } catch { /* diagnostics must not replace the original outcome */ }
   const failure = rejections.find(result => !(result.reason instanceof RewriteGenerationError) && !['TimeoutError','AbortError'].includes(result.reason?.name));
   if (failure) {
-    if (failure.reason.name === 'RewriteWorkerError') throw failure.reason;
-    throw new RewriteWorkerError('generation_probe');
+    const error = failure.reason.name === 'RewriteWorkerError' ? failure.reason : new RewriteWorkerError('generation_probe');
+    throw Object.assign(error, { workerProbe: details });
   }
-  signal?.throwIfAborted();
-  return { requests: concurrency, durationMs: Date.now() - started, ready: rejections.length === 0,
-    ...(rejections.length ? { warnings: rejections.length } : {}) };
+  if (signal?.aborted) {
+    if (signal.reason && typeof signal.reason === 'object' && Object.isExtensible(signal.reason)) signal.reason.workerProbe = details;
+    throw signal.reason;
+  }
+  return details;
 };
 
 /** Quality rejection leaves the queue untouched; execution failures still throw in the probe. */
@@ -291,14 +316,17 @@ export const rewriteWhenReady = async (probe, processQueue) => probe?.ready === 
   qualityStopped: true, stopReason: 'readiness_rejected', reason: 'model_quality_unavailable',
 };
 
-export const rewriteQueueQuery = (now = new Date()) => ({ status: 'active', sourceContentHash: { $type: 'string' },
+export const rewriteQueueQuery = (now = new Date(), { shard = 0, shardCount = 1 } = {}) => {
+  return { status: 'active', sourceContentHash: { $type: 'string' },
+  ...rewriteShardFilter(shard, shardCount),
   $or: [
     { 'descriptionRewrite.status': 'pending', 'descriptionRewrite.attempts': { $lt: 3 } },
     { 'descriptionRewrite.status': 'failed', 'descriptionRewrite.attempts': { $lt: 3 },
       'descriptionRewrite.nextAttemptAt': { $type: 'date', $lte: now } },
     { 'descriptionRewrite.status': 'failed', 'descriptionRewrite.policyVersion': { $type: 'string', $ne: REWRITE_MODEL.policyVersion } },
   ],
-});
+  };
+};
 
 const deterministicRejections = new Set(['numeric_relationship_changed', 'required_scope_changed', 'preferred_scope_changed',
   'negation_changed', 'application_url_changed', 'source_details_changed', 'unsupported_claim', 'unsafe_output',
@@ -337,18 +365,22 @@ export const rewriteFailureDetails = (error, phase) => ({
   ...(Number.isInteger(error.workerExitCode) ? { workerExitCode: error.workerExitCode } : {}),
   ...(typeof error.workerSignal === 'string' && /^SIG[A-Z0-9]{1,20}$/.test(error.workerSignal) ? { workerSignal: error.workerSignal } : {}),
   ...(['process_exit', 'spawn_error', 'connection_refused', 'generation_probe'].includes(error.workerFailure) ? { workerFailure: error.workerFailure } : {}),
+  ...(error.errorDiagnostic && { errorDiagnostic: captureRewriteError(error.errorDiagnostic) }),
+  ...(error.workerProbe && { workerProbe: error.workerProbe }),
+  ...(error.workerDiagnostics && { workerDiagnostics: error.workerDiagnostics }),
 });
 
 export const rewriteProgress = summary => {
   const jobWarnings = (summary.failed || 0) + (summary.staleSources || 0) + (summary.concurrentChanges || 0);
-  return { warnings: jobWarnings + (summary.workerProbe?.warnings || 0),
+  return { warnings: jobWarnings + (summary.workerProbe?.warnings || 0) + (summary.sourceFallbackDescriptions || 0),
     pendingEstimate: Math.max(0, (summary.queued || 0) - (summary.published || 0) - (summary.skipped || 0) - jobWarnings) };
 };
 
 /** The caller supplies a Mongo update boundary; source/filter fields never enter these updates. */
 export const rewriteCandidates = async (jobs, { client, update, deadline, signal, concurrency = 1, onResult = () => {}, onRejection = () => {} } = {}) => {
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw new Error('Rewrite concurrency must be between one and four');
-  const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, queueRepairs: 0, staleSources: 0, concurrentChanges: 0, interrupted: false, peakConcurrency: 0 };
+  const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, queueRepairs: 0, staleSources: 0, concurrentChanges: 0,
+    sourceFallbackDescriptions: 0, sourceFallbackBlocks: 0, interrupted: false, peakConcurrency: 0 };
   const processJob = async job => {
     if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
     const reconciled = await reconcileRewriteCandidate(job, { update });
@@ -385,6 +417,7 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
       if (Number.isInteger(error.generationRequests) || error.rawText) response = { generationRequests: error.generationRequests,
         rawText: error.rawText, usage: error.usage, timings: error.timings, generations: error.generations };
+      response = { ...response, errorDiagnostic: error.errorDiagnostic || captureRewriteError(error, { phase: 'generate', sourceTexts: [input.sourceDescription] }) };
       result = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout'
         : error.reason === 'model_context_budget' ? 'model_context_budget' : 'generation_error' };
     }
@@ -401,10 +434,16 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
     if (!result.ok && deterministicRejections.has(result.reason)) values.$set['descriptionRewrite.nextAttemptAt'] = null;
     const saved = await update(filter, values);
     if (saved.matchedCount === 0) stats.concurrentChanges++;
-    else if (result.ok) stats.published++;
+    else if (result.ok) {
+      stats.published++;
+      const fallbackBlocks = result.quality?.sourceFallbackBlocks || 0;
+      if (fallbackBlocks) { stats.sourceFallbackDescriptions++; stats.sourceFallbackBlocks += fallbackBlocks; }
+    }
     else if (!assessment.ok || ['not_improved','already_structured','dense_source','uncertain_section_assignment','model_context_budget'].includes(result.reason)) stats.skipped++;
     else stats.failed++;
-    await onResult({ id: String(job._id), inputHash: input.inputHash, ok: result.ok, reason: result.reason, durationMs, wordCount: result.wordCount, generated: assessment.ok, modelPlanCached: response?.cachedModelPlan || false,
+    await onResult({ id: String(job._id), inputHash: input.inputHash, ok: result.ok,
+      published: result.ok && saved.matchedCount !== 0, reason: result.reason, durationMs, wordCount: result.wordCount, generated: assessment.ok, modelPlanCached: response?.cachedModelPlan || false,
+      ...(response?.errorDiagnostic && { errorDiagnostic: response.errorDiagnostic }),
       generationRequests: response?.generationRequests ?? (assessment.ok && !response?.cachedModelPlan ? 1 : 0), renderedWithoutInference: response?.renderedWithoutInference,
       retrySkipped: response?.retrySkipped, quality: result.quality, usage: response?.usage, timings: response?.timings,
       generations: response?.generations, reusedChunks: response?.reusedChunks,

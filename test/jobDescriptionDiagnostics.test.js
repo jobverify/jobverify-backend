@@ -62,3 +62,28 @@ test('startup probe samples cannot occupy the production numeric rejection sampl
   assert.ok(result.samples.some(sample => sample.id === 'real-job'));
   assert.ok(result.samples.length <= 10);
 });
+
+test('readiness diagnostics retain the full synthetic source separately from the failing statement', () => {
+  const diagnostics = createRewriteDiagnostics();
+  const sourceDescription = 'Role overview: Build Python services for customer group 2. Required qualifications: At least 2 years is required. Preferred qualifications: AWS is nice to have.';
+  for (const id of ['worker-probe-1', 'production-job']) diagnostics.record({ id, reason: 'numeric_relationship_changed',
+    input: { sourceDescription }, diagnostic: { evidence: 'Build Python services for customer group 2.' } });
+  const [probe, production] = diagnostics.snapshot().samples;
+  assert.equal(probe.probeSource, sourceDescription);
+  assert.equal(probe.sourceContext, 'Build Python services for customer group 2.');
+  assert.equal(production.probeSource, undefined);
+});
+
+test('assembly failure evidence uses the actual failing candidate and context rather than a stale completion', () => {
+  const diagnostics = createRewriteDiagnostics();
+  diagnostics.record({ id: 'assembly-job', reason: 'source_details_changed',
+    input: { sourceDescription: 'Build services. Maintain tests.' },
+    response: { rawText: '{"text":"last unrelated fragment"}' },
+    diagnostic: { phase: 'assembly', code: 'source_details_changed', scope: 'required',
+      evidence: 'Maintain tests.', text: 'Invented skills.', sectionContext: 'Requirements' } });
+  const sample = diagnostics.snapshot().samples[0];
+  assert.equal(sample.validation.phase, 'assembly');
+  assert.equal(sample.validation.sectionContext, 'Requirements');
+  assert.equal(JSON.parse(sample.completionPreview).text, 'Invented skills.');
+  assert.equal(sample.sourceContext, 'Maintain tests.');
+});

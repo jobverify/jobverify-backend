@@ -118,7 +118,7 @@ test('CloudMoyo returns [] while the verified public SmartRecruiters API stays a
   assert.deepEqual(jobs, [])
 })
 
-test('CloudMoyo fails closed when the verified contact page or zero-listings API state drift', async () => {
+test('CloudMoyo rejects an unrelated contact page and preserves a newly nonempty legacy observation as partial', async () => {
   const cloudmoyo = await loadModule()
 
   await assert.rejects(
@@ -129,11 +129,16 @@ test('CloudMoyo fails closed when the verified contact page or zero-listings API
     /contact page/i,
   )
 
-  await assert.rejects(
-    cloudmoyo.createCloudMoyoScraper().run({
-      fetchText: async () => officialContactHtml,
-      fetchJson: async () => publicListingsPayload,
-    }),
-    /zero-listings api state/i,
-  )
+  const jobs = await cloudmoyo.createCloudMoyoScraper().run({
+    fetchText: async () => officialContactHtml,
+    fetchJson: async () => publicListingsPayload,
+  })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Full Stack Developer')
+  assert.equal(jobs[0].jobDescription, null)
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.equal(jobs[0].applicationUrlIsGeneric, true)
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
 })

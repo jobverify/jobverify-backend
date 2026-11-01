@@ -127,7 +127,7 @@ test('extractOpenings maps EIL recruitment portal entries into shared job fields
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription: 'Official EIL opening (HRD/RECTT./ADVT./2026-27/04). See the EIL Recruitment Portal for advertisement and application details.',
+      jobDescription: null,
     },
     {
       title: 'FIXED TERM HIRING',
@@ -148,7 +148,7 @@ test('extractOpenings maps EIL recruitment portal entries into shared job fields
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription: 'Official EIL opening (HRD/RECTT./ADVT./2026-27/02). See the EIL Recruitment Portal for advertisement and application details.',
+      jobDescription: null,
     },
     {
       title: 'RECRUITMENT FOR EXPERIENCED PERSONNEL',
@@ -169,7 +169,7 @@ test('extractOpenings maps EIL recruitment portal entries into shared job fields
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription: 'Official EIL opening (HRD/RECTT./ADVT./2026-27/03). See the EIL Recruitment Portal for advertisement and application details.',
+      jobDescription: null,
     },
   ])
 })

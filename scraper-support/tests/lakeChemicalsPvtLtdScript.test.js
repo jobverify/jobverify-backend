@@ -60,17 +60,17 @@ test('Lake Chemicals scraper recognizes the verified homepage and first-party jo
   assert.deepEqual(
     jobs.map((job) => job.location),
     [
-      'Attibele Industrial Area, Bangalore, India',
-      'Attibele Industrial Area, Bangalore, India',
-      'Attibele Industrial Area, Bangalore, India',
-      'Shivaji Nagar, Bangalore, India',
-      'Attibele Industrial Area, Bangalore, India',
-      'Attibele Industrial Area, Bangalore, India',
+      'Attibele (Factory)',
+      'Attibele (Factory)',
+      'Attibele (Factory)',
+      'Shivajinagar (Head Office)',
+      'Attibele (Factory)',
+      'Attibele (Factory)',
     ],
   )
   assert.deepEqual(
     jobs.map((job) => job.city),
-    ['Bangalore', 'Bangalore', 'Bangalore', 'Bangalore', 'Bangalore', 'Bangalore'],
+    [null, null, null, null, null, null],
   )
   assert.equal(jobs[0].minimumQualification, 'Diploma in Chemical Engineering, B.Sc. in Chemistry, B.Tech/ B.E. in Chemical Engineering')
   assert.equal(jobs[0].experienceRequired, '5-8 years')
@@ -84,98 +84,22 @@ test('Lake Chemicals scraper recognizes the verified homepage and first-party jo
   assert.equal(jobs[3].experienceRequired, 'Fresher / 1-2 years of experience in API Marketing')
   assert.ok(
     jobs.every((job) =>
-      job.country === 'India'
+      job.country === null
       && job.sourceUrl.startsWith('https://lakechemicals.com/job-search#lakechemicalspvtltd-')
       && job.applyUrl === 'https://lakechemicals.com/job-search'
-      && job.jobDescription.includes('Apply via the official Lake Chemicals job search page.')),
+      && job.jobDescription.includes('Qualification') && !job.jobDescription.includes('Apply via the official')),
   )
 })
 
-test('Lake Chemicals scraper returns the public first-party roles from the verified job search page', async () => {
-  const lakeChemicals = await loadLakeChemicalsModule()
-  const requestedUrls = []
-
-  const jobs = await lakeChemicals.createLakeChemicalsPvtLtdScraper({
-    now: () => '2026-07-11T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === lakeChemicals.HOMEPAGE_URL) return verifiedHomepageHtml
-      if (url === lakeChemicals.JOB_SEARCH_URL) return verifiedJobSearchHtml
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [lakeChemicals.HOMEPAGE_URL, lakeChemicals.JOB_SEARCH_URL])
-  assert.equal(jobs.length, 6)
-  assert.equal(jobs[0].source, 'lakechemicalspvtltd')
-  assert.equal(jobs[0].company, 'Lake Chemicals Pvt. Ltd')
-  assert.equal(jobs[0].companyCareerPage, 'https://lakechemicals.com/job-search')
-  assert.equal(jobs[0].companyDomain, 'lakechemicals.com')
-  assert.equal(jobs[0].atsPlatform, 'official-company-careers')
-  assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].city, 'Bangalore')
+// Runtime HTTP metadata, country proofs and closing behavior are exercised by
+// test/lakeNativeInventory.test.js. The retired body-only override cannot certify them.
+test('Lake Chemicals runtime rejects legacy body-only transport before public HTTP', async () => {
+  const lake = await loadLakeChemicalsModule()
+  await assert.rejects(lake.run({fetchText: async () => verifiedJobSearchHtml}), /metadata|body.only|unsupported/i)
 })
 
-test('Lake Chemicals scraper fails closed when the verified homepage or job search surface drifts', async () => {
-  const lakeChemicals = await loadLakeChemicalsModule()
-
-  await assert.rejects(
-    lakeChemicals.createLakeChemicalsPvtLtdScraper().run({
-      fetchText: async (url) => {
-        if (url === lakeChemicals.HOMEPAGE_URL) return '<html><title>Unexpected</title></html>'
-        return verifiedJobSearchHtml
-      },
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    lakeChemicals.createLakeChemicalsPvtLtdScraper().run({
-      fetchText: async (url) => {
-        if (url === lakeChemicals.HOMEPAGE_URL) return verifiedHomepageHtml
-        return verifiedJobSearchHtml.replace(
-          'WE&#x27;RE HIRING!!',
-          'WE ARE GROWING',
-        )
-      },
-    }),
-    /verified first-party job search page/i,
-  )
-
-  await assert.rejects(
-    lakeChemicals.createLakeChemicalsPvtLtdScraper().run({
-      fetchText: async (url) => {
-        if (url === lakeChemicals.HOMEPAGE_URL) return verifiedHomepageHtml
-        return verifiedJobSearchHtml.replace(
-          'data-aid="CONTENT_DESCRIPTION1_RENDERED"',
-          'data-aid="CONTENT_DESCRIPTION_CHANGED"',
-        )
-      },
-    }),
-    /verified public job cards changed shape/i,
-  )
-})
-
-test('Lake Chemicals scraper returns [] when both verified first-party surfaces are temporarily unreachable from this runtime', async () => {
-  const lakeChemicals = await loadLakeChemicalsModule()
-  const requestedUrls = []
-
-  const jobs = await lakeChemicals.createLakeChemicalsPvtLtdScraper({
-    now: () => '2026-08-15T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      throw buildConnectTimeoutError()
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    lakeChemicals.HOMEPAGE_URL,
-    lakeChemicals.JOB_SEARCH_URL,
-  ])
-  assert.deepEqual(jobs, [])
+test('Lake Chemicals network failure never becomes verified empty', async t => {
+  const lake = await loadLakeChemicalsModule()
+  t.mock.method(globalThis, 'fetch', async () => {throw buildConnectTimeoutError()})
+  await assert.rejects(lake.run(), /fetch failed/)
 })

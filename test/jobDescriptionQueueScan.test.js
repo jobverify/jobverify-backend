@@ -51,6 +51,32 @@ test('large rewrite queues stream through the existing index without a blocking 
   for await (const job of rewriteQueuePages(Job, rewriteQueueQuery(), { pageSize: 8 })) ids.push(String(job._id));
   assert.deepEqual(ids, jobs.map(job => String(job._id)).sort());
   assert.equal(await Job.countDocuments(), jobs.length + excluded.length);
+
+  const partitions = await Promise.all([0, 1, 2, 3].map(async shard => {
+    const query = rewriteQueueQuery(now, { shard, shardCount: 4 });
+    assert.equal(await Job.countDocuments(query), 20);
+    const partitionPlan = await rewriteQueueScan(Job, query).explain('queryPlanner');
+    assert.doesNotMatch(JSON.stringify(partitionPlan.queryPlanner.winningPlan), /"stage":"SORT"/);
+    const assigned = [];
+    for await (const job of rewriteQueuePages(Job, query, { pageSize: 3 })) {
+      assigned.push(String(job._id));
+      // Source changes must not change the assignment while other runners scan.
+      await Job.updateOne({ _id: job._id }, { $set: { sourceContentHash: `changed-${shard}` } });
+    }
+    assert.equal(await Job.countDocuments(query), 20);
+    return assigned;
+  }));
+  assert.deepEqual(partitions.flat().sort(), ids);
+  assert.equal(new Set(partitions.flat()).size, partitions.flat().length);
+  const dynamicPartitions = await Promise.all(Array.from({ length: 32 }, async (_, shard) => {
+    const query = rewriteQueueQuery(now, { shard, shardCount: 32 });
+    const assigned = [];
+    for await (const job of rewriteQueuePages(Job, query, { pageSize: 3 })) assigned.push(String(job._id));
+    assert.equal(await Job.countDocuments(query), assigned.length);
+    return assigned;
+  }));
+  assert.deepEqual(dynamicPartitions.flat().sort(), ids);
+  assert.equal(new Set(dynamicPartitions.flat()).size, ids.length);
 });
 
 test('rewrite diagnostics identify MongoDB failures without exposing source text or credentials', () => {

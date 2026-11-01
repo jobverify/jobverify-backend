@@ -162,6 +162,17 @@ for (const parallel of [true, false]) {
     assert.equal(result.history.unavailable.success, false)
     assert.deepEqual(result.history.unavailable.retry, { attemptsUsed: 2, retries: 1, retryDelayMs: 2000 })
   })
+  test(`${parallel ? 'parallel' : 'sequential'} runner retains recovered HTTP retries in persisted run history`, () => {
+    const result = runScenario('recovered-request-telemetry', parallel)
+    assert.equal(result.error, null)
+    assert.equal(result.httpRequests, 2)
+    assert.equal(result.history.recovered.success, true)
+    assert.deepEqual(result.history.recovered.retry, { attemptsUsed: 1, retries: 0, retryDelayMs: 0 })
+    assert.deepEqual(result.history.recovered.retryPressure, {
+      nestedScopes: 1, nestedAttempts: 2, nestedRetries: 1, nestedFailedAttempts: 1,
+      nestedRetryDelayMs: 0, httpStatusCounts: { 429: 1 },
+    })
+  })
 }
 
 

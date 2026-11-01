@@ -18,6 +18,7 @@ const MONGO_MAP_DOLLAR_ESCAPE = "\uFF04";
 const ATTEMPT_DIAGNOSTIC_FIELDS = [
   "rawRecords", "filteredNonIndia", "filteredClosed", "filteredInvalidUrl",
   "filteredEmptyDescription", "filteredNonJob", "zeroJobEvidence", "inventoryEvidence", "detailHealth",
+  "inventoryDelegationEvidence", "sourceObservations", "retryPressure", "retry",
   "attemptedAt", "completedAt", "staleCheckSkipped", "staleCheckReason",
   "softFailure", "upstreamOutage", "failureKind", "partial", "skipped", "processingComplete",
 ];

@@ -3,7 +3,7 @@ import {
   isAllowedAccountEmail,
   isStrongPassword,
   normalizeEmailAddress,
-  PASSWORD_MIN_LENGTH,
+  PASSWORD_POLICY_MESSAGE,
 } from "../utils/authSecurity.js";
 import { PREFERRED_JOB_TYPES } from "../constants/preferredJobTypes.js";
 import { ACCESS_ROLES, PLAN_IDS } from "../constants/accessPlans.js";
@@ -286,7 +286,7 @@ export const registerValidation = [
     }
     if (!isStrongPassword(value)) {
       throw new Error(
-        `Password must be at least ${PASSWORD_MIN_LENGTH} characters and include uppercase, lowercase, and a number.`,
+        PASSWORD_POLICY_MESSAGE,
       );
     }
     return true;
@@ -338,7 +338,7 @@ export const verifyEmailValidation = [
     }
     if (!isStrongPassword(value)) {
       throw new Error(
-        `Password must be at least ${PASSWORD_MIN_LENGTH} characters and include uppercase, lowercase, and a number.`,
+        PASSWORD_POLICY_MESSAGE,
       );
     }
     return true;
@@ -357,7 +357,7 @@ export const resetPasswordValidation = [
     }
     if (!isStrongPassword(value)) {
       throw new Error(
-        `Password must be at least ${PASSWORD_MIN_LENGTH} characters and include uppercase, lowercase, and a number.`,
+        PASSWORD_POLICY_MESSAGE,
       );
     }
     return true;
@@ -368,7 +368,7 @@ export const changePasswordValidation = [
   body('oldPassword').isString().bail().notEmpty().withMessage('Old password is required.'),
   body('newPassword').custom((value) => {
     if (typeof value !== 'string' || !isStrongPassword(value)) {
-      throw new Error(`Password must be at least ${PASSWORD_MIN_LENGTH} characters and include uppercase, lowercase, and a number.`);
+      throw new Error(PASSWORD_POLICY_MESSAGE);
     }
     return true;
   }),
@@ -454,17 +454,6 @@ export const mongoIdParamValidation = (name, label) => [
 ];
 
 export const userProfileValidation = [
-  ...['aboutYou', 'experienceProjects'].map(field => body(field).optional().isString().bail()
-    .custom(value => value.trim().length <= 4000).withMessage('Candidate context must be 4000 characters or fewer.')),
-  body('portfolioUrl').optional().isString().bail().custom(value => {
-    if (!value.trim()) return true;
-    if (value.trim().length > 2048) throw new Error('Portfolio link is too long.');
-    try {
-      const url = new URL(value.trim());
-      if (['http:', 'https:'].includes(url.protocol) && !url.username && !url.password) return true;
-    } catch { /* Reject malformed links below. */ }
-    throw new Error('Portfolio must be an http(s) link without credentials.');
-  }),
   body("name").optional().custom((value) => {
     if (String(value ?? "").trim().length > MAX_TEXT_LENGTH) {
       throw new Error(`Name must be ${MAX_TEXT_LENGTH} characters or fewer.`);

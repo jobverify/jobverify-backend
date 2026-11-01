@@ -73,7 +73,7 @@ test('Harbinger Systems run validates the current careers shell before using Dar
 
   assert.deepEqual(requested, [
     { type: 'text', url: harbingerSystems.CAREERS_URL },
-    { type: 'listing', params: { page: 1, pageSize: 10, companyId: 'main' } },
+    { type: 'listing', params: { page: 1, pageSize: 10, companyId: 'main', signal: undefined } },
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'harbingersystems')

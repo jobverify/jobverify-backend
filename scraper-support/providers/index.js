@@ -17,13 +17,17 @@ import {
 } from '../supportPaths.js'
 import { TARGETED_OPENING_PROVIDERS } from './targetedOpeningProviders.js'
 import { attachInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { attachInventoryDelegationEvidence, readInventoryDelegationEvidence } from '../utils/inventoryDelegationEvidence.js'
+import { attachSourceObservationEvidence, readSourceObservationEvidence } from '../utils/sourceObservationEvidence.js'
 import { hasMatchingPublicAtsBinding } from '../utils/publicAtsIdentity.js'
+import { buildHttpError, parseRetryAfterHeader } from '../utils/fetch.js'
 
 const currentDir = SUPPORT_PROVIDER_DIR
 const scraperDir = SCRAPER_DIR
 export const DEFAULT_PROVIDER_EXTENSION_DIR = path.join(SUPPORT_PROVIDER_DIR, 'providerExtensions')
 const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobverify.workday.authoritative-empty')
 const WORKDAY_COUNTRY_INVENTORY_PROOF = Symbol.for('jobverify.workday.country-inventory-proof')
+const OFFICIAL_ATS_DISCOVERY = Symbol.for('jobverify.official-ats-discovery')
 const workdayCompanies = JSON.parse(
   readFileSync(path.resolve(currentDir, '../myworkday/companies.json'), 'utf-8'),
 )
@@ -478,7 +482,7 @@ const createAuthorizedFetchJson = (provider) => {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} for ${authConfig.tokenUrl}`)
+      throw buildHttpError(response, authConfig.tokenUrl)
     }
 
     const payload = await response.json()
@@ -509,16 +513,16 @@ const createAuthorizedFetchJson = (provider) => {
     }
 
     let response = await executeRequest()
+    let httpError = response.ok ? null : buildHttpError(response, url)
     if (
       shouldAuthorizeRequest(provider, url)
       && (response.status === 401 || response.status === 403)
     ) {
       response = await executeRequest({ forceRefresh: true })
+      httpError = response.ok ? null : buildHttpError(response, url)
     }
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} for ${url}`)
-    }
+    if (httpError) throw httpError
 
     return response.json()
   }
@@ -546,6 +550,10 @@ export const getScraperCatalog = ({
 
 export const decorateJobsWithProviderMetadata = (jobs, provider) => {
   const decoratedJobs = jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
+  const sourceObservations = readSourceObservationEvidence(jobs, provider.source)
+  if (sourceObservations) attachSourceObservationEvidence(decoratedJobs, sourceObservations)
+  const delegationEvidence = readInventoryDelegationEvidence(jobs)
+  if (delegationEvidence) attachInventoryDelegationEvidence(decoratedJobs, delegationEvidence)
   const inventoryEvidence = readInventoryEvidence(jobs)
   if (inventoryEvidence) {
     attachInventoryEvidence(decoratedJobs, inventoryEvidence)
@@ -568,6 +576,11 @@ export const decorateJobsWithProviderMetadata = (jobs, provider) => {
   if (jobs[WORKDAY_COUNTRY_INVENTORY_PROOF]) {
     Object.defineProperty(decoratedJobs, WORKDAY_COUNTRY_INVENTORY_PROOF, {
       value: jobs[WORKDAY_COUNTRY_INVENTORY_PROOF],
+    })
+  }
+  if (jobs[OFFICIAL_ATS_DISCOVERY]) {
+    Object.defineProperty(decoratedJobs, OFFICIAL_ATS_DISCOVERY, {
+      value: jobs[OFFICIAL_ATS_DISCOVERY],
     })
   }
   return decoratedJobs
@@ -617,7 +630,14 @@ const fetchJson = async (url, options = {}) => {
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+    const error = buildHttpError(response, url)
+    const retryAfter = response.headers?.get?.('retry-after')
+    if (retryAfter != null) {
+      error.retryAfter = retryAfter
+      const retryDelayMs = error.retryDelayMs ?? parseRetryAfterHeader(retryAfter)
+      if (retryDelayMs != null) error.retryDelayMs = retryDelayMs
+    }
+    throw error
   }
 
   return response.json()

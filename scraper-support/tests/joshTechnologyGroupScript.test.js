@@ -48,9 +48,9 @@ test('Josh Technology Group extracts the verified first-party careers listings w
     department: 'JTGxPOD Hirings',
     location: null,
     city: null,
-    country: 'India',
+    country: null,
     jobId: 'joshtechnologygroup-inside-sales-strategist-podxjtg',
-    requisitionId: 'joshtechnologygroup-inside-sales-strategist-podxjtg',
+    requisitionId: null,
     sourceUrl: 'https://www.joshtechnologygroup.com/careers/inside-sales-strategist-podxjtg/',
     applyUrl: 'https://www.joshtechnologygroup.com/careers/inside-sales-strategist-podxjtg/',
     employmentType: null,
@@ -68,9 +68,9 @@ test('Josh Technology Group extracts the verified first-party careers listings w
     department: 'Technical Delivery',
     location: null,
     city: null,
-    country: 'India',
+    country: null,
     jobId: 'joshtechnologygroup-software-developer-php-magento',
-    requisitionId: 'joshtechnologygroup-software-developer-php-magento',
+    requisitionId: null,
     sourceUrl: 'https://www.joshtechnologygroup.com/careers/software-developer-php-magento/',
     applyUrl: 'https://www.joshtechnologygroup.com/careers/software-developer-php-magento/',
     employmentType: null,
@@ -93,9 +93,9 @@ test('Josh Technology Group enriches verified detail pages into normalized job r
     department: 'JTGxPOD Hirings',
     location: null,
     city: null,
-    country: 'India',
+    country: null,
     jobId: 'joshtechnologygroup-inside-sales-strategist-podxjtg',
-    requisitionId: 'joshtechnologygroup-inside-sales-strategist-podxjtg',
+    requisitionId: null,
     sourceUrl: 'https://www.joshtechnologygroup.com/careers/inside-sales-strategist-podxjtg/',
     applyUrl: 'https://www.joshtechnologygroup.com/careers/inside-sales-strategist-podxjtg/',
     employmentType: null,
@@ -108,8 +108,10 @@ test('Josh Technology Group enriches verified detail pages into normalized job r
     jobDescription: null,
   })
 
-  assert.equal(insideSales.location, 'Gurgaon/Gurugram, India')
-  assert.equal(insideSales.city, 'Gurgaon')
+  // Keep the native workplace label; it supplies neither a typed city nor country.
+  assert.equal(insideSales.location, 'Gurgaon/Gurugram – Work from office')
+  assert.equal(insideSales.city, null)
+  assert.equal(insideSales.country, null)
   assert.equal(insideSales.experienceRequired, '0-5 Years of B2B/Inside Sales Experience')
   assert.equal(insideSales.minimumQualification, "Bachelor's/Master's degree in any relevant field")
   assert.match(insideSales.jobDescription, /Conducting in-depth market research to identify new sales opportunities/i)
@@ -131,9 +133,9 @@ test('Josh Technology Group enriches verified detail pages into normalized job r
     department: 'Technical Delivery',
     location: null,
     city: null,
-    country: 'India',
+    country: null,
     jobId: 'joshtechnologygroup-software-developer-php-magento',
-    requisitionId: 'joshtechnologygroup-software-developer-php-magento',
+    requisitionId: null,
     sourceUrl: 'https://www.joshtechnologygroup.com/careers/software-developer-php-magento/',
     applyUrl: 'https://www.joshtechnologygroup.com/careers/software-developer-php-magento/',
     employmentType: null,
@@ -146,9 +148,10 @@ test('Josh Technology Group enriches verified detail pages into normalized job r
     jobDescription: null,
   })
 
-  assert.equal(phpMagento.location, 'Gurgaon, India')
-  assert.equal(phpMagento.city, 'Gurgaon')
-  assert.equal(phpMagento.experienceRequired, '1-3 years of software development experience.')
+  assert.equal(phpMagento.location, 'Gurgaon (WFO)')
+  assert.equal(phpMagento.city, null)
+  assert.equal(phpMagento.country, null)
+  assert.equal(phpMagento.experienceRequired, '1- 3 years of software development experience.')
   assert.equal(phpMagento.minimumQualification, 'B.E/B.Tech in CS/IT/ECE from a reputed college.')
   assert.match(phpMagento.jobDescription, /low-latency applications/i)
   assert.ok(phpMagento.requiredSkills.includes('Must have technical knowledge of PHP. and Magento 2.'))
@@ -173,7 +176,7 @@ test('Josh Technology Group run validates the verified first-party flow and retu
         return INSIDE_SALES_DETAIL_HTML.replaceAll(
           'Inside Sales Strategist @PODxJTG',
           'Program Associate @PODxJTG',
-        )
+        ).replaceAll('inside-sales-strategist-podxjtg', 'program-associate-podxjtg')
       }
 
       throw new Error(`Unexpected fixture URL: ${url}`)
@@ -232,6 +235,6 @@ test('Josh Technology Group fails closed when the verified homepage, careers pag
         return '<html><body><h1>Broken</h1></body></html>'
       },
     }),
-    /verified first-party detail page/i,
+    /Josh Technology Group.*(?:identity|detail)/i,
   )
 })

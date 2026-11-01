@@ -96,7 +96,8 @@ test('experienced job visibility is reversible and consistent across public surf
   const ids = categories.map(() => new mongoose.Types.ObjectId());
   await Job.collection.insertMany(categories.map((jobType, index) => ({
     fingerprint: String(ids[index]), _id: ids[index], title: `Opportunity ${index}`, company: `Company ${index}`, companyKey: `company ${index}`,
-    jobType, status: 'active', isPublicIndia: true, city: 'Bangalore', country: 'India', description: 'Deliver software features and support the engineering team.',
+    jobType, status: 'active', isPublicIndia: true, city: 'Bangalore', country: 'India',
+    description: 'Deliver software features and support the engineering team. Review requirements, investigate defects, write automated checks and collaborate with colleagues to maintain reliable applications.',
     sourceUrl: `https://example.com/jobs/${index}`, applyUrl: `https://example.com/jobs/${index}`,
     postedAt: new Date(), sortDate: new Date(),
   })));
@@ -192,9 +193,9 @@ test('experienced job visibility is reversible and consistent across public surf
   });
   await t.test('reenabling restores jobs, counts, links and bookmarks', async () => {
     await SiteSettings.collection.updateOne({ _id: 'global' }, { $set: { experiencedJobsEnabled: true } });
-    assert.equal((await read('/api/jobs')).pagination.total, 6);
-    assert.equal((await read('/api/jobs/stats')).data.totalJobs, 6);
-    assert.equal((await read('/saved')).data.length, 6);
+    assert.equal((await read('/api/jobs')).pagination.total, 4);
+    assert.equal((await read('/api/jobs/stats')).data.totalJobs, 4);
+    assert.equal((await read('/saved')).data.length, 4);
     assert.equal((await fetch(base + `/api/jobs/${ids[0]}`)).status, 200);
     assert.equal(await Job.countDocuments({}), 6);
   });

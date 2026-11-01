@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { getScraperCatalog, createCatalogScraper } from '../providers/index.js'
 import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { capturedWatchguardRecords, replayRegisteredWatchguard } from './watchguardRegistered20261031.fixture.js'
 
 // Representative native contracts, not captured live responses. See the public
 // Lever Postings API and Greenhouse Job Board API schemas.
@@ -30,7 +31,7 @@ const leverJob = (board, id, location = 'Bengaluru, India') => ({
   additional: '<p>Employer benefits include paid leave.</p>',
 })
 
-for (const [source, board] of [['asapp', 'asapp-2'], ['watchguard', 'watchguard']]) {
+for (const [source, board] of [['asapp', 'asapp-2']]) {
   test(`${source} registered scraper retains every native Lever description section`, async t => {
     const jobs = await runRegistered(t, source, [leverJob(board, 'india-role'),
       { ...leverJob(board, 'foreign-role', 'Boston, United States'), country: 'US' }])
@@ -64,6 +65,77 @@ for (const [source, board] of [['asapp', 'asapp-2'], ['watchguard', 'watchguard'
     assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
   })
 }
+
+// WatchGuard's registered source now binds native HTTP/role-schema provenance
+// and leaves employer scope unresolved. Bare JSON mapper fixtures cannot stand
+// in for that source or certify complete inventory. Keep the four contracts at
+// the current registered boundary, using its existing transport-qualified data.
+test('watchguard registered reader retains all captured native criteria without certifying source scope', async () => {
+  const original = capturedWatchguardRecords()
+  const { jobs, audit, calls } = await replayRegisteredWatchguard()
+  assert.equal(jobs.length, 0)
+  assert.equal(calls.length, 33)
+  assert.deepEqual(audit.originalOpening, original)
+  assert.deepEqual(audit.originalClosing, original)
+  assert.equal(audit.nativeRecords.length, 31)
+  for (const [index, role] of audit.nativeRecords.entries()) {
+    const raw = original[index]
+    assert.deepEqual(role.sourceNativeRecord, raw)
+    const introduction = [raw.descriptionPlain, raw.description, raw.descriptionBodyPlain].find(value => value?.trim())
+    if (introduction) assert.ok(role.jobDescription.includes(introduction.trim()))
+    for (const section of raw.lists) {
+      if (section.content?.trim()) assert.ok(role.jobDescription.includes(section.content.trim()), `Missing native criteria for ${raw.id}`)
+    }
+    const additional = [raw.additionalPlain, raw.additional].find(value => value?.trim())
+    if (additional) assert.ok(role.jobDescription.includes(additional.trim()))
+  }
+  assert.equal(audit.nativeRecords[0].postingDate, '2026-10-15')
+  assert.equal(audit.nativeRecords[0].nativeCreatedAt, 1792068974364)
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'discovery-only')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
+  assert.equal(evidence.reason, 'watchguard-publication-provenance-source-scope-unresolved:lever-public-posting-api-incomplete:native-location-scope-unresolved;provider-source-scope-unresolved;api-portal-incomplete-listing-or-role-details:native-location-scope-unresolved;inner-source-listing-incomplete')
+  assert.equal(audit.lifecycleCleanupAllowed, false)
+})
+
+test('watchguard registered foreign role retains native provenance while the authoritative India count stays unknown', async () => {
+  const record = capturedWatchguardRecords().find(row => row.country === 'IT' && row.categories.location === 'Padova')
+  assert.ok(record)
+  const { jobs, audit, calls } = await replayRegisteredWatchguard({ selectedRecords: [record] })
+  assert.equal(jobs.length, 0)
+  assert.equal(calls.length, 3)
+  assert.equal(audit.strongestEngineEvidence.indiaFacetCount, 0)
+  assert.deepEqual(audit.nativeRecords[0].sourceNativeRecord, record)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).reason, 'watchguard-publication-provenance-source-scope-unresolved:lever-public-posting-api-incomplete:provider-source-scope-unresolved')
+})
+
+test('watchguard registered native country and India location conflict still rejects the source', async () => {
+  const record = capturedWatchguardRecords()[0]
+  // Controlled contradiction of the real ES record, rejected before role HTML.
+  record.categories.location = 'Bengaluru, India'
+  record.categories.allLocations = ['Bengaluru, India']
+  await assert.rejects(replayRegisteredWatchguard({ selectedRecords: [record] }), /contradictory country\/location/i)
+})
+
+test('watchguard actual unresolved alternate location cannot inherit the primary native country', async () => {
+  const record = capturedWatchguardRecords().find(row => row.country === 'US'
+    && row.categories.location === 'Seattle, Washington' && row.categories.allLocations.length === 2)
+  assert.ok(record)
+  assert.deepEqual(record.categories.allLocations, ['Seattle, Washington', 'Miami, FL'])
+  const { jobs, audit } = await replayRegisteredWatchguard({ selectedRecords: [record] })
+  assert.equal(jobs.length, 0)
+  assert.equal(audit.strongestEngineEvidence.listingComplete, false)
+  assert.equal(audit.strongestEngineEvidence.indiaFacetCount, null)
+  assert.deepEqual(audit.nativeRecords[0].sourceNativeLocationAlternatives, ['Seattle, Washington', 'Miami, FL'])
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  assert.equal(readInventoryEvidence(jobs).reason, 'watchguard-publication-provenance-source-scope-unresolved:lever-public-posting-api-incomplete:native-location-scope-unresolved;provider-source-scope-unresolved;api-portal-incomplete-listing-or-role-details:native-location-scope-unresolved;inner-source-listing-incomplete')
+})
 
 test('Lever HTML sections survive empty plain-text variants', async t => {
   const row = { ...leverJob('asapp-2', 'html-role'), descriptionPlain: ' ', additionalPlain: '',

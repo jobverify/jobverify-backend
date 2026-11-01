@@ -34,7 +34,7 @@ for(const stage of keys){
     assert.deepEqual(manifest.stages.map(entry=>entry.key),[stage]);
     assert.equal(manifest.kind,'all');
     assert.equal(manifest.snapshot,true);
-    assert.equal(bundle.filename,`pipeline-${id}-${stage}-${manifest.createdAt.replace(/[:.]/g,'-')}.zip`);
+    assert.equal(bundle.filename,`${stage==='classification'?'classify':stage}-${manifest.createdAt.replace(/[:.]/g,'-')}.zip`);
   });
 }
 
@@ -65,7 +65,7 @@ for(const kind of ['logs','artifacts']){
     }
     const manifest=JSON.parse(await zip.file('manifest.json').async('string'));
     assert.equal(manifest.kind,kind);
-    assert.equal(bundle.filename,`pipeline-${id}-${kind}-${manifest.createdAt.replace(/[:.]/g,'-')}.zip`);
+    assert.equal(bundle.filename,`pipeline-${kind}-${manifest.createdAt.replace(/[:.]/g,'-')}.zip`);
     assert.ok(manifest.stages.every(stage=>stage.unavailable.length===0));
   });
 

@@ -1,6 +1,6 @@
 import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {resolveWorksiteCountry} from './worksiteCountry.js'
-import {CORPORATE,CAREERS,BOARD,API,listingJobs,jobDetail,pagination,searchBody,validateCorporate,validateClient,countryOf} from './nativeContract.js'
+import {CORPORATE,CAREERS,BOARD,BOARD_ROOT,API,listingJobs,jobDetail,pagination,searchBody,validateCorporate,validateClient,isExactNativeHandoff,countryOf} from './nativeContract.js'
 export const LISTING_PAGE_URL=BOARD
 export const DETAIL_PAGE_URL_PREFIX='https://careers.brillio.com/job-details?job-id='
 export const APPLY_PAGE_URL_PREFIX='https://careers.brillio.com/privacy-notice?job-id='
@@ -28,7 +28,7 @@ export const createBrillioScraper=({maxJobs=null}={})=>({
  async run(options={}){
   const now=new Date(options.now||Date.now()).toISOString(),fetchNative=options.fetch||globalThis.fetch,allRows=[],jobs=[],requests=[],errors=[],contextualCountryEvidence=[]
   let denied=false,pagesFetched=0,enumerationComplete=false,closingMatches=false,bindingVerified=false,unknownCount=0,foreignCount=0,globalCount=0,fullCount=0,closedCount=0
-  const get=async(url,init={})=>{
+  const get=async(url,init={},expectedFinalUrls=null)=>{
    if(denied)throw Error('Brillio native access already denied')
    options.signal?.throwIfAborted()
    let body,finalURL=url,status=200
@@ -42,7 +42,7 @@ export const createBrillioScraper=({maxJobs=null}={})=>({
    if([401,403,429].includes(status)||blocked(body)){denied=true;throw Error('Brillio native public access denied')}
    if(status<200||status>=300)throw Error('Brillio native HTTP '+status)
    const requested=new URL(url),final=new URL(finalURL)
-   if(requested.hostname!==final.hostname||requested.searchParams.get('job-id')!==final.searchParams.get('job-id'))throw Error('Brillio native response identity redirect mismatch')
+   if(requested.hostname!==final.hostname||requested.searchParams.get('job-id')!==final.searchParams.get('job-id')||expectedFinalUrls&&!expectedFinalUrls.some(expected=>isExactNativeHandoff(final.href,expected)))throw Error('Brillio native response identity redirect mismatch')
    return body
   }
   const inventory=async()=>{
@@ -59,9 +59,14 @@ export const createBrillioScraper=({maxJobs=null}={})=>({
    return rows
   }
   try{
-   validateCorporate(await get(CORPORATE),CAREERS)
-   validateCorporate(await get(CAREERS),BOARD)
-   const board=await get(BOARD);validateClient(board);bindingVerified=true
+   const handoff=validateCorporate(await get(CORPORATE),CAREERS,[BOARD,BOARD_ROOT])
+   if(handoff===CAREERS)validateCorporate(await get(CAREERS),BOARD)
+   let board
+   if(handoff===BOARD_ROOT){
+    const landing=await get(BOARD_ROOT,{},[BOARD_ROOT,BOARD])
+    try{validateClient(landing);board=landing}catch{validateCorporate(landing,BOARD);board=await get(BOARD)}
+   }else board=await get(BOARD)
+   validateClient(board);bindingVerified=true
    allRows.push(...await inventory());globalCount=allRows.length;enumerationComplete=true
    for(const row of allRows){
     const listingCountry=countryOf(row.location)
@@ -88,7 +93,8 @@ export const createBrillioScraper=({maxJobs=null}={})=>({
    nativeReportedTotal:null,nativeIndiaFacetCount:null,globalPostingIds:allRows.map(row=>row.jobId),contextualCountryEvidence,
    enumerationComplete,closingInventoryMatches:closingMatches,bindingVerified,scopeComplete:complete,pagesFetched,denied,errors,requests}
   for(const job of selected)Object.assign(job,{sourceListingComplete:complete,sourceNativeInventory:audit,lifecycleCleanupAllowed:complete})
-  return attachInventoryEvidence(selected,{status:complete?'complete-inventory':'coverage-gap',surface:BOARD,firstParty:bindingVerified,listingComplete:complete,pagesFetched,reportedTotal:null,indiaFacetCount:null,verifiedAt:now,reason:complete?'native-unfiltered-pages-and-closing-inventory-reconciled':'native-country-detail-or-scope-unresolved'})
+  const failureReasons=[...new Set(errors.map(error=>error.reason))].slice(0,5)
+  return attachInventoryEvidence(selected,{status:complete?'complete-inventory':'coverage-gap',surface:BOARD,firstParty:bindingVerified,listingComplete:complete,pagesFetched,reportedTotal:null,indiaFacetCount:null,verifiedAt:now,reason:complete?'native-unfiltered-pages-and-closing-inventory-reconciled':['native-country-detail-or-scope-unresolved',...failureReasons].join(':')})
  }
 })
 export const run=options=>createBrillioScraper().run(options)

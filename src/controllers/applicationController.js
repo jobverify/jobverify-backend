@@ -5,7 +5,7 @@ import Job from '../models/Job.js';
 import { safeApplicationUrl, recordApplicationEvidence, publicApplication } from '../services/applicationService.js';
 import { respondWithInternalError } from '../utils/respondWithInternalError.js';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 2;
 
 export async function getApplications(req, res) {
   const { page: rawPage = '1', status = 'all', stage = 'all' } = req.query ?? {};
@@ -16,8 +16,8 @@ export async function getApplications(req, res) {
   }
   try {
     const filters = [...(status === 'all' ? [] : [{ $match: { status } }]), ...(stage === 'all' ? [] : [{ $match: { stage } }])];
-    // Start with durable resume requests so even requests queued before this
-    // feature appear without a migration or an employer-page click.
+    // A tailored resume request is the only way a job enters this tracker.
+    // Employer-page clicks and submission evidence alone do not add entries.
     const [result] = await TailoredResume.aggregate([
       { $match: { user: new mongoose.Types.ObjectId(String(req.user._id)) } },
       { $lookup: { from: Application.collection.name, let: { owner: '$user', jobId: '$job' }, pipeline: [
@@ -39,26 +39,13 @@ export async function getApplications(req, res) {
         confirmationSource: { $ifNull: ['$application.confirmationSource', ''] },
         evidence: { $ifNull: ['$application.evidence', []] },
         resumeStatus: '$status', resumeRequestedAt: { $ifNull: ['$requestedAt', '$createdAt'] },
-        trackedAt: { $ifNull: ['$application.firstOpenedAt', { $ifNull: ['$requestedAt', '$createdAt'] }] },
+        trackedAt: { $ifNull: ['$requestedAt', '$createdAt'] },
         jobSnapshot: { $ifNull: ['$application.jobSnapshot', {
           title: '$listing.title', company: '$listing.company',
           location: { $ifNull: ['$listing.location', '$listing.city'] }, jobType: '$listing.jobType',
           applicationUrl: '$listing.applicationUrl', applyUrl: '$listing.applyUrl', sourceUrl: '$listing.sourceUrl',
         }] },
       } },
-      // Resume requests retain their existing place in the tracker. Applications
-      // made with another CV are equally durable and must not disappear here.
-      { $unionWith: { coll: Application.collection.name, pipeline: [
-        { $match: { user: new mongoose.Types.ObjectId(String(req.user._id)) } },
-        { $lookup: { from: TailoredResume.collection.name, let: { owner: '$user', jobId: '$job' }, pipeline: [
-          { $match: { $expr: { $and: [{ $eq: ['$user', '$$owner'] }, { $eq: ['$job', '$$jobId'] }] } } },
-          { $project: { _id: 1 } },
-        ], as: 'resume' } },
-        { $match: { 'resume.0': { $exists: false } } },
-        { $project: { job: 1, status: 1, firstOpenedAt: 1, appliedAt: 1, jobSnapshot: 1, evidence: 1, confirmationSource: 1,
-          stage: { $ifNull: ['$stage', { $cond: [{ $eq: ['$status', 'applied'] }, 'applied', 'preparing'] }] },
-          version: { $ifNull: ['$version', 0] }, canConfirm: { $literal: true }, trackedAt: { $ifNull: ['$firstOpenedAt', '$createdAt'] } } },
-      ] } },
       { $facet: {
         items: [
           ...filters,

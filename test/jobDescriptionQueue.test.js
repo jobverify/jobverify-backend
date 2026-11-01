@@ -18,3 +18,11 @@ test('malformed workflow timestamps and limits fail closed', () => {
   assert.throws(() => rewriteDeadline({ workflowStartedAt: 'bad' }), /timestamp/);
   assert.throws(() => rewriteDeadline({ workflowSeconds: 'bad' }), /deadline/);
 });
+
+test('queue partition identities are validated before any work can be assigned', () => {
+  for (const options of [{ shard: -1, shardCount: 4 }, { shard: 4, shardCount: 4 },
+    { shard: .5, shardCount: 4 }, { shard: 0, shardCount: 0 }, { shard: 0, shardCount: 17 },
+    { shard: 0, shardCount: 2.5 }, { shard: NaN, shardCount: 4 }]) {
+    assert.throws(() => rewriteQueueQuery(new Date(), options), /shard/i);
+  }
+});

@@ -1,18 +1,18 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { CAREERS, runNativeEntegris } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "entegris"
 export const COMPANY = "Entegris"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-08"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 11 exact-name sentinel for Entegris added on Saturday, August 8, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = CAREERS
+export const DISPOSITION = 'current-official-redirect-native-Workday-India-facet'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Reverify the current first-party careers handoff, native country facet, full role identity/content/dates and selected inventory. Other company recruitment channels and publication remain unknown.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runNativeEntegris(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

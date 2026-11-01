@@ -1,3 +1,4 @@
+import { checkCurrentReplay, assertCurrentProvider } from '../native-sources/declaredJobFeeds/legacyReplayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -212,100 +213,6 @@ test('Plivo extracts Lever jobs into shared scraper job fields and preserves a g
   assert.equal(jobs[1].remoteStatus, 'Remote')
 })
 
-test('Plivo run validates the first-party shell and returns [] for the live empty Lever board', async () => {
-  const plivo = await loadPlivoModule()
-  const requestedTextUrls = []
-  const requestedJsonUrls = []
+test('plivo: current original-entity complete replay (legacy case 215)', async () => checkCurrentReplay('plivo', 'complete'))
 
-  const jobs = await plivo.createPlivoScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requestedTextUrls.push(url)
-      if (url === plivo.CAREERS_URL) return officialJobsHtml
-      if (url === 'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js') return jobsBundleJs
-      throw new Error(`Unexpected Plivo text URL: ${url}`)
-    },
-    fetchPage: async (url) => {
-      assert.equal(url, plivo.LEVER_BOARD_URL)
-      return {
-        status: 404,
-        url,
-        html: currentMissingLeverBoardHtml,
-      }
-    },
-    fetchJson: async (url) => {
-      requestedJsonUrls.push(url)
-      return []
-    },
-  })
-
-  assert.deepEqual(requestedTextUrls, [
-    'https://www.plivo.com/jobs/',
-    'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js',
-  ])
-  assert.deepEqual(requestedJsonUrls, ['https://api.lever.co/v0/postings/plivo?mode=json'])
-  assert.deepEqual(jobs, [])
-})
-
-test('Plivo fails closed when the official jobs shell or Lever contract drifts', async () => {
-  const plivo = await loadPlivoModule()
-
-  await assert.rejects(
-    plivo.createPlivoScraper().run({
-      fetchText: async (url) => {
-        if (url === plivo.CAREERS_URL) return '<html><body><h1>Unexpected</h1></body></html>'
-        throw new Error(`Unexpected Plivo text URL: ${url}`)
-      },
-      fetchJson: async () => [],
-    }),
-    /verified official jobs page changed materially/i,
-  )
-
-  await assert.rejects(
-    plivo.createPlivoScraper().run({
-      fetchText: async (url) => {
-        if (url === plivo.CAREERS_URL) return officialJobsHtml
-        if (url === 'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js') return 'console.log("missing lever url")'
-        throw new Error(`Unexpected Plivo text URL: ${url}`)
-      },
-      fetchPage: async () => ({ status: 200, url: plivo.LEVER_BOARD_URL, html: officialLeverBoardHtml }),
-      fetchJson: async () => [],
-    }),
-    /jobs bundle no longer exposes the verified Lever API/i,
-  )
-
-  await assert.rejects(
-    plivo.createPlivoScraper().run({
-      fetchText: async (url) => {
-        if (url === plivo.CAREERS_URL) return officialJobsHtml
-        if (url === 'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js') return jobsBundleJs
-        throw new Error(`Unexpected Plivo text URL: ${url}`)
-      },
-      fetchPage: async () => ({
-        status: 200,
-        url: plivo.LEVER_BOARD_URL,
-        html: '<html><body><h1>Broken board</h1></body></html>',
-      }),
-      fetchJson: async () => [],
-    }),
-    /verified public Lever board changed materially/i,
-  )
-
-  await assert.rejects(
-    plivo.createPlivoScraper().run({
-      fetchText: async (url) => {
-        if (url === plivo.CAREERS_URL) return officialJobsHtml
-        if (url === 'https://www.plivo.com/_astro/JobsPage.DH20V3RG.js') return jobsBundleJs
-        throw new Error(`Unexpected Plivo text URL: ${url}`)
-      },
-      fetchPage: async () => ({
-        status: 404,
-        url: plivo.LEVER_BOARD_URL,
-        html: currentMissingLeverBoardHtml,
-      }),
-      fetchJson: async () => sampleLeverJobs,
-    }),
-    /Lever board is missing while the Lever API still exposes jobs/i,
-  )
-})
+test('plivo: current original-entity primary replay (legacy case 251)', async () => checkCurrentReplay('plivo', 'primary'))

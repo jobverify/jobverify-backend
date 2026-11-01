@@ -79,6 +79,10 @@ const readFlightRecords = html => {
   return records
 }
 
+// Expose the same literal-only decoder for non-Kula pages using React Flight.
+// This does not select, transform or manufacture any account or job records.
+export { readFlightRecords as readLiteralFlightRecords }
+
 export const extractKulaNativeJobs = (html, { accountName } = {}) => {
   if (typeof accountName !== 'string' || !accountName.trim()) fail('expected account name is required')
   const records = readFlightRecords(html)

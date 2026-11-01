@@ -12,10 +12,8 @@ import { recoverQueuedJobAlerts } from "./src/services/jobAlertService.js";
 import { downgradeExpiredPlans } from "./src/services/planService.js";
 import { captureHiringObservation } from './src/services/hiringObservationService.js';
 import { reconcileActivePipeline } from './src/pipeline/recovery.js';
-import { recoverOutreachTasks } from './src/services/outreachService.js';
+import { tickScraperSchedule, scraperSchedulerEnabled } from './src/pipeline/scheduler.js';
 import { recoverTailoredResumes } from './src/services/resumeTailoringService.js';
-import { processCampaignQueue } from './src/services/campaignService.js';
-import { processApplicationMailboxQueue } from './src/services/applicationMailboxService.js';
 import { processAutoApplyQueue } from './src/services/autoApplyService.js';
 import { recoverJobAlertOutbox } from './src/services/jobAlertOutboxService.js';
 
@@ -43,6 +41,10 @@ async function main() {
   console.log(`Server is running on 0.0.0.0:${port}`);
 
   const stopTasks = [
+    ...(scraperSchedulerEnabled() ? [createPeriodicTask(tickScraperSchedule, {
+      intervalMs: 60_000, runImmediately: true,
+      onError: error => console.error('[Scraper scheduler]', error.message),
+    })] : []),
     createPeriodicTask(recoverJobAlertOutbox, {
       intervalMs: 5000, runImmediately: true,
       onError: () => console.error('[Job Alerts] Pending alert creation will retry.'),
@@ -51,21 +53,9 @@ async function main() {
       intervalMs: 5000, runImmediately: true,
       onError: () => console.error('[Automated applications] Worker could not finish.'),
     }),
-    createPeriodicTask(processApplicationMailboxQueue, {
-      intervalMs: 15000, runImmediately: true,
-      onError: () => console.error('[Application mailbox] Sync could not finish.'),
-    }),
     createPeriodicTask(recoverTailoredResumes, {
       intervalMs: 5000, runImmediately: true,
       onError: () => console.error('[Resume tailoring] Recovery could not finish.'),
-    }),
-    createPeriodicTask(recoverOutreachTasks, {
-      intervalMs: 5000, runImmediately: true,
-      onError: error => console.error('[Outreach tasks]', error.message),
-    }),
-    createPeriodicTask(processCampaignQueue, {
-      intervalMs: 15000, runImmediately: true,
-      onError: error => console.error('[Campaign queue]', error.message),
     }),
     createPeriodicTask(reconcileActivePipeline, {
       intervalMs: 60_000, runImmediately: true,

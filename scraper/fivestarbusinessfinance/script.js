@@ -89,8 +89,10 @@ const normalizeUrl = (value) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -98,11 +100,10 @@ const defaultFetchPage = async (url) => {
     redirect: 'follow',
   })
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
+  signal?.throwIfAborted()
+  const html = await response.text()
+  signal?.throwIfAborted()
+  return { status: response.status, url: response.url, html }
 }
 
 export const extractHomepageCareersUrl = (html = '') => {
@@ -151,7 +152,19 @@ export const hasOfficialCareersShellSignal = (html = '') => {
 }
 
 export const createFiveStarBusinessFinanceScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchPage: rawFetchPage = defaultFetchPage, signal } = {}) {
+    signal?.throwIfAborted()
+    const fetchPage = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      try {
+        const page = await rawFetchPage(url, { ...options, signal: signal || options.signal })
+        signal?.throwIfAborted()
+        return page
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
     const homepage = await fetchPage(HOMEPAGE_URL)
 
     if (

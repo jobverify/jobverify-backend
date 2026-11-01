@@ -1,186 +1,97 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import { gunzipSync } from 'node:zlib'
+import { createHash } from 'node:crypto'
 import test from 'node:test'
+import * as source from '../../scraper/deepintent/script.js'
+import { getScraperCatalog,createCatalogScraper } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
-const HOMEPAGE_HTML = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>DeepIntent | Healthcare Marketing Demand Side Platform</title>
-  </head>
-  <body>
-    <nav>
-      <a href="https://deepintent.com/about-us">About Us</a>
-      <a href="https://deepintent.com/careers">Careers</a>
-      <a href="https://deepintent.com/contact-us">Contact Us</a>
-    </nav>
-    <h1>the leading Healthcare Advertising Platform</h1>
-    <p>Shaping the Future of Healthcare Advertising</p>
-  </body>
-</html>
-`
+const packets=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/deepintent/test-data/current-public-20261031.json.gz',import.meta.url))))
+for(const packet of packets) assert.equal(createHash('sha256').update(packet.body).digest('hex'),packet.bodySha256)
+const api=packets.find(packet=>packet.url.startsWith('https://boards-api.greenhouse.io/'))
+const payload=JSON.parse(api.body)
+const indiaIds=['5472780004','5764065004','5636891004','5688687004','6204899004','5987259004']
+const provider=()=>getScraperCatalog().find(item=>item.source==='deepintent')
 
-const HOMEPAGE_HTML_WITH_RELATIVE_CAREERS_LINK = HOMEPAGE_HTML.replaceAll(
-  'https://deepintent.com/careers',
-  '/careers',
-)
+test('DeepIntent resolves the registered Greenhouse implementation and exact board identity',()=>{
+  assert.equal(source.SOURCE,'deepintent')
+  assert.equal(source.COMPANY,'DeepIntent')
+  assert.equal(source.CAREERS_URL,'https://deepintent.com/careers')
+  assert.equal(source.PROVIDER_METADATA.atsPlatform,'greenhouse')
+  assert.equal(source.PROVIDER_METADATA.boardToken,'deepintent')
+  assert.equal(provider().atsPlatform,'greenhouse')
+  assert.equal(provider().companyDomain,'deepintent.com')
+  assert.ok(provider().bindingEvidence.matchedLinks.includes('https://boards.greenhouse.io/embed/job_board/js?for=deepintent'))
+})
 
-const CAREERS_HTML = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Careers | DeepIntent</title>
-  </head>
-  <body>
-    <nav>
-      <a href="https://deepintent.com/careers">Careers</a>
-      <a href="https://deepintent.com/contact-us">Contact Us</a>
-    </nav>
-    <h1>Careers</h1>
-    <h2>Innovate at the Heart of Healthcare and Advertising with Us</h2>
-    <p>Open Positions</p>
-    <p>Who we are</p>
-    <h2>The People Who Power the Platform</h2>
-    <h2>Our Promise to All DeepIntent Employees</h2>
-    <h2>Join Our Team</h2>
-    <h2>Why Work at DeepIntent?</h2>
-    <h2>Open Positions</h2>
-    <p>Ready to join the best in the business and work on cutting-edge technology solutions that improve outcomes?</p>
-    <p>updates@deepintent.com</p>
-  </body>
-</html>
-`
-
-const loadDeepIntentModule = async () => {
-  try {
-    return await import('../../scraper/deepintent/script.js')
-  } catch {
-    assert.fail('Expected DeepIntent scraper module at ../../scraper/deepintent/script.js')
+test('the actual default registered transport retains six native India roles and exact employer descriptions',async t=>{
+  const reads=[]
+  t.mock.method(globalThis,'fetch',async(url,init)=>{
+    assert.equal(String(url),api.url)
+    assert.ok(init.signal)
+    reads.push(String(url))
+    return new Response(api.body,{status:api.status,headers:{'content-type':api.contentType}})
+  })
+  const jobs=await createCatalogScraper(provider()).run({signal:new AbortController().signal})
+  assert.deepEqual(reads,[api.url])
+  assert.equal(payload.jobs.length,14)
+  assert.deepEqual(jobs.map(job=>String(job.jobId)).sort(),[...indiaIds].sort())
+  for(const job of jobs){
+    const native=payload.jobs.find(row=>String(row.id)===String(job.jobId))
+    assert.equal(job.jobId,native.id)
+    assert.equal(job.source,'deepintent')
+    assert.equal(job.company,'DeepIntent')
+    assert.equal(job.country,'India')
+    assert.equal(job.applyUrl,native.absolute_url)
+    assert.equal(job.nativeDescriptionRaw,native.content)
+    assert.equal(job.nativeSourceRecord.id,native.id)
+    assert.ok(job.jobDescription.length>100)
   }
-}
-
-test('DeepIntent sentinel constants stay pinned to the verified homepage and careers shell', async () => {
-  const deepIntent = await loadDeepIntentModule()
-
-  assert.equal(deepIntent.SOURCE, 'deepintent')
-  assert.equal(deepIntent.COMPANY, 'DeepIntent')
-  assert.equal(deepIntent.HOMEPAGE_URL, 'https://deepintent.com/')
-  assert.equal(deepIntent.CAREERS_URL, 'https://deepintent.com/careers')
-  assert.equal(deepIntent.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
-  assert.equal(deepIntent.extractCareersUrl(HOMEPAGE_HTML), deepIntent.CAREERS_URL)
-  assert.equal(deepIntent.hasVerifiedCareersShell(CAREERS_HTML), true)
-  assert.equal(deepIntent.extractLikelyJobLinks(CAREERS_HTML).length, 0)
+  const evidence=readInventoryEvidence(jobs)
+  assert.equal(evidence.surface,api.url)
+  assert.equal(evidence.reportedTotal,14)
+  // Native API evidence describes this checked board, not every employer channel.
+  assert.equal(Object.hasOwn(evidence,'companyGlobalTotal'),false)
 })
 
-test('DeepIntent homepage sentinel accepts a relative first-party careers handoff', async () => {
-  const deepIntent = await loadDeepIntentModule()
-
-  assert.equal(deepIntent.hasOfficialHomepageSignal(HOMEPAGE_HTML_WITH_RELATIVE_CAREERS_LINK), true)
-  assert.equal(
-    deepIntent.extractCareersUrl(HOMEPAGE_HTML_WITH_RELATIVE_CAREERS_LINK),
-    deepIntent.CAREERS_URL,
-  )
+test('native Greenhouse account and posting identity contradictions fail closed',async t=>{
+  t.mock.method(globalThis,'fetch',async()=>{throw Error('No unmocked HTTP allowed')})
+  for(const url of [
+    'https://job-boards.greenhouse.io/othercompany/jobs/5472780004',
+    'https://job-boards.greenhouse.io/deepintent/jobs/1',
+  ]){
+    const changed=structuredClone(payload)
+    changed.jobs.find(row=>row.id===5472780004).absolute_url=url
+    await assert.rejects(source.run({fetchJson:async requested=>{assert.equal(requested,api.url);return changed}}),/foreign native posting account|native posting identity mismatch/)
+  }
 })
 
-test('DeepIntent sentinel returns [] only while the verified careers shell stays a no-public-jobs surface', async () => {
-  const deepIntent = await loadDeepIntentModule()
-  const requestedUrls = []
+test('failed, malformed, incomplete and repeated native inventories never become empty success',async t=>{
+  t.mock.method(globalThis,'fetch',async()=>{throw Error('No unmocked HTTP allowed')})
+  for(const changed of [
+    {error:'controlled upstream error',jobs:[]},
+    {jobs:null},
+    {...structuredClone(payload),hasMore:true},
+    {jobs:[payload.jobs[0],payload.jobs[0]],meta:{total:2}},
+  ]) await assert.rejects(source.run({fetchJson:async requested=>{assert.equal(requested,api.url);return changed}}),/Failed greenhouse inventory|Invalid greenhouse inventory|Incomplete greenhouse inventory/)
+})
 
-  const jobs = await deepIntent.createDeepIntentScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === deepIntent.HOMEPAGE_URL) {
-        return { status: 200, url, html: HOMEPAGE_HTML }
-      }
-
-      if (url === deepIntent.CAREERS_URL) {
-        return { status: 200, url, html: CAREERS_HTML }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
+test('pre-aborted and native-boundary caller cancellation preserve the exact reason',async t=>{
+  const first=new AbortController(), reason=Object.freeze(Error('DeepIntent caller cancellation'))
+  let reads=0
+  t.mock.method(globalThis,'fetch',async()=>{reads++;throw Error('No pre-aborted read allowed')})
+  first.abort(reason)
+  await assert.rejects(createCatalogScraper(provider()).run({signal:first.signal}),error=>error===reason)
+  assert.equal(reads,0)
+  const second=new AbortController()
+  t.mock.method(globalThis,'fetch',async(url,init)=>{
+    reads++
+    assert.equal(String(url),api.url)
+    second.abort(reason)
+    assert.equal(init.signal.aborted,true)
+    return new Response(api.body,{status:api.status,headers:{'content-type':api.contentType}})
   })
-
-  assert.deepEqual(requestedUrls, [deepIntent.HOMEPAGE_URL, deepIntent.CAREERS_URL])
-  assert.deepEqual(jobs, [])
-})
-
-test('DeepIntent sentinel returns [] when the verified homepage uses a relative careers handoff', async () => {
-  const deepIntent = await loadDeepIntentModule()
-
-  const jobs = await deepIntent.createDeepIntentScraper().run({
-    fetchPage: async (url) => {
-      if (url === deepIntent.HOMEPAGE_URL) {
-        return { status: 200, url, html: HOMEPAGE_HTML_WITH_RELATIVE_CAREERS_LINK }
-      }
-
-      if (url === deepIntent.CAREERS_URL) {
-        return { status: 200, url, html: CAREERS_HTML }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-})
-
-test('DeepIntent sentinel fails closed when the homepage handoff or careers shell drifts into a public jobs surface', async () => {
-  const deepIntent = await loadDeepIntentModule()
-
-  await assert.rejects(
-    deepIntent.createDeepIntentScraper().run({
-      fetchPage: async (url) => {
-        if (url === deepIntent.HOMEPAGE_URL) {
-          return { status: 200, url, html: '<html><body>Unexpected</body></html>' }
-        }
-
-        return { status: 200, url, html: CAREERS_HTML }
-      },
-    }),
-    /homepage no longer matches/i,
-  )
-
-  await assert.rejects(
-    deepIntent.createDeepIntentScraper().run({
-      fetchPage: async (url) => {
-        if (url === deepIntent.HOMEPAGE_URL) {
-          return { status: 200, url, html: HOMEPAGE_HTML }
-        }
-
-        return {
-          status: 200,
-          url,
-          html: `
-            <html>
-              <head><title>Careers | DeepIntent</title></head>
-              <body>
-                <h1>Careers</h1>
-                <h2>Open Positions</h2>
-                <a href="https://jobs.lever.co/deepintent/software-engineer">Software Engineer</a>
-              </body>
-            </html>
-          `,
-        }
-      },
-    }),
-    /appears to expose public job links/i,
-  )
-
-  await assert.rejects(
-    deepIntent.createDeepIntentScraper().run({
-      fetchPage: async (url) => {
-        if (url === deepIntent.HOMEPAGE_URL) {
-          return { status: 200, url, html: HOMEPAGE_HTML }
-        }
-
-        return {
-          status: 200,
-          url,
-          html: CAREERS_HTML.replace('Innovate at the Heart of Healthcare and Advertising with Us', 'Join us'),
-        }
-      },
-    }),
-    /verified first-party careers page/i,
-  )
+  await assert.rejects(createCatalogScraper(provider()).run({signal:second.signal}),error=>error===reason)
+  assert.equal(reads,1)
 })

@@ -1,6 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+import { hydrateSourceDescriptions } from '../../scraper-support/utils/sourceDescriptionHydration.js'
+import { extractActiveDescription, readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
+import { isExactPublicJobUrl, publicPostingDescription } from '../../rewriting/publicPostingDescription.js'
 import COUPA_SOFTWARE_INC_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -41,14 +45,14 @@ const normalizeUrl = (value) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
-    signal: AbortSignal.timeout(15000),
+    signal: composeAbortSignals(signal, AbortSignal.timeout(15000)),
   })
 
   return {
@@ -59,19 +63,13 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
+const defaultFetchText = async (url, options) => {
+  const response = await defaultFetchPage(url, options)
+  if (response.status < 200 || response.status >= 300) {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return response.text()
+  return response.html
 }
 
 const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
@@ -220,15 +218,59 @@ const normalizeJob = (job, scrapedAt) => ({
   atsPlatform: COUPA_SOFTWARE_INC_CATALOG.atsPlatform,
 })
 
+// The role URL carries the native UUID, while listing titles carry the numeric
+// requisition. Require both, the active page identity and explicit India schema.
+export const extractCoupaJobDescription = (job, response = {}) => {
+  if (response.status !== 200 || job.company !== COMPANY || !isExactPublicJobUrl(job.sourceUrl, response.url)) return null
+  try {
+    const url = new URL(job.sourceUrl)
+    const path = url.pathname.match(/^\/en\/jobs\/([a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12})\/[^/]+-(\d+)\/$/)
+    if (url.origin !== 'https://careers.coupa.com' || !path || path[2] !== job.jobId || buildJobId(job.title, '') !== job.jobId) return null
+    const document = readNativeDocument(getPageHtml(response))
+    const canonicals = document.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical')
+    const headings = document.nodes(node => node.tag === 'h1')
+    const details = document.nodes(node => node.attrs.id === 'js-job-detail')
+    const scripts = document.nodes(node => node.tag === 'script' && node.attrs.type === 'application/ld+json' && !node.attrs.src)
+    if (canonicals.length !== 1 || !isExactPublicJobUrl(canonicals[0].attrs.href, job.sourceUrl)
+      || headings.length !== 1 || document.text(headings[0]) !== normalizeWhitespace(job.title)
+      || details.length !== 1 || details[0].attrs['data-id'] !== path[1]
+      || normalizeWhitespace(details[0].attrs['data-jobtitle']) !== normalizeWhitespace(job.title)
+      || scripts.length !== 1) return null
+    const record = JSON.parse(scripts[0].raw)
+    const address = record.jobLocation?.address
+    if (record['@type'] !== 'JobPosting' || record.identifier !== path[1]
+      || normalizeWhitespace(record.title) !== normalizeWhitespace(job.title)
+      || !isExactPublicJobUrl(record.url, job.sourceUrl)
+      || record.hiringOrganization?.name !== 'Coupa' || record.hiringOrganization?.url !== 'https://www.coupa.com/'
+      || Array.isArray(record.jobLocation) || address?.addressCountry !== 'India'
+      || !normalizeWhitespace(address?.addressLocality) || typeof record.description !== 'string') return null
+    const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+      && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value
+    if (!validDate(record.datePosted) || (record.validThrough != null && !validDate(record.validThrough))) return null
+    const facts = { sourcePostingDate: record.datePosted, postingDate: record.datePosted, sourceDateEvidence: 'coupa-canonical-jobposting-dates-v1' }
+    if (record.validThrough != null) Object.assign(facts, { sourceClosingDate: record.validThrough, closingDate: record.validThrough })
+    if (!extractActiveDescription(record.description)) return { ...facts, sourceDescription: null }
+    const posting = publicPostingDescription({ ...job, jobId: path[1] }, getPageHtml(response), response.url, { employerAliases: ['Coupa'] })
+    return posting ? { ...facts, sourceDescription: posting.description } : null
+  } catch {
+    return null
+  }
+}
+
 export const createCoupaSoftwareIncScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchText = defaultFetchText, fetchPage = defaultFetchPage, fetchDetailPage = defaultFetchPage, detailEnrichmentBudgetMs, signal } = {}) {
+    signal?.throwIfAborted()
     const loadJobsPage = async (url) => {
       try {
-        return await fetchText(url)
+        const html = await fetchText(url, { signal })
+        signal?.throwIfAborted()
+        return html
       } catch (error) {
-        const fallbackPage = await fetchPage(url)
+        signal?.throwIfAborted()
+        const fallbackPage = await fetchPage(url, { signal })
+        signal?.throwIfAborted()
         if (isVerifiedCloudflareChallengedPage(fallbackPage, url)) {
           return null
         }
@@ -269,7 +311,21 @@ export const createCoupaSoftwareIncScraper = ({
       }
     }
 
-    return jobs.map((job) => normalizeJob(job, now()))
+    const detailFacts = new Map()
+    const hydrated = await hydrateSourceDescriptions(jobs.map(job => ({ ...normalizeJob(job, now()), sourceListingComplete: false })), {
+      signal, detailEnrichmentBudgetMs,
+      fetchDetail: async (job, { signal: detailSignal }) => {
+        const response = await fetchDetailPage(job.sourceUrl, { signal: detailSignal })
+        detailSignal.throwIfAborted()
+        const detail = extractCoupaJobDescription(job, response)
+        if (detail) {
+          const { sourceDescription, ...facts } = detail
+          detailFacts.set(job.jobId, facts)
+        }
+        return detail
+      },
+    })
+    return hydrated.map(job => ({ ...job, ...detailFacts.get(job.jobId) }))
   },
 })
 

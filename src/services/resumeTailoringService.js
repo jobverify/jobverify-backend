@@ -6,7 +6,7 @@ import TailoredResume from '../models/TailoredResume.js';
 import SiteSettings from '../models/SiteSettings.js';
 import { applyPublicJobVisibility } from '../utils/publicJobVisibility.js';
 import { dispatchTailoredResumes, tailoredResumeActionsConfigured, requireTailoredResumeActions } from './resumeTailoringWorkflow.js';
-import { dayKey, reserveUsage } from './outreachUsage.js';
+import { dayKey, reserveUsage } from './resumeUsage.js';
 import { tailoringError } from './resumeTailoringContent.js';
 import { artifactBytes, readResumeArtifact } from './resumeArtifactService.js';
 import { activeResumeOwner, activeResumeStatuses, requirePreparedResume, drainResumePreparations, recoverResumePreparations, evidenceMatches } from './resumePreparationService.js';

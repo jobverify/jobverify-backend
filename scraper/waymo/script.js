@@ -2,8 +2,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { buildHttpError } from '../../scraper-support/utils/fetch.js'
+import { runWaymoNative } from './native.js'
+import { nativeLocationCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -44,7 +46,9 @@ const stripTags = (value) => normalizeWhitespace(String(value ?? '').replace(/<[
 
 const toAbsoluteUrl = (value, baseUrl = FIRST_PARTY_ROOT_URL) => {
   try {
-    return new URL(value, baseUrl).toString()
+    const url = new URL(value, baseUrl)
+    return url.origin === new URL(FIRST_PARTY_ROOT_URL).origin && /^\/jobs\/[a-z0-9-]+$/.test(url.pathname)
+      && url.pathname !== '/jobs/search' && !url.search && !url.hash && !url.username && !url.password ? url.href : null
   } catch {
     return null
   }
@@ -89,12 +93,8 @@ const extractJobId = (url) => {
   }
 }
 
-const normalizeIndiaLocation = (location) => {
-  const normalized = normalizeWhitespace(location)
-  if (!normalized) return null
-  return /india/i.test(normalized) ? normalized : `${normalized}, India`
-}
-
+// Listing cards are observations. Only the registered native detail reader
+// establishes explicit country, a requisition, full description and application.
 export const extractJobsFromSearchHtml = (html, {
   scrapedAt = new Date().toISOString(),
 } = {}) => extractArticleBlocks(html)
@@ -104,7 +104,7 @@ export const extractJobsFromSearchHtml = (html, {
     )
     const sourceUrl = toAbsoluteUrl(titleLink?.[1])
     const title = stripTags(titleLink?.[2])
-    const location = normalizeIndiaLocation(extractComponentText(article, 'job-component-location'))
+    const location = extractComponentText(article, 'job-component-location')
     const city = normalizeCity(String(location ?? '').split(',')[0]) || String(location ?? '').split(',')[0]?.trim() || null
     const jobId = extractJobId(sourceUrl)
 
@@ -117,9 +117,9 @@ export const extractJobsFromSearchHtml = (html, {
       department: extractComponentText(article, 'job-component-department'),
       location,
       city,
-      country: 'India',
+      country: nativeLocationCountryName(location),
       sourceUrl,
-      applyUrl: sourceUrl,
+      applyUrl: null,
       employmentType: extractComponentText(article, 'job-component-employment-type'),
       experienceRequired: extractComponentText(article, 'job-component-dropdown-field-2'),
       minimumQualification: null,
@@ -127,8 +127,12 @@ export const extractJobsFromSearchHtml = (html, {
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription: extractSummary(article),
-      requisitionId: jobId,
+      jobDescription: null,
+      nativeListingSummary: extractSummary(article),
+      sourceDetailComplete: false,
+      sourceDetailStatus: 'listing-summary-only',
+      sourceListingComplete: false,
+      requisitionId: null,
       source: SOURCE,
       link: sourceUrl,
       scrapedAt,
@@ -136,12 +140,13 @@ export const extractJobsFromSearchHtml = (html, {
   })
   .filter(Boolean)
 
-const defaultFetchText = async (url, { signal } = {}) => {
+const defaultFetchText = async (url, { signal, headers = {} } = {}) => {
   const timeout = AbortSignal.timeout(20000)
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      ...headers,
     },
     signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   })
@@ -149,6 +154,7 @@ const defaultFetchText = async (url, { signal } = {}) => {
     const error = buildHttpError(response, url)
     error.message = `Waymo HTTP ${response.status} for ${url}; final URL ${response.url}`
     Object.assign(error, { requestUrl: url, finalUrl: response.url })
+    if (response.status === 202) error.abortRetries = true
     void Promise.resolve().then(() => response.body?.cancel?.(error)).catch(() => {})
     throw error
   }
@@ -162,33 +168,24 @@ export const createWaymoScraper = ({
     fetchText = defaultFetchText,
     now = defaultNow,
     signal,
+    timeoutMs = 45000,
   } = {}) {
     signal?.throwIfAborted()
-    const searchUrl = buildIndiaSearchUrl()
-    const searchHtml = await fetchText(searchUrl, { signal })
-    signal?.throwIfAborted()
-    const scrapedAt = now()
-    const jobs = extractJobsFromSearchHtml(searchHtml, { scrapedAt })
-    const reportedTotal = extractDisplayedCount(searchHtml)
-
-    if (jobs.length === 0 && reportedTotal !== 0) {
-      throw new Error('Waymo first-party India search page returned no parseable job cards')
-    }
-    if (reportedTotal === null || reportedTotal !== jobs.length || new Set(jobs.map(job => job.jobId)).size !== jobs.length) {
-      throw new Error('Waymo incomplete India inventory: displayed count or unique job-card count mismatch')
-    }
-
-    return attachInventoryEvidence(jobs, {
-      status: 'complete-inventory',
-      surface: searchUrl,
-      firstParty: true,
-      listingComplete: true,
-      pagesFetched: 1,
-      reportedTotal: reportedTotal ?? jobs.length,
-      indiaFacetCount: jobs.length,
-      verifiedAt: scrapedAt,
-      reason: 'waymo-first-party-country-filtered-search-results',
+    if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>60000)throw Error('Waymo invalid aggregate request budget')
+    const controller=new AbortController(),combined=signal?AbortSignal.any([signal,controller.signal]):controller.signal
+    let timer,listener
+    const interrupted=new Promise((_,reject)=>{
+      listener=()=>reject(combined.reason)
+      combined.addEventListener('abort',listener,{once:true})
+      timer=setTimeout(()=>controller.abort(Object.assign(Error('Waymo aggregate source deadline exceeded'),{
+        code:'WAYMO_NATIVE_TIMEOUT',abortRetries:true,failureKind:'incomplete_listing',source:SOURCE,
+        inventoryEvidence:normalizeInventoryEvidence({status:'coverage-gap',surface:buildIndiaSearchUrl(),firstParty:true,
+          listingComplete:false,pagesFetched:null,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),
+          reason:'Aggregate source deadline exceeded; native inventory remains unverified'}),
+      })),timeoutMs)
     })
+    try{return await Promise.race([runWaymoNative({read:fetchText,searchUrl:buildIndiaSearchUrl(),now,signal:combined}),interrupted])}
+    finally{clearTimeout(timer);combined.removeEventListener('abort',listener)}
   },
 })
 

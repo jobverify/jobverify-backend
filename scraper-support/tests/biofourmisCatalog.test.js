@@ -14,13 +14,19 @@ test('getScraperCatalog includes Biofourmis on the official careers page backed 
   assert.equal(provider.companyCareerPage, 'https://biofourmis.com/about/job-openings')
   assert.equal(provider.companyDomain, 'biofourmis.com')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-careers-page-plus-greenhouse-loader-script')
+  assert.equal(provider.paginationStrategy, 'full-native-post-feed-and-office-index;all-native-post-GETs-opening-closing')
   assert.equal(
     provider.extractionStrategy,
-    'official-careers-page+verified-greenhouse-loader+greenhouse-jobs-api+detail-pages',
+    'all-published-original-post-models-and-complete-criteria-before-prospect-country-selection',
   )
-  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.parser, 'current-declared-native-post-models')
   assert.match(provider.modulePath, /biofourmis[\\/]script\.js$/i)
+  assert.equal(provider.publicInventoryVerification.policy, 'biofourmis-current-advertised-public-source')
+  assert.equal(provider.publicInventoryVerification.currentDisposition, 'coverage-gap')
+  assert.equal(provider.publicInventoryVerification.companyGlobalTotal, null)
+  assert.equal(provider.publicInventoryVerification.wholeCompanyScope, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
 })
 
 test('buildScrapers and company coverage resolve Biofourmis without aliases', () => {

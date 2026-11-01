@@ -2,6 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
+import { hasActiveIonSurface, readIonInlineRoles } from './nativeInline.js'
 
 import { IONIDEA_CATALOG } from './catalog.js'
 
@@ -33,24 +36,26 @@ const toSlug = (value = '') => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  attempts: 1,
+  signal: options.signal,
 })
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
-  return normalized.includes('Jobs at IonIdea')
-    && normalized.includes('APM Consultant/Sr Consultant for Dynatrace')
-    && normalized.includes('Software Engineer - APM')
-    && normalized.includes('Consultant (Devops Engineer)')
+  return hasActiveIonSurface(String(html))
   }
 
 export const extractInlineJobs = (html = '') => {
+  return readIonInlineRoles(String(html))
+}
+
+const extractLegacyHeadingRows = (html = '') => {
   const page = String(html)
   const headings = [...page.matchAll(/<h[1-6][^>]*>\s*([\s\S]*?)\s*<\/h[1-6]>/gi)]
     .map((match) => ({
@@ -98,8 +103,10 @@ export const extractInlineJobs = (html = '') => {
 export const createIonideaScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, signal } = {}) {
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('IonIdea careers page no longer matches the verified first-party surface')
     }
@@ -108,15 +115,15 @@ export const createIonideaScraper = ({
       .map((job) => ({
         ...job,
         company: COMPANY,
-        city: job.location?.split('/')[0]?.trim() || null,
-        country: 'India',
+        city: null,
+        country: job.country,
         department: null,
         employmentType: null,
-        jobId: toSlug(job.title),
-        requisitionId: toSlug(job.title),
+        jobId: null,
+        requisitionId: null,
         sourceUrl: CAREERS_URL,
-        applyUrl: APPLY_URL,
-        link: APPLY_URL,
+        applyUrl: job.applyUrl,
+        link: job.applyUrl,
         source: SOURCE,
         scrapedAt: now(),
       }))
@@ -126,7 +133,11 @@ export const createIonideaScraper = ({
       throw new Error('IonIdea careers page no longer exposes trusted inline jobs')
     }
 
-    return jobs
+    attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows', observedRecordCount: jobs.length,
+      observedVacancyCount: jobs.length, sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null })
+    return attachInventoryEvidence(jobs, { status: 'discovery-only', surface: CAREERS_URL, firstParty: true,
+      listingComplete: false, pagesFetched: 1, reportedTotal: null, indiaFacetCount: null, verifiedAt: null,
+      reason: 'ionidea-native-inline-vacancy-observations;application-targets-not-independently-read;company-scope-unconfirmed;closing-not-read' })
   },
 })
 

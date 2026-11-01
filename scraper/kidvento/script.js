@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { runNativeInventory } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -134,34 +135,7 @@ export const extractSuspiciousPublicJobLinks = (html) => {
 }
 
 export const createKidventoScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Kidvento verified official homepage no longer matches the known public surface')
-    }
-
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('Kidvento homepage now appears to expose a public jobs surface')
-    }
-
-    const careersPage = await fetchPage(CAREERS_URL)
-
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
-      throw new Error('Kidvento verified official careers page no longer matches the known public surface')
-    }
-
-    if (hasPublicJobsSignal(careersPage.html)) {
-      throw new Error('Kidvento careers page now appears to expose a public jobs surface')
-    }
-
-    const suspiciousLinks = extractSuspiciousPublicJobLinks(careersPage.html)
-    if (suspiciousLinks.length > 0) {
-      throw new Error('Kidvento careers page now exposes public job links')
-    }
-
-    return []
-  },
+  async run(options = {}) { return runNativeInventory(options) },
 })
 
 export const run = async (options = {}) => createKidventoScraper().run(options)

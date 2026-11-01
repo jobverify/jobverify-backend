@@ -9,7 +9,7 @@ import { runHashiCorpSearch } from '../../scraper/hashicorp/script.js'
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   'fixtures',
-  'ibm',
+  'hashicorp',
 )
 
 const readJsonFixture = (name) => JSON.parse(readFileSync(path.join(fixturesDir, name), 'utf8'))

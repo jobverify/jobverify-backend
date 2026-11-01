@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {readCurrentCodemonk} from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -77,29 +78,23 @@ export const extractCareerListings = (html) => [...String(html ?? '').matchAll(
   })
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, {signal} = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'codemonk',
   timeoutMs: 15000,
+  signal,
 })
 
 export const createCodemonkScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREERS_URL)
-
-    return extractCareerListings(html).map((job) => ({
-      ...job,
-      source: 'codemonk',
-      link: job.applyUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+  async run({ fetchText = defaultFetchText, signal, onAudit } = {}) {
+    return readCurrentCodemonk({fetchText,signal,onAudit})
   },
 })
 
-export const run = async () => createCodemonkScraper().run()
+export const run = async (options = {}) => createCodemonkScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -93,7 +93,7 @@ test('Information Evolution extracts the verified India card from the first-part
   assert.deepEqual(cards, [
     {
       title: 'Team Leader',
-      detailUrl: 'https://dev.informationevolution.com/job/team-leader/',
+      detailUrl: new URL('/job/team-leader/', informationEvolution.JOBS_URL).href,
       location: 'Coimbatore, India',
     },
   ])
@@ -134,7 +134,7 @@ test('Information Evolution returns the current first-party India job set', asyn
         return jobsPageHtml
       }
 
-      if (url === 'https://dev.informationevolution.com/job/team-leader/') {
+      if (url === new URL('/job/team-leader/', informationEvolution.JOBS_URL).href) {
         return teamLeaderDetailHtml
       }
 
@@ -145,7 +145,7 @@ test('Information Evolution returns the current first-party India job set', asyn
 
   assert.deepEqual(requestedUrls, [
     informationEvolution.JOBS_URL,
-    'https://dev.informationevolution.com/job/team-leader/',
+    new URL('/job/team-leader/', informationEvolution.JOBS_URL).href,
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'informationevolution')

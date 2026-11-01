@@ -15,6 +15,8 @@ import {
 import { normalizeJobSearchKey } from "../utils/jobSearchKeys.js";
 import { normalizeProfilePreferenceFilters } from "../utils/profilePreferenceFilters.js";
 import { PUBLIC_WORK_ARRANGEMENT_EXPRESSION, normalizePublicWorkArrangement } from '../utils/publicWorkArrangement.js';
+import { normalizePublicJobCategory } from '../utils/publicJobNormalization.js';
+import { getPublicJobTypeMatches } from '../utils/publicJobTypeLabel.js';
 
 const MAX_REGEX_FILTER_LENGTH = 80;
 const MAX_TEXT_QUERY_LENGTH = 200;
@@ -136,7 +138,7 @@ export const buildJobFilterConditions = (queryParams = {}, { includeExperienceYe
   if (cityKeys.length > 1) filters.locationKeys = { $in: cityKeys };
   const locationKeys = normalizeList(location).map(normalizeJobSearchKey).filter(Boolean);
   if (locationKeys.length && !filters.locationKeys) filters.locationKeys = { $in: locationKeys };
-  const jobTypes = [...new Set(normalizeList(jobType).flatMap(getPreferredJobTypeMatches))];
+  const jobTypes = [...new Set(normalizeList(jobType).flatMap(getPublicJobTypeMatches))];
   if (jobTypes.length) filters.jobType = { $in: jobTypes };
   const batchValues = normalizeList(batch).map(Number).filter(Number.isFinite);
   if (batchValues.length) filters.eligibleBatches = { $in: batchValues };
@@ -195,7 +197,7 @@ export const jobMatchesSavedFilters = ({ job, filters, userProfile = {}, now = n
   const batches = (job.eligibleBatches || []).map(Number);
   if (branches.length && !branches.includes(branch)) return false;
   if (batches.length && !batches.includes(passingYear)) return false;
-  const jobTypes = getPreferredJobTypeMatches(job.jobType || "");
+  const jobTypes = getPublicJobTypeMatches(normalizePublicJobCategory(job));
   const location = [job.city, job.location].filter(Boolean).join(" ").toLowerCase();
   const experienceMatches = matchesExperienceFilter(job, normalized.experienceYear, (legacy) => {
     const text = String(legacy.experienceRequired || '').trim();
@@ -205,7 +207,7 @@ export const jobMatchesSavedFilters = ({ job, filters, userProfile = {}, now = n
 
   return (
     (normalized.company.length === 0 || normalized.company.some((value) => String(job.company || "").toLowerCase() === value.toLowerCase()))
-    && (normalized.jobType.length === 0 || normalized.jobType.some((value) => getPreferredJobTypeMatches(value).some((match) => jobTypes.includes(match))))
+    && (normalized.jobType.length === 0 || normalized.jobType.some((value) => getPublicJobTypeMatches(value).some((match) => jobTypes.includes(match))))
     && (normalized.location.length === 0 || normalized.location.some((value) => location.includes(String(value).toLowerCase())))
     && experienceMatches
     && (normalized.roleDomain.length === 0 || normalized.roleDomain.includes(job.primaryRoleDomain))

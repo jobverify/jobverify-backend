@@ -83,11 +83,11 @@ test('extractJobsFromSearchHtml maps server-rendered Waymo India cards', () => {
       title: 'Senior Software Engineer, Compute Software',
       company: 'Waymo',
       department: 'Software Engineering',
-      location: 'Bengaluru, Karnataka, India',
+      location: 'Bengaluru, Karnataka',
       city: 'Bangalore',
-      country: 'India',
+      country: null,
       sourceUrl: 'https://careers.withwaymo.com/jobs/senior-software-engineer-compute-software-bengaluru-karnataka-india',
-      applyUrl: 'https://careers.withwaymo.com/jobs/senior-software-engineer-compute-software-bengaluru-karnataka-india',
+      applyUrl: null,
       employmentType: 'Full-Time',
       experienceRequired: 'Mid Career',
       minimumQualification: null,
@@ -95,8 +95,12 @@ test('extractJobsFromSearchHtml maps server-rendered Waymo India cards', () => {
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription: "Waymo is an autonomous driving technology company with the mission to be the world's most trusted driver.",
-      requisitionId: 'senior-software-engineer-compute-software-bengaluru-karnataka-india',
+      jobDescription: null,
+      nativeListingSummary: "Waymo is an autonomous driving technology company with the mission to be the world's most trusted driver.",
+      sourceDetailComplete: false,
+      sourceDetailStatus: 'listing-summary-only',
+      sourceListingComplete: false,
+      requisitionId: null,
       source: 'waymo',
       link: 'https://careers.withwaymo.com/jobs/senior-software-engineer-compute-software-bengaluru-karnataka-india',
       scrapedAt: '2026-09-14T00:00:00.000Z',
@@ -106,11 +110,11 @@ test('extractJobsFromSearchHtml maps server-rendered Waymo India cards', () => {
       title: 'Software Quality Operations Specialist, Safety Evaluation',
       company: 'Waymo',
       department: 'Engineering Operations',
-      location: 'Hyderabad, Telangana, India',
+      location: 'Hyderabad, Telangana',
       city: 'Hyderabad',
-      country: 'India',
+      country: null,
       sourceUrl: 'https://careers.withwaymo.com/jobs/software-quality-operations-specialist-safety-evaluation-hyderabad-telangana-india',
-      applyUrl: 'https://careers.withwaymo.com/jobs/software-quality-operations-specialist-safety-evaluation-hyderabad-telangana-india',
+      applyUrl: null,
       employmentType: 'Full-Time',
       experienceRequired: 'Advanced Career',
       minimumQualification: null,
@@ -118,8 +122,12 @@ test('extractJobsFromSearchHtml maps server-rendered Waymo India cards', () => {
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription: 'Safety evaluation operations role.',
-      requisitionId: 'software-quality-operations-specialist-safety-evaluation-hyderabad-telangana-india',
+      jobDescription: null,
+      nativeListingSummary: 'Safety evaluation operations role.',
+      sourceDetailComplete: false,
+      sourceDetailStatus: 'listing-summary-only',
+      sourceListingComplete: false,
+      requisitionId: null,
       source: 'waymo',
       link: 'https://careers.withwaymo.com/jobs/software-quality-operations-specialist-safety-evaluation-hyderabad-telangana-india',
       scrapedAt: '2026-09-14T00:00:00.000Z',
@@ -127,21 +135,24 @@ test('extractJobsFromSearchHtml maps server-rendered Waymo India cards', () => {
   ])
 })
 
-test('createWaymoScraper fetches the India search page and marks complete inventory', async () => {
+test('listing summaries without native country and detail proof cannot qualify complete inventory', async () => {
   const requestedUrls = []
 
-  const jobs = await createWaymoScraper({
+  await assert.rejects(createWaymoScraper({
     now: () => '2026-09-14T00:00:00.000Z',
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       return searchHtml
     },
+  }),error=>{
+    assert.equal(error.code,'WAYMO_NATIVE_PROOF')
+    assert.equal(error.inventoryEvidence.status,'coverage-gap')
+    assert.equal(error.inventoryEvidence.listingComplete,false)
+    assert.equal(error.inventoryEvidence.reportedTotal,null)
+    assert.equal(error.inventoryEvidence.indiaFacetCount,null)
+    return true
   })
 
   assert.deepEqual(requestedUrls, [buildIndiaSearchUrl()])
-  assert.equal(jobs.length, 2)
-  assert.equal(readInventoryEvidence(jobs)?.status, 'complete-inventory')
-  assert.equal(readInventoryEvidence(jobs)?.reportedTotal, 2)
-  assert.equal(readInventoryEvidence(jobs)?.indiaFacetCount, 2)
 })

@@ -6,11 +6,11 @@ import { normalizeJobListResponseJob } from '../src/controllers/jobController.js
 import { normalizeScrapedJob } from '../scraper-support/utils/normalizeScrapedJob.js';
 import { buildSemanticExperienceConstraint } from '../src/utils/classifiedExperienceFilters.js';
 
-test('unknown classification defaults to experienced without inventing experience or leaking provenance', () => {
+test('unknown classification stays unspecified without inventing experience or leaking provenance', () => {
   const job = { title: 'Engineer', description: 'Build software.', experienceProfile: { minimumYears: null } };
   const normalized = normalizeScrapedJob({ ...job, classification: resolveClassification(job, null, { mode: 'enforce' }) });
   const response = normalizeJobListResponseJob(normalized);
-  assert.equal(response.jobType, 'Full-time Experienced');
+  assert.equal(response.jobType, 'Unspecified');
   assert.equal(response.experienceLevel, null);
   assert.equal(response.classification, undefined);
 });

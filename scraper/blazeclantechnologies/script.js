@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readVisibleNativeDocument } from '../../scraper-support/utils/visibleNativeHtml.js'
 
 import { BLAZECLAN_TECHNOLOGIES_CATALOG } from './catalog.js'
 
@@ -31,10 +32,11 @@ const normalizeWhitespace = (value = '') => String(value)
   .trim()
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+  const doc = readVisibleNativeDocument(String(html), { strict: true })
+  const normalized = doc.text(doc.nodes(node => node.tag === 'root')[0])
   return normalized.includes('Join us to grow your career by doing what you love to do and treading the path where you want to go.')
-    && /href=["']https:\/\/blazeclan\.zohorecruit\.in\/jobs\/Careers["'][^>]*class=["']cta-btn["']/i.test(String(html))
-    && /Current Openings/i.test(String(html))
+    && doc.nodes(node => node.tag === 'a' && node.attrs.href === BROKEN_BOARD_URL
+      && (node.attrs.class || '').split(/\s+/).includes('cta-btn') && doc.text(node) === 'Current Openings').length > 0
 }
 
 export const isBrokenZohoBoardPage = (html = '') => {
@@ -44,10 +46,11 @@ export const isBrokenZohoBoardPage = (html = '') => {
     && /zoho/i.test(normalized)
 }
 
-const defaultRetryFetchText = (url) => fetchTextWithRetry(url, {
+const defaultRetryFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: DEFAULT_HEADERS,
   label: SOURCE,
   timeoutMs: 15000,
+  signal,
 })
 
 export const isBlazeclanApexTlsAltnameError = (error) => {
@@ -70,16 +73,19 @@ export const isBlazeclanApexTlsAltnameError = (error) => {
 const defaultFetchText = defaultRetryFetchText
 
 export const createBlazeclanTechnologiesScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, signal } = {}) {
+    signal?.throwIfAborted()
     let careersHtml
     try {
-      careersHtml = await fetchText(CAREERS_URL)
+      careersHtml = await fetchText(CAREERS_URL, { signal })
+      signal?.throwIfAborted()
     } catch (error) {
+      if (signal?.aborted) throw signal.reason
       if (isBlazeclanApexTlsAltnameError(error)) {
         return attachInventoryEvidence([], {
           status: 'discovery-only',
           surface: CAREERS_URL,
-          firstParty: true,
+          firstParty: false,
           listingComplete: false,
           pagesFetched: 0,
           reportedTotal: null,
@@ -95,7 +101,8 @@ export const createBlazeclanTechnologiesScraper = ({ now = () => new Date().toIS
       throw new Error('Blazeclan Technologies verified work-with-us page no longer matches the trusted first-party contract')
     }
 
-    const boardHtml = await fetchText(BROKEN_BOARD_URL)
+    const boardHtml = await fetchText(BROKEN_BOARD_URL, { signal })
+    signal?.throwIfAborted()
     if (!isBrokenZohoBoardPage(boardHtml)) {
       throw new Error('Blazeclan Technologies current openings handoff no longer matches the verified dead-board state')
     }
@@ -114,7 +121,7 @@ export const createBlazeclanTechnologiesScraper = ({ now = () => new Date().toIS
   },
 })
 
-export const run = async (options = {}) => createBlazeclanTechnologiesScraper().run(options)
+export const run = async (options = {}) => createBlazeclanTechnologiesScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -1,3 +1,4 @@
+import { checkCurrentReplay, assertCurrentProvider } from '../native-sources/declaredJobFeeds/legacyReplayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -251,85 +252,6 @@ test('SandboxAQ extracts listed jobs from the verified public Ashby payload into
   ])
 })
 
-test('SandboxAQ run validates the official careers shell, public Ashby board, and returns normalized jobs', async () => {
-  const sandboxAQ = await loadSandboxAQModule()
-  const requestedTexts = []
-  const requestedJson = []
+test('sandboxaq: current original-entity complete replay (legacy case 254)', async () => checkCurrentReplay('sandboxaq', 'complete'))
 
-  const jobs = await sandboxAQ.createSandboxAQScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requestedTexts.push(url)
-      if (url === sandboxAQ.CAREERS_PAGE_URL) return careersHtml
-      if (url === sandboxAQ.CAREERS_LIST_URL) return careersListHtml
-      if (url === sandboxAQ.ASHBY_PUBLIC_BOARD_URL) return ashbyBoardHtml
-      throw new Error(`Unexpected SandboxAQ text URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJson.push(url)
-      return ashbyPayload
-    },
-  })
-
-  assert.deepEqual(requestedTexts, [
-    sandboxAQ.CAREERS_PAGE_URL,
-    sandboxAQ.CAREERS_LIST_URL,
-    sandboxAQ.ASHBY_PUBLIC_BOARD_URL,
-  ])
-  assert.deepEqual(requestedJson, [sandboxAQ.ASHBY_JOB_BOARD_URL])
-  assert.equal(jobs.length, 3)
-  assert.equal(jobs[0].source, 'sandboxaq')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
-})
-
-test('SandboxAQ fails closed when the verified careers shell, board shell, or Ashby payload drift', async () => {
-  const sandboxAQ = await loadSandboxAQModule()
-
-  await assert.rejects(
-    sandboxAQ.createSandboxAQScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-      fetchJson: async () => ashbyPayload,
-    }),
-    /verified sandboxaq official careers page/i,
-  )
-
-  await assert.rejects(
-    sandboxAQ.createSandboxAQScraper().run({
-      fetchText: async (url) => {
-        if (url === sandboxAQ.CAREERS_PAGE_URL) return careersHtml
-        if (url === sandboxAQ.CAREERS_LIST_URL) return '<html><body><p>Different route</p></body></html>'
-        throw new Error(`Unexpected SandboxAQ text URL: ${url}`)
-      },
-      fetchJson: async () => ashbyPayload,
-    }),
-    /verified sandboxaq careers list shell/i,
-  )
-
-  await assert.rejects(
-    sandboxAQ.createSandboxAQScraper().run({
-      fetchText: async (url) => {
-        if (url === sandboxAQ.CAREERS_PAGE_URL) return careersHtml
-        if (url === sandboxAQ.CAREERS_LIST_URL) return careersListHtml
-        if (url === sandboxAQ.ASHBY_PUBLIC_BOARD_URL) return '<html><body><p>No board shell</p></body></html>'
-        throw new Error(`Unexpected SandboxAQ text URL: ${url}`)
-      },
-      fetchJson: async () => ashbyPayload,
-    }),
-    /verified ashby public board/i,
-  )
-
-  await assert.rejects(
-    sandboxAQ.createSandboxAQScraper().run({
-      fetchText: async (url) => {
-        if (url === sandboxAQ.CAREERS_PAGE_URL) return careersHtml
-        if (url === sandboxAQ.CAREERS_LIST_URL) return careersListHtml
-        if (url === sandboxAQ.ASHBY_PUBLIC_BOARD_URL) return ashbyBoardHtml
-        throw new Error(`Unexpected SandboxAQ text URL: ${url}`)
-      },
-      fetchJson: async () => ({ postings: [] }),
-    }),
-    /verified ashby payload/i,
-  )
-})
+test('sandboxaq: current original-entity primary replay (legacy case 287)', async () => checkCurrentReplay('sandboxaq', 'primary'))

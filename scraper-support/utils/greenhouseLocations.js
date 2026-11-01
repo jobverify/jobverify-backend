@@ -11,20 +11,38 @@ export const greenhouseCountryLabels = record => (Array.isArray(record?.metadata
   .flatMap(entry => Array.isArray(entry.value) ? entry.value : entry.value == null ? [] : [entry.value])
   .map(value => typeof value === 'string' ? (/^(?:IN|IND)$/i.test(value.trim()) ? 'India' : value.trim()) : value)
 
-export const hasUnhandledGreenhouseGeography = record => (Array.isArray(record?.metadata) ? record.metadata : [])
-  .some(entry => /location|country|countries|office|region|geograph/i.test(entry?.name || '')
+const GEO_FIELD = /location|country|countries|office|address|region|geograph|latitude|longitude|postal|territor|continent/i
+const hasValue = value => value != null && (Array.isArray(value) ? value.some(hasValue)
+  : typeof value === 'string' ? Boolean(value.trim()) : true)
+const unknownGeographicField = (value, allowed) => Object.entries(value || {}).some(([key, field]) =>
+  GEO_FIELD.test(key) && !allowed.includes(key) && hasValue(field))
+export const hasUnhandledGreenhouseGeography = record =>
+  unknownGeographicField(record, ['location', 'offices', 'metadata'])
+  || unknownGeographicField(record?.location, ['name'])
+  || (Array.isArray(record?.offices) && record.offices.some(office => unknownGeographicField(office, ['name', 'location'])))
+  || (Array.isArray(record?.metadata) ? record.metadata : []).some(entry => GEO_FIELD.test(entry?.name || '')
     && !LOCATION_FIELD.test(entry.name)
-    && (Array.isArray(entry.value) ? entry.value : [entry.value])
-      .some(value => value != null && String(value).trim() !== ''))
+    && hasValue(entry.value))
 
 export const hasNativeIndiaLocation = label => typeof label === 'string'
   && NATIVE_INDIA_LOCATION.test(label) && isIndiaJob({ location: label,
     ...(/\bindia\b/i.test(label) ? { country: 'India' } : {}),
   })
 
-// Native boards use semicolons between separate offices. Other separators may
-// describe eligibility or a conflicting single address and remain intact.
+// Some boards enumerate several fully qualified city/state worksites after a
+// remote-work prefix. Split only when every element has that address shape;
+// ordinary hyphens in a city or a work arrangement are not location separators.
+export const qualifiedGreenhouseWorksites = label => {
+  if (typeof label !== 'string') return null
+  const locations = label.trim().replace(/^Remote\s+-\s+/i, '').split(/\s+[-–—]\s+/u)
+  return locations.length && locations.every(location => /^[\p{L}][\p{L} .'-]*,\s*[A-Z]{2}$/u.test(location))
+    ? locations.map(location => location.trim()) : null
+}
+
+// Semicolons also enumerate independent native offices. Unqualified alternate
+// city/region labels retain their original text and unresolved scope.
 export const greenhouseLocationSegments = label => label.split(';').map(value => value.trim()).filter(Boolean)
+  .flatMap(value => qualifiedGreenhouseWorksites(value) || [value])
 
 export const greenhouseLocationLabels = (record = {}) => {
   const labels = []

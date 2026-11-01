@@ -3,8 +3,9 @@ import test from 'node:test'
 
 import { runApiPortalScraper } from '../apiPortal/engine.js'
 import { getScraperCatalog } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
-test('runApiPortalScraper maps Booking.com Jibe jobs from the official jobs API', async () => {
+test('Booking.com preserves the India job while two native rows contradict a total of one', async () => {
   const provider = getScraperCatalog().find((item) => item.source === 'bookingcom')
   assert.ok(provider)
 
@@ -78,5 +79,12 @@ test('runApiPortalScraper maps Booking.com Jibe jobs from the official jobs API'
     requiredSkills: [],
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'discovery-only')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, 1)
+  assert.equal(evidence.pagesFetched, 1)
+  assert.equal(evidence.reason, 'api-portal-incomplete-listing-or-role-details:upstream-count-mismatch')
 })

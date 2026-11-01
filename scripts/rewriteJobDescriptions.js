@@ -7,11 +7,18 @@ import { configureMongoDns } from '../src/utils/mongoDns.js';
 import Job from '../src/models/Job.js';
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
 import { rewriteDeadline, rewriteStopDetails, rewriteQueueQuery, rewriteQueuePages, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient, rewriteWhenReady, rewriteProgress } from '../rewriting/runner.js';
-import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration, rewriteGpuLayers } from '../rewriting/worker.js';
+import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration, rewriteGpuLayers, collectRewriteRuntimeDiagnostics } from '../rewriting/worker.js';
 import { createRewriteDiagnostics } from '../rewriting/diagnostics.js';
+import { summarizeRewriteCapacity } from '../rewriting/capacity.js';
 import { createProgressLogger } from './lib/progressLogger.js';
 
 const apply = process.argv.includes('--apply');
+const shard = Number(process.env.JOB_DESCRIPTION_REWRITE_SHARD || 0);
+const shardCount = Number(process.env.JOB_DESCRIPTION_REWRITE_SHARD_COUNT || 1);
+const queueAsOf = process.env.JOB_DESCRIPTION_REWRITE_QUEUE_AS_OF || new Date().toISOString();
+if (!Number.isFinite(Date.parse(queueAsOf))) throw new Error('Invalid rewrite queue cutoff');
+const query = rewriteQueueQuery(new Date(queueAsOf), { shard, shardCount });
+const shardSuffix = shardCount > 1 || process.env.JOB_DESCRIPTION_REWRITE_SHARD !== undefined ? `-${shard}` : '';
 const mode = process.env.JOB_DESCRIPTION_REWRITE_MODE || 'off';
 const workerConfig = rewriteWorkerConfiguration({ threads: process.env.JOB_DESCRIPTION_REWRITE_CPU_THREADS || REWRITE_MODEL.cpuThreads,
   parallelism: process.env.JOB_DESCRIPTION_REWRITE_CONCURRENCY || 1 });
@@ -20,7 +27,7 @@ const binaryOverride = process.env.JOB_DESCRIPTION_REWRITE_BINARY;
 const binarySha256 = process.env.JOB_DESCRIPTION_REWRITE_BINARY_SHA256;
 if (gpuLayers !== 0 && (!binaryOverride || !binarySha256)) throw new TypeError('GPU rewriting requires a compatible binary and its SHA-256 checksum');
 if (!['off', 'publish'].includes(mode)) throw new Error('JOB_DESCRIPTION_REWRITE_MODE must be off or publish');
-const summary = { mode: apply ? mode : 'preview', modelId: REWRITE_MODEL.modelId, modelFile: REWRITE_MODEL.file,
+const summary = { mode: apply ? mode : 'preview', shard, shardCount, queueAsOf, modelId: REWRITE_MODEL.modelId, modelFile: REWRITE_MODEL.file,
   modelRevision: REWRITE_MODEL.revision, policyVersion: REWRITE_MODEL.policyVersion, outputFormat: REWRITE_MODEL.outputFormat,
   startedAt: new Date().toISOString(), environment: { platform: os.platform(), cpu: os.cpus()[0]?.model,
     availableCpus: os.availableParallelism(), cpuThreads: workerConfig.threads, parallelism: workerConfig.parallelism, gpuLayers,
@@ -28,13 +35,13 @@ const summary = { mode: apply ? mode : 'preview', modelId: REWRITE_MODEL.modelId
     maxRetryOutputTokens: REWRITE_MODEL.maxRetryOutputTokens, maxModelEdits: REWRITE_MODEL.maxModelEdits,
     maxPromptCandidates: REWRITE_MODEL.maxPromptCandidates, maxEditCharacters: REWRITE_MODEL.maxEditCharacters, queuePageSize: 8,
     requestSeconds: REWRITE_MODEL.requestSeconds, totalMemoryBytes: os.totalmem() } };
-const summaryFile = path.resolve(process.env.PIPELINE_SUMMARY_FILE || '.cache/scraper-actions/description-summary.json');
+const summaryFile = path.resolve(process.env.PIPELINE_SUMMARY_FILE || `.cache/scraper-actions/description-summary${shardSuffix}.json`);
 if (REWRITE_MODEL.outputFormat === 'prose') {
   for (const key of ['maxOutputTokens', 'maxRetryOutputTokens', 'maxModelEdits', 'maxPromptCandidates', 'maxEditCharacters', 'requestSeconds']) delete summary.environment[key];
-  summary.environment.outputSizing = 'remaining_model_context';
+  summary.environment.outputSizing = 'source_tokens_with_formatting_headroom';
   summary.environment.requestDeadline = 'remaining_workflow_budget';
 }
-const diagnosticFile = path.join(path.dirname(summaryFile), 'description-rejections.json');
+const diagnosticFile = path.join(path.dirname(summaryFile), `description-rejections${shardSuffix}.json`);
 const diagnostics = createRewriteDiagnostics();
 const onRejection = rejection => diagnostics.record(rejection);
 const deadline = rewriteDeadline({ budgetSeconds: process.env.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || 1200,
@@ -45,7 +52,7 @@ const budgetSignal = AbortSignal.timeout(Math.max(1, Math.floor(deadline - Date.
 const signal = AbortSignal.any([controller.signal, budgetSignal]);
 let worker, jobs, phase = 'configuration';
 const progress = createProgressLogger('rewrite', () => ({
-  mode: summary.mode, queued: summary.queued, processed: summary.results?.length || 0,
+  mode: summary.mode, shard, shardCount, queued: summary.queued, processed: summary.results?.length || 0,
   remaining: summary.queued === undefined ? undefined : Math.max(0, summary.queued - (summary.results?.length || 0)),
 }));
 const setPhase = value => { phase = value; progress.phase(value); };
@@ -58,19 +65,32 @@ try {
     configureMongoDns();
     setPhase('connect');
     await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: Math.max(1, Math.min(15000, deadline - Date.now())) });
-    const query = rewriteQueueQuery();
     setPhase('count_queue');
     summary.queued = await Job.countDocuments(query).maxTimeMS(15000);
     if (!apply || !summary.queued) summary.reason = apply ? 'empty_queue' : 'read_only_preview';
     else {
         signal.throwIfAborted();
         setPhase('prepare_runtime');
+        if (process.env.JOB_DESCRIPTION_REWRITE_REQUIRE_CUSTOM_BINARY === '1' && (!binaryOverride || !binarySha256)) {
+          throw new Error('The rewrite workflow requires its verified portable runtime before processing a nonempty queue');
+        }
         const runtime = await prepareRewriteRuntime({ signal, binaryOverride, binarySha256 });
+        summary.workerRuntime = await collectRewriteRuntimeDiagnostics({ binary: runtime.binary,
+          nativeBacktrace: process.env.JOB_DESCRIPTION_REWRITE_NATIVE_BACKTRACE === '1' });
+        summary.workerRuntime.runtimeKind = runtime.runtimeKind;
+        if (binaryOverride && process.env.JOB_DESCRIPTION_REWRITE_RUNTIME_PROFILE) {
+          summary.workerRuntime.profile = process.env.JOB_DESCRIPTION_REWRITE_RUNTIME_PROFILE;
+          summary.workerRuntime.sourceRevision = process.env.JOB_DESCRIPTION_REWRITE_RUNTIME_SOURCE_REVISION;
+        }
         setPhase('start_worker');
         worker = await startRewriteWorker({ ...runtime, signal, deadline,
+          nativeBacktrace: summary.workerRuntime.nativeBacktrace.enabled,
+          logFile: path.join(path.dirname(summaryFile), `description-worker${shardSuffix}.log`),
           threads: workerConfig.threads, parallelism: workerConfig.parallelism, gpuLayers });
         setPhase('probe_worker');
-        summary.workerProbe = await probeRewriteClient(createRewriteClient(worker), { concurrency: worker.parallelism, deadline, signal, onRejection });
+        summary.workerProbe = await probeRewriteClient(createRewriteClient(worker), { concurrency: worker.parallelism, deadline, signal, onRejection,
+          onProbeComplete: details => { summary.workerProbe = details; },
+          onProbeEvent: event => console.log(JSON.stringify({ mode: summary.mode, shard, shardCount, ...event })) });
         summary.results = [];
         Object.assign(summary, await rewriteWhenReady(summary.workerProbe, async () => {
         setPhase('process_queue');
@@ -105,12 +125,9 @@ try {
   await worker?.stop();
   await mongoose.disconnect();
   if (summary.results?.length) {
-    const durations=summary.results.filter(r=>r.generated && !r.modelPlanCached && r.durationMs>0).map(r=>r.durationMs).sort((a,b)=>a-b);
-    const seconds=(Date.now()-Date.parse(summary.startedAt))/1000;
-    summary.capacity={elapsedSeconds:seconds,modelRequests:summary.results.reduce((total,r)=>total+(r.generationRequests??(r.generated&&!r.modelPlanCached?1:0)),0),attemptsPerHour:summary.attempted ? summary.attempted/seconds*3600 : 0,p50DurationMs:durations[Math.floor(durations.length*.5)]||null,p95DurationMs:durations[Math.min(durations.length-1,Math.floor(durations.length*.95))]||null};
-    summary.capacity.renderedWithoutInference = summary.results.filter(result => result.ok && result.renderedWithoutInference).length;
-    summary.capacity.modelEditedItems = summary.results.reduce((total, result) => total + (result.ok ? result.quality?.modelEditedItems || 0 : 0), 0);
-    summary.capacity.sourceCopiedItems = summary.results.reduce((total, result) => total + (result.ok ? result.quality?.sourceCopiedItems || 0 : 0), 0);
+    summary.capacity = summarizeRewriteCapacity(summary.results, {
+      startedAt: summary.startedAt, finishedAt: new Date().toISOString(), attempted: summary.attempted,
+    });
   }
   if (apply && summary.queued !== undefined) Object.assign(summary, rewriteProgress(summary));
   if (apply && !summary.errorType && summary.reason !== 'disabled') Object.assign(summary,

@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import vm from 'node:vm'
+import { extractDwrPayload as extractSharedDwrPayload } from '../../scraper-support/shared/successFactorsDwr.js'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
@@ -290,41 +290,10 @@ const postSuccessFactorsDwr = async ({
   })
 }
 
-export const extractDwrPayload = (responseText) => {
-  const rawText = String(responseText ?? '')
-  if (!hasSuccessFactorsDwrResponseSignal(rawText)) return null
-
-  let callbackValue = null
-  const executable = rawText.replace(/^\s*throw 'allowScriptTagRemoting is false\.';\s*/i, '')
-  const sandbox = {
-    dwr: {
-      engine: {
-        _remoteHandleCallback(_batchId, _callId, value) {
-          callbackValue = value
-        },
-      },
-    },
-  }
-
-  try {
-    vm.runInNewContext(executable, sandbox, { timeout: 1000 })
-  } catch (error) {
-    throw new Error(
-      'The Volkswagen SuccessFactors DWR payload could not be parsed',
-      { cause: error },
-    )
-  }
-
-  const payload = callbackValue?.payload?.results
-    ? callbackValue.payload
-    : callbackValue
-
-  if (!payload?.results || !Array.isArray(payload.results.postings)) {
-    throw new Error('The Volkswagen SuccessFactors DWR payload no longer exposes postings')
-  }
-
-  return payload
-}
+export const extractDwrPayload = responseText => extractSharedDwrPayload(responseText, {
+  parseErrorMessage: 'The Volkswagen SuccessFactors DWR payload could not be parsed',
+  missingResultsErrorMessage: 'The Volkswagen SuccessFactors DWR payload no longer exposes postings',
+})
 
 const flattenPostingFields = (value) => {
   if (!value) return []

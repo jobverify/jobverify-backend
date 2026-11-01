@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runRgbsi } from './nativeCareers.js'
 
 import {
   BOARD_URL,
@@ -66,41 +67,8 @@ const isIndiaLocation = (record = {}) => {
   return country === 'in' || /\bIndia\b/i.test(fullLocation)
 }
 
-export const createRgbsiScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
-    const boardHtml = await fetchText(BOARD_URL)
-    if (!hasVerifiedBoardSignal(boardHtml)) {
-      throw new Error('RGBSI verified SmartRecruiters board no longer matches the trusted exact-name contract')
-    }
-
-    const url = new URL(LISTING_API_URL)
-    url.searchParams.set('limit', '100')
-    url.searchParams.set('country', 'in')
-    url.searchParams.set('offset', '0')
-
-    const payload = await fetchJson(url.toString())
-    const records = Array.isArray(payload?.content) ? payload.content : []
-    const indiaRecords = records.filter(isIndiaLocation)
-
-    return indiaRecords.map((record) => ({
-      title: record.name,
-      company: COMPANY,
-      location: record.location?.fullLocation || null,
-      city: record.location?.city || null,
-      country: 'India',
-      department: record.department?.label || null,
-      employmentType: record.typeOfEmployment?.label || null,
-      experienceRequired: record.experienceLevel?.label || null,
-      jobId: record.id || null,
-      requisitionId: record.refNumber || record.id || null,
-      sourceUrl: record.postingUrl || BOARD_URL,
-      applyUrl: record.applyUrl || record.postingUrl || BOARD_URL,
-      link: record.postingUrl || BOARD_URL,
-      jobDescription: null,
-      source: SOURCE,
-      scrapedAt: new Date().toISOString(),
-    })).sort((left, right) => left.title.localeCompare(right.title))
-  },
+export const createRgbsiScraper = (defaults = {}) => ({
+  run: (options = {}) => runRgbsi({ ...defaults, ...options }),
 })
 
 export const run = async (options = {}) => createRgbsiScraper(options).run(options)

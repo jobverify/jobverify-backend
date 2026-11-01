@@ -86,6 +86,7 @@ const BUNDLE_JOBS_SIGNAL_PATTERNS = [
 ]
 
 const defaultFetchPage = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
     signal,
     headers: {
@@ -94,17 +95,21 @@ const defaultFetchPage = async (url, { signal } = {}) => {
     },
   })
 
+  signal?.throwIfAborted()
+  const html = await response.text()
+  signal?.throwIfAborted()
   return {
     status: response.status,
     url: response.url,
     headers: {
       location: response.headers.get('location'),
     },
-    html: await response.text(),
+    html,
   }
 }
 
 const defaultFetchText = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
     signal,
     headers: {
@@ -113,11 +118,14 @@ const defaultFetchText = async (url, { signal } = {}) => {
     },
   })
 
+  signal?.throwIfAborted()
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return response.text()
+  const text = await response.text()
+  signal?.throwIfAborted()
+  return text
 }
 
 const normalizeHtml = (value) => String(value ?? '').toLowerCase()

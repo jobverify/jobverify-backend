@@ -1,6 +1,7 @@
 import { classifyProviderImplementation } from './reportScriptCatalogTopology.js'
 import { isVerifiedEmptyEvidence, isFreshCompleteInventoryEvidence, hasIncompleteScraperAttempt, isCompleteScraperAttempt } from '../scraper-support/utils/inventoryEvidence.js'
 import { explainPublishingGap } from './publishingGapExplanation.js'
+import { normalizeInventoryDelegationEvidence } from '../scraper-support/utils/inventoryDelegationEvidence.js'
 
 const metric = value => Number.isSafeInteger(value) && value >= 0 ? value : null
 const timestamp = value => {
@@ -96,20 +97,29 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
   }
   const providers = [...new Map(catalog.map(p => [p.source, p])).values()].sort((a, b) => a.source.localeCompare(b.source))
   const catalogSources = new Set(providers.map(provider => provider.source))
-  const delegationFor = provider => {
-    const declared = provider.inventoryDelegation
+  const delegationFor = (provider, attempt) => {
+    const historical = provider.inventoryDelegation
+    const observed = normalizeInventoryDelegationEvidence(attempt?.inventoryDelegationEvidence)
+    const completedAt = timestamp(attempt?.completedAt)
+    const currentObservation = Boolean(observed && observed.source === provider.source && completedAt
+      && historical?.verified === true && Array.isArray(historical.sources)
+      && observed.evidence.url === historical.evidence?.url
+      && historical.sources.length === observed.sources.length && historical.sources.every(source => observed.sources.includes(source))
+      && new Date(observed.verifiedAt) <= new Date(completedAt) && fresh(observed.verifiedAt, now, maxAgeHours))
+    const declared = currentObservation ? { ...historical, verifiedAt: observed.verifiedAt, evidence: observed.evidence } : historical
     if (declared?.verified !== true || declared.preservesChildSourceAndCompany !== true
       || !Array.isArray(declared.sources) || !declared.sources.length
       || new Set(declared.sources).size !== declared.sources.length
       || !declared.sources.every(source => source !== provider.source && catalogSources.has(source))
       || !/^https:\/\//.test(declared.evidence?.url || '')
-      || typeof declared.evidence?.artifact !== 'string' || !declared.evidence.artifact
-      || !/^[a-f0-9]{64}$/.test(declared.evidence?.sha256 || '')) return null
+      || (!currentObservation && (typeof declared.evidence?.artifact !== 'string' || !declared.evidence.artifact
+        || !/^[a-f0-9]{64}$/.test(declared.evidence?.sha256 || '')))) return null
     const evidenceFresh = fresh(declared.verifiedAt, now, maxAgeHours)
     const childInventories = declared.sources.map(source => ({ source, ...inventoryFor(source) }))
     const current = evidenceFresh && snapshotFresh && inventoryAvailable && publicNamesAvailable
       && childInventories.every(child => child.savedJobs !== null && child.visibleJobs !== null && child.visibleCompanies !== null)
-    return { verifiedAt: timestamp(declared.verifiedAt), evidenceFresh, snapshotAt: timestamp(runtime?.generatedAt),
+    return { verifiedAt: timestamp(declared.verifiedAt), evidenceFresh,
+      evidenceOrigin: currentObservation ? 'runtime-attempt' : 'catalog-declaration', snapshotAt: timestamp(runtime?.generatedAt),
       fresh: current, sources: [...declared.sources], preservesChildSourceAndCompany: true,
       evidence: declared.evidence, childInventories,
       publicChildSources: current ? childInventories.filter(child => child.visibleJobs > 0).map(child => child.source) : [],
@@ -170,7 +180,7 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       rawJobs: metric(attempt?.rawRecords), indiaJobs: metric(attempt?.jobs), eligibleJobs: metric(attempt?.eligibleJobs),
       upstreamReportedJobs: metric(evidence?.reportedTotal),
       savedJobs, visibleJobs, visibleCompanies: current.visibleCompanies, rejectionCounts,
-      inventoryDelegation: delegationFor(provider),
+      inventoryDelegation: delegationFor(provider, attempt),
       completeSuccessfulCheck: attemptFresh && completeAttempt,
       inventoryEvidence: evidence, detailHealth: attempt?.detailHealth || null, zeroJobEvidence: attempt?.zeroJobEvidence || null,
       failureKind: attempt?.failureKind || null, error: attempt?.error || null,

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
 import {
   CAREERS_URL,
@@ -59,7 +60,7 @@ test('Sigma Computing constants and official careers page validation match the v
 })
 
 test('Sigma Computing Greenhouse extraction keeps only India jobs and maps canonical detail URLs', () => {
-  const jobs = extractIndiaJobsFromGreenhousePayload({
+  const payload = {
     jobs: [
       {
         id: 111,
@@ -83,7 +84,8 @@ test('Sigma Computing Greenhouse extraction keeps only India jobs and maps canon
         content: '<p>Help customers deploy Sigma.</p>',
       },
     ],
-  }, { scrapedAt: '2026-07-25T10:00:00.000Z' })
+  }
+  const jobs = extractIndiaJobsFromGreenhousePayload(payload, { scrapedAt: '2026-07-25T10:00:00.000Z' })
 
   assert.deepEqual(jobs, [{
     title: 'Solutions Engineer',
@@ -99,12 +101,26 @@ test('Sigma Computing Greenhouse extraction keeps only India jobs and maps canon
     requisitionId: 'REQ-222',
     department: 'Solutions Engineering',
     employmentType: null,
+    sourcePublisher: 'Sigma Computing',
+    legalHiringEmployer: null,
+    sourceFirstPublished: null,
+    sourceUpdatedAt: '2026-07-25T09:00:00Z',
+    sourceNativeEducation: null,
+    sourceNativeMetadata: null,
+    sourceNativeRecord: payload.jobs[1],
+    sourceNativeContent: '<p>Help customers deploy Sigma.</p>',
+    sourceNativeRequisitionId: 'REQ-222',
+    sourceCriteriaIssues: ['unreviewed-native-metadata'],
+    sourceCriteriaSchemaKnown: false,
     experienceRequired: null,
-    jobDescription: 'Help customers deploy Sigma.',
+    jobDescription: '<p>Help customers deploy Sigma.</p>',
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '2026-07-25T09:00:00Z',
+    // This original unit fixture has no first_published field. Its edit time
+    // cannot supply a publication date; real historical dates are covered by
+    // nativeCriteria.test.js against all77 untouched original records.
+    postingDate: null,
     closingDate: null,
     scrapedAt: '2026-07-25T10:00:00.000Z',
   }])
@@ -143,6 +159,11 @@ test('Sigma Computing scraper returns an honest empty India slice when the verif
   })
 
   assert.deepEqual(jobs, [])
+  const evidence=readInventoryEvidence(jobs)
+  assert.equal(evidence.listingComplete,false)
+  assert.equal(evidence.reportedTotal,null)
+  assert.equal(evidence.indiaFacetCount,null)
+  assert.equal(jobs.sourceAudit.lifecycleCleanupAllowed,false)
 })
 
 test('Sigma Computing scraper fails closed when the verified first-party page or Greenhouse identity changes', async () => {
@@ -164,6 +185,6 @@ test('Sigma Computing scraper fails closed when the verified first-party page or
         location: { name: 'Bengaluru, India' },
       }],
     }),
-    /verified company identity/i,
+    /Sigma Computing native identity changed materially/,
   )
 })

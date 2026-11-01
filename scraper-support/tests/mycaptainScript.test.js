@@ -243,16 +243,16 @@ test('MyCaptain run fetches the verified homepage and /career page and returns t
   assert.equal(jobs[2].jobId, 'mycaptain-finance-controller-bangalore-2')
 })
 
-test('MyCaptain returns [] when the verified first-party public routes all show the deployment-paused shell', async () => {
+test('MyCaptain reports unavailable inventory when public routes all show the deployment-paused shell', async () => {
   const mycaptain = await loadMyCaptainModule()
   const requestedUrls = []
 
-  const jobs = await mycaptain.createMyCaptainScraper().run({
+  await assert.rejects(mycaptain.createMyCaptainScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
       return deploymentPausedPage(url)
     },
-  })
+  }), error => error.failureKind === 'upstream_inventory_unavailable' && error.status === 402)
 
   assert.deepEqual(requestedUrls, [
     mycaptain.HOMEPAGE_URL,
@@ -261,21 +261,18 @@ test('MyCaptain returns [] when the verified first-party public routes all show 
     mycaptain.JOB_URL,
     mycaptain.JOBS_URL,
   ])
-  assert.deepEqual(jobs, [])
 })
 
-test('MyCaptain returns an empty result when the verified blocked first-party routes are temporarily timeout-blocked', async () => {
+test('MyCaptain retains an unavailable check when public routes are temporarily timeout-blocked', async () => {
   const mycaptain = await loadMyCaptainModule()
 
-  const jobs = await mycaptain.createMyCaptainScraper().run({
+  await assert.rejects(mycaptain.createMyCaptainScraper().run({
     fetchPage: async () => {
       throw new Error(
         'fetch failed | Connect Timeout Error (attempted address: mycaptain.in:443, timeout: 10000ms)',
       )
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), /Connect Timeout Error/)
 })
 
 test('MyCaptain fails closed when the verified reachable-or-blocked contract drifts materially', async () => {

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createAshbyApiScraper } from '../../scraper-support/utils/ashbyApi.js'
+import { runNative } from './nativeCareers.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -11,12 +11,7 @@ export const ASHBY_BOARD_SLUG = 'zapier'
 export const ASHBY_PUBLIC_BOARD_URL = 'https://jobs.ashbyhq.com/zapier'
 export const ASHBY_JOB_BOARD_URL = 'https://api.ashbyhq.com/posting-api/job-board/zapier'
 
-export const createZapierScraper = (options = {}) => createAshbyApiScraper({
-  source: SOURCE,
-  companyName: COMPANY,
-  ashbyJobBoardUrl: ASHBY_JOB_BOARD_URL,
-  ...options,
-})
+export const createZapierScraper = (options = {}) => ({ run: (runOptions = {}) => runNative({ ...options, ...runOptions }) })
 
 export const createScraper = createZapierScraper
 export const run = async (options = {}) => createZapierScraper(options).run(options)

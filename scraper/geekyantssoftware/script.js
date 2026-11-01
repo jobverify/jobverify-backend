@@ -2,9 +2,11 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { GEEKYANTS_SOFTWARE_CATALOG as PROVIDER_METADATA } from './catalog.js'
+import { readNativeGeekyantsCareers } from './nativeCareers.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -93,14 +95,30 @@ const extractExperienceRequired = (value) => {
   return null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  includeResponseMetadata: true,
+  signal,
 })
+
+const pageBody = (response, requestedUrl, allowText) => {
+  if (allowText && typeof response === 'string') return response
+  const requested = new URL(requestedUrl)
+  let finalUrl
+  try { finalUrl = new URL(response?.url) } catch { /* Missing metadata is unresolved. */ }
+  if (response?.status !== 200 || typeof response?.html !== 'string' || !finalUrl
+    || finalUrl.username || finalUrl.password || finalUrl.origin !== requested.origin
+    || finalUrl.pathname.replace(/\/+$/, '') !== requested.pathname.replace(/\/+$/, '')
+    || finalUrl.search !== requested.search || finalUrl.hash) {
+    throw new Error('GeekyAnts response did not preserve the verified source URL and HTTP status')
+  }
+  return response.html
+}
 
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html) || ''
@@ -188,20 +206,56 @@ export const createGeekyantsSoftwareScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
+    const fetchText = options.fetchPage || options.fetchText || defaultFetchText
     const now = options.now || (() => new Date().toISOString())
+    const signal = options.signal
+    const loadPage = async url => {
+      signal?.throwIfAborted()
+      const response = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      return pageBody(response, url, fetchText !== defaultFetchText)
+    }
+    const limit = Number.isSafeInteger(maxJobs) && maxJobs >= 0 ? maxJobs : null
 
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    const careersHtml = await loadPage(OFFICIAL_CAREERS_URL)
+    const native = readNativeGeekyantsCareers(careersHtml)
+    if (native) {
+      let pagesFetched = 1
+      const reasons = [...native.issues]
+      let stable = false
+      try {
+        const closingHtml = await loadPage(OFFICIAL_CAREERS_URL)
+        pagesFetched += 1
+        const closing = readNativeGeekyantsCareers(closingHtml)
+        stable = closing?.complete === true && closing.signature === native.signature
+        if (!stable) reasons.push('native-closing-inventory-not-reconciled')
+      } catch (error) {
+        signal?.throwIfAborted()
+        reasons.push(`native-closing-inventory-unavailable:${error.message}`)
+      }
+      const capped = limit != null && native.jobs.length > limit
+      if (capped) reasons.push('native-output-capped')
+      const complete = native.complete && stable && !capped
+      const jobs = (limit == null ? native.jobs : native.jobs.slice(0, limit)).map(job => ({
+        ...job, scrapedAt: now(), sourceListingComplete: complete, lifecycleCleanupAllowed: complete,
+      }))
+      return attachInventoryEvidence(jobs, {
+        status: complete ? 'complete-inventory' : 'coverage-gap', surface: OFFICIAL_CAREERS_URL,
+        firstParty: true, listingComplete: complete, pagesFetched, reportedTotal: native.reportedTotal,
+        indiaFacetCount: complete ? native.jobs.length : null, verifiedAt: now(),
+        reason: complete ? 'native-card-jobposting-count-and-closing-inventory-reconciled' : reasons.join(';'),
+      })
+    }
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Geekyants Software verified first-party careers page no longer matches the trusted public surface')
     }
 
     const listings = extractListingJobs(careersHtml).filter(isIndiaListing)
-    const selectedListings = maxJobs ? listings.slice(0, maxJobs) : listings
+    const selectedListings = limit == null ? listings : listings.slice(0, limit)
     const jobs = []
 
     for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.detailUrl)
+      const detailHtml = await loadPage(listing.detailUrl)
       jobs.push({
         ...extractJobDetail(detailHtml, listing),
         source: SOURCE,

@@ -4,6 +4,7 @@ import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { extractAshbyExperienceRequired } from '../../scraper-support/utils/ashbyExperience.js'
 import { decode, text, visibleText, readAppData, readSchemas, qualificationSections } from './nativeHtml.js'
+import { createDelineaPublicReader } from './publicRead.js'
 
 const config = loadConfig(path.dirname(fileURLToPath(import.meta.url)))
 export const SOURCE = 'delinea'
@@ -36,13 +37,6 @@ export const careersChannels = html => {
 }
 export const hasVerifiedCareersSignal = html => careersChannels(html).channels.includes(ASHBY_PUBLIC_BOARD_URL) && /delinea/i.test(visibleText(html))
 const denial = error => [401, 403, 429].includes(error?.status) || /HTTP (?:401|403|429)|access denied|verify you are human|captcha|bot challenge/i.test(error?.message || '')
-const defaultFetch = async (url, { signal, json = false } = {}) => {
-  const response = await fetch(url, { method: 'GET', signal: signal || AbortSignal.timeout(30000), headers: { Accept: json ? 'application/json' : 'text/html' } })
-  if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status} for ${url}`), { status: response.status, abortRetries: true })
-  const body = await response.text()
-  if (/just a moment|verify you are human|access denied|cf-chl-|captcha challenge/i.test(body)) throw Object.assign(new Error(`Public careers access denial for ${url}`), { abortRetries: true })
-  return json ? JSON.parse(body) : body
-}
 const validPostingUrls = job => {
   try {
     const role = new URL(job.jobUrl); const apply = new URL(job.applyUrl)
@@ -107,10 +101,11 @@ const extractDetail = (job, brief, board, html) => {
 }
 
 export const createDelineaScraper = ({ maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null, now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText, fetchJson, signal, onNativeAudit } = {}) {
-    let pagesFetched = 0
-    const getText = async url => { pagesFetched++; const body = await (fetchText ? fetchText(url, { signal }) : defaultFetch(url, { signal })); if (/just a moment|verify you are human|access denied|cf-chl-|captcha challenge/i.test(body)) throw Object.assign(new Error('Public careers access denial'), { abortRetries: true }); return body }
-    const getJson = async url => { pagesFetched++; return fetchJson ? fetchJson(url, { signal }) : defaultFetch(url, { signal, json: true }) }
+  async run({ fetchText, fetchJson, signal, onNativeAudit, fetchImpl, transport, onNativeResponse } = {}) {
+    const reader = createDelineaPublicReader({ fetchText, fetchJson, signal, fetchImpl, transport, onNativeResponse })
+    try {
+    const getText = url => reader.readText(url)
+    const getJson = url => reader.readJson(url)
     const issues = []; const rows = []
     const additionalChannelChecks = []
     const inspectAdditionalChannel = async (url, phase) => {
@@ -140,10 +135,11 @@ export const createDelineaScraper = ({ maxJobs = Number.isInteger(config.maxJobs
       const brief = opening.jobs.find(j => j.id === job.id)
       if (!brief || !validPostingUrls(job)) { issues.push(`missing-native-brief-or-public-url:${job.id}`); continue }
       try { rows.push(extractDetail(job, brief, opening, await getText(job.jobUrl))) }
-      catch (e) { if (denial(e) || signal?.aborted) throw e; issues.push(e.message) }
+      catch (e) { if (denial(e) || signal?.aborted) throw e; issues.push(e.message); if (reader.limitExceeded) break }
     }
     let closing = null; let closingFeed = null; let closingChannels = null
     try {
+      if (reader.limitExceeded) fail('cohort read budget exhausted before closing inventory')
       closing = boardSnapshot(await getText(ASHBY_PUBLIC_BOARD_URL))
       closingFeed = feedSnapshot(await getJson(ASHBY_JOB_BOARD_URL))
       closingChannels = careersChannels(await getText(CAREERS_PAGE_URL))
@@ -158,13 +154,16 @@ export const createDelineaScraper = ({ maxJobs = Number.isInteger(config.maxJobs
     const cap = Number.isInteger(maxJobs) && maxJobs >= 0 && indiaRows.length > maxJobs
     if (cap) issues.push('output-cap')
     const complete = issues.length === 0 && rows.length === jobs.length
-    const scrapedAt = now()
-    const result = (cap ? indiaRows.slice(0, maxJobs) : indiaRows).map(({ isIndia, ...job }) => ({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt, sourceListingComplete: complete }))
-    const audit = { source: SOURCE, verifiedAt: scrapedAt, complete, issues, advertisedChannels, additionalChannelChecks, openingChannels, localizedChannels, closingChannels, opening: { organization: opening.organization, ids: opening.jobs.map(j => j.id).sort() }, closing: closing && { organization: closing.organization, ids: closing.jobs.map(j => j.id).sort() }, nativeCount: jobs.length, fullyHealthyCount: rows.length, indiaCount: indiaRows.length, eligibleCount: result.length, pagesFetched, rows }
+    const scrapedAt = reader.observedAt || now()
+    const pagesFetched = reader.audit.requests
+    const result = (cap ? indiaRows.slice(0, maxJobs) : indiaRows).map(({ isIndia, ...job }) => ({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt, sourceListingComplete: complete,
+      ...(!complete ? { sourceScopeComplete: false, lifecycleCleanupAllowed: false } : {}) }))
+    const audit = { source: SOURCE, verifiedAt: scrapedAt, complete, issues, advertisedChannels, additionalChannelChecks, openingChannels, localizedChannels, closingChannels, opening: { organization: opening.organization, ids: opening.jobs.map(j => j.id).sort() }, closing: closing && { organization: closing.organization, ids: closing.jobs.map(j => j.id).sort() }, nativeCount: jobs.length, fullyHealthyCount: rows.length, indiaCount: indiaRows.length, eligibleCount: result.length, pagesFetched, rows, publicRead: reader.audit }
     onNativeAudit?.(audit)
     return attachInventoryEvidence(result, { status: complete ? 'complete-inventory' : 'coverage-gap', surface: ASHBY_PUBLIC_BOARD_URL, firstParty: true, listingComplete: complete, pagesFetched,
       reportedTotal: complete ? jobs.length : null, indiaFacetCount: complete ? indiaRows.length : null, verifiedAt: scrapedAt,
       reason: complete ? 'native-board-feed-all-details-and-closing-inventory-reconciled' : [...new Set(issues)].join('; ') || 'incomplete-native-details' })
+    } finally { reader.dispose() }
   },
 })
 export const run = async (options = {}) => createDelineaScraper(options).run(options)

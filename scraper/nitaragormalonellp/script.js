@@ -1,3 +1,4 @@
+import {readListings,collect,nativeFetch} from './native.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -111,86 +112,12 @@ export const hasOfficialCareersSignal = (html) => {
     && pdfLinkCount >= 1
 }
 
-export const extractPublicListings = (html) => {
-  if (!hasOfficialCareersSignal(html)) {
-    throw new Error(
-      'NITARA Gormalone LLP careers page no longer matches the verified first-party careers page with public job openings',
-    )
-  }
+export const extractPublicListings = readListings
 
-  const jobs = []
-
-  for (const match of String(html ?? '').matchAll(
-    /<a\b[^>]*href=["']([^"']*\/?files\/JD\/[^"']+\.pdf)["'][^>]*>([\s\S]*?)<\/a>/gi,
-  )) {
-    const title = stripTags(match[2])
-    const sourceUrl = toAbsoluteUrl(match[1], CAREERS_URL)
-    const department = findNearestDepartment(html, match.index)
-    const identity = slugify(title)
-
-    if (!title || !sourceUrl || !identity) {
-      throw new Error(
-        'NITARA Gormalone LLP careers page no longer matches the verified first-party careers page with public job openings',
-      )
-    }
-
-    jobs.push({
-      title,
-      company: COMPANY,
-      department,
-      location: null,
-      city: null,
-      country: 'India',
-      jobId: `${SOURCE}-${identity}`,
-      requisitionId: `${SOURCE}-${identity}`,
-      sourceUrl,
-      applyUrl: `mailto:${APPLY_EMAIL}`,
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: buildJobDescription({ title, department }),
-    })
-  }
-
-  if (jobs.length === 0) {
-    throw new Error(
-      'NITARA Gormalone LLP careers page no longer matches the verified first-party careers page with public job openings',
-    )
-  }
-
-  return jobs
-}
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = nativeFetch
 
 export const createNitaraGormaloneLlpScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('NITARA Gormalone LLP homepage no longer matches the verified official homepage')
-    }
-
-    const careersHtml = await fetchText(CAREERS_URL)
-    const jobs = extractPublicListings(careersHtml)
-
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.sourceUrl || job.applyUrl,
-      scrapedAt: (overrideNow || now)(),
-    }))
-  },
+  async run(options={}) { return collect({...options,now:options.now||now,homepageVerifier:hasOfficialHomepageSignal}) },
 })
 
 export const run = async (options = {}) => createNitaraGormaloneLlpScraper().run(options)

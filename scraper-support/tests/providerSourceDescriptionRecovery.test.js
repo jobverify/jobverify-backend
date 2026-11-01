@@ -85,8 +85,17 @@ test('native lifecycle conflicts or malformed dates do not overwrite trusted sou
     response.payload.items[0].ExternalPostedStartDate = 'not-a-date'
     return response
   })), false)
-  const result = normalizeScrapedJob(await oracleRun({...oracle(),postingDate:'2026-10-24T10:00:00Z',scrapedAt:'2026-10-24T10:00:00Z'}))
+  // Use the ingestion fallback with its observation provenance. An explicit
+  // unmarked postingDate remains a source date even when it equals scrapedAt.
+  const observed = normalizeScrapedJob({...oracle(),scrapedAt:'2026-10-24T10:00:00Z'})
+  const result = normalizeScrapedJob(await oracleRun(observed))
   assert.equal(new Date(result.postedAt).toISOString(), new Date(fixture('oracle-detail').items[0].ExternalPostedStartDate).toISOString())
+})
+
+test('an unmarked source date equal to scrapedAt is not silently replaced during recovery', async () => {
+  const result = await oracleRun({...oracle(),postingDate:'2026-10-24T10:00:00Z',scrapedAt:'2026-10-24T10:00:00Z'})
+  assert.equal(hasSourceDescription(result), false)
+  assert.equal(new Date(result.postingDate).toISOString(), '2026-10-24T10:00:00.000Z')
 })
 
 test('invalid native calendar dates and conflicting trusted exact clocks cannot authorize source recovery', async () => {
@@ -203,8 +212,8 @@ test('an inactive or failed official Fountain handoff cannot authorize a migrate
   ]) assert.equal(hasSourceDescription(await fountainRun(value => value, value => { mutate(value); return value })), false)
 })
 
-const ceipal = () => ({ ...missing, title: 'Embedded Systems Engineer II', company: 'Detroit Engineered Products', source: 'detroitengineeredproducts',
-  companyCareerPage: 'https://depusa.com/index.php/careers-india', jobId: '241',
+const ceipal = () => ({ ...missing, title: 'Embedded Systems Engineer II', company: 'Example Engineering', source: 'exampleengineering',
+  companyCareerPage: 'https://engineering.example/careers-india', jobId: '241',
   sourceUrl: 'https://candidateportal.ceipal.com/job-details/native-role-241', applyUrl: 'https://candidateportal.ceipal.com/apply/native-role-241' })
 const ceipalRun = (change = value => value, changePage = value => value) => {
   const job = ceipal()

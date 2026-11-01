@@ -17,6 +17,12 @@ const check=(ok,message)=>{if(!ok)throw Error('Flywire native: '+message)}
 const plain=v=>typeof v==='string'&&v.trim().length>0
 const norm=v=>decodeNativeEntities(String(v)).replace(/\s+/g,'').trim()
 const key=v=>String(v).toLowerCase().replace(/\b(?:india|ind|in)\b/g,'').replace(/[^\p{L}\p{N}]/gu,'')
+const indiaCountryScope=value=>typeof value==='string'&&/^India(?:,\s*Remote)?$/i.test(value.trim())
+const indiaCityLocation=value=>{
+ const parts=value.split(',').map(part=>part.trim())
+ return (parts.length===1||(parts.length===2&&parts[1]==='India'))&&parts[0]
+   &&! /^(?:Remote|India|IN|IND)$/i.test(parts[0])&&isJobInPublicLocationScope({location:parts[0]})
+}
 const closed=/\b(?:(?:job|position|role)\s+(?:is\s+|has been\s+)?(?:closed|filled|expired|removed|no longer available)|no longer accepting applications|applications (?:are |have been )?closed)\b/i
 function envelope(p){
  check(p&&typeof p==='object'&&!Array.isArray(p),'Invalid native envelope')
@@ -34,6 +40,19 @@ function row(r){
  check(Array.isArray(r.bulletFields)&&r.bulletFields.length===1&&/^(?:JR|R)-\d+$/.test(r.bulletFields[0]),'Invalid native requisition')
  return r
 }
+function orderedFacets(entries,groupsOnly=false){
+ check(Array.isArray(entries),'Invalid native facet inventory')
+ const seen=new Set()
+ return entries.map(entry=>{
+  check(entry&&typeof entry==='object'&&!Array.isArray(entry),'Invalid native facet identity')
+  const group=Array.isArray(entry.values),id=group?entry.facetParameter:entry.id
+  check((!groupsOnly||group)&&plain(id),'Invalid native facet identity')
+  const identity=(group?'facet:':'value:')+id
+  check(!seen.has(identity),'Duplicate native facet identity');seen.add(identity)
+  if(entry.count!=null)check(Number.isSafeInteger(entry.count)&&entry.count>=0,'Invalid native facet count')
+  return {identity,value:group?{...entry,values:orderedFacets(entry.values)}:{...entry}}
+ }).sort((a,b)=>a.identity.localeCompare(b.identity)).map(entry=>entry.value)
+}
 export function parsePage(text,offset,total){
  const p=envelope(JSON.parse(text));check(Array.isArray(p.jobPostings)&&Number.isSafeInteger(p.total)&&p.total>=0,'Invalid listing records/total')
  const declared=offset===0?p.total:total
@@ -43,6 +62,9 @@ export function parsePage(text,offset,total){
  check(offset===0||p.total===0||p.total===total,'Native total drift')
  check(p.jobPostings.length===Math.min(20,declared-offset),'Incomplete native page')
  p.jobPostings.forEach(row);check(new Set(p.jobPostings.map(r=>r.externalPath)).size===p.jobPostings.length,'Duplicate native page identities')
+ // Native filter options are keyed by parameter/id. Equal-count options can
+ // arrive in different presentation order; preserve all values and counts.
+ if(p.facets!=null)p.facets=orderedFacets(p.facets,true)
  return p
 }
 export function parseBinding(corporate,shell,client){
@@ -76,9 +98,13 @@ export function parseNativeDetail(text,r,{now=new Date().toISOString()}={}){
  for(const l of i.additionalLocations??[])if(l&&typeof l==='object'&&l.country)check(country(l.country)===india&&l.country.id===i.country.id,'Conflicting native secondary country')
  const locations=[i.location,...(i.additionalLocations??[]).map(l=>typeof l==='string'?l:l?.descriptor)]
  check(Array.isArray(i.additionalLocations??[])&&locations.every(plain),'Invalid additional locations')
+ const countryScopedRequisition=india&&indiaCountryScope(i.jobRequisitionLocation.descriptor)
  if(india){
   check(i.jobRequisitionLocation.country.alpha2Code==='IN','Native India ISO country missing')
-  check(locations.every(l=>key(l)===key(i.jobRequisitionLocation.descriptor)&&isJobInPublicLocationScope({country:'India',location:l})),'Native India country/location contradiction')
+  // A native India/India, Remote requisition describes country scope rather
+  // than another city. Specific city descriptors still require exact agreement.
+  check(locations.every(l=>(key(l)===key(i.jobRequisitionLocation.descriptor)||(countryScopedRequisition&&indiaCityLocation(l)))
+   &&isJobInPublicLocationScope({country:'India',location:l})),'Native India country/location contradiction')
  }else check(!locations.some(l=>/\bIndia\b/i.test(l)||isJobInPublicLocationScope({location:l})),'Foreign country with unresolved India/secondary location')
  if(!/^\d+ Locations?$/i.test(r.locationsText))check(r.locationsText===i.location,'Listing/detail location mismatch')
  else check(Number(r.locationsText.split(' ')[0])===locations.length,'Grouped location count mismatch')
@@ -86,7 +112,7 @@ export function parseNativeDetail(text,r,{now=new Date().toISOString()}={}){
  check(!closed.test(extractActiveDescription(i.jobDescription)||''),'Native closed-role description')
  const cxsEmployer=p.hiringOrganization?.name
  check(cxsEmployer==null||typeof cxsEmployer==='string','Malformed native employer')
- return {payload:p,info:i,india,locations,canonical,cxsEmployer:cxsEmployer?.trim()||null}
+ return {payload:p,info:i,india,locations,canonical,countryScopedRequisition,listingLocation:r.locationsText,cxsEmployer:cxsEmployer?.trim()||null}
 }
 function date(value,now,publication=true){
  if(value==null||value==='')return null
@@ -95,7 +121,7 @@ function date(value,now,publication=true){
  return d.toISOString()
 }
 export function parseIndiaPage(html,native,{now}){
- const{info:i,payload,canonical,locations}=native,d=readNativeDocument(html)
+ const{info:i,payload,canonical,locations,countryScopedRequisition}=native,d=readNativeDocument(html)
  const canonicalLinks=d.nodes(n=>n.tag==='link'&&n.attrs.rel==='canonical')
  const htmlCanonical='https://flywire.wd108.myworkdayjobs.com/en-US/flywirecareers/job/'+i.jobPostingId
  check(canonicalLinks.length===1&&canonicalLinks[0].attrs.href===htmlCanonical,'Native HTML canonical mismatch')
@@ -105,7 +131,9 @@ export function parseIndiaPage(html,native,{now}){
   &&ld.identifier?.value===i.jobReqId&&typeof ld.identifier.name==='string'&&decodeNativeEntities(ld.identifier.name)===i.title,
   `HTML posting identity mismatch for ${i.jobReqId}: native title ${JSON.stringify(i.title)}, HTML title ${JSON.stringify(ld.title)}, identifier ${JSON.stringify(ld.identifier)}`)
  const places=Array.isArray(ld.jobLocation)?ld.jobLocation:[ld.jobLocation]
- check(places.length>0&&places.every(p=>p?.address?.addressCountry==='India'&&locations.some(l=>key(l)===key(p.address.addressLocality))),'Native HTML typed India geography mismatch')
+ check(places.length>0&&places.every(p=>p?.address?.addressCountry==='India'
+  &&(locations.some(l=>key(l)===key(p.address.addressLocality))
+   ||(countryScopedRequisition&&indiaCountryScope(p.address.addressLocality)&&key(p.address.addressLocality)===key(i.jobRequisitionLocation.descriptor)))),'Native HTML typed India geography mismatch')
  if(ld.applicantLocationRequirements)check(ld.applicantLocationRequirements.name==='India','Native applicant country contradiction')
  const employer=ld.hiringOrganization?.name?.trim()||null
  check(employer===null||employer==='FW Solutions India LLP [India]','Unreviewed native role employer')
@@ -122,7 +150,8 @@ export function parseIndiaPage(html,native,{now}){
  if(ld.validThrough!=null&&i.endDate!=null)check(ld.validThrough===i.endDate,'Conflicting native closing dates (CXS '+i.endDate+'; HTML '+ld.validThrough+')')
  const closingDate=ld.validThrough??i.endDate??null
  return {
-  source:'flywire',company:'Flywire',jobId:i.jobReqId,requisitionId:i.jobReqId,title:i.title,country:'India',city:places[0].address.addressLocality,state:null,
+  source:'flywire',company:'Flywire',jobId:i.jobReqId,requisitionId:i.jobReqId,title:i.title,country:'India',
+  city:countryScopedRequisition?(indiaCityLocation(i.location)?i.location.split(',')[0].trim():null):places[0].address.addressLocality,state:null,
   location:i.location,locations,sourceUrl:canonical,link:canonical,nativeHtmlCanonical:htmlCanonical,
   // The advertised current client constructs this route from native location
   // and exact jobPostingId. No form is opened or submitted by this scraper.
@@ -132,6 +161,10 @@ export function parseIndiaPage(html,native,{now}){
   nativeDescriptionOriginal:i.jobDescription,nativeListingDetailOriginal:payload,nativeStructuredJobPosting:ld,
   nativeDatePosted:ld.datePosted??null,nativeStartDate:i.startDate??null,nativePostedOn:i.postedOn??null,nativeEndDate:i.endDate??null,nativeValidThrough:ld.validThrough??null,
   nativeLegalEmployer:employer,nativeCxsEmployer:native.cxsEmployer,nativeCountryOriginal:i.country,nativeLocationOriginal:i.location,
+  nativeRequisitionLocationOriginal:i.jobRequisitionLocation,nativeRemoteTypeOriginal:i.remoteType??null,
+  ...(countryScopedRequisition?{sourceWorkplaceEvidence:{kind:'native-india-country-scope',listingLocation:native.listingLocation,
+   publicPostingLocation:i.location,requisitionLocation:i.jobRequisitionLocation,structuredLocations:places,nativeRemoteType:i.remoteType??null,
+   cityProvenance:'native-public-posting-location',workArrangementQualified:false}}:{}),
   postedAt,postingDate:postedAt,closingDate,sourceClosingDateIsExact:false,
   closingDateProvenance:ld.validThrough!=null?'official-jobposting-jsonld-validThrough':i.endDate!=null?'official-workday-cxs-endDate':null,nativeDateUnknown:postedAt===null,
   publicationDateQualified:postedAt!==null,publicationDateProvenance:postedAt?'official-jobposting-jsonld-datePosted':null,originalPublicationDateQualified:false,

@@ -1,3 +1,4 @@
+import {readListings,collect,nativeFetch} from './native.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -58,70 +59,12 @@ export const hasOfficialCareersSignal = (html) => {
     && /BTL India/i.test(page)
 }
 
-export const extractPublicListings = (html) => {
-  if (!hasOfficialCareersSignal(html)) {
-    throw new Error('Expected verified BTL India careers surface with public opportunities')
-  }
+export const extractPublicListings = readListings
 
-  const jobs = []
-
-  for (const match of String(html ?? '').matchAll(/<h4\b[^>]*>\s*<a\b[^>]*href="([^"]+\.pdf)"[^>]*>([\s\S]*?)<\/a>\s*<\/h4>/gi)) {
-    const sourceUrl = buildAbsoluteUrl(match[1], CAREERS_URL)
-    const title = normalizeWhitespace(match[2])
-    const slug = slugify(title)
-
-    if (!sourceUrl || !title || !slug) continue
-
-    jobs.push({
-      title,
-      company: COMPANY,
-      department: null,
-      location: null,
-      city: null,
-      country: 'India',
-      jobId: `${SOURCE}-${slug}`,
-      requisitionId: `${SOURCE}-${slug}`,
-      sourceUrl,
-      applyUrl: `mailto:${APPLY_EMAIL}`,
-      employmentType: null,
-      experienceRequired: extractExperience(title),
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: 'On-site',
-    })
-  }
-
-  if (jobs.length === 0) {
-    throw new Error('Expected verified BTL India careers surface with public opportunities')
-  }
-
-  return jobs
-}
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = nativeFetch
 
 export const createBTLIndiaScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    return extractPublicListings(careersHtml).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: (overrideNow || now)(),
-    }))
-  },
+  async run(options={}) { return collect({...options,now:options.now||now}) },
 })
 
 export const run = async (options = {}) => createBTLIndiaScraper().run(options)

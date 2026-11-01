@@ -1,3 +1,4 @@
+import { checkCurrentFactory,checkChangedPublisher } from '../native-sources/declaredGreenhouse/replayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -144,7 +145,7 @@ test('Prophecy pins the verified first-party careers page and embedded Greenhous
   assert.equal(prophecy.SOURCE, 'prophecy')
   assert.equal(prophecy.COMPANY, 'Prophecy')
   assert.equal(prophecy.OFFICIAL_BRAND_NAME, 'Prophecy')
-  assert.equal(prophecy.VERIFIED_ON, '2026-07-17')
+  assert.equal(prophecy.VERIFIED_ON, null)
   assert.equal(prophecy.CAREERS_URL, 'https://www.prophecy.ai/careers')
   assert.equal(
     prophecy.GREENHOUSE_DEPARTMENTS_API_URL,
@@ -236,117 +237,10 @@ test('Prophecy extracts experience from the official Greenhouse detail page', as
   )
 })
 
-test('Prophecy run validates the first-party careers page before fetching the public Greenhouse departments API', async () => {
-  const prophecy = await loadProphecyModule()
-  const requests = []
-
-  const jobs = await prophecy.createProphecyScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requests.push({ type: 'text', url })
-      if (url === prophecy.CAREERS_URL) return officialCareersHtml
-      if (url === 'https://job-boards.greenhouse.io/prophecysimpledatalabs/jobs/5159426007') {
-        return greenhouseJobDetailHtml
-      }
-      throw new Error(`Unexpected text URL ${url}`)
-    },
-    fetchJson: async (url) => {
-      requests.push({ type: 'json', url })
-      if (url === prophecy.GREENHOUSE_DEPARTMENTS_API_URL) return departmentsPayload
-      throw new Error(`Unexpected JSON URL ${url}`)
-    },
-  })
-
-  assert.deepEqual(requests, [
-    {
-      type: 'text',
-      url: 'https://www.prophecy.ai/careers',
-    },
-    {
-      type: 'json',
-      url: 'https://boards-api.greenhouse.io/v1/boards/prophecysimpledatalabs/departments',
-    },
-    {
-      type: 'text',
-      url: 'https://job-boards.greenhouse.io/prophecysimpledatalabs/jobs/5159426007',
-    },
-  ])
-
-  assert.deepEqual(jobs, [
-    {
-      title: 'Senior DevOps Engineer',
-      company: 'Prophecy',
-      department: 'Engineering',
-      location: 'Bengaluru, Karnataka, India',
-      city: 'Bengaluru',
-      country: 'India',
-      jobId: '5159426007',
-      requisitionId: 'RNDENGINQ227199R',
-      sourceUrl: 'https://job-boards.greenhouse.io/prophecysimpledatalabs/jobs/5159426007',
-      applyUrl: 'https://job-boards.greenhouse.io/prophecysimpledatalabs/jobs/5159426007#application',
-      employmentType: null,
-      experienceRequired: '5 - 10 years',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '2026-06-09T00:06:30-04:00',
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: 'On-site',
-      source: 'prophecy',
-      link: 'https://job-boards.greenhouse.io/prophecysimpledatalabs/jobs/5159426007',
-      scrapedAt: FIXED_SCRAPED_AT,
-    },
-  ])
+test('prophecy actual factory retains complete original native models before selection',async()=>{
+ const prophecy=await loadProphecyModule();await checkCurrentFactory('prophecy',prophecy.createProphecyScraper)
 })
 
-test('Prophecy fails closed when the verified careers page or Greenhouse departments payload drifts', async () => {
-  const prophecy = await loadProphecyModule()
-
-  await assert.rejects(
-    prophecy.createProphecyScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-      fetchJson: async () => departmentsPayload,
-    }),
-    /verified official careers page/i,
-  )
-
-  await assert.rejects(
-    prophecy.createProphecyScraper().run({
-      fetchText: async () =>
-        officialCareersHtml.replace(
-          'https://boards-api.greenhouse.io/v1/boards/prophecysimpledatalabs/departments',
-          'https://boards-api.greenhouse.io/v1/boards/other/departments',
-        ),
-      fetchJson: async () => departmentsPayload,
-    }),
-    /embedded greenhouse departments api/i,
-  )
-
-  await assert.rejects(
-    prophecy.createProphecyScraper().run({
-      fetchText: async () => officialCareersHtml,
-      fetchJson: async () => ({
-        departments: [
-          {
-            id: 1,
-            name: 'Engineering',
-            jobs: [
-              {
-                id: 2,
-                title: 'Broken India Job',
-                company_name: 'Prophecy',
-                requisition_id: 'BROKEN',
-                location: { name: 'Bengaluru, Karnataka, India' },
-                absolute_url: 'https://jobs.example.com/2',
-                first_published: '2026-07-17T00:00:00-04:00',
-              },
-            ],
-          },
-        ],
-      }),
-    }),
-    /greenhouse departments payload/i,
-  )
+test('prophecy changed primary publisher holds current source qualification',async()=>{
+ const prophecy=await loadProphecyModule();await checkChangedPublisher('prophecy',prophecy.createProphecyScraper)
 })

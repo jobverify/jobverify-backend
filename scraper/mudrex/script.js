@@ -240,7 +240,8 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -250,13 +251,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const createMudrexScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const aboutHtml = await fetchText(ABOUT_URL)
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString(), signal } = {}) {
+    const read = async url => {
+      signal?.throwIfAborted()
+      const html = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      return html
+    }
+    const aboutHtml = await read(ABOUT_URL)
     if (!hasOfficialAboutPageSignal(aboutHtml)) {
       throw new Error('Mudrex about page no longer matches the verified first-party public surface')
     }
 
-    const boardHtml = await fetchText(CAREERS_BOARD_URL)
+    const boardHtml = await read(CAREERS_BOARD_URL)
     if (!hasOfficialBoardSignal(boardHtml)) {
       throw new Error('Mudrex public Manatal board no longer matches the verified public surface')
     }
@@ -269,12 +276,13 @@ export const createMudrexScraper = ({ maxJobs = null } = {}) => ({
       let job = listing
 
       try {
-        const detailHtml = await fetchText(listing.sourceUrl)
+        const detailHtml = await read(listing.sourceUrl)
         job = {
           ...extractJobDetail(detailHtml, listing),
           publicExperienceChecked: true,
         }
       } catch {
+        signal?.throwIfAborted()
         // The board listing remains authoritative even when a detail page transiently rate-limits.
         job = {
           ...listing,

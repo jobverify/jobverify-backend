@@ -34,3 +34,24 @@ test("an incorrect password does not disclose whether an email uses Google sign-
     }, email);
   }
 });
+
+test('failed login categories each perform one policy-cost password comparison', async t => {
+  const accounts = new Map([
+    ['google.account@gmail.com', { password: null, google: { sub: 'fixture-subject' } }],
+    ['password.account@gmail.com', { password: await bcrypt.hash('FixturePassword123!', 10) }],
+  ]);
+  t.mock.method(User, 'findOne', async ({ email }) => accounts.get(email) ?? null);
+  t.mock.method(PendingUser, 'findOne', async () => null);
+  const compare = t.mock.method(bcrypt, 'compare', async (_password, hash) => {
+    assert.equal(bcrypt.getRounds(hash), 10);
+    return false;
+  });
+  for (const email of ['unknown.account@gmail.com', ...accounts.keys()]) {
+    const previous = compare.mock.callCount();
+    const res = createResponse();
+    await login({ body: { email, password: 'IncorrectPassword123!' } }, res);
+    assert.equal(compare.mock.callCount() - previous, 1, email);
+    assert.equal(res.statusCode, 401);
+    assert.equal(res.body.message, 'Invalid credentials');
+  }
+});

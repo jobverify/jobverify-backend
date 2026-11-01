@@ -138,6 +138,7 @@ test('Scripbox scraper run returns current public India roles from the verified 
   const requestedUrls = []
 
   const jobs = await createScripboxScraper().run({
+    detailEnrichmentBudgetMs: 0,
     fetchText: async (url) => {
       requestedUrls.push(url)
       return careersHtml

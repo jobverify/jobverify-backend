@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { runTechnotreonNativeDiscovery } from './nativeDiscovery.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -157,7 +158,7 @@ const extractCurrentListings = (page) => {
       throw new Error('Technotreon incomplete role card ' + number)
     }
     listings.push({ title, applyUrl, department: normalizeDepartment(title),
-      description: paragraphs.join(' '), location: 'Pune, India', city: 'Pune' })
+      description: paragraphs.join(' '), location: 'Pune', city: 'Pune' })
   }
   return listings
 }
@@ -185,14 +186,14 @@ export const extractListings = (html) => {
       applyUrl,
       department: normalizeDepartment(title),
       description: paragraphs.join(' '),
-      location: 'India',
+      location: null,
     })
   }
 
   return listings
 }
 
-export const createTechnotreonScraper = () => ({
+const createLegacyTechnotreonParser = () => ({
   async run({ fetchText = defaultFetchText, now = () => new Date().toISOString(), signal } = {}) {
     signal?.throwIfAborted()
     let homepageHtml = null
@@ -238,7 +239,7 @@ export const createTechnotreonScraper = () => ({
         company: COMPANY,
         location: listing.location,
         city: listing.city || null,
-        country: 'India',
+        country: null,
         source: SOURCE,
         sourceUrl: CAREERS_URL,
         applyUrl: listing.applyUrl,
@@ -264,7 +265,8 @@ export const createTechnotreonScraper = () => ({
   },
 })
 
-export const run = async (options = {}) => createTechnotreonScraper().run(options)
+export const createTechnotreonScraper = () => ({ run: runTechnotreonNativeDiscovery })
+export const run = runTechnotreonNativeDiscovery
 
 const isDirectExecution = (() => {
   if (!process.argv[1]) return false

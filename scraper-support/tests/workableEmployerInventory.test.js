@@ -70,8 +70,9 @@ for (const spec of specs) test(`${spec.company} replaces the legacy runtime with
   assert.equal(jobs[0].applyUrl, `https://apply.workable.com/${spec.tenant}/j/NATIVE1001/apply/`)
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)
   assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 1)
-  assert.deepEqual(opts.calls, [spec.careers, `https://apply.workable.com/api/v1/accounts/${spec.tenant}`,
-    `https://apply.workable.com/api/v3/accounts/${spec.tenant}/jobs`, `https://apply.workable.com/api/v2/accounts/${spec.tenant}/jobs/NATIVE1001`])
+  const snapshotCalls = [spec.careers, `https://apply.workable.com/api/v1/accounts/${spec.tenant}`,
+    `https://apply.workable.com/api/v3/accounts/${spec.tenant}/jobs`, `https://apply.workable.com/api/v2/accounts/${spec.tenant}/jobs/NATIVE1001`]
+  assert.deepEqual(opts.calls, spec.source === 'bharatx' ? [...snapshotCalls, ...snapshotCalls] : snapshotCalls)
 })
 
 test('a current employer-bound exact empty native inventory is verified empty', async () => {
@@ -170,7 +171,7 @@ test('hidden-only native detail descriptions fail closed', async () => {
   const data = fixture(); data.details.NATIVE1001.description = '<div hidden>Build employer products.</div>'
   await assert.rejects(run(data), /description/i)
 })
-test('output limits preserve complete native scope and incomplete cleanup markers', async () => {
+test('BharatX output limits preserve observed native totals while keeping full-source facets and cleanup incomplete', async () => {
   const data = fixture(), row = structuredClone(data.pages[0].results[0])
   Object.assign(row, { id: 1002, shortcode: 'NATIVE1002' })
   data.pages[0].results.push(row); data.pages[0].total++
@@ -178,7 +179,9 @@ test('output limits preserve complete native scope and incomplete cleanup marker
   const jobs = await run(data, { maxJobs: 1 })
   assert.equal(jobs.length, 1)
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
-  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 2)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 2)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  assert.match(readInventoryEvidence(jobs).reason, /source-job-limit/)
   assert.equal(jobs[0].lifecycleCleanupAllowed, false)
 })
 test('limits are applied after unsafe hidden India roles are excluded', async () => {
@@ -192,13 +195,26 @@ test('limits are applied after unsafe hidden India roles are excluded', async ()
   assert.equal(jobs[0].jobId, 'NATIVE1002')
   assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
 })
-test('hidden prose is omitted while visible employer sections and literal angle brackets survive', async () => {
-  const data = fixture()
+test('single-snapshot mapping omits hidden prose while visible employer sections and literal angle brackets survive', async () => {
+  const data = fixture(specs[1])
   data.details.NATIVE1001.description = '<p>Build systems with O(n &lt; 10) performance.</p><div hidden>Do not display private draft prose.</div>'
   data.details.NATIVE1001.requirements = '<div style="display:none">Hidden draft requirements</div>'
   const jobs = await run(data)
   assert.match(jobs[0].jobDescription, /O\(n < 10\)/)
   assert.doesNotMatch(jobs[0].jobDescription, /private draft|Hidden draft/)
+})
+
+test('BharatX closing proof keeps descriptions with hidden draft criteria incomplete without rewriting native content', async () => {
+  const data = fixture()
+  const description = '<p>Build systems with O(n &lt; 10) performance.</p><div hidden>Do not display private draft prose.</div>'
+  data.details.NATIVE1001.description = description
+  data.details.NATIVE1001.requirements = '<div style="display:none">Hidden draft requirements</div>'
+  const jobs = await run(data)
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
+  assert.match(readInventoryEvidence(jobs).reason, /visible-full-native-description-unavailable:NATIVE1001/)
+  assert.equal(data.details.NATIVE1001.description, description)
 })
 test('a script URL pointing to an HTML board cannot establish an employer handoff', async () => {
   const data = fixture(); data.homepage = '<script src="https://apply.workable.com/bharatx/"></script>'

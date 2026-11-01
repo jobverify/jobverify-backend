@@ -5,7 +5,7 @@ export const createGenerationPool = ({ generate, keyFor, bindResult, requestMs }
     const timeout = AbortSignal.timeout(Math.max(1, Math.floor(Math.min(remainingMs, requestMs))));
     const caller = signal ? AbortSignal.any([signal, timeout]) : timeout;
     caller.throwIfAborted();
-    const key = share ? keyFor(input) : Symbol('fresh generation');
+    const key = share ? keyFor(input, options) : Symbol('fresh generation');
     let entry = pending.get(key);
     const joined = Boolean(entry);
     if (!entry) {

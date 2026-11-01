@@ -23,6 +23,10 @@ import {
   nativeDetailReceiptKey, readNativeDetailReceipt, rememberNativeDetailReceipt,
   NativeDetailRecoveryPendingError, NATIVE_DETAIL_SCOPE_PASS_MS, nativeDetailPassBudget, currentNativeDetailRecovery,
 } from '../utils/nativeDetailRecovery.js'
+import {
+  currentWorkdayVanityHandoffReceipt, currentWorkdayVanityBoardReceipt,
+  snapshotWorkdayVanityCaptureClocks, readBoundedWorkdayVanityHtml,
+} from './officialVanityCareers.js'
 
 const DEFAULT_COUNTRY_FACET_PARAMETER = 'locationCountry'
 const DEFAULT_WORKDAY_DETAIL_FETCH_CONCURRENCY = 4
@@ -85,7 +89,7 @@ const createWorkdayEmptyResult = ({
   })
 }
 
-const mapWithConcurrency = async (items, concurrency, mapper) => {
+const mapWithConcurrency = async (items, concurrency, mapper, errorController = null) => {
   const limit = Math.max(1, Number.parseInt(concurrency, 10) || 1)
   const results = new Array(items.length)
   let nextIndex = 0
@@ -100,12 +104,17 @@ const mapWithConcurrency = async (items, concurrency, mapper) => {
       try {
         results[currentIndex] = await mapper(items[currentIndex], currentIndex)
       } catch (error) {
-        firstError ||= error
+        if (!firstError) {
+          firstError = error
+          errorController?.abort(error)
+        }
         return
       }
     }
   }
 
+  // Cancellation stops active native peers; ownership is retained until every
+  // worker's actual transport/response consumption has settled.
   await Promise.all(
     Array.from({ length: Math.min(limit, items.length) }, worker),
   )
@@ -1449,7 +1458,7 @@ const fetchDetailedJobPayload = async (
         }
       } catch (error) {
         throwIfAborted(signal)
-        if (['WORKDAY_NATIVE_DATE_INVALID', 'WORKDAY_NATIVE_ROLE_MISMATCH'].includes(error?.code)) throw error
+        if (['WORKDAY_NATIVE_DATE_INVALID', 'WORKDAY_NATIVE_ROLE_MISMATCH', 'WORKDAY_NATIVE_COUNTRY_MISMATCH'].includes(error?.code)) throw error
         const status = Number(error?.jobsApiHttpStatus ?? error?.httpStatus)
         if (status === 429 || status >= 500) throw error
         // Missing, blocked, or malformed API descriptions use the existing page path.
@@ -1491,7 +1500,7 @@ const fetchDetailedJobPayload = async (
     }
   } catch (error) {
     throwIfAborted(signal)
-    if (['WORKDAY_NATIVE_DATE_INVALID', 'WORKDAY_NATIVE_ROLE_MISMATCH'].includes(error?.code)) throw error
+    if (['WORKDAY_NATIVE_DATE_INVALID', 'WORKDAY_NATIVE_ROLE_MISMATCH', 'WORKDAY_NATIVE_COUNTRY_MISMATCH'].includes(error?.code)) throw error
     circuitBreaker.recordFailure(jobUrl, error)
     if (shouldFallbackToListingDataAfterDetailFailure(error)) {
       logRecoverableWorkdayNotice(`  [${source}] Failed to enrich details for ${jobUrl}; keeping listing data when summary location remains safely in scope: ${error.message}`)
@@ -1566,8 +1575,7 @@ const resolveWorkdayCxsPrimaryLocation = (info = {}) => (
 // posting locations. Only an explicitly listed office can be published.
 const resolveWorkdayRequisitionLocationBinding = (info = {}) => {
   const nested = info.jobRequisitionLocation
-  if (!info.country || !nested?.country || typeof info.location !== 'string'
-    || typeof nested.descriptor !== 'string' || !Array.isArray(info.additionalLocations)) return null
+  if (!nested?.country || typeof info.location !== 'string') return null
   const countryLabels = country => (typeof country === 'string'
     ? [country] : [country?.descriptor, country?.alpha2Code])
     .filter(value => typeof value === 'string' && value.trim())
@@ -1580,11 +1588,12 @@ const resolveWorkdayRequisitionLocationBinding = (info = {}) => {
     return key
   }
   const nestedKey = officeKey(nested.descriptor, [nested.country])
-  if (!nestedKey || !info.location.trim() || /^unknown$/i.test(nestedKey)
-    || isGroupedLocationLabel(nested.descriptor) || !countryLabels(info.country).length
-    || !countryLabels(nested.country).length
-    || nestedKey === officeKey(info.location, [info.country, nested.country])) return null
-  const matches = info.additionalLocations.filter(location => officeKey(location, [nested.country]) === nestedKey)
+  if (!info.location.trim()) return null
+  if (!nestedKey || /^unknown$/i.test(nestedKey) || isGroupedLocationLabel(nested.descriptor)
+    || !countryLabels(nested.country).length) return info.country ? null : { publicLocation: null }
+  if (nestedKey === officeKey(info.location, [info.country, nested.country])) return null
+  const matches = (Array.isArray(info.additionalLocations) ? info.additionalLocations : [])
+    .filter(location => officeKey(location, [nested.country]) === nestedKey)
   return { publicLocation: matches.length === 1 ? matches[0] : null }
 }
 
@@ -1613,6 +1622,7 @@ const resolveWorkdayCxsPrimaryCountryScope = (info = {}) => {
 const fetchWorkdayScopePayload = async ({
   candidate, jobsApiUrl, source, session, signal, requestTimeoutMs,
   retryBaseDelayMs, circuitBreaker, requestScheduler, countryProof = false,
+  allowUnresolvedLocations = false,
 }) => {
   const jobPath = new URL(candidate.canonicalLink).pathname.match(/\/job\/.+$/)?.[0]
   if (!jobPath) throw buildWorkdayIncompleteScopeError(source, candidate.canonicalLink)
@@ -1655,14 +1665,18 @@ const fetchWorkdayScopePayload = async ({
         const expectedCount = Number(candidate.location.match(/^(\d+)\s+locations?$/i)?.[1]) || 1
         if (
           !info || (info.additionalLocations != null && !Array.isArray(info.additionalLocations))
-          || locations.some((value) => typeof value !== 'string' || !value.trim()
-            || isGroupedLocationLabel(value) || /^unknown$/i.test(value.trim()))
+          || Array.isArray(info.additionalLocations) && info.additionalLocations.some(value => typeof value !== 'string')
         ) {
           throw new Error('CXS job location payload is missing or ambiguous')
         }
-        const normalizedLocations = locations.map((value) => value.trim())
-        if (normalizedLocations.length < expectedCount) {
-          throw new Error('CXS supplied ' + normalizedLocations.length + ' of ' + expectedCount + ' job locations')
+        const normalizedLocations = locations.map(value => typeof value === 'string' ? value.trim() : '')
+        if (!allowUnresolvedLocations) {
+          if (normalizedLocations.some(value => !value || isGroupedLocationLabel(value) || /^unknown$/i.test(value))) {
+            throw new Error('CXS job location payload is missing or ambiguous')
+          }
+          if (normalizedLocations.length < expectedCount) {
+            throw new Error('CXS supplied ' + normalizedLocations.length + ' of ' + expectedCount + ' job locations')
+          }
         }
         circuitBreaker.recordSuccess(detailApiUrl.href)
         return payload
@@ -1737,7 +1751,16 @@ const resolveWorkdayScopeLocations = (candidate, countryEvidence, source, countr
   try {
     if (candidate.scopeCountryConflict) throw new Error('CXS primary country fields conflict')
     const info = candidate.scopePayload.jobPostingInfo
-    const locations = [...new Set([resolveWorkdayCxsPrimaryLocation(info), ...(info.additionalLocations || [])].map(value => value.trim()))]
+    const rawLocations = [resolveWorkdayCxsPrimaryLocation(info), ...(info.additionalLocations || [])]
+    const expectedCount = Number(candidate.location.match(/^(\d+)\s+locations?$/i)?.[1]) || 1
+    if (countryProof && (!info.country && !info.jobRequisitionLocation?.country
+      || rawLocations.some(value => typeof value !== 'string' || !value.trim()
+        || isGroupedLocationLabel(value) || /^unknown$/i.test(value.trim()))
+      || rawLocations.length < expectedCount)) {
+      throw Object.assign(new Error('CXS native geography is missing or ambiguous; country and complete public office locations are required'),
+        { code: 'WORKDAY_NATIVE_LOCATIONS_UNRESOLVED' })
+    }
+    const locations = [...new Set(rawLocations.map(value => value.trim()))]
     const primaryScope = resolveWorkdayCxsPrimaryCountryScope(info)
     const scopes = locations.map((location, index) => {
       const known = countryEvidence.get(workdayLocationEvidenceKey(location))
@@ -1754,15 +1777,18 @@ const resolveWorkdayScopeLocations = (candidate, countryEvidence, source, countr
       return null
     })
     if (!scopes.includes('india') && !scopes.every(scope => scope === 'foreign')) {
-      throw new Error('CXS job locations do not establish India or foreign scope: '
-        + locations.filter((_location, index) => !scopes[index]).join(' / '))
+      throw Object.assign(new Error('CXS job locations do not establish India or foreign scope: '
+        + locations.filter((_location, index) => !scopes[index]).join(' / ')),
+      { code: 'WORKDAY_NATIVE_LOCATIONS_UNRESOLVED' })
     }
     const scopedLocations = locations.map((location, index) => scopes[index] === 'india' && !isWorkdayJobInPublicIndiaScope({ location })
       ? location + ', India' : location)
     return { locations: scopedLocations, countryScopes: scopes,
       indiaLocations: scopedLocations.filter((_location, index) => scopes[index] === 'india') }
   } catch (error) {
-    throw buildWorkdayIncompleteScopeError(source, candidate.canonicalLink, error)
+    const failure = buildWorkdayIncompleteScopeError(source, candidate.canonicalLink, error)
+    if (error.code === 'WORKDAY_NATIVE_LOCATIONS_UNRESOLVED') failure.code = error.code
+    throw failure
   }
 }
 
@@ -1812,9 +1838,42 @@ const runWorkdayJobsApiScraper = async ({
     const allJobs = []
     const allCandidates = []
     const initialInventory = new Map()
+    const unresolvedCountryRoles = []
     let boardReceipt = null
     if (countryProof) {
       try {
+        if (config.officialVanityCareersUrl) {
+          const readVanityPage = async (url, maxBytes) => {
+            const controller = new AbortController()
+            const deadline = new WorkdayRequestTimeoutError(source, url, requestTimeoutMs)
+            const timer = setTimeout(() => controller.abort(deadline), requestTimeoutMs)
+            const boundarySignal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal
+            const captureStartedAt = new Date().toISOString()
+            try {
+              return await fetchWorkdayResource(url,
+                { headers: { accept: 'text/html,application/xhtml+xml', 'user-agent': WORKDAY_FETCH_USER_AGENT }, cache: 'no-store', redirect: 'manual' },
+                { signal: boundarySignal, timeoutMs: requestTimeoutMs, source, requestScheduler },
+                async response => {
+                  boundarySignal.throwIfAborted()
+                  const html = await readBoundedWorkdayVanityHtml(response, { expectedUrl: url, signal: boundarySignal, maxBytes })
+                  boundarySignal.throwIfAborted()
+                  const clocks = snapshotWorkdayVanityCaptureClocks(response, { captureStartedAt, capturedAt: new Date().toISOString() })
+                  return { response, html, clocks }
+                })
+            } catch (error) {
+              throwIfAborted(signal)
+              boundarySignal.throwIfAborted()
+              throw error
+            } finally { clearTimeout(timer) }
+          }
+          const primary = await readVanityPage(config.officialCareersUrl, 4 * 1024 * 1024)
+          throwIfAborted(signal)
+          const handoff = currentWorkdayVanityHandoffReceipt({ officialCareersUrl: config.officialCareersUrl,
+            vanityCareersUrl: config.officialVanityCareersUrl, boardUrl: baseUrl, ...primary })
+          const native = await readVanityPage(config.officialVanityCareersUrl, 1024 * 1024)
+          throwIfAborted(signal)
+          boardReceipt = currentWorkdayVanityBoardReceipt({ handoff, ...native })
+        } else {
         const { response, html } = await fetchWorkdayResource(
           config.officialCareersUrl,
           { headers: { accept: 'text/html,application/xhtml+xml', 'user-agent': WORKDAY_FETCH_USER_AGENT }, cache: 'no-store' },
@@ -1823,11 +1882,13 @@ const runWorkdayJobsApiScraper = async ({
         )
         boardReceipt = currentWorkdayBoardReceipt({ officialCareersUrl: config.officialCareersUrl,
           boardUrl: baseUrl, response, html })
+        }
         // The configured API must belong to the board the corporate page names.
         const inferred = inferWorkdayJobsApiConfig(baseUrl)
         if (!inferred || inferred.jobsApiUrl !== jobsApiUrl) throw new Error('Workday API does not match the corporate-bound tenant and site')
       } catch (error) {
         throwIfAborted(signal)
+        if (config.officialVanityCareersUrl && error instanceof WorkdayRequestTimeoutError) throw error
         throw buildWorkdayIncompleteScopeError(source, config.officialCareersUrl || baseUrl, error)
       }
     }
@@ -2009,7 +2070,7 @@ const runWorkdayJobsApiScraper = async ({
           const expectedRolePath = '/' + apiBoard?.[2] + job.externalPath
           const actualRolePath = canonicalLink && new URL(canonicalLink).pathname.replace(/^\/[a-z]{2}-[a-z]{2}(?=\/)/i, '')
           if (!apiBoard || typeof job.title !== 'string' || !job.title.trim()
-            || typeof job.externalPath !== 'string' || !/^\/job\/.+_[^/]+$/.test(job.externalPath)
+            || typeof job.externalPath !== 'string' || !/^\/job\/.*_[^/]+$/.test(job.externalPath)
             || !canonicalLink || actualRolePath !== expectedRolePath || initialInventory.has(canonicalLink)) {
             throw buildWorkdayIncompleteListingError(source, 'complete-board role identity is missing, duplicate, or outside this board')
           }
@@ -2089,10 +2150,12 @@ const runWorkdayJobsApiScraper = async ({
         throw buildWorkdayIncompleteScopeError(source, candidate.canonicalLink,
           new Error('Native Workday detail lacks the matching requisition, title, site, or canonical same-board URL'))
       }
-      if (countryProof && [info?.country, info?.jobRequisitionLocation?.country]
-        .some(country => !hasRecognizedWorkdayCountry(country))) {
-        throw buildWorkdayIncompleteScopeError(source, candidate.canonicalLink,
-          new Error('Native Workday country fields are unrecognized or conflicting'))
+      const suppliedCountries = [info?.country, info?.jobRequisitionLocation?.country].filter(country => country != null)
+      if (countryProof && !suppliedCountries.length && config.retainProvenIndiaOnUnresolvedLocations !== true
+        || suppliedCountries.some(country => !hasRecognizedWorkdayCountry(country))) {
+        throw Object.assign(buildWorkdayIncompleteScopeError(source, candidate.canonicalLink,
+          new Error('Native Workday country fields are unrecognized or conflicting')),
+        { code: 'WORKDAY_NATIVE_COUNTRY_MISMATCH' })
       }
       if (!info) return
       const { reqMatches, postingIdentityMatches } = nativeRoleIdentity(info, candidate)
@@ -2106,8 +2169,7 @@ const runWorkdayJobsApiScraper = async ({
       }
     }
     const scopeController = new AbortController()
-    const scopeSignal = nativeDetailRecovery
-      ? (signal ? AbortSignal.any([signal, scopeController.signal]) : scopeController.signal) : signal
+    const scopeSignal = signal ? AbortSignal.any([signal, scopeController.signal]) : scopeController.signal
     const scopeTimer = nativeDetailRecovery && scopeCandidates.length
       ? setTimeout(() => scopeController.abort(new NativeDetailRecoveryPendingError(scopeCandidates.length)),
         nativeDetailPassBudget(nativeDetailRecovery, NATIVE_DETAIL_SCOPE_PASS_MS)) : null
@@ -2128,7 +2190,7 @@ const runWorkdayJobsApiScraper = async ({
             candidate.scopePayload = await fetchWorkdayScopePayload({
               candidate, jobsApiUrl, source, session, signal: scopeSignal, requestTimeoutMs,
               retryBaseDelayMs, circuitBreaker: detailCircuitBreaker, requestScheduler,
-              countryProof,
+              countryProof, allowUnresolvedLocations: countryProof && config.retainProvenIndiaOnUnresolvedLocations === true,
             })
             if (countryProof) validateNativeRole(candidate.scopePayload, candidate)
             candidate.scopeFetchedAt = Date.now()
@@ -2140,6 +2202,7 @@ const runWorkdayJobsApiScraper = async ({
             if (!scopeController.signal.aborted) throw error
           }
         },
+        scopeController,
       )
     } finally { clearTimeout(scopeTimer) }
     const pendingScopeCount = scopeCandidates.filter(candidate => !candidate.scopePayload).length
@@ -2153,10 +2216,22 @@ const runWorkdayJobsApiScraper = async ({
     const countryEvidence = buildWorkdayLocationCountryEvidence(scopeCandidates)
     for (const candidate of scopeCandidates) {
       validateNativeRole(candidate.scopePayload, candidate)
-      const scope = resolveWorkdayScopeLocations(candidate, countryEvidence, source, countryProof)
-      candidate.scopeLocations = scope.locations
-      candidate.scopeIndiaLocations = scope.indiaLocations
-      candidate.scopeCountryScopes = scope.countryScopes
+      try {
+        const scope = resolveWorkdayScopeLocations(candidate, countryEvidence, source, countryProof)
+        candidate.scopeLocations = scope.locations
+        candidate.scopeIndiaLocations = scope.indiaLocations
+        candidate.scopeCountryScopes = scope.countryScopes
+      } catch (error) {
+        if (!countryProof || config.retainProvenIndiaOnUnresolvedLocations !== true
+          || error.code !== 'WORKDAY_NATIVE_LOCATIONS_UNRESOLVED') throw error
+        const info = candidate.scopePayload.jobPostingInfo
+        candidate.scopeLocations = [resolveWorkdayCxsPrimaryLocation(info), ...(info.additionalLocations || [])]
+          .filter(value => typeof value === 'string' && value.trim()).map(value => value.trim())
+        candidate.scopeIndiaLocations = []
+        candidate.scopeCountryScopes = []
+        unresolvedCountryRoles.push({ url: candidate.canonicalLink, requisitionId: info.jobReqId,
+          locations: candidate.scopeLocations, reason: error.cause.message })
+      }
     }
 
     // Finish listing before optional enrichment so a slow detail page cannot
@@ -2317,6 +2392,7 @@ const runWorkdayJobsApiScraper = async ({
             ? workdayJob
             : null
         },
+        detailController,
       )
 
       allJobs.push(...detailedJobs.filter(Boolean))
@@ -2358,26 +2434,35 @@ const runWorkdayJobsApiScraper = async ({
       }
       const identities = [...initialInventory.values()].sort()
       Object.defineProperty(allJobs, WORKDAY_COUNTRY_INVENTORY_PROOF, { value: {
-        scope: 'complete-board-country-proof', boardReceipt,
+        scope: 'complete-board-country-proof', boardReceipt, unresolvedRoles: unresolvedCountryRoles,
         initial: { reportedTotal, count: initialInventory.size, sha256: hashWorkdayProof(JSON.stringify(identities)) },
         closing: { reportedTotal: closingTotal, count: closingInventory.size,
           sha256: hashWorkdayProof(JSON.stringify([...closingInventory.values()].sort())), verifiedAt: new Date().toISOString() },
+        listingRoles: [...initialInventory].map(([url, identity]) => {
+          const [externalPath, title, bulletFields, locationsText] = JSON.parse(identity)
+          return { url, externalPath, title, bulletFields, locationsText }
+        }),
         roles: scopeCandidates.map(candidate => ({ url: candidate.canonicalLink,
           requisitionId: candidate.scopePayload.jobPostingInfo.jobReqId,
           locations: candidate.scopeLocations, countryScopes: candidate.scopeCountryScopes })),
       } })
       pagesFetched += closingPages
     }
+    if (unresolvedCountryRoles.length) for (const job of allJobs) Object.assign(job, {
+      sourceScopeComplete: false, sourceListingComplete: false, lifecycleCleanupAllowed: false,
+      sourceUnresolvedCountryRoleCount: unresolvedCountryRoles.length,
+    })
     return attachInventoryEvidence(allJobs, {
-      status: 'complete-inventory',
+      status: unresolvedCountryRoles.length ? 'coverage-gap' : 'complete-inventory',
       surface: jobsApiUrl,
       firstParty: true,
-      listingComplete: true,
+      listingComplete: unresolvedCountryRoles.length === 0,
       pagesFetched,
       reportedTotal,
-      indiaFacetCount: allJobs.length,
+      indiaFacetCount: unresolvedCountryRoles.length ? null : allJobs.length,
       verifiedAt: new Date(countryProof ? Date.now() : nativeDetailRecovery?.verifiedAt || Date.now()).toISOString(),
-      reason: countryProof ? 'reconciled-complete-workday-board-country-proof' : 'complete-workday-india-enumeration',
+      reason: unresolvedCountryRoles.length ? `reconciled-workday-board;unresolved-country-roles=${unresolvedCountryRoles.length};proven-india-roles-only`
+        : countryProof ? 'reconciled-complete-workday-board-country-proof' : 'complete-workday-india-enumeration',
     })
   } finally {
     throwIfAborted(signal)

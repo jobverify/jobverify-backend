@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { runReviewedThirdWaveDarwinboxInventory } from '../stanplus/nativeInventory.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -25,20 +27,20 @@ const isDarwinboxLoginOnly = (html) => (
   && /Perfios SSO/i.test(String(html ?? ''))
 )
 
-export const createPerfiosScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasDarwinboxHandoff(careersHtml)) {
-      throw new Error('Perfios first-party careers page changed; refusing to assume no public listings')
-    }
+const nativeSpec = {
+  "source": "perfios",
+  "company": "Perfios",
+  "brand": "Perfios",
+  "tenant": "perfios",
+  "tenantId": "244",
+  "origin": "https://perfios.darwinbox.in",
+  "corporateHandoff": "https://perfios.darwinbox.in/ms/candidate/careers/",
+  "handoff": "https://perfios.darwinbox.in/ms/candidatev2/main"
+}
+nativeSpec.review = JSON.parse(readFileSync(new URL('./reviewedNativeScope.json', import.meta.url), 'utf8'))
 
-    const darwinboxHtml = await fetchText(DARWINBOX_URL)
-    if (!isDarwinboxLoginOnly(darwinboxHtml)) {
-      throw new Error('Perfios public Darwinbox surface changed; refusing to assume no public listings')
-    }
-
-    return []
-  },
+export const createPerfiosScraper = (defaults = {}) => ({
+  run: (options = {}) => runReviewedThirdWaveDarwinboxInventory(nativeSpec, { ...defaults, ...options }),
 })
 
 export const run = async (options = {}) => createPerfiosScraper().run(options)

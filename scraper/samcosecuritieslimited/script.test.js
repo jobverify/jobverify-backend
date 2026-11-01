@@ -1,3 +1,11 @@
+import * as capturedFs from 'node:fs'
+import {gunzipSync as capturedGunzip} from 'node:zlib'
+import * as nativeSource from './script.js'
+import {readInventoryEvidence as capturedInventory} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readSourceObservationEvidence as capturedObservations} from '../../scraper-support/utils/sourceObservationEvidence.js'
+const nativePacket=JSON.parse(capturedGunzip(capturedFs.readFileSync(new URL('./test-data/2026-10-31-native-packets.json.gz',import.meta.url))))
+const nativePage=url=>{const row=nativePacket.requests.find(row=>row.url===url);assert.ok(row,'Unrecorded native URL '+url);return row.body}
+const withCapturedNative=async(callback,alter=row=>row)=>{const original=globalThis.fetch,calls=[];globalThis.fetch=async(input,options={})=>{const url=String(input),method=options.method||'GET',body=String(options.body||''),recorded=nativePacket.requests.find(row=>row.url===url&&(row.method||'GET')===method&&(method==='GET'||row.requestBody===body));assert.ok(recorded,'Unrecorded native request '+url+' '+body);const row=alter({...recorded});calls.push({url,method,body});const response=new Response(Buffer.from(row.body,row.bodyEncoding),{status:row.status,headers:{'content-type':row.contentType}});Object.defineProperty(response,'url',{value:row.finalUrl});return response};try{return await callback(calls)}finally{globalThis.fetch=original}}
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -129,195 +137,10 @@ test('SAMCO sentinels recognize the verified homepage and first-party careers pa
   assert.equal(samco.hasOfficialCareersSignal(careersHtml), true)
 })
 
-test('SAMCO accepts a changed position when its public card and application option agree', async () => {
-  const samco = await loadSamcoModule()
-  const updatedCareersHtml = careersHtml
-    .replaceAll('RankMF - B2B Sales', 'Engineering')
-    .replaceAll('data-value="27"', 'data-value="125"')
-    .replaceAll('value="27"', 'value="125"')
-  const jobs = samco.extractPublicJobs(updatedCareersHtml)
-  assert.equal(jobs.length, 4)
-  assert.ok(jobs.some((job) => job.requisitionId === '125' && job.title === 'Engineering'))
-  assert.ok(!jobs.some((job) => job.requisitionId === '27'))
-})
+test("SAMCO accepts a bound department rename without turning the filter label into a vacancy",async()=>{const html=nativePage(nativeSource.CAREERS_URL).replaceAll('Engineering','Controlled Platform'),jobs=nativeSource.extractPublicJobs(html);assert.equal(jobs.length,0);assert.equal(jobs.nativeCollectionEvidence.observedDepartments.find(row=>row.id==='125').name,'Controlled Platform');assert.equal(jobs.nativeCollectionEvidence.observedVacancyCount,0)})
 
-test('SAMCO extracts the four current public department openings from the first-party careers page', async () => {
-  const samco = await loadSamcoModule()
+test("SAMCO four active department options remain discovery records until native positions are fetched",async()=>{const jobs=nativeSource.extractPublicJobs(nativePage(nativeSource.CAREERS_URL));assert.equal(jobs.length,0);assert.equal(jobs.nativeCollectionEvidence.observedDepartments.length,4);assert.equal(jobs.nativeCollectionEvidence.recordKind,'departments');assert.equal(jobs.nativeCollectionEvidence.observedVacancyCount,0);assert.equal(capturedInventory(jobs).reportedTotal,null)})
 
-  const jobs = samco.extractPublicJobs(careersHtml)
+test("SAMCO resolves eight native position identities and retains duplicate titles across different IDs",async()=>{await withCapturedNative(async calls=>{const jobs=await nativeSource.run();assert.equal(jobs.length,8);assert.equal(calls.filter(call=>call.method==='POST').length,12);assert.equal(new Set(jobs.map(job=>job.requisitionId)).size,8);assert.equal(jobs.filter(job=>job.title==='Business Development Manager').length,2);assert.ok(jobs.every(job=>job.country==null&&job.postingDate==null));assert.equal(capturedInventory(jobs).status,'coverage-gap')})})
 
-  assert.equal(jobs.length, 4)
-  assert.deepEqual(
-    jobs.map((job) => ({
-      title: job.title,
-      department: job.department,
-      location: job.location,
-      city: job.city,
-      country: job.country,
-      sourceUrl: job.sourceUrl,
-      applyUrl: job.applyUrl,
-      jobId: job.jobId,
-      requisitionId: job.requisitionId,
-      requiredSkills: job.requiredSkills,
-    })),
-    [
-      {
-        title: 'Channel Sales',
-        department: 'Channel Sales',
-        location: null,
-        city: null,
-        country: 'India',
-        sourceUrl: 'https://www.samco.in/careers#samcosecuritieslimited-115-channel-sales',
-        applyUrl: 'https://www.samco.in/careers',
-        jobId: 'samcosecuritieslimited-115-channel-sales',
-        requisitionId: '115',
-        requiredSkills: [],
-      },
-      {
-        title: 'Growth',
-        department: 'Growth',
-        location: null,
-        city: null,
-        country: 'India',
-        sourceUrl: 'https://www.samco.in/careers#samcosecuritieslimited-127-growth',
-        applyUrl: 'https://www.samco.in/careers',
-        jobId: 'samcosecuritieslimited-127-growth',
-        requisitionId: '127',
-        requiredSkills: [],
-      },
-      {
-        title: 'Operations',
-        department: 'Operations',
-        location: null,
-        city: null,
-        country: 'India',
-        sourceUrl: 'https://www.samco.in/careers#samcosecuritieslimited-139-operations',
-        applyUrl: 'https://www.samco.in/careers',
-        jobId: 'samcosecuritieslimited-139-operations',
-        requisitionId: '139',
-        requiredSkills: [],
-      },
-      {
-        title: 'RankMF - B2B Sales',
-        department: 'RankMF - B2B Sales',
-        location: null,
-        city: null,
-        country: 'India',
-        sourceUrl: 'https://www.samco.in/careers#samcosecuritieslimited-27-rankmf-b2b-sales',
-        applyUrl: 'https://www.samco.in/careers',
-        jobId: 'samcosecuritieslimited-27-rankmf-b2b-sales',
-        requisitionId: '27',
-        requiredSkills: [],
-      },
-    ],
-  )
-})
-
-test('SAMCO run verifies the official surface and returns the public openings with metadata', async () => {
-  const samco = await loadSamcoModule()
-  const requestedUrls = []
-
-  const jobs = await samco.createSamcoSecuritiesLimitedScraper({
-    now: () => '2026-07-11T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === samco.HOMEPAGE_URL) return homepageHtml
-      if (url === samco.CAREERS_URL) return careersHtml
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [samco.HOMEPAGE_URL, samco.CAREERS_URL])
-  assert.equal(jobs.length, 4)
-  assert.deepEqual(
-    jobs.map((job) => ({
-      title: job.title,
-      company: job.company,
-      source: job.source,
-      link: job.link,
-      companyCareerPage: job.companyCareerPage,
-      companyDomain: job.companyDomain,
-      atsPlatform: job.atsPlatform,
-      scrapedAt: job.scrapedAt,
-    })),
-    [
-      {
-        title: 'Channel Sales',
-        company: 'SAMCO Securities Limited',
-        source: 'samcosecuritieslimited',
-        link: 'https://www.samco.in/careers',
-        companyCareerPage: 'https://www.samco.in/careers',
-        companyDomain: 'samco.in',
-        atsPlatform: 'official-company-careers',
-        scrapedAt: '2026-07-11T00:00:00.000Z',
-      },
-      {
-        title: 'Growth',
-        company: 'SAMCO Securities Limited',
-        source: 'samcosecuritieslimited',
-        link: 'https://www.samco.in/careers',
-        companyCareerPage: 'https://www.samco.in/careers',
-        companyDomain: 'samco.in',
-        atsPlatform: 'official-company-careers',
-        scrapedAt: '2026-07-11T00:00:00.000Z',
-      },
-      {
-        title: 'Operations',
-        company: 'SAMCO Securities Limited',
-        source: 'samcosecuritieslimited',
-        link: 'https://www.samco.in/careers',
-        companyCareerPage: 'https://www.samco.in/careers',
-        companyDomain: 'samco.in',
-        atsPlatform: 'official-company-careers',
-        scrapedAt: '2026-07-11T00:00:00.000Z',
-      },
-      {
-        title: 'RankMF - B2B Sales',
-        company: 'SAMCO Securities Limited',
-        source: 'samcosecuritieslimited',
-        link: 'https://www.samco.in/careers',
-        companyCareerPage: 'https://www.samco.in/careers',
-        companyDomain: 'samco.in',
-        atsPlatform: 'official-company-careers',
-        scrapedAt: '2026-07-11T00:00:00.000Z',
-      },
-    ],
-  )
-})
-
-test('SAMCO fails closed when the verified homepage or careers openings drift', async () => {
-  const samco = await loadSamcoModule()
-
-  await assert.rejects(
-    samco.createSamcoSecuritiesLimitedScraper().run({
-      fetchText: async (url) => {
-        if (url === samco.HOMEPAGE_URL) {
-          return homepageHtml.replace('Samco Securities Limited', 'Another Broker')
-        }
-
-        return careersHtml
-      },
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    samco.createSamcoSecuritiesLimitedScraper().run({
-      fetchText: async (url) => {
-        if (url === samco.HOMEPAGE_URL) return homepageHtml
-        if (url === samco.CAREERS_URL) {
-          return careersHtml.replace(
-            '<option data-value="27" data-id="RankMF - B2B Sales" value="27">RankMF - B2B Sales</option>',
-            '',
-          )
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /public position options/i,
-  )
-})
+test("SAMCO employer identity and canonical source drift remain unavailable with unknown inventory",async()=>{await assert.rejects(nativeSource.run({fetchText:async()=>'<html><title>Changed</title></html>'}),error=>error.abortRetries===true&&error.inventoryEvidence?.reportedTotal===null);const html=nativePage(nativeSource.CAREERS_URL).replace('rel="canonical" href="https://www.samco.in/careers"','rel="canonical" href="https://foreign.example/careers"');assert.notEqual(html,nativePage(nativeSource.CAREERS_URL));assert.throws(()=>nativeSource.extractPublicJobs(html),/native:/)})

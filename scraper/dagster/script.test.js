@@ -1,3 +1,4 @@
+import { checkCurrentReplay, assertCurrentProvider } from '../../scraper-support/native-sources/declaredJobFeeds/legacyReplayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -63,25 +64,4 @@ test('Dagster recognizes the current homepage, Prefect careers redirect, and emp
   assert.equal(dagster.hasEmptyGreenhouseBoardSignal(emptyGreenhouseHtml), true)
 })
 
-test('Dagster returns an empty list for the current verified empty sentinel', async () => {
-  const dagster = await loadModule()
-
-  const jobs = await dagster.createDagsterScraper().run({
-    fetchText: async (url) => {
-      if (url === dagster.HOMEPAGE_URL) return homepageHtml
-      if (url === dagster.GREENHOUSE_BOARD_URL) return emptyGreenhouseHtml
-      throw new Error(`Unexpected fetchText URL: ${url}`)
-    },
-    fetchPage: async (url) => {
-      assert.equal(url, dagster.CAREERS_URL)
-      return {
-        status: 200,
-        url: 'https://www.prefect.io/careers',
-        headers: {},
-        html: prefectCareersHtml,
-      }
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-})
+test('dagster: current original-entity complete replay (legacy case 66)', async () => checkCurrentReplay('dagster', 'complete'))

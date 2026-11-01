@@ -1,4 +1,6 @@
+import {createPublicLeverSource, PUBLIC_LEVER_PROFILES} from '../../scraper-support/native-sources/publicLeverChannels/nativeCareers.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 export const SOURCE = 'verygoodsecurityindia'
 export const COMPANY = 'Very Good Security India'
@@ -44,17 +46,44 @@ const normalizeLeverUrl = (value) => {
   }
 }
 
-const indiaLocations = (job) => {
+const regionNames = new Intl.DisplayNames(['en'], { type: 'region', fallback: 'none' })
+const isNativeCountry = code => /^[A-Z]{2}$/.test(code || '')
+  && !['EU', 'EZ', 'QO', 'UN', 'XA', 'XB', 'ZZ'].includes(code) && Boolean(regionNames.of(code))
+const explicitForeignCountries = new Map([['United States', 'US'], ['Canada', 'CA'], ['Greece', 'GR'], ['Poland', 'PL'], ['United Kingdom', 'GB'], ['Singapore', 'SG'], ['Australia', 'AU'], ['Germany', 'DE']].map(([name, code]) => [name.toLowerCase(), code]))
+const explicitLocationCountry = place => {
+  if (/^(?:India|(?:Bengaluru|Bangalore|Hyderabad|Gurugram|Gurgaon|Pune|Mumbai|Chennai|Noida)(?:,\s*India)?)$/i.test(place)) return 'IN'
+  return explicitForeignCountries.get(place.toLowerCase()) || null
+}
+
+const primaryLocationCountries = payload => {
+  const countries = new Map()
+  for (const job of payload) {
+    const primary = normalizeWhitespace(job?.categories?.location), country = normalizeWhitespace(job?.country)?.toUpperCase()
+    // Generic remote labels can describe different worksites on each posting.
+    // Only an exact, specific native primary label can corroborate a secondary
+    // location; a posting's country never applies to all its locations.
+    if (!primary || /\b(?:Remote|Global|Worldwide|Anywhere)\b/i.test(primary) || !isNativeCountry(country)) continue
+    if (countries.has(primary) && countries.get(primary) !== country) throw new Error('VGS conflicting native primary location countries')
+    countries.set(primary, country)
+  }
+  return countries
+}
+
+const indiaLocations = (job, locationCountries) => {
   const primary = normalizeWhitespace(job?.categories?.location)
   const places = Array.isArray(job?.categories?.allLocations) ? job.categories.allLocations.map(normalizeWhitespace) : [primary]
   if (!primary || !places.length || places.some(place => !place) || !places.includes(primary)) throw new Error('VGS incomplete location inventory')
   const country = normalizeWhitespace(job.country)?.toUpperCase()
+  if (country && !isNativeCountry(country)) throw new Error('VGS invalid native posting country')
   const india = []
   for (const place of places) {
-    if (/^(?:India|(?:Bengaluru|Bangalore|Hyderabad|Gurugram|Gurgaon|Pune|Mumbai|Chennai|Noida)(?:,\s*India)?)$/i.test(place)) india.push(place)
-    else if (/^(?:United States|Canada|Greece|Poland|United Kingdom|Singapore|Australia|Germany)$/i.test(place)) continue
-    else if (place === primary && /^[A-Z]{2}$/.test(country || '') && country !== 'IN') continue
+    const explicitCountry = explicitLocationCountry(place)
+    if (place === primary && country && explicitCountry && country !== explicitCountry) throw new Error('VGS conflicting native primary location and country')
+    if (explicitCountry === 'IN') india.push(place)
+    else if (explicitCountry) continue
+    else if (place === primary && country && country !== 'IN') continue
     else if (place === primary && country === 'IN' && /^Remote$/i.test(place)) india.push('Remote, India')
+    else if (place !== primary && locationCountries.has(place) && locationCountries.get(place) !== 'IN') continue
     else throw Object.assign(new Error('VGS incomplete location scope: ' + place), { code: 'incomplete_location_scope' })
   }
   return [...new Set(india)]
@@ -111,6 +140,7 @@ export const extractIndiaLeverJobs = (payload = []) => {
   }
 
   const seen = new Set()
+  const locationCountries = primaryLocationCountries(payload)
   return payload.map((job) => {
     const title = normalizeWhitespace(job?.text)
     const jobId = normalizeWhitespace(job?.id)
@@ -122,7 +152,7 @@ export const extractIndiaLeverJobs = (payload = []) => {
       throw new Error('VGS invalid or duplicate Lever role identity/application')
     }
     seen.add(jobId)
-    const places = indiaLocations(job)
+    const places = indiaLocations(job, locationCountries)
     if (!places.length) return null
     const location = places.join(' / ')
     const jobDescription = normalizeText([
@@ -173,62 +203,7 @@ const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createVeryGoodSecurityIndiaScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-    signal,
-  } = {}) {
-    signal?.throwIfAborted()
-    const careersHtml = await fetchText(CAREERS_URL, { signal })
-    signal?.throwIfAborted()
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Very Good Security India official careers surface changed materially')
-    }
-
-    const boardHtml = await fetchText(LEVER_BOARD_URL, { signal })
-    signal?.throwIfAborted()
-    if (!hasOfficialLeverBoardSignal(boardHtml)) {
-      throw new Error('Very Good Security India Lever board changed materially')
-    }
-
-    const expectedIds = new Set()
-    for (const match of boardHtml.matchAll(/<a\b[^>]*href=["']([^"']+)["']/gi)) {
-      const url = normalizeLeverUrl(match[1])
-      const id = url && new URL(url).pathname.match(/^\/verygoodsecurity\/([^/]+)(?:\/apply)?$/)?.[1]
-      if (id) expectedIds.add(id)
-    }
-    if (!expectedIds.size) throw new Error('VGS incomplete public board inventory')
-    const records = []
-    const seen = new Set()
-    let finished = false
-    for (let page = 0; page < 100; page += 1) {
-      const url = new URL(LEVER_API_URL)
-      url.searchParams.set('limit', '100')
-      url.searchParams.set('skip', String(page * 100))
-      const batch = await fetchJson(url.toString(), { signal })
-      signal?.throwIfAborted()
-      if (!Array.isArray(batch) || batch.length > 100) throw new Error('VGS invalid public API page')
-      // Validate every record, including foreign ones, before declaring India empty.
-      extractIndiaLeverJobs(batch)
-      for (const record of batch) {
-        if (seen.has(record.id)) throw new Error('VGS duplicate or repeated API page')
-        seen.add(record.id)
-        records.push(record)
-      }
-      if (batch.length < 100) { finished = true; break }
-    }
-    if (!finished || seen.size !== expectedIds.size || [...seen].some(id => !expectedIds.has(id))) throw new Error('VGS incomplete API/board inventory')
-    const scrapedAt = now()
-    return extractIndiaLeverJobs(records).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-    }))
-  },
-})
+export const createVeryGoodSecurityIndiaScraper = (options = {}) => createPublicLeverSource(PUBLIC_LEVER_PROFILES.verygoodsecurityindia, options)
 
 export const run = async (options = {}) =>
   createVeryGoodSecurityIndiaScraper().run(options)

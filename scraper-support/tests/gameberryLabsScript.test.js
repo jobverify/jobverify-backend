@@ -65,121 +65,18 @@ test('Gameberry Labs sentinel constants stay pinned to the verified homepage and
   )
 })
 
-test('Gameberry Labs sentinel returns [] only while the verified homepage still hands off to the unreachable external Keka board', async () => {
-  const gameberryLabs = await loadGameberryLabsModule()
-  const requestedCalls = []
-
-  const jobs = await gameberryLabs.createGameberryLabsScraper().run({
-    fetchPage: async (url, options = {}) => {
-      requestedCalls.push({ url, options })
-
-      if (url === gameberryLabs.HOMEPAGE_URL) {
-        return {
-          ok: true,
-          status: 200,
-          url,
-          location: null,
-          text: homepageHtml,
-        }
-      }
-
-      if (url === gameberryLabs.CAREERS_URL) {
-        return {
-          ok: false,
-          status: 302,
-          url,
-          location: 'https://gameberry.keka.com/careers',
-          text: '',
-        }
-      }
-
-      throw new Error(`Unexpected Gameberry Labs URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedCalls, [
-    {
-      url: gameberryLabs.HOMEPAGE_URL,
-      options: {},
-    },
-    {
-      url: gameberryLabs.CAREERS_URL,
-      options: { redirectMode: 'manual' },
-    },
-  ])
-  assert.deepEqual(jobs, [])
+// Current public native inventory supersedes the historical redirect sentinel.
+test('Gameberry traverses current native details and preserves the exact foreign-country proof and original malformed code',async()=>{
+ const gameberry=await loadGameberryLabsModule()
+ const {transport}=await import('../../scraper/acciojob/current.fixture.js')
+ const {readInventoryEvidence}=await import('../utils/inventoryEvidence.js')
+ const jobs=await gameberry.createGameberryLabsScraper().run({fetchImpl:transport()})
+ assert.equal(jobs.length,9)
+ assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+ assert.equal(readInventoryEvidence(jobs).indiaFacetCount,9)
+ assert.ok(jobs[0].sourceNativeResolvedForeignPayloads.some(row=>row.id===85579))
 })
-
-test('Gameberry Labs sentinel fails closed when the verified homepage shell or external handoff changes', async () => {
-  const gameberryLabs = await loadGameberryLabsModule()
-
-  await assert.rejects(
-    gameberryLabs.createGameberryLabsScraper().run({
-      fetchPage: async (url) => {
-        if (url === gameberryLabs.HOMEPAGE_URL) {
-          return {
-            ok: true,
-            status: 200,
-            url,
-            location: null,
-            text: homepageHtml.replaceAll('/jobs', '/careers'),
-          }
-        }
-
-        throw new Error(`Unexpected Gameberry Labs URL: ${url}`)
-      },
-    }),
-    /verified official homepage no longer matches the trusted careers handoff/i,
-  )
-
-  await assert.rejects(
-    gameberryLabs.createGameberryLabsScraper().run({
-      fetchPage: async (url, options = {}) => {
-        if (url === gameberryLabs.HOMEPAGE_URL) {
-          return {
-            ok: true,
-            status: 200,
-            url,
-            location: null,
-            text: `${homepageHtml}<a href="https://gameberrylabs.com/jobs/backend-engineer">Backend Engineer</a>`,
-          }
-        }
-
-        return {
-          ok: false,
-          status: 302,
-          url,
-          location: 'https://gameberry.keka.com/careers',
-          text: '',
-          options,
-        }
-      },
-    }),
-    /first-party homepage now exposes public job records/i,
-  )
-
-  await assert.rejects(
-    gameberryLabs.createGameberryLabsScraper().run({
-      fetchPage: async (url) => {
-        if (url === gameberryLabs.HOMEPAGE_URL) {
-          return {
-            ok: true,
-            status: 200,
-            url,
-            location: null,
-            text: homepageHtml,
-          }
-        }
-
-        return {
-          ok: false,
-          status: 302,
-          url,
-          location: 'https://gameberry.keka.com/careers/openings',
-          text: '',
-        }
-      },
-    }),
-    /verified careers redirect no longer matches the pinned external handoff/i,
-  )
+test('Gameberry rejects legacy page transport without observed native HTTP metadata',async()=>{
+ const gameberry=await loadGameberryLabsModule()
+ await assert.rejects(gameberry.createGameberryLabsScraper().run({fetchPage:async()=>({text:homepageHtml})}),/unsupported legacy transport/)
 })

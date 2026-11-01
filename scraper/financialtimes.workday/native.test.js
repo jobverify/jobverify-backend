@@ -3,6 +3,7 @@ import test from 'node:test'
 
 globalThis.fetch=()=>{throw Error('Offline Financial Times network tripwire')}
 const load=()=>import('./script.js')
+import { fixture,replay } from '../../scraper-support/native-sources/declaredGreenhouse/fixtureReplay.js'
 const offices=[
  {id:1,name:'APAC',parent_id:null,child_ids:[2,3]},
  {id:2,name:'India',parent_id:1,child_ids:[3]},
@@ -25,6 +26,21 @@ test('FT country resolves through exact native office ancestry without interpret
  assert.equal(us.country,'United States');assert.equal(us.complete,true)
 })
 
+test('registered FT broader reader retains all genuine original posts, career surfaces and published program handoffs',async()=>{
+ const {getScraperCatalog,createCatalogScraper}=await import('../../scraper-support/providers/index.js')
+ const r=replay();let records
+ const jobs=await createCatalogScraper(getScraperCatalog().find(p=>p.source==='financialtimes')).run({...r.options,fetchJson:undefined,onRecords:value=>{records=value}})
+ const audit=r.audits[0],expected=fixture.oracle.financialtimes.records
+ assert.equal(audit.nativeInventoryComplete,true);assert.equal(records.length,expected.length)
+ assert.ok(audit.openingSurfaces.pages.length>=19);assert.ok(audit.closingSurfaces.pages.length>=19)
+ assert.ok(audit.additionalRecruitmentScopes.some(item=>item.url.includes('maisiefellowship')))
+ assert.equal(audit.allOfficeAssignmentsAreAvailableWorksites,false)
+ for(const row of expected){const job=records.find(job=>job.jobId===String(row.postId));assert.deepEqual(job.sourceNativeRecord,row.nativeFeedRecord)
+  assert.equal(job.sourceNativeContentText,row.nativeContentText);assert.equal(job.jobDescription.replace(/\s+/g,' ').trim(),row.fullCriteriaText)
+  assert.equal(job.postingDate,row.nativeFeedRecord.first_published);assert.equal(job.sourceScopeComplete,false)}
+ assert.equal(jobs.length,0);assert.equal(audit.wholeCompanyIndia,null)
+})
+
 test('FT full native criteria decode transport and individual text leaves once and preserve original native identities/dates',async()=>{
  const mod=await load();assert.equal(typeof mod.parseFinancialTimesRole,'function')
  const job=mod.parseFinancialTimesRole(role,mod.buildOfficeGraph({offices}),{now:'2026-10-27T00:00:00Z'})
@@ -33,6 +49,35 @@ test('FT full native criteria decode transport and individual text leaves once a
  assert.equal(job.country,'India');assert.equal(job.sourceDetailComplete,true)
  for(const text of ['connectors & retain <literal> examples.','Production API experience.','Database skills.'])assert.ok(job.sourceDescription.includes(text))
  assert.equal(job.legalEmployer,null);assert.equal(job.employmentType,null);assert.equal(job.workMode,null)
+})
+
+test('FT original broader traversal awaits both audit and complete-record observers',async()=>{
+ const m=await load(),t=transport();let auditDone=false,recordsDone=false
+ await m.run({...t.options,onAudit:async()=>{await new Promise(resolve=>setTimeout(resolve,20));auditDone=true},onRecords:async()=>{await new Promise(resolve=>setTimeout(resolve,20));recordsDone=true}})
+ assert.equal(auditDone,true);assert.equal(recordsDone,true)
+})
+
+test('FT retains original native records and never promotes a bounded source to whole-employer authority',async()=>{
+ const m=await load(),t=transport();let audit,records
+ const jobs=await m.run({...t.options,onAudit:value=>{audit=value},onRecords:value=>{records=value}})
+ assert.equal(records.length,2);assert.deepEqual(records[0].sourceNativeRecord,role)
+ assert.equal(audit.sourceScopeComplete,false);assert.equal(audit.lifecycleCleanupAllowed,false)
+ assert.equal(audit.wholeCompanyGlobal,null);assert.equal(audit.wholeCompanyIndia,null)
+ assert.equal(jobs.sourceAudit.sourceScopeComplete,false)
+})
+
+test('FT retains earlier complete positives and closing-only originals when reconciliation is unavailable',async()=>{
+ const m=await load(),t=transport();let calls=0,records,audit
+ const original=t.options.fetchJson
+ t.options.fetchJson=async url=>{if(url.includes('/jobs?')&&++calls===2)throw Error('closing unavailable');return original(url)}
+ const jobs=await m.run({...t.options,onRecords:value=>{records=value},onAudit:value=>{audit=value}})
+ assert.equal(jobs.length,0);assert.equal(records.length,2);assert.equal(records[0].sourceDescription.includes('Database skills.'),true)
+ assert.deepEqual(records[0].sourceNativeRecord,role);assert.equal(records[0].sourceCurrentNativeRoleQualified,false)
+ assert.equal(audit.nativeInventoryComplete,false);assert.ok(audit.reasons.some(reason=>reason.includes('closing unavailable')))
+ const changed=transport({closing:r=>r.jobs.push({...role,id:103,absolute_url:role.absolute_url.replace('/101','/103')} )})
+ changed.options.fetchJson=async url=>{if(url.endsWith('/offices'))return{offices};const n=++calls;return{meta:{total:n>3?3:2},jobs:[role,{...role,id:102,absolute_url:role.absolute_url.replace('/101','/102')},...(n>3?[{...role,id:103,absolute_url:role.absolute_url.replace('/101','/103')}]:[])]}}
+ calls=2;await m.run({...changed.options,onRecords:value=>{records=value}})
+ assert.deepEqual(records.map(record=>record.jobId),['101','102','103']);assert.equal(records.at(-1).sourceCurrentNativeRoleQualified,false)
 })
 
 test('registered FT execution must stop current employer denial before reading the historical public API',async()=>{
@@ -77,6 +122,44 @@ const transport=(changes={})=>{
  return {calls,options:{now:()=> '2026-10-27T00:00:00Z',fetchPage:async url=>{calls.push(url);return {url,status:200,body:html,contentType:'text/html'}},fetchJson:async url=>{calls.push(url);if(url.endsWith('/offices'))return {offices};const result={meta:{total:2},jobs:[role,{...role,id:102,absolute_url:role.absolute_url.replace('/101','/102')}]};if(closing&&changes.closing)changes.closing(result);closing=true;return result},...changes.options}}
 }
 
+// Artificial original-response-shaped controls, never fresh HTTP evidence.
+const responseTransport=(mutate=()=>{})=>{
+ let phase=0
+ return{now:()=> '2026-10-31T00:00:00Z',fetchPage:async url=>{
+  let body=html,type='text/html'
+  if(url.endsWith('/jobs?content=true')){const payload={meta:{total:2},jobs:[structuredClone(role),{...structuredClone(role),id:102,absolute_url:role.absolute_url.replace('/101','/102')}]};mutate(payload,++phase);body=JSON.stringify(payload);type='application/json'}
+  else if(url.endsWith('/offices')){body=JSON.stringify({offices});type='application/json'}
+  else assert.ok(url==='https://aboutus.ft.com/'||url==='https://aboutus.ft.com/careers/')
+  return{url,status:200,bodyBase64:Buffer.from(body).toString('base64'),headers:{'content-type':type}}
+ }}
+}
+
+test('FT India results and both awaited complete-corpus observers are independently JSON serializable',async()=>{
+ const m=await load();let auditCount=0,recordCount=0
+ const jobs=await m.run({...responseTransport(),onAudit:async value=>{await new Promise(resolve=>setTimeout(resolve,5));assert.equal(JSON.parse(JSON.stringify(value)).observations.length,2);auditCount++},onRecords:async value=>{await new Promise(resolve=>setTimeout(resolve,5));assert.equal(JSON.parse(JSON.stringify(value)).length,2);recordCount++}})
+ assert.equal(auditCount,1);assert.equal(recordCount,1);assert.equal(JSON.parse(JSON.stringify(jobs)).length,2)
+ assert.deepEqual(jobs[0].sourceNativeRecord,role)
+})
+
+for(const phase of ['opening','closing'])test('FT malformed '+phase+' row preserves earlier healthy observations and full raw closing history',async()=>{
+ const m=await load();let audit,records
+ const jobs=await m.run({...responseTransport((data,n)=>{if(n===(phase==='opening'?1:2))data.jobs[1].first_published='2026-02-30T10:00:00Z'}),onAudit:value=>{audit=value;JSON.stringify(value)},onRecords:value=>{records=value;JSON.stringify(value)}})
+ assert.deepEqual(jobs.map(job=>job.jobId),['101']);assert.equal(records.length,2);assert.equal(audit.observations.length,2)
+ assert.deepEqual(records[0].sourceNativeRecord,role);assert.equal(records[1].sourceCurrentNativeRoleQualified,false)
+ assert.ok(records[1].jobDescription.includes('Database skills.'))
+ const invalid=phase==='opening'?records[1]:audit.observationHistory.find(pair=>pair.postId===102).current
+ assert.equal(invalid.sourceNativeRecord.first_published,'2026-02-30T10:00:00Z');assert.ok(invalid.sourceNativeIssues.some(issue=>/calendar|date/.test(issue)))
+})
+
+test('FT role-owned typed Location metadata reconciles conflicts without replacing its primary-office policy',async()=>{
+ const m=await load(),metadata=[{name:'Location',value_type:'single_select',value:'United States'}]
+ const scope=m.classifyFinancialTimesWorksites({...role,metadata},m.buildOfficeGraph({offices}))
+ assert.equal(scope.indiaEligible,false);assert.equal(scope.complete,false);assert.equal(scope.country,null)
+ const jobs=await m.run(responseTransport(data=>{for(const row of data.jobs)row.metadata=metadata}))
+ assert.equal(jobs.length,0);assert.equal(jobs.sourceAudit.allOfficeAssignmentsAreAvailableWorksites,false)
+ assert.ok(jobs.sourceAudit.observations.every(job=>job.country===null&&job.location===null))
+})
+
 test('FT registered adapter reconciles complete native inventory before caps and retains native totals',async()=>{
  const {getScraperCatalog,createCatalogScraper}=await import('../../scraper-support/providers/index.js');const {readInventoryEvidence}=await import('../../scraper-support/utils/inventoryEvidence.js')
  const t=transport();let audit;const jobs=await createCatalogScraper(getScraperCatalog().find(p=>p.source==='financialtimes')).run({...t.options,maxJobs:1,onAudit:a=>{audit=a}})
@@ -84,7 +167,7 @@ test('FT registered adapter reconciles complete native inventory before caps and
  assert.equal(t.calls.filter(u=>u.includes('/jobs?')).length,2);assert.equal(t.calls.filter(u=>u.endsWith('/offices')).length,2)
  assert.equal(readInventoryEvidence(jobs).status,'discovery-only');assert.equal(readInventoryEvidence(jobs).listingComplete,false)
  const full=await createCatalogScraper(getScraperCatalog().find(p=>p.source==='financialtimes')).run(transport().options)
- assert.equal(readInventoryEvidence(full).status,'complete-inventory');assert.equal(readInventoryEvidence(full).reportedTotal,2)
+ assert.equal(readInventoryEvidence(full).status,'discovery-only');assert.equal(readInventoryEvidence(full).reportedTotal,null)
 })
 
 test('FT refuses total truncation, changed closing capture, corporate drift, and aborted requests',async()=>{

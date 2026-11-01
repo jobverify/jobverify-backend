@@ -1,7 +1,6 @@
-export const createFailClosedSentinelScraper = () => ({
-  async run() {
-    return []
-  },
-})
+import {run as runNative} from './script.js'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+// Preserve the old entry point without retaining its unconditional empty result.
+export const createFailClosedSentinelScraper = () => ({run:runNative})
+
+export const run = async (options = {}) => runNative(options)

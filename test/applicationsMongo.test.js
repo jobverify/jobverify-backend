@@ -59,6 +59,7 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   assert.equal(untracked.body.data.application.status, 'opened', 'Apply tracks intent even with a personal CV');
   assert.equal(untracked.body.data.application.appliedAt, null);
   assert.equal(await Application.countDocuments({ user }), 1);
+  assert.equal((await request('/api/user/applications')).body.data.length, 0, 'An Apply click alone does not add a tracked job');
   await Application.deleteMany({ user }); // Exercise resume-only history separately below.
   await TailoredResume.collection.insertOne({ _id: `${otherUser}:${jobId}`, user: otherUser, job: jobId, status: 'completed', outputFormat: 'latex-pdf', generationId: 'other-user-generation' });
   await TailoredResume.collection.insertOne({ _id: `${user}:${jobId}`, user, job: jobId, status: 'queued', output: null });
@@ -134,10 +135,10 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   await Application.create({ user, job: legacyJob, status: 'applied', jobSnapshot: job });
   for (const status of ['all', 'opened', 'applied']) {
     const filtered = await request(`/api/user/applications?status=${status}&page=1`);
-    assert.deepEqual(filtered.body.summary, { total: 2, opened: 0, applied: 2 });
-    assert.equal(filtered.body.pagination.total, status === 'opened' ? 0 : 2);
-    assert.equal(filtered.body.data.length, status === 'opened' ? 0 : 2);
-    assert.ok(filtered.body.data.every(item => [String(jobId), String(legacyJob)].includes(item.job)));
+    assert.deepEqual(filtered.body.summary, { total: 1, opened: 0, applied: 1 });
+    assert.equal(filtered.body.pagination.total, status === 'opened' ? 0 : 1);
+    assert.equal(filtered.body.data.length, status === 'opened' ? 0 : 1);
+    assert.ok(filtered.body.data.every(item => item.job === String(jobId)), 'Legacy click-only records stay outside the tracker');
   }
   const queuedJobs = Array.from({ length: 21 }, (_, index) => ({ ...job, _id: new mongoose.Types.ObjectId(), fingerprint: `queued-${index}` }));
   await Job.collection.insertMany(queuedJobs);
@@ -145,11 +146,11 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
     _id: `${user}:${listing._id}`, user, job: listing._id, status: 'queued', requestedAt: new Date(), output: null,
   })));
   const secondPage = await request('/api/user/applications?page=2');
-  assert.equal(secondPage.body.data.length, 3);
-  assert.deepEqual(secondPage.body.summary, { total: 23, opened: 21, applied: 2 });
-  assert.equal(secondPage.body.pagination.totalPages, 2);
+  assert.equal(secondPage.body.data.length, 2);
+  assert.deepEqual(secondPage.body.summary, { total: 22, opened: 21, applied: 1 });
+  assert.equal(secondPage.body.pagination.totalPages, 11);
   const pendingPage = await request('/api/user/applications?status=opened');
-  assert.equal(pendingPage.body.data.length, 20);
+  assert.equal(pendingPage.body.data.length, 2);
   assert.equal(pendingPage.body.pagination.total, 21);
   assert.ok(pendingPage.body.data.every(item => item.resumeStatus === 'queued'));
 });

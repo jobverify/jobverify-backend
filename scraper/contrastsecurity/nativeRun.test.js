@@ -1,28 +1,41 @@
-import fs from 'node:fs'
-import {gunzipSync} from 'node:zlib'
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {run} from './script.js'
-import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
-const fixture=()=>JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/current-native-20261021.json.gz',import.meta.url))))
-async function replay(change,options={}){
- const original=globalThis.fetch,{packets}=fixture();let count=0
- globalThis.fetch=async(url,init={})=>{assert.equal(init.method??'GET','GET');const p=structuredClone(packets.find(p=>p.url===String(url)));assert.ok(p,'Only exact observed public URLs');change?.(p,++count);const r=new Response(p.body,{status:p.status});Object.defineProperty(r,'url',{value:p.finalURL});return r}
- try{return await run(options)}finally{globalThis.fetch=original}
-}
-test('actual current corporate and two native empty surfaces reconcile without certifying company zero',async()=>{const jobs=await replay();assert.equal(jobs.length,0);const e=readInventoryEvidence(jobs);assert.equal(e.status,'coverage-gap');assert.equal(e.firstParty,true);assert.equal(e.listingComplete,false);assert.equal(e.reportedTotal,null);assert.equal(e.indiaFacetCount,null)})
-for(const [name,mutate]of[
- ['inert corporate',p=>{if(p.url==='https://www.contrastsecurity.com/')p.body='<div inert>'+p.body+'</div>'}],
- ['hidden career handoff',p=>{if(p.url.endsWith('/contrast-careers'))p.body='<div hidden>'+p.body+'</div>'}],
- ['wrong native employer',p=>{if(p.url.startsWith('https://jobs.ashbyhq.com/'))p.body=p.body.replaceAll('Contrast Security','Other Company')}],
- ['wrong native tenant',p=>{if(p.url.startsWith('https://jobs.ashbyhq.com/'))p.body=p.body.replaceAll('contrast-security','different-tenant')}],
- ['inert native preload',p=>{if(p.url.startsWith('https://jobs.ashbyhq.com/'))p.body='<template>'+p.body+'</template>'}],
- ['conditional native preload',p=>{if(p.url.startsWith('https://jobs.ashbyhq.com/'))p.body=p.body.replace('window.__appData =','if(false) window.__appData =')}],
- ['HTTP202',p=>{if(p.url.startsWith('https://api.'))p.status=202}],
- ['redirected tenant',p=>{if(p.url.startsWith('https://api.'))p.finalURL='https://api.ashbyhq.com/posting-api/job-board/wrong'}],
- ['error envelope',p=>{if(p.url.startsWith('https://api.'))p.body='{"apiVersion":"1","jobs":[],"meta":{"ERROR":"unavailable"}}'}],
- ['unknown API version',p=>{if(p.url.startsWith('https://api.'))p.body='{"apiVersion":"2","jobs":[]}'}],
- ['future native rows require qualification',p=>{if(p.url.startsWith('https://api.'))p.body='{"apiVersion":"1","jobs":[{"id":"future-native-role"}]}'}]
-])test('rejects '+name,async()=>{await assert.rejects(()=>replay(mutate))})
-test('final native empty inventory drift cannot inherit earlier zero',async()=>{await assert.rejects(()=>replay((p,n)=>{if(n===5)p.body='{"apiVersion":"1","jobs":[{"id":"new-role"}]}'}))})
-test('caps, explicit zero timeout and cancellation fail rather than return empty',async()=>{await assert.rejects(()=>run({maxJobs:0}));await assert.rejects(()=>run({timeoutMs:0}));const c=new AbortController();await assert.rejects(()=>replay((p,n)=>{if(n===6)c.abort(Error('cancelled at final response'))},{signal:c.signal}),/cancelled/);await assert.rejects(()=>run({signal:AbortSignal.abort(Error('already cancelled'))}),/cancelled/)})
+import { run } from './script.js'
+import { replay, mutateJSON, mutateHTML, fixture } from '../../scraper-support/native-sources/declaredJobFeeds/fixtureReplay.js'
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+const profile = fixture.profiles.contrastsecurity
+const editText = (p, change) => ({...p,bodyBase64:Buffer.from(change(Buffer.from(p.bodyBase64,'base64').toString('utf8'))).toString('base64')})
+globalThis.fetch = async () => { throw Error('Offline original-entity tests prohibit all network') }
+test('current company, native board and API empty observations remain discovery-only', async () => {
+  const r = replay(), jobs = await run(r.options), audit = r.audits[0]
+  assert.equal(jobs.length,0);assert.equal(audit.opening.qualified,true);assert.equal(audit.closing.qualified,true)
+  assert.deepEqual(audit.observations,[]);assert.equal(audit.authoritativeSourceTotal,null)
+  assert.equal(readInventoryEvidence(jobs).status,'discovery-only');assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+})
+for (const [name, change] of [
+  ['inert corporate',(url,p)=>url===profile.primaryURL?editText(p,html=>'<div inert>'+html+'</div>'):p],
+  ['hidden career handoff',(url,p)=>url===profile.primaryPages[1]?editText(p,html=>'<div hidden>'+html+'</div>'):p],
+  ['wrong native employer',(url,p)=>url===profile.boardURL?mutateHTML(p,data=>{data.organization.name='Other Company'}):p],
+  ['wrong native tenant',(url,p)=>url===profile.boardURL?mutateHTML(p,data=>{data.organization.hostedJobsPageSlug='other'}):p],
+  ['inert native preload',(url,p)=>url===profile.boardURL?editText(p,html=>'<template>'+html+'</template>'):p],
+  ['conditional native preload',(url,p)=>url===profile.boardURL?editText(p,html=>html.replace('window.__appData =','if(false) window.__appData =')):p],
+  ['HTTP202',(url,p)=>url===profile.publicAPIURL?{...p,status:202}:p],
+  ['redirected tenant',(url,p)=>url===profile.publicAPIURL?{...p,url:'https://api.ashbyhq.com/posting-api/job-board/other?includeCompensation=true'}:p],
+  ['error envelope',(url,p)=>url===profile.publicAPIURL?mutateJSON(p,data=>{data.success=false}):p],
+  ['unknown API version',(url,p)=>url===profile.publicAPIURL?mutateJSON(p,data=>{data.apiVersion='2'}):p],
+  ['future malformed native identity',(url,p)=>url===profile.publicAPIURL?mutateJSON(p,data=>{data.jobs=[{id:'malformed'}]}):p]
+]) test('holds '+name+' without source-zero authority',async()=>{
+  const r=replay(change),jobs=await run(r.options),audit=r.audits[0]
+  assert.equal(audit.opening.qualified,false);assert.equal(audit.closing.qualified,false)
+  assert.equal(jobs.length,0);assert.equal(audit.sourceScopeComplete,false);assert.equal(audit.authoritativeSourceTotal,null)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+})
+test('closing native inventory drift retains the opening original and cannot inherit earlier zero',async()=>{
+  const r=replay((url,p,visit)=>url===profile.publicAPIURL&&visit===2?mutateJSON(p,data=>{data.jobs=[{id:'new-role'}]}):p)
+  await run(r.options);assert.equal(r.audits[0].opening.qualified,true);assert.equal(r.audits[0].closing.qualified,false)
+  assert.deepEqual(r.audits[0].opening.originalNativeFeed.jobs,[])
+})
+test('zero candidate cap still audits the complete channel; cancellation rejects before GET',async()=>{
+  const r=replay();await run({...r.options,maxJobs:0});assert.equal(r.audits[0].closing.qualified,true)
+  const c=replay();await assert.rejects(run({...c.options,signal:AbortSignal.abort(Error('cancelled'))}),/cancelled/);assert.equal(c.requests.length,0)
+})

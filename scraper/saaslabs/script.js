@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { SAASLABS_CATALOG } from './catalog.js'
+import {readCurrentSaaSLabs} from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -80,19 +81,16 @@ export const extractJobsFromListingHtml = (html = '') => {
   return jobs
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, {signal} = {}) => fetchTextWithRetry(url, {
   headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': USER_AGENT },
   label: SOURCE,
   timeoutMs: 15000,
+  signal,
 })
 
 export const createSaaSLabsScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREERS_URL)
-    if (!hasKulaListingSignal(html)) {
-      throw new Error('The verified SaaS Labs Kula careers surface no longer matches the trusted public listing')
-    }
-    return extractJobsFromListingHtml(html)
+  async run({ fetchText = defaultFetchText, signal, onAudit } = {}) {
+    return readCurrentSaaSLabs({fetchText,signal,onAudit})
   },
 })
 

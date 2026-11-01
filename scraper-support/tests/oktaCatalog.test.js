@@ -17,14 +17,16 @@ test('Okta India remains a catalog alias of the one native Okta source',()=>{
  assert.equal(report.matchedCount,2);assert.equal(report.unmatchedCount,0)
  assert.deepEqual(report.matched.map(r=>r.source),['okta','okta'])
 })
-test('Auth0 official careers delegation preserves Okta job ownership and does not assert a repaired Auth0 scraper',()=>{
+test('Auth0 current redirect wrapper retains canonical Okta attribution while historical catalog proof expires',()=>{
  const catalog=getScraperCatalog(),auth0=catalog.find(p=>p.source==='auth0'),okta=catalog.find(p=>p.source==='okta')
  assert.equal(auth0.inventoryDelegation.verified,true);assert.deepEqual(auth0.inventoryDelegation.sources,['okta'])
- assert.equal(auth0.inventoryDelegation.preservesChildSourceAndCompany,true);assert.equal(classifyProviderImplementation(auth0).type,'sentinel')
- const now=new Date(),report=buildPublishingGapReport({catalog:[auth0,okta],now,runtime:{databaseAvailable:true,generatedAt:now.toISOString(),publicCompanyNames:['Okta'],
+ assert.equal(auth0.inventoryDelegation.preservesChildSourceAndCompany,true);assert.equal(classifyProviderImplementation(auth0).type,'script')
+ assert.equal(auth0.atsPlatform,'official-first-party-drupal-job-board')
+ const now=new Date('2026-10-31T08:05:20.380Z'),report=buildPublishingGapReport({catalog:[auth0,okta],now,runtime:{databaseAvailable:true,generatedAt:now.toISOString(),publicCompanyNames:['Okta'],
   inventory:[{source:'auth0',savedJobs:0,visibleJobs:0,visibleCompanies:[]},{source:'okta',savedJobs:3,visibleJobs:3,visibleCompanies:['Okta']}],statuses:[]}})
  assert.equal(report.summary.distinctVisibleCompanies,1)
- const wrapper=report.rows.find(r=>r.source==='auth0');assert.equal(wrapper.implementationType,'sentinel')
- assert.deepEqual(wrapper.inventoryDelegation.publicChildSources,['okta']);assert.equal(wrapper.visibleJobs,0)
+ const wrapper=report.rows.find(r=>r.source==='auth0');assert.equal(wrapper.implementationType,'script')
+ assert.equal(wrapper.inventoryDelegation.evidenceFresh,false)
+ assert.deepEqual(wrapper.inventoryDelegation.publicChildSources,[]);assert.equal(wrapper.visibleJobs,0)
  assert.equal(report.rows.find(r=>r.source==='okta').visibleJobs,3)
 })

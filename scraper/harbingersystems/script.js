@@ -30,7 +30,8 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -67,17 +68,28 @@ export const createHarbingerSystemsScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchListingPage,
+    signal,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('The verified Harbinger Systems careers page no longer matches the trusted first-party handoff')
-    }
+    signal?.throwIfAborted()
+    try {
+      const careersHtml = await fetchText(CAREERS_URL, { signal })
+      signal?.throwIfAborted()
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('The verified Harbinger Systems careers page no longer matches the trusted first-party handoff')
+      }
 
-    return darwinboxScraper.run({
-      fetchListingPage,
-      maxJobs,
-      maxPages,
-    })
+      const jobs = await darwinboxScraper.run({
+        fetchListingPage,
+        maxJobs,
+        maxPages,
+        signal,
+      })
+      signal?.throwIfAborted()
+      return jobs
+    } catch (error) {
+      signal?.throwIfAborted()
+      throw error
+    }
   },
 })
 

@@ -1,7 +1,9 @@
 import http from 'node:http'
 import https from 'node:https'
+import { setTimeout as sleep } from 'node:timers/promises'
 
 import { extractTextFromPdfBuffer } from './pdfText.js'
+import { composeAbortSignals } from '../utils/fetch.js'
 
 const DEFAULT_BROWSER_TIMEOUT_MS = 60000
 
@@ -17,7 +19,21 @@ const CERTIFICATE_ERROR_CODES = new Set([
   'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
 ])
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const checkAbort = ({ callerSignal, signal }) => {
+  callerSignal?.throwIfAborted()
+  signal?.throwIfAborted()
+}
+const checkedRead = async (operation, context) => {
+  checkAbort(context)
+  try {
+    const value = await operation()
+    checkAbort(context)
+    return value
+  } catch (error) {
+    checkAbort(context)
+    throw error
+  }
+}
 
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || typeof AbortSignal?.timeout !== 'function') {
@@ -199,26 +215,32 @@ const requestWithInsecureHttps = (url, {
 
 const readResponseContent = async (response, {
   pdfTextExtractionTimeoutMs = DEFAULT_BROWSER_TIMEOUT_MS,
+  signal,
+  callerSignal,
 } = {}) => {
+  const context = { signal, callerSignal }
+  checkAbort(context)
   const contentType = response.headers?.get?.('content-type') || ''
   const responseUrl = response.url || ''
 
   if (TEXT_CONTENT_TYPE_PATTERN.test(contentType)) {
-    return response.text()
+    return checkedRead(() => response.text(), context)
   }
 
   if (PDF_CONTENT_TYPE_PATTERN.test(contentType) || /\.pdf(?:$|\?)/i.test(responseUrl)) {
     try {
-      return await extractTextFromPdfBuffer(
-        new Uint8Array(await response.arrayBuffer()),
-        { timeoutMs: pdfTextExtractionTimeoutMs },
-      )
+      const bytes = await checkedRead(() => response.arrayBuffer(), context)
+      return await checkedRead(() => extractTextFromPdfBuffer(
+        new Uint8Array(bytes),
+        { timeoutMs: pdfTextExtractionTimeoutMs, signal },
+      ), context)
     } catch {
+      checkAbort(context)
       return ''
     }
   }
 
-  return response.text()
+  return checkedRead(() => response.text(), context)
 }
 
 export const createBrowserFetchSession = async ({
@@ -227,90 +249,84 @@ export const createBrowserFetchSession = async ({
   waitUntil = 'domcontentloaded',
   settleTimeMs = 0,
   ignoreHTTPSErrors = false,
+  signal,
 } = {}) => {
+  signal?.throwIfAborted()
   const request = async (url, options = {}) => {
+    const callerSignal = composeAbortSignals(signal, options.signal)
+    callerSignal?.throwIfAborted()
+    const requestSignal = composeAbortSignals(callerSignal, createTimeoutSignal(timeoutMs))
+    const context = { callerSignal, signal: requestSignal }
     const method = options.method || 'GET'
     const headers = buildHeaders(userAgent, options.headers, options.referer)
     const requestOptions = {
       method,
       headers,
       ...(options.body != null ? { body: options.body } : {}),
-      signal: createTimeoutSignal(timeoutMs),
+      signal: requestSignal,
     }
     let response
 
-    try {
-      response = await fetch(url, requestOptions)
-    } catch (error) {
-      if (!shouldUseInsecureHttpsFallback(url, error, ignoreHTTPSErrors)) {
-        throw error
+    return checkedRead(async () => {
+      try {
+        response = await fetch(url, requestOptions)
+      } catch (error) {
+        checkAbort(context)
+        if (!shouldUseInsecureHttpsFallback(url, error, ignoreHTTPSErrors)) {
+          throw error
+        }
+
+        response = await requestWithInsecureHttps(url, {
+          method,
+          headers,
+          body: options.body,
+          timeoutMs,
+        })
       }
-
-      response = await requestWithInsecureHttps(url, {
-        method,
-        headers,
-        body: options.body,
-        timeoutMs,
-      })
-    }
-
-    if (settleTimeMs > 0) {
-      await sleep(settleTimeMs)
-    }
-
-    return response
+      checkAbort(context)
+      if (settleTimeMs > 0) await sleep(settleTimeMs, undefined, { signal: requestSignal })
+      return { response, ...context }
+    }, context)
   }
 
   return {
     close: async () => {},
     fetchText: async (url, options = {}) => {
-      const response = await request(url, options)
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} for ${url}`)
-      }
-
-      return readResponseContent(response, { pdfTextExtractionTimeoutMs: timeoutMs })
+      const context = await request(url, options), { response } = context
+      return checkedRead(async () => {
+        if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
+        return readResponseContent(response, { ...context, pdfTextExtractionTimeoutMs: timeoutMs })
+      }, context)
     },
     fetchPage: async (url, options = {}) => {
-      const response = await request(url, options)
-
-      return {
-        status: response.status,
-        url: response.url,
-        html: await readResponseContent(response, { pdfTextExtractionTimeoutMs: timeoutMs }),
-      }
+      const context = await request(url, options), { response } = context
+      return checkedRead(async () => ({
+        status: response.status, url: response.url,
+        html: await readResponseContent(response, { ...context, pdfTextExtractionTimeoutMs: timeoutMs }),
+      }), context)
     },
     fetchFinalUrl: async (url, options = {}) => {
-      const response = await request(url, options)
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} for ${url}`)
-      }
-
-      return response.url || url
+      const context = await request(url, options), { response } = context
+      return checkedRead(async () => {
+        if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
+        return response.url || url
+      }, context)
     },
     fetchJson: async (url, options = {}) => {
       if (options.landingUrl) {
-        const landingResponse = await request(options.landingUrl, options)
-        if (!landingResponse.ok) {
-          throw new Error(`HTTP ${landingResponse.status} for ${options.landingUrl}`)
-        }
+        const landing = await request(options.landingUrl, options)
+        await checkedRead(async () => {
+          if (!landing.response.ok) throw new Error(`HTTP ${landing.response.status} for ${options.landingUrl}`)
+        }, landing)
       }
 
-      const response = await request(url, options)
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} for ${url}`)
-      }
-
-      const text = await response.text()
-      try {
-        return JSON.parse(text)
-      } catch (error) {
-        throw new Error(`Expected JSON from ${url} but received an invalid API payload`, {
-          cause: error,
-        })
-      }
+      const context = await request(url, options), { response } = context
+      return checkedRead(async () => {
+        if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
+        const text = await checkedRead(() => response.text(), context)
+        try { return JSON.parse(text) }
+        catch (error) { throw new Error(`Expected JSON from ${url} but received an invalid API payload`, { cause: error }) }
+      }, context)
     },
   }
 }

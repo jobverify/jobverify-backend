@@ -3,7 +3,10 @@ import {requireNative,oneNative,hasClass,nativeCountryName} from '../../scraper-
 import {verifyRmkCompanyToken,readRmkLocationCountry} from '../../scraper-support/shared/successFactorsRmk.js'
 import {parseNativeRole} from '../../scraper-support/shared/rmkNativePair.js'
 import {parseNativeTilePage} from '../../scraper-support/shared/successFactorsNativeTiles.js'
-import {createFirstPartyHTMLScraper} from '../../scraper-support/shared/firstPartyHtmlJobs.js'
+import {createFirstPartyHTMLScraper,createHTMLTransport} from '../../scraper-support/shared/firstPartyHtmlJobs.js'
+import {readNativeDocument} from '../../scraper-support/utils/activeNativeHtml.js'
+import {attachInventoryDelegationEvidence} from '../../scraper-support/utils/inventoryDelegationEvidence.js'
+import {createHash} from 'node:crypto'
 export const ORIGIN='https://careers.holcimgroup.com',HOME=ORIGIN+'/',SEARCH=ORIGIN+'/search/',CATEGORY=ORIGIN+'/holcim_ghbs/go/Job-at-Holcim-GHBS/8823002/'
 export const QUERY='?q=&sortColumn=referencedate&sortDirection=desc&searchby=location&d=10',API=ORIGIN+'/tile-search-results'+QUERY+'&startrow=',CHILD_API=ORIGIN+'/holcim_ghbs/tile-search-results/category/8823002?startrow='
 const rolePath=/^\/(?:[A-Za-z][A-Za-z0-9_]*\/)?job\/[^/]+\/([1-9]\d{5,15})\/$/,ensure=(v,m)=>requireNative(v,'Holcim native: '+m)
@@ -24,4 +27,70 @@ export function createSourceConfig({source='holcim',now=()=>new Date().toISOStri
   projectJobs(result){const{jobs,listingRecords,retainedResponses,unknownRawFailures,...summary}=result,delegated=child?[]:listingRecords.filter(r=>r.nativeCountryCodes.includes('IN')&&r.url.includes('/holcim_ghbs/job/')),compact={...summary,extractedDetailJobs:jobs.length,listingRecordCount:listingRecords.length,unknownRawFailureCount:unknownRawFailures.length,delegatedIndiaRecords:delegated.map(r=>({id:r.id,url:r.url,source:'holcimglobalhubbusinessservices'})),fullBatchEvidenceOnFirstExtractedJob:true,retainedResponses:retainedResponses.map(({url,status,bodyBytes,bodySHA256,requestedAt,completedAt})=>({url,status,bodyBytes,bodySHA256,requestedAt,completedAt}))};return jobs.map((j,i)=>({...j,nativeDelegatedIndiaRecords:compact.delegatedIndiaRecords,nativeCollectionEvidence:i===0?{...result,delegatedIndiaRecords:compact.delegatedIndiaRecords}:compact}))},
  }
 }
-export const runFamily=(source,options={})=>createFirstPartyHTMLScraper(createSourceConfig({...options,source})).run(options)
+const ownsParentJobs=jobs=>Array.isArray(jobs)&&jobs.every(job=>job&&job.source==='holcim'&&job.company==='Holcim'&&!job.sourceUrl?.includes('/holcim_ghbs/job/')&&Array.isArray(job.nativeDelegatedIndiaRecords)&&job.nativeDelegatedIndiaRecords.every(row=>row.source==='holcimglobalhubbusinessservices'))
+export async function verifyHolcimRecruitmentReference({parentEvidence,parentJobs=[],transport,signal}={}){
+ const requireReference=(condition,message)=>ensure(condition,'recruitment reference: '+message)
+ const deadline=signal?AbortSignal.any([signal,AbortSignal.timeout(20000)]):AbortSignal.timeout(20000)
+ let listener
+ try{
+  deadline.throwIfAborted()
+  requireReference(ownsParentJobs(parentJobs),'Parent/child ownership or attribution changed')
+  requireReference(parentEvidence?.source==='holcim'&&parentEvidence.handoffVerified===true&&Array.isArray(parentEvidence.listingRecords)&&Array.isArray(parentEvidence.retainedResponses),'Actual parent native binding/listing unavailable')
+  const decode=response=>{
+   requireReference(response?.status===200&&typeof response.rawBodyBase64==='string'&&/^text\/html\b/i.test(response.headers?.['content-type']||''),'Parent native HTML response unavailable')
+   const body=Buffer.from(response.rawBodyBase64,'base64');requireReference(body.length>0&&body.length<=2*1024*1024,'Parent native response body bound')
+   return{...response,body,html:new TextDecoder('utf-8',{fatal:true}).decode(body)}
+  }
+  const home=decode(parentEvidence.retainedResponses.find(response=>response.url===HOME))
+  const parentConfig=createSourceConfig()
+  for(const step of parentConfig.handoffs)step.verify(home.html)
+  const parentRows=parentEvidence.listingRecords.filter(row=>row.url?.startsWith(ORIGIN+'/holcim_ghbs/job/')&&row.nativeCountryCodes?.includes('IN'))
+  requireReference(parentRows.length>0,'No actual parent India business-unit reference')
+  const childConfig=createSourceConfig({source:'holcimglobalhubbusinessservices'})
+  const read=transport||createHTMLTransport(childConfig,{signal:deadline})
+  const page=await Promise.race([Promise.resolve().then(()=>read(CATEGORY,{method:'GET',redirect:'manual',credentials:'omit',signal:deadline})),new Promise((_,reject)=>{listener=()=>reject(deadline.reason);deadline.addEventListener('abort',listener,{once:true})})])
+  deadline.throwIfAborted()
+  requireReference(page?.url===CATEGORY&&(page.finalUrl??page.url)===CATEGORY&&page.status===200&&page.bodyComplete===true&&page.body instanceof Uint8Array&&page.body.length>0&&page.body.length<=2*1024*1024&&/^text\/html\b/i.test(page.headers?.['content-type']||''),'Child native HTTP identity, MIME or body unavailable')
+  const html=new TextDecoder('utf-8',{fatal:true}).decode(page.body),doc=readNativeDocument(html)
+  const canonical=doc.nodes(node=>node.tag==='link'&&node.attrs.rel==='canonical')
+  requireReference(canonical.length===1&&canonical[0].attrs.href===CATEGORY&&doc.nodes(node=>node.tag==='title').some(node=>norm(node.raw)==='Global Hub Business Services'),'Child native company/category identity unavailable')
+  const anchors=doc.nodes(node=>node.tag==='a'&&node.attrs.href)
+  requireReference(anchors.some(node=>new URL(node.attrs.href,ORIGIN).href===CATEGORY&&doc.text(node)==='Jobs at Holcim Global Hub Business Services')&&anchors.some(node=>new URL(node.attrs.href,ORIGIN).href===ORIGIN+'/go/All-Jobs/8790902/'&&doc.text(node)==='Holcim Group Jobs'),'Explicit child self-label or reciprocal Holcim group handoff unavailable')
+  const category=childConfig.parseListing(html,CATEGORY)
+  requireReference(category.errors.length===0,'Unresolved child native tile criteria')
+  const tuple=row=>JSON.stringify([row.id,row.title,row.url,row.locations,row.nativeCountryCodes])
+  const match=parentRows.find(parent=>category.records.some(child=>child.nativeCountryCodes.includes('IN')&&tuple(child)===tuple(parent)))
+  requireReference(match,'Current native posting/title/URL/typed-location tuple does not reconcile')
+  requireReference(parentJobs.every(job=>job.nativeDelegatedIndiaRecords.some(reference=>reference.id===match.id&&reference.url===match.url&&reference.source==='holcimglobalhubbusinessservices')),'Matching child ownership reference unavailable')
+  const listing=parentEvidence.retainedResponses.filter(response=>response.url!==HOME&&response.status===200).map(decode).find(response=>typeof match.rawListingHTML==='string'&&response.html.includes(match.rawListingHTML))
+  requireReference(listing,'Actual parent native row backing unavailable')
+  const native=[{...home,finalUrl:home.url,capturedAt:home.completedAt},{...listing,finalUrl:listing.url,capturedAt:listing.completedAt},{...page,body:Buffer.from(page.body),finalUrl:page.finalUrl??page.url,capturedAt:page.completedAt??page.capturedAt}]
+  // This is a current recruitment-surface reference, not executable child
+  // delegation, matching wrapper jobs, child totals or company completeness.
+  // Historic and untimed transports never acquire the source invocation clock.
+  if(!native.every(response=>typeof response.capturedAt==='string'&&Number.isFinite(Date.parse(response.capturedAt))&&Date.parse(response.capturedAt)>0&&Date.parse(response.capturedAt)<=Date.now()))return null
+  return{source:'holcim',sources:['holcimglobalhubbusinessservices'],preservesChildSourceAndCompany:true,
+   verifiedAt:new Date(Math.min(...native.map(response=>Date.parse(response.capturedAt)))).toISOString(),
+   evidence:{method:'native-group-and-business-unit-recruitment-reference',url:CATEGORY,responses:native.map(response=>({url:response.url,finalUrl:response.finalUrl,status:response.status,sha256:createHash('sha256').update(response.body).digest('hex')}))}}
+ }catch(error){signal?.throwIfAborted();deadline.throwIfAborted();throw Object.assign(Error('Holcim native recruitment reference unverified: '+error.message,{cause:error}),{abortRetries:true})}
+ finally{deadline.removeEventListener('abort',listener)}
+}
+
+export const runFamily=async(source,options={})=>{
+ if(source!=='holcim')return createFirstPartyHTMLScraper(createSourceConfig({...options,source})).run(options)
+ const deadline=AbortSignal.timeout(540000),signal=options.signal?AbortSignal.any([options.signal,deadline]):deadline
+ const jobs=await createFirstPartyHTMLScraper(createSourceConfig({...options,source})).run({...options,signal})
+ signal.throwIfAborted()
+ ensure(ownsParentJobs(jobs),'recruitment reference: Parent/child ownership changed')
+ try{
+  const proof=await verifyHolcimRecruitmentReference({parentEvidence:jobs[Symbol.for('jobverify.native-html-evidence')],parentJobs:jobs,transport:options.transport,signal})
+  if(proof)attachInventoryDelegationEvidence(jobs,proof)
+  Object.defineProperty(jobs,'sourceDelegationAudit',{value:{status:proof?'native-scoped-reference-verified':'unverified',referenceOnly:true,childExecuted:false,childCountsInferred:false,wholeCompanyComplete:false,reason:proof?'native-same-tenant-business-unit-reference':'native-reference-clock-unavailable-or-future'}})
+ }catch(error){
+  signal.throwIfAborted()
+  // A failed optional relationship check cannot discard genuine own jobs or
+  // convert their already partial inventory into a current child reference.
+  Object.defineProperty(jobs,'sourceDelegationAudit',{value:{status:'unverified',referenceOnly:true,childExecuted:false,childCountsInferred:false,wholeCompanyComplete:false,reason:error.message}})
+ }
+ signal.throwIfAborted();return jobs
+}

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createCommvaultClumioScraper } from '../../scraper-support/native-sources/commvaultClumio/nativeCareers.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -226,55 +226,7 @@ export const extractDetailFields = (html) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-export const createClumioScraper = ({
-  maxJobs = null,
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Clumio careers page no longer matches the verified Commvault first-party jobs surface')
-    }
-
-    const baseJobs = extractClumioJobsFromGreenhouseList(
-      extractGreenhouseListPayload(careersHtml),
-      { scrapedAt: now() },
-    )
-
-    const jobs = []
-
-    for (const baseJob of baseJobs) {
-      const detailHtml = await fetchText(baseJob.sourceUrl)
-      const detail = extractDetailFields(detailHtml)
-
-      if (detail.title && detail.title !== baseJob.title) {
-        throw new Error('Clumio first-party detail page no longer matches the verified job title handoff')
-      }
-
-      jobs.push({
-        ...baseJob,
-        jobDescription: detail.jobDescription || baseJob.jobDescription,
-        minimumQualification: detail.minimumQualification,
-        preferredQualification: detail.preferredQualification,
-        remoteStatus: detail.remoteStatus || baseJob.remoteStatus,
-      })
-    }
-
-    return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-  },
-})
+export const createClumioScraper = (options = {}) => createCommvaultClumioScraper(options)
 
 export const run = async (options = {}) => createClumioScraper(options).run(options)
 

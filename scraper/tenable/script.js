@@ -6,6 +6,7 @@ import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import TENABLE_CATALOG from './catalog.js'
+import {run as runCurrentNative} from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -333,28 +334,11 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createTenableScraper = ({ maxJobs = null } = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Tenable careers page no longer matches the verified official Tenable careers surface')
-    }
-
-    const jobs = extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' }),
-      { scrapedAt: now() },
-    )
-
-    return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-  },
+export const createTenableScraper = (options = {}) => ({
+  run: runOptions => runCurrentNative({ ...options, ...runOptions }),
 })
 
-export const run = async (options = {}) => createTenableScraper().run(options)
+export const run = async (options = {}) => runCurrentNative(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

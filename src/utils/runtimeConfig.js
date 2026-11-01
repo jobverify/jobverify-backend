@@ -3,6 +3,9 @@ import {
   normalizeOrigin,
 } from "./originAllowlist.js";
 
+export const isProductionEnvironment = (env = process.env) =>
+  String(env.NODE_ENV ?? "").trim().toLowerCase() === "production";
+
 export const requireEnv = (name, env = process.env) => {
   const value = String(env[name] ?? "").trim();
   if (!value) {
@@ -73,7 +76,7 @@ export const resolveFrontendOrigin = (env = process.env) => {
   ];
 
   const uniqueOrigins = [...new Set(configuredOrigins)];
-  const isProduction = String(env.NODE_ENV ?? "").trim().toLowerCase() === "production";
+  const isProduction = isProductionEnvironment(env);
   const allowedOrigins = isProduction
     ? uniqueOrigins.filter((origin) => !isLoopbackOrigin(origin))
     : uniqueOrigins;

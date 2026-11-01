@@ -3,6 +3,7 @@ import { extractActiveDescription } from './activeNativeHtml.js'
 
 const text = value => typeof value === 'string' ? value.trim() : ''
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
+const shortRegionNames = new Intl.DisplayNames(['en'], { type: 'region', style: 'short' })
 const fail = message => { throw new Error('Workable public inventory ' + message) }
 const assertNativePayload = payload => {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload) || payload.success === false
@@ -42,7 +43,8 @@ const validateLocation = location => {
     || typeof location.countryCode !== 'string' || !/^[A-Z]{2}$/.test(location.countryCode) || !text(location.country)
     || /^(?:unknown|global|anywhere|worldwide|remote|multiple)$/i.test(location.country)
     || ['ZZ', 'EU', 'UN', 'XA', 'XB', 'QO'].includes(location.countryCode) || regionNames.of(location.countryCode) === location.countryCode
-    || regionNames.of(location.countryCode).toLowerCase() !== text(location.country).toLowerCase()
+    || ![regionNames.of(location.countryCode), shortRegionNames.of(location.countryCode)]
+      .some(name => name.toLowerCase() === text(location.country).toLowerCase())
     || ((location.countryCode === 'IN') !== /^india$/i.test(location.country))) fail('country/location scope is missing or contradictory')
   for (const key of ['city', 'region']) {
     if (location[key] != null && typeof location[key] !== 'string') fail('location fields are malformed')

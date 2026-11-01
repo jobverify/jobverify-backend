@@ -1,3 +1,5 @@
+import { isProductionEnvironment } from "../utils/runtimeConfig.js";
+
 export class APIError extends Error {
   constructor(statusCode, message, details = null) {
     super(message);
@@ -16,7 +18,7 @@ export const errorHandler = (err, req, res, next) => {
   const isInvalidJson = err.type === "entity.parse.failed";
   const message = isInvalidJson ? "Invalid JSON request body." : err.message || "Internal Server Error";
   const details = isInvalidJson ? null : err.details || null;
-  const isProduction = process.env.NODE_ENV === "production";
+  const isProduction = isProductionEnvironment();
   const isSafeClientError =
     err instanceof APIError || (statusCode >= 400 && statusCode < 500);
   const responseMessage =

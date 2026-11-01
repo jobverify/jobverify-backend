@@ -12,6 +12,10 @@ const scraper = createPhenomScraper({
   searchPath: '/global/en/search-results',
   scraperDir: currentDir,
   nativeBangaloreLocationAlias: true,
+  defaultDetailConcurrency: 4,
+  nativeLocalitySuffixFormatting: true,
+  nativeBoundUSStateCodeFormatting: true,
+  nativeReviewedIndiaCityAliases: true,
 })
 
 export const {

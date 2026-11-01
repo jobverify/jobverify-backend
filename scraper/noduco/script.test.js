@@ -232,7 +232,8 @@ test('Noduco scraper recognizes the verified homepage and careers cards', async 
       department: 'Engineering',
       location: null,
       city: null,
-      country: 'India',
+      // A listing card has no role-owned country; detail JobPosting may bind it.
+      country: null,
       sourceUrl: 'https://noduco.com/careers/1/',
       applyUrl: null,
       employmentType: 'Full-Time',
@@ -253,7 +254,7 @@ test('Noduco scraper recognizes the verified homepage and careers cards', async 
       department: 'Engineering',
       location: null,
       city: null,
-      country: 'India',
+      country: null,
       sourceUrl: 'https://noduco.com/careers/10/',
       applyUrl: null,
       employmentType: 'Full-Time',

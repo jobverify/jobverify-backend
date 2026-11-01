@@ -1,0 +1,28 @@
+[
+  {
+    "source": "gcore",
+    "companyName": "Gcore",
+    "companyDomain": "gcore.com",
+    "adapter": "script",
+    "modulePath": "../../scraper/gcore/script.js",
+    "companyCareerPage": "https://gcore.com/careers",
+    "atsPlatform": "smartrecruiters",
+    "countryFilter": "India",
+    "paginationStrategy": "bounded-native-opening-detail-closing",
+    "extractionStrategy": "official-gcore-navigation-and-reciprocal-smartrecruiters-native-role-observation",
+    "parser": "custom-script",
+    "normalizationProfile": "engineering-default",
+    "backfillMode": "native-board-observation",
+    "sourceScopeComplete": false,
+    "zeroResultPolicy": "evidence-required",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "companyGlobalTotal": null,
+    "companyIndiaTotal": null,
+    "verifiedInventoryStatus": "unverified",
+    "verifiedSurfaceSummary": "The selected Gcore native script validates the current official Toggle-menu/About Open positions handoff to the exact Gcore SmartRecruiters board, reciprocal employer link, native role/company/all supplied URLs, explicit role-owned country, original JD and independent closing pagination. Company scope and verified counts remain unresolved; a zero returned India subset requires native evidence and is not company-empty inventory.",
+    "catalogOverride": true
+  }
+]

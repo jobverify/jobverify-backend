@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runLakeCurrentInventory } from './nativeCareers.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -9,12 +9,10 @@ export const SOURCE = 'lakechemicalspvtltd'
 export const COMPANY = 'Lake Chemicals Pvt. Ltd'
 export const HOMEPAGE_URL = 'https://lakechemicals.com/'
 export const JOB_SEARCH_URL = 'https://lakechemicals.com/job-search'
-export const VERIFIED_ON = '2026-08-15'
+export const VERIFIED_ON = '2026-10-29'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, August 15, 2026 that direct requests from this runtime to both https://lakechemicals.com/ and https://lakechemicals.com/job-search currently time out with UND_ERR_CONNECT_TIMEOUT before either verified first-party surface can be rendered. The scraper preserves the previously verified homepage and inline public-role parser whenever either page becomes reachable again, but now returns an authoritative empty result while both trusted first-party surfaces remain simultaneously unreachable from this environment.'
+  'Current runtime verifies native first-party role cards, full employer-provided criteria, explicit role-assigned factory or head-office addresses and their native India country, additional hiring surfaces, HTTP identity and closing inventory. Unavailable pages and unqualified city labels remain unverified; no empty or India defaults are supplied.'
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const UNAVAILABLE_ERROR_PATTERN =
   /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound/i
 
@@ -53,54 +51,9 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/^-+|-+$/g, '')
 
 export const normalizeLocationData = (value) => {
-  const normalized = stripTags(value)
-  if (!normalized) {
-    return {
-      location: null,
-      city: null,
-      country: 'India',
-    }
-  }
-
-  if (/attibele/i.test(normalized)) {
-    return {
-      location: 'Attibele Industrial Area, Bangalore, India',
-      city: 'Bangalore',
-      country: 'India',
-    }
-  }
-
-  if (/shivaji\s*nagar|shivajinagar/i.test(normalized)) {
-    return {
-      location: 'Shivaji Nagar, Bangalore, India',
-      city: 'Bangalore',
-      country: 'India',
-    }
-  }
-
-  if (/bangalore|bengaluru/i.test(normalized)) {
-    return {
-      location: normalized.includes('India') ? normalized : `${normalized}, India`,
-      city: 'Bangalore',
-      country: 'India',
-    }
-  }
-
-  return {
-    location: normalized.includes('India') ? normalized : `${normalized}, India`,
-    city: null,
-    country: 'India',
-  }
+  const location = stripTags(value) || null
+  return { location, city: null, country: location && /(?:^|,\s*)India$/i.test(location) ? 'India' : null }
 }
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
 
 export const isVerifiedLakeChemicalsUnavailableError = (error) => {
   const message = String(error?.message ?? error ?? '')
@@ -112,21 +65,6 @@ export const isVerifiedLakeChemicalsUnavailableError = (error) => {
     || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
 }
 
-const fetchTextSafely = async (fetchText, url) => {
-  try {
-    return {
-      html: await fetchText(url),
-      error: null,
-    }
-  } catch (error) {
-    if (!isVerifiedLakeChemicalsUnavailableError(error)) throw error
-
-    return {
-      html: null,
-      error,
-    }
-  }
-}
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -205,13 +143,7 @@ const parseRoleCard = (rawTitle, rawDescription) => {
     requiredSkills,
     postingDate: null,
     closingDate: null,
-    jobDescription: normalizeWhitespace(
-      `Qualification: ${qualification}. `
-        + `Experience: ${experience}. `
-        + `Skills: ${requiredSkills.join('; ')}. `
-        + `Location: ${locationData.location}. `
-        + 'Apply via the official Lake Chemicals job search page.',
-    ),
+    jobDescription: normalizeWhitespace(normalizedBlock),
   }
 }
 
@@ -262,37 +194,8 @@ export const extractPublicJobs = (html) => {
   return jobs
 }
 
-export const createLakeChemicalsPvtLtdScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepage = await fetchTextSafely(fetchText, HOMEPAGE_URL)
-    const jobSearch = await fetchTextSafely(fetchText, JOB_SEARCH_URL)
-
-    if (homepage.html && !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Lake Chemicals verified official homepage no longer matches the known first-party surface')
-    }
-
-    if (jobSearch.html) {
-      const jobs = extractPublicJobs(jobSearch.html)
-
-      return jobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl,
-        scrapedAt: (overrideNow || now)(),
-        companyCareerPage: JOB_SEARCH_URL,
-        companyDomain: 'lakechemicals.com',
-        atsPlatform: 'official-company-careers',
-      }))
-    }
-
-    if (homepage.error && jobSearch.error) {
-      return []
-    }
-
-    throw jobSearch.error || homepage.error || new Error(
-      'Lake Chemicals verified first-party job search page is currently unavailable',
-    )
-  },
+export const createLakeChemicalsPvtLtdScraper = ({ now } = {}) => ({
+  run: (options = {}) => runLakeCurrentInventory({ ...(now ? { now } : {}), ...options }),
 })
 
 export const run = async (options = {}) => createLakeChemicalsPvtLtdScraper().run(options)

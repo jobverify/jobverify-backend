@@ -228,7 +228,7 @@ test('run seeds the public Darwinbox shell before using the native listings API 
   assert.equal(requests[1].options.method, 'POST')
 })
 
-test('run can use inline official Darwinbox job links when the first-party careers page already exposes them', async () => {
+test('inline official roles remain partial when their native descriptions are unavailable', async () => {
   const { createAgroStarScraper } = await loadModule()
   const requests = []
   const scraper = createAgroStarScraper({
@@ -241,10 +241,16 @@ test('run can use inline official Darwinbox job links when the first-party caree
 
   const jobs = await scraper.run({
     fetchText: async () => currentOfficialCareersHtml,
+    fetchJobDetail: async ({ jobId }) => {
+      requests.push(jobId)
+      throw new Error('Native detail unavailable')
+    },
   })
 
-  assert.deepEqual(requests, [])
-  assert.deepEqual(jobs, [
+  assert.deepEqual(requests, ['a69f8bd0c30c48', 'a681afb8c613ff'])
+  assert.ok(jobs.every(job => job.sourceDetailComplete === false && job.sourceListingComplete === false
+    && job.sourceDetailFailureKind === 'upstream'))
+  assert.deepEqual(jobs.map(({ sourceDetailComplete, sourceListingComplete, sourceDetailFailureKind, ...job }) => job), [
     {
       title: 'Cluster Manager - Saharanpur',
       company: 'AgroStar',
@@ -292,4 +298,90 @@ test('run can use inline official Darwinbox job links when the first-party caree
       scrapedAt: FIXED_SCRAPED_AT,
     },
   ])
+})
+
+const inlineDetail = (jobId, changes = {}) => {
+  const first = jobId === 'a69f8bd0c30c48'
+  return { status: 'success', message: { job: [{ id: jobId,
+    title: first ? 'Cluster Manager - Saharanpur' : 'Senior Manager - Crop Protection',
+    country: 'India', officelocation_show_arr: first ? 'Saharanpur, Uttar Pradesh, India' : 'Pune, Maharashtra, India',
+    jd: first ? '<p>Lead the Saharanpur cluster growth plan and support agricultural sales teams.</p>'
+      : '<p>Manage crop protection products and work with agricultural research teams.</p>', ...changes,
+  }] } }
+}
+
+test('inline AgroStar roles fetch validated native descriptions instead of stopping at title-only cards', async () => {
+  const { createAgroStarScraper } = await loadModule()
+  const { extractionDetailHealth } = await import('../utils/extractionDetailHealth.js')
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const jobs = await createAgroStarScraper({ now: () => '2026-10-29T14:00:00.000Z' }).run({
+    fetchText: async () => currentOfficialCareersHtml,
+    fetchJobDetail: async ({ jobId, companyId, signal }) => {
+      assert.equal(companyId, 'main')
+      assert.ok(signal instanceof AbortSignal)
+      return inlineDetail(jobId)
+    },
+  })
+  assert.equal(jobs.length, 2)
+  assert.ok(jobs.every(job => job.sourceDetailComplete === true && job.sourceDescription.includes('<p>')))
+  assert.ok(jobs.every(job => job.country === 'India'))
+  assert.equal(extractionDetailHealth(jobs).missingDescriptions, 0)
+  assert.equal(extractionDetailHealth(jobs).complete, false, 'Inline cards do not establish complete native pagination')
+  assert.equal(readInventoryEvidence(jobs), null)
+  assert.equal(jobs[0].jobId, 'a69f8bd0c30c48')
+  assert.equal(jobs[0].sourceUrl, 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a69f8bd0c30c48')
+})
+
+test('AgroStar native identity and India-location conflicts cannot supply inline role descriptions', async () => {
+  const { createAgroStarScraper } = await loadModule()
+  const { hasSourceDescription } = await import('../../src/utils/jobSourceContent.js')
+  for (const change of [
+    { id: 'other-job' }, { title: 'Another role' }, { country: 'US' },
+    { officelocation_show_arr: 'Chicago, United States' }, { jd: null },
+  ]) {
+    const jobs = await createAgroStarScraper({ maxJobs: 1 }).run({
+      fetchText: async () => currentOfficialCareersHtml,
+      fetchJobDetail: async ({ jobId }) => inlineDetail(jobId, change),
+    })
+    assert.equal(hasSourceDescription(jobs[0]), false, JSON.stringify(change))
+    assert.equal(jobs[0].sourceDetailComplete, false)
+  }
+})
+
+test('AgroStar keeps inline roles private with zero detail budget and propagates caller cancellation', async () => {
+  const { createAgroStarScraper } = await loadModule()
+  let calls = 0
+  const jobs = await createAgroStarScraper().run({ fetchText: async () => currentOfficialCareersHtml,
+    detailEnrichmentBudgetMs: 0, fetchJobDetail: async () => { calls++; return inlineDetail('a69f8bd0c30c48') },
+  })
+  assert.equal(calls, 0)
+  assert.ok(jobs.every(job => job.sourceDetailComplete === false && job.sourceDetailFailureKind === 'budget-exhausted'))
+  const controller = new AbortController(), reason = new Error('operator cancelled')
+  await assert.rejects(createAgroStarScraper().run({ fetchText: async () => currentOfficialCareersHtml,
+    signal: controller.signal, fetchJobDetail: async () => { controller.abort(reason); throw reason },
+  }), error => error === reason)
+})
+
+test('recovered AgroStar inline descriptions persist as public jobs without claiming a complete listing', { timeout: 60000 }, async t => {
+  const [{ default: mongoose }, { MongoMemoryServer }, { fileURLToPath }, { saveToDB }, { applyPublicJobVisibility }] = await Promise.all([
+    import('mongoose'), import('mongodb-memory-server'), import('node:url'), import('../utils/saveToDB.js'),
+    import('../../src/utils/publicJobVisibility.js'),
+  ])
+  assert.equal(mongoose.connection.readyState, 0, 'Never reuse an application database')
+  const mongo = await MongoMemoryServer.create({ instance: { ip: '127.0.0.1' },
+    binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../../.cache/mongodb-binaries/', import.meta.url)) } })
+  t.after(async () => { await mongoose.disconnect(); await mongo.stop() })
+  assert.match(mongo.getUri(), /^mongodb:\/\/127\.0\.0\.1:\d+\//)
+  await mongoose.connect(mongo.getUri(), { autoIndex: false, autoCreate: false })
+  const now = new Date('2026-10-29T14:00:00.000Z')
+  const { createAgroStarScraper } = await loadModule()
+  const jobs = await createAgroStarScraper({ now: () => now.toISOString() }).run({
+    fetchText: async () => currentOfficialCareersHtml, fetchJobDetail: async ({ jobId }) => inlineDetail(jobId),
+  })
+  await saveToDB(jobs, 'agrostar', { now, enrichPublicExperience: false, enqueueAlerts: false,
+    descriptionRewriteMode: 'off', replaceExisting: false, refreshDatasetSummary: false })
+  const visible = await mongoose.connection.db.collection('jobs')
+    .find(applyPublicJobVisibility({ source: 'agrostar', status: 'active' }, {}, now)).toArray()
+  assert.equal(visible.length, 2)
+  assert.ok(visible.every(job => job.sourceDescription && job.sourceDescription.includes('<p>')))
 })

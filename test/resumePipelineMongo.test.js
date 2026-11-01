@@ -26,7 +26,7 @@ test('prepared and tailored artifacts publish only for the current owner/source/
   const job = new mongoose.Types.ObjectId();
   const owner = { _id: id };
   await User.collection.insertOne({ _id: id, email: 'asha@example.test', savedJobs: [job] });
-  await Job.collection.insertOne({ _id: job, title: 'React Engineer', company: 'Example', location: 'Pune, India', isPublicIndia: true, status: 'active', description: 'Build React applications.', fingerprint: 'pipeline-job' });
+  await Job.collection.insertOne({ _id: job, title: 'React Engineer', company: 'Example', location: 'Pune, India', isPublicIndia: true, jobType: 'Full-time Experienced', status: 'active', description: 'Build React applications.', fingerprint: 'pipeline-job' });
   const uploaded = response();
   await uploadResume({ user: owner, headers: { 'x-resume-filename': 'resume.tex' }, body: Buffer.from(latex) }, uploaded);
   assert.equal(uploaded.statusCode, 200);

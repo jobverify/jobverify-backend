@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { inspectResumePdf } from '../outreach/latexCompiler.js';
+import { inspectResumePdf } from '../resume-tailoring/latexCompiler.js';
 
 function fixture({ font = 11, x = 60, y = 740, pageWidth = 612, prefix = '' } = {}) {
   const content = `${prefix} BT /F1 ${font} Tf ${x} ${y} Td (Synthetic readable resume text) Tj ET`;

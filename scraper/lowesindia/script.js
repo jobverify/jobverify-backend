@@ -11,6 +11,8 @@ const scraper = createPhenomScraper({
   baseUrl: 'https://talent.lowes.com',
   searchPath: '/in/en/search-results',
   scraperDir: currentDir,
+  useJobSequenceForDetailUrl: true,
+  numberedOfficeLocations: { idPrefix: 'LWS', namePrefix: 'LWS_IND_', buildingLabels: ['D3 Blue Tech'] },
 })
 
 export const {

@@ -1,3 +1,11 @@
+import * as capturedFs from 'node:fs'
+import {gunzipSync as capturedGunzip} from 'node:zlib'
+import * as nativeSource from './script.js'
+import {readInventoryEvidence as capturedInventory} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readSourceObservationEvidence as capturedObservations} from '../../scraper-support/utils/sourceObservationEvidence.js'
+const nativePacket=JSON.parse(capturedGunzip(capturedFs.readFileSync(new URL('./test-data/2026-10-31-native-packets.json.gz',import.meta.url))))
+const nativePage=url=>{const row=nativePacket.requests.find(row=>row.url===url);assert.ok(row,'Unrecorded native URL '+url);return row.body}
+const withCapturedNative=async(callback,alter=row=>row)=>{const original=globalThis.fetch,calls=[];globalThis.fetch=async(input,options={})=>{const url=String(input),method=options.method||'GET',body=String(options.body||''),recorded=nativePacket.requests.find(row=>row.url===url&&(row.method||'GET')===method&&(method==='GET'||row.requestBody===body));assert.ok(recorded,'Unrecorded native request '+url+' '+body);const row=alter({...recorded});calls.push({url,method,body});const response=new Response(Buffer.from(row.body,row.bodyEncoding),{status:row.status,headers:{'content-type':row.contentType}});Object.defineProperty(response,'url',{value:row.finalUrl});return response};try{return await callback(calls)}finally{globalThis.fetch=original}}
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -30,81 +38,6 @@ const jobsCategoryHtml = `
   </div>
 `
 
-test('extractHighlightedRoles keeps the public careers page as checked evidence for highlighted jobs', () => {
-  assert.deepEqual(extractHighlightedRoles(highlightedCareersHtml), [
-    {
-      title: 'Social Media Internship & Job',
-      company: 'Bluestock Fintech',
-      department: null,
-      location: null,
-      city: null,
-      jobId: 'social-media-internship-job',
-      requisitionId: null,
-      sourceUrl: CAREER_PAGE_URL,
-      applyUrl: 'https://tally.so/r/mYka9W',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: 'Highlighted opening from the official Bluestock careers page.',
-      publicExperienceChecked: true,
-      companyCareerPage: CAREER_PAGE_URL,
-      companyDomain: COMPANY_DOMAIN,
-      atsPlatform: ATS_PLATFORM,
-    },
-  ])
-})
+test("Bluestock public promoted labels preserve unknown workplace, IDs and full description",async()=>{const jobs=nativeSource.extractHighlightedRoles(nativePage(nativeSource.CAREER_PAGE_URL));assert.deepEqual(jobs.map(job=>job.title),['Social Media Internship & Job','Flutter Developer Intern / Job']);assert.ok(jobs.every(job=>job.jobId==null&&job.requisitionId==null&&job.country==null&&job.location==null&&job.jobDescription==null));assert.equal(jobs[0].applyUrl,'https://tally.so/r/mYka9W')})
 
-test('extractJobCategories marks the generic public category cards as checked-missing experience surfaces', () => {
-  assert.deepEqual(extractJobCategories(jobsCategoryHtml), [
-    {
-      title: 'Software Engineer',
-      company: 'Bluestock Fintech',
-      department: null,
-      location: null,
-      city: null,
-      jobId: 'software-engineer',
-      requisitionId: null,
-      sourceUrl: JOBS_PAGE_URL,
-      applyUrl: 'https://bluestock.in/careers/jobs/apply/',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: '04 Job Openings',
-      publicExperienceChecked: true,
-      companyCareerPage: CAREER_PAGE_URL,
-      companyDomain: COMPANY_DOMAIN,
-      atsPlatform: ATS_PLATFORM,
-    },
-    {
-      title: 'Business Analyst',
-      company: 'Bluestock Fintech',
-      department: null,
-      location: null,
-      city: null,
-      jobId: 'business-analyst',
-      requisitionId: null,
-      sourceUrl: JOBS_PAGE_URL,
-      applyUrl: 'https://bluestock.in/careers/jobs/apply/',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: '02 Job Openings',
-      publicExperienceChecked: true,
-      companyCareerPage: CAREER_PAGE_URL,
-      companyDomain: COMPANY_DOMAIN,
-      atsPlatform: ATS_PLATFORM,
-    },
-  ])
-})
+test("Bluestock generic categories retain their counts without becoming requisitions",async()=>{const jobs=nativeSource.extractJobCategories(nativePage(nativeSource.JOBS_PAGE_URL)),audit=jobs.nativeCollectionEvidence;assert.equal(jobs.length,0);assert.equal(audit.recordKind,'categories');assert.equal(audit.observedRecordCount,3);assert.equal(audit.observedVacancyCount,0);assert.deepEqual(audit.observedCategories.map(row=>row.publishedOpeningCount),[4,2,3]);assert.equal(capturedInventory(jobs).reportedTotal,null)})

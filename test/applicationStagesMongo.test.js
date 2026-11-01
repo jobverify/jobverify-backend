@@ -144,7 +144,8 @@ test('application stages and durable events preserve submission, concurrency and
     await User.collection.insertOne({ _id: owner, email: 'filters@example.test' });
     let interview = await applicationService.recordApplicationOpen(owner, job());
     interview = await applicationService.changeApplicationStage(owner, interview._id, { stage: 'interview', expectedVersion: interview.version, eventKey: 'filter-interview' });
-    await applicationService.recordApplicationOpen(owner, job());
+    const preparing = await applicationService.recordApplicationOpen(owner, job());
+    await TailoredResume.collection.insertMany([interview, preparing].map(row => ({ _id: `${owner}:${row.job}`, user: owner, job: row.job, status: 'completed' })));
     const response = () => ({ statusCode: 200, status(code) { this.statusCode = code; return this; }, json(body) { this.body = body; return this; } });
     const res = response();
     await getApplications({ user: { _id: owner }, query: { stage: 'interview', status: 'opened' } }, res);
@@ -161,7 +162,7 @@ test('application stages and durable events preserve submission, concurrency and
     const owner = oid(); await User.collection.insertOne({ _id: owner, email: 'deleting@example.test' });
     const listing = job();
     const row = await applicationService.recordApplicationOpen(owner, listing);
-    await User.updateOne({ _id: owner }, { $set: { outreachDeletingAt: new Date() } });
+    await User.updateOne({ _id: owner }, { $set: { accountDeletingAt: new Date() } });
     await assert.rejects(applicationService.recordApplicationOpen(owner, listing), error => error.statusCode === 404);
     await assert.rejects(applicationService.recordApplicationEvidence(owner, row._id, { key: 'late-email', source: 'email', observedAt: new Date() }), error => error.statusCode === 404);
     await assert.rejects(applicationService.changeApplicationStage(owner, row._id, { stage: 'offer', expectedVersion: row.version, eventKey: 'late-change' }), error => error.statusCode === 404);
@@ -182,7 +183,7 @@ test('application stages and durable events preserve submission, concurrency and
     });
     const rejected = assert.rejects(mutation, error => error.statusCode === 404);
     await started;
-    await User.updateOne({ _id: owner }, { $set: { outreachDeletingAt: new Date() } });
+    await User.updateOne({ _id: owner }, { $set: { accountDeletingAt: new Date() } });
     await Application.deleteMany({ user: owner }); await ApplicationEvent.deleteMany({ user: owner });
     release();
     try { await rejected; } finally { await session.endSession(); }

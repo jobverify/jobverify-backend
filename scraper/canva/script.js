@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { buildHttpError } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -199,16 +200,20 @@ const defaultFetchPage = async (url) => {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    redirect: 'follow',
+    redirect: 'manual',
     signal: AbortSignal.timeout(15000),
   })
 
-  return {
+  const page = {
     status: response.status,
     url: response.url || url,
     headers: Object.fromEntries(response.headers.entries()),
-    html: await response.text(),
   }
+  if (response.status !== 200) {
+    try { Promise.resolve(response.body?.cancel()).catch(() => {}) } catch {}
+    return { ...page, html: '' }
+  }
+  return { ...page, html: await response.text() }
 }
 
 export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
@@ -265,18 +270,19 @@ export const createCanvaScraper = ({
       const pageUrl = buildJobsPageUrl({ page: currentPage })
       const page = await effectiveFetchPage(pageUrl)
 
-      if (isVerifiedCloudflareChallengedPage(page, pageUrl)) {
-        if (currentPage !== 1) {
-          throw new Error('Canva pagination route no longer matches the verified official Canva jobs surface')
+      if (page?.status !== 200) {
+        const qualifiedStatus = Number.isInteger(page?.status)
+        const error = qualifiedStatus
+          ? buildHttpError({ status: page.status, headers: { get: name => getHeader(page, name) } }, pageUrl)
+          : new Error('Canva response has no qualified HTTP status')
+        if (!qualifiedStatus || [401, 403, 429].includes(page.status)) error.abortRetries = true
+        error.inventoryEvidence = {
+          status: 'coverage-gap', surface: CAREERS_URL, firstParty: false,
+          listingComplete: false, pagesFetched: currentPage - 1,
+          reportedTotal: null, indiaFacetCount: null, verifiedAt: null,
+          reason: qualifiedStatus ? `native-http-${page.status}-inventory-unavailable` : 'native-http-status-unqualified',
         }
-
-        const secondPageUrl = buildJobsPageUrl({ page: 2 })
-        const secondPage = await effectiveFetchPage(secondPageUrl)
-        if (isVerifiedCloudflareChallengedPage(secondPage, secondPageUrl)) {
-          return []
-        }
-
-        throw new Error('Canva pagination route no longer matches the verified official Canva jobs surface')
+        throw error
       }
 
       const html = getPageHtml(page)

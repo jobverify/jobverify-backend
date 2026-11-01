@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { CLOUDMOYO_CATALOG } from './catalog.js'
+import { runCloudMoyo } from './nativeCareers.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -72,7 +73,8 @@ export const hasVerifiedEmptyBoardSignal = (html = '') => {
 export const hasVerifiedZeroListingsSignal = (payload = {}) =>
   Array.isArray(payload?.content)
   && payload.content.length === 0
-  && Number(payload?.totalFound ?? 0) === 0
+  && Number.isSafeInteger(payload?.totalFound)
+  && payload.totalFound === 0
 
 export const pageExposesPublicJobListings = (html = '') => {
   const normalized = normalizeWhitespace(html)
@@ -80,20 +82,8 @@ export const pageExposesPublicJobListings = (html = '') => {
   return /Full Stack Developer|Engineer|Analyst|Manager|Consultant/i.test(normalized)
 }
 
-export const createCloudMoyoScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
-    const contactHtml = await fetchText(CONTACT_URL)
-    if (!hasOfficialContactSignal(contactHtml)) {
-      throw new Error('The official CloudMoyo contact page no longer matches the verified careers handoff surface')
-    }
-
-    const listingsPayload = await fetchJson(LISTINGS_API_URL)
-    if (!hasVerifiedZeroListingsSignal(listingsPayload)) {
-      throw new Error('The verified CloudMoyo public SmartRecruiters zero-listings API state changed materially')
-    }
-
-    return []
-  },
+export const createCloudMoyoScraper = (defaults = {}) => ({
+  run: (options = {}) => runCloudMoyo({ ...defaults, ...options }),
 })
 
 export const run = async (options = {}) => createCloudMoyoScraper().run(options)

@@ -1,4 +1,6 @@
 import {readNativeDocument} from './nativeHtml.js'
+import {findExplicitNativeClosure,readNativeStatusTextBlocks} from '../../scraper-support/utils/sourceAvailability.js'
+import {readVisibleNativeDocument} from '../../scraper-support/utils/visibleNativeHtml.js'
 export const HOME='https://www.credo.ai/',CAREERS=HOME+'company/jobs',BOARD='https://jobs.ashbyhq.com/credo.ai',API='https://api.ashbyhq.com/posting-api/job-board/credo.ai'
 export const check=(ok,message)=>{if(!ok)throw Error('Credo AI native contract: '+message)}
 const one=(a,label)=>{check(a.length===1,'Expected one '+label);return a[0]}
@@ -47,9 +49,10 @@ export function validateInventory(payload,board,now){
 function nativeDate(value,now){check(typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}(?:Z|\+00:00)$/.test(value),'Unsupported native publication timestamp');const d=new Date(value);check(Number.isFinite(d.getTime())&&d.toISOString().slice(0,23)===value.slice(0,23)&&d.getTime()<=Date.parse(now),'Invalid/future native publication')}
 function plain(html){const d=readNativeDocument(html);return d.text(one(d.nodes(n=>n.tag==='root'),'content root'))}
 function fullDescription(html){
- check(typeof html==='string','Malformed native full content');const d=readNativeDocument(html),root=one(d.nodes(n=>n.tag==='root'),'description root'),sections=new Map();let heading=null
+ check(typeof html==='string','Malformed native full content');const d=readVisibleNativeDocument(html,{strict:true,statusLayout:true}),root=one(d.nodes(n=>n.tag==='root'),'description root'),sections=new Map();let heading=null
+ check(!findExplicitNativeClosure(readNativeStatusTextBlocks(root)),'Listed native role has an explicit closure notice')
  for(const node of root.children){if(typeof node==='string'||node.inert)continue;if(/^h[1-6]$/.test(node.tag)){heading=d.text(node);check(!sections.has(heading),'Duplicate role section');sections.set(heading,'')}else if(heading)sections.set(heading,sections.get(heading)+' '+d.text(node))}
- for(const title of['About the Role','Key Responsibilities','Minimum Qualifications']){const text=sections.get(title)||'';if(/(?:this|the) (?:job|role|position) (?:(?:is|has been) (?:closed|filled|no longer available))|no longer accepting applications/i.test(text))return null;const clean=text.replace(/(?:please )?(?:click (?:the )?apply(?: now)?|apply now|submit your application)[^.!?]*(?:[.!?]|$)/gi,'');if((clean.match(/[A-Za-z]/g)||[]).length<40)return null}
+ for(const title of['About the Role','Key Responsibilities','Minimum Qualifications']){const text=sections.get(title)||'';const clean=text.replace(/(?:please )?(?:click (?:the )?apply(?: now)?|apply now|submit your application)[^.!?]*(?:[.!?]|$)/gi,'');if((clean.match(/[A-Za-z]/g)||[]).length<40)return null}
  return plain(html)
 }
 export function validateDetail(row,detail,application){

@@ -27,7 +27,8 @@ export function createHTMLTransport(config, { fetchImpl = globalThis.fetch, sign
       timer = setTimeout(() => controller.abort(Object.assign(Error('Native HTML GET stream timeout'), { name: 'TimeoutError', code: 'ETIMEDOUT' })), timeoutMs);
     });
     const task = (async () => {
-      const response = await fetchImpl(url, { method: 'GET', redirect: 'manual', credentials: 'omit', headers: { Accept: 'text/html' }, signal: controller.signal });
+      const accept = config.expectedContentType ? config.expectedContentType(url) : 'text/html';
+      const response = await fetchImpl(url, { method: 'GET', redirect: 'manual', credentials: 'omit', headers: { Accept: accept }, signal: controller.signal });
       controller.signal.throwIfAborted();
       requireNative(response.url === url && Number.isInteger(response.status) && typeof response.headers?.entries === 'function', 'Invalid manual response identity');
       const headers = Object.fromEntries(response.headers.entries()), length = headers['content-length'];

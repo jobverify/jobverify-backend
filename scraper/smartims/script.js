@@ -147,6 +147,7 @@ export const extractJobsFromCareersHtml = (html = '') => extractSmartImsJobCards
       openingsCount: openingsCount || null,
       jobDescription,
       detailUrl: CAREERS_URL,
+      sourceUrl: CAREERS_URL,
     }
   })
   .filter(Boolean)

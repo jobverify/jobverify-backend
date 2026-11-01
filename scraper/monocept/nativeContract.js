@@ -109,13 +109,15 @@ export function nativeShellContract(html) {
   check(doc.nodes(n => n.tag === 'base').length === 0, 'unreviewed native base')
   const scripts = execution.nodes(n => n.tag === 'script' && n.attrs.src)
   const native = scripts.filter(n => new URL(n.attrs.src, NATIVE_ORIGIN).origin === NATIVE_ORIGIN)
-  check(native.length === NATIVE_CLIENTS.length && native.every(n => executable(n) && NATIVE_CLIENTS.includes(new URL(n.attrs.src, NATIVE_ORIGIN).href)) && new Set(native.map(n => n.attrs.src)).size === NATIVE_CLIENTS.length, 'native public client version/execution drift')
+  const versions = reviewedSurfaces.nativeClientVersions || [{scriptURLs:NATIVE_CLIENTS,clientURLs:Object.keys(reviewedSurfaces.clientSHA256)}]
+  const version = versions.find(version => native.length === version.scriptURLs.length && native.every(n => executable(n) && version.scriptURLs.includes(new URL(n.attrs.src, NATIVE_ORIGIN).href)) && new Set(native.map(n => new URL(n.attrs.src, NATIVE_ORIGIN).href)).size === version.scriptURLs.length)
+  check(version, 'native public client version/execution drift')
   check(scripts.filter(n => new URL(n.attrs.src, NATIVE_ORIGIN).origin !== NATIVE_ORIGIN).every(n => executable(n) && NATIVE_EXTERNALS.has(pathOnly(n.attrs.src, NATIVE_ORIGIN))), 'unreviewed external native client')
   check(doc.nodes(n => n.tag === 'div' && n.attrs.id === 'root').length === 1, 'missing active public application root')
-  return {doc,execution,hiringLinks:hiringLinks(doc,NATIVE_ORIGIN),frames:frameContexts(doc,NATIVE_ORIGIN)}
+  return {doc,execution,clientURLs:version.scriptURLs,publicClientURLs:version.clientURLs,hiringLinks:hiringLinks(doc,NATIVE_ORIGIN),frames:frameContexts(doc,NATIVE_ORIGIN)}
 }
 export function nativePageContract(html, expected) {
-  const {doc,hiringLinks:roleLinks,frames}=nativeShellContract(html)
+  const {doc,hiringLinks:roleLinks,frames,clientURLs}=nativeShellContract(html)
   const postings = schema(doc, 'JobPosting')
   check(postings.length === 1, 'missing/ambiguous public JobPosting')
   const posting = postings[0]
@@ -131,7 +133,7 @@ export function nativePageContract(html, expected) {
     return nativeCountryName(a.addressCountry)
   })
   const visibleText=doc.nodes(n=>n.tag==='body').map(n=>doc.text(n)).join(' ')
-  return { posting, countries: [...new Set(countries)], clientURLs: NATIVE_CLIENTS,roleLinks,frames,visibleClosure:explicitClosure(visibleText) }
+  return { posting, countries: [...new Set(countries)], clientURLs,roleLinks,frames,visibleClosure:explicitClosure(visibleText) }
 }
 export function organizationContract(value) {
   check(value && typeof value === 'object' && !Array.isArray(value) && value.OrgID === ORG_ID, 'public organization identity changed')

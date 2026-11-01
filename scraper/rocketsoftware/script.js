@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { ROCKET_SOFTWARE_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -27,13 +28,14 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 20000,
+  signal,
 })
 
 const hasKnownCloudflareGateSignal = (html = '') => {
@@ -62,18 +64,23 @@ export const createRocketSoftwareScraper = () => ({
   async run({
     fetchText = defaultFetchText,
     runWorkday = runWorkdayScraper,
+    signal,
   } = {}) {
+    signal?.throwIfAborted()
     let careersHtml = null
 
     try {
-      careersHtml = await fetchText(CAREERS_URL)
+      careersHtml = await (signal === undefined ? fetchText(CAREERS_URL) : fetchText(CAREERS_URL, { signal }))
     } catch (error) {
+      signal?.throwIfAborted()
       if (!isKnownCloudflareGateError(error)) {
         throw error
       }
     }
+    signal?.throwIfAborted()
 
-    if (careersHtml && !hasOfficialCareersSignal(careersHtml)) {
+    const officialHandoffVerified = Boolean(careersHtml && hasOfficialCareersSignal(careersHtml))
+    if (careersHtml && !officialHandoffVerified) {
       if (!hasKnownCloudflareGateSignal(careersHtml)) {
         throw new Error('Rocket Software verified careers page changed materially')
       }
@@ -85,15 +92,33 @@ export const createRocketSoftwareScraper = () => ({
       locationCountry: 'India',
       source: SOURCE,
       scraperDir: currentDir,
+      ...(signal === undefined ? {} : { signal }),
     })
+    signal?.throwIfAborted()
 
-    return jobs.map((job) => ({
+    const mapped = jobs.map((job) => ({
       ...job,
       company: job.company || COMPANY,
       source: job.source || SOURCE,
       sourceUrl: job.sourceUrl || job.link || null,
       applyUrl: job.applyUrl || job.link || null,
     }))
+    const nativeEvidence = readInventoryEvidence(jobs)
+    const authoritativeEmpty = Symbol.for('jobverify.workday.authoritative-empty')
+    const scopeUnverified = !officialHandoffVerified
+      && (nativeEvidence?.listingComplete === true || jobs[authoritativeEmpty] === true)
+    // Native inventory/country receipts are non-enumerable array symbols.
+    // Keep them when decorating the independently returned native jobs.
+    for (const symbol of Object.getOwnPropertySymbols(jobs)) {
+      if (scopeUnverified && symbol === authoritativeEmpty) continue
+      Object.defineProperty(mapped, symbol, Object.getOwnPropertyDescriptor(jobs, symbol))
+    }
+    if (scopeUnverified) attachInventoryEvidence(mapped, {
+      ...nativeEvidence, surface: nativeEvidence?.surface || WORKDAY_BOARD_URL,
+      status: 'coverage-gap', listingComplete: false, indiaFacetCount: null,
+      reason: 'current-rocket-official-handoff-unverified;native-query-only',
+    })
+    return mapped
   },
 })
 

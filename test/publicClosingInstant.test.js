@@ -34,6 +34,9 @@ after(async () => {
 })
 
 const input = (id, closing = {}) => ({ jobId: id, title: 'Software Engineer', company: 'Local native expiry fixture',
+  // These lifecycle scenarios start with a known public category; classification
+  // of an unresolved source role is verified separately in modelPublicJobTypes.
+  jobType: 'Full-time Experienced',
   source: 'local-public-expiry', country: 'India', city: 'Bengaluru', location: 'Bengaluru, India',
   sourceUrl: `https://example.invalid/public-expiry/${id}`, applyUrl: `https://example.invalid/public-expiry/${id}`,
   sourceDescription: 'Build reliable services and maintain production software systems.',

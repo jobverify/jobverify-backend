@@ -5,6 +5,8 @@ import Job from "../src/models/Job.js";
 import User from "../src/models/User.js";
 import { buildAggregateHiringSignalFilter } from "../src/utils/jobListingEvidence.js";
 import { buildMissingSourceDescriptionFilter } from "../src/utils/jobSourceContent.js";
+import { PUBLIC_JOB_TYPE_EXPRESSION } from "../src/utils/publicJobType.js";
+import { PUBLIC_JOB_TYPES } from "../src/utils/publicJobTypeLabel.js";
 
 const createResponseDouble = () => {
   const result = {
@@ -26,12 +28,15 @@ const createResponseDouble = () => {
 const PUBLIC_SCOPE_NOW = new Date('2026-10-25T12:34:56.000Z');
 
 const assertHasPublicSavedJobScope = (scope) => {
+  const [lifecycleScope, publicCategoryScope] = scope?.$expr?.$and ?? [];
   const [postedUpperBound, closingAvailability, postedLowerBound] =
-    scope?.$expr?.$and ?? [];
+    lifecycleScope?.$and ?? [];
 
   assert.equal(scope?.isPublicIndia, true);
   assert.equal(scope?.status, "active");
-  assert.equal(scope.$expr.$and.length, 3);
+  assert.equal(scope.$expr.$and.length, 2);
+  assert.equal(lifecycleScope.$and.length, 3);
+  assert.deepEqual(publicCategoryScope, { $in: [PUBLIC_JOB_TYPE_EXPRESSION, PUBLIC_JOB_TYPES] });
   assert.deepEqual(postedUpperBound, { $lte: [{ $ifNull: ['$postedAt', PUBLIC_SCOPE_NOW] }, PUBLIC_SCOPE_NOW] });
   assert.deepEqual(closingAvailability, { $or: [
     { $eq: [{ $ifNull: ['$closingDate', null] }, null] },

@@ -275,6 +275,7 @@ export const createManatecElectronicsScraper = ({
         )
       }, { signal, timeoutMs })
     } catch (error) {
+      if (signal?.aborted) throw signal.reason
       if (error?.code === 'MANATEC_INVENTORY_UNAVAILABLE') {
         return buildDiscoveryOnlyEvidence(now, error.surface, error)
       }

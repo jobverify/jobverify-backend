@@ -1,3 +1,4 @@
+import { createDeclaredJobFeedScraper, DECLARED_JOB_FEED_PROFILES } from '../../scraper-support/native-sources/declaredJobFeeds/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import provider from './catalog.js'
@@ -5,7 +6,7 @@ import { createPublicAtsCatalogScraper } from '../../scraper-support/providers/i
 export const SOURCE = provider.source
 export const COMPANY = provider.companyName
 export const CAREERS_URL = provider.companyCareerPage
-export const run = options => createPublicAtsCatalogScraper(provider).run(options)
+export const run = options => createDeclaredJobFeedScraper(DECLARED_JOB_FEED_PROFILES.clearco).run(options)
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()

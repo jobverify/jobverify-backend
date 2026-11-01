@@ -221,3 +221,22 @@ test('HexaView Technologies scraper follows the verified jobs pagination and ext
     ],
   )
 })
+
+test('Hexaview current button styling preserves distinct native role identities', async () => {
+  const scraper = await loadScriptModule()
+  const jobs = await scraper.run({ fetchText: async url => url === scraper.CAREERS_URL ? LANDING_FIXTURE
+    : url.includes('page=2') ? LISTING_PAGE_TWO_FIXTURE.replace('job-apply-button', 'button-primary')
+      : LISTING_PAGE_ONE_FIXTURE.replace('job-apply-button', 'button-primary') })
+  assert.equal(jobs.length, 2)
+  assert.equal(new Set(jobs.map(job => job.jobId)).size, 2)
+  assert.ok(jobs.every(job => !job.sourceUrl.includes('undefined') && job.sourceUrl.includes('/job-openings/')))
+})
+
+test('Hexaview missing or foreign role links fail instead of inventing an undefined URL', async () => {
+  const scraper = await loadScriptModule()
+  for (const replacement of ['', 'href="https://unrelated.example/job-openings/automation-qa-engineer-noida"']) {
+    const listing = LISTING_PAGE_ONE_FIXTURE.replace('href="/job-openings/automation-qa-engineer-noida"', replacement)
+      + '<a href="/job-openings/another-native-role">Another opening</a>'
+    await assert.rejects(scraper.run({ fetchText: async url => url === scraper.CAREERS_URL ? LANDING_FIXTURE : listing }), /verified native Apply Now link/)
+  }
+})

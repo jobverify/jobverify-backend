@@ -3,11 +3,16 @@ import { expandApiPortalProviderTemplate } from '../providers/apiPortalTemplates
 import { extractAshbyJobs } from './ashbyApi.js'
 import { fetchJsonWithRetry } from './fetch.js'
 import { filterIndiaJobs } from './indiaLocationFilter.js'
-import { attachInventoryEvidence, readInventoryEvidence, isFreshCompleteInventoryEvidence } from './inventoryEvidence.js'
+import { attachInventoryEvidence, readInventoryEvidence, isFreshCompleteInventoryEvidence, mapJobsWithInventoryEvidence } from './inventoryEvidence.js'
 import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
 import { greenhouseLocationLabels, greenhouseLocationSegments, greenhouseCountryLabels, hasUnhandledGreenhouseGeography, selectGreenhouseLocation, NATIVE_INDIA_LOCATION } from './greenhouseLocations.js'
 import { selectLeverLocation, selectLeverCountry } from './leverLocations.js'
+import { greenhouseUsWorksiteScope } from './greenhouseWorksiteCountry.js'
+import { identifyPublicAtsBoard } from './publicAtsIdentity.js'
+import { reconcileGreenhouseOfficeCountries, greenhouseOfficeCountryForRole, withGreenhouseOfficeCountries, greenhouseOfficeProofReason } from './greenhouseOfficeCountry.js'
+import { isGreenhouseProspectPost, greenhouseProspectPostIds, withGreenhousePostingKind, excludeGreenhouseProspects, greenhouseProspectReason } from './greenhouseProspects.js'
+import { decodeNativeEntities } from './activeNativeHtml.js'
 
 // Generic remote work is not evidence that an employer accepts applicants in India.
 const INDIA_LOCATION = NATIVE_INDIA_LOCATION
@@ -35,13 +40,33 @@ const GLOBAL_LOCATION = /\b(?:worldwide|global|anywhere|any\s+location|all\s+loc
 const unresolvedLocationSegment = (label, country) => {
   const parts = String(label || '').split(/\s*(?:[;|/+&\n]|\s+(?:or|and)\s+)\s*/i).filter(Boolean)
   return !parts.length ? !country : parts.some(part => GLOBAL_LOCATION.test(part)
-    || (!INDIA_LOCATION.test(part) && !foreignCountryPattern.test(part) && !(parts.length === 1 && country)))
+    // A native postal country scopes this location object, including a label
+    // with several cities. Separate secondary locations retain their own scope.
+    || (!INDIA_LOCATION.test(part) && !foreignCountryPattern.test(part) && !country))
 }
-export const validatePublicPostingScope = (records, kind, provider) => {
+export const validatePublicPostingScope = (records, kind, provider, { countryProofs = null, officeCountryScope,
+  officeCountryProofs = null } = {}) => {
   const reasons = new Set()
+  const officeScope = kind === 'greenhouse' ? officeCountryScope || reconcileGreenhouseOfficeCountries(records, provider) : null
+  if (officeCountryProofs && officeScope) officeCountryProofs.push(...officeScope.proofs)
   const fail = reason => { throw new Error(`[${provider.source}] Invalid ${kind} inventory: ${reason}`) }
   for (const record of records) {
+    if (kind === 'greenhouse' && isGreenhouseProspectPost(record)) continue
     if (record?.isListed === false || TALENT_POOL.test(record?.title || record?.text || '')) continue
+    if (kind === 'greenhouse') {
+      let postingUrl
+      try { postingUrl = new URL(record?.absolute_url) } catch { fail('invalid native application URL') }
+      if (postingUrl.username || postingUrl.password) fail('invalid native posting authority')
+      const postingBoard = identifyPublicAtsBoard(postingUrl.href)
+      if (postingBoard && (postingBoard.atsPlatform !== kind || postingBoard.boardToken !== provider.boardToken)) fail('foreign native posting account')
+      if (postingBoard?.atsPlatform === kind) {
+        if (postingUrl.searchParams.getAll('for').some(account => account !== provider.boardToken)) fail('foreign native posting account')
+        const pathId = postingUrl.pathname.match(/\/jobs\/(\d+)\/?$/)?.[1]
+        const suppliedIds = [...(pathId == null ? [] : [pathId]), ...postingUrl.searchParams.getAll('token')]
+        if (suppliedIds.some(id => id !== String(record.id))) fail('native posting identity mismatch')
+      }
+      if (postingUrl.searchParams.getAll('gh_jid').some(id => id !== String(record.id))) fail('native posting query identity mismatch')
+    }
     if (kind === 'lever') {
       if (typeof record?.id !== 'string' || !/^[a-z0-9][a-z0-9._-]{0,255}$/i.test(record.id)) fail('missing native role identity')
       for (const [field, suffix] of [['hostedUrl', ''], ['applyUrl', '/apply']]) {
@@ -59,10 +84,20 @@ export const validatePublicPostingScope = (records, kind, provider) => {
     const countryValue = kind === 'lever' ? record?.country : greenhouseCountries.length === 1 ? greenhouseCountries[0] : null
     if (countryValue != null && typeof countryValue !== 'string') fail('invalid native country')
     const country = nativeCountry(countryValue)
-    const mappedLocation = kind === 'greenhouse' ? selectGreenhouseLocation(record) : selectLeverLocation(record)
+    const worksite = kind === 'greenhouse' && !country ? greenhouseUsWorksiteScope(record, provider) : null
+    if (worksite && countryProofs) countryProofs.push(worksite.proof)
+    const mappingRecord = kind === 'greenhouse' ? withGreenhouseOfficeCountries(record, provider, officeScope) : record
+    const officeLabels = new Map()
+    for (const office of Array.isArray(record?.offices) ? record.offices : []) {
+      const entry = greenhouseOfficeCountryForRole(record, office, provider, officeScope)
+      if (entry) officeLabels.set(office.name.trim(), entry.country)
+    }
+    const mappedLocation = kind === 'greenhouse' ? selectGreenhouseLocation(mappingRecord) : selectLeverLocation(record)
     const primaryIndia = (typeof mappedLocation === 'string' && INDIA_LOCATION.test(mappedLocation))
       || (kind === 'lever' && selectLeverCountry(record) === 'India')
-    const candidates = kind === 'greenhouse' ? greenhouseLocationLabels(record).map(label => ({ label, country })) : [{ label: primary, country }]
+    const candidates = kind === 'greenhouse' ? greenhouseLocationLabels(record).map(label => ({ label,
+      country: country || (worksite?.locations.includes(label) ? worksite.country : null) || officeLabels.get(label),
+    })) : [{ label: primary, country }]
     if (!candidates.length) candidates.push({ label: null })
     if (kind === 'lever' && record?.categories?.allLocations != null) {
       if (!Array.isArray(record.categories.allLocations)) fail('invalid native location inventory')
@@ -75,7 +110,8 @@ export const validatePublicPostingScope = (records, kind, provider) => {
           || (office.name != null && typeof office.name !== 'string')
           || (office.location != null && typeof office.location !== 'string')) fail('invalid native office')
         const officeLabel = office?.location || office?.name
-        candidates.push(...(officeLabel ? greenhouseLocationSegments(officeLabel).map(label => ({ label })) : [{ label: officeLabel }]))
+        const entry = greenhouseOfficeCountryForRole(record, office, provider, officeScope)
+        candidates.push(...(officeLabel ? greenhouseLocationSegments(officeLabel).map(label => ({ label, country: entry?.country })) : [{ label: officeLabel }]))
         // A descriptive office name need not repeat its explicit address. But
         // alternate India/global evidence in that name must remain visible.
         if (office?.location && typeof office.name === 'string'
@@ -99,7 +135,7 @@ export const validatePublicPostingScope = (records, kind, provider) => {
   }
   return [...reasons]
 }
-const inventoryError = payload => payload && !Array.isArray(payload) && (payload.success === false || payload.ok === false
+export const publicAtsInventoryError = payload => payload && !Array.isArray(payload) && (payload.success === false || payload.ok === false
   || payload.hasError === true || payload.failed === true || Boolean(payload.error)
   || (Array.isArray(payload.errors) ? payload.errors.length > 0 : Boolean(payload.errors))
   || /^(?:error|failed|failure|unavailable)$/i.test(String(payload.status || ''))
@@ -169,15 +205,27 @@ export const createPublishingGapAtsScraper = (provider) => ({
         : `https://api.${provider.leverRegion === 'eu' ? 'eu.' : ''}lever.co/v0/postings/${token}?mode=json`
     const payload = await fetchJson(url, { signal })
     signal?.throwIfAborted()
-    if (inventoryError(payload)) throw new Error(`[${provider.source}] Failed ${kind} inventory envelope`)
+    if (publicAtsInventoryError(payload)) throw new Error(`[${provider.source}] Failed ${kind} inventory envelope`)
     const records = kind === 'lever' ? payload : payload?.jobs
     if (!Array.isArray(records)) throw new Error(`[${provider.source}] Invalid ${kind} inventory`)
+    if (kind === 'greenhouse') {
+      const identities = new Set()
+      for (const record of records) {
+        if (record?.id == null) continue
+        const id = String(record.id)
+        if (identities.has(id)) throw new Error(`[${provider.source}] Invalid greenhouse inventory: duplicate native identity`)
+        identities.add(id)
+      }
+    }
     const reported = payload?.meta?.total ?? payload?.total ?? null
     if (payload?.hasMore === true || (reported != null && Number(reported) !== records.length)) {
       throw new Error(`[${provider.source}] Incomplete ${kind} inventory`)
     }
+    const prospectIds = kind === 'greenhouse' ? greenhouseProspectPostIds(records, provider) : []
+    const countryProofs = [], officeCountryProofs = []
+    const officeCountryScope = kind === 'greenhouse' ? reconcileGreenhouseOfficeCountries(records, provider) : null
     const nativeReasons = kind === 'ashby' ? validateAshbyInventory(payload, records, provider)
-      : validatePublicPostingScope(records, kind, provider)
+      : validatePublicPostingScope(records, kind, provider, { countryProofs, officeCountryScope, officeCountryProofs })
     const active = records.filter((record) => record?.isListed !== false)
     if (active.some((record) => !record?.id || !(record.title || record.text))) {
       throw new Error(`[${provider.source}] Malformed ${kind} inventory record`)
@@ -187,13 +235,39 @@ export const createPublishingGapAtsScraper = (provider) => ({
     }
     let mapped
     if (kind === 'ashby') {
-      mapped = extractAshbyJobs({ payload, companyName: provider.companyName })
+      const nativeById = new Map(records.map(record => [record.id, record]))
+      mapped = extractAshbyJobs({ payload, companyName: provider.companyName }).map(job => {
+        const native = nativeById.get(job.jobId)
+        const description = hasSourceDescription({ sourceDescription: native.descriptionHtml })
+          ? native.descriptionHtml : native.descriptionPlain || null
+        return { ...job, jobDescription: description, sourceDescription: description }
+      })
     } else {
       const config = expandApiPortalProviderTemplate({ ...provider, template: kind, templateOptions: { boardToken: provider.boardToken, region: provider.leverRegion } })
       // Greenhouse updated_at is an edit timestamp, not the original posting date.
       if (kind === 'greenhouse') config.config.mapping.postingDate = 'first_published'
       if (kind === 'greenhouse') config.config.mapping.location = { strategy: 'greenhouse-location' }
-      mapped = await runApiPortalScraper({ provider: config, fetchJson: async () => payload })
+      if (kind === 'greenhouse') excludeGreenhouseProspects(config)
+      const mappingPayload = kind === 'greenhouse' ? { ...payload,
+        jobs: records.map(record => withGreenhousePostingKind(withGreenhouseOfficeCountries(record, provider, officeCountryScope))),
+      } : payload
+      mapped = await runApiPortalScraper({ provider: config, fetchJson: async () => mappingPayload })
+      if (kind === 'greenhouse') {
+        const nativeById = new Map(records.map(record => [String(record.id), record]))
+        mapped = mapJobsWithInventoryEvidence(mapped, job => {
+          const native = nativeById.get(String(job.jobId))
+          const raw = native?.content
+          if (typeof raw !== 'string') return { ...job, nativeDescriptionRaw: raw ?? null,
+            nativeSourceRecord: native ? structuredClone(native) : null }
+          // The public API commonly wraps HTML in one entity-encoding layer.
+          // Existing HTML must keep its inner literal entities (e.g. examples).
+          const alreadyHTML = /<\/?[a-z][a-z\d:-]*(?:\s[^<>]*|\/?)>/i.test(raw)
+          const encodedHTML = /(?:&lt;|&#0*60;|&#x0*3c;)\/?[a-z][a-z\d:-]*(?:\s|&gt;|&#0*62;|&#x0*3e;)/i.test(raw)
+          const description = !alreadyHTML && encodedHTML ? decodeNativeEntities(raw) : raw
+          return { ...job, sourceDescription: description, jobDescription: description,
+            nativeDescriptionHTML: description, nativeDescriptionRaw: raw, nativeSourceRecord: structuredClone(native) }
+        })
+      }
     }
     signal?.throwIfAborted()
     const located = filterIndiaJobs(mapped).filter(job => indiaLocation(job)
@@ -233,8 +307,12 @@ export const createPublishingGapAtsScraper = (provider) => ({
       reportedTotal: innerEvidence?.reportedTotal ?? (kind === 'greenhouse' ? null : records.length),
       indiaFacetCount: nativeReasons.some(reason => /location-scope-unresolved|location-unmapped/.test(reason)) ? null : located.length,
       verifiedAt: new Date().toISOString(),
-      reason: listingComplete ? `${kind}-public-posting-api-complete-single-response`
-        : `${kind}-public-posting-api-incomplete:${incompleteReasons.join(';')}`,
+      reason: (listingComplete ? `${kind}-public-posting-api-complete-single-response`
+        : `${kind}-public-posting-api-incomplete:${incompleteReasons.join(';')}`)
+        + (countryProofs.length ? `:native-worksite-country-verified:${countryProofs.map(proof => `${proof.jobId}=${proof.country}@${proof.sha256}`).join(',')}` : '')
+        + greenhouseOfficeProofReason(officeCountryProofs) + greenhouseProspectReason(prospectIds),
+      // The proof identifies source records and office IDs without replacing
+      // the original native response or claiming a new publisher country field.
     })
   },
 })

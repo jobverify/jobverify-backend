@@ -15,6 +15,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import {
   createApiRateLimitHandler,
   createRateLimiter,
+  createPublishingRateLimiter,
   getApiRateLimitProfile,
 } from "./utils/rateLimit.js";
 import {
@@ -175,6 +176,7 @@ export function createApp({ isReady = () => mongoose.connection.readyState === 1
   app.use("/api", authLimiter);
   app.use("/api", cheapReadLimiter);
   app.use("/api", expensiveSearchLimiter);
+  app.use("/api", createPublishingRateLimiter());
 
   const noStore = (_req, res, next) => {
     res.set("Cache-Control", "no-store");

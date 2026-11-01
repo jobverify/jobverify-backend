@@ -9,6 +9,9 @@ import mongoose from 'mongoose'
 
 import Job from '../src/models/Job.js'
 import JobDatasetSummary from '../src/models/JobDatasetSummary.js'
+import { PUBLIC_JOB_TYPE_EXPRESSION } from '../src/utils/publicJobType.js'
+import { PUBLIC_JOB_TYPES } from '../src/utils/publicJobTypeLabel.js'
+import { JOB_DATASET_LIFECYCLE_VERSION } from '../src/services/jobDatasetSummaryService.js'
 import { buildPublishableJobPostedAtCutoff } from '../src/utils/jobLifecycle.js'
 import { buildAggregateHiringSignalFilter } from '../src/utils/jobListingEvidence.js'
 import { buildMissingSourceDescriptionFilter } from '../src/utils/jobSourceContent.js'
@@ -54,7 +57,10 @@ const createSummaryFindOneStub = (summary) => () => ({
   lean() {
     return this
   },
-  exec: async () => summary,
+  exec: async () => summary && {
+    lifecycleVersion: JOB_DATASET_LIFECYCLE_VERSION, refreshedAt: new Date(),
+    publishedSequence: 1, refreshSequence: 1, ...summary,
+  },
 })
 
 const createSummaryAggregateStub = (summary, inspect = () => {}) => createAggregateExecStub(async pipeline => {
@@ -110,14 +116,21 @@ const assertHasPublishedDateScope = (scope) => {
   })
 }
 
-const assertMatchesPublicJobScope = (scope, expectedFilters = {}) => {
+const assertMatchesPublicJobScope = (scope, expectedFilters = {}, { publicVisibility = true } = {}) => {
   assert.ok(scope)
   assert.deepEqual(stripPublishedDateScope(scope), {
     ...expectedFilters,
     isPublicIndia: true,
     $nor: [buildAggregateHiringSignalFilter(), buildMissingSourceDescriptionFilter()],
   })
-  assertHasPublishedDateScope(scope)
+  if (publicVisibility) {
+    const [dates, category] = scope.$expr?.$and || []
+    assert.deepEqual(category, { $in: [PUBLIC_JOB_TYPE_EXPRESSION, PUBLIC_JOB_TYPES] })
+    assert.equal(scope.$expr.$and.length, 2)
+    assertHasPublishedDateScope({ ...scope, $expr: dates })
+  } else {
+    assertHasPublishedDateScope(scope)
+  }
 }
 
 const setConnectionReadyState = (readyState) => {
@@ -184,7 +197,7 @@ test('buildPublicJobLocationScope excludes jobs older than one month, future and
   const now = new Date('2026-07-25T12:00:00.000Z')
   const scope = buildPublicJobLocationScope(now)
 
-  assertMatchesPublicJobScope(scope)
+  assertMatchesPublicJobScope(scope, {}, { publicVisibility: false })
   assert.equal(
     scope.$expr.$and[0].$lte[1].toISOString(),
     '2026-07-25T12:00:00.000Z',
@@ -842,6 +855,10 @@ test('getJobMeta applies the public location scope to metadata queries', async (
     return []
   }
   Job.aggregate = createAggregateExecStub(async (pipeline) => {
+    if (pipeline[1]?.$group?._id === PUBLIC_JOB_TYPE_EXPRESSION) {
+      capturedFilters.set('jobType', pipeline[0].$match)
+      return []
+    }
     if (JSON.stringify(pipeline[1]?.$group?._id).includes('$workArrangement')) {
       capturedFilters.set('workArrangement', pipeline[0].$match)
       return []
@@ -879,7 +896,6 @@ test('getJobMeta applies the public location scope to metadata queries', async (
     const expectedJobTypeFilter = {
       status: 'active',
       companyKey: 'example corp',
-      jobType: { $ne: null },
     }
     const expectedExperienceFilter = {
       status: 'active',
@@ -916,7 +932,7 @@ test('getJobMeta applies the public location scope to metadata queries', async (
   }
 })
 
-test('getJobMeta omits unsupported part-time job types from metadata responses', async () => {
+test('getJobMeta preserves unspecified eligibility alongside known effective categories', async () => {
   const originalDistinct = Job.distinct
   const originalAggregate = Job.aggregate
   const originalCountDocuments = Job.countDocuments
@@ -927,7 +943,13 @@ test('getJobMeta omits unsupported part-time job types from metadata responses',
     if (field === 'jobType') return ['Part-time', 'Contract', 'Full-time']
     return []
   }
-  Job.aggregate = createAggregateExecStub(async () => [{ company: 'Example Corp' }])
+  Job.aggregate = createAggregateExecStub(async pipeline => {
+    if (pipeline[1]?.$group?._id === PUBLIC_JOB_TYPE_EXPRESSION) {
+      return [{ _id: 'Unspecified' }, { _id: 'Contract' }, { _id: 'Full-time Experienced' }]
+    }
+    if (JSON.stringify(pipeline[1]?.$group?._id).includes('$workArrangement')) return []
+    return [{ company: 'Example Corp' }]
+  })
   Job.countDocuments = async () => 1
 
   try {
@@ -947,7 +969,7 @@ test('getJobMeta omits unsupported part-time job types from metadata responses',
     }, res)
 
     assert.equal(res.statusCode, 200)
-    assert.deepEqual(res.body.data.jobTypes, ['Contract', 'Full-time Experienced'])
+    assert.deepEqual(res.body.data.jobTypes, ['Contract', 'Full-time Experienced', 'Unspecified'])
   } finally {
     Job.distinct = originalDistinct
     Job.aggregate = originalAggregate

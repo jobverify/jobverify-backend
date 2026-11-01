@@ -1,3 +1,4 @@
+import {readRoleAreas,verifyHomepage,finish,nativeFetch} from './native.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -75,70 +76,30 @@ const extractRoleTitles = (html) => {
     .filter(Boolean)
 }
 
-export const extractOpenings = (html) => {
-  if (!hasOfficialCareersSignal(html)) {
-    throw new Error('DEITEL Engineering Solutions LLP verified official careers page changed')
-  }
+export const extractOpenings = readRoleAreas
 
-  const titles = extractRoleTitles(html)
-  if (titles.length === 0) {
-    throw new Error('DEITEL Engineering Solutions LLP verified public role list changed or disappeared')
-  }
-
-  return titles.map((title) => {
-    const identity = slugify(title)
-
-    return {
-      title,
-      company: COMPANY,
-      department: null,
-      location: null,
-      city: null,
-      country: 'India',
-      jobId: `${SOURCE}-${identity}`,
-      requisitionId: `${SOURCE}-${identity}`,
-      sourceUrl: CAREERS_URL,
-      applyUrl: APPLICATION_URL,
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: buildJobDescription(),
-      publicExperienceChecked: true,
-    }
-  })
-}
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = nativeFetch
 
 export const createDeitelEngineeringSolutionsLlpScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, now: overrideNow, signal } = {}) {
+    signal?.throwIfAborted()
+    const homepageHtml = await fetchText(HOMEPAGE_URL,{signal})
+    verifyHomepage(homepageHtml)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('DEITEL Engineering Solutions LLP verified official homepage changed')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersHtml = await fetchText(CAREERS_URL,{signal})
     const jobs = extractOpenings(careersHtml)
 
-    return jobs.map((job) => ({
+    return finish(jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: (overrideNow || now)(),
-    }))
+    })),{...jobs.nativeCollectionEvidence,pagesFetched:2,now:overrideNow||now})
   },
 })
 

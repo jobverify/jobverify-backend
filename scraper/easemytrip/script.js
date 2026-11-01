@@ -7,6 +7,7 @@ import { activeHead } from '../../scraper-support/utils/activeNativeHtml.js'
 import { attachInventoryEvidence, normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { isNativeBareCityInPublicScope } from '../../scraper-support/shared/nativeCityScope.js'
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
+import { assertCurrentCorporateHandoff, CORPORATE_ABOUT_URL, hasNormalClientHomepage } from './nativeCorporateHandoff.js'
 
 export const SOURCE = 'easemytrip'
 export const COMPANY = 'EaseMyTrip'
@@ -47,14 +48,15 @@ export const inspectInventory = async ({fetchImpl=fetch,signal,timeoutMs=45000,n
  const evidence=()=>normalizeInventoryEvidence({status:'coverage-gap',surface:CAREERS_URL,firstParty,listingComplete:false,pagesFetched,reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason:'Native roles publish only city/Remote locations; explicit country, role requisitions and whole inventory scope unverified'})
  const interrupted=new Promise((_,reject)=>{listener=()=>reject(combined.reason);combined.addEventListener('abort',listener,{once:true});timer=setTimeout(()=>controller.abort(Error('EaseMyTrip aggregate deadline exceeded')),timeoutMs)})
  const inspect=async()=>{
-  const read=async url=>{
+  const read=async (url,{stylesheet=false}={})=>{
    checkDeadline()
-   const r=await fetchImpl(url,{signal:combined,redirect:'manual',headers:{Accept:'text/html','User-Agent':'Mozilla/5.0'}})
+   const r=await fetchImpl(url,{signal:combined,redirect:'manual',headers:{Accept:stylesheet?'text/css':'text/html','User-Agent':'Mozilla/5.0'}})
    let reader,complete=false
    const cancel=()=>{try{Promise.resolve(reader?reader.cancel(combined.reason):r.body?.cancel(combined.reason)).catch(()=>{})}catch{}}
    let body
    try{
     checkDeadline();requireNative(r.status===200&&r.url===url,'Native HTTP status or final URL changed')
+    if(stylesheet)requireNative(/^text\/css\b/i.test(r.headers?.get('content-type')||''),'Native stylesheet content type changed')
     requireNative(typeof r.body?.getReader==='function','Native streaming body unavailable')
     reader=r.body.getReader();combined.addEventListener('abort',cancel,{once:true});checkDeadline()
     const chunks=[];let bytes=0
@@ -75,11 +77,19 @@ export const inspectInventory = async ({fetchImpl=fetch,signal,timeoutMs=45000,n
     if(reader)reader.releaseLock()
    }
    checkDeadline()
-   const doc=activeDocument(body);checkDeadline()
-   pagesFetched++;retainedResponses.push({url,finalUrl:r.url,status:r.status,body});return doc
+   pagesFetched++;retainedResponses.push({url,finalUrl:r.url,status:r.status,body})
+   const doc=stylesheet?body:activeDocument(body);checkDeadline();return doc
   }
   const home=await read(HOME_URL)
-  requireNative(home.nodes(n=>n.tag==='a'&&n.attrs.href===CAREERS_URL&&/current openings/i.test(home.text(n))).length>0,'Official careers handoff missing')
+  if(!home.nodes(n=>n.tag==='a'&&n.attrs.href===CAREERS_URL&&/current openings/i.test(home.text(n))).length){
+   requireNative(hasNormalClientHomepage(retainedResponses.at(-1).body),'Official careers handoff missing')
+   // The current canonical corporate About Us page is an independent public
+   // employer entrypoint. Its visible top navigation supplies the handoff;
+   // strings in the Angular program and hidden footer links supply no proof.
+   await read(CORPORATE_ABOUT_URL)
+   const html=retainedResponses.at(-1).body
+   await assertCurrentCorporateHandoff({html,readStylesheet:url=>read(url,{stylesheet:true}),checkDeadline})
+  }
   const careers=await read(CAREERS_URL)
   requireNative(careers.nodes(n=>n.tag==='h1'&&/Boost Your Professional Journey/.test(careers.text(n))).length===1,'Careers page identity changed')
   firstParty=true

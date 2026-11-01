@@ -18,11 +18,7 @@ import { getApplications, getJobApplication, markApplicationApplied } from '../c
 import { protect } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
 import { createRateLimiter } from "../utils/rateLimit.js";
-import outreachRoutes from './outreachRoutes.js';
-import gmailRoutes from './gmailRoutes.js';
-import applicationMailRoutes from './applicationMailRoutes.js';
 import autoApplyRoutes from './autoApplyRoutes.js';
-import campaignRoutes from './campaignRoutes.js';
 import resumeRoutes from './resumeRoutes.js';
 import tailoredResumeRoutes from './tailoredResumeRoutes.js';
 import candidateEvidenceRoutes from './candidateEvidenceRoutes.js';
@@ -47,11 +43,7 @@ const profileUpdateLimiter = createRateLimiter({
 });
 
 const router = express.Router();
-router.use('/outreach', outreachRoutes);
-router.use('/gmail', gmailRoutes);
-router.use('/application-mail', applicationMailRoutes);
 router.use('/auto-apply', autoApplyRoutes);
-router.use('/campaigns', campaignRoutes);
 router.use('/resume', resumeRoutes);
 router.use('/tailored-resumes', tailoredResumeRoutes);
 router.use('/candidate-evidence', candidateEvidenceRoutes);
@@ -85,8 +77,8 @@ router.post(
 );
 
 router.route("/telegram-alerts/schedule")
-  .get(protect, getUserTelegramAlertSchedule)
-  .put(protect, profileUpdateLimiter, telegramAlertScheduleValidation, validateRequest, updateUserTelegramAlertSchedule);
+  .get(protect, loadSiteSettings, getUserTelegramAlertSchedule)
+  .put(protect, profileUpdateLimiter, telegramAlertScheduleValidation, validateRequest, loadSiteSettings, updateUserTelegramAlertSchedule);
 
 router
   .route("/saved-jobs")
@@ -109,17 +101,18 @@ router
     removeSavedJob,
   );
 
-router.post("/telegram-alerts/link", protect, createTelegramAlertLink);
+router.post("/telegram-alerts/link", protect, loadSiteSettings, createTelegramAlertLink);
 
 router
   .route("/telegram-alerts")
-  .get(protect, getTelegramAlertSettings)
+  .get(protect, loadSiteSettings, getTelegramAlertSettings)
   .put(
     protect,
     telegramAlertsValidation,
     validateRequest,
+    loadSiteSettings,
     updateTelegramAlertSettings,
   )
-  .delete(protect, deleteTelegramAlertSettings);
+  .delete(protect, loadSiteSettings, deleteTelegramAlertSettings);
 
 export default router;

@@ -8,6 +8,8 @@ import {analyzePublishableJobs} from '../../scraper-support/utils/publishableJob
 
 const root=new URL('./fixtures/',import.meta.url)
 const proof=JSON.parse(readFileSync(new URL('provenance.json',root),'utf8'))
+const capturedNow=new Date(proof.capturedAt)
+const eligibleNativeIds=['47634','47679','47686','47687']
 const fixtures=new Map(proof.receipts.map(row=>{
   const body=readFileSync(new URL(row.fixture,root),'utf8')
   assert.equal(createHash('sha256').update(body).digest('hex'),row.bodySha256)
@@ -15,7 +17,7 @@ const fixtures=new Map(proof.receipts.map(row=>{
 }))
 const replay=async({change=(_file,body)=>body,failAt,options={}}={})=>{
   const requested=[]
-  const jobs=await bmc.run({...options,fetchText:async(url,{signal}={})=>{
+  const jobs=await bmc.run({now:capturedNow,...options,fetchText:async(url,{signal}={})=>{
     signal?.throwIfAborted();requested.push(url)
     const fixture=fixtures.get(url)
     assert.ok(fixture,'unexpected or invented native URL '+url)
@@ -25,14 +27,17 @@ const replay=async({change=(_file,body)=>body,failAt,options={}}={})=>{
   return {jobs,requested}
 }
 
-test('current exact native five-page India snapshot retains25 unique full roles and source-scoped evidence',async()=>{
+test('captured exact native five-page India snapshot retains25 roles while publication policy admits the four recent roles',async()=>{
   const {jobs,requested}=await replay()
   assert.equal(jobs.length,25)
   assert.equal(new Set(jobs.map(job=>job.jobId)).size,25)
   assert.equal(requested.length,31)
   assert.ok(jobs.every(job=>job.source==='bmcsoftware'&&job.country==='India'&&job.sourceDetailComplete===true))
   assert.ok(jobs.every(job=>job.applyUrl===`https://jobs.bmc.com/Careers/ApplicationMethods?jobId=${job.jobId}`))
-  assert.equal(analyzePublishableJobs(jobs).eligibleJobs.length,25)
+  const publication=analyzePublishableJobs(jobs,{now:capturedNow})
+  assert.deepEqual(publication.eligibleJobs.map(job=>job.jobId).sort(),eligibleNativeIds)
+  assert.equal(publication.filterCounts.old,21)
+  assert.equal(publication.filterCounts.emptyDescription,0)
   const evidence=readInventoryEvidence(jobs)
   assert.equal(evidence.status,'complete-inventory')
   assert.equal(evidence.reportedTotal,25)
@@ -75,7 +80,7 @@ test('a page cap preserves useful observed jobs with explicitly incomplete inven
   assert.equal(readInventoryEvidence(jobs).reportedTotal,25)
 })
 
-test('failed native role transport preserves enumeration but cannot publish or clean up from that role',async()=>{
+test('failed native role transport preserves enumeration and marks detail and lifecycle evidence incomplete',async()=>{
   const {jobs}=await replay({failAt:'role-47129-http.html'})
   assert.equal(jobs.length,25)
   const failed=jobs.find(job=>job.jobId==='47129')
@@ -84,7 +89,11 @@ test('failed native role transport preserves enumeration but cannot publish or c
   assert.equal(failed.jobDescription,null)
   assert.equal(readInventoryEvidence(jobs).listingComplete,true)
   assert.ok(jobs.every(job=>job.sourceListingComplete===false))
-  assert.equal(analyzePublishableJobs(jobs).eligibleJobs.length,24)
+  const publication=analyzePublishableJobs(jobs,{now:capturedNow})
+  assert.deepEqual(publication.eligibleJobs.map(job=>job.jobId).sort(),eligibleNativeIds)
+  assert.equal(publication.filterCounts.old,21)
+  // Missing descriptions remain inventory observations for later enrichment.
+  assert.equal(publication.filterCounts.emptyDescription,0)
 })
 
 test('native detail country, title, JobID, canonical and application conflicts remain ineligible',async()=>{

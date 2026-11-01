@@ -1,4 +1,5 @@
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 export const PROFILE_URL = 'https://www.linkedin.com/company/baazi-games'
 export const JOBS_URL = 'https://www.linkedin.com/jobs/baazi-games-jobs-worldwide?f_C=14573181&trk=top-card_top-card-primary-button-top-card-primary-cta'
@@ -116,6 +117,33 @@ const canonicalLinkedInJobUrl = (value, id) => {
   } catch { return null }
 }
 
+const refineDelhiWorkplace = (job, location, jdHtml, workplaces) => {
+  const address = job.jobLocation.address
+  if (address.addressLocality !== 'Delhi' || !['IN', 'India'].includes(address.addressCountry)
+    || (address.addressRegion != null && address.addressRegion !== 'Delhi')
+    || !['Delhi, India', 'Delhi, Delhi, India'].includes(location)
+    || workplaces.length !== 1 || workplaces[0] !== 'New Delhi') return null
+  // New Delhi is contained within Delhi; this is deliberately one-way. The
+  // native IN country and matching card/schema Delhi context are required.
+  // Keep the coarser native address and coordinates alongside the precise JD.
+  if (/<(?:style|link)\b/i.test(jdHtml)) throw subsetContractError('unreviewed JD workplace visibility')
+  const document = readNativeDocument(jdHtml), blocks = new Set(['div', 'p', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+  const hasBlock = node => node.children.some(child => typeof child !== 'string' && !child.inert && (blocks.has(child.tag) || hasBlock(child)))
+  const headers = document.nodes(node => blocks.has(node.tag) && !hasBlock(node))
+    .filter(node => /^(?:(?:Job\s+|Work\s+)?Location)\s*:/i.test(document.text(node)))
+  const presentation = node => Object.hasOwn(node.attrs, 'class') || Object.hasOwn(node.attrs, 'style') || Object.hasOwn(node.attrs, 'id')
+    || node.children.some(child => typeof child !== 'string' && !child.inert && presentation(child))
+  if (headers.length !== 1 || !/^(?:Job\s+|Work\s+)?Location\s*:\s*New Delhi$/i.test(document.text(headers[0])) || presentation(headers[0])) {
+    throw subsetContractError('missing active explicit JD workplace refinement proof')
+  }
+  return {
+    location: 'New Delhi, Delhi, India', city: 'New Delhi', state: 'Delhi',
+    evidence: { kind: 'native-jd-workplace-refinement', listingLocation: location, schemaAddress: { ...address },
+      schemaLocation: job.jobLocation, jdWorkplaces: workplaces, country: 'India',
+      relationship: 'New Delhi within Delhi; no reverse city substitution', referenceUrl: 'https://dmnewdelhi.delhi.gov.in/' },
+  }
+}
+
 const readLinkedInIndiaDetail = (html, card, checkedAt) => {
   const idAware = String(html ?? '').replace(/(<code\b[^>]*id=["']decoratedJobPostingId["'][^>]*>)\s*<!--("\d+")-->\s*(<\/code>)/gi, '$1$2$3')
   const native = uncomment(idAware), page = visiblePage(idAware)
@@ -155,13 +183,15 @@ const readLinkedInIndiaDetail = (html, card, checkedAt) => {
     || (address.addressRegion != null && (!indianRegions.has(address.addressRegion) || address.addressRegion !== visibleRegion))) {
     throw subsetContractError('conflicting or unverified native India workplace country')
   }
-  const jdLines = decodeHtmlEntities(job.description).replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n').replace(/<[^>]+>/g, ' ')
+  const jdHtml = decodeHtmlEntities(job.description)
+  const jdLines = jdHtml.replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n').replace(/<[^>]+>/g, ' ')
   const workplaces = [...jdLines.matchAll(/(?:^|\n)\s*(?:Job\s+|Work\s+)?Location\s*:\s*[-–]?\s*([^\n]+)/gi)].map(m => normalizeWhitespace(m[1]))
   const allowedWorkplaces = [location, location.replace(/,\s*India$/i, ''), address.addressLocality, 'India']
   // Published JD uses this Delhi-region/hybrid label; country is independently explicit IN in the native schema.
   allowedWorkplaces.push(address.addressLocality + ' / Hybrid')
   if (['Delhi', 'New Delhi'].includes(address.addressLocality)) allowedWorkplaces.push('Delhi NCR | Hybrid')
-  if (workplaces.some(workplace => !allowedWorkplaces.includes(workplace))) {
+  const refinement = refineDelhiWorkplace(job, location, jdHtml, workplaces)
+  if (!refinement && workplaces.some(workplace => !allowedWorkplaces.includes(workplace))) {
     throw subsetContractError('conflicting explicit JD workplace: ' + workplaces.join('; '))
   }
   const posted = Date.parse(job.datePosted), closes = Date.parse(job.validThrough), now = Date.parse(checkedAt)
@@ -172,7 +202,8 @@ const readLinkedInIndiaDetail = (html, card, checkedAt) => {
   if (!description || description.length < 300 || description !== visibleDescription) throw subsetContractError('published job description is missing or conflicts with visible content')
   return {
     title: card.title, company: COMPANY, source: SOURCE, jobId: card.id, requisitionId: null,
-    location, city: address.addressLocality, country: 'India', department: null,
+    location: refinement?.location || location, city: refinement?.city || address.addressLocality, country: 'India', department: null,
+    ...(refinement ? { state: refinement.state, sourceWorkplaceEvidence: refinement.evidence } : {}),
     sourceUrl: card.sourceUrl, applyUrl: card.sourceUrl, link: card.sourceUrl,
     employmentType: job.employmentType || null, postingDate: new Date(posted).toISOString(), closingDate: new Date(closes).toISOString(),
     jobDescription: description, requiredSkills: [], experienceRequired: null, minimumQualification: null, preferredQualification: null,

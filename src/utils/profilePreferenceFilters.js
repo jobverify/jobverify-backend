@@ -1,14 +1,8 @@
+import { normalizePreferredJobType } from '../constants/preferredJobTypes.js';
+
 const PROFILE_PREFERENCE_SORT_OPTIONS = ["all", "popularity", "latest", "oldest"];
 const MAX_PROFILE_TEXT_LENGTH = 80;
 const MAX_PROFILE_ITEMS = 20;
-
-const JOB_TYPE_COMPATIBILITY_MAP = new Map([
-  ["Internship", "Intern"],
-  ["Full-time Fresher", "Full-time Fresher"],
-  ["Full-time Experienced", "Full-time Experienced"],
-  ["Contract", "Contract"],
-  ["Unspecified", "Unspecified"],
-]);
 
 const normalizeStringList = (value) => {
   const list = Array.isArray(value) ? value : String(value ?? "").split(",");
@@ -49,7 +43,7 @@ export function deriveLegacyProfilePreferences(filters = {}) {
   return {
     locationPreference: Array.isArray(filters.location) ? filters.location : [],
     preferredJobTypes: (Array.isArray(filters.jobType) ? filters.jobType : [])
-      .map((jobType) => JOB_TYPE_COMPATIBILITY_MAP.get(jobType))
+      .map(normalizePreferredJobType)
       .filter(Boolean),
   };
 }

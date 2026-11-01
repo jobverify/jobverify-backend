@@ -1,16 +1,11 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runNativeInventory } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://achiralabs.com/careers'
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -101,33 +96,13 @@ export const extractSearchResults = (html) => {
   }).filter(Boolean)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'axiralabs',
-  timeoutMs: 15000,
-})
-
-export const createAxiraLabsScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
+export const createAxiraLabsScraper = (factoryOptions = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const jobs = extractSearchResults(await fetchText(CAREER_PAGE_URL))
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: 'axiralabs',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+    return runNativeInventory({ ...factoryOptions, ...options })
   },
 })
 
-export const run = async () => createAxiraLabsScraper().run()
+export const run = async (options = {}) => createAxiraLabsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

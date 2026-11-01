@@ -1,5 +1,5 @@
 import path from 'node:path'
-import vm from 'node:vm'
+import { parseJobsDeclaration } from '../../scraper-support/utils/remoteScriptData.js'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -59,14 +59,12 @@ export const extractJobsFromJobsScript = (scriptText = '') => {
   const script = String(scriptText ?? '')
   if (!/const\s+JOB_DATA\s*=\s*\{/i.test(script)) return []
 
-  const context = vm.createContext({})
-  const payload = vm.runInContext(
-    `${script}\n;globalThis.__JOB_DATA__ = typeof JOB_DATA === 'undefined' ? null : JOB_DATA;`,
-    context,
-    { timeout: 1000 },
-  )
-
-  const jobData = payload?.__JOB_DATA__ || context.__JOB_DATA__
+  let jobData
+  try {
+    jobData = parseJobsDeclaration(script)
+  } catch (error) {
+    throw new Error('verified WazirX careers requisition blocks no longer match the known public page', { cause: error })
+  }
   if (!jobData || typeof jobData !== 'object') return []
 
   return Object.entries(jobData).flatMap(([jobId, job]) => {

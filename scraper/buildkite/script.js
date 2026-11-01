@@ -1,3 +1,4 @@
+import { createNativeGreenhouseScraper, NATIVE_GREENHOUSE_PROFILES, nativeSourceMetadata } from '../../scraper-support/native-sources/declaredGreenhouse/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,7 +10,7 @@ import { BUILDKITE_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const PROVIDER_METADATA = BUILDKITE_CATALOG
+export const PROVIDER_METADATA = nativeSourceMetadata(NATIVE_GREENHOUSE_PROFILES["buildkite"], BUILDKITE_CATALOG)
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY_NAME = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
@@ -144,26 +145,9 @@ export const extractIndiaJobsFromGreenhousePayload = (
   })
 }
 
-export const createBuildkiteScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-    signal,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL, { signal })
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('Buildkite verified official careers page no longer matches the trusted public surface')
-    }
+export const createBuildkiteScraper = (defaults = {}) => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["buildkite"], defaults)
 
-    const payload = await fetchJson(buildGreenhouseJobsApiUrl(), { signal })
-    const jobs = extractIndiaJobsFromGreenhousePayload(payload, { scrapedAt: now() })
-    return attachGreenhouseSourceEvidence(jobs, { source: SOURCE, companyName: COMPANY_NAME,
-      companyCareerPage: CAREERS_URL, boardToken: 'buildkite', payload, signal, officialHtml: careersHtml })
-  },
-})
-
-export const run = async (options = {}) => createBuildkiteScraper().run(options)
+export const run = options => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["buildkite"]).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

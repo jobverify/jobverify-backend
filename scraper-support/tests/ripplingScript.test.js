@@ -226,6 +226,7 @@ test('Rippling run validates the official pages and paginates the verified Algol
 
   const jobs = await rippling.createRipplingScraper({ hitsPerPage: 2 }).run({
     fetchText: async (url) => {
+      if (url.startsWith('https://ats.rippling.com/rippling/jobs/')) return { status: 404, url, html: '' }
       requested.push({ type: 'text', url })
       if (url === rippling.CAREERS_URL) return verifiedCareersHtml
       if (url === rippling.OPEN_ROLES_URL) return verifiedOpenRolesHtml

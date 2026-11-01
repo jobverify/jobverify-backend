@@ -1,18 +1,18 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { runNativeEvidation } from './nativeRun.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "evidation"
 export const COMPANY = "Evidation"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Evidation added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://evidation.com/open-positions'
+export const DISPOSITION = 'current-corporate-bound-native-rippling-extraction'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Revalidate the current visible corporate Rippling widget, loader delegation, unfiltered native pagination, every public role detail and closing snapshot. Preserve full employer content and creation metadata; publication dates and whole-company coverage remain unverified.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runNativeEvidation(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

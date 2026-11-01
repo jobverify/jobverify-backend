@@ -171,3 +171,47 @@ test('Darwinbox actual detail transport uses the public native ID/company query 
   assert.equal(request.init.headers.cookie, '__cf_bm=current')
   assert.ok(hasSourceDescription(jobs[0]))
 })
+
+test('Darwinbox accepts native title dash typography while preserving role words and ID', async () => {
+  const payload = JSON.parse(readFileSync(new URL('./fixtures/darwinbox/seclore-ai-labs-native-detail.json', import.meta.url), 'utf8'))
+  const scraper = createDarwinboxScraper({ source: 'seclore', origin: 'https://seclore.darwinbox.in' })
+  const job = { jobId: 'a6a70a470f077f', title: 'Software Engineer \u2013 AI Labs' }
+  const description = scraper.validateJobDetail(payload, job)
+  assert.match(description, /Data Security Posture Management/)
+  for (const title of ['Software Engineer \u2014 AI Labs', 'Software Engineer-AI Labs']) {
+    assert.equal(scraper.validateJobDetail(payload, { ...job, title }), description)
+  }
+  for (const changed of [{ ...job, title: 'Software Engineer \u2013 IT Labs' }, { ...job, jobId: 'another-role' }]) {
+    assert.throws(() => scraper.validateJobDetail(payload, changed), error => error.name === 'DarwinboxDetailContractError')
+  }
+  const untitled = structuredClone(payload)
+  untitled.message.job[0].title = ''
+  assert.throws(() => scraper.validateJobDetail(untitled, { ...job, title: '' }), error => error.name === 'DarwinboxDetailContractError')
+})
+
+test('Darwinbox keeps verified native publication epochs independently of old or empty descriptions', async () => {
+  for (const [fixture, expectedDate, hasBody] of [
+    ['seclore-ai-labs-native-detail.json', '2026-08-02T18:30:00.000Z', true],
+    ['scripbox-empty-native-detail.json', '2026-09-10T18:30:00.000Z', false],
+  ]) {
+    const payload = JSON.parse(readFileSync(new URL('./fixtures/darwinbox/' + fixture, import.meta.url), 'utf8'))
+    const record = payload.message.job[0]
+    const scraper = createDarwinboxScraper({ source: 'native-date-fixture' })
+    const jobs = await scraper.run({
+      fetchListingPage: async () => ({ status: 'success', data: [{ id: record.id, title: record.title, locations: record.officelocation_show_arr, country: 'India', jd: '' }], job_counts: 1 }),
+      fetchJobDetail: async () => payload,
+    })
+    assert.equal(jobs[0].sourcePostingDate, expectedDate)
+    assert.equal(jobs[0].postingDate, expectedDate)
+    assert.equal(jobs[0].sourceDateEvidence, 'darwinbox-native-posted-on-v1')
+    assert.equal(jobs[0].sourceDetailComplete, hasBody)
+    assert.equal(hasSourceDescription(jobs[0]), hasBody)
+    const mismatched = structuredClone(payload)
+    mismatched.message.job[0].job_posting.careers.from += 86400
+    assert.throws(() => scraper.extractJobDetailFacts(mismatched, { jobId: record.id, title: record.title }), error => error.name === 'DarwinboxDetailContractError')
+    const createdOnly = structuredClone(payload)
+    delete createdOnly.message.job[0].posted_on
+    delete createdOnly.message.job[0].job_posting.careers.from
+    assert.deepEqual(scraper.extractJobDetailFacts(createdOnly, { jobId: record.id, title: record.title }), {})
+  }
+})

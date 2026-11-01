@@ -111,8 +111,9 @@ const issueTelegramLinkToken = async (userId) => {
   throw new Error("Unable to issue a Telegram link token.");
 };
 
-const hasTelegramEligibility = (user) =>
-  user.role === "admin"
+const hasTelegramEligibility = (user, siteSettings) =>
+  siteSettings?.billingEnabled === false
+  || user.role === "admin"
   || (
     TELEGRAM_ELIGIBLE_ACCESS_ROLES.has(user.accessRole)
     && user.premium?.status === "active"
@@ -143,13 +144,13 @@ const persistExpiredAccessDowngrade = async (user) => {
   return true;
 };
 
-const buildTelegramAlertSettingsData = (user) => ({
+const buildTelegramAlertSettingsData = (user, siteSettings) => ({
   linked: hasLinkedTelegram(user),
   username: user.telegram?.username ?? null,
   linkedAt: user.telegram?.linkedAt ?? null,
   optedOutAt: user.telegram?.optedOutAt ?? null,
   enabled: Boolean(user.premium?.telegramAlertsEnabled),
-  canUseTelegramAlerts: canUseTelegramAlerts(user),
+  canUseTelegramAlerts: canUseTelegramAlerts(user, new Date(), siteSettings),
   accessRole: user.accessRole,
   access: buildAccessSummary(user),
   telegramAlertFilters: normalizeProfilePreferenceFilters(
@@ -209,10 +210,6 @@ export const updateUserProfile = async (req, res) => {
     if (user) {
       // Update profile fields if provided
       if (req.body.name !== undefined) user.profile.name = normalizeProfileText(req.body.name);
-      for (const field of ['aboutYou', 'experienceProjects']) {
-        if (req.body[field] !== undefined) user.profile[field] = String(req.body[field]).trim().slice(0, 4000);
-      }
-      if (req.body.portfolioUrl !== undefined) user.profile.portfolioUrl = String(req.body.portfolioUrl).trim().slice(0, 2048);
       if (req.body.graduateEducation !== undefined) user.profile.graduateEducation = normalizeProfileText(req.body.graduateEducation);
       if (req.body.branch !== undefined) user.profile.branch = normalizeProfileText(req.body.branch);
       if (req.body.passingYear !== undefined) {
@@ -456,7 +453,7 @@ export const createTelegramAlertLink = async (req, res) => {
 
     await persistExpiredAccessDowngrade(user);
 
-    if (!hasTelegramEligibility(user)) {
+    if (!hasTelegramEligibility(user, req.siteSettings)) {
       return res.status(403).json({
         code: 403,
         success: false,
@@ -504,7 +501,7 @@ export const getTelegramAlertSettings = async (req, res) => {
     return res.status(200).json({
       code: 200,
       success: true,
-      data: buildTelegramAlertSettingsData(user),
+      data: buildTelegramAlertSettingsData(user, req.siteSettings),
     });
   } catch (error) {
     return respondWithUserInternalError(res, error);
@@ -533,7 +530,7 @@ export const updateTelegramAlertSettings = async (req, res) => {
       });
     }
 
-    if (req.body.enabled === true && !hasTelegramEligibility(user)) {
+    if (req.body.enabled === true && !hasTelegramEligibility(user, req.siteSettings)) {
       return res.status(403).json({
         code: 403,
         success: false,
@@ -557,7 +554,7 @@ export const updateTelegramAlertSettings = async (req, res) => {
       code: 200,
       success: true,
       message: "Telegram alert settings updated successfully.",
-      data: buildTelegramAlertSettingsData(user),
+      data: buildTelegramAlertSettingsData(user, req.siteSettings),
     });
   } catch (error) {
     return respondWithUserInternalError(res, error);
@@ -588,7 +585,7 @@ export const deleteTelegramAlertSettings = async (req, res) => {
       code: 200,
       success: true,
       message: "Telegram account unlinked successfully.",
-      data: buildTelegramAlertSettingsData(user),
+      data: buildTelegramAlertSettingsData(user, req.siteSettings),
     });
   } catch (error) {
     return respondWithUserInternalError(res, error);

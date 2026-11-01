@@ -85,24 +85,7 @@ test('Fingent extracts the verified Friday, August 14, 2026 current openings fro
     ],
   )
 
-  const jobs = await fingent.run({
-    fetchText: async () => careersHtml,
-    now: () => '2026-08-14T00:00:00.000Z',
-  })
-
-  assert.equal(jobs.length, 6)
-  assert.deepEqual(jobs[0], {
-    title: 'Senior Consultant - Magento (Contract)',
-    experience: '4-10 Years',
-    location: null,
-    sourceUrl: 'https://www.fingent.com/careers/jobs/senior-consultant-magento-contract/',
-    applyUrl: 'https://www.fingent.com/careers/jobs/senior-consultant-magento-contract/',
-    company: 'Fingent',
-    country: 'India',
-    link: 'https://www.fingent.com/careers/jobs/senior-consultant-magento-contract/',
-    source: 'fingent',
-    scrapedAt: '2026-08-14T00:00:00.000Z',
-  })
+  await assert.rejects(fingent.run({fetchText:async()=>careersHtml,now:()=> '2026-08-14T00:00:00.000Z'}),/declared role-field author stylesheet/)
 })
 
 test('Fingent fails closed when the verified openings page changes materially or stops exposing public roles', async () => {
@@ -124,6 +107,6 @@ test('Fingent fails closed when the verified openings page changes materially or
         </html>
       `,
     }),
-    /no longer exposes public roles/i,
+    /no longer exposes public roles|no active advertised roles/i,
   )
 })

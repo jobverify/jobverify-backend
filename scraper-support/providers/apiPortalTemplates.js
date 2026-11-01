@@ -222,7 +222,7 @@ const API_PORTAL_TEMPLATES = {
     },
     pagination: {
       strategy: templateOptions.paginationStrategy || 'offset-limit',
-      pageSize: templateOptions.pageSize || 10,
+      pageSize: templateOptions.pageSize ?? 50,
       offsetParam: 'start',
       limitParam: 'limit',
       resultsPath: 'data.positions',

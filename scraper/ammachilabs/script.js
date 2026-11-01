@@ -3,6 +3,8 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { nativeCountryName, nativeLocationCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -66,11 +68,13 @@ const inferLocationFromTitle = (title) => {
   return normalizeWhitespace(match?.[1])
 }
 
-const ensureIndiaLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  if (/india/i.test(normalized)) return normalized
-  return `${normalized}, India`
+const explicitLocationCountry = (value) => {
+  if (!value) return null
+  const parts = value.split(',').map(part => part.trim())
+  const countries = parts.filter(part => part.length > 2).map(nativeCountryName).filter(Boolean)
+  if (new Set(countries).size > 1) throw Object.assign(Error('Ammachi native role country conflict'), {abortRetries:true})
+  // The CMS field is a workplace label, not a typed ISO-country field.
+  return parts.at(-1).length > 2 ? nativeLocationCountryName(value) : null
 }
 
 const inferRemoteStatus = (value) => {
@@ -95,15 +99,30 @@ const appendSection = (parts, title, value) => {
 
 export const buildSearchUrl = () => JOBS_API_URL
 
-export const extractSearchResults = (records = []) =>
-  records.map((record) => {
+export const extractSearchResults = (records = []) => {
+  if (!Array.isArray(records)) throw Error('Ammachi native jobs array missing')
+  const seen = new Set()
+  return records.map((record) => {
+    if (seen.has(String(record?.id))) throw Object.assign(Error('Ammachi duplicate native role identity'), {abortRetries:true})
+    seen.add(String(record?.id))
     const title = normalizeWhitespace(record?.position_title)
       || normalizeWhitespace(record?.title?.rendered)
     const rawLocation = normalizeWhitespace(record?.position_job_location)
       || inferLocationFromTitle(title)
-    const location = ensureIndiaLocation(rawLocation)
-    const remoteStatus = inferRemoteStatus(location)
-    const city = remoteStatus === 'Remote'
+    const address=Object.fromEntries(['streetAddress','addressLocality','addressRegion','postalCode','addressCountry'].map(key=>{
+      const value=record?.['position_job_location_'+key]
+      if(value!=null&&typeof value!=='string')throw Error('Ammachi native workplace component type changed')
+      return[key,normalizeWhitespace(value)]
+    }))
+    const labelCountry=explicitLocationCountry(rawLocation),addressCountry=address.addressCountry?nativeCountryName(address.addressCountry):null
+    if(address.addressCountry&&!addressCountry||labelCountry&&addressCountry&&labelCountry!==addressCountry)throw Object.assign(Error('Ammachi native role country conflict'),{abortRetries:true})
+    if(rawLocation&&address.addressLocality&&!rawLocation.split(',').map(value=>value.trim().toLowerCase()).includes(address.addressLocality.toLowerCase()))throw Object.assign(Error('Ammachi native role locality conflict'),{abortRetries:true})
+    const country=labelCountry||addressCountry
+    const componentLabel=[address.streetAddress,address.addressLocality,address.addressRegion,address.postalCode,addressCountry].filter(Boolean).join(', ')||null
+    const location=rawLocation||componentLabel
+    const remoteStatus=rawLocation?inferRemoteStatus(rawLocation):null
+    const city = !rawLocation ? address.addressLocality : remoteStatus === 'Remote' || country && nativeCountryName(location) === country
+      || /[;&|]|\b(?:across|multiple locations|worldwide|global)\b/i.test(location || '')
       ? null
       : normalizeWhitespace(rawLocation)?.split(',')[0]?.trim() || null
 
@@ -118,7 +137,7 @@ export const extractSearchResults = (records = []) =>
       department: null,
       location,
       city,
-      country: 'India',
+      country,
       jobId: String(record?.id ?? ''),
       requisitionId: String(record?.id ?? ''),
       sourceUrl: normalizeWhitespace(record?.link),
@@ -136,8 +155,10 @@ export const extractSearchResults = (records = []) =>
       remoteStatus,
     }
   }).filter((job) => job.title && job.jobId && job.sourceUrl)
+}
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, {signal} = {}) => fetchJsonWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
@@ -150,21 +171,44 @@ export const createAmmachiLabsScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
+    options.signal?.throwIfAborted()
     const fetchJson = options.fetchJson || defaultFetchJson
-    const records = await fetchJson(buildSearchUrl())
+    const records = await fetchJson(buildSearchUrl(), {signal:options.signal})
+    options.signal?.throwIfAborted()
     const jobs = extractSearchResults(records)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const selectedJobs = maxJobs == null ? jobs : jobs.slice(0, maxJobs)
+    const byId = new Map(records.map(record => [String(record.id), record]))
+    const scrapedAt = new Date(typeof options.now === 'function' ? options.now() : options.now || new Date()).toISOString()
 
-    return selectedJobs.map((job) => ({
+    const result = selectedJobs.map((job) => ({
       ...job,
       source: 'ammachilabs',
       link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
+      scrapedAt,
+      sourceListingComplete:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,
+      sourceDetailComplete:Boolean(job.jobDescription),
+      nativeLocationEvidence:{positionJobLocation:byId.get(job.jobId).position_job_location??null,
+        positionJobLocationComponents:Object.fromEntries(['streetAddress','addressLocality','addressRegion','postalCode','addressCountry','remote'].map(key=>[key,byId.get(job.jobId)['position_job_location_'+key]??null])),
+        roleTitleLocation:inferLocationFromTitle(job.title),countryQualified:Boolean(job.country),
+        reason:job.country?'explicit-country-in-role-workplace':'native-role-country-unknown'},
+      nativePublicationDateRaw:byId.get(job.jobId).date_gmt??byId.get(job.jobId).date??null,
+      nativeRoleDescriptionSections:Object.fromEntries(['position_description','position_responsibilities','position_qualifications'].map(key=>[key,byId.get(job.jobId)[key]??null])),
     }))
+    const audit={source:'ammachilabs',observedListingCount:records.length,reportedTotal:null,indiaFacetCount:null,
+      candidateDetails:records.length,extractedDetailJobs:result.filter(job=>job.sourceDetailComplete).length,excludedDetailJobs:0,
+      failures:result.filter(job=>!job.sourceDetailComplete).map(job=>({stage:'native-detail',nativeRoleId:job.jobId,kind:'missing-content'})),
+      listingPaginationComplete:null,closingInventoryMatches:null,sourceScopeComplete:false,nativeObservedRecordCount:records.length,
+      nativeMissingWorkplaceCount:jobs.filter(job=>!job.location).length,nativeExplicitCountryCount:jobs.filter(job=>job.country).length,
+      authoritativeTotalUnknown:true,reason:'One public WordPress page; pagination headers, current closing cohort and missing role workplace countries remain unverified.'}
+    if(result.length)result[0].nativeCollectionEvidence=audit
+    Object.defineProperty(result,'nativeCollectionEvidence',{value:audit})
+    return attachInventoryEvidence(result,{status:'coverage-gap',surface:JOBS_API_URL,firstParty:true,listingComplete:false,
+      pagesFetched:1,reportedTotal:null,indiaFacetCount:null,verifiedAt:scrapedAt,
+      reason:'Native role workplace labels retained without employer-address, travel or country inference. '+records.length+' records observed; '+jobs.filter(job=>!job.location).length+' workplaces absent. Full inventory and country scope remain unknown.'})
   },
 })
 
-export const run = async () => createAmmachiLabsScraper().run()
+export const run = async (options = {}) => createAmmachiLabsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

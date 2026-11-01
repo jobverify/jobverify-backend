@@ -4,8 +4,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {verifyCarrierBinding,validateCarrierMappedJobs,HOME,CAREERS,ROLE,BOARD} from './nativeBinding.js'
 import {toPlainText} from '../../scraper-support/detailExtractors/shared.js'
+import {carrierSearchPacket} from '../../test/helpers/carrierNativeSearch.js'
 const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/native-20261021.json.gz',import.meta.url))))
-const fetchPage=async url=>{const p=url===HOME?f.corporate:url===CAREERS?f.careers:f.role;return{status:p.status,url:p.finalURL,body:p.body}}
+const fetchPage=async url=>{const p=url===carrierSearchPacket().url?carrierSearchPacket():url===HOME?f.corporate:url===CAREERS?f.careers:f.role;return{status:p.status,url:p.finalURL,body:p.body}}
 test('actual current Carrier corporate, careers and role bind the observed exact Workday board',async()=>{const b=await verifyCarrierBinding({fetchPage});assert.equal(b.boardURL,BOARD);assert.equal(b.nativeRequisitionId,'30220084');assert.equal(b.companyScopeComplete,false)})
 for(const [name,change]of [['hidden',s=>'<div hidden>'+s+'</div>'],['inert',s=>'<div inert>'+s+'</div>'],['template',s=>'<template>'+s+'</template>'],['wrong tenant',s=>s.replaceAll('carrier.wd5','unrelated.wd5')],['wrong application requisition',s=>s.replaceAll('_30220084/','_99999999/')]])test('public current role rejects '+name,async()=>{await assert.rejects(()=>verifyCarrierBinding({fetchPage:async url=>{const p=await fetchPage(url);return{...p,body:url===ROLE?change(p.body):p.body}}}))})
 test('corporate hidden/inert handoffs and unsuccessful HTTP cannot establish identity',async()=>{for(const change of [p=>({...p,body:'<div inert>'+p.body+'</div>'}),p=>({...p,status:403}),p=>({...p,status:202}),p=>({...p,url:'https://example.invalid/'})])await assert.rejects(()=>verifyCarrierBinding({fetchPage:async url=>change(await fetchPage(url))}))})

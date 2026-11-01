@@ -321,7 +321,7 @@ test('Perpetuuiti Technosoft Services stays fail-closed while the verified homep
   )
 })
 
-test('Cybertech Systems & Software extracts the verified first-party careers cards', async () => {
+test('Cybertech Systems & Software keeps listing-only observations partial when native role replies are unavailable', async () => {
   const cybertech = await loadModule('../../scraper/cybertechsystemsandsoftware/script.js')
 
   assert.equal(cybertech.hasOfficialCareersSignal(cybertechCareersHtml), true)
@@ -330,22 +330,22 @@ test('Cybertech Systems & Software extracts the verified first-party careers car
       title: 'Lead Public Cloud DevOps Automation Specialist',
       sourceUrl: 'https://cybertech.com/job/lead-public-cloud-devops-automation-specialist/',
       applyUrl: 'https://cybertech.com/job/lead-public-cloud-devops-automation-specialist/',
-      experienceRequired: '12+ years',
-      employmentType: 'Full Time',
+      experienceRequired: null,
+      employmentType: null,
     },
     {
       title: 'Sr.DBA (MSSQL)',
       sourceUrl: 'https://cybertech.com/job/ui-with-cloud-foundry-developer-2/',
       applyUrl: 'https://cybertech.com/job/ui-with-cloud-foundry-developer-2/',
-      experienceRequired: '6+ Years/10+Years',
-      employmentType: 'Full Time',
+      experienceRequired: null,
+      employmentType: null,
     },
     {
       title: 'SAP ABAP Developer',
       sourceUrl: 'https://cybertech.com/job/sap-abap-developer/',
       applyUrl: 'https://cybertech.com/job/sap-abap-developer/',
-      experienceRequired: '4+ years',
-      employmentType: 'Full Time',
+      experienceRequired: null,
+      employmentType: null,
     },
   ])
 
@@ -353,36 +353,38 @@ test('Cybertech Systems & Software extracts the verified first-party careers car
     now: () => FIXED_SCRAPED_AT,
   }).run({
     fetchText: async (url) => {
-      assert.equal(url, cybertech.CAREERS_URL)
-      return cybertechCareersHtml
+      if (url === cybertech.CAREERS_URL) return cybertechCareersHtml
+      throw new Error('No retained native reply in this listing-only fixture')
     },
   })
 
   assert.equal(jobs.length, 3)
   assert.deepEqual(
-    jobs.map((job) => [job.title, job.experienceRequired, job.employmentType, job.applyUrl]),
+    jobs.map((job) => [job.title, job.experienceRequired ?? null, job.employmentType ?? null, job.applyUrl]),
     [
       [
         'Lead Public Cloud DevOps Automation Specialist',
-        '12+ years',
-        'Full Time',
+        null,
+        null,
         'https://cybertech.com/job/lead-public-cloud-devops-automation-specialist/',
       ],
       [
         'Sr.DBA (MSSQL)',
-        '6+ Years/10+Years',
-        'Full Time',
+        null,
+        null,
         'https://cybertech.com/job/ui-with-cloud-foundry-developer-2/',
       ],
       [
         'SAP ABAP Developer',
-        '4+ years',
-        'Full Time',
+        null,
+        null,
         'https://cybertech.com/job/sap-abap-developer/',
       ],
     ],
   )
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.ok(jobs.every(job => job.jobId === null && job.requisitionId === null && job.jobDescription === null))
+  assert.ok(jobs.every(job => job.country === null && job.sourceDetailComplete === false && job.lifecycleCleanupAllowed === false))
 })
 
 test('Zieta Technologies extracts the verified inline careers opening from the first-party page', async () => {

@@ -1,3 +1,4 @@
+import { checkCurrentFactory,checkChangedPublisher } from '../../scraper-support/native-sources/declaredGreenhouse/replayControls.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -101,60 +102,10 @@ test('Buildkite Greenhouse extraction keeps only India jobs and maps canonical d
   }])
 })
 
-test('Buildkite scraper returns an honest empty India slice when the verified feed has no India roles', async () => {
-  const jobs = await createBuildkiteScraper().run({
-    fetchText: async (url) => {
-      assert.equal(url, CAREERS_URL)
-      return careersHtml
-    },
-    fetchJson: async (url) => {
-      assert.equal(url, 'https://boards-api.greenhouse.io/v1/boards/buildkite/jobs?content=true')
-      return {
-        jobs: [
-          {
-            id: 1,
-            title: 'Senior Product Manager',
-            company_name: 'Buildkite',
-            absolute_url: 'https://job-boards.greenhouse.io/buildkite/jobs/1',
-            location: { name: 'ANZ Region' },
-            content: '<p>Own product outcomes.</p>',
-          },
-          {
-            id: 2,
-            title: 'Senior Site Reliability Engineer',
-            company_name: 'Buildkite',
-            absolute_url: 'https://job-boards.greenhouse.io/buildkite/jobs/2',
-            location: { name: 'Australia' },
-            content: '<p>Keep the platform reliable.</p>',
-          },
-        ],
-      }
-    },
-    now: () => '2026-07-25T09:00:00.000Z',
-  })
-
-  assert.deepEqual(jobs, [])
+test('buildkite actual factory retains complete original native models before selection',async()=>{
+ await checkCurrentFactory('buildkite',createBuildkiteScraper)
 })
 
-test('Buildkite scraper fails closed when the verified first-party page or Greenhouse identity changes', async () => {
-  await assert.rejects(
-    createBuildkiteScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected page</h1></body></html>',
-      fetchJson: async () => ({ jobs: [] }),
-    }),
-    /verified official careers page/i,
-  )
-
-  assert.throws(
-    () => extractIndiaJobsFromGreenhousePayload({
-      jobs: [{
-        id: 3,
-        title: 'Solutions Engineer',
-        company_name: 'Someone Else',
-        absolute_url: 'https://job-boards.greenhouse.io/buildkite/jobs/3',
-        location: { name: 'Bengaluru, India' },
-      }],
-    }),
-    /verified company identity/i,
-  )
+test('buildkite changed primary publisher holds current source qualification',async()=>{
+ await checkChangedPublisher('buildkite',createBuildkiteScraper)
 })

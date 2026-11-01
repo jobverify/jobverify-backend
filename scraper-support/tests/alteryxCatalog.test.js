@@ -10,6 +10,10 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 import { loadConfig } from '../utils/loadConfig.js'
+import { PROVIDER_METADATA as historicalCatalog } from '../../scraper/alteryx.workday/catalog.js'
+import { resolveZeroJobOutcome, buildCoverageGapResult } from '../runner.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { inventoryCleanupOptions } from '../utils/scraperOutcome.js'
 
 const testsDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -24,15 +28,15 @@ test('getScraperCatalog includes Alteryx on the verified first-party careers pag
   assert.equal(provider.companyDomain, 'alteryx.com')
   assert.equal(provider.verifiedOn, '2026-07-25')
   assert.match(provider.baseUrl, /alteryx\.wd108\.myworkdayjobs\.com\/en-US\/AlteryxCareers/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.alteryx\.com\/about-us\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /alteryx\.wd108\.myworkdayjobs\.com\/en-US\/AlteryxCareers/i)
-  assert.match(provider.verifiedSurfaceSummary, /returned 74 total postings/i)
-  assert.match(provider.verifiedSurfaceSummary, /c4f78be1a8f14da0ab49ce1162348a5e/i)
-  assert.match(provider.verifiedSurfaceSummary, /count 6/i)
-  assert.match(provider.verifiedSurfaceSummary, /Sr\. Workday Integration Specialist/i)
-  assert.match(provider.verifiedSurfaceSummary, /Learning Programs Specialist/i)
-  assert.match(provider.verifiedSurfaceSummary, /CX Operations Specialist/i)
+  assert.match(historicalCatalog.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
+  assert.match(historicalCatalog.verifiedSurfaceSummary, /https:\/\/www\.alteryx\.com\/about-us\/careers/i)
+  assert.match(historicalCatalog.verifiedSurfaceSummary, /alteryx\.wd108\.myworkdayjobs\.com\/en-US\/AlteryxCareers/i)
+  assert.match(historicalCatalog.verifiedSurfaceSummary, /returned 74 total postings/i)
+  assert.match(historicalCatalog.verifiedSurfaceSummary, /c4f78be1a8f14da0ab49ce1162348a5e/i)
+  assert.match(historicalCatalog.verifiedSurfaceSummary, /count 6/i)
+  assert.match(historicalCatalog.verifiedSurfaceSummary, /Sr\. Workday Integration Specialist/i)
+  assert.match(historicalCatalog.verifiedSurfaceSummary, /Learning Programs Specialist/i)
+  assert.match(historicalCatalog.verifiedSurfaceSummary, /CX Operations Specialist/i)
 })
 
 test('buildScrapers and company coverage resolve Alteryx from the shared Workday catalog', () => {
@@ -72,4 +76,32 @@ test('Alteryx local Workday config uses the verified locationCountry facet expec
       locationCountry: ['c4f78be1a8f14da0ab49ce1162348a5e'],
     },
   )
+})
+
+// July role/count prose remains historical; the effective override is identity-only.
+test('Alteryx identity override preserves its native handoff without certifying current inventory', () => {
+  const provider = getScraperCatalog().find(item => item.source === 'alteryx')
+  const scraper = buildScrapers().find(item => item.name === 'alteryx')
+  assert.equal(historicalCatalog.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.baseUrl, 'https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers')
+  assert.equal(provider.companyName, 'Alteryx')
+  assert.equal(provider.officialBindingVerifiedAt, '2026-10-20T18:49:24.688Z')
+  assert.equal(provider.bindingEvidence.checkedAt, provider.officialBindingVerifiedAt)
+  assert.equal(provider.bindingEvidence.officialURL, "https://www.alteryx.com/about-us/careers")
+  assert.deepEqual(provider.bindingEvidence.matchedLinks, ["https://alteryx.wd108.myworkdayjobs.com/AlteryxCareers"])
+  assert.equal(provider.bindingEvidence.identityScope, "Alteryx employer brand")
+  assert.match(provider.verifiedSurfaceSummary, /identity verification is not an inventory or zero-openings claim/i)
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  assert.equal(provider.verifiedPublicJobCount ?? null, null)
+  assert.equal(provider.verifiedIndiaJobCount ?? null, null)
+  assert.equal(provider.verifiedAt ?? null, null)
+  const jobs = []
+  assert.equal(readInventoryEvidence(jobs), null)
+  assert.equal(resolveZeroJobOutcome(scraper, jobs, jobs), 'unverified-zero')
+  assert.equal(buildCoverageGapResult(scraper.name, 'unverified-zero').success, false)
+  assert.deepEqual(inventoryCleanupOptions({ success: true, zeroJobEvidence: 'unverified-zero', inventoryEvidence: null }), { replaceExisting: false })
+  // Synthetic descriptor counters cannot replace native inventory evidence.
+  const fabricatedDescriptor = { ...scraper, provider: { ...provider, verifiedPublicJobCount: 0, verifiedIndiaJobCount: 0, verifiedInventoryStatus: 'verified-empty', verifiedAt: provider.officialBindingVerifiedAt } }
+  assert.equal(resolveZeroJobOutcome(fabricatedDescriptor, jobs, jobs), 'unverified-zero')
 })

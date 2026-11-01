@@ -1,3 +1,4 @@
+import { createDeclaredJobFeedScraper, DECLARED_JOB_FEED_PROFILES } from '../../scraper-support/native-sources/declaredJobFeeds/nativeCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -173,49 +174,7 @@ const defaultFetchJson = async (url) => {
   return response.json()
 }
 
-export const createSandboxAQScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Verified SandboxAQ official careers page changed materially')
-    }
-
-    if (extractVerifiedCareersListUrl(careersHtml) !== CAREERS_LIST_URL) {
-      throw new Error('Verified SandboxAQ official careers page changed materially')
-    }
-
-    const careersListHtml = await fetchText(CAREERS_LIST_URL)
-    if (!hasVerifiedCareersListShellSignal(careersListHtml)) {
-      throw new Error('Verified SandboxAQ careers list shell changed materially')
-    }
-
-    const ashbyBoardHtml = await fetchText(ASHBY_PUBLIC_BOARD_URL)
-    if (!hasVerifiedAshbyPublicBoardShellSignal(ashbyBoardHtml)) {
-      throw new Error('Verified Ashby public board changed materially')
-    }
-
-    if (buildAshbyJobBoardUrl(ASHBY_PUBLIC_BOARD_URL) !== ASHBY_JOB_BOARD_URL) {
-      throw new Error('Verified Ashby public board changed materially')
-    }
-
-    const payload = await fetchJson(ASHBY_JOB_BOARD_URL)
-    if (!Array.isArray(payload?.jobs)) {
-      throw new Error('Verified Ashby payload changed materially')
-    }
-
-    return extractAshbyJobs(payload).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: now(),
-    }))
-  },
-})
+export const createSandboxAQScraper = (options = {}) => createDeclaredJobFeedScraper(DECLARED_JOB_FEED_PROFILES.sandboxaq, options)
 
 export const run = async (options = {}) => createSandboxAQScraper(options).run(options)
 
