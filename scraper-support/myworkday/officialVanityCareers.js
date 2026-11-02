@@ -4,6 +4,7 @@ import {activeScripts,readNativeDocument} from '../utils/activeNativeHtml.js'
 import {readVisibleNativeDocument} from '../utils/visibleNativeHtml.js'
 
 const handoffs=new WeakSet()
+const redirectHandoffs=new WeakMap()
 const proof=(value,message)=>{if(!value)throw Error('Current Workday vanity handoff: '+message)}
 const hash=body=>createHash('sha256').update(body).digest('hex')
 const configuredURL=value=>{
@@ -89,10 +90,106 @@ export const readBoundedWorkdayVanityHtml=async(response,{expectedUrl,signal,max
  }finally{try{reader.releaseLock()}catch{}}
 }
 
-const responseReceipt=({response,html,expectedUrl,clocks})=>Object.freeze({
- ...responseIdentity(response,expectedUrl),sha256:hash(html),
- capturedAt:iso(clocks?.capturedAt),captureStartedAt:iso(clocks?.captureStartedAt),
+const receiptClocks=clocks=>{
+ const supplied=clocks&&typeof clocks==='object'&&!Array.isArray(clocks)?clocks:{}
+ const metadata=Object.create(null)
+ for(const key of ['capturedAt','captureStartedAt','startedAt']){
+  if(!(key in supplied))continue
+  const descriptor=Object.getOwnPropertyDescriptor(supplied,key)
+  const value=descriptor&&Object.hasOwn(descriptor,'value')?descriptor.value:undefined
+  if(key!=='capturedAt'&&descriptor&&Object.hasOwn(descriptor,'value')&&value===null)continue
+  metadata[key]=value
+ }
+ return snapshotWorkdayVanityCaptureClocks(metadata)
+}
+const responseReceipt=({response,html,expectedUrl,clocks})=>{
+ const qualified=receiptClocks(clocks)
+ return Object.freeze({...responseIdentity(response,expectedUrl),sha256:hash(html),
+  capturedAt:qualified.capturedAt,captureStartedAt:qualified.captureStartedAt})
+}
+
+const redirectIdentity=(response,expectedUrl,boardUrl)=>{
+ const expected=configuredURL(expectedUrl),board=configuredURL(boardUrl)
+ proof(!expected.port&&!expected.search&&!board.port&&!board.search,'unsupported redirect URL identity')
+ proof(response?.status===301&&response.ok===false,'native redirect response is not exact HTTP301')
+ proof(response.url===expected.href,'native redirect exact URL contradiction')
+ const location=response.headers?.get?.('location')
+ proof(typeof location==='string'&&location===boardUrl,'native redirect Location is not the literal configured Workday board')
+ return {url:expected.href,finalUrl:response.url,status:301,location,
+  contentType:response.headers?.get?.('content-type')||''}
+}
+const boundedLength=(response,maxBytes,bytes=null)=>{
+ const length=response.headers?.get?.('content-length')
+ proof(length==null||/^\d+$/.test(length)&&Number(length)<=maxBytes,'native body exceeds advertised byte bound')
+ const encoding=(response.headers?.get?.('content-encoding')||'').trim().toLowerCase()
+ if(bytes!=null&&length!=null&&(!encoding||encoding==='identity'))proof(bytes===Number(length),'native identity body ended before advertised Content-Length')
+}
+
+// Only the explicit redirect-chain mode uses this owned reader. Cancellation
+// observes the first reader.cancel promise and does not race a native read.
+const readOwnedVanityBytes=async(response,{signal,maxBytes,maxAllowed,validate})=>{
+ let reader,cancellation
+ const cancel=reason=>{
+  if(cancellation)return cancellation
+  try{cancellation=Promise.resolve(reader?reader.cancel(reason):response?.body?.cancel?.(reason))}
+  catch(error){cancellation=Promise.reject(error)}
+  cancellation.catch(()=>{})
+  return cancellation
+ }
+ const abort=()=>{void cancel(signal.reason)}
+ try{
+  signal?.throwIfAborted()
+  validate()
+  proof(Number.isInteger(maxBytes)&&maxBytes>0&&maxBytes<=maxAllowed,'invalid native body bound')
+  boundedLength(response,maxBytes)
+  proof(response.body?.getReader,'unsupported native streamed body')
+  reader=response.body.getReader()
+  signal?.addEventListener('abort',abort,{once:true})
+  if(signal?.aborted)abort()
+  const chunks=[]
+  let bytes=0
+  for(;;){
+   signal?.throwIfAborted()
+   const chunk=await reader.read()
+   signal?.throwIfAborted()
+   if(chunk.done)break
+   proof(chunk.value instanceof Uint8Array,'unsupported native body chunk')
+   bytes+=chunk.value.byteLength
+   proof(bytes<=maxBytes,'native body exceeds bounded byte budget')
+   chunks.push(Buffer.from(chunk.value))
+  }
+  boundedLength(response,maxBytes,bytes)
+  signal?.throwIfAborted()
+  return Buffer.concat(chunks)
+ }catch(error){
+  try{await cancel(error)}catch{}
+  signal?.throwIfAborted()
+  throw error
+ }finally{
+  signal?.removeEventListener('abort',abort)
+  if(cancellation)try{await cancellation}catch{}
+  try{reader?.releaseLock()}catch{}
+ }
+}
+export const readBoundedWorkdayVanityChainHtml=async(response,{expectedUrl,signal,maxBytes}={})=>{
+ const bytes=await readOwnedVanityBytes(response,{signal,maxBytes,maxAllowed:4*1024*1024,validate:()=>responseIdentity(response,expectedUrl)})
+ return bytes.toString('utf8')
+}
+export const readBoundedWorkdayVanityRedirect=(response,{expectedUrl,boardUrl,signal,maxBytes}={})=>readOwnedVanityBytes(response,{
+ signal,maxBytes,maxAllowed:1024*1024,validate:()=>redirectIdentity(response,expectedUrl,boardUrl),
 })
+
+export const currentWorkdayVanityRedirectReceipt=({handoff,response,body,clocks})=>{
+ proof(handoffs.has(handoff),'primary visible handoff proof was not established')
+ const identity=redirectIdentity(response,handoff.vanityUrl,handoff.board)
+ proof(body instanceof Uint8Array&&body.byteLength<=1024*1024,'missing or oversized redirect body bytes')
+ boundedLength(response,1024*1024,body.byteLength)
+ const qualified=receiptClocks(clocks)
+ const receipt=Object.freeze({...identity,sha256:hash(body),bytes:body.byteLength,
+  capturedAt:qualified.capturedAt,captureStartedAt:qualified.captureStartedAt})
+ redirectHandoffs.set(receipt,handoff)
+ return receipt
+}
 
 export const currentWorkdayVanityHandoffReceipt=({officialCareersUrl,vanityCareersUrl,boardUrl,response,html,clocks})=>{
  const vanity=configuredURL(vanityCareersUrl),board=configuredURL(boardUrl)
@@ -216,22 +313,40 @@ const nativeConfig=html=>{
  return Object.freeze(identity)
 }
 
+const nativeBoardIdentity=({html,boardUrl,localeUrl})=>{
+ const document=readNativeDocument(html),canonicals=document.nodes(node=>node.tag==='link'&&(node.attrs.rel||'').split(/\s+/).includes('canonical'))
+ proof(canonicals.length===1&&canonicals[0].attrs.href===boardUrl,'native canonical is ambiguous or outside the configured Workday board')
+ const board=configuredURL(boardUrl),host=board.hostname.match(/^([^.]+)\.wd\d+\.myworkdayjobs\.com$/i),parts=board.pathname.split('/').filter(Boolean)
+ proof(host&&parts.length===1&&!board.search,'unsupported configured Workday board identity')
+ const identity=nativeConfig(html)
+ proof(identity.tenant===host[1]&&identity.siteId===parts[0]&&identity.appName==='cxs'&&identity.isExternal===true,'native Workday tenant site or external-CXS identity contradiction')
+ const locale=new URL(localeUrl).pathname.split('/').filter(Boolean).find(part=>/^[a-z]{2}-[A-Z]{2}$/.test(part))
+ proof(typeof identity.locale==='string'&&(!locale||identity.locale===locale),'native Workday locale identity contradiction')
+ return identity
+}
+
 export const currentWorkdayVanityBoardReceipt=({handoff,response,html,clocks})=>{
  proof(handoffs.has(handoff),'primary visible handoff proof was not established')
  proof(typeof html==='string'&&Buffer.byteLength(html)<=1024*1024,'missing or oversized vanity HTML')
  const native=responseReceipt({response,html,expectedUrl:handoff.vanityUrl,clocks})
- const document=readNativeDocument(html),canonicals=document.nodes(node=>node.tag==='link'&&(node.attrs.rel||'').split(/\s+/).includes('canonical'))
- proof(canonicals.length===1&&canonicals[0].attrs.href===handoff.board,'native canonical is ambiguous or outside the configured Workday board')
- const board=configuredURL(handoff.board),host=board.hostname.match(/^([^.]+)\.wd\d+\.myworkdayjobs\.com$/i),parts=board.pathname.split('/').filter(Boolean)
- proof(host&&parts.length===1&&!board.search,'unsupported configured Workday board identity')
- const identity=nativeConfig(html)
- proof(identity.tenant===host[1]&&identity.siteId===parts[0]&&identity.appName==='cxs'&&identity.isExternal===true,'native Workday tenant site or external-CXS identity contradiction')
- const locale=new URL(handoff.vanityUrl).pathname.split('/').filter(Boolean).find(part=>/^[a-z]{2}-[A-Z]{2}$/.test(part))
- proof(typeof identity.locale==='string'&&(!locale||identity.locale===locale),'native Workday locale identity contradiction')
+ const identity=nativeBoardIdentity({html,boardUrl:handoff.board,localeUrl:handoff.vanityUrl})
  const responses=Object.freeze([handoff.primary,native])
  const fetchedAt=responses.every(row=>row.capturedAt)?responses.map(row=>row.capturedAt).sort()[0]:null
  return Object.freeze({requestedUrl:handoff.primary.url,responseUrl:handoff.primary.finalUrl,status:200,contentType:handoff.primary.contentType,
   board:handoff.board,anchorUrl:handoff.anchorUrl,sha256:handoff.primary.sha256,fetchedAt,
   method:'official-visible-vanity-and-literal-workday-config',responses,nativeIdentity:identity,
+  sourceScopeComplete:false,companyGlobalTotal:null,companyIndiaTotal:null})
+}
+
+export const currentWorkdayVanityRedirectBoardReceipt=({handoff,redirect,response,html,clocks})=>{
+ proof(handoffs.has(handoff)&&redirectHandoffs.get(redirect)===handoff,'same primary handoff and branded redirect proof were not established')
+ proof(typeof html==='string'&&Buffer.byteLength(html)<=1024*1024,'missing or oversized native board HTML')
+ const native=responseReceipt({response,html,expectedUrl:handoff.board,clocks})
+ const identity=nativeBoardIdentity({html,boardUrl:handoff.board,localeUrl:handoff.vanityUrl})
+ const responses=Object.freeze([handoff.primary,redirect,native])
+ const fetchedAt=responses.every(row=>row.capturedAt)?responses.map(row=>row.capturedAt).sort()[0]:null
+ return Object.freeze({requestedUrl:handoff.primary.url,responseUrl:handoff.primary.finalUrl,status:200,contentType:handoff.primary.contentType,
+  board:handoff.board,anchorUrl:handoff.anchorUrl,sha256:handoff.primary.sha256,fetchedAt,
+  method:'official-visible-vanity-redirect-and-literal-workday-config',responses,nativeIdentity:identity,
   sourceScopeComplete:false,companyGlobalTotal:null,companyIndiaTotal:null})
 }

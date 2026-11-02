@@ -113,7 +113,13 @@ test('extractJobCards keeps only linked public roles and normalizes titles from 
 
 test('run decorates the extracted jobs from the official careers page', async () => {
   const requestedUrls = []
+  const requestedNativeUrls = []
+  const nativeUnavailable = new Error('Controlled native detail unavailable in this synthetic listing fixture')
   const jobs = await createVerteilTechnologiesScraper().run({
+    fetchNative: async (url) => {
+      requestedNativeUrls.push(url)
+      throw nativeUnavailable
+    },
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === CAREERS_URL) return careersHtml
@@ -126,4 +132,13 @@ test('run decorates the extracted jobs from the official careers page', async ()
   assert.equal(jobs[0].source, 'verteiltechnologies')
   assert.equal(jobs[0].link, 'https://recruitcareers.zappyhire.com/en/Verteil/apply?job=256')
   assert.ok(jobs.every((job) => typeof job.scrapedAt === 'string' && job.scrapedAt.length > 0))
+  assert.deepEqual(requestedNativeUrls, [
+    'https://verteil.zappyhire-multitenant-be-prod.zappyhire.com/api/careers/configurations/?job=256',
+    'https://verteil.zappyhire-multitenant-be-prod.zappyhire.com/api/careers/configurations/?job=43',
+    'https://verteil.zappyhire-multitenant-be-prod.zappyhire.com/api/careers/configurations/?job=257',
+    'https://verteil.zappyhire-multitenant-be-prod.zappyhire.com/api/careers/configurations/?job=241',
+  ])
+  assert.ok(jobs.every((job) => job.sourceDetailComplete === false
+    && job.sourceDetailFailureKind === 'source-detail-access-failed'
+    && job.jobDescription === null && job.postingDate === null))
 })

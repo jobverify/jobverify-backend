@@ -13,12 +13,12 @@ import { alertScheduleService } from "./alertScheduleService.js";
 import { getTelegramProvider, isTelegramDeliveryEnabled } from "./telegramProvider.js";
 import { resolveFrontendOrigin } from "../utils/runtimeConfig.js";
 import { getSiteSettings } from "./siteSettingsService.js";
+import { normalizePublicJobCategory } from "../utils/publicJobNormalization.js";
 
-const MAX_JOBS_PER_MESSAGE = 5;
+const MAX_JOBS_PER_MESSAGE = 1;
 const CLAIM_TTL_MS = 5 * 60 * 1000;
 const SEND_TIMEOUT_MS = 60 * 1000;
 const RECOVERY_LIMIT = 500;
-const TELEGRAM_TEXT_LIMIT = 4096;
 
 const compactText = (value, limit) => {
   const text = String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -33,23 +33,29 @@ function telegramJobLink(job) {
       if (['https:', 'http:'].includes(url.protocol) && !url.username && !url.password && url.href.length <= 400) return url.href;
     } catch { /* Try the next stored link. */ }
   }
-  // Keep the URL intact when an ATS tracking link cannot fit in the digest.
+  // Keep navigation intact when an employer URL is too long.
   let origin;
   try { origin = resolveFrontendOrigin(); } catch { origin = 'https://www.jobverify.in'; }
   return new URL(job._id ? `/jobs/${encodeURIComponent(String(job._id))}` : '/jobs', origin).href;
 }
 
 export const buildTelegramMessageBody = (jobs) => {
-  const batch = jobs.slice(0, MAX_JOBS_PER_MESSAGE);
-  if (!batch.length) return '';
-  const budget = Math.floor((TELEGRAM_TEXT_LIMIT - 2 * (batch.length - 1)) / batch.length);
-  return batch.map((job, index) => {
-    const heading = `${index + 1}. ${compactText(job.title, 160)}\n${compactText(job.company, 100)} - ${compactText(job.city || job.location || 'India', 100)}`;
-    const link = telegramJobLink(job);
-    const available = budget - heading.length - link.length - 2;
-    const summary = available > 0 ? compactText(job.summary || job.description, available) : '';
-    return [heading, summary, link].filter(Boolean).join('\n');
-  }).join('\n\n');
+  const job = jobs[0];
+  if (!job) return '';
+  const batches = [...new Set((job.eligibleBatches || [])
+    .filter(year => Number.isInteger(year) && year >= 1900 && year <= 2100))]
+    .sort((a, b) => a - b).slice(0, 20);
+  const category = normalizePublicJobCategory(job);
+  const type = /^full[ -]time/i.test(category) ? 'Full time' : category;
+  return [
+    `📌 ${compactText(job.company, 100) || 'Company not specified'} is hiring ${compactText(job.title, 160) || 'Role not specified'}`,
+    '',
+    `🎓 Batch :- ${batches.length ? batches.join(', ') : 'Not specified'}`,
+    `⚙️ Type :- ${compactText(type, 60) || 'Not specified'}`,
+    `📍 Location :- ${compactText(job.city || job.location, 100) || 'Not specified'}`,
+    '',
+    `👔 Job link\n${telegramJobLink(job)}`,
+  ].join('\n');
 };
 
 const claimFilter = (now = new Date()) => ({

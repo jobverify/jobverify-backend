@@ -178,7 +178,63 @@ for (const parallel of [false, true]) {
       assert.match(result.stderr, /WARN \[broken\]/)
     })
   }
-  for (const scenario of ['persistence-error', 'runner-code-error', 'analysis-error', 'fatal-source', 'artifact-error']) {
+  for (const scenario of ['malformed-description', 'source-code-error', 'processing-code-error', 'fatal-source']) {
+    test(`${mode} CLI isolates ${scenario}, checkpoints the failure and completes the next source`, t => {
+      const result = runScenario(t, scenario, parallel)
+      assert.equal(result.status, 0, result.stdout + result.stderr)
+      assert.deepEqual(result.state.started, ['broken', 'healthy'])
+      assert.deepEqual(result.state.saved, ['healthy'])
+      assert.equal(result.state.statuses.broken.success, false)
+      assert.equal(result.state.history.broken.success, false)
+      assert.equal(result.state.history.healthy.success, true)
+      assert.equal(result.state.finished.aborted, false)
+      assert.equal(result.summary.failed, 1)
+      assert.equal(result.summary.warnings, 1)
+      assert.equal(result.summary.pendingEstimate, 0)
+      assert.equal(result.summary.interrupted, false)
+      assert.equal(stageOutcome('scraper', result.summary, result.status), 'completed')
+      const checkpoint = JSON.parse(fs.readFileSync(path.join(result.directory, 'run-state.json'), 'utf8'))
+      assert.equal(checkpoint.status, 'complete')
+      assert.equal(checkpoint.remainingCount, 0)
+      assert.equal(checkpoint.completed.broken.result.success, false)
+      assert.equal(checkpoint.completed.healthy.result.success, true)
+      if (scenario === 'malformed-description') {
+        assert.match(result.state.history.broken.error, /Active native content: Unterminated native tag/)
+        assert.match(result.state.statuses.broken.error, /Active native content: Unterminated native tag/)
+        assert.deepEqual(result.summary.extractionChecks, { complete: 1, incomplete: 1 })
+      }
+    })
+  }
+  for (const scenario of ['all-description-fail', 'persistence-error', 'analysis-error']) {
+    test(`${mode} CLI completes with warnings when every source has ${scenario}`, t => {
+      const result = runScenario(t, scenario, parallel)
+      assert.equal(result.status, 0, result.stdout + result.stderr)
+      assert.deepEqual(result.state.started, ['broken', 'healthy'])
+      assert.deepEqual(result.state.saved, [])
+      assert.equal(result.summary.failed, 2)
+      assert.equal(result.summary.warnings, 2)
+      assert.equal(result.summary.pendingEstimate, 0)
+      assert.equal(result.summary.interrupted, false)
+      assert.equal(stageOutcome('scraper', result.summary, result.status), 'completed')
+    })
+  }
+  if (parallel) {
+    test('parallel description failure preserves active healthy work and starts queued sources', t => {
+      const result = runScenario(t, 'concurrent-description-error', true)
+      assert.equal(result.status, 0, result.stdout + result.stderr)
+      assert.deepEqual(result.state.started, ['broken', 'peer', 'healthy'])
+      assert.deepEqual(result.state.saved.sort(), ['healthy', 'peer'])
+      assert.equal(result.state.peerAborted, false)
+      assert.equal(result.state.history.broken.success, false)
+      assert.equal(result.state.history.peer.success, true)
+      assert.equal(result.state.history.healthy.success, true)
+      assert.equal(result.summary.failed, 1)
+      assert.equal(result.summary.completed, 2)
+      assert.equal(result.summary.pendingEstimate, 0)
+      assert.equal(stageOutcome('scraper', result.summary, result.status), 'completed')
+    })
+  }
+  for (const scenario of ['runner-code-error', 'artifact-error']) {
     test(`${mode} CLI fails for ${scenario} instead of treating it as a source warning`, t => {
       const result = runScenario(t, scenario, parallel)
       assert.equal(result.status, 1, result.stdout + result.stderr)

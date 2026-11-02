@@ -67,9 +67,14 @@ test('Telegram alert delivery through matching, durable scheduling and provider 
       ? { ok: false, error_code: 400, description: 'Bad Request: message is too long' }
       : { ok: true, result: { message_id: 123 } });
     await queueJobAlertsForJobs(jobs);
-    assert.equal(requests.length, 1);
-    assert.ok(requests[0].text.length <= 4096, `Message has ${requests[0].text.length} characters; Telegram accepts at most 4096.`);
-    for (const item of jobs) { assert.ok(requests[0].text.includes(item.title)); assert.ok(requests[0].text.includes(item.sourceUrl)); }
+    assert.equal(requests.length, jobs.length, 'Each job must be sent in a separate Telegram message.');
+    for (const [index, item] of jobs.entries()) {
+      const body = requests[index].text;
+      assert.ok(body.length <= 4096);
+      assert.ok(body.startsWith(`📌 Example is hiring ${item.title}\n`));
+      assert.ok(body.includes(item.sourceUrl));
+      for (const other of jobs) if (other.id !== item.id) assert.equal(body.includes(other.sourceUrl), false);
+    }
     assert.equal((await User.findById(owner._id)).premium.telegramAlertsEnabled, true);
     assert.equal(await JobAlertDelivery.countDocuments(), 0);
     assert.ok((await Subscription.findOne({ user: owner._id })).telegramLastSentAt);
@@ -147,5 +152,6 @@ test('bounded alert text preserves complete navigation links and valid Unicode',
   const body = buildTelegramMessageBody(jobs);
   assert.ok(body.length <= 4096);
   assert.equal(body.isWellFormed(), true);
-  for (const item of jobs) assert.ok(body.includes(`https://jobs.example.test/jobs/${item._id}`), 'Long employer URLs need a complete JobVerify link.');
+  assert.ok(body.includes('https://jobs.example.test/jobs/job-0'), 'Long employer URLs need a complete JobVerify link.');
+  assert.equal(body.includes('https://jobs.example.test/jobs/job-1'), false);
 });

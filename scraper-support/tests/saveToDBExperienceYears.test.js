@@ -189,6 +189,7 @@ test('saveToDB persists normalized experience years for filtering', async () => 
       description: 'Build and maintain backend services.',
       experienceRequired: '2 years of backend engineering experience',
     }], 'example-source', {
+      enrichPublicExperience: false,
       refreshDatasetSummary: false,
       replaceExisting: false,
     })

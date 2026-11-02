@@ -168,6 +168,7 @@ test('PTC scraper discovers every India Workday location facet and paginates', a
   ]
 
   const jobs = await scraper.run({
+    fetchPage: async () => { throw new Error('Controlled optional detail unavailable in pagination fixture') },
     fetchJobsPage: async (request) => {
       requests.push(request)
       return requests.length === 1 ? facetPayload : pages[requests.length - 2]

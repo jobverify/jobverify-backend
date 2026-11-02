@@ -157,7 +157,7 @@ const buildRetryError = (
 
   finalErr.cause = lastError
 
-  for (const key of ['softFailure', 'upstreamOutage', 'failureKind', 'abortRetries', 'localTimeout', 'retryDelayMs']) {
+  for (const key of ['softFailure', 'upstreamOutage', 'failureKind', 'abortRetries', 'localTimeout', 'retryDelayMs', 'partial']) {
     if (lastError?.[key] != null) {
       finalErr[key] = lastError[key]
     }

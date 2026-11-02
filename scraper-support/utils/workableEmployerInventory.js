@@ -12,19 +12,57 @@ const cleanUrl = value => {
 }
 const recruitingHost = /(?:^|\.)(?:workable\.com|greenhouse\.io|lever\.co|ashbyhq\.com|myworkdayjobs\.com|smartrecruiters\.com|icims\.com|freshteam\.com|zappyhire\.com|darwinbox\.in|zohorecruit\.(?:com|in)|bamboohr\.com|recruitee\.com|jobvite\.com|teamtailor\.com|taleo\.net)$/i
 const fetchPage = async (url, { signal } = {}) => {
-  const response = await fetch(url, { redirect: 'follow',
-    signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(25000)]),
-    headers: { Accept: 'text/html', 'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)' } })
-  const html = await response.text()
-  if (html.length > 3000000) throw new Error('Workable employer page exceeds verification budget')
-  return { status: response.status, url: response.url, html }
+  signal?.throwIfAborted()
+  const requestSignal = AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(25000)])
+  let response
+  try {
+    requestSignal.throwIfAborted()
+    response = await fetch(url, { redirect: 'follow', signal: requestSignal,
+      headers: { Accept: 'text/html', 'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)' } })
+    signal?.throwIfAborted()
+    requestSignal.throwIfAborted()
+    const html = await response.text()
+    signal?.throwIfAborted()
+    requestSignal.throwIfAborted()
+    if (html.length > 3000000) throw new Error('Workable employer page exceeds verification budget')
+    return { status: response.status, url: response.url, html }
+  } catch (error) {
+    if (signal?.aborted || requestSignal.aborted) {
+      // Keep abort disposal owned until settlement; caller reasons stay opaque.
+      try { await response?.body?.cancel?.() } catch {}
+      signal?.throwIfAborted()
+      requestSignal.throwIfAborted()
+    }
+    throw error
+  }
 }
 const fetchJson = async (url, options = {}) => {
-  const response = await fetch(url, { ...options, redirect: 'follow',
-    signal: AbortSignal.any([...(options.signal ? [options.signal] : []), AbortSignal.timeout(30000)]),
-    headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)', ...options.headers } })
-  if (response.status !== 200 || response.url !== url) throw new Error(`Workable native HTTP status or redirect identity changed: ${url}`)
-  return response.json()
+  const callerSignal = options.signal
+  callerSignal?.throwIfAborted()
+  const signal = AbortSignal.any([...(callerSignal ? [callerSignal] : []), AbortSignal.timeout(30000)])
+  let response
+  try {
+    signal.throwIfAborted()
+    response = await fetch(url, { ...options, signal, redirect: 'follow', headers: {
+      Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
+      ...options.headers,
+    } })
+    callerSignal?.throwIfAborted()
+    signal.throwIfAborted()
+    if (response.status !== 200 || response.url !== url) throw new Error(`Workable native HTTP status or redirect identity changed: ${url}`)
+    const payload = await response.json()
+    callerSignal?.throwIfAborted()
+    signal.throwIfAborted()
+    return payload
+  } catch (error) {
+    if (callerSignal?.aborted || signal.aborted) {
+      // Keep abort disposal owned until settlement; caller reasons stay opaque.
+      try { await response?.body?.cancel?.() } catch {}
+      callerSignal?.throwIfAborted()
+      signal.throwIfAborted()
+    }
+    throw error
+  }
 }
 
 // Opt-in current employer proof around the shared complete cursor/detail engine.

@@ -68,17 +68,21 @@ for (const parallel of [true, false]) {
     })
   }
   for (const scenario of ['code-error', 'source-code-error']) {
-    test(`${parallel ? 'parallel' : 'sequential'} ${scenario} still stops execution`, () => {
+    test(`${parallel ? 'parallel' : 'sequential'} ${scenario} remains isolated while the next source completes`, () => {
       const result = runScenario(scenario, parallel)
-      assert.ok(result.error)
-      assert.match(result.error.message, /invalid .* code/)
-      assert.deepEqual(result.started, ['alpha'])
-      assert.equal(result.checkpoint.completedCount, 0)
+      assert.equal(result.error, null)
+      assert.deepEqual(result.started, ['alpha', 'beta'])
+      assert.equal(result.history.alpha.success, false)
+      assert.match(result.history.alpha.error, /invalid .* code/)
+      assert.equal(result.history.beta.success, true)
+      assert.equal(result.finished.aborted, false)
+      assert.equal(result.checkpoint.completedCount, 2)
+      assert.equal(result.checkpoint.status, 'complete')
     })
   }
 }
 
-for (const scenario of ['fatal-cleanup', 'persistence-cleanup']) {
+for (const scenario of ['fatal-cleanup']) {
   test(`lifecycle timeout preserves ${scenario} errors instead of downgrading them to a warning`, () => {
     const result = runScenario(scenario)
     assert.match(result.error?.message || '', /shared persistence failed during abort cleanup/)
@@ -86,6 +90,16 @@ for (const scenario of ['fatal-cleanup', 'persistence-cleanup']) {
     assert.equal(result.finished.aborted, true)
   })
 }
+
+test('source cleanup failure after a lifecycle timeout leaves queued work running', () => {
+  const result = runScenario('persistence-cleanup')
+  assert.equal(result.error, null)
+  assert.deepEqual(result.started, ['broken', 'queued'])
+  assert.equal(result.history.broken.success, false)
+  assert.equal(result.history.broken.failureKind, 'runner_lifecycle_timeout')
+  assert.equal(result.history.queued.success, true)
+  assert.equal(result.finished.aborted, false)
+})
 
 test('parallel timeout stays bounded when a source ignores its abort signal', () => {
   const result = runScenario('uncooperative-timeout')

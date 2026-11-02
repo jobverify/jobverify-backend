@@ -3,6 +3,7 @@ import test from 'node:test'
 import mongoose from 'mongoose'
 
 import Job from '../../src/models/Job.js'
+import JobDatasetSummary from '../../src/models/JobDatasetSummary.js'
 import ScraperRun from '../../src/models/ScraperRun.js'
 import ScraperStatus from '../../src/models/ScraperStatus.js'
 import { resolveZeroJobOutcome, runAll } from '../runner.js'
@@ -14,7 +15,7 @@ import {
 import { generateFingerprint, saveToDB as persistJobs } from '../utils/saveToDB.js'
 
 // These persistence fixtures stub MongoDB; transactional alert behavior has its own replica-set suite.
-const saveToDB = (jobs, source, options = {}) => persistJobs(jobs, source, { enqueueAlerts: false, ...options })
+const saveToDB = (jobs, source, options = {}) => persistJobs(jobs, source, { enqueueAlerts: false, enrichPublicExperience: false, ...options })
 import { DEFAULT_JOB_RETENTION_DAYS } from '../../src/utils/jobLifecycle.js'
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 
@@ -121,8 +122,25 @@ test('runAll preserves the existing jobs collection during a full live run', asy
   const originalFindOne = ScraperStatus.findOne
   const originalCreate = ScraperRun.create
   const originalBulkWrite = ScraperStatus.bulkWrite
+  const originalSummaryFindOne = JobDatasetSummary.findOne
+  let summaryReads = 0
+  const summaryUnavailable = new Error('Controlled fixture: summary read unavailable')
 
   const deleteFilters = []
+
+  JobDatasetSummary.findOne = filter => {
+    assert.deepEqual(filter, { key: 'public-active' })
+    let sorted = false, leaned = false
+    return {
+      sort(order) { assert.deepEqual(order, { _id: 1 }); sorted = true; return this },
+      lean() { assert.equal(sorted, true); leaned = true; return this },
+      async exec() {
+        assert.equal(leaned, true)
+        summaryReads++
+        throw summaryUnavailable
+      },
+    }
+  }
 
   Job.deleteMany = async (filter) => {
     deleteFilters.push(filter)
@@ -144,8 +162,10 @@ test('runAll preserves the existing jobs collection during a full live run', asy
     await runAll()
 
     assert.deepEqual(deleteFilters, [])
+    assert.equal(summaryReads, 1)
   } finally {
     Job.deleteMany = originalDeleteMany
+    JobDatasetSummary.findOne = originalSummaryFindOne
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
     ScraperStatus.findOne = originalFindOne
     ScraperRun.create = originalCreate
@@ -163,6 +183,9 @@ test('runAll defers sources without starting scrapers when Atlas storage quota b
   const originalFindOne = ScraperStatus.findOne
   const originalCreate = ScraperRun.create
   const originalDeleteMany = Job.deleteMany
+  const originalJobFind = Job.find
+  let recoveryReads = 0
+  const recoveryUnavailable = new Error('Controlled fixture: expired-job read unavailable')
 
   let activeStatusReads = 0
   let pipelineStatusWrites = 0
@@ -171,6 +194,24 @@ test('runAll defers sources without starting scrapers when Atlas storage quota b
     'you are over your space quota, using 521 MB of 512 MB. Writes are blocked on your cluster.',
   )
 
+  Job.find = filter => {
+    assert.deepEqual(Object.keys(filter).sort(), ['lastSeenAt', 'status'])
+    assert.equal(filter.status, 'expired')
+    assert.deepEqual(Object.keys(filter.lastSeenAt), ['$lt'])
+    assert.ok(filter.lastSeenAt.$lt instanceof Date)
+    assert.ok(Number.isFinite(filter.lastSeenAt.$lt.getTime()))
+    let sorted = false, limited = false, leaned = false
+    return {
+      sort(order) { assert.deepEqual(order, { lastSeenAt: 1, _id: 1 }); sorted = true; return this },
+      limit(value) { assert.equal(sorted, true); assert.equal(value, 100); limited = true; return this },
+      lean() { assert.equal(limited, true); leaned = true; return this },
+      async exec() {
+        assert.equal(leaned, true)
+        recoveryReads++
+        throw recoveryUnavailable
+      },
+    }
+  }
   Job.deleteMany = async (filter) => {
     deleteFilters.push(filter)
     return { deletedCount: 0 }
@@ -201,8 +242,10 @@ test('runAll defers sources without starting scrapers when Atlas storage quota b
     assert.equal(pipelineStatusWrites, 0)
     assert.equal(activeStatusReads, 0)
     assert.deepEqual(deleteFilters, [])
+    assert.equal(recoveryReads, 3)
   } finally {
     Job.deleteMany = originalDeleteMany
+    Job.find = originalJobFind
     ScraperStatus.bulkWrite = originalBulkWrite
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
     ScraperStatus.findOne = originalFindOne

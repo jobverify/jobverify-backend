@@ -123,6 +123,7 @@ test('discovers the India facet then paginates every BlackLine result page', asy
   })
 
   const jobs = await scraper.run({
+    fetchPage: async () => { throw new Error('Controlled optional detail unavailable in pagination fixture') },
     fetchJobsPage: async (request) => {
       requests.push(request)
 
