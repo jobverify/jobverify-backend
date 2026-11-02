@@ -16,6 +16,14 @@ test('private resumes round-trip through HTTP and MongoDB without changing docum
   process.env.NODE_ENV = 'test';
   process.env.JWT_SECRET = 'resume-storage-integration-test-secret-only';
   process.env.CORS_ORIGIN = 'http://localhost:5173';
+  // Storage/history fixtures drain generated output explicitly below; automatic
+  // external workflow dispatch is unrelated to these HTTP/Mongo assertions.
+  const actionsEnabledBefore = process.env.TAILORED_RESUME_ACTIONS_ENABLED;
+  process.env.TAILORED_RESUME_ACTIONS_ENABLED = 'false';
+  t.after(() => {
+    if (actionsEnabledBefore === undefined) delete process.env.TAILORED_RESUME_ACTIONS_ENABLED;
+    else process.env.TAILORED_RESUME_ACTIONS_ENABLED = actionsEnabledBefore;
+  });
   const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1 }, binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
   let server;
   t.after(async () => { if (server) await new Promise(resolve => server.close(resolve)); await mongoose.disconnect(); await mongo.stop(); });

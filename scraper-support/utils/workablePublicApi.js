@@ -25,15 +25,34 @@ const nativePublication = (value, currentTime) => {
 }
 
 const defaultFetchJson = async (url, options = {}) => {
-  const signal = options.signal
-    ? AbortSignal.any([options.signal, AbortSignal.timeout(30000)])
+  const callerSignal = options.signal
+  callerSignal?.throwIfAborted()
+  const signal = callerSignal
+    ? AbortSignal.any([callerSignal, AbortSignal.timeout(30000)])
     : AbortSignal.timeout(30000)
-  const response = await fetch(url, { ...options, signal, redirect: 'follow', headers: {
-    Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
-    ...options.headers,
-  } })
-  if (response.status !== 200 || response.url !== url) fail('HTTP status or redirect identity changed for ' + url)
-  return response.json()
+  let response
+  try {
+    signal.throwIfAborted()
+    response = await fetch(url, { ...options, signal, redirect: 'follow', headers: {
+      Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
+      ...options.headers,
+    } })
+    callerSignal?.throwIfAborted()
+    signal.throwIfAborted()
+    if (response.status !== 200 || response.url !== url) fail('HTTP status or redirect identity changed for ' + url)
+    const payload = await response.json()
+    callerSignal?.throwIfAborted()
+    signal.throwIfAborted()
+    return payload
+  } catch (error) {
+    if (callerSignal?.aborted || signal.aborted) {
+      // Keep abort disposal owned until settlement; caller reasons stay opaque.
+      try { await response?.body?.cancel?.() } catch {}
+      callerSignal?.throwIfAborted()
+      signal.throwIfAborted()
+    }
+    throw error
+  }
 }
 
 const locationKey = location => [location.countryCode, location.city, location.region].map(value => text(value).toLowerCase()).join('|')

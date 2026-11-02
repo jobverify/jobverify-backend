@@ -632,7 +632,7 @@ const waitForAbortSettlement = async (runPromise, abortGraceMs) => {
 }
 
 const getAbortReason = (signal, fallbackMessage) => (
-  signal?.reason || new Error(fallbackMessage)
+  signal?.aborted ? signal.reason : new Error(fallbackMessage)
 )
 
 const throwIfAborted = (signal, fallbackMessage = 'Runner operation aborted') => {
@@ -677,9 +677,11 @@ export const withSourceLifecycleTimeout = async (
   let timeoutError = null
   const controller = new AbortController()
   let parentAbortReason = null
+  let parentAborted = false
   let rejectParentAbort
   const parentAbortPromise = new Promise((_, reject) => { rejectParentAbort = reject })
   const detachParentAbort = attachParentAbort(signal, controller, (reason) => {
+    parentAborted = true
     parentAbortReason = reason
     rejectParentAbort(reason)
   })
@@ -713,12 +715,12 @@ export const withSourceLifecycleTimeout = async (
       parentAbortPromise,
     ])
   } catch (error) {
-    if (error === timeoutError || error === parentAbortReason) {
+    if ((timeoutError !== null && error === timeoutError) || (parentAborted && error === parentAbortReason)) {
       const settlement = await waitForAbortSettlement(runPromise, abortGraceMs)
       if (settlement.settled) {
-        if (isPipelineFatalError(settlement.error)) throw settlement.error
+        if (isPipelineFatalError(settlement.error, controller.signal)) throw settlement.error
         if (
-          error === timeoutError
+          timeoutError !== null && error === timeoutError
           && settlement.value?.success === false
           && settlement.value?.failureKind === error.failureKind
         ) {
@@ -746,7 +748,9 @@ const runBoundedScraperPass = async (
   let onParentAbort = null
   const controller = new AbortController()
   let parentAbortReason = null
+  let parentAborted = false
   const detachParentAbort = attachParentAbort(signal, controller, (reason) => {
+    parentAborted = true
     parentAbortReason = reason
   })
   const runPromise = Promise.resolve().then(() => scraper.run({ signal: controller.signal }))
@@ -772,9 +776,9 @@ const runBoundedScraperPass = async (
         : new Promise(() => {}),
     ])
   } catch (error) {
-    if (error === timeoutError || error === parentAbortReason) {
+    if ((timeoutError !== null && error === timeoutError) || (parentAborted && error === parentAbortReason)) {
       const settlement = await waitForAbortSettlement(runPromise, abortGraceMs)
-      if (isPipelineFatalError(settlement.error)) throw settlement.error
+      if (isPipelineFatalError(settlement.error, controller.signal)) throw settlement.error
     }
     throw error
   } finally {
@@ -972,26 +976,26 @@ export const isHardSourceFailure = (result = {}) => (
   && result.softFailure !== true
 )
 
-const isPipelineFatalError = (error) => {
+const isPipelineFatalError = (error, signal = null) => {
   const seen = new Set()
   for (let current = error; current && !seen.has(current); current = current.cause) {
+    // An opaque caller reason is data, including when a cleanup error wraps it.
+    if (signal?.aborted && current === signal.reason) return false
     seen.add(current)
     if (current.abortPipeline === true || current.persistenceBlocked === true) return true
   }
   return false
 }
 
-const rethrowFatalError = (error, { source, processingStarted, signal }) => {
+const rethrowInfrastructureError = (error, { processingStarted }) => {
   if (isMongoOperationalError(error, { networkCodes: processingStarted })) return
-  if (isPipelineFatalError(error)) throw error
-  if (error?.classificationPending || (!processingStarted && (!isProgrammingError(error) || classifyScraperError(error).softFailure))) return
+  // Parser and job-processing failures belong to the source being attempted.
+  // A source's error flags cannot escalate them into a pipeline-wide abort.
   const seen = new Set()
   for (let current = error; current && !seen.has(current); current = current.cause) {
     seen.add(current)
-    // Ordinary cancellation during shared processing is still a source timeout/shutdown.
-    if (signal?.aborted && current === signal.reason) return
+    if (current instanceof FatalScraperPersistenceError || current instanceof LocalJobOutboxPersistenceError) throw error
   }
-  throw toFatalScraperPersistenceError(`[pipeline] Shared processing failed for [${source}]; aborting run`, error, { required: true })
 }
 
 export class MissingMongoUriError extends Error {
@@ -1374,8 +1378,7 @@ export const runAll = async ({ stopSignal = null, preparedRun = null } = {}) => 
         console.error(`  ${fatalPersistenceError.message}`)
         throw fatalPersistenceError
       }
-      // Source outages stay isolated; shared persistence and explicitly fatal errors must escape.
-      rethrowFatalError(err, { source: scraper.name, processingStarted, signal: stopSignal })
+      rethrowInfrastructureError(err, { processingStarted })
       const classification = classifyScraperError(err)
       const failureResult = {
         success: false,
@@ -1388,6 +1391,7 @@ export const runAll = async ({ stopSignal = null, preparedRun = null } = {}) => 
         retryPressure: getRetryPressure(scrapeOperation),
         durationMs: Date.now() - scraperStart,
         ...classification,
+        ...(err.partial === true ? { partial: true } : {}),
         ...(isMongoOperationalError(err, { networkCodes: processingStarted }) ? pendingPersistenceResult(err) : {}),
       }
       const failureLabel = failureResult.softFailure ? 'UPSTREAM:' : 'SOURCE FAILED:'
@@ -1593,7 +1597,7 @@ export const runScraper = async (
       console.error(`  ${fatalPersistenceError.message}`)
       throw fatalPersistenceError
     }
-    rethrowFatalError(err, { source: scraper.name, processingStarted, signal: lifecycleSignal })
+    rethrowInfrastructureError(err, { processingStarted })
     const classification = classifyScraperError(err)
     const failResult = {
       success: false,
@@ -1606,6 +1610,7 @@ export const runScraper = async (
       retryPressure: getRetryPressure(scrapeOperation),
       durationMs: Date.now() - scraperStart,
       ...classification,
+      ...(err.partial === true ? { partial: true } : {}),
       ...(isMongoOperationalError(err, { networkCodes: processingStarted }) ? pendingPersistenceResult(err) : {}),
     }
     const failureLabel = failResult.softFailure ? 'UPSTREAM:' : 'SOURCE FAILED:'

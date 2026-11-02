@@ -90,8 +90,9 @@ globalThis.runnerLifecycleFixture = {
       if (['fatal-cleanup', 'persistence-cleanup'].includes(scenario)) {
         return new Promise((resolve, reject) => {
           signal.addEventListener('abort', () => {
-            const error = new Error('shared persistence failed during abort cleanup')
-            if (scenario === 'fatal-cleanup') error.abortPipeline = true
+            const error = scenario === 'fatal-cleanup'
+              ? globalThis.runnerLifecycleFixture.fatalCleanupError
+              : new Error('source persistence failed during abort cleanup')
             reject(error)
           }, { once: true })
         })
@@ -213,7 +214,8 @@ if (scenario === 'checkpoint-failure-threshold') {
   process.env.SCRAPER_FAILURE_ABORT_THRESHOLD = '1'
 }
 console.log = console.error = console.warn = () => {}
-const { runAll } = await import('../../runner.js')
+const { runAll, FatalScraperPersistenceError } = await import('../../runner.js')
+globalThis.runnerLifecycleFixture.fatalCleanupError = new FatalScraperPersistenceError('shared persistence failed during abort cleanup')
 mock.timers.enable({ apis: ['setTimeout'] })
 let completed = false
 const shutdownController = new AbortController()

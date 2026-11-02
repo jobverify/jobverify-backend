@@ -8,9 +8,6 @@ import { before, after, beforeEach, test } from 'node:test'
 import { inspectSearch, parsePage, parseDetail } from '../../scraper/disney.workday/nativeContract.js'
 import { readNativeRoleAvailability, storedAvailabilityMarker } from '../utils/sourceAvailability.js'
 
-const binaryDir = path.join(os.tmpdir(), 'codex-scraper-test-mongo-8.2.6')
-process.env.MONGOMS_SYSTEM_BINARY ||= path.join(binaryDir, 'mongod-x64-win32-8.2.6.exe')
-process.env.MONGOMS_DOWNLOAD_DIR ||= binaryDir
 process.env.MONGOMS_RUNTIME_DOWNLOAD = 'false'
 process.env.MONGO_URI = 'mongodb://127.0.0.1:1/availability_disney_disconnected_guard'
 const { default: mongoose } = await import('mongoose')
@@ -47,7 +44,7 @@ before(async () => {
   assert.equal(mongoose.connection.readyState, 0); proof.initialMongooseReadyState = 0
   globalThis.fetch = async () => { throw Error('External network forbidden in isolated Disney availability verification') }
   mongo = await MongoMemoryServer.create({ instance: { ip: '127.0.0.1', dbName: 'codex_disney_availability_binding' },
-    binary: { version: '8.2.6', systemBinary: process.env.MONGOMS_SYSTEM_BINARY, downloadDir: binaryDir } })
+    binary: { version: '8.2.6' } })
   const uri = mongo.getUri('codex_disney_availability_binding')
   assert.match(uri, /^mongodb:\/\/127\.0\.0\.1:\d+\/codex_disney_availability_binding/)
   process.env.MONGO_URI = uri; await mongoose.connect(uri, { autoIndex: false, autoCreate: false })
