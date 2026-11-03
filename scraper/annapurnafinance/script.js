@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { runCurrentAnnapurna } from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -68,22 +69,7 @@ export const isMissingCareerRoute = (page = {}, requestedUrl = '') => {
 }
 
 export const createAnnapurnaFinanceScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-
-    if (homepage.status !== 200 || !hasOfficialHomepageSurface(homepage.html)) {
-      throw new Error('Annapurna Finance official homepage no longer matches the verified public surface')
-    }
-
-    for (const routeUrl of CAREER_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isMissingCareerRoute(routePage, routeUrl)) {
-        throw new Error(`Annapurna Finance career route changed materially or now exposes public jobs: ${routeUrl}`)
-      }
-    }
-
-    return []
-  },
+  run: runCurrentAnnapurna,
 })
 
 export const run = async (options = {}) => createAnnapurnaFinanceScraper().run(options)

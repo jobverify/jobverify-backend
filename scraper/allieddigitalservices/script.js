@@ -1,3 +1,4 @@
+import {runCurrentAllied} from './currentNative.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -207,28 +208,7 @@ const extractVerifiedDetail = (html, record) => {
   }
 }
 
-export const createAlliedDigitalServicesScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJobsPage = defaultFetchJobsPage, now: overrideNow } = {}) {
-    const rootHtml = await fetchText(ROOT_URL)
-    if (!hasOfficialRootSignal(rootHtml)) throw new Error('Allied Digital Services verified root surface changed: ' + ROOT_URL)
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) throw new Error('Allied Digital Services verified careers surface changed: ' + CAREERS_URL)
-    const listingHtml = await fetchText(HIRING_NOW_URL)
-    if (!hasHiringNowSignal(listingHtml)) throw new Error('Allied Digital Services verified Hiring Now surface changed: ' + HIRING_NOW_URL)
-    const inventory = await fetchCompleteInventory(fetchJobsPage, listingHtml)
-    const jobs = []
-    for (const record of inventory) {
-      const job = extractVerifiedDetail(await fetchText(record.link), record)
-      if (job) jobs.push({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt: (overrideNow || now)() })
-    }
-    return attachInventoryEvidence(jobs, {
-      status: 'complete-inventory', surface: JOBS_API_URL, firstParty: true, listingComplete: true,
-      pagesFetched: Math.ceil(inventory.length / PAGE_SIZE), reportedTotal: inventory.length,
-      indiaFacetCount: jobs.length, verifiedAt: (overrideNow || now)(),
-      reason: 'count-checked-wordpress-inventory-and-verified-details',
-    })
-  },
-})
+export const createAlliedDigitalServicesScraper = (defaults = {}) => ({run:(options = {})=>runCurrentAllied({...defaults,...options})})
 
 export const run = async (options = {}) => createAlliedDigitalServicesScraper().run(options)
 

@@ -3,7 +3,7 @@ const degree = /\b(?:bachelor(?:'s|s)?|master(?:'s|s)?|b\.?tech|m\.?tech|b\.e\.?
 const seniorRole = /\b(?:manager|director|vice president|chief|head of|senior|sr|principal|staff|lead|supervisor|expert)\b/i;
 const excludedStudentSubject = /\b(?:our (?:staff|employees|team)|employees|staff|mentoring|mentor|supervis(?:e|ing)|manage|managing|lead (?:our |the )?(?:graduate|student|intern)|recruitment programme|recruitment program|support (?:recent )?graduates)\b/i;
 const employerExperienceSubject = /\b(?:our|the|this)\s+(?:company|business|organization|organisation)\s+(?:has|have|with|brings?)\b|\bwe\s+(?:have|are\s+a\s+company\s+with)\b/i;
-const applicantExperienceRequirement = /\b(?:applicants?|candidates?|you)\s+(?:(?:must|should)\s+)?(?:have|possess|bring)\s+(?:prior |previous |professional |relevant |work )?experience\b/i;
+const applicantExperienceRequirement = /\b(?:(?:applicants?|candidates?|you)\s+(?:(?:must|should)\s+)?|(?:must|should|required to)\s+)(?:have|possess|bring)\s+(?:(?:prior|previous|professional|relevant|work)\s+)*experience\b/i;
 const normalize = value => String(value || '').replace(/[\u2018\u2019]/g, "'").replace(/[\u2013\u2014]/g, '-');
 const clauses = text => normalize(text).split(/\n|[.;](?=\s|$)/).map(value => value.trim()).filter(Boolean);
 const negated = text => /\b(?:not|never|no longer|ineligible|cannot|can't|need not)\b/i.test(text);
@@ -13,6 +13,18 @@ export const fresherVacancyTitle = value => {
   return /\bfreshers?\b/i.test(title)
     && !/\b(?:no|not|non|never|cannot|ineligible|excluding|except|excluded)\b|\b\w+n't\b/i.test(title)
     && !/\b(?:trainers?|training|mentors?|mentoring|instructors?|tutors?|coaches?|coaching|recruit(?:ers?|ment|ing)?|talent\s+acquisition|placements?)\b/i.test(title)
+    ? title : null;
+};
+// Eligibility for the vacancy itself. Recruiting, supervising or training these
+// applicants is an occupation, rather than evidence that the applicant is new.
+export const entryLevelVacancyTitle = value => {
+  const title = normalize(value).replace(/_/g, ' ');
+  if (/\b(?:no|not|non|never|cannot|ineligible|excluding|except|excluded)\b|\b\w+n't\b/i.test(title)
+    || /\b(?:for|of|manage|managing|mentor|mentoring|train|training|recruit|recruiting)\s+(?:(?:the|our|new|recent|college)\s+)*(?:graduates?|trainees?|apprentices?|entry[- ]level)\b/i.test(title)
+    || /\b(?:graduate|trainee|apprentice(?:ship)?|entry[- ]level)\s+(?:(?:program(?:me)?|recruitment|training|relations|operations)\s+)*(?:recruiter|trainer|instructor|mentor|coordinator|director|supervisor)\b/i.test(title)
+    || /\b(?:graduate|trainee|apprentice(?:ship)?)\s+(?:program(?:me)?|recruitment|training)\s+(?:manager|specialist|administrator|officer)\b/i.test(title)
+    || (seniorRole.test(title) && !/\btrainee\b/i.test(title))) return null;
+  return /\b(?:trainee|apprentice|entry[- ]level|(?:new|recent|fresh)\s+(?:(?:college|university)\s+)?grad(?:uate)?s?|graduate\s+(?:engineer(?:ing)?|developer|analyst|associate|trainee|programme?|program|role|position))\b/i.test(title)
     ? title : null;
 };
 const applicantContext = text => /\b(?:applicants?|candidates?|you)\s+(?:(?:who|must|should)\s+)?(?:(?:have|has|are|be)\s+)?(?:(?:currently|recently|just)\s+)?(?:pursuing|studying|enrolled|completed|finished|graduated|freshers?|fresh graduates?|recent graduates?|new graduates?)\b|\b(?:can|may|must|should|eligible to|encouraged to)\s+apply\b/i.test(text);
@@ -37,7 +49,8 @@ export const collectRecruitmentFacts = input => {
   // Restore a boundary only when qualification text follows, not in prose such
   // as "an equivalent combination of education and experience is considered".
   const sectionBody = normalize(input.body).replace(/\b((?:(?:preferred|desirable|optional|desired|nice[- ]to[- ]have|good[- ]to[- ]have|bonus)\s+)?Education\s+(?:and|&)\s+Experience)(?=\s*(?::|\n|[•-]|bachelor|master|degree|experience|relevant|previous|required))/gi, '\n$1\n')
-    .replace(/\b(About\s+(?:the\s+)?ideal\s+candidate)\s*:/gi, '\n$1:\n');
+    .replace(/\b(About\s+(?:the\s+)?ideal\s+candidate)\s*:/gi, '\n$1:\n')
+    .replace(/\b(SKILLS\s+(?:AND|&)\s+COMPETENCIES)\b/g, '\n$1:\n');
   const segments = clauses(sectionBody).filter(segment => {
     if (/^(?:preferred|nice[- ]to[- ]have|desirable|optional|desired|bonus|good[- ]to[- ]have)\b/i.test(segment)) preferredSection = true;
     else if (unconditionalFresherEligibility(segment)
@@ -47,7 +60,7 @@ export const collectRecruitmentFacts = input => {
   let inQualifications = false;
   const qualificationSegments = new Set(segments.filter(segment => {
     if (/^(?:(?:minimum|basic|required)?\s*(?:qualifications?|requirements?)|education\s+(?:and|&)\s+experience|about\s+(?:the\s+)?ideal\s+candidate)(?:\b|:)/i.test(segment)) inQualifications = true;
-    else if (/^(?:preferred|responsibilities|duties|benefits|functional skills?|supervisory responsibilities|primary skills|more about us|about (?:us|the company)|company overview|diversity\s*(?:&|and)\s*inclusion|building a|recruitment fraud|what's in it|guidelines)\b/i.test(segment)) inQualifications = false;
+    else if (/^(?:preferred|responsibilities|duties|benefits|functional skills?|skills\s*(?:and|&)\s*competencies|supervisory responsibilities|primary skills|more about us|about (?:us|the company)|company overview|diversity\s*(?:&|and)\s*inclusion|building a|recruitment fraud|what's in it|guidelines)\b/i.test(segment)) inQualifications = false;
     return inQualifications;
   }));
   const internOccupation = /\bintern(?:ship)?\s*(?:[-:\u2013\u2014]\s*)?(?:(?:program(?:me)?|recruitment|training|relations|operations)\s+)*(?:manager|director|coordinator|mentor|supervisor)\b/i.test(input.title)
@@ -102,7 +115,8 @@ export const collectRecruitmentFacts = input => {
     for (const pattern of patterns) for (const match of segment.matchAll(pattern)) years.push(...match[1].match(/(?:19|20)\d{2}/g).map(Number));
     return years;
   })])].filter(year => year >= 1990 && year <= input.referenceYear + 10).sort((a, b) => a - b);
-  return { internship, contract, fullTime, studying, recent, completed, experienced, cohorts, graduationEvidence: graduationSegments.join(' ').slice(0, 160), text };
+  return { internship, contract, fullTime, studying, recent, completed, experienced,
+    entryLevel: entryLevelVacancyTitle(input.title), cohorts, graduationEvidence: graduationSegments.join(' ').slice(0, 160), text };
 };
 
 // Optional experience on an alternative path is not mandatory for freshers.
@@ -120,13 +134,14 @@ export const resolveRecruitmentPolicy = (input, { numeric, sourceEmployment, mod
   // User-approved category defaults override employer fields, which remain separately stored.
   const employment = facts.internship || facts.studying ? 'internship' : sourceEmployment || (facts.contract ? 'contract'
     : facts.fullTime ? 'full_time'
-      : (min !== null || explicitZero || facts.recent || facts.completed || facts.cohorts.length || facts.experienced) ? 'full_time' : modelEmployment);
+      : (min !== null || explicitZero || facts.recent || facts.completed || facts.cohorts.length || facts.experienced || facts.entryLevel) ? 'full_time' : modelEmployment);
   if (!employment || employment === 'unspecified') return null;
   let fields = null;
   const preservePreferred = value => ({ ...value, experienceProfile: { ...value.experienceProfile, preferredMinimumYears: numeric.experienceProfile.preferredMinimumYears } });
   if (!fields) {
     if (employment === 'internship') fields = inferred(0, 0, 'internship_default', facts.internship || facts.studying || input.sourceEmploymentType);
-    else if (facts.cohorts.length) {
+    else if (facts.cohorts.length && !(explicitZero && (facts.recent || facts.entryLevel)
+      && facts.cohorts.at(-1) < input.referenceYear)) {
       const newest = facts.cohorts.at(-1);
       if (newest > input.referenceYear && !sourceEmployment && !facts.fullTime) {
         return { ...preservePreferred(inferred(0, 0, 'student_eligibility', facts.graduationEvidence)), employment: 'internship', experience: 'fresher_eligible', evidence: facts.graduationEvidence };
@@ -139,6 +154,7 @@ export const resolveRecruitmentPolicy = (input, { numeric, sourceEmployment, mod
     else if (explicitZero) fields = inferred(0, 0, 'fresher_eligibility', input.sourceExperienceRequired || numeric.experienceProfile.evidence);
     else if (min !== null) fields = { ...numeric, experienceBasis: 'employer_requirement', experienceRequired: input.sourceExperienceRequired || numeric.experienceProfile.evidence };
     else if (facts.experienced) fields = inferred(1, 15, 'experienced_role_default', facts.experienced);
+    else if (facts.entryLevel) fields = inferred(0, 0, 'entry_level_title', facts.entryLevel);
     else if (facts.completed) fields = inferred(0, 0, 'graduate_eligibility', facts.completed);
     else if (modelExperience === 'prior_required') fields = inferred(1, 15, 'model_eligibility', 'Calibrated model: prior experience required.');
     else if (['fresher_eligible', 'mixed'].includes(modelExperience)) fields = inferred(0, 0, 'model_eligibility', 'Calibrated model: applicants without experience may qualify.');

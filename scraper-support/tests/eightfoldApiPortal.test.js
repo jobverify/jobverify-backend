@@ -1,3 +1,4 @@
+import { withEightfoldFixtureIdentity } from './fixtures/eightfoldIdentityMappingFixture.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -11,7 +12,7 @@ test('runApiPortalScraper maps PayPal Eightfold jobs and keeps India roles', asy
   const requests = []
   const jobs = await runApiPortalScraper({
     provider,
-    fetchJson: async (url, options = {}) => {
+    fetchJson: withEightfoldFixtureIdentity(provider, async (url, options = {}) => {
       requests.push({ url, options })
 
       if (url.includes('/api/pcsx/search')) {
@@ -42,7 +43,7 @@ test('runApiPortalScraper maps PayPal Eightfold jobs and keeps India roles', asy
       }
 
       throw new Error(`Unexpected fixture URL: ${url}`)
-    },
+    }),
   })
 
   assert.equal(jobs.length, 1)
@@ -85,7 +86,7 @@ test('runApiPortalScraper maps Ericsson Eightfold jobs with detail-owned public 
 
   const jobs = await runApiPortalScraper({
     provider,
-    fetchJson: async (url) => {
+    fetchJson: withEightfoldFixtureIdentity(provider, async (url) => {
       if (url.includes('/api/pcsx/search')) {
         return {
           data: {
@@ -114,7 +115,7 @@ test('runApiPortalScraper maps Ericsson Eightfold jobs with detail-owned public 
       }
 
       throw new Error(`Unexpected fixture URL: ${url}`)
-    },
+    }),
   })
 
   assert.equal(jobs.length, 1)
@@ -149,7 +150,7 @@ test('runApiPortalScraper keeps Eightfold listing jobs when optional details are
 
   const jobs = await runApiPortalScraper({
     provider,
-    fetchJson: async (url) => {
+    fetchJson: withEightfoldFixtureIdentity(provider, async (url) => {
       if (url.includes('/api/pcsx/search')) {
         return {
           data: {
@@ -173,7 +174,7 @@ test('runApiPortalScraper keeps Eightfold listing jobs when optional details are
       }
 
       throw new Error(`Unexpected fixture URL: ${url}`)
-    },
+    }),
   })
 
   assert.equal(jobs.length, 1)

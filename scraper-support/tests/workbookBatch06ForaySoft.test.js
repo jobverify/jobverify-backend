@@ -1,3 +1,4 @@
+import { registerCurrentRecruitmentContract } from './helpers/currentRecruitmentContract.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -113,26 +114,21 @@ const createFetchText = () => {
   }
 }
 
-test('ForaySoft validates the verified first-party careers shell and stale third-party jobs archive evidence', async () => {
+test('ForaySoft retains historical archive parsing helpers while current inventory remains unverified', async () => {
   const foraysoft = await loadModule()
 
   assert.equal(foraysoft.SOURCE, 'foraysoft')
   assert.equal(foraysoft.COMPANY, 'ForaySoft')
   assert.equal(foraysoft.OFFICIAL_BRAND, 'ForaySoft')
-  assert.equal(foraysoft.VERIFIED_ON, '2026-07-25')
+  assert.equal(foraysoft.VERIFIED_ON, null)
   assert.equal(foraysoft.CAREERS_URL, 'https://www.foraysoft.com/careers.html')
   assert.equal(foraysoft.JOBS_URL, 'https://www.foraysoft.com/jobs/')
   assert.equal(foraysoft.JOBS_PAGE_TWO_URL, 'https://www.foraysoft.com/jobs/?p=2')
   assert.equal(
     foraysoft.DISPOSITION,
-    'verified-first-party-careers-page-plus-stale-third-party-jobs-archive-fail-closed',
+    'runtime-verified-recruitment',
   )
-  assert.match(foraysoft.VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
-  assert.match(foraysoft.VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.foraysoft\.com\/careers\.html/i)
-  assert.match(foraysoft.VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.foraysoft\.com\/jobs\//i)
-  assert.match(foraysoft.VERIFIED_SURFACE_SUMMARY, /Tech Java Developer - Atos/i)
-  assert.match(foraysoft.VERIFIED_SURFACE_SUMMARY, /Java Full Stack Developer - Xebia/i)
-  assert.match(foraysoft.VERIFIED_SURFACE_SUMMARY, /no trustworthy current exact-company public jobs contract was verified/i)
+  assert.match(foraysoft.VERIFIED_SURFACE_SUMMARY, /inventories remain unverified/i)
 
   foraysoft.assertVerifiedCareersSurface(VERIFIED_CAREERS_HTML)
   foraysoft.assertVerifiedJobsArchiveSurface(VERIFIED_JOBS_HTML, foraysoft.JOBS_URL)
@@ -157,105 +153,32 @@ test('ForaySoft validates the verified first-party careers shell and stale third
   assert.equal(foraysoft.pageShowsThirdPartyPlacementArchive(VERIFIED_JOBS_PAGE_TWO_HTML), true)
 })
 
-test('ForaySoft run stays fail-closed because the verified jobs archive is stale and third-party rather than exact-company', async () => {
-  const foraysoft = await loadModule()
-  const { fetchText, requests } = createFetchText()
 
-  const jobs = await foraysoft.run({
-    fetchText,
+
+
+
+
+
+
+
+
+
+// Production extraction supersedes the former unconditional-empty contract.
+registerCurrentRecruitmentContract('foraysoft', 'workbookBatch06ForaySoft.test.js')
+
+test('the historical ForaySoft third-party archive cannot certify current India inventory', async () => {
+  const module = await loadModule()
+  await assert.rejects(module.run({ fetchPage: async url => ({ status: 200, url,
+    html: url === module.JOBS_URL ? VERIFIED_JOBS_HTML : url === module.JOBS_PAGE_TWO_URL ? VERIFIED_JOBS_PAGE_TWO_HTML : VERIFIED_CAREERS_HTML }) }),
+  error => error.failureKind === 'coverage_gap' && error.recruitmentObservations.sourceScopeComplete === false)
+})
+
+test('ForaySoft transport failure stays unknown instead of becoming an empty inventory', async () => {
+  const module = await loadModule()
+  await assert.rejects(module.run({ fetchPage: async () => { throw new Error('getaddrinfo ENOTFOUND www.foraysoft.com') } }), error => {
+    assert.equal(error.failureKind, 'coverage_gap')
+    assert.equal(error.recruitmentObservations.receipts.length, 0)
+    assert.ok(error.recruitmentObservations.failures.every(row => /ENOTFOUND/.test(row.message)))
+    return true
   })
-
-  assert.deepEqual(requests, [
-    foraysoft.CAREERS_URL,
-    foraysoft.JOBS_URL,
-    foraysoft.JOBS_PAGE_TWO_URL,
-  ])
-  assert.deepEqual(jobs, [])
-})
-
-test('ForaySoft returns discovery-only evidence when its official hostname cannot be resolved', async () => {
-  const foraysoft = await loadModule()
-  const dnsError = Object.assign(new Error('fetch failed'), {
-    cause: { code: 'ENOTFOUND', message: 'getaddrinfo ENOTFOUND www.foraysoft.com' },
-  })
-
-  const jobs = await foraysoft.run({
-    fetchText: async () => { throw dnsError },
-    now: () => '2026-09-14T00:00:00.000Z',
-  })
-
-  assert.deepEqual(jobs, [])
-  const evidence = readInventoryEvidence(jobs)
-  assert.equal(evidence?.status, 'discovery-only')
-  assert.equal(evidence?.surface, foraysoft.CAREERS_URL)
-  assert.equal(evidence?.listingComplete, false)
-})
-
-test('ForaySoft rejects when the verified careers surface markers disappear', async () => {
-  const foraysoft = await loadModule()
-  const { fetchText } = createFetchText()
-
-  await assert.rejects(
-    foraysoft.run({
-      fetchText: async (url) => {
-        if (url === foraysoft.CAREERS_URL) {
-          return `
-            <html>
-              <body>
-                <main>
-                  <h1>Careers</h1>
-                  <p>Join us.</p>
-                </main>
-              </body>
-            </html>
-          `
-        }
-
-        return fetchText(url)
-      },
-    }),
-    /verified careers surface changed/i,
-  )
-})
-
-test('ForaySoft rejects when the reviewed jobs archive no longer matches the stale pre-July-25-2026 contract', async () => {
-  const foraysoft = await loadModule()
-  const { fetchText } = createFetchText()
-
-  await assert.rejects(
-    foraysoft.run({
-      fetchText: async (url) => {
-        if (url === foraysoft.JOBS_URL) {
-          return `
-            ${VERIFIED_JOBS_HTML}
-            <section>
-              <h2><a href="https://www.foraysoft.com/jobs/software-engineer-foraysoft">Software Engineer - ForaySoft</a></h2>
-              <p>Posted on 30th Jul 2026 09:00:00 in <a href="https://www.foraysoft.com/jobs/c-java-with-fullstack">Java With fullstack</a></p>
-            </section>
-          `
-        }
-
-        return fetchText(url)
-      },
-    }),
-    /stale pre-Saturday-July-25-2026 contract|trustworthy current exact-company jobs/i,
-  )
-})
-
-test('ForaySoft rejects when the public surface starts handing off to a trusted external jobs host', async () => {
-  const foraysoft = await loadModule()
-  const { fetchText } = createFetchText()
-
-  await assert.rejects(
-    foraysoft.run({
-      fetchText: async (url) => {
-        if (url === foraysoft.CAREERS_URL) {
-          return `${VERIFIED_CAREERS_HTML}<a href="https://jobs.lever.co/foraysoft">Open roles</a>`
-        }
-
-        return fetchText(url)
-      },
-    }),
-    /public surface changed materially/i,
-  )
 })

@@ -1,3 +1,4 @@
+import { registerCurrentRecruitmentContract } from './helpers/currentRecruitmentContract.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -69,146 +70,15 @@ const loadModule = async () => {
   }
 }
 
-test('Cloudphysician validates the verified careers surface and returns [] while the JD handoffs remain dead', async () => {
-  const cloudphysician = await loadModule()
-  const requestedStatuses = []
-  let requestedUrl = null
 
-  const jobs = await cloudphysician.run({
-    fetchHtml: async (url) => {
-      requestedUrl = url
-      return VERIFIED_SURFACE_HTML
-    },
-    fetchStatus: async (url) => {
-      requestedStatuses.push(url)
-      return 404
-    },
-  })
 
-  assert.equal(requestedUrl, cloudphysician.CAREERS_URL)
-  assert.deepEqual(requestedStatuses, cloudphysician.EXPECTED_OPENINGS.map(({ jdUrl }) => jdUrl))
-  assert.deepEqual(jobs, [])
-  assert.equal(cloudphysician.SOURCE, 'cloudphysician')
-  assert.equal(cloudphysician.COMPANY, 'Cloudphysician')
-  assert.equal(cloudphysician.OFFICIAL_BRAND, 'Cloudphysician')
-  assert.equal(cloudphysician.CAREERS_URL, 'https://www.cloudphysician.net/careers/')
-  assert.equal(cloudphysician.APPLY_NOW_URL, 'mailto:careers@cloudphysician.net')
-  assert.equal(
-    cloudphysician.DISPOSITION,
-    'verified-first-party-careers-surface-with-dead-same-origin-jd-handoffs',
-  )
-  assert.match(cloudphysician.VERIFIED_SURFACE_SUMMARY, /Sunday, July 26, 2026/)
-  assert.match(cloudphysician.VERIFIED_SURFACE_SUMMARY, /17 role titles/i)
-  assert.match(cloudphysician.VERIFIED_SURFACE_SUMMARY, /returned 404/i)
-  assert.match(
-    cloudphysician.VERIFIED_SURFACE_SUMMARY,
-    /no trustworthy enumerable public jobs contract/i,
-  )
-  assert.equal(
-    cloudphysician.extractVerifiedApplyNowUrl(VERIFIED_SURFACE_HTML),
-    cloudphysician.APPLY_NOW_URL,
-  )
-  assert.equal(cloudphysician.extractVerifiedOpeningLinks(VERIFIED_SURFACE_HTML).length, 17)
-  assert.deepEqual(
-    cloudphysician.extractVerifiedOpeningLinks(VERIFIED_SURFACE_HTML).slice(0, 3),
-    cloudphysician.EXPECTED_OPENINGS.slice(0, 3),
-  )
-})
 
-test('Cloudphysician rejects when the verified official careers surface markers disappear', async () => {
-  const cloudphysician = await loadModule()
 
-  await assert.rejects(
-    cloudphysician.run({
-      fetchHtml: async () => `
-        <html>
-          <body>
-            <main>
-              <h1>Careers</h1>
-              <p>Join our team.</p>
-            </main>
-          </body>
-        </html>
-      `,
-    }),
-    /verified official careers surface changed/i,
-  )
-})
 
-test('Cloudphysician rejects when the verified apply-now handoff or opening catalog drifts', async () => {
-  const cloudphysician = await loadModule()
 
-  await assert.rejects(
-    cloudphysician.run({
-      fetchHtml: async () => VERIFIED_SURFACE_HTML.replace(
-        'mailto:careers@cloudphysician.net',
-        'https://forms.gle/cloudphysician-apply',
-      ),
-      fetchStatus: async () => 404,
-    }),
-    /apply-now handoff changed/i,
-  )
 
-  await assert.rejects(
-    cloudphysician.run({
-      fetchHtml: async () => VERIFIED_SURFACE_HTML.replace(
-        'Marketing Associate',
-        'Field Marketing Manager',
-      ),
-      fetchStatus: async () => 404,
-    }),
-    /opening catalog changed/i,
-  )
-})
 
-test('Cloudphysician rejects when any verified dead JD handoff becomes live', async () => {
-  const cloudphysician = await loadModule()
 
-  await assert.rejects(
-    cloudphysician.run({
-      fetchHtml: async () => VERIFIED_SURFACE_HTML,
-      fetchStatus: async (url) =>
-        url.endsWith('/Product_Designer_JD.pdf') ? 200 : 404,
-    }),
-    /JD handoff is no longer dead/i,
-  )
-})
 
-test('Cloudphysician rejects when JobPosting markup, a trusted ATS, or a new same-origin jobs path appears', async () => {
-  const cloudphysician = await loadModule()
-
-  await assert.rejects(
-    cloudphysician.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <script type="application/ld+json">
-          {"@context":"https://schema.org","@type":"JobPosting","title":"Product Designer"}
-        </script>
-      `,
-      fetchStatus: async () => 404,
-    }),
-    /JobPosting markup/i,
-  )
-
-  await assert.rejects(
-    cloudphysician.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <a href="https://jobs.lever.co/cloudphysician/product-designer">Product Designer</a>
-      `,
-      fetchStatus: async () => 404,
-    }),
-    /public jobs surface/i,
-  )
-
-  await assert.rejects(
-    cloudphysician.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <a href="/careers/product-designer">Product Designer</a>
-      `,
-      fetchStatus: async () => 404,
-    }),
-    /public jobs surface/i,
-  )
-})
+// Current production extraction replaces the old always-empty contract.
+registerCurrentRecruitmentContract('cloudphysician', 'workbookBatch06Cloudphysician')

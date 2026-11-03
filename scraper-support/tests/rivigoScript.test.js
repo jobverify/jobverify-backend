@@ -1,3 +1,4 @@
+import { registerCurrentRecruitmentContract } from './helpers/currentRecruitmentContract.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -92,125 +93,30 @@ const loadRivigoModule = async () => {
   }
 }
 
-test('Rivigo helper signals stay pinned to the verified Mahindra Logistics redirect and parent-company handoff surface', async () => {
+test('Rivigo retains historical parent-handoff helpers while current extraction metadata remains unverified', async () => {
   const rivigo = await loadRivigoModule()
 
   assert.equal(rivigo.SOURCE, 'rivigo')
   assert.equal(rivigo.COMPANY, 'Rivigo')
   assert.equal(rivigo.HOMEPAGE_URL, 'https://mahindralogistics.com/b2b-express/')
   assert.equal(rivigo.REDIRECTED_HOMEPAGE_URL, 'https://mahindralogistics.com/b2b-express/')
-  assert.equal(rivigo.CAREERS_URL, 'https://mahindralogistics.com/work-with-us/')
+  assert.equal(rivigo.CAREERS_URL, 'https://careers-rivigo.flexiele.com/')
   assert.equal(rivigo.PARENT_DARWINBOX_URL, 'https://nectar.darwinbox.in/ms/candidate/careers')
   assert.equal(
     rivigo.PARENT_DARWINBOX_HOME_URL,
     'https://nectar.darwinbox.in/ms/candidatev2/main/careers/home',
   )
-  assert.equal(rivigo.VERIFIED_ON, '2026-08-04')
+  assert.equal(rivigo.VERIFIED_ON, null)
+  assert.equal(rivigo.PROVIDER_METADATA.verifiedIndiaJobCount, null)
   assert.equal(rivigo.hasVerifiedRedirectedHomepageSignal(redirectedHomepagePage), true)
   assert.equal(rivigo.hasVerifiedParentCareersSignal(parentCareersPage), true)
   assert.equal(rivigo.hasVerifiedParentDarwinboxSignal(parentDarwinboxPage), true)
   assert.equal(rivigo.hasVerifiedParentDarwinboxSignal(parentDarwinboxJavascriptShellPage), true)
 })
 
-test('Rivigo returns [] while the verified brand redirect and parent-company careers handoff remain intact', async () => {
-  const rivigo = await loadRivigoModule()
-  const requestedUrls = []
 
-  const jobs = await rivigo.createRivigoScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
 
-      if (url === rivigo.HOMEPAGE_URL) {
-        return {
-          status: 200,
-          ...redirectedHomepagePage,
-        }
-      }
 
-      if (url === rivigo.CAREERS_URL) {
-        return {
-          status: 200,
-          ...parentCareersPage,
-        }
-      }
 
-      if (url === rivigo.PARENT_DARWINBOX_URL) {
-        return {
-          status: 200,
-          ...parentDarwinboxJavascriptShellPage,
-        }
-      }
-
-      throw new Error(`Unexpected Rivigo fixture URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    rivigo.HOMEPAGE_URL,
-    rivigo.CAREERS_URL,
-    rivigo.PARENT_DARWINBOX_URL,
-  ])
-  assert.deepEqual(jobs, [])
-})
-
-test('Rivigo fails closed when the verified redirect, careers handoff, or parent-company board drifts', async () => {
-  const rivigo = await loadRivigoModule()
-
-  await assert.rejects(
-    rivigo.createRivigoScraper().run({
-      fetchPage: async () => ({
-        status: 200,
-        url: rivigo.HOMEPAGE_URL,
-        html: '<html><head><title>Unexpected</title></head><body>No verified markers</body></html>',
-      }),
-    }),
-    /B2B Express landing/i,
-  )
-
-  await assert.rejects(
-    rivigo.createRivigoScraper().run({
-      fetchPage: async (url) => {
-        if (url === rivigo.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            ...redirectedHomepagePage,
-          }
-        }
-
-        return {
-          status: 200,
-          url: rivigo.CAREERS_URL,
-          html: parentCareersPage.html.replace('https://nectar.darwinbox.in/ms/candidate/careers', '/missing'),
-        }
-      },
-    }),
-    /parent-company careers handoff/i,
-  )
-
-  await assert.rejects(
-    rivigo.createRivigoScraper().run({
-      fetchPage: async (url) => {
-        if (url === rivigo.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            ...redirectedHomepagePage,
-          }
-        }
-
-        if (url === rivigo.CAREERS_URL) {
-          return {
-            status: 200,
-            ...parentCareersPage,
-          }
-        }
-
-        return {
-          status: 200,
-          url: rivigo.PARENT_DARWINBOX_HOME_URL,
-          html: parentDarwinboxPage.html.replace('Mahindra Logistics and Subsidiaries', 'Different Board'),
-        }
-      },
-    }),
-    /parent-company Darwinbox board/i,
-  )
-})
+// Production extraction supersedes the former unconditional-empty contract.
+registerCurrentRecruitmentContract('rivigo', 'rivigoScript.test.js')

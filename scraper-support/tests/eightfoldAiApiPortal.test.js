@@ -1,3 +1,4 @@
+import { withEightfoldFixtureIdentity } from './fixtures/eightfoldIdentityMappingFixture.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -6,12 +7,12 @@ import { getScraperCatalog } from '../providers/index.js'
 
 test('Eightfold blank detail error sentinel preserves the native employer description', async () => {
  const provider = getScraperCatalog().find(item => item.source === 'eightfoldai')
- const jobs = await runApiPortalScraper({ provider, fetchJson: async url => ({
+ const jobs = await runApiPortalScraper({ provider, fetchJson: withEightfoldFixtureIdentity(provider, async url => ({
   status: 200, error: { message: '', body: '' },
   data: url.includes('/search') ? { positions: [{ id: 8342001, name: 'Senior Software Engineer',
    locations: ['Bengaluru, Karnataka, India'] }], count: 1 }
    : { publicUrl: 'https://app.eightfold.ai/careers/job/8342001', jobDescription: '<p>Build AI-powered talent products.</p>' },
- }) })
+ })) })
  assert.equal(jobs.length, 1)
  assert.equal(jobs[0].jobDescription, '<p>Build AI-powered talent products.</p>')
 })
@@ -22,7 +23,7 @@ test('runApiPortalScraper maps Eightfold AI jobs from the public Eightfold caree
 
   const jobs = await runApiPortalScraper({
     provider,
-    fetchJson: async (url) => {
+    fetchJson: withEightfoldFixtureIdentity(provider, async (url) => {
       if (url.includes('/api/pcsx/search')) {
         return {
           data: {
@@ -51,7 +52,7 @@ test('runApiPortalScraper maps Eightfold AI jobs from the public Eightfold caree
       }
 
       throw new Error(`Unexpected fixture URL: ${url}`)
-    },
+    }),
   })
 
   assert.equal(jobs.length, 1)

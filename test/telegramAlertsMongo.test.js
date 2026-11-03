@@ -72,6 +72,19 @@ test('Telegram alert delivery through matching, durable scheduling and provider 
     assert.equal(await JobAlertDelivery.countDocuments(), 0);
   });
 
+  await t.test('delivery uses the latest personal template saved after queueing', async st => {
+    await reset();
+    const owner = await user();
+    const listing = await job();
+    const requests = provider(st);
+    await queueJobAlertsForJobs([listing]);
+    await User.updateOne({ _id: owner._id }, { $set: { 'profile.telegramAlertTemplate': '{title} at {company}\n{jobUrl}' } });
+    await JobAlertDelivery.updateMany({}, { $set: { scheduledFor: new Date(0) } });
+    await recoverQueuedJobAlerts();
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].text, `${listing.title} at ${listing.company}\n${listing.sourceUrl}`);
+  });
+
   await t.test('a scheduled send drains more than one recovery page in the same run', async st => {
     await reset(); const owner = await user(); const requests = provider(st);
     await updateAlertSchedule(owner._id, { frequency: 'daily', isActive: true, deliveryTime: '09:00', weeklyDay: 'Monday' });

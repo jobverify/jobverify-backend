@@ -77,6 +77,34 @@ test('Akulaku horizontal nowrap clipping and native line clamps hold incomplete 
  }
 })
 
+test('Akulaku applies actual published stylesheet order',()=>{
+ const before=page(card.detailUrl).html,hiddenStyles={stylesheets:styleOptions.stylesheets.map((row,index)=>({...row,body:row.body+(index===1?'\n.xiangqingtext{display:none}':'')}))},earlier=before.replace('<head>','<head><style>.xiangqingtext{display:block}</style>');assert.notEqual(earlier,before)
+ assert.equal(detailModel(earlier,card,hiddenStyles).sourceDetailComplete,false)
+})
+
+for(const condition of['@supports not (display: block)','@media not screen'])test('Akulaku unreachable visible override does not qualify hidden criteria: '+condition,()=>{
+ const html=page(card.detailUrl).html.replace('</head>','<style>.xiangqingtext{display:none}'+condition+'{.xiangqingtext{display:block}}</style></head>')
+ assert.equal(detailModel(html,card,styleOptions).sourceDetailComplete,false)
+})
+
+test('Akulaku an initially disabled alternate stylesheet is outside current public criteria qualification',async()=>{
+ const fixture=reducedBoard({india:true})
+ for(const[url,packet]of fixture.pages)if(url.includes('/zpdetail/'))packet.html=packet.html.replace('</head>','<link rel="alternate stylesheet" title="Unused application appearance" href="/unused-application.css"></head>')
+ const jobs=await run({fetchPage:fixture.fetchPage});assert.equal(jobs.length,2);assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+ assert.ok(fixture.calls.every(row=>!row.url.includes('unused-application.css')))
+})
+
+test('Akulaku unused conditional private style variables do not become public criteria gates',async()=>{
+ const fixture=reducedBoard({india:true})
+ for(const[url,packet]of fixture.pages)if(url.includes('/zpdetail/'))packet.html=packet.html.replace('</head>','<style>@supports (unreviewed-private-condition: yes){:root{--private-application-label:"Account password"}}</style></head>')
+ const jobs=await run({fetchPage:fixture.fetchPage});assert.equal(jobs.length,2);assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+})
+
+test('Akulaku generated public criteria text is retained as a gap rather than silently omitted',()=>{
+ const html=page(card.detailUrl).html.replace('</head>','<style>.xiangqingtext::before{content:"Additional mandatory certification"}</style></head>'),row=detailModel(html,card,styleOptions)
+ assert.equal(row.sourceDetailComplete,false);assert.ok(row.sourceNativeCriteriaVisibility.generatedCriteria.some(value=>value.content.includes('Additional mandatory certification')))
+})
+
 test('Akulaku first denied published stylesheet stops without private or browser fallback',async()=>{
  const fixture=reducedBoard({india:true});let denied=0,browser=0
  await assert.rejects(run({fetchPage:async(url,request)=>{if(url===styleOptions.stylesheets[0].url){denied++;return{url,status:403,html:'Denied'}}return fixture.fetchPage(url,request)},fetchBrowserText:()=>{browser++}}),error=>error.status===403&&error.abortRetries&&!error.abortPipeline)

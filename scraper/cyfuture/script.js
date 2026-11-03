@@ -1,11 +1,13 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'cyfuture'
 export const COMPANY = 'Cyfuture'
-export const VERIFIED_AT = '2026-07-14'
+export const VERIFIED_AT = '2026-11-03'
 export const HOMEPAGE_URL = 'https://cyfuture.com/'
 export const CAREERS_URL = 'https://cyfuture.com/careers.html'
 export const CURRENT_OPPORTUNITIES_URL = 'https://cyfuture.com/current-opportunities.html'
@@ -113,7 +115,12 @@ const getLocationDetails = (value) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Data Centers \| Cloud Hosting \| Tech Support BPO Services[^\n<]*Cyfuture/i.test(page)
+  const document = readNativeDocument(page)
+  const currentIdentity = /<title>\s*GPU Cloud, AI Factories and Enterprise AI \| Cyfuture\s*<\/title>/i.test(page)
+    && document.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical' && node.attrs.href === HOMEPAGE_URL).length === 1
+    && document.nodes(node => node.tag === 'a' && absoluteUrl(node.attrs.href, HOMEPAGE_URL) === CAREERS_URL).length > 0
+
+  return currentIdentity || /<title>\s*Data Centers \| Cloud Hosting \| Tech Support BPO Services[^\n<]*Cyfuture/i.test(page)
     && /Be A Techvolutionary @ Cyfuture/i.test(page)
     && /href=["']https:\/\/cyfuture\.com\/careers\.html["']/i.test(page)
 }
@@ -132,7 +139,7 @@ export const hasCurrentOpportunitiesSignal = (html) => {
 
   return /<title>\s*Career Opportunities at Cyfuture\s*<\/title>/i.test(page)
     && /Current Opening'?s/i.test(page)
-    && /currenttabbtn/i.test(page)
+    && /currenttabbtn|data-bs-target=["']#[a-z]+["']/i.test(page)
     && /apply-job\/\d+\//i.test(page)
     && /upload-resume\.html/i.test(page)
 }
@@ -223,10 +230,59 @@ const parseListingCard = (cardHtml, locationLabel) => {
   }
 }
 
+const descendants = (node, predicate) => !node || node.inert ? [] : [
+  ...(predicate(node) ? [node] : []),
+  ...node.children.filter(child => typeof child !== 'string').flatMap(child => descendants(child, predicate)),
+]
+
+const extractCurrentTabCards = html => {
+  const document = readNativeDocument(html)
+  const tabs = document.nodes(node => node.tag === 'button' && node.attrs['data-bs-toggle'] === 'tab'
+    && /^#[a-z]+$/.test(node.attrs['data-bs-target'] || ''))
+  if (!tabs.length) return null
+  const listings = []
+  for (const tab of tabs) {
+    const locationDetails = getLocationDetails(document.text(tab))
+    if (!locationDetails) continue
+    const panes = document.nodes(node => node.attrs.id === tab.attrs['data-bs-target'].slice(1))
+    if (panes.length !== 1) throw new Error('Cyfuture advertised location tab is missing or ambiguous')
+    for (const card of descendants(panes[0], node => document.hasClass(node, 'opening-card'))) {
+      const anchors = descendants(card, node => node.tag === 'a' && node.attrs.href)
+        .map(node => absoluteUrl(node.attrs.href, CURRENT_OPPORTUNITIES_URL))
+        .filter(url => url && new URL(url).origin === new URL(CURRENT_OPPORTUNITIES_URL).origin
+          && /^\/apply-job\/\d+\//.test(new URL(url).pathname))
+      const title = document.text(descendants(card, node => node.tag === 'h4')[0] || { children: [] })
+      // Explicit empty-location placeholders have no native role or action.
+      if (!anchors.length && title === 'Coming Soon') continue
+      if (anchors.length !== 1 || !title) throw new Error('Cyfuture current role card has incomplete native identity')
+      const field = label => {
+        const item = descendants(card, node => node.tag === 'li').find(node =>
+          descendants(node, child => child.tag === 'strong').some(child => document.text(child) === label))
+        const value = item && descendants(item, node => node.tag === 'span')[0]
+        return value ? document.text(value) : null
+      }
+      const department = descendants(card, node => document.hasClass(node, 'department'))[0]
+      const badge = descendants(card, node => document.hasClass(node, 'opening-badge'))[0]
+      const sourceUrl = anchors[0], jobId = new URL(sourceUrl).pathname.split('/')[2]
+      listings.push({ jobId, requisitionId: jobId, title,
+        department: department ? document.text(department).replace(/^\(|\)$/g, '') : null,
+        ...locationDetails, experienceRequired: field('Experience'),
+        minimumQualification: field('Educational Qualifications'),
+        openingCount: badge ? parseOpeningCount(document.text(badge)) : null,
+        sourceUrl, applyUrl: UPLOAD_RESUME_URL })
+    }
+  }
+  if (!listings.length) throw new Error('Cyfuture current public tabs contain no verified India role cards')
+  return listings
+}
+
 export const extractCurrentOpportunities = (html) => {
   if (!hasCurrentOpportunitiesSignal(html)) {
     throw new Error('Cyfuture verified current opportunities page no longer matches the trusted first-party public jobs surface')
   }
+
+  const currentCards = extractCurrentTabCards(html)
+  if (currentCards) return currentCards
 
   const listings = []
   const tabs = extractLocationTabs(html)
@@ -275,6 +331,10 @@ export const extractJobDetail = (html, listing = {}) => {
   if (!hasJobDetailSignal(html)) {
     throw new Error('Cyfuture verified first-party job detail no longer matches the trusted public job surface')
   }
+  const nativeId = String(html).match(/<title>\s*Apply for Job ID (\d+)/i)?.[1]
+  if (listing.jobId && nativeId !== String(listing.jobId)) {
+    throw new Error('Cyfuture verified first-party job detail has a different native role ID')
+  }
 
   const sections = extractDetailSections(html)
   const titleLines = stripTagsToLines(sections['Job Title'])
@@ -309,13 +369,14 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(15000)]),
   })
 
   return {
@@ -326,28 +387,43 @@ const defaultFetchPage = async (url) => {
 }
 
 export const createCyfutureScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, signal } = {}) {
+    const getPage = async url => {
+      signal?.throwIfAborted()
+      const page = await fetchPage(url, { signal })
+      signal?.throwIfAborted()
+      const final = new URL(page.url), expected = new URL(url)
+      if (final.protocol !== 'https:' || final.username || final.password || final.port
+        || final.hostname.replace(/^www\./, '') !== 'cyfuture.com' || final.pathname !== expected.pathname) {
+        throw new Error('Cyfuture public response URL no longer matches the requested employer role')
+      }
+      return page
+    }
+    const homepage = await getPage(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Cyfuture verified official homepage no longer matches the trusted first-party surface')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
+    const careersPage = await getPage(CAREERS_URL)
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('Cyfuture verified careers page no longer matches the trusted first-party surface')
     }
 
-    const opportunitiesPage = await fetchPage(CURRENT_OPPORTUNITIES_URL)
+    const opportunitiesPage = await getPage(CURRENT_OPPORTUNITIES_URL)
+    if (opportunitiesPage.status !== 200) throw new Error('Cyfuture public opportunities inventory unavailable')
     const listings = extractCurrentOpportunities(opportunitiesPage.html)
 
     const jobs = []
     for (const listing of listings) {
-      const detailPage = await fetchPage(listing.sourceUrl)
+      const detailPage = await getPage(listing.sourceUrl)
       if (detailPage.status !== 200 || !hasJobDetailSignal(detailPage.html)) {
         throw new Error(`Cyfuture verified first-party job detail no longer matches the trusted public surface: ${listing.sourceUrl}`)
       }
 
       const detail = extractJobDetail(detailPage.html, listing)
+      if (!detail.jobDescription || detail.jobDescription.length < 150 || !detail.requiredSkills.length) {
+        throw new Error('Cyfuture verified first-party job detail has incomplete native role criteria')
+      }
 
       jobs.push({
         ...detail,
@@ -355,10 +431,18 @@ export const createCyfutureScraper = ({ now = () => new Date().toISOString() } =
         source: SOURCE,
         link: detail.applyUrl,
         scrapedAt: now(),
+        sourceListingComplete: false,
+        sourceScopeComplete: false,
+        lifecycleCleanupAllowed: false,
       })
     }
 
-    return jobs
+    return attachInventoryEvidence(jobs, {
+      status: 'coverage-gap', surface: CURRENT_OPPORTUNITIES_URL, firstParty: true,
+      listingComplete: false, reportedTotal: null, indiaFacetCount: null,
+      pagesFetched: 3 + listings.length, verifiedAt: now(),
+      reason: 'current-public-tab-role-criteria;closing-inventory-and-global-scope-not-verified',
+    })
   },
 })
 

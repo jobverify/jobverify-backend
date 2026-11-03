@@ -20,3 +20,24 @@ test('an incomplete published tile continuation is a held failure before own rea
 test('changed closing production listing retains112 full observations but withholds identity candidates',()=>offline(async()=>{const r=replay((p,calls)=>p.url===SEARCH&&calls.filter(u=>u===SEARCH).length===2?alter(p,t=>t.replaceAll('TLA Equipment Technician','Changed Equipment Technician')):p),jobs=await run(r.options);assert.equal(jobs.length,0);assert.equal(r.records[0].length,112);assert.equal(r.audits[0].listingStable,false);assert.ok(r.records[0].every(j=>j.sourceCurrentNativePostingIdentityQualified===false))}));
 test('Tata callbacks are awaited and detached from the retained native jobs',()=>offline(async()=>{const r=replay(),events=[],jobs=await run({...r.options,maxJobs:1,onRecords:async rows=>{await Promise.resolve();events.push('records');assert.equal(rows.length,112);rows[0].jobDescription='caller cropped'},onAudit:async audit=>{await Promise.resolve();events.push('audit');audit.observations[0].title='caller changed'}});assert.deepEqual(events,['records','audit']);assert.equal(jobs.length,1);assert.equal(jobs[0].jobDescription.length,3342);assert.equal(jobs[0].title,'TLA Equipment Technician')}));
 test('a native403 corporate denial establishes a host hold without an empty completion',()=>offline(async()=>{const heldHosts=new Set(),r=replay(p=>p.url===PRIMARY?{...p,status:403}:p);await assert.rejects(run({...r.options,heldHosts}),/403|hold/i);assert.equal(r.calls.length,1);assert.ok(heldHosts.has('www.tataelectronics.com'));assert.equal(r.records.length,0);assert.equal(r.audits.length,0)}));
+
+test('Tata reserves closing requests when extra native detail redirects would exhaust the 128-request cap',()=>offline(async()=>{
+ const {readInventoryEvidence}=await import('../../scraper-support/utils/inventoryEvidence.js');
+ const r=replay(),redirected=new Set([...entities.keys()].filter(url=>url.startsWith('https://careers.tataelectronics.com/job/')).slice(0,3));
+ const jobs=await run({...r.options,fetchPage:async url=>{
+  r.calls.push(url);const u=new URL(url),base=u.origin+u.pathname,entity=entities.get(url)||entities.get(base);assert.ok(entity,'Only retained original native roles may be used');
+  if(redirected.has(base)&&Number(u.searchParams.get('native-test-hop')||0)<3){
+   u.searchParams.set('native-test-hop',String(Number(u.searchParams.get('native-test-hop')||0)+1));
+   return{url,status:302,headers:{location:u.href},bodyBase64:''};
+  }
+  return{url,status:entity.status,headers:structuredClone(entity.headers),bodyBase64:entity.bodyBase64};
+ }});
+ assert.ok(jobs.length>0&&jobs.length<112,'Previously verified roles survive the bounded collection');
+ assert.ok(r.calls.length<=128,'The existing public request cap is preserved');
+ assert.equal(r.calls.filter(url=>url===SEARCH).length,2,'Closing listing is still read');
+ assert.equal(r.calls.filter(url=>url===PRIMARY).length,2,'Closing employer handoff is still read');
+ const audit=r.audits[0];assert.equal(audit.listingStable,true);assert.equal(audit.employerBindingQualified,true);
+ assert.ok(audit.requestBudget.uninspectedNativeJobIds.length>0);assert.equal(audit.sourceScopeComplete,false);
+ assert.equal(readInventoryEvidence(jobs).listingComplete,false);assert.match(readInventoryEvidence(jobs).reason,/source-request-budget-reserved/);
+ assert.ok(jobs.every(job=>job.lifecycleCleanupAllowed===false));
+}));

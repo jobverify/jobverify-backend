@@ -1,9 +1,8 @@
-import { proseHeadings, proseSectionRole } from './proseValidation.js';
+import { proseHeadings } from './proseValidation.js';
 export { proseHeadings } from './proseValidation.js';
 
 const metadata = /(?<!\S)(Position|Location|Time Type|Job Category|Employment type|Salary)[ \t]*:[ \t]*/gi;
 const maxBlockCharacters = 900;
-const protectedFacts = /\d|https?:\/\/|\b(?:no|not|never|without|cannot|must|required|mandatory|minimum|preferred|optional|if|unless|until|only when)\b|\b\w+n['’]t\b/i;
 
 const boundedSpans = (source, offset, sectionContext) => {
   const result = [];
@@ -27,12 +26,12 @@ const boundedSpans = (source, offset, sectionContext) => {
   return result;
 };
 
-export const buildProseBlocks = (source, { protectFacts = true } = {}) => {
+export const buildProseBlocks = source => {
   const fields = [...source.matchAll(metadata)].map(match => ({ start: match.index,
     end: match.index + match[0].length, kind: 'metadata' }));
   // Small sources already have ample output space. Avoid extra generation
   // round trips unless a protected field must be removed from the prompt.
-  if (source.length <= maxBlockCharacters && !fields.length && (!protectFacts || !protectedFacts.test(source))) {
+  if (source.length <= maxBlockCharacters && !fields.length) {
     return [{ source, sourceOffset: 0, sectionContext: null }];
   }
   const markers = [...proseHeadings(source), ...fields].sort((a, b) => a.start - b.start);
@@ -60,9 +59,8 @@ export const buildProseBlocks = (source, { protectFacts = true } = {}) => {
   append(source.length);
   return spans.flatMap(span => {
     if (span.protected) return [span];
-    if (protectFacts && (proseSectionRole(span.sectionContext) !== 'neutral' || protectedFacts.test(span.source))) {
-      return [{ ...span, protected: 'facts' }];
-    }
+    // Facts constrain validation, not eligibility. Freezing a whole span for a
+    // number or "if" also freezes unrelated prose and can bypass inference.
     return boundedSpans(span.source, span.sourceOffset, span.sectionContext);
   });
 };

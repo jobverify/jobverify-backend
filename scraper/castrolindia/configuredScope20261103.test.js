@@ -49,3 +49,12 @@ test('nontext native role criteria is retained as raw evidence and never silentl
  const target='https://job-boards.eu.greenhouse.io/castrol/jobs/4983338101',jobs=await run({fetchImpl:async(url,request)=>{const r=await f.fetchImpl(url,request);if(url===target){const html=await r.text(),doc=readNativeDocument(html),script=doc.nodes(n=>n.tag==='script'&&n.raw?.trim().startsWith('window.__remixContext'))[0],match=script.raw.match(/^\s*window\.__remixContext\s*=\s*([\s\S]+);\s*$/),model=JSON.parse(match[1]);model.state.loaderData['routes/$url_token_.jobs_.$job_post_id'].jobPost.content+='<img src="https://example.invalid/public-criteria.png" alt="Mandatory certification matrix">';return{status:200,url,text:async()=>html.replace(script.raw,script.raw.replace(match[1],JSON.stringify(model)))}}return r}})
  const held=jobs.find(j=>j.jobId==='4983338101');assert.equal(held.sourceDetailComplete,false);assert.equal(held.jobDescription,null);assert.match(held.nativeRoleCriteriaHtml,/Mandatory certification matrix/);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
+test('an unrelated private consent change does not veto the unchanged public vacancy inventory',async()=>{
+ let reads=0
+ const jobs=await run({fetchImpl:async(url,request)=>{const r=await f.fetchImpl(url,request);if(url===API&&++reads===2){const p=JSON.parse(await r.text());p.jobs[0].data_compliance=[{type:'gdpr',requires_consent:true,privateCopy:'Updated application consent copy'}];return{status:200,url,text:async()=>JSON.stringify(p)}}return r}})
+ assert.equal(jobs.length,25);assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+})
+test('a supplied public reader stays on the current Castrol native adapter',async()=>{
+ const reports=[],jobs=await run({fetchPage:f.fetchImpl,onAudit:r=>reports.push(r)})
+ assert.equal(jobs.length,25);assert.equal(readInventoryEvidence(jobs).listingComplete,true);assert.equal(reports.length,1);assert.equal(reports[0].ownDetailPasses,2)
+})

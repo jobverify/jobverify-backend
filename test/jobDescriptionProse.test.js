@@ -233,8 +233,8 @@ test('changed factual numbers cannot be published', async t => {
   assert.equal(checked.ok, true);
   assert.match(checked.description, /2 years/);
   assert.doesNotMatch(checked.description, /10 years/);
-  assert.equal(checked.quality.sourceFallbackBlocks, 0);
-  assert.ok(checked.quality.protectedSourceBlocks > 0);
+  assert.ok(response.generationRequests > 0);
+  assert.ok(checked.quality.sourceFallbackBlocks > 0);
 });
 
 test('a rejected rewrite gets one source-grounded correction before publication', async t => {
@@ -372,6 +372,7 @@ test('required, preferred, negated statements and application URLs retain their 
     ['AWS is preferred.', 'AWS is useful.', 'preferred_scope_changed'],
     ['Visa sponsorship is not available.', 'Visa sponsorship is available.', 'negation_changed'],
     ['Apply at https://example.com/job', 'Apply at https://other.example/job', 'application_url_changed'],
+    ['Apply at www.example.com/careers?form=internship', 'Apply at www.example.com/careers/form/internship', 'application_url_changed'],
   ]) {
     const server = await serverFor(t, { complete: () => ({ text: rewrite }) });
     const response = await createRewriteClient(server).generate(inputFor(original), { allowSourceFallback: false });

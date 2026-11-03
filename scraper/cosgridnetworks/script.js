@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -11,9 +13,9 @@ export const HOMEPAGE_URL = 'https://www.cosgrid.com/'
 export const CAREERS_URL = 'https://www.cosgrid.com/company/careers'
 export const OPENINGS_URL = 'https://www.cosgrid.com/company/careers/openings'
 export const COMPANY_DOMAIN = 'cosgrid.com'
-export const VERIFIED_ON = '2026-08-15'
+export const VERIFIED_ON = '2026-11-03'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, August 15, 2026 that direct requests from this runtime to https://www.cosgrid.com/, https://www.cosgrid.com/company/careers, and https://www.cosgrid.com/company/careers/openings currently fail with ECONNREFUSED before the trusted first-party COSGrid surfaces can render. The scraper preserves the previously verified homepage, careers-landing, openings-listing, and detail-page parser whenever those trusted surfaces are reachable again, and now returns an authoritative empty result while they remain temporarily unreachable from this environment.'
+  'Verified November 3, 2026 against the current public homepage, careers landing, eight advertised role pages, and their native detail criteria. Four roles have complete visible descriptions; one returns 404 and three lack usable role criteria. Missing details retain partial inventory and prohibit cleanup; transport failure never proves empty inventory.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -177,18 +179,24 @@ export const hasOfficialHomepageSignal = (html) => {
   const hasZ3Hero = /Endpoint Native - Unified SASE Platform/i.test(text)
     && /COSGrid Z3:\s*Cyber-Resiliency Simplified\./i.test(text)
     && /Built on Three Absolutes/i.test(text)
+  const document = readNativeDocument(page)
+  const hasCurrentIdentity = document.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical'
+    && node.attrs.href === HOMEPAGE_URL).length === 1
+    && document.nodes(node => node.tag === 'a' && node.attrs.href === '/company/careers').length > 0
 
   return /<title>\s*COSGrid \| Cyber Resiliency Simplified - Secure Access &amp; Protection\s*<\/title>/i.test(page)
-    && (hasLegacyHero || hasZ3Hero)
+    && (hasLegacyHero || hasZ3Hero || hasCurrentIdentity)
     && /href=["']\/company\/careers["']/i.test(page)
 }
 
 export const hasOfficialCareersLandingSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
+  const document = readNativeDocument(page)
 
   return /<title>\s*Join the COSGrid Team: Build a Brighter Digital Future\s*<\/title>/i.test(page)
-    && /<h1[^>]*>\s*(?:Join the COSGrid Team|Join Our Team)\s*<\/h1>/i.test(page)
+    && document.nodes(node => node.tag === 'h1'
+      && /^(?:Join the COSGrid Team|Join Our Team|COSGrid Careers)$/.test(document.text(node))).length === 1
     && /Take a look at our latest job opportunities/i.test(text)
     && /(?:ng-reflect-router-link=["']openings["']|href=["']\/company\/careers\/openings["'])/i.test(page)
 }
@@ -265,7 +273,19 @@ export const extractJobDetail = (html, { sourceUrl, fallbackListing } = {}) => {
       ?? metadata.country,
   )
   const location = appendCountryToLocation(jsonLocation ?? metadata.location, country ?? 'India')
-  const description = normalizeWhitespace(jobPosting?.description ?? extractMetaDescription(page))
+  // Current structured descriptions are short search previews. Retain the
+  // actual visible role criteria before the application form instead.
+  const document = readNativeDocument(page)
+  const main = document.nodes(node => node.tag === 'main')[0]
+  const visibleDescription = main && requiredSkills.length
+    ? document.text(main).split('Submit your Application')[0].trim() : null
+  const description = normalizeWhitespace(visibleDescription || jobPosting?.description || extractMetaDescription(page))
+  if (jobPosting?.hiringOrganization?.name && jobPosting.hiringOrganization.name !== COMPANY) {
+    throw new Error('COSGrid verified detail surface has a different employer')
+  }
+  if (jobPosting?.url && sourceUrl && jobPosting.url !== sourceUrl) {
+    throw new Error('COSGrid verified detail surface has a different native role URL')
+  }
   const experienceRequired = extractExperienceRequired([
     ...requiredSkills,
     ...requirements,
@@ -343,11 +363,12 @@ export const createCosgridNetworksScraper = ({ now = () => new Date().toISOStrin
     const openingsResult = await fetchTextSafely(fetchText, OPENINGS_URL)
     const openingsHtml = openingsResult.html
     if (!openingsHtml) {
-      return []
+      throw openingsResult.error || new Error('COSGrid public inventory unavailable')
     }
 
     const listings = extractSearchResults(openingsHtml)
     const jobs = []
+    const unavailable = []
 
     for (const listing of listings) {
       let detailHtml = null
@@ -356,6 +377,7 @@ export const createCosgridNetworksScraper = ({ now = () => new Date().toISOStrin
         detailHtml = await fetchText(listing.sourceUrl)
       } catch (error) {
         if (/HTTP 404/i.test(String(error?.message ?? error))) {
+          unavailable.push(listing.slug)
           continue
         }
 
@@ -367,6 +389,11 @@ export const createCosgridNetworksScraper = ({ now = () => new Date().toISOStrin
           sourceUrl: listing.sourceUrl,
           fallbackListing: listing,
         })
+        if (!detail.jobDescription || detail.jobDescription.length < 150
+          || (!detail.requiredSkills.length && !detail.minimumQualification)) {
+          unavailable.push(listing.slug)
+          continue
+        }
 
         jobs.push({
           ...detail,
@@ -381,9 +408,13 @@ export const createCosgridNetworksScraper = ({ now = () => new Date().toISOStrin
           companyCareerPage: OPENINGS_URL,
           companyDomain: COMPANY_DOMAIN,
           atsPlatform: 'official-company-careers',
+          sourceListingComplete: false,
+          sourceScopeComplete: false,
+          lifecycleCleanupAllowed: false,
         })
       } catch (error) {
         if (/verified detail surface/i.test(String(error?.message ?? error))) {
+          unavailable.push(listing.slug)
           continue
         }
 
@@ -391,7 +422,14 @@ export const createCosgridNetworksScraper = ({ now = () => new Date().toISOStrin
       }
     }
 
-    return jobs
+    // A listed role with a missing/changed detail does not prove a complete
+    // inventory. Keep independently verified roles and prohibit cleanup.
+    return attachInventoryEvidence(jobs, {
+      status: 'coverage-gap', surface: OPENINGS_URL, firstParty: true,
+      listingComplete: false, reportedTotal: listings.length, indiaFacetCount: null,
+      pagesFetched: 3 + listings.length, verifiedAt: (overrideNow || now)(),
+      reason: `current-public-role-criteria;closing-inventory-not-verified;unavailable-native-roles:${unavailable.join(',') || 'none'}`,
+    })
   },
 })
 

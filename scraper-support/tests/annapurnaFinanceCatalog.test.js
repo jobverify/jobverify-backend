@@ -7,17 +7,23 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Annapurna Finance as a verified resume-form sentinel source', () => {
+test('getScraperCatalog routes Annapurna Finance to the current evidence-required native collector', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'annapurnafinance')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'Annapurna Finance')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
-  assert.equal(provider.companyCareerPage, 'https://annapurnafinance.in/career-openings/')
+  assert.equal(provider.atsPlatform, 'hrone')
+  assert.equal(provider.companyCareerPage, 'https://annapurnafinance.in/career/career-openings')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
-  assert.equal(provider.extractionStrategy, 'verified-resume-form-careers-page-return-empty')
+  assert.equal(provider.paginationStrategy, 'published-native-terminal-array-pagination')
+  assert.equal(provider.extractionStrategy, 'current-published-public-native-query-and-two-own-role-passes-final-inventory')
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'annapurnafinance.in')

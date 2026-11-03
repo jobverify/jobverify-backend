@@ -1,125 +1,16 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
-const loadAmiModule = async () => {
-  try {
-    return await import('../../scraper/ami/script.js')
-  } catch {
-    assert.fail('Expected AMI scraper module at ../../scraper/scraper/ami/script.js')
-  }
-}
-
-const sampleCompanyHtml = `
-<html>
-  <head><title>AMI | LinkedIn</title></head>
-  <body>
-    <meta content="urn:li:organization:635771">
-  </body>
-</html>
-`
-
-const sampleSearchHtml = `
-<div class="base-card base-card--link job-search-card" data-entity-urn="urn:li:jobPosting:4445556667">
-  <a class="base-card__full-link" href="https://www.linkedin.com/jobs/view/firmware-engineer-at-ami-4445556667?trk=public_jobs_topcard-title">
-    <h3 class="base-search-card__title">Firmware Engineer</h3>
-  </a>
-  <h4 class="base-search-card__subtitle">
-    <a>AMI</a>
-  </h4>
-  <span class="job-search-card__location">Chennai, Tamil Nadu, India</span>
-  <time class="job-search-card__listdate" datetime="2026-06-26"></time>
-</div>
-`
-
-const sampleDetailHtml = `
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "JobPosting",
-  "title": "Firmware Engineer",
-  "description": "<p>Build firmware and low-level platform software for AMI products.</p>",
-  "datePosted": "2026-06-26",
-  "employmentType": "FULL_TIME",
-  "hiringOrganization": {
-    "@type": "Organization",
-    "name": "AMI"
-  },
-  "jobLocation": {
-    "@type": "Place",
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": "Chennai",
-      "addressRegion": "Tamil Nadu",
-      "addressCountry": "IN"
-    }
-  }
-}
-</script>
-`
-
-test('extractSearchResults maps AMI LinkedIn guest results into conservative job records', async () => {
-  const ami = await loadAmiModule()
-  const listings = ami.extractSearchResults(sampleSearchHtml)
-  const detail = ami.extractJobDetail(sampleDetailHtml)
-
-  assert.equal(ami.pageIndicatesAmiCompany(sampleCompanyHtml), true)
-  assert.equal(listings.length, 1)
-  assert.deepEqual(
-    {
-      ...listings[0],
-      ...Object.fromEntries(
-        Object.entries(detail).filter(([, value]) => value != null),
-      ),
-    },
-    {
-      title: 'Firmware Engineer',
-      company: 'AMI',
-      department: null,
-      location: 'Chennai, Tamil Nadu, India',
-      city: 'Chennai',
-      country: 'India',
-      jobId: '4445556667',
-      requisitionId: '4445556667',
-      sourceUrl: 'https://www.linkedin.com/jobs/view/firmware-engineer-at-ami-4445556667?trk=public_jobs_topcard-title',
-      applyUrl: 'https://www.linkedin.com/jobs/view/firmware-engineer-at-ami-4445556667?trk=public_jobs_topcard-title',
-      employmentType: 'Full-time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '2026-06-26',
-      closingDate: null,
-      jobDescription: 'Build firmware and low-level platform software for AMI products.',
-    },
-  )
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {run,createAmiScraper,LINKEDIN_COMPANY_PAGE_URL,LINKEDIN_INDIA_JOBS_URL} from '../../scraper/ami/script.js'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+globalThis.fetch=()=>{throw Error('Offline AMI legacy-contract network tripwire')}
+const packets=JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/ami/test-data/native-20261103.json.gz',import.meta.url)))),pages=new Map(packets.map(packet=>[packet.requestedUrl,packet]))
+test('AMI factory preserves actual configured filter observations without inventing complete employer inventory',async()=>{
+ let audit;const jobs=await createAmiScraper({maxJobs:0}).run({fetchPage:async url=>{assert.ok(pages.has(url));return structuredClone(pages.get(url))},onAudit:value=>{audit=value}})
+ assert.equal(jobs.length,0);assert.deepEqual(audit.opening.search.nativeKeywords,['Jobs']);assert.equal(audit.opening.profile.nativeOrganizationUrn,'urn:li:organization:635771');assert.equal(audit.observedCandidates.length,0);assert.equal(readInventoryEvidence(jobs).listingComplete,false);assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
 })
-
-test('run fetches AMI company, search, and detail pages and decorates openings', async () => {
-  const ami = await loadAmiModule()
-  const requestedUrls = []
-  const scraper = ami.createAmiScraper({ maxJobs: 1 })
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === ami.LINKEDIN_COMPANY_PAGE_URL) return sampleCompanyHtml
-      if (url === ami.LINKEDIN_INDIA_JOBS_URL) return sampleSearchHtml
-      if (url === 'https://www.linkedin.com/jobs/view/firmware-engineer-at-ami-4445556667?trk=public_jobs_topcard-title') {
-        return sampleDetailHtml
-      }
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(
-    requestedUrls,
-    [
-      ami.LINKEDIN_COMPANY_PAGE_URL,
-      ami.LINKEDIN_INDIA_JOBS_URL,
-      'https://www.linkedin.com/jobs/view/firmware-engineer-at-ami-4445556667?trk=public_jobs_topcard-title',
-    ],
-  )
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'ami')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
+test('AMI public run forwards reader options and original cancellation instead of starting a default request',async()=>{
+ const requested=[];await run({fetchPage:async url=>{requested.push(url);return structuredClone(pages.get(url))}});assert.deepEqual(requested,[LINKEDIN_COMPANY_PAGE_URL,LINKEDIN_INDIA_JOBS_URL,LINKEDIN_COMPANY_PAGE_URL,LINKEDIN_INDIA_JOBS_URL])
+ const caller=new AbortController(),reason=Object.freeze({caller:'legacy-before'});caller.abort(reason);await assert.rejects(run({signal:caller.signal,fetchPage:()=>{throw Error('no read after abort')}}),error=>error===reason)
 })

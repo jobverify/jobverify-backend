@@ -19,7 +19,13 @@ export const identifyPublicAtsBoard = value => {
     boardToken = url.hostname.startsWith('jobs.') ? parts[0]
       : parts[0] === 'v0' && parts[1] === 'postings' ? parts[2] : null
   }
-  if (!boardToken || !/^[a-z\d][a-z\d._-]{0,100}$/i.test(boardToken)) return null
+  if (atsPlatform === 'ashby') {
+    // Ashby publishes board names such as "Jasper AI" as one encoded path
+    // component. Decode once; separators, controls and double encoding remain
+    // invalid, and API builders encode the resulting name exactly once.
+    try { boardToken = decodeURIComponent(boardToken || '') } catch { return null }
+    if (!/^[a-z\d][a-z\d ._-]{0,100}$/i.test(boardToken) || boardToken.trim() !== boardToken) return null
+  } else if (!boardToken || !/^[a-z\d][a-z\d._-]{0,100}$/i.test(boardToken)) return null
   return { atsPlatform, boardToken, ...(region ? { region } : {}) }
 }
 

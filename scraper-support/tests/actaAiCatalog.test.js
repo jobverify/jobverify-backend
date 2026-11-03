@@ -6,13 +6,17 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes the ACTA.ai scraper with LinkedIn guest-search metadata', () => {
+test('getScraperCatalog binds ACTA.ai to current native observations with unknown vacancy scope', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'actaai')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'linkedin-guest-search')
+  assert.equal(provider.atsPlatform, 'linkedin-company-posts-and-unqualified-guest-search')
+  assert.equal(provider.sourceCurrentPublicContractReviewedOn,'2026-11-03')
+  assert.equal(provider.verifiedPublicJobCount,null)
+  assert.equal(provider.sourceScopeComplete,false)
+  assert.equal(provider.lifecycleCleanupAllowed,false)
   assert.match(provider.companyCareerPage, /linkedin\.com\/company\/acta-ai/i)
   assert.equal(provider.companyDomain, 'acta.ai')
 })

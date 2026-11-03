@@ -19,8 +19,8 @@ test('shorthand or duplicate unknown status values remain inconclusive',()=>{
  }
 })
 
-test('current AgNext diagnostic checker remains discovery-only while Auth0 delegates to native extraction',()=>{
- for(const [source,type] of [['agnext','discovery-only'],['auth0','script']]){
+test('AgNext and Auth0 delegate to implemented native extraction',()=>{
+ for(const [source,type] of [['agnext','script'],['auth0','script']]){
   const modulePath=fileURLToPath(new URL(`../../scraper/${source}/script.js`,import.meta.url))
   assert.equal(classifyProviderImplementation({adapter:'script',modulePath}).type,type,source)
  }

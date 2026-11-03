@@ -1,176 +1,64 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-
-import { createAlliedDigitalServicesScraper } from '../../scraper/allieddigitalservices/script.js'
-
-const BASE = 'https://www.allieddigital.net'
-const API = BASE + '/wp-json/wp/v2/awsm_job_openings'
-const readFixture = (name) => readFile(new URL('./fixtures/allieddigitalservices/' + name, import.meta.url), 'utf8')
-const [rootHtml, careersHtml, listingHtml, apiFixture, serviceHtml, endpointHtml, networkHtml] = await Promise.all([
-  'homepage.html', 'careers.html', 'job-openings.html', 'jobs-api-page-1.json',
-  'service-desk-executive-l3.html', 'endpoint-administrator.html', 'network-engineer-l3.html',
-].map(readFixture))
-const firstPage = JSON.parse(apiFixture)
-const details = new Map([
-  [BASE + '/jobs/service-desk-executive-l3/', serviceHtml],
-  [BASE + '/jobs/endpoint-administrator/', endpointHtml],
-  [BASE + '/jobs/network-engineer-l3/', networkHtml],
-])
-const runFixture = (overrides = {}) => createAlliedDigitalServicesScraper().run({
-  fetchText: async (url) => {
-    if (url === BASE + '/') return overrides.root ?? rootHtml
-    if (url === BASE + '/careers/') return overrides.careers ?? careersHtml
-    if (url === BASE + '/job-openings/') return overrides.listing ?? listingHtml
-    const detail = overrides.details?.get(url) ?? details.get(url)
-    if (detail != null) return detail
-    throw new Error('Unexpected URL: ' + url)
-  },
-  fetchJobsPage: overrides.fetchJobsPage ?? (async () => overrides.page ?? structuredClone(firstPage)),
-  now: () => '2026-10-08T18:00:00.000Z',
+import {createAlliedDigitalServicesScraper,createWordPressJobsPageFetch} from '../../scraper/allieddigitalservices/script.js'
+import {revisitFixture} from '../../scraper/castrolindia/revisitFixture.js'
+import {structure} from '../../scraper/alohatechnology/publicRead.js'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const BASE='https://www.allieddigital.net',API=BASE+'/wp-json/wp/v2/awsm_job_openings',meta=new URL('../../scraper/allieddigitalservices/currentNative20261103.test.js',import.meta.url),f=revisitFixture(meta),rootHtml=f.text(BASE+'/'),careersHtml=f.text(BASE+'/careers/'),listingHtml=f.text(BASE+'/job-openings/'),records=JSON.parse(f.text(API+'?per_page=100&page=1')),firstPage={records,total:3,totalPages:1},details=new Map(records.map(r=>[r.link,f.text(r.link)])),serviceHtml=details.get(records[0].link),endpointHtml=details.get(records[1].link),networkHtml=details.get(records[2].link)
+globalThis.fetch=async()=>{throw Error('Allied legacy/current tests prohibit network')}
+const runFixture=(o={})=>createAlliedDigitalServicesScraper().run({now:'2026-11-03T04:45:00.000Z',onAudit:o.onAudit,fetchPage:async url=>{
+ let body,headers=new Headers()
+ if(url.startsWith(API+'?')){const page=o.fetchJobsPage?await o.fetchJobsPage(url):o.page??structuredClone(firstPage);body=JSON.stringify(page.records);if(page.total!==null&&page.total!==undefined)headers.set('x-wp-total',String(page.total));if(page.totalPages!==null&&page.totalPages!==undefined)headers.set('x-wp-totalpages',String(page.totalPages))}
+ else if(url===BASE+'/')body=o.root??rootHtml
+ else if(url===BASE+'/careers/')body=o.careers??careersHtml
+ else if(url===BASE+'/job-openings/')body=o.listing??listingHtml
+ else body=o.details?.get(url)??details.get(url)
+ assert.equal(typeof body,'string','Only declared fixture URL '+url);return{url,status:200,body,headers}
+}})
+const changeSchema=(html,change)=>{const script=structure(html).scripts.find(s=>s.attrs.type==='application/ld+json'&&s.body.includes('JobPosting'));assert(script);const schema=JSON.parse(script.body);return html.replace(script.body,JSON.stringify(change(schema)))}
+test('Allied current adapter keeps the full native criterion candidate and preserves unpublished countries/IDs',async()=>{
+ let audit;const jobs=await runFixture({onAudit:r=>{audit=r}})
+ assert.deepEqual(jobs.map(j=>[j.jobId,j.title,j.location,j.country]),[['4596','NETWORK ENGINEER L3','Navi Mumbai',null]])
+ assert.equal(jobs[0].requisitionId,null);assert.equal(jobs[0].remoteStatus,null);assert.equal(jobs[0].employmentType,'Full-time');assert.match(jobs[0].jobDescription,/L3 escalation support/)
+ assert.equal(audit.publicWordPressRoles.length,3);assert.equal(audit.corporateAnnouncementObservations.length,4);assert.equal(audit.publicWordPressRoles.filter(j=>!j.sourceDetailComplete).length,2);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
-
-test('Allied Digital migration reads the complete current WordPress inventory and verified India details', async () => {
-  const jobs = await runFixture()
-  assert.deepEqual(jobs.map((job) => [job.jobId, job.title, job.location, job.country]), [
-    ['4718', 'SERVICE DESK EXECUTIVE L3', 'Navi Mumbai, India', 'India'],
-    ['4717', 'Endpoint Administrator', 'Navi Mumbai, India', 'India'],
-    ['4596', 'NETWORK ENGINEER L3', 'Navi Mumbai, India', 'India'],
-  ])
-  assert.equal(jobs[0].department, 'CSD')
-  assert.equal(jobs[0].employmentType, 'Full Time')
-  assert.equal(jobs[0].postingDate, '2026-05-05T12:52:37+00:00')
-  assert.equal(jobs[0].jobDescription, null)
-  assert.equal(jobs[1].jobDescription, null)
-  assert.match(jobs[2].jobDescription, /L3 escalation support/)
-  assert.equal(jobs[2].link, BASE + '/jobs/network-engineer-l3/')
-  assert.equal(jobs[2].source, 'allieddigitalservices')
-  assert.equal(jobs[2].scrapedAt, '2026-10-08T18:00:00.000Z')
+test('Allied rejects changed corporate, careers and native board canonical identity',async()=>{
+ for(const [key,html]of [['root',rootHtml],['careers',careersHtml],['listing',listingHtml]])await assert.rejects(runFixture({[key]:html.replace('rel="canonical"','rel="alternate"')}),/canonical identity/)
 })
-
-test('Allied Digital migration rejects changed first-party root, careers, and opening surfaces', async () => {
-  for (const [key, html, message] of [
-    ['root', rootHtml, /verified root surface/],
-    ['careers', careersHtml, /verified careers surface/],
-    ['listing', listingHtml, /verified Hiring Now surface/],
-  ]) {
-    await assert.rejects(runFixture({ [key]: html.replace(/rel="canonical"/, 'rel="alternate"') }), message)
-  }
+test('Allied native pagination rejects missing records, duplicate IDs, missing headers and zero without a native zero model',async()=>{
+ for(const page of [{...firstPage,total:4},{...firstPage,records:[records[0],records[0],records[2]]},{...firstPage,totalPages:2},{...firstPage,total:null},{records:[],total:0,totalPages:0}])await assert.rejects(runFixture({page}),/native|REST|inventory/i)
 })
-
-test('Allied Digital inventory rejects missing records, duplicates, and inconsistent page counts', async () => {
-  await assert.rejects(runFixture({ page: { ...firstPage, total: 4 } }), /incomplete.*inventory|inventory.*incomplete/i)
-  await assert.rejects(runFixture({ page: { ...firstPage, records: [firstPage.records[0], firstPage.records[0], firstPage.records[2]] } }), /duplicate/i)
-  await assert.rejects(runFixture({ page: { ...firstPage, totalPages: 2 } }), /page count|pagination/i)
-  await assert.rejects(runFixture({ page: { ...firstPage, total: null } }), /inventory|count/i)
-  await assert.rejects(runFixture({ page: { records: [], total: 0, totalPages: 0 } }), /inventory|openings/i)
+test('Allied API IDs and links must bind the actual public opening cards',async()=>{
+ await assert.rejects(runFixture({page:{...firstPage,records:records.map(r=>({...r,id:r.id+1}))}}),/inventory disagree/)
 })
-
-test('Allied Digital inventory rejects API jobs omitted from the live opening cards', async () => {
-  await assert.rejects(runFixture({ page: { ...firstPage, records: firstPage.records.map((item) => ({ ...item, id: item.id + 1 })) } }), /inventory|listing/i)
+test('Allied details bind public canonical, alternate post ID and employer rather than private application controls',async()=>{
+ for(const broken of [endpointHtml.replace('/awsm_job_openings/4717','/awsm_job_openings/9999'),changeSchema(endpointHtml,p=>({...p,hiringOrganization:{...p.hiringOrganization,name:'Unrelated Company'}})),changeSchema(endpointHtml,p=>({...p,hiringOrganization:{...p.hiringOrganization,sameAs:'https://unrelated.example'}})),endpointHtml.replace('rel="canonical"','rel="alternate"')])await assert.rejects(runFixture({details:new Map([[records[1].link,broken]])}),/identity|employer|canonical|post ID/)
+ const jobs=await runFixture({details:new Map([[records[2].link,networkHtml.replace(/<input\b(?=[^>]*\bname=["']awsm_job_id["'])[^>]*>/gi,'')]])});assert.equal(jobs.length,1)
 })
-
-test('Allied Digital details require the same job identity, canonical URL, employer, and application form', async () => {
-  for (const broken of [
-    endpointHtml.replace('value="4717"', 'value="9999"'),
-    endpointHtml.replace('"name":"Allied Digital"', '"name":"Unrelated Company"'),
-    endpointHtml.replace('https:\\/\\/www.allieddigital.net', 'https:\\/\\/unrelated.example'),
-    endpointHtml.replace('rel="canonical"', 'rel="alternate"'),
-    endpointHtml.replace('class="awsm-job-form"', 'class="other-form"'),
-  ]) {
-    await assert.rejects(runFixture({ details: new Map([[BASE + '/jobs/endpoint-administrator/', broken]]) }), /verified.*detail|detail.*changed/i)
-  }
+test('Allied excludes a full native foreign role while retaining all country evidence',async()=>{
+ const foreign=changeSchema(networkHtml,p=>({...p,jobLocation:{'@type':'Place',address:{'@type':'PostalAddress',addressLocality:'New York',addressCountry:'US'}}})).replaceAll('Navi Mumbai','New York');let audit
+ const jobs=await runFixture({details:new Map([[records[2].link,foreign]]),onAudit:r=>{audit=r}});assert.equal(jobs.length,0);assert.equal(audit.publicWordPressRoles.find(r=>r.jobId==='4596').country,'United States');assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
-
-const changeSchema = (html, change) => html.replace(
-  /(<script[^>]*type="application\/ld\+json"[^>]*>)([\s\S]*?)(<\/script>)/,
-  (_, start, json, end) => start + JSON.stringify(change(JSON.parse(json))) + end,
-)
-
-test('Allied Digital global inventory filters foreign jobs before assigning India country', async () => {
-  const foreign = changeSchema(endpointHtml, (schema) => ({
-    ...schema,
-    jobLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressLocality: 'New York', addressCountry: 'US' } },
-  })).replace(/Navi Mumbai/g, 'New York')
-  const jobs = await runFixture({ details: new Map([[BASE + '/jobs/endpoint-administrator/', foreign]]) })
-  assert.deepEqual(jobs.map((job) => job.jobId), ['4718', '4596'])
+test('Allied unspecified remote country remains unqualified without a manufactured India label',async()=>{
+ const remote=changeSchema(networkHtml,p=>({...p,jobLocation:{'@type':'Place',address:'Remote'}})).replaceAll('Navi Mumbai','Remote');let audit
+ const jobs=await runFixture({details:new Map([[records[2].link,remote]]),onAudit:r=>{audit=r}});assert.equal(jobs.length,0);assert.equal(audit.publicWordPressRoles.find(r=>r.jobId==='4596').country,null);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
-
-test('Allied Digital global inventory does not infer India from an unspecified remote location', async () => {
-  const remote = changeSchema(endpointHtml, (schema) => ({ ...schema, jobLocation: { '@type': 'Place', address: 'Remote' } }))
-    .replace(/Navi Mumbai/g, 'Remote')
-  const jobs = await runFixture({ details: new Map([[BASE + '/jobs/endpoint-administrator/', remote]]) })
-  assert.deepEqual(jobs.map((job) => job.jobId), ['4718', '4596'])
+// Explicit synthetic pagination reduction/extension, never current live proof.
+function paginatedInventory(){const all=structuredClone(records),detailMap=new Map(details);for(let index=0;index<98;index++){const id=5000+index,title='Synthetic Support Engineer '+index,link=BASE+'/jobs/synthetic-support-engineer-'+index+'/';all.push({...structuredClone(records[0]),id,title:{rendered:title},link});detailMap.set(link,changeSchema(serviceHtml,p=>({...p,title})).replaceAll('SERVICE DESK EXECUTIVE L3',title).replaceAll(records[0].link,link).replaceAll('/awsm_job_openings/4718','/awsm_job_openings/'+id))}const cards=all.slice(0,10).map(r=>'<div class="awsm-grid-item" id="awsm-grid-item-'+r.id+'"><a href="'+r.link+'"></a></div>').join(''),listing=listingHtml.replace(/<div class="awsm-job-listings[\s\S]*$/,'<div class="awsm-job-listings" data-listings="10">'+cards+'</div>');return{records:all,detailMap,listing}}
+test('Allied traverses both counted pages again after all closing native details',async()=>{
+ const f=paginatedInventory(),requested=[];let audit
+ const jobs=await runFixture({listing:f.listing,details:f.detailMap,onAudit:r=>{audit=r},fetchJobsPage:async url=>{requested.push(url);const page=Number(new URL(url).searchParams.get('page'));return{records:f.records.slice((page-1)*100,page*100),total:101,totalPages:2}}})
+ assert.deepEqual(requested,[API+'?per_page=100&page=1',API+'?per_page=100&page=2',API+'?per_page=100&page=1',API+'?per_page=100&page=2']);assert.equal(audit.publicWordPressRoles.length,101);assert.equal(jobs.length,1);assert.equal(audit.declaredBoardInventoryComplete,true);assert.equal(audit.ownDetailPasses,2)
 })
-
-const paginatedInventory = () => {
-  const records = [...structuredClone(firstPage.records)]
-  const detailMap = new Map(details)
-  for (let index = 0; index < 98; index += 1) {
-    const id = 5000 + index
-    const title = 'Support Engineer ' + index
-    const link = BASE + '/jobs/support-engineer-' + index + '/'
-    records.push({ ...structuredClone(firstPage.records[0]), id, title: { rendered: title }, link })
-    detailMap.set(link, changeSchema(serviceHtml, (schema) => ({ ...schema, title }))
-      .replaceAll('SERVICE DESK EXECUTIVE L3', title)
-      .replaceAll(BASE + '/jobs/service-desk-executive-l3/', link)
-      .replace('value="4718"', 'value="' + id + '"'))
-  }
-  const cards = records.slice(0, 10).map((item) => '<div class="awsm-job-listing-item awsm-grid-item" id="awsm-grid-item-' + item.id + '"><a href="' + item.link + '" class="awsm-job-item"></a></div>').join('')
-  return { records, detailMap, listing: listingHtml.replace(/<div class="awsm-job-listings[\s\S]*$/, '<div class="awsm-job-listings" data-listings="10">' + cards + '</div>') }
-}
-
-test('Allied Digital pagination traverses all counted pages without returning a partial inventory', async () => {
-  const fixture = paginatedInventory()
-  const requested = []
-  const jobs = await runFixture({
-    listing: fixture.listing, details: fixture.detailMap,
-    fetchJobsPage: async (url) => {
-      requested.push(url)
-      const page = Number(new URL(url).searchParams.get('page'))
-      return { records: fixture.records.slice((page - 1) * 100, page * 100), total: 101, totalPages: 2 }
-    },
-  })
-  assert.deepEqual(requested, [API + '?per_page=100&page=1', API + '?per_page=100&page=2'])
-  assert.equal(jobs.length, 101)
-  assert.equal(new Set(jobs.map((job) => job.jobId)).size, 101)
-  assert.equal(jobs.at(-1).jobId, '5097')
+test('Allied a second page transport error or changed native count never becomes a partial success',async()=>{
+ const f=paginatedInventory();for(const failure of[Error('Second page unavailable'),{records:f.records.slice(100),total:102,totalPages:2}])await assert.rejects(runFixture({listing:f.listing,details:f.detailMap,fetchJobsPage:async url=>{if(new URL(url).searchParams.get('page')==='1')return{records:f.records.slice(0,100),total:101,totalPages:2};if(failure instanceof Error)throw failure;return failure}}),/Second page unavailable|pagination changed/)
 })
-
-test('Allied Digital pagination rejects a second page failure or changed inventory count', async () => {
-  const fixture = paginatedInventory()
-  for (const failure of [new Error('Second page unavailable'), { records: fixture.records.slice(100), total: 102, totalPages: 2 }]) {
-    await assert.rejects(runFixture({
-      listing: fixture.listing, details: fixture.detailMap,
-      fetchJobsPage: async (url) => {
-        if (new URL(url).searchParams.get('page') === '1') return { records: fixture.records.slice(0, 100), total: 101, totalPages: 2 }
-        if (failure instanceof Error) throw failure
-        return failure
-      },
-    }), /Second page unavailable|inventory.*changed/i)
-  }
+test('Allied compatible REST count reader keeps count headers and rejects absent headers',async()=>{
+ const response=headers=>new Response(JSON.stringify(records),{headers:{'content-type':'application/json',...headers}}),reader=createWordPressJobsPageFetch({fetchImpl:async()=>response({'x-wp-total':'3','x-wp-totalpages':'1'})});assert.deepEqual(await reader(API+'?per_page=100&page=1'),firstPage);await assert.rejects(createWordPressJobsPageFetch({fetchImpl:async()=>response({})})(API+'?per_page=100&page=1'),/count|inventory/i)
 })
-
-test('Allied Digital API fetch keeps authoritative counts and rejects absent count headers', async () => {
-  const { createWordPressJobsPageFetch } = await import('../../scraper/allieddigitalservices/script.js')
-  const response = (headers) => new Response(JSON.stringify(firstPage.records), { headers: { 'content-type': 'application/json', ...headers } })
-  const fetchPage = createWordPressJobsPageFetch({ fetchImpl: async () => response({ 'x-wp-total': '3', 'x-wp-totalpages': '1' }) })
-  assert.deepEqual(await fetchPage(API + '?per_page=100&page=1'), firstPage)
-  const uncounted = createWordPressJobsPageFetch({ fetchImpl: async () => response({}) })
-  await assert.rejects(uncounted(API + '?per_page=100&page=1'), /count|inventory/i)
-})
-
-test('Allied Digital preserves complete inventory evidence when every published role is outside India', async () => {
-  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
-  const foreignDetails = new Map([...details].map(([url, html]) => [url, changeSchema(html, (schema) => ({
-    ...schema,
-    jobLocation: { '@type': 'Place', address: { addressLocality: 'New York', addressCountry: 'US' } },
-  })).replace(/Navi Mumbai/g, 'New York')]))
-  const jobs = await runFixture({ details: foreignDetails })
-  assert.deepEqual(jobs, [])
-  assert.deepEqual(readInventoryEvidence(jobs), {
-    status: 'complete-inventory', surface: API, firstParty: true, listingComplete: true,
-    pagesFetched: 1, reportedTotal: 3, indiaFacetCount: 0,
-    verifiedAt: '2026-10-08T18:00:00.000Z', reason: 'count-checked-wordpress-inventory-and-verified-details',
-  })
+test('Allied configured native board can prove India exclusion only with all foreign countries and no unresolved corporate branch',async()=>{
+ // The corporate announcement tables are explicitly removed only in this
+ // synthetic board-only scope control; original captured HTML is immutable.
+ const boardOnly=careersHtml.replace(/<table\b[^>]*id="tablepress-[^"]+"[\s\S]*?<\/table>/g,''),foreign=new Map([...details].map(([url,html])=>[url,changeSchema(html,p=>({...p,jobLocation:{'@type':'Place',address:{'@type':'PostalAddress',addressLocality:'New York',addressCountry:'US'}}})).replaceAll('Navi Mumbai','New York')]));let audit
+ const jobs=await runFixture({careers:boardOnly,details:foreign,onAudit:r=>{audit=r}}),evidence=readInventoryEvidence(jobs);assert.equal(jobs.length,0);assert.equal(evidence.listingComplete,true);assert.equal(evidence.reportedTotal,3);assert.equal(evidence.indiaFacetCount,0);assert.equal(audit.sourceScopeComplete,false);assert.equal(audit.lifecycleCleanupAllowed,false)
 })

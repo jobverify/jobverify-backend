@@ -1,6 +1,7 @@
 /** Conservative recovery from an exact role page's employer-authored content. */
 import {extractActiveDescription, readNativeDocument} from '../scraper-support/utils/activeNativeHtml.js';
 import {ripplingPostingDescription} from './ripplingPostingDescription.js';
+import {visiblePostingDescription} from './visiblePostingDescription.js';
 const identity=value=>String(value??'').replace(/&amp;/gi,'&').replace(/\s+/g,' ').trim().toLowerCase();
 const sameUrl=(a,b)=>{try{const x=new URL(a),y=new URL(b);return x.protocol==='https:'&&y.protocol==='https:'&&x.origin===y.origin&&x.pathname.replace(/\/$/,'')===y.pathname.replace(/\/$/,'')&&x.search===y.search&&x.hash===y.hash;}catch{return false;}};
 export {sameUrl as isExactPublicJobUrl};
@@ -21,7 +22,8 @@ export function publicPostingDescription(job,html,responseUrl,{employerAliases=[
   for(const script of scripts){
     try{visit(JSON.parse(script.raw));}catch{return null;}
   }
-  if(records.length===0)return ripplingPostingDescription(job,document,responseUrl,{employerAliases,normalizeTitle});
+  if(records.length===0)return ripplingPostingDescription(job,document,responseUrl,{employerAliases,normalizeTitle})
+    || visiblePostingDescription(job,document,responseUrl,{sameUrl,normalizeTitle});
   const employers=[job.company,...employerAliases].map(identity);
   const matches=records.filter(value=>identity(normalizeTitle(value.title))===identity(normalizeTitle(job.title))&&employers.includes(identity(value.hiringOrganization?.name))&&sameUrl(value.url,url));
   if(matches.length!==1)return null;

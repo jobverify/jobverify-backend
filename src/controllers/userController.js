@@ -8,6 +8,7 @@ import TailoredResume from '../models/TailoredResume.js';
 import Subscription from "../models/Subscription.js";
 import TelegramLinkToken from "../models/TelegramLinkToken.js";
 import User from "../models/User.js";
+import { BROADCAST_TOKENS, DEFAULT_BROADCAST_TEMPLATE, BROADCAST_SAMPLE_JOBS, renderBroadcastTemplate, validateBroadcastTemplate } from '../services/telegramBroadcastTemplate.js';
 import { normalizePreferredJobType } from "../constants/preferredJobTypes.js";
 import { ACCESS_ROLES } from "../constants/accessPlans.js";
 import {
@@ -145,6 +146,9 @@ const persistExpiredAccessDowngrade = async (user) => {
 };
 
 const buildTelegramAlertSettingsData = (user, siteSettings) => ({
+  template: user.profile?.telegramAlertTemplate || DEFAULT_BROADCAST_TEMPLATE,
+  defaultTemplate: DEFAULT_BROADCAST_TEMPLATE,
+  tokens: BROADCAST_TOKENS,
   linked: hasLinkedTelegram(user),
   username: user.telegram?.username ?? null,
   linkedAt: user.telegram?.linkedAt ?? null,
@@ -484,6 +488,16 @@ export const createTelegramAlertLink = async (req, res) => {
   }
 };
 
+export const previewUserTelegramAlert = (req, res) => {
+  try {
+    const sample = req.body?.sample ?? 'complete';
+    if (!Object.hasOwn(BROADCAST_SAMPLE_JOBS, sample)) return res.status(400).json({ success: false, message: 'Choose the complete or minimal sample.' });
+    const text = renderBroadcastTemplate(req.body?.template, BROADCAST_SAMPLE_JOBS[sample]);
+    return res.json({ success: true, data: { text, characters: text.length,
+      sampleLabel: sample === 'complete' ? 'Illustrative sample with source details' : 'Illustrative sample with missing details' } });
+  } catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+};
+
 export const getTelegramAlertSettings = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -510,6 +524,11 @@ export const getTelegramAlertSettings = async (req, res) => {
 
 export const updateTelegramAlertSettings = async (req, res) => {
   try {
+    let template;
+    if (req.body.template !== undefined) {
+      try { template = validateBroadcastTemplate(req.body.template); }
+      catch (error) { return res.status(400).json({ success: false, message: error.message }); }
+    }
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -543,6 +562,8 @@ export const updateTelegramAlertSettings = async (req, res) => {
         req.body.telegramAlertFilters,
       );
     }
+
+    if (template !== undefined) user.profile.telegramAlertTemplate = template;
 
     if (req.body.enabled !== undefined) {
       user.premium.telegramAlertsEnabled = req.body.enabled === true;

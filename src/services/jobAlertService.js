@@ -14,6 +14,7 @@ import { getTelegramProvider, isTelegramDeliveryEnabled } from "./telegramProvid
 import { resolveFrontendOrigin } from "../utils/runtimeConfig.js";
 import { getSiteSettings } from "./siteSettingsService.js";
 import { normalizePublicJobCategory } from "../utils/publicJobNormalization.js";
+import { renderBroadcastTemplate } from './telegramBroadcastTemplate.js';
 
 const MAX_JOBS_PER_MESSAGE = 1;
 const CLAIM_TTL_MS = 5 * 60 * 1000;
@@ -48,9 +49,10 @@ export function telegramJobLink(job) {
   return new URL(job._id ? `/jobs/${encodeURIComponent(String(job._id))}` : '/jobs', origin).href;
 }
 
-export const buildTelegramMessageBody = (jobs) => {
+export const buildTelegramMessageBody = (jobs, template) => {
   const job = jobs[0];
   if (!job) return '';
+  if (template) return renderBroadcastTemplate(template, job);
   const batches = [...new Set((job.eligibleBatches || [])
     .filter(year => Number.isInteger(year) && year >= 1900 && year <= 2100))]
     .sort((a, b) => a - b).slice(0, 20);
@@ -168,7 +170,7 @@ const processRecords = async (user, records) => {
       await JobAlertDelivery.updateMany(owned, { $set: retryUpdate("telegram_disabled", 5 * 60_000) });
       continue;
     }
-    const body = buildTelegramMessageBody(claimed.map(({ job }) => job));
+    const body = buildTelegramMessageBody(claimed.map(({ job }) => job), currentUser.profile?.telegramAlertTemplate);
     const attemptCount = Math.max(0, ...claimed.map(({ delivery }) => delivery.attemptCount || 0)) + 1;
     let result;
     try {

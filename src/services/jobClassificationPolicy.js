@@ -116,6 +116,8 @@ const sourceNumericFields = input => {
   // A break from work is not work experience, even if it is adjacent to an experience requirement.
   const breakWords = '(?:career (?:break|gap)|employment gap|break from (?:work|employment))';
   for (const key of ['required', 'preferred']) separated[key] = separated[key]
+    // The length of a degree is education, not previous professional work.
+    .replace(/\b(?:\d+(?:\.\d+)?|one|two|three|four|five|six)\s*(?:\+\s*)?(?:[- ]\s*)?(?:years?|yrs?)\s*(?:of\s+)?(?=(?:bachelor(?:['\u2019]s|s)?|master(?:['\u2019]s|s)?|[bm]\.?\s*tech|[bm]\.e\.?|degree|diploma)\b)/gi, 'degree duration ')
     .replace(new RegExp(NUMERIC_SOURCE_PATTERN.source + '\\s+(?:of\\s+)?' + breakWords + '\\b', 'gi'), 'career break')
     .replace(new RegExp('\\b' + breakWords + '\\s+(?:(?:of|for|up to|at most|maximum|minimum|between)\\s+)*' + NUMERIC_SOURCE_PATTERN.source, 'gi'), 'career break')
     .replace(new RegExp('^[\\t ]*(?:in|within|after|by|at)\\s+(?:the\\s+)?(?:(?:first|next|initial)\\s+)?' + NUMERIC_SOURCE_PATTERN.source + '[\\t ]*[:=-]?[\\t ]*$', 'gim'), 'performance milestone')

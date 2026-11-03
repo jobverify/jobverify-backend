@@ -28,10 +28,16 @@ export async function runCurrentAkulaku(options={}){
   if(native&&address.pathname.startsWith('/zpdetail/'))need([...address.searchParams.keys()].every(name=>['o','PageIndex'].includes(name))&&['1','2'].includes(address.searchParams.get('o')),'unrecognized native detail routing')
   if(!supplied){const delay=Math.max(0,500-(Date.now()-(lastHostStart.get(address.host)||0)));if(delay)await wait(()=>new Promise(resolve=>setTimeout(resolve,delay)));lastHostStart.set(address.host,Date.now())}
   const requestController=new AbortController(),requestSignal=AbortSignal.any([signal,requestController.signal,AbortSignal.timeout(20000)]),requestedAt=new Date().toISOString()
-  let packet
+  let packet,networkAttempts=0,transientConnectTimeoutRetried=false
   try{
    const request={method:'GET',redirect:'manual',signal:requestSignal,headers:{'User-Agent':'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',Accept:NATIVE_STYLESHEETS.includes(url)?'text/css,*/*;q=0.1':'text/html,application/xhtml+xml,*/*;q=0.8'}}
-   packet=await withCallerSignal(()=>supplied?supplied(url,request):(options.fetchImpl??globalThis.fetch)(url,{...request,signal:requestSignal}),requestSignal)
+   const getPacket=()=>{networkAttempts++;return withCallerSignal(()=>supplied?supplied(url,request):(options.fetchImpl??globalThis.fetch)(url,{...request,signal:requestSignal}),requestSignal)}
+   try{packet=await getPacket()}catch(error){
+    if(supplied||!NATIVE_STYLESHEETS.includes(url)||signal.aborted||requestSignal.aborted||error?.status!=null||error?.response!=null||error?.cause?.code!=='UND_ERR_CONNECT_TIMEOUT')throw error
+    // Only the observed pre-header public CDN connect timeout is retried. The
+    // identical GET shares the original request/collection cancellation budget.
+    transientConnectTimeoutRetried=true;await withCallerSignal(()=>new Promise(resolve=>setTimeout(resolve,500)),requestSignal);packet=await getPacket()
+   }
    signal.throwIfAborted()
    if(packet?.status!==200){if(packet?.body?.cancel)await withCallerSignal(()=>packet.body.cancel(),[signal,AbortSignal.timeout(500)]).catch(()=>{});const status=packet?.status;throw failure('HTTP '+status+'; stopped without retry/browser/private session',[401,403,429].includes(status)?'AKULAKU_PUBLIC_ACCESS_DENIED':status===404||status===410?'AKULAKU_DETAIL_UNAVAILABLE':'AKULAKU_PUBLIC_HTTP',{status,failureKind:[401,403,429].includes(status)?'blocked':'source_unavailable'})}
    need(packet.url===url,'public final URL identity changed')
@@ -42,7 +48,7 @@ export async function runCurrentAkulaku(options={}){
    else if(packet.body?.getReader){const reader=packet.body.getReader(),parts=[];let bytes=0;try{for(;;){const row=await withCallerSignal(()=>reader.read(),requestSignal);if(row.done)break;bytes+=row.value.byteLength;need(bytes<=2*1024*1024,'native body exceeds safety bound');parts.push(Buffer.from(row.value))}receivedBytes=Buffer.concat(parts);html=new TextDecoder('utf-8',{fatal:true}).decode(receivedBytes)}finally{await withCallerSignal(()=>reader.cancel(),AbortSignal.timeout(500)).catch(()=>{});reader.releaseLock()}}
    else if(typeof packet.text==='function')html=await withCallerSignal(()=>packet.text(),requestSignal)
    need(typeof html==='string'&&Buffer.byteLength(html)>0&&Buffer.byteLength(html)<=2*1024*1024,'public body unavailable or oversized')
-   signal.throwIfAborted();const body=receivedBytes??Buffer.from(html),record={url,finalUrl:packet.url,status:packet.status,bytes:body.length,sha256:createHash('sha256').update(body).digest('hex'),requestedAt,completedAt:new Date().toISOString()};responses.push(record);await notify('onResponse',{...record,bodyBase64:body.toString('base64')});return html
+   signal.throwIfAborted();const body=receivedBytes??Buffer.from(html),record={url,finalUrl:packet.url,status:packet.status,bytes:body.length,sha256:createHash('sha256').update(body).digest('hex'),requestedAt,completedAt:new Date().toISOString(),networkAttempts,transientConnectTimeoutRetried};responses.push(record);await notify('onResponse',{...record,bodyBase64:body.toString('base64')});return html
   }finally{requestController.abort();if(packet?.body?.cancel)await withCallerSignal(()=>packet.body.cancel(),AbortSignal.timeout(500)).catch(()=>{})}
  }
  const binding=async()=>({corporate:corporateModel(await read(CORPORATE)),board:boardModel(await read(BOARD))})

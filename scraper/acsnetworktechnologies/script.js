@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -38,6 +39,18 @@ const normalizeWhitespace = (value) => {
 }
 
 const stripHtml = (value) => normalizeWhitespace(value)
+
+const isAcsEmployer = value => /^acsnetworks?technolog(?:y|ies)$/.test(String(value || '')
+  .toLowerCase().replace(/\b(?:private|limited|pvt|ltd|and)\b/g, '').replace(/[^a-z]/g, ''))
+const trustedJobUrl = value => {
+  try { const url = new URL(value); return url.protocol === 'https:' && url.hostname === 'www.placementindia.com'
+    && /^\/job-detail\/.+-\d+\.htm$/i.test(url.pathname) } catch { return false }
+}
+const acsJobUrl = value => trustedJobUrl(value) && /-in-acs-networks?-technolog(?:y|ies)(?:-|$)/i.test(new URL(value).pathname)
+const employerLabels = (html, className) => {
+  const document = readNativeDocument(html)
+  return document.nodes(node => document.hasClass(node, className)).map(node => document.text(node)).filter(Boolean)
+}
 
 const buildAbsoluteUrl = (href) => {
   const normalized = normalizeWhitespace(href)
@@ -119,7 +132,10 @@ export const extractSearchResults = (html) => {
     .map((block) => {
       const url = buildAbsoluteUrl(block.match(/data-url="([^"]+)"/i)?.[1])
       const title = stripHtml(block.match(/<a[^>]+class="job-name"[^>]*>([\s\S]*?)<\/a>/i)?.[1])
-      const company = stripHtml(block.match(/<p class="job-cname">([\s\S]*?)<\/p>/i)?.[1]) || COMPANY
+      const owners = employerLabels(block, 'job-cname')
+      const owner = owners[0] || null
+      if (!trustedJobUrl(url) || (owners.length ? !owners.every(isAcsEmployer) : !acsJobUrl(url))) return null
+      const company = owner || COMPANY
       const metadataHtml = block.match(/<ul class="sjci-need">([\s\S]*?)<\/ul>/i)?.[1] || ''
       const metadataItems = [...metadataHtml.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
         .map((match) => stripHtml(match[1]))
@@ -168,9 +184,7 @@ export const extractJobDetails = (html) => {
       /<h2 class="jdlb-t1">Job Description<\/h2>\s*<div class="dyn_text_sec">([\s\S]*?)<ul class="jr">/i,
     )?.[1],
   )
-  const company = stripHtml(
-    normalizedHtml.match(/<div class="jd-cname">[\s\S]*?<span>([\s\S]*?)<\/span>/i)?.[1],
-  )
+  const company = employerLabels(normalizedHtml, 'jd-cname').join(' / ') || null
   const title = stripHtml(normalizedHtml.match(/<h1 class="jd-title">([\s\S]*?)<\/h1>/i)?.[1])
   const headlineItems = [...normalizedHtml.matchAll(/<ul class="jd-mfl">([\s\S]*?)<\/ul>/gi)]
     .flatMap((match) => [...match[1].matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)])
@@ -271,6 +285,7 @@ export const createAcsNetworkTechnologiesScraper = ({
     }
 
     const jobs = extractSearchResults(listingPage.html)
+    if (!jobs.length) throw new Error('ACS recruiter page has no job cards with verified employer ownership')
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
     const enrichedJobs = await Promise.all(
@@ -278,6 +293,8 @@ export const createAcsNetworkTechnologiesScraper = ({
         try {
           const detailHtml = await fetchText(job.sourceUrl)
           const detail = extractJobDetails(detailHtml)
+          if (detail.company && !isAcsEmployer(detail.company)) return null
+          if (!detail.company) return job
           return {
             ...job,
             ...detail,
@@ -294,11 +311,14 @@ export const createAcsNetworkTechnologiesScraper = ({
       }),
     )
 
-    return enrichedJobs.map((job) => ({
+    const incomplete = enrichedJobs.some(job => !job)
+    if (incomplete && enrichedJobs.every(job => !job)) throw new Error('ACS job detail pages no longer verify the recruiter employer')
+    return enrichedJobs.filter(Boolean).map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: new Date().toISOString(),
+      ...(incomplete ? { sourceListingComplete: false } : {}),
     }))
   },
 })

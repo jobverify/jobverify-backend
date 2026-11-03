@@ -48,7 +48,7 @@ test('Dentalkart extracts 24 active India jobs and excludes ten retained closed 
 test('Dentalkart run validates the current first-party handoff and complete API inventory', async () => {
   const requests = []
   const jobs = await dentalkart.run({ fetchPage: async url => { requests.push(url); return pageFor(url) }, fetchJson: async url => { requests.push(url); return payload }, now: () => '2026-10-08T00:00:00.000Z' })
-  assert.deepEqual(requests, [dentalkart.HOMEPAGE_URL, dentalkart.ABOUT_URL, dentalkart.CAREERS_URL, 'https://dentalkart.zohorecruit.in/jobs/Careers', 'https://dentalkart.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite'])
+  assert.deepEqual(requests, [dentalkart.HOMEPAGE_URL, dentalkart.ABOUT_URL, dentalkart.CAREERS_URL, 'https://dentalkart.zohorecruit.in/jobs/Careers', dentalkart.CAREERS_API_URL, dentalkart.CAREERS_API_URL])
   assert.equal(jobs.length, 24)
   assert.equal(jobs.every(j => j.source === 'dentalkart' && j.link === j.applyUrl && j.scrapedAt === '2026-10-08T00:00:00.000Z'), true)
 })

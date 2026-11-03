@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const currentCaptures=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/arms4ai/test-data/current-public-20261103.json.gz',import.meta.url))))
 
 const loadArms4AiModule = async () => {
   try {
@@ -34,17 +38,16 @@ test('extractSearchResults returns an empty list when ARMS 4 AI LinkedIn guest s
   assert.deepEqual(arms4ai.extractSearchResults(sampleSearchHtml), [])
 })
 
-test('run fetches ARMS 4 AI company and search pages and returns no jobs when public guest search is empty', async () => {
+test('run reconciles current ARMS announcements and retains the unwanted guest-query keyword gap', async () => {
   const arms4ai = await loadArms4AiModule()
   const requestedUrls = []
   const scraper = arms4ai.createArms4AiScraper()
 
   const jobs = await scraper.run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === arms4ai.LINKEDIN_COMPANY_PAGE_URL) return sampleCompanyHtml
-      if (url === arms4ai.LINKEDIN_INDIA_JOBS_URL) return sampleSearchHtml
-      throw new Error(`Unexpected URL: ${url}`)
+      const row=currentCaptures.find(row=>row.url===url);assert.ok(row)
+      return{status:row.status,url:row.finalURL,html:row.body}
     },
   })
 
@@ -53,7 +56,11 @@ test('run fetches ARMS 4 AI company and search pages and returns no jobs when pu
     [
       arms4ai.LINKEDIN_COMPANY_PAGE_URL,
       arms4ai.LINKEDIN_INDIA_JOBS_URL,
+      arms4ai.LINKEDIN_COMPANY_PAGE_URL,
+      arms4ai.LINKEDIN_INDIA_JOBS_URL,
     ],
   )
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
 })

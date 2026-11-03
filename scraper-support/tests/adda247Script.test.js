@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const currentCaptures=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/adda247/test-data/current-public-20261103.json.gz',import.meta.url))))
+const currentResponse=url=>{const row=currentCaptures.find(row=>row.url===url);assert.ok(row,'undeclared current native URL');return{status:row.status,url:row.finalURL,headers:row.headers,html:row.body}}
 
 const loadAdda247Module = async () => {
   try {
@@ -82,7 +87,7 @@ test('Adda247 validates the verified first-party careers shell and current exter
 
   assert.equal(adda247.SOURCE, 'adda247')
   assert.equal(adda247.COMPANY, 'Adda247')
-  assert.equal(adda247.VERIFIED_AT, '2026-07-19')
+  assert.equal(adda247.VERIFIED_AT, null)
   assert.equal(adda247.CAREERS_URL, 'https://www.adda247.com/careers.html')
   assert.equal(adda247.EXTERNAL_HANDOFF_URL, 'https://adda247.kekahire.com/')
   assert.equal(adda247.KEKA_CAREERS_URL, 'https://adda247.keka.com/careers/')
@@ -155,81 +160,54 @@ test('Adda247 maps Keka active jobs into the shared India job shape', async () =
   )
 })
 
-test('Adda247 returns Keka jobs after validating the verified first-party careers page and external handoff', async () => {
+test('Adda247 registered wrapper recovers full configured-native roles with a truthful unverified corporate handoff', async () => {
   const adda247 = await loadAdda247Module()
   const requestedUrls = []
 
   const jobs = await adda247.createAdda247Scraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === adda247.CAREERS_URL) {
-        return careersShellHtml
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
+      return currentResponse(url)
     },
-    fetchJson: async (url) => {
-      requestedUrls.push(url)
-      if (url === adda247.KEKA_ACTIVE_JOBS_API_URL) {
-        return kekaActiveJobsPayload
-      }
-
-      throw new Error(`Unexpected JSON URL: ${url}`)
-    },
-    now: () => '2026-07-19T00:00:00.000Z',
+    now: () => '2026-11-03T04:20:00.000Z',
   })
 
-  assert.deepEqual(requestedUrls, [adda247.CAREERS_URL, adda247.KEKA_ACTIVE_JOBS_API_URL])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].title, 'Exam Counsellor')
+  assert.equal(requestedUrls.length,39)
+  assert.equal(requestedUrls.includes(adda247.CAREERS_URL),false)
+  assert.equal(requestedUrls.at(-1),adda247.KEKA_ACTIVE_JOBS_API_URL)
+  assert.equal(jobs.length, 11)
+  assert.equal(jobs[0].title, 'Executive-Telesales')
   assert.equal(jobs[0].source, 'adda247')
-  assert.equal(jobs[0].link, 'https://adda247.keka.com/careers/jobdetails/133120')
+  assert.equal(jobs[0].link, 'https://adda247.keka.com/careers/jobdetails/143333')
+  assert.equal(jobs[0].corporateHandoffVerified,false)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
 
-test('Adda247 can recover with a browser-backed first-party careers shell when direct requests are blocked', async () => {
+test('Adda247 stops on native access denial without a browser or alternate-route retry', async () => {
   const adda247 = await loadAdda247Module()
   const browserUrls = []
 
-  const jobs = await adda247.createAdda247Scraper().run({
-    fetchText: async () => {
-      throw new Error(`HTTP 403 for ${adda247.CAREERS_URL}`)
-    },
+  const requested=[]
+  await assert.rejects(adda247.createAdda247Scraper().run({
+    fetchPage: async url=>{requested.push(url);return{url,status:403,html:''}},
     fetchBrowserText: async (url) => {
       browserUrls.push(url)
       return careersShellHtml
     },
-    fetchJson: async (url) => {
-      if (url === adda247.KEKA_ACTIVE_JOBS_API_URL) {
-        return kekaActiveJobsPayload
-      }
+  }),error=>error.status===403&&error.abortRetries)
 
-      throw new Error(`Unexpected JSON URL: ${url}`)
-    },
-    now: () => '2026-07-19T00:00:00.000Z',
-  })
-
-  assert.deepEqual(browserUrls, [adda247.CAREERS_URL])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'adda247')
+  assert.deepEqual(browserUrls, [])
+  assert.deepEqual(requested,[adda247.KEKA_CAREERS_URL])
 })
 
-test('Adda247 fails closed when the first-party careers shell changes or starts exposing first-party job records', async () => {
+test('Adda247 preserves historical corporate detection helpers and fails current native employer drift', async () => {
   const adda247 = await loadAdda247Module()
 
   await assert.rejects(
     adda247.createAdda247Scraper().run({
-      fetchText: async () => careersShellHtml.replace(
-        'https://adda247.kekahire.com/',
-        'https://www.adda247.com/jobs',
-      ),
+      fetchPage: async url=>{const response=currentResponse(url);if(url.endsWith('/careerportalinfo'))response.html=response.html.replace('"name":"Adda247"','"name":"Different employer"');return response},
     }),
-    /verified first-party careers shell/i,
+    /native tenant\/employer identity/i,
   )
-
-  await assert.rejects(
-    adda247.createAdda247Scraper().run({
-      fetchText: async () => careersWithFirstPartyJobRecordHtml,
-    }),
-    /first-party careers page now exposes public job records/i,
-  )
+  assert.deepEqual(adda247.extractFirstPartyJobRecordUrls(careersWithFirstPartyJobRecordHtml),['https://www.adda247.com/careers/openings/senior-software-engineer'])
 })

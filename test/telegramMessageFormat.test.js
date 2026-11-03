@@ -2,6 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildTelegramMessageBody } from '../src/services/jobAlertService.js';
 
+test('personal Telegram templates control the delivered message', () => {
+  const job = { company: 'Example', title: 'Engineer', sourceUrl: 'https://example.com/job' };
+  assert.equal(buildTelegramMessageBody([job], '{title} at {company}\n{jobUrl}'),
+    'Engineer at Example\nhttps://example.com/job');
+  assert.throws(() => buildTelegramMessageBody([job], '{unknown}\n{jobUrl}'), /Unsupported placeholder/);
+});
+
 const footer = [
   'Follow Jobverify 📈 channel for more jobs',
   'http://bit.ly/4aATqJE',

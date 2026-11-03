@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { registerCurrentRecruitmentContract } from './helpers/currentRecruitmentContract.js'
 
 import {
   CAREERS_URL,
   CONTACT_EMAIL,
-  run,
 } from '../../scraper/techjockey/script.js'
 
-test('Techjockey authoritative careers surface is currently empty', async () => {
+test('Techjockey retains its official careers and contact metadata', () => {
   assert.equal(CAREERS_URL, 'https://www.techjockey.com/company/careers')
   assert.equal(CONTACT_EMAIL, 'career@techjockey.com')
-  assert.deepEqual(await run(), [])
 })
+
+registerCurrentRecruitmentContract('techjockey', 'workbook batch 05')

@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { factPlanMessages, factPlanSchema, factPlanRanges, validateFactPlan, assessRewriteInput, expandModelPlan } from './factPlan.js';
 import { REWRITE_MODEL, REWRITE_SCHEMA, MAX_REWRITE_SECTION_ITEMS, buildRewriteInput, rewriteMessages, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
-import { reconcileRewriteCandidate, rewriteSnapshotFilter } from './queue.js';
+import { reconcileRewriteCandidate, rewriteSnapshotFilter, sourceCopyRetryQuery } from './queue.js';
 import { RewriteWorkerError } from './worker.js';
 import { captureRewriteError } from './failureDiagnostics.js';
 import { buildReferencedSections, expandReferencedSections } from './sectionProtocol.js';
@@ -324,6 +324,7 @@ export const rewriteQueueQuery = (now = new Date(), { shard = 0, shardCount = 1 
     { 'descriptionRewrite.status': 'failed', 'descriptionRewrite.attempts': { $lt: 3 },
       'descriptionRewrite.nextAttemptAt': { $type: 'date', $lte: now } },
     { 'descriptionRewrite.status': 'failed', 'descriptionRewrite.policyVersion': { $type: 'string', $ne: REWRITE_MODEL.policyVersion } },
+    sourceCopyRetryQuery(),
   ],
   };
 };

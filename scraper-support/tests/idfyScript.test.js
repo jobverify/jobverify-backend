@@ -98,6 +98,11 @@ const sampleTurboHirePayload = {
   ],
 }
 
+const FULL_DESCRIPTION = 'Responsibilities: Lead platform reliability and cloud automation for production services. Required qualifications: Build and operate reliable deployment pipelines, monitor production systems and maintain secure infrastructure.'
+const sampleDetail = () => ({ ...structuredClone(sampleTurboHirePayload.Result[0]),
+  JobDescriptionV2: `<p>${FULL_DESCRIPTION}</p>`, PublishedDates: { CAREERPAGE: sampleTurboHirePayload.Result[0].PublishedDate },
+  IsPublic: true, JobStatus: 'Active', PublishedJobBoards: ['CAREERPAGE'] })
+
 test('IDfy helpers stay pinned to the verified official TurboHire handoff and public feed', async () => {
   const idfy = await loadIdfyModule()
 
@@ -188,6 +193,7 @@ test('run validates the official IDfy handoff before reading the public TurboHir
       requested.push({ type: 'json', url, method: options.method || 'GET' })
       if (url === idfy.NOAUTH_TOKEN_URL) return { access_token: 'public-token' }
       if (url === idfy.FILTERED_JOBS_URL) return sampleTurboHirePayload
+      if (url === `${idfy.API_BASE_URL}/api/publicjobs/idfy-role-1?fieldVisibility=CareerPage`) return sampleDetail()
       throw new Error(`Unexpected json URL: ${url}`)
     },
     now: () => '2026-07-16T00:00:00.000Z',
@@ -196,6 +202,8 @@ test('run validates the official IDfy handoff before reading the public TurboHir
   assert.deepEqual(requested, [
     { type: 'page', url: idfy.OFFICIAL_CAREERS_URL },
     { type: 'json', url: idfy.NOAUTH_TOKEN_URL, method: 'GET' },
+    { type: 'json', url: idfy.FILTERED_JOBS_URL, method: 'POST' },
+    { type: 'json', url: `${idfy.API_BASE_URL}/api/publicjobs/idfy-role-1?fieldVisibility=CareerPage`, method: 'GET' },
     { type: 'json', url: idfy.FILTERED_JOBS_URL, method: 'POST' },
   ])
   assert.equal(jobs.length, 1)
@@ -235,6 +243,7 @@ test('run accepts the current branded careers wrapper when it still hands off to
       requested.push({ type: 'json', url, method: options.method || 'GET' })
       if (url === idfy.NOAUTH_TOKEN_URL) return { access_token: 'public-token' }
       if (url === idfy.FILTERED_JOBS_URL) return sampleTurboHirePayload
+      if (url === `${idfy.API_BASE_URL}/api/publicjobs/idfy-role-1?fieldVisibility=CareerPage`) return sampleDetail()
       throw new Error(`Unexpected json URL: ${url}`)
     },
     now: () => '2026-07-16T00:00:00.000Z',
@@ -244,6 +253,8 @@ test('run accepts the current branded careers wrapper when it still hands off to
     { type: 'page', url: idfy.OFFICIAL_CAREERS_URL },
     { type: 'page', url: idfy.BOARD_URL },
     { type: 'json', url: idfy.NOAUTH_TOKEN_URL, method: 'GET' },
+    { type: 'json', url: idfy.FILTERED_JOBS_URL, method: 'POST' },
+    { type: 'json', url: `${idfy.API_BASE_URL}/api/publicjobs/idfy-role-1?fieldVisibility=CareerPage`, method: 'GET' },
     { type: 'json', url: idfy.FILTERED_JOBS_URL, method: 'POST' },
   ])
   assert.equal(jobs.length, 1)

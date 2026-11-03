@@ -25,7 +25,7 @@ const loadRivigoModule = async () => {
   }
 }
 
-test('Rivigo local catalog captures the verified empty-board first-party careers contract', async () => {
+test('Rivigo retains historical catalog evidence while production metadata describes current extraction', async () => {
   const { RIVIGO_CATALOG } = await loadCatalogModule()
   const rivigo = await loadRivigoModule()
   const provider = hydrateProviderCatalogEntry(RIVIGO_CATALOG)
@@ -61,11 +61,11 @@ test('Rivigo local catalog captures the verified empty-board first-party careers
   assert.match(provider.verifiedSurfaceSummary, /Rivigo-specific public openings flow/i)
 
   assert.equal(rivigo.PROVIDER_METADATA.source, RIVIGO_CATALOG.source)
-  assert.equal(rivigo.PROVIDER_METADATA.redirectedHomepageUrl, RIVIGO_CATALOG.redirectedHomepageUrl)
-  assert.equal(
-    rivigo.PROVIDER_METADATA.officialFirstPartyJobsUrl,
-    RIVIGO_CATALOG.officialFirstPartyJobsUrl,
-  )
+  assert.equal(rivigo.PROVIDER_METADATA.companyCareerPage, rivigo.CAREERS_URL)
+  assert.equal(rivigo.PROVIDER_METADATA.verifiedOn, null)
+  assert.equal(rivigo.PROVIDER_METADATA.verifiedIndiaJobCount, null)
+  assert.equal(rivigo.PROVIDER_METADATA.sourceScopeComplete, false)
+  assert.equal(rivigo.PROVIDER_METADATA.parser, 'runtime-verified-recruitment')
 })
 
 test('Rivigo exact backlog row matches directly from the local catalog without aliases', async () => {

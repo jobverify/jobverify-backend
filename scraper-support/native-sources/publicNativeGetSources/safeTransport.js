@@ -152,5 +152,5 @@ export const createPublicPageReader=(options={})=>{
   }
   return page
  }
- return {read,events,held}
+ return {read,events,held,get remainingRequests(){return Math.max(0,128-count)}}
 }

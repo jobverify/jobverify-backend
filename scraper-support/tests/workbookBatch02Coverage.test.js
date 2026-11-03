@@ -429,7 +429,7 @@ test('workbook batch 02 expected workbook companies resolve fully from the share
   )
 })
 
-test('workbook batch 02 active sentinel scrapers stay registered in the global catalog and fail closed with zero jobs', async (t) => {
+test('workbook batch 02 retains current source routes and checks only remaining sentinels for offline empty results', async (t) => {
   const forbidden = installWorkbookOfflineGuard(t)
   const scrapers = buildScrapers().filter((scraper) =>
     EXPECTED_ACTIVE_SENTINEL_SOURCES.includes(scraper.name),
@@ -441,10 +441,16 @@ test('workbook batch 02 active sentinel scrapers stay registered in the global c
   )
 
   for (const scraper of scrapers) {
-    await assertCurrentWorkbookRoute(scraper.provider, scraper)
+    const implementation = await assertCurrentWorkbookRoute(scraper.provider, scraper)
     assert.equal(scraper.provider.modulePath, hydratedScriptModulePathFor(scraper.name))
     assert.equal(scraper.provider.originalModulePath, '../workbookbatch02/failClosedSentinel.js')
-    assert.equal(scraper.provider.atsPlatform, 'workbook-exact-name-sentinel')
-    assert.deepEqual(await scraper.run({ fetchText: forbidden, fetchJson: forbidden, fetchPage: forbidden }), [])
+    if (['sentinel', 'static-empty'].includes(implementation.type)) {
+      assert.equal(scraper.provider.atsPlatform, 'workbook-exact-name-sentinel')
+      assert.deepEqual(await scraper.run({ fetchText: forbidden, fetchJson: forbidden, fetchPage: forbidden }), [])
+    } else if (scraper.provider.parser === 'runtime-verified-recruitment') {
+      assert.equal(scraper.provider.zeroResultPolicy, 'evidence-required')
+      assert.equal(scraper.provider.verifiedIndiaJobCount, null)
+      assert.equal(scraper.provider.sourceScopeComplete, false)
+    }
   }
 })

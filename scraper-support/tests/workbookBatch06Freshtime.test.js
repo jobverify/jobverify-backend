@@ -1,3 +1,4 @@
+import { registerCurrentRecruitmentContract } from './helpers/currentRecruitmentContract.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -34,21 +35,15 @@ const VERIFIED_NOT_FOUND_HTML = `
   </html>
 `
 
-test('Freshtime validates the verified official informational surface and stays fail-closed', async () => {
+test('Freshtime retains historical information-surface helpers without certifying current inventory', () => {
   assert.equal(COMPANY, 'Freshtime')
-  assert.equal(VERIFIED_ON, '2026-08-14')
+  assert.equal(VERIFIED_ON, null)
   assert.match(CAREERS_URL, /greencore\.com\/.*freshtime/i)
   assert.doesNotThrow(() => assertVerifiedOfficialPublicSurface(VERIFIED_SURFACE_HTML))
   assert.doesNotThrow(() => assertVerifiedOfficialPublicSurface(VERIFIED_NOT_FOUND_HTML))
   assert.doesNotThrow(() => assertNoPublicJobsSurface(VERIFIED_SURFACE_HTML))
   assert.doesNotThrow(() => assertNoPublicJobsSurface(VERIFIED_NOT_FOUND_HTML))
 
-  const scraper = createFreshtimeScraper()
-  assert.deepEqual(await scraper.run({ fetchHtml: async () => VERIFIED_SURFACE_HTML }), [])
-  assert.deepEqual(
-    await scraper.run({ fetchPage: async () => ({ status: 404, html: VERIFIED_NOT_FOUND_HTML }) }),
-    [],
-  )
 })
 
 test('Freshtime rejects official-surface drift and public jobs emergence', () => {
@@ -66,4 +61,16 @@ test('Freshtime rejects official-surface drift and public jobs emergence', () =>
     () => assertNoPublicJobsSurface(`${VERIFIED_SURFACE_HTML}<script type="application/ld+json">{"@type":"JobPosting"}</script>`),
     /JobPosting/i,
   )
+})
+
+// Production extraction supersedes the former unconditional-empty contract.
+registerCurrentRecruitmentContract('freshtime', 'workbookBatch06Freshtime.test.js')
+
+test('Freshtime retains a captured 404 as an explicit current coverage failure', async () => {
+  await assert.rejects(createFreshtimeScraper().run({ fetchPage: async url => ({ status: 404, url, html: VERIFIED_NOT_FOUND_HTML }) }), error => {
+    assert.equal(error.failureKind, 'coverage_gap')
+    assert.ok(error.recruitmentObservations.receipts.every(row => row.status === 404))
+    assert.equal(error.recruitmentObservations.sourceScopeComplete, false)
+    return true
+  })
 })

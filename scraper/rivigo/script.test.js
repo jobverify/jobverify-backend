@@ -1,5 +1,7 @@
+import { registerCurrentRecruitmentContract } from '../../scraper-support/tests/helpers/currentRecruitmentContract.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { CAREERS_URL as HISTORICAL_CAREERS_URL } from './historicalBoundary20261103.js'
 
 import {
   CAREERS_URL,
@@ -94,7 +96,7 @@ test('Rivigo recognizes the verified Mahindra redirect and parent-company handof
 
   assert.equal(
     hasVerifiedParentCareersSignal({
-      url: CAREERS_URL,
+      url: HISTORICAL_CAREERS_URL,
       html: parentCareersHtml,
     }),
     true,
@@ -125,111 +127,19 @@ test('Rivigo recognizes the verified Mahindra redirect and parent-company handof
   )
 })
 
-test('Rivigo returns no jobs when the official brand only hands off to the parent-company board', async () => {
-  const requestedUrls = []
 
-  const jobs = await createRivigoScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
 
-      if (url === HOMEPAGE_URL) {
-        return {
-          status: 200,
-          url: REDIRECTED_HOMEPAGE_URL,
-          html: redirectedHomepageHtml,
-        }
-      }
 
-      if (url === CAREERS_URL) {
-        return {
-          status: 200,
-          url: CAREERS_URL,
-          html: parentCareersHtml,
-        }
-      }
 
-      if (url === PARENT_DARWINBOX_URL) {
-        return {
-          status: 200,
-          url: PARENT_DARWINBOX_URL,
-          html: parentDarwinboxJavascriptShellHtml,
-        }
-      }
+// Production extraction supersedes the former unconditional-empty contract.
+registerCurrentRecruitmentContract('rivigo', 'script.test.js')
 
-      throw new Error(`Unexpected URL: ${url}`)
-    },
+test('a captured Mahindra parent-company redirect cannot relabel that inventory as Rivigo', async () => {
+  await assert.rejects(createRivigoScraper().run({ fetchPage: async () => ({ status: 200,
+    url: REDIRECTED_HOMEPAGE_URL, html: redirectedHomepageHtml }) }), error => {
+    assert.equal(error.failureKind, 'coverage_gap')
+    assert.equal(error.recruitmentObservations.nativeRecords, 0)
+    assert.ok(error.recruitmentObservations.failures.some(row => /authority/.test(row.message)))
+    return true
   })
-
-  assert.deepEqual(requestedUrls, [
-    HOMEPAGE_URL,
-    CAREERS_URL,
-    PARENT_DARWINBOX_URL,
-  ])
-  assert.deepEqual(jobs, [])
-})
-
-test('Rivigo fails closed when the parent-company handoff changes materially', async () => {
-  await assert.rejects(
-    createRivigoScraper().run({
-      fetchPage: async (url) => {
-        if (url === HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url: REDIRECTED_HOMEPAGE_URL,
-            html: redirectedHomepageHtml,
-          }
-        }
-
-        if (url === CAREERS_URL) {
-          return {
-            status: 200,
-            url: CAREERS_URL,
-            html: parentCareersHtml.replace(
-              'https://nectar.darwinbox.in/ms/candidate/careers',
-              'https://boards.greenhouse.io/mahindralogistics',
-            ),
-          }
-        }
-
-        return {
-          status: 200,
-          url: 'https://nectar.darwinbox.in/ms/candidatev2/main/careers/home',
-          html: parentDarwinboxHtml,
-        }
-      },
-    }),
-    /parent-company careers handoff/i,
-  )
-
-  await assert.rejects(
-    createRivigoScraper().run({
-      fetchPage: async (url) => {
-        if (url === HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url: REDIRECTED_HOMEPAGE_URL,
-            html: redirectedHomepageHtml,
-          }
-        }
-
-        if (url === CAREERS_URL) {
-          return {
-            status: 200,
-            url: CAREERS_URL,
-            html: parentCareersHtml,
-          }
-        }
-
-        return {
-          status: 200,
-          url: 'https://nectar.darwinbox.in/ms/candidatev2/main/careers/home',
-          html: parentDarwinboxHtml.replace(
-            'Mahindra Logistics and Subsidiaries',
-            'Rivigo Careers',
-          ),
-        }
-      },
-    }),
-    /parent-company Darwinbox board/i,
-  )
 })

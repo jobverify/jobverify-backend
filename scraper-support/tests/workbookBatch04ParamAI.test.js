@@ -1,3 +1,4 @@
+import { registerCurrentRecruitmentContract } from './helpers/currentRecruitmentContract.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -11,22 +12,9 @@ import {
   run,
 } from '../../scraper/paramai/script.js'
 
-test('Param.ai exact-name scraper stays fail-closed without a verified jobs surface', async () => {
-  assert.deepEqual(await run(), [])
-})
 
-test('Param.ai exact-name scraper documents the verified public surface it guards', () => {
-  assert.equal(SOURCE, 'paramai')
-  assert.equal(COMPANY, 'Param.ai')
-  assert.equal(OFFICIAL_BRAND, 'Param.ai')
-  assert.equal(CAREERS_URL, 'https://param.ai/')
-  assert.equal(DISPOSITION, 'verified-exact-name-public-surface-fail-closed')
-  assert.match(
-    VERIFIED_SURFACE_SUMMARY,
-    /Saturday, July 25, 2026.*exact-name Param\.ai public company surface/i,
-  )
-  assert.match(
-    VERIFIED_SURFACE_SUMMARY,
-    /does not establish a stable enumerable first-party jobs contract/i,
-  )
-})
+
+
+
+// Current production extraction replaces the old always-empty contract.
+registerCurrentRecruitmentContract('paramai', 'workbookBatch04ParamAI')
