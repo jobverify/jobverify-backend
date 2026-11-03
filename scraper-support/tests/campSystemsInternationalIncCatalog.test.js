@@ -21,17 +21,17 @@ test('CAMP Systems International, Inc. local catalog captures the verified first
   assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.adapter, 'script')
   assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.companyCareerPage, 'https://www.campsystems.com/careers')
   assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.companyDomain, 'campsystems.com')
-  assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.atsPlatform, 'ukg-pro')
   assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.countryFilter, 'India')
-  assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.paginationStrategy, 'verified-careers-landing-only')
+  assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.paginationStrategy, 'native-unfiltered-search+offset+closing-membership')
   assert.equal(
     CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.extractionStrategy,
-    'verified-first-party-careers-landing+no-inline-public-jobs-return-empty',
+    'current-corporate-handoff+anonymous-public-ukg-search+full-bound-role-models',
   )
   assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.parser, 'custom-script')
   assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.modulePath, '../../scraper/campsystemsinternationalinc/script.js')
-  assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.verifiedOn, '2026-07-17')
+  assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.verifiedOn, '2026-11-03')
   assert.equal(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.dryRunFile, 'campsystemsinternationalinc/jobs.json')
   assert.match(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.campsystems\.com\/careers/i)
   assert.match(CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG.verifiedSurfaceSummary, /Find Opportunities/i)

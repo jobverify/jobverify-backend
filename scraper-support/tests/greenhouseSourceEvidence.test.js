@@ -24,7 +24,7 @@ for (const source of ['tripadvisor', 'dataiku', 'sigmacomputing', 'buildkite']) 
   const currentProvider = catalog.find(p => p.source === source)
   // Synthetic inner-mapper controls do not inherit the current source hold.
   // Current registered source behavior is covered by original HTTP fixtures.
-  const provider = ['tripadvisor','buildkite'].includes(source) ? {...currentProvider,sourceScopeComplete:undefined} : currentProvider
+  const provider = ['tripadvisor','buildkite','sigmacomputing'].includes(source) ? {...currentProvider,sourceScopeComplete:undefined} : currentProvider
   const sharedMapping = true
   const scraper = source === 'dataiku' ? createDataikuScraper()
     : createPublishingGapAtsScraper({ ...provider, boardToken: source })

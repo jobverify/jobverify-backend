@@ -1,46 +1,7 @@
-import assert from 'node:assert/strict'
 import test from 'node:test'
+import assert from 'node:assert/strict'
+import{getScraperCatalog,buildScrapers}from'../providers/index.js'
+import{generateCompanyCoverageReport}from'../providers/companyCoverage.js'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
-
-test('getScraperCatalog includes BlackBuck as an email-only first-party careers source', () => {
-  const provider = getScraperCatalog().find((item) => item.source === 'blackbuck')
-
-  assert.ok(provider)
-  assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers-nonlisting')
-  assert.equal(provider.companyName, 'BlackBuck')
-  assert.equal(provider.companyCareerPage, 'https://blackbuck.com/team-blackbuck.html')
-  assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-team-page-plus-broken-careers-route-validation')
-  assert.equal(
-    provider.extractionStrategy,
-    'verified-homepage-plus-email-only-team-page-plus-broken-careers-routes-return-empty',
-  )
-  assert.equal(provider.parser, 'custom-script')
-  assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'blackbuck.com')
-  assert.match(provider.modulePath, /blackbuck[\\/]script\.js$/i)
-})
-
-test('buildScrapers and company coverage resolve BlackBuck to blackbuck', () => {
-  const scraper = buildScrapers().find((item) => item.name === 'blackbuck')
-
-  assert.ok(scraper)
-  assert.equal(typeof scraper.run, 'function')
-  assert.equal(scraper.provider.source, 'blackbuck')
-  assert.match(scraper.dryRunFile, /blackbuck[\\/]jobs\.json$/i)
-
-  const report = generateCompanyCoverageReport({
-    csvText: 'BlackBuck,\n',
-    catalog: getScraperCatalog(),
-  })
-
-  assert.equal(report.matchedCount, 1)
-  assert.equal(report.unmatchedCount, 0)
-  assert.deepEqual(
-    report.matched.map((item) => [item.companyName, item.source, item.provider?.source ?? null]),
-    [['BlackBuck', 'blackbuck', 'blackbuck']],
-  )
-})
+test('blackbuck current catalog override wins and retains unknown company totals and cleanup guards',()=>{const p=getScraperCatalog().find(p=>p.source==='blackbuck');assert.ok(p);assert.equal(p.adapter,'script');assert.equal(p.companyCareerPage,'https://blackbuck.com/team-blackbuck.html');assert.equal(p.sourceScopeComplete,false);assert.equal(p.lifecycleCleanupAllowed,false);assert.equal(p.verifiedPublicJobCount,null);assert.equal(p.verifiedIndiaJobCount,null);assert.equal(p.verifiedOn,null);assert.match(p.modulePath,/blackbuck[\\/]script\.js$/);assert.ok(!p.extractionStrategy.includes('return-empty'));assert.equal(p.catalogOverride,true)})
+test('blackbuck retains runnable source identity, jobs output path and direct company coverage',()=>{const p=getScraperCatalog().find(p=>p.source==='blackbuck'),s=buildScrapers().find(s=>s.name==='blackbuck');assert.ok(s);assert.equal(typeof s.run,'function');assert.match(s.dryRunFile,/blackbuck[\\/]jobs\.json$/);const report=generateCompanyCoverageReport({csvText:p.companyName+'\n',catalog:[p]});assert.equal(report.matchedCount,1)})

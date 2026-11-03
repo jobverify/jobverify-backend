@@ -1,3 +1,4 @@
+import { runCurrentAffordmed } from './currentPublic.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -24,25 +25,9 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createAffordmedScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const html = await fetchText(buildSearchUrl())
-    const jobs = extractSearchResults(html)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+export const createAffordmedScraper = (defaults = {}) => ({ run: (options = {}) => runCurrentAffordmed({ ...defaults, ...options }) })
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: 'affordmed',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
-})
-
-export const run = async () => createAffordmedScraper().run()
+export const run = async (options = {}) => createAffordmedScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -3,6 +3,8 @@ import { fileURLToPath } from 'url'
 
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -254,12 +256,39 @@ export const extractJobDetail = (html) => {
   }
 }
 
-const defaultFetchText = async (url) => {
+const detailIdentityMatches = (job, detail) => {
+  const reqId = normalizeWhitespace(detail?.reqId)
+  const id = normalizeWhitespace(detail?.id)
+  const position = normalizeWhitespace(detail?.positionId)
+  const jobNumber = normalizeWhitespace(detail?.jobNumber)
+  if (reqId && id && reqId !== id) return false
+  const declared = new Set([reqId, id, jobNumber].filter(Boolean))
+  const locations = Array.isArray(detail?.locations) ? detail.locations : []
+  if (locations.length && !locations.some(location => /^india$/i.test(normalizeWhitespace(location.countryName) || ''))) return false
+  const localized = new Set()
+  if (position) {
+    for (const internal of [reqId, id].filter(Boolean)) {
+      const typed = internal.match(/^(?:PIPE|REQ)-(.+)$/)
+      if (typed && typed[1] !== position) return false
+    }
+    for (const location of locations) {
+      const posting = normalizeWhitespace(location?.postingIdentifier)
+      if (posting && /^india$/i.test(normalizeWhitespace(location.countryName) || '')) localized.add(`${position}-${posting}`)
+    }
+    if (jobNumber && jobNumber !== position && !localized.has(jobNumber)) return false
+  }
+  // These aliases are published by this role's own native detail. Never strip
+  // arbitrary locale suffixes or infer identity from a similar title.
+  return declared.has(job.jobId) || localized.has(job.jobId)
+}
+
+const defaultFetchText = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
   })
 
   if (!response.ok) {
@@ -276,18 +305,52 @@ export const createAppleScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
+    const { signal } = options
+    signal?.throwIfAborted()
     const jobs = []
     const seenJobIds = new Set()
+    const openingRoles = new Map()
+    const incomplete = new Set()
+    let reportedTotal = null
+    let pagesFetched = 0
+    let listingPages = 0
+    const identity = job => JSON.stringify([job.title, job.location, job.sourceUrl])
+    const readPage = async page => {
+      signal?.throwIfAborted()
+      const html = await fetchText(buildSearchUrl({ page }), { signal })
+      signal?.throwIfAborted()
+      pagesFetched++
+      const search = extractHydrationPayload(html)?.loaderData?.search
+      const total = Number(search?.totalRecords)
+      if (!search || !Array.isArray(search.searchResults) || search.totalRecords == null
+        || search.totalRecords === '' || !Number.isSafeInteger(total) || total < 0) {
+        throw new Error('Apple search inventory envelope is missing or invalid')
+      }
+      const listings = extractSearchResults(html)
+      if (listings.length !== search.searchResults.length || listings.some(job => !job.title)) incomplete.add('unmapped-native-listing')
+      if (search.searchResults.some(job => !Array.isArray(job.locations) || !job.locations.length
+        || job.locations.some(location => !normalizeWhitespace(location?.countryName)))) incomplete.add('native-country-unavailable')
+      if (search.searchResults.some(job => !Array.isArray(job.locations)
+        || !job.locations.some(location => /^india$/i.test(normalizeWhitespace(location?.countryName) || '')))) {
+        incomplete.add('native-india-filter-scope-unverified')
+      }
+      return { listings, total, summary: extractPaginationSummary(html) }
+    }
 
     for (let page = 1; page <= maxPages; page += 1) {
-      const html = await fetchText(buildSearchUrl({ page }))
-      const listings = extractSearchResults(html)
-      const summary = extractPaginationSummary(html)
+      const { listings, total, summary } = await readPage(page)
+      listingPages++
+      if (reportedTotal === null) reportedTotal = total
+      else if (total !== reportedTotal) incomplete.add('native-total-changed')
       const freshListings = []
 
       for (const job of listings) {
-        if (seenJobIds.has(job.jobId)) continue
+        if (seenJobIds.has(job.jobId)) {
+          incomplete.add('duplicate-native-listing')
+          continue
+        }
         seenJobIds.add(job.jobId)
+        openingRoles.set(job.jobId, identity(job))
         freshListings.push(job)
       }
 
@@ -299,42 +362,75 @@ export const createAppleScraper = ({
         selectedListings,
         detailConcurrency,
         async (job) => {
-          const detail = job.sourceUrl
-            ? extractJobDetail(await fetchText(job.sourceUrl))
-            : {
-                minimumQualification: null,
-                preferredQualification: null,
-                experienceRequired: null,
-                jobDescription: null,
-              }
-
-          return {
-            ...job,
-            ...detail,
-            jobDescription: detail.jobDescription || job.jobDescription,
-            source: 'apple',
-            link: job.applyUrl || job.sourceUrl,
-            scrapedAt: new Date().toISOString(),
+          signal?.throwIfAborted()
+          try {
+            const detailHtml = await fetchText(job.sourceUrl, { signal })
+            signal?.throwIfAborted()
+            const nativeDetail = extractHydrationPayload(detailHtml)?.loaderData?.jobDetails?.jobsData
+            const identityMatches = detailIdentityMatches(job, nativeDetail)
+            if (!identityMatches) throw new Error('Apple detail role identity changed or is unavailable')
+            if (nativeDetail?.postingTitle && normalizeWhitespace(nativeDetail.postingTitle) !== job.title) throw new Error('Apple detail role title changed')
+            const detail = extractJobDetail(detailHtml)
+            const sourceDetailComplete = hasSourceDescription(detail)
+            return { ...job, ...detail, jobDescription: detail.jobDescription || null,
+              source: 'apple', link: job.applyUrl || job.sourceUrl, scrapedAt: new Date().toISOString(),
+              sourceDetailComplete, ...(!sourceDetailComplete ? { sourceDetailFailureKind: 'native-detail-content-unavailable',
+                sourceNativeListingDescription: job.jobDescription, preserveExistingSourceContent: true } : {}) }
+          } catch (error) {
+            signal?.throwIfAborted()
+            return { ...job, jobDescription: null, sourceNativeListingDescription: job.jobDescription,
+              preserveExistingSourceContent: true, source: 'apple', link: job.applyUrl || job.sourceUrl,
+              scrapedAt: new Date().toISOString(), sourceDetailComplete: false,
+              sourceDetailFailureKind: 'native-detail-unavailable' }
           }
         },
       )
 
       jobs.push(...hydratedJobs)
 
-      if (maxJobs && jobs.length >= maxJobs) {
-        return jobs
-      }
+      if (maxJobs && jobs.length >= maxJobs) break
 
-      if (!summary.hasNext) {
-        break
-      }
+      // The last page is shorter; dividing the total by its row count would
+      // invent additional pages. The native total and unique IDs bound this run.
+      if (seenJobIds.size >= reportedTotal || !summary.hasNext || !freshListings.length) break
     }
 
-    return jobs
+    if (reportedTotal == null || seenJobIds.size !== reportedTotal || jobs.length !== reportedTotal) incomplete.add('listing-cap-or-count-mismatch')
+    if (jobs.some(job => job.sourceDetailComplete !== true)) incomplete.add('native-detail-incomplete')
+    // An empty result still needs an independently verified India filter. Do
+    // not promote an unexplained empty search into authoritative zero jobs.
+    if (reportedTotal === 0) incomplete.add('empty-native-india-filter-unverified')
+    if (!incomplete.size) {
+      try {
+        const closing = new Map()
+        for (let page = 1; page <= listingPages; page++) {
+          const frame = await readPage(page)
+          if (frame.total !== reportedTotal) incomplete.add('closing-total-changed')
+          for (const job of frame.listings) {
+            if (closing.has(job.jobId)) incomplete.add('duplicate-closing-role')
+            closing.set(job.jobId, identity(job))
+          }
+        }
+        if (closing.size !== openingRoles.size || [...openingRoles].some(([id, value]) => closing.get(id) !== value)) incomplete.add('closing-inventory-changed')
+      } catch (error) {
+        signal?.throwIfAborted()
+        incomplete.add('closing-inventory-unavailable')
+      }
+    }
+    const listingComplete = incomplete.size === 0
+    if (!listingComplete) for (const job of jobs) job.sourceListingComplete = false
+    return attachInventoryEvidence(jobs, {
+      status: listingComplete ? 'complete-inventory' : 'discovery-only', surface: CAREER_PAGE_URL,
+      firstParty: true, listingComplete, pagesFetched, reportedTotal,
+      indiaFacetCount: listingComplete ? jobs.filter(job => /\bindia\b/i.test(job.location || '')).length : null,
+      verifiedAt: new Date().toISOString(), reason: listingComplete
+        ? 'apple-native-pagination-details-and-closing-inventory-reconciled'
+        : `apple-inventory-incomplete:${[...incomplete].join(';')}`,
+    })
   },
 })
 
-export const run = async () => createAppleScraper().run()
+export const run = async (options = {}) => createAppleScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

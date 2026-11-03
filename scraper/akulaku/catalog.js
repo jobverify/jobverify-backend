@@ -1,34 +1,33 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, August 7, 2026 that https://www.akulaku.com/staff-life is still the live first-party Akulaku careers shell and still links "Lihat Lowongan" to https://akulaku.zhiye.com/. Also verified that both the official jobs board URL https://akulaku.zhiye.com/ and the linked listings URL https://akulaku.zhiye.com/alljob/?o=1 currently resolve to the Beisen maintenance surface titled "Document" with the visible message "System Upgrade Maintenance" / "系统升级维护中", so no public job listings were accessible on the verified surface.'
-
-export const AKULAKU_CATALOG = {
-  source: 'akulaku',
-  companyName: 'Akulaku',
-  officialBrandName: 'Akulaku',
-  adapter: 'script',
-  companyCareerPage: 'https://www.akulaku.com/staff-life',
-  firstPartyCareersUrl: 'https://www.akulaku.com/staff-life',
-  officialJobsBoardUrl: 'https://akulaku.zhiye.com/',
-  jobListingsUrl: 'https://akulaku.zhiye.com/alljob/?o=1',
-  companyDomain: 'akulaku.com',
-  atsPlatform: 'official-company-careers',
-  countryFilter: 'India',
-  paginationStrategy: 'first-party-careers-shell-plus-linked-zhiye-next-link-pagination',
-  extractionStrategy:
-    'first-party-shell-link-verification+zhiye-list-parse-or-verified-beisen-maintenance+india-location-filter+detail-fetch-for-india-matches',
-  parser: 'custom-script',
-  normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-07',
-  verifiedPublicJobCount: 0,
-  verifiedIndiaJobCount: 0,
-  verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
-  dryRunFile: 'akulaku/jobs.json',
-  modulePath: path.resolve(currentDir, 'script.js'),
+import{fileURLToPath}from'node:url'
+export const VERIFIED_SURFACE_SUMMARY="Current https://www.akulaku.com/staff-life declares https://akulaku.zhiye.com/. Runtime follows both currently declared native normal/featured orderings, reconciles reported totals and distinct numeric posting identities, preserves complete public role fields, criteria, original date-only publication/deadline precision and all native workplace interpretations, then rereads full details and final inventories. Source-native country gaps, unknown public branches, unlisted featured cards, access/transport failures and changed membership remain unresolved. City, province, employer headquarters, corporate language and private account/application fields never establish India or verified empty. The historical August maintenance/count assertion is cleared; current values require actual runtime evidence."
+export const AKULAKU_CATALOG={
+  "source": "akulaku",
+  "companyName": "Akulaku",
+  "officialBrandName": "Akulaku",
+  "adapter": "script",
+  "companyCareerPage": "https://www.akulaku.com/staff-life",
+  "firstPartyCareersUrl": "https://www.akulaku.com/staff-life",
+  "officialJobsBoardUrl": "https://akulaku.zhiye.com/",
+  "jobListingsUrl": "https://akulaku.zhiye.com/alljob/?o=1",
+  "companyDomain": "akulaku.com",
+  "atsPlatform": "first-party-declared-public-zhiye-board",
+  "countryFilter": "India",
+  "paginationStrategy": "complete-normal-and-featured-native-next-pages+unique-posting-identities+final-enumerations-after-closing-details",
+  "extractionStrategy": "current-corporate-board-binding+full-public-native-criteria-and-original-date-fields+all-workplace-country-interpretations+closing",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": null,
+  "verifiedAt": null,
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "zeroResultPolicy": "evidence-required",
+  "sourceCompanyWideScopeComplete": false,
+  "lifecycleCleanupAllowed": false,
+  "scraperTimeoutMs": 840000,
+  "sourceLifecycleTimeoutMs": 900000,
+  "verifiedSurfaceSummary": "Current https://www.akulaku.com/staff-life declares https://akulaku.zhiye.com/. Runtime follows both currently declared native normal/featured orderings, reconciles reported totals and distinct numeric posting identities, preserves complete public role fields, criteria, original date-only publication/deadline precision and all native workplace interpretations, then rereads full details and final inventories. Source-native country gaps, unknown public branches, unlisted featured cards, access/transport failures and changed membership remain unresolved. City, province, employer headquarters, corporate language and private account/application fields never establish India or verified empty. The historical August maintenance/count assertion is cleared; current values require actual runtime evidence."
 }
-
+AKULAKU_CATALOG.modulePath=path.join(path.dirname(fileURLToPath(import.meta.url)),'script.js')
+AKULAKU_CATALOG.dryRunFile='akulaku/jobs.json'
 export default AKULAKU_CATALOG

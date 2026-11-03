@@ -1,3 +1,4 @@
+import { createCurrentAvg } from "./currentPublic.js"
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -131,7 +132,7 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /Easily apply to multiple jobs with one click/i.test(text)
 }
 
-export const hasVerifiedEmptyJobsSection = (html = '') => {
+export const hasUnqualifiedEmptyJobsSection = (html = '') => {
   const page = String(html ?? '')
   const rowSection = extractJobRowSection(page)
 
@@ -142,6 +143,10 @@ export const hasVerifiedEmptyJobsSection = (html = '') => {
     && !/<div\b[^>]*class=["'][^"']*\bjob-card\b[^"']*["']/i.test(rowSection)
     && !pageExposesPublicJobListings(page)
 }
+
+// The reviewed HTML container has no native inventory count/model or published
+// empty-state assertion. Its comment-only appearance never verifies absence.
+export const hasVerifiedEmptyJobsSection = () => false
 
 export const hasExpectedRobotsTxtSignal = (text = '') => {
   const normalized = String(text ?? '')
@@ -187,53 +192,7 @@ export const hasOperationalPortal404 = (page = {}, requestedUrl) =>
   && /The resource you are looking for might have been removed/i.test(stripTagsToText(page.html))
   && !pageExposesPublicJobListings(page.html)
 
-export const createAvgLogisticsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('AVG Logistics verified official homepage no longer matches the known public surface')
-    }
-
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
-      throw new Error('AVG Logistics verified careers page no longer matches the known first-party surface')
-    }
-
-    if (pageExposesPublicJobListings(careersPage.html) || !hasVerifiedEmptyJobsSection(careersPage.html)) {
-      throw new Error('AVG Logistics careers page now appears to expose a public jobs surface or no longer matches the verified empty jobs section')
-    }
-
-    const robotsTxt = await fetchPage(ROBOTS_TXT_URL)
-    if (robotsTxt.status !== 200 || !hasExpectedRobotsTxtSignal(robotsTxt.html)) {
-      throw new Error('AVG Logistics verified robots.txt no longer matches the known public surface')
-    }
-
-    const sitemap = await fetchPage(SITEMAP_URL)
-    if (sitemap.status !== 200 || !hasExpectedSitemapSignal(sitemap.html)) {
-      throw new Error('AVG Logistics verified sitemap no longer matches the known public surface')
-    }
-
-    for (const routeUrl of NO_PUBLIC_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-
-      if (!hasVerified404Route(routePage, routeUrl)) {
-        throw new Error(`AVG Logistics verified no-public-job route changed: ${routeUrl}`)
-      }
-    }
-
-    const operationsPortal = await fetchPage(OPERATIONS_PORTAL_URL)
-    if (operationsPortal.status !== 200 || !hasOperationalPortalSignal(operationsPortal.html)) {
-      throw new Error('AVG Logistics verified operational portal no longer matches the known parcel-tracking login surface')
-    }
-
-    const operationsPortalCareers = await fetchPage(OPERATIONS_PORTAL_CAREERS_URL)
-    if (!hasOperationalPortal404(operationsPortalCareers, OPERATIONS_PORTAL_CAREERS_URL)) {
-      throw new Error('AVG Logistics verified operational portal careers route changed materially')
-    }
-
-    return []
-  },
-})
+export const createAvgLogisticsScraper = () => createCurrentAvg()
 
 export const run = async (options = {}) => createAvgLogisticsScraper().run(options)
 

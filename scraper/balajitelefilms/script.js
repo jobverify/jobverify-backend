@@ -1,3 +1,4 @@
+import { createCurrentBalaji } from "./currentPublic.js"
 import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -252,86 +253,7 @@ export const isVerifiedMissingRoute = ({ status, html }) => {
     )
 }
 
-export const createBalajiTelefilmsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
-    }
-
-    const browserPageFetcher = fetchBrowserPage || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchPage(url)
-    })
-
-    const fetchVerifiedPage = async (url) => {
-      try {
-        return await fetchPage(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        return browserPageFetcher(url)
-      }
-    }
-
-    try {
-      const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
-      const homepageIsBlockedShell = homepage.status === 200 && hasVerifiedIncapsulaBlockedShell(homepage.html)
-
-      if (!homepageIsBlockedShell && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
-        throw new Error('Balaji Telefilms verified official homepage no longer matches the known first-party surface')
-      }
-
-      if (!homepageIsBlockedShell && !hasVerifiedCareersLink(homepage.html)) {
-        throw new Error('Balaji Telefilms homepage no longer links to the verified first-party careers page')
-      }
-
-      if (!homepageIsBlockedShell && hasUnexpectedPublicJobsSignal(homepage.html)) {
-        throw new Error('Balaji Telefilms homepage now appears to expose a public jobs surface')
-      }
-
-      const careersPage = await fetchVerifiedPage(CAREERS_URL)
-      const careersPageIsBlockedShell = careersPage.status === 200 && hasVerifiedIncapsulaBlockedShell(careersPage.html)
-
-      if (careersPageIsBlockedShell) {
-        return []
-      }
-
-      if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
-        throw new Error('Balaji Telefilms verified first-party careers surface no longer matches the known public page')
-      }
-
-      if (!hasEmailOnlyCareersSignal(careersPage.html)) {
-        throw new Error('Balaji Telefilms verified email-only careers surface changed')
-      }
-
-      if (hasUnexpectedPublicJobsSignal(careersPage.html)) {
-        throw new Error('Balaji Telefilms verified email-only careers surface drifted to a public jobs surface')
-      }
-
-      for (const missingRouteUrl of MISSING_ROUTE_URLS) {
-        const missingRoute = await fetchVerifiedPage(missingRouteUrl)
-
-        if (!isVerifiedMissingRoute(missingRoute)) {
-          throw new Error('Balaji Telefilms missing jobs routes changed materially')
-        }
-      }
-
-      return []
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
-    }
-  },
-})
+export const createBalajiTelefilmsScraper = () => createCurrentBalaji()
 
 export const run = async (options = {}) => createBalajiTelefilmsScraper().run(options)
 

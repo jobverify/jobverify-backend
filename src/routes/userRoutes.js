@@ -1,4 +1,5 @@
 import express from "express";
+import { requireTelegramAccess } from "../middleware/telegramAccess.js";
 import { loadSiteSettings } from "../middleware/siteSettings.js";
 import { telegramAlertScheduleValidation, getUserTelegramAlertSchedule, updateUserTelegramAlertSchedule } from "../controllers/alertScheduleController.js";
 import {
@@ -76,9 +77,11 @@ router.post(
   submitUserSuggestion,
 );
 
+router.use('/telegram-alerts', protect, requireTelegramAccess);
+
 router.route("/telegram-alerts/schedule")
-  .get(protect, loadSiteSettings, getUserTelegramAlertSchedule)
-  .put(protect, profileUpdateLimiter, telegramAlertScheduleValidation, validateRequest, loadSiteSettings, updateUserTelegramAlertSchedule);
+  .get(loadSiteSettings, getUserTelegramAlertSchedule)
+  .put(profileUpdateLimiter, telegramAlertScheduleValidation, validateRequest, loadSiteSettings, updateUserTelegramAlertSchedule);
 
 router
   .route("/saved-jobs")
@@ -101,18 +104,17 @@ router
     removeSavedJob,
   );
 
-router.post("/telegram-alerts/link", protect, loadSiteSettings, createTelegramAlertLink);
+router.post("/telegram-alerts/link", loadSiteSettings, createTelegramAlertLink);
 
 router
   .route("/telegram-alerts")
-  .get(protect, loadSiteSettings, getTelegramAlertSettings)
+  .get(loadSiteSettings, getTelegramAlertSettings)
   .put(
-    protect,
     telegramAlertsValidation,
     validateRequest,
     loadSiteSettings,
     updateTelegramAlertSettings,
   )
-  .delete(protect, loadSiteSettings, deleteTelegramAlertSettings);
+  .delete(loadSiteSettings, deleteTelegramAlertSettings);
 
 export default router;

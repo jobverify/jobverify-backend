@@ -31,7 +31,21 @@ function allowedUrl(value) {
   throw error('Native HTTP URL/path/query outside source scope')
 }
 
-export async function getAttNative(url, {requestImpl = https.request, timeoutMs = 20000, signal} = {}) {
+export async function getAttNative(url, options = {}) {
+  const timeoutMs=options.timeoutMs??20000,started=Date.now()
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 20000) throw error('Invalid request timeout bound')
+  for(let attempt=0;attempt<2;attempt++){
+    const remaining=timeoutMs-(Date.now()-started)
+    if(remaining<1)throw error('Request timeout')
+    try{return await getAttNativeAttempt(url,{...options,timeoutMs:remaining})}
+    catch(failure){
+      if(options.signal?.aborted)throw options.signal.reason
+      if(attempt===1||failure?.code!=='ATT_NATIVE_BODY_ABORTED')throw failure
+    }
+  }
+}
+
+async function getAttNativeAttempt(url, {requestImpl = https.request, timeoutMs = 20000, signal} = {}) {
   allowedUrl(url)
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 20000) throw error('Invalid request timeout bound')
   if (signal?.aborted) throw signal.reason ?? error('Request aborted')
@@ -92,7 +106,7 @@ export async function getAttNative(url, {requestImpl = https.request, timeoutMs 
             chunks.push(chunk)
           })
           incoming.once('error', fail)
-          incoming.once('aborted', () => fail(error('Native HTTP body aborted')))
+          incoming.once('aborted', () => fail(Object.assign(error('Native HTTP body aborted'),{code:'ATT_NATIVE_BODY_ABORTED',requestUrl:url})))
           incoming.once('end', () => {
             if (settled) return
             let body

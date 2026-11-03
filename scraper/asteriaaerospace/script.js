@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { hasAsteriaKekaHandoff, runCurrentAsteriaKeka } from './currentKeka.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -88,7 +89,16 @@ export const hasUnexpectedPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const createAsteriaAerospaceScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText, signal } = {}) {
+  async run(options = {}) {
+    const { fetchText = defaultFetchText, fetchBrowserText } = options
+    const signal = AbortSignal.any([AbortSignal.timeout(90000), ...(options.signal ? [options.signal] : [])])
+    const wait = promise => new Promise((resolve, reject) => {
+      const finish = (fn, value) => { signal.removeEventListener('abort', abort); fn(value) }
+      const abort = () => finish(reject, signal.reason)
+      signal.addEventListener('abort', abort, { once: true })
+      Promise.resolve(promise).then(value => finish(resolve, value), error => finish(reject, error))
+      if (signal.aborted) abort()
+    })
     signal?.throwIfAborted()
     let browserSession = null
 
@@ -110,7 +120,7 @@ export const createAsteriaAerospaceScraper = () => ({
     const readBrowser = async url => {
       signal?.throwIfAborted()
       try {
-        const value = await browserTextFetcher(url, { signal })
+        const value = await wait(browserTextFetcher(url, { signal: fetchBrowserText && options.signal ? options.signal : signal }))
         signal?.throwIfAborted()
         return value
       } catch (error) {
@@ -122,7 +132,7 @@ export const createAsteriaAerospaceScraper = () => ({
       signal?.throwIfAborted()
       let value
       try {
-        value = await fetchText(url, { signal })
+        value = await wait(fetchText(url, { signal: options.fetchText && options.signal ? options.signal : signal }))
         signal?.throwIfAborted()
       } catch (error) {
         signal?.throwIfAborted()
@@ -135,6 +145,8 @@ export const createAsteriaAerospaceScraper = () => ({
 
     try {
       const careersHtml = await fetchPageText(CAREERS_URL)
+
+      if (hasAsteriaKekaHandoff(careersHtml)) return runCurrentAsteriaKeka({ ...options, signal, initialHtml: careersHtml })
 
       if (!hasVerifiedCareersPageSignal(careersHtml)) {
         throw new Error('Asteria Aerospace verified email-only careers surface no longer matches the known public page')

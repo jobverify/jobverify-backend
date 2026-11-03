@@ -1,3 +1,6 @@
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+const currentPublicPage=(source,url)=>{const fixture=JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/'+source+'/test-data/current-public-20261103.json.gz',import.meta.url)))),row=fixture.responses.find(r=>r.url===url);assert.ok(row,'Only current captured declared public URL: '+url);return{url:row.finalURL,status:row.status,headers:row.headers,html:row.body}}
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -37,22 +40,8 @@ test('extractSearchResults returns no jobs when Affordmed only exposes a fronten
   assert.deepEqual(jobs, [])
 })
 
-test('run fetches the Affordmed careers page and decorates an empty result set', async () => {
-  const affordmed = await loadAffordmedModule()
-  assert.ok(affordmed)
-
-  const requestedUrls = []
-  const scraper = affordmed.createAffordmedScraper()
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === affordmed.CAREER_PAGE_URL) return buildCareersHtml()
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.equal(affordmed.buildSearchUrl(), affordmed.CAREER_PAGE_URL)
-  assert.deepEqual(requestedUrls, [affordmed.CAREER_PAGE_URL])
-  assert.deepEqual(jobs, [])
+test('Affordmed shell and active current root-router are inspected without certifying empty vacancies',async()=>{
+ const module=await loadAffordmedModule(),reads=[]
+ await assert.rejects(module.createAffordmedScraper().run({fetchPage:async url=>{reads.push(url);return currentPublicPage('affordmed',url)}}),error=>error.failureKind==='source_inventory_unavailable'&&error.inventoryEvidence.reportedTotal===null)
+ assert.deepEqual(reads,[module.CAREER_PAGE_URL,'https://www.affordmed.com/assets/index-DEUWnO6z.js'])
 })

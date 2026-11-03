@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { gunzipSync } from 'node:zlib'
-export const avasoftCapture = () => JSON.parse(gunzipSync(readFileSync(new URL('../../../scraper/avasoft/fixtures/native-20261026.json.gz', import.meta.url))))
+export const avasoftCapture = () => JSON.parse(gunzipSync(readFileSync(new URL('../../../scraper/avasoft/test-data/current-public-20261103.json.gz', import.meta.url))))
 export const avasoftNativeOptions = (mutate = () => {}, fixture = avasoftCapture()) => {
   const calls = [], counts = new Map()
   const fetchPage = async (url, init = {}) => {

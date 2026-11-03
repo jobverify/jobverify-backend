@@ -81,16 +81,26 @@ export async function run(options = {}) {
       need(final.total === first.total && JSON.stringify(final.rows) === JSON.stringify(snapshot.rows), 'Native closing inventory identity/count drift')
     }
     abort()
+    const declaredBoardComplete = unavailableRoles.length === 0
     for (const job of jobs) {
       job.sourceObservedIndiaJobCount = rows.length
       job.sourceGlobalJobCount = null
       job.sourceNativeFacet = 'India country 1269750'
+      job.sourceDeclaredBoardScopeComplete = declaredBoardComplete
+      job.sourceListingComplete = declaredBoardComplete
+      job.lifecycleCleanupAllowed = false
     }
+    if (jobs.length) jobs[0].nativeCollectionEvidence = { source: SOURCE,
+      observedListingCount: rows.length, observedIndiaListingCount: rows.length, nonIndiaListingCount: 0,
+      candidateDetails: rows.length, extractedDetailJobs: jobs.length, jobs: jobs.map(job => ({id: job.jobId})), exclusions: [],
+      failures: unavailableRoles.map(role => ({stage: 'native-detail', nativeJobId: role.id, reason: role.reason})),
+      listingPaginationComplete: true, closingInventoryMatches: true, sourceScopeComplete: false,
+      declaredBoardScopeComplete: declaredBoardComplete }
     return attachInventoryEvidence(jobs, {
-      status: 'coverage-gap', surface: INDIA_URL, firstParty: true,
-      listingComplete: false, pagesFetched: first.pages * 2,
-      reportedTotal: null, indiaFacetCount: unavailableRoles.length ? null : first.total, verifiedAt: now.toISOString(),
-      reason: 'current-native-India-country-filter-all-pages-and-closing-reconciliation; whole-employer-scope-and-native-lifecycle-unproven; original-native-publication-dates-retained'
+      status: declaredBoardComplete ? 'complete-inventory' : 'coverage-gap', surface: INDIA_URL, firstParty: true,
+      listingComplete: declaredBoardComplete, pagesFetched: first.pages * 2,
+      reportedTotal: first.total, indiaFacetCount: unavailableRoles.length ? null : first.total, verifiedAt: now.toISOString(),
+      reason: 'current-declared-India-country-board; native-all-pages-and-closing-total-identities-and-listing-models-reconciled; all-returned-role-country-identity-and-full-criteria-qualified; company-wide-scope-and-native-expiry-remain-unproven; original-native-publication-and-raw-expiry-retained'
         + (unavailableRoles.length ? '; unqualified-native-details:' + unavailableRoles.map(role => role.id + ':' + role.reason).join(',') : ''),
     })
   } catch (failure) {

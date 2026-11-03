@@ -4,6 +4,7 @@ import Job from '../models/Job.js';
 import JobAlertOutbox from '../models/JobAlertOutbox.js';
 import { stageJobAlertDeliveries } from './jobAlertService.js';
 import { retryMongoOperation } from '../utils/mongoOperationalError.js';
+import { stageTelegramChannelDeliveries } from './telegramChannelService.js';
 
 const CLAIM_TTL_MS = 5 * 60_000;
 const INGESTION_BATCH_SIZE = 100;
@@ -54,7 +55,10 @@ export const processClaimedJobAlertEvent = async event => mongoose.connection.tr
   const job = await Job.findOneAndUpdate({ _id: current.job, status: 'active' }, { $inc: { __v: 1 } },
     { session, new: true, timestamps: false }).lean();
   const available = job?.status === 'active';
-  if (available) await stageJobAlertDeliveries([job], { session });
+  if (available) {
+    await stageJobAlertDeliveries([job], { session });
+    await stageTelegramChannelDeliveries([job], { session });
+  }
   // Completion and delivery insertion share one commit. A crash before this
   // commit rolls both back; after it, even deleted sent rows cannot be replayed.
   const result = await JobAlertOutbox.updateOne({ ...owned, claimExpiresAt: { $gt: new Date() } }, { $set: {

@@ -97,13 +97,14 @@ export const hasOfficialCareersHandoffSignal = (html = '') => {
     && sameUrl(extractDarwinboxHandoffUrl(page), OFFICIAL_CAREERS_HANDOFF_URL)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  signal,
 })
 
 const createConfiguredDarwinboxScraper = () => createDarwinboxScraper({
@@ -122,7 +123,10 @@ export const createAffleScraper = ({
     fetchText = defaultFetchText,
     ...darwinboxOptions
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    const { signal } = darwinboxOptions
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_PAGE_URL, { signal })
+    signal?.throwIfAborted()
 
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('The verified Affle careers page changed materially')

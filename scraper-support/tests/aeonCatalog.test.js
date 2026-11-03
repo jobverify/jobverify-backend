@@ -30,7 +30,7 @@ test('AEON provider metadata captures the verified India careers hub and blocked
   assert.equal(provider.paginationStrategy, 'verified-homepage-plus-careers-pages-plus-blocked-peoplestrong-handoff')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-careers-hub+verified-join-us-page+verified-blocked-peoplestrong-joblist-return-empty',
+    'verified-official-homepage+verified-careers-hub+verified-join-us-page+declared-peoplestrong-access-failure-with-unknown-inventory',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -70,6 +70,7 @@ test('buildScrapers and company coverage resolve AEON from the shared catalog', 
   assert.equal(provider.companyName, 'AEON')
   assert.equal(provider.companyCareerPage, 'https://www.aeoncredit.co.in/careers')
   assert.match(scraper.dryRunFile, /aeon[\\/]jobs\.json$/i)
+  assert.match(provider.extractionStrategy, /access-failure-with-unknown-inventory/)
 
   const report = generateCompanyCoverageReport({
     csvText: 'AEON\n',

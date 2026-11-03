@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { AISLE_CATALOG } from './catalog.js'
 
@@ -325,12 +326,11 @@ export const extractSearchResults = ({
 
 const isIndiaListing = (listing = {}) => {
   const location = normalizeWhitespace(listing.rawLocation || listing.locationText) || ''
-  return /india/i.test(location)
-    || /bengaluru|bangalore|mumbai|pune|gurugram|gurgaon|hyderabad|chennai|delhi|noida/i.test(location)
-    || /remote/i.test(location)
+  return /\bindia\b/i.test(location)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -365,8 +365,25 @@ export const createAisleScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
+    const signal = AbortSignal.any([AbortSignal.timeout(90000), ...(options.signal ? [options.signal] : [])])
+    signal.throwIfAborted()
+    const wait = promise => new Promise((resolve, reject) => {
+      const finish = (fn, value) => { signal.removeEventListener('abort', abort); fn(value) }
+      const abort = () => finish(reject, signal.reason)
+      signal.addEventListener('abort', abort, { once: true })
+      Promise.resolve(promise).then(value => finish(resolve, value), error => finish(reject, error))
+      if (signal.aborted) abort()
+    })
+    let pagesFetched = 0
+    const fetchText = async url => {
+      signal.throwIfAborted(); pagesFetched++
+      const value = await wait((options.fetchText || defaultFetchText)(url, { signal }))
+      signal.throwIfAborted(); return value
+    }
     const now = options.now || (() => new Date().toISOString())
+    const gap = (jobs, reason) => attachInventoryEvidence(jobs, { status: 'coverage-gap', surface: LISTING_URL,
+      firstParty: true, listingComplete: false, reportedTotal: null, indiaFacetCount: null,
+      pagesFetched, verifiedAt: now(), reason })
     const officialHtml = await fetchTextOrThrowUpstream(fetchText, OFFICIAL_HOMEPAGE_URL)
 
     if (!hasOfficialHomepageSignal(officialHtml)) {
@@ -383,7 +400,8 @@ export const createAisleScraper = ({
       listingHtml = await fetchTextOrThrowUpstream(fetchText, listingUrl)
     } catch (error) {
       if (listingUrl === LISTING_URL && isExpectedVerifiedBoardOutage(error, listingUrl)) {
-        return []
+        signal.throwIfAborted()
+        return gap([], 'Current official homepage still declares this Freshteam board; HTTP 500 prevents observing its current native inventory, job countries or criteria; unknown totals')
       }
 
       throw error
@@ -394,7 +412,7 @@ export const createAisleScraper = ({
     }
 
     if (hasEmptyJobsStateSignal(listingHtml)) {
-      return []
+      return gap([], 'Native HTML shows a no-jobs state; authoritative total, active filter defaults and closing inventory are not currently qualified')
     }
 
     const listingJobs = extractListingJobs(listingHtml).filter(isIndiaListing)
@@ -410,12 +428,17 @@ export const createAisleScraper = ({
       detailHtmlByUrl,
     })
 
-    return jobs.map((job) => ({
+    return gap(jobs.map((job) => ({
       ...job,
+      requisitionId: null,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
-    }))
+      sourceCountryEvidence: 'The same native listing explicitly includes India in its data-portal-location; city names and remote labels do not establish country.',
+      sourceListingComplete: false,
+      sourceDetailComplete: false,
+      sourceDetailFailureKind: 'legacy-native-detail-and-current-inventory-not-qualified',
+    })), 'Legacy role parsing remains outside verified current inventory: full same-identity native detail binding and closing inventory are not currently qualified')
   },
 })
 

@@ -8,6 +8,10 @@ import User from '../src/models/User.js';
 import Subscription from '../src/models/Subscription.js';
 import JobAlertDelivery from '../src/models/JobAlertDelivery.js';
 import JobAlertOutbox from '../src/models/JobAlertOutbox.js';
+import TelegramChannelDelivery from '../src/models/TelegramChannelDelivery.js';
+import TelegramChannelSchedule from '../src/models/TelegramChannelSchedule.js';
+import TelegramBroadcastSettings from '../src/models/TelegramBroadcastSettings.js';
+import { DEFAULT_BROADCAST_TEMPLATE } from '../src/services/telegramBroadcastTemplate.js';
 import { claimJobAlertEvent, persistJobChangesWithAlertOutbox, processClaimedJobAlertEvent, recoverJobAlertOutbox } from '../src/services/jobAlertOutboxService.js';
 import { updateAlertSchedule } from '../src/services/alertScheduleService.js';
 import { saveToDB } from '../scraper-support/utils/saveToDB.js';
@@ -37,7 +41,8 @@ test('job persistence retains the alert obligation without a running worker', { 
   t.signal.throwIfAborted();
   await mongoose.connect(mongo.getUri(), { monitorCommands: true });
   t.signal.throwIfAborted();
-  await Promise.all([Job.init(), User.init(), Subscription.init(), JobAlertDelivery.init(), JobAlertOutbox.init()]);
+  await Promise.all([Job.init(), User.init(), Subscription.init(), JobAlertDelivery.init(), JobAlertOutbox.init(),
+    TelegramChannelDelivery.init(), TelegramChannelSchedule.init(), TelegramBroadcastSettings.init()]);
   t.signal.throwIfAborted();
   t.mock.method(globalThis, 'fetch', async () => { throw new Error('External sends are forbidden in local outbox tests.'); });
   const source = [{ title: 'Software Engineer', company: 'Example', location: 'Bengaluru, India',
@@ -52,7 +57,10 @@ test('job persistence retains the alert obligation without a running worker', { 
 
   const reset = async () => {
     await mongoose.connection.db.command({ collMod: 'jobalertoutboxes', validator: {} });
-    await Promise.all([Job.deleteMany({}), User.deleteMany({}), Subscription.deleteMany({}), JobAlertDelivery.deleteMany({}), JobAlertOutbox.deleteMany({})]);
+    await mongoose.connection.db.command({ collMod: 'telegramchanneldeliveries', validator: {} });
+    await Promise.all([Job.deleteMany({}), User.deleteMany({}), Subscription.deleteMany({}), JobAlertDelivery.deleteMany({}),
+      JobAlertOutbox.deleteMany({}), TelegramChannelDelivery.deleteMany({}), TelegramChannelSchedule.deleteMany({}),
+      TelegramBroadcastSettings.deleteMany({})]);
   };
   const publish = (fingerprint = 'outbox-fixture', extra = {}) => persistJobChangesWithAlertOutbox(Job, [{ updateOne: {
     filter: { fingerprint }, update: { $set: { fingerprint, title: 'Software Engineer', company: 'Example', city: 'Bengaluru',
@@ -61,6 +69,9 @@ test('job persistence retains the alert obligation without a running worker', { 
   const subscriber = (email, extra = {}) => User.create({ email,
     premium: { planId: 'semester', status: 'active', telegramAlertsEnabled: true },
     telegram: { chatId: email, linkedAt: new Date() }, profile: { telegramAlertFilters: { company: ['Example'] } }, ...extra });
+  const configure = id => TelegramBroadcastSettings.create({ _id: id, enabled: true,
+    chatId: id === 'channel' ? '@examplechannel' : '@examplegroup', filters: { company: ['Example'] },
+    minIntervalMinutes: 2, maxIntervalMinutes: 3, template: DEFAULT_BROADCAST_TEMPLATE, revision: 1 });
 
   await t.test('failed outbox persistence rolls back a new job and updates in the same batch', async () => {
     await reset();
@@ -205,5 +216,42 @@ test('job persistence retains the alert obligation without a running worker', { 
     assert.deepEqual(await recoverJobAlertOutbox(), { completed: 1, failed: 0 });
     assert.equal((await JobAlertOutbox.findOne()).outcome, 'job_unavailable');
     assert.equal(await JobAlertDelivery.countDocuments(), 0);
+  });
+
+  await t.test('channel fanout commits with the publication receipt and rolls back on completion failure', async () => {
+    await reset(); await configure('channel');
+    await publish('channel-transaction');
+    await mongoose.connection.db.command({ collMod: 'jobalertoutboxes', validator: { status: { $ne: 'completed' } } });
+    assert.deepEqual(await recoverJobAlertOutbox(), { completed: 0, failed: 1 });
+    assert.equal(await TelegramChannelDelivery.countDocuments(), 0);
+    assert.equal(await TelegramChannelSchedule.countDocuments(), 0);
+    assert.equal((await TelegramBroadcastSettings.findById('channel')).dispatchRevision, 0);
+    await mongoose.connection.db.command({ collMod: 'jobalertoutboxes', validator: {} });
+    await JobAlertOutbox.updateMany({}, { $set: { nextAttemptAt: new Date(0) } });
+    assert.deepEqual(await recoverJobAlertOutbox(), { completed: 1, failed: 0 });
+    assert.equal(await TelegramChannelDelivery.countDocuments({ status: 'queued', destination: 'channel', configRevision: 1 }), 1);
+    assert.equal(await TelegramChannelSchedule.countDocuments(), 1);
+    assert.equal(await JobAlertDelivery.countDocuments(), 0);
+    assert.equal((await TelegramBroadcastSettings.findById('channel')).dispatchRevision, 1);
+    assert.deepEqual(await recoverJobAlertOutbox(), { completed: 0, failed: 0 });
+    assert.equal(await TelegramChannelDelivery.countDocuments(), 1);
+  });
+  await t.test('a group staging failure rolls back both public queues and the personal fanout', async () => {
+    await reset(); await subscriber('personal-member@example.test');
+    await configure('channel'); await configure('group');
+    await publish('group-staging-failure');
+    await mongoose.connection.db.command({ collMod: 'telegramchanneldeliveries', validator: { destination: { $ne: 'group' } } });
+    assert.deepEqual(await recoverJobAlertOutbox(), { completed: 0, failed: 1 });
+    assert.equal((await JobAlertOutbox.findOne()).status, 'pending');
+    assert.equal(await JobAlertDelivery.countDocuments(), 0);
+    assert.equal(await TelegramChannelDelivery.countDocuments(), 0);
+    assert.equal(await TelegramChannelSchedule.countDocuments(), 0);
+    assert.equal(await TelegramBroadcastSettings.countDocuments({ dispatchRevision: 0 }), 2);
+    await mongoose.connection.db.command({ collMod: 'telegramchanneldeliveries', validator: {} });
+    await JobAlertOutbox.updateMany({}, { $set: { nextAttemptAt: new Date(0) } });
+    assert.deepEqual(await recoverJobAlertOutbox(), { completed: 1, failed: 0 });
+    assert.equal(await TelegramChannelDelivery.countDocuments(), 2);
+    assert.equal(await JobAlertDelivery.countDocuments(), 1);
+    assert.equal(await TelegramBroadcastSettings.countDocuments({ dispatchRevision: 1 }), 2);
   });
 });

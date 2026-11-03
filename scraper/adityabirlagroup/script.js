@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { ADITYA_BIRLA_GROUP_CATALOG } from './catalog.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { readBirlaNativeJobs } from './nativeJobs.js'
+import { withCallerSignal } from './callerSignal.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -110,13 +112,16 @@ export const hasPublicJobSignal = (html) => {
   return totalJobs > 0 || extractPublicJobLinks(html).length > 0
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    ...options.headers,
   },
   label: SOURCE,
   timeoutMs: 15000,
+  signal: options.signal,
+  includeResponseMetadata: true,
 })
 
 const isCorporateHomepageGatewayFailure = (error) => {
@@ -132,9 +137,17 @@ const isCorporateHomepageGatewayFailure = (error) => {
 }
 
 export const createAdityaBirlaGroupScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, signal, maxPages, maxJobs, now, onAudit } = {}) {
+    const read = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      const response = await withCallerSignal(()=>fetchText(url, { ...options, signal }),signal)
+      signal?.throwIfAborted()
+      if (typeof response === 'string') return response
+      if (response?.status !== 200 || response.url !== url) throw new Error('Aditya Birla first-party response identity changed')
+      return response.html
+    }
     try {
-      const homepageHtml = await fetchText(HOMEPAGE_URL)
+      const homepageHtml = await read(HOMEPAGE_URL)
       if (!hasOfficialHomepageSignal(homepageHtml)) {
         throw new Error('Aditya Birla Group homepage no longer matches the verified official homepage')
       }
@@ -144,7 +157,7 @@ export const createAdityaBirlaGroupScraper = () => ({
       console.warn('  [adityabirlagroup] Corporate homepage unavailable; verifying official careers inventory')
     }
 
-    const careersHomeHtml = await fetchText(CAREERS_HOME_URL)
+    const careersHomeHtml = await read(CAREERS_HOME_URL)
     if (!hasOfficialCareersHomeSignal(careersHomeHtml)) {
       throw new Error(
         'Aditya Birla Group careers homepage no longer matches the verified public careers homepage',
@@ -157,18 +170,8 @@ export const createAdityaBirlaGroupScraper = () => ({
       )
     }
 
-    const jobSearchHtml = await fetchText(JOB_SEARCH_URL)
-    if (hasVerifiedZeroJobsSurface(jobSearchHtml)) {
-      return []
-    }
-
-    if (hasPublicJobSignal(jobSearchHtml)) {
-      throw new Error('Aditya Birla Group public jobs surface now exposes openings')
-    }
-
-    throw new Error(
-      'Aditya Birla Group public job-search surface no longer matches the verified zero-jobs shell',
-    )
+    const jobSearchHtml = await read(JOB_SEARCH_URL)
+    return readBirlaNativeJobs({ read, searchHtml: jobSearchHtml, signal, maxPages, maxJobs, now, onAudit })
   },
 })
 

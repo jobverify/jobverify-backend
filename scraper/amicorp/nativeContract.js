@@ -3,7 +3,11 @@ import {activeHead,decodeNativeEntities} from '../../scraper-support/utils/activ
 import {AMICORP_CATALOG as catalog} from './catalog.js'
 const check=(ok,message)=>{if(!ok)throw Object.assign(Error('Amicorp detail page '+message),{abortRetries:true})}
 const norm=value=>decodeNativeEntities(value).replace(/[\u2013\u2014]/g,'-').replace(/\s+/g,' ').trim()
-const titleKey=value=>norm(value).replace(/\s*\/\s*/g,'/').toLowerCase()
+const titleKey=value=>norm(value).replace(/\u200b/g,'').replace(/\bJD\s+(?=\d)/gi,'JD').replace(/\s*\/\s*/g,'/').toLowerCase()
+// The current Senior Manager H1 inserts ", &" and uses a comma where the
+// matching card, canonical page title and public CMS title use a dash. Preserve
+// all words and meaningful operators; do not equate Market with Marketing.
+const visibleHeadingKey=value=>titleKey(value).replace(/,\s*&\s+/g,', ').replace(/[,-]/g,' ').replace(/\s+/g,' ').trim()
 const within=(node,predicate)=>node.inert?[]:[...(predicate(node)?[node]:[]),...node.children.filter(child=>typeof child!=='string').flatMap(child=>within(child,predicate))]
 const one=(nodes,label)=>{check(nodes.length===1,'no longer exposes the verified '+label);return nodes[0]}
 const date=value=>{
@@ -31,7 +35,7 @@ export const readAmicorpDetail=(html,listing)=>{
  const nativeLocation=workplace(doc.text(spans[0])),nativeDate=norm(doc.text(spans[1])).replace(/^\(\s*|\s*\)$/g,''),identifier=norm(doc.text(spans[2]))
  check(/^JD\d*$/.test(identifier)&&date(nativeDate),'role metadata')
  const advertised=norm(listing.subtitle).match(/^(?:(JD\d*)\s*-\s*)?(.+?)\s*-\s*(\d{1,2}\s+[a-z]{3}\s+\d{4})$/i)
- check(advertised&&(!advertised[1]||advertised[1]===identifier)&&date(advertised[3])===date(nativeDate)
+ check(advertised&&(!advertised[1]||advertised[1]===identifier)
   &&norm(workplace(advertised[2]).location).toLowerCase()===norm(nativeLocation.location).toLowerCase(),'listing/detail workplace, date or requisition contradiction')
  check(nativeLocation.country?.toLowerCase()==='india','unqualified India workplace')
  const requisitionId=identifier==='JD'?null:identifier
@@ -40,6 +44,9 @@ export const readAmicorpDetail=(html,listing)=>{
  const titleCompositions=[`${listing.title} ${identifier} - Amicorp`,`${listing.title} - ${identifier} - Amicorp`,
   ...(nativeLocation.city?[`${listing.title} ${nativeLocation.city} - ${identifier} - Amicorp`]:[])]
  check(titleCompositions.some(value=>titleKey(pageTitle)===titleKey(value)),'listing/detail title contradiction')
+ if(date(advertised[3])!==date(nativeDate))throw Object.assign(Error('Amicorp detail page listing/detail publication dates conflict'),{
+  code:'AMICORP_NATIVE_PUBLICATION_DATE_CONFLICT',nativeJobId:identifier,
+  listingDate:date(advertised[3]),detailDate:date(nativeDate),abortRetries:true})
  const slug=new URL(canonical).pathname.split('/').filter(Boolean).at(-1)
  if(requisitionId&&/jd\d+/i.test(slug))check(slug.match(/jd\d+/i)[0].toLowerCase()===requisitionId.toLowerCase(),'URL/requisition identity contradiction')
  const frames=doc.frames().filter(node=>/CareerPageForm/i.test(node.attrs.src||'')||node.attrs['aria-label']==='Career Page Form')
@@ -66,11 +73,13 @@ export const readAmicorpDetail=(html,listing)=>{
  const published=head.metas.filter(meta=>meta.property==='article:published_time').map(meta=>meta.content)
  check(published.length<=1&&(!published.length||Number.isFinite(Date.parse(published[0]))),'native posting date')
  const headings=within(content,node=>node.tag==='h1'&&doc.hasClass(node,'title-h1')).map(node=>doc.text(node))
- const titleConflict=headings.some(heading=>titleKey(heading)!==titleKey(listing.title))
+ const titleConflict=headings.some(heading=>visibleHeadingKey(heading)!==visibleHeadingKey(listing.title))
+ const headingFormattingOnly=!titleConflict&&headings.some(heading=>titleKey(heading)!==titleKey(listing.title))
  return {location:nativeLocation.location,city:nativeLocation.city,state:null,country:'India',requisitionId,
   jobId:`amicorp-${requisitionId?requisitionId.toLowerCase():slug}`,applyUrl:frame.attrs.src,
   postingDate:published[0]||date(nativeDate),jobDescription,sourceListingComplete:false,
   sourceDetailComplete:!titleConflict,sourceDetailStatus:titleConflict?'identity-mismatch':'complete',
+  ...(headingFormattingOnly?{sourceNativeVisibleHeadingFormattingOnly:true}:{}),
   ...(titleConflict?{sourceDetailFailureKind:'identity-mismatch'}:{}),
   ...(headings.length?{rawNativeRoleEvidence:{canonicalUrl:canonical,listingTitle:listing.title,detailHeading:headings[0],
    nativeWorkplace:nativeLocation.raw,nativeDisplayDate:nativeDate,nativeIdentifierLabel:identifier,

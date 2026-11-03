@@ -19,6 +19,18 @@ test('scheduled starts claim each interval once and retry busy slots without dri
   assert.equal(await startScheduledPipeline(schedule, options, { now: anchor - 1 }), null);
   const first = await startScheduledPipeline(schedule, options, { now: anchor });
   assert.ok(first.scheduleSlot); assert.equal(first.stages[0].githubRunId, 100);
+  // Simulate a tick whose slot lookup ran before the first claim became visible.
+  const exists = PipelineRun.exists.bind(PipelineRun);
+  const staleLookup = t.mock.method(PipelineRun, 'exists', (filter, ...args) =>
+    filter.scheduleSlot === first.scheduleSlot ? Promise.resolve(null) : exists(filter, ...args));
+  const remote = t.mock.method(globalThis, 'fetch', async () => assert.fail('A claimed interval must not query GitHub'));
+  try {
+    assert.equal(await startScheduledPipeline(schedule, options, { now: anchor, token: 'scheduled-test-token' }), null);
+    assert.equal(remote.mock.callCount(), 0);
+  } finally {
+    staleLookup.mock.restore();
+    remote.mock.restore();
+  }
   assert.equal(await startScheduledPipeline(schedule, options, { now: anchor + 3600000 }), null);
   await failPipeline(first._id, 'failed', 'Simulate failed scheduled attempt');
   assert.equal(await startScheduledPipeline(schedule, options, { now: anchor + 2 * 3600000 }), null);

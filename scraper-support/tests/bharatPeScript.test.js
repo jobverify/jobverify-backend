@@ -65,11 +65,11 @@ test('isVerifiedNoPublicJobsRoute accepts 404s and homepage redirects but reject
   assert.equal(bharatPe.isVerifiedNoPublicJobsRoute(publicJobsRoute), false)
 })
 
-test('run returns an empty list only when BharatPe exposes no public careers surface on common routes', async () => {
+test('run fails closed when no current native recruiting handoff is published', async () => {
   const bharatPe = await loadBharatPeModule()
   const requestedUrls = []
 
-  const jobs = await bharatPe.createBharatPeScraper().run({
+  await assert.rejects(bharatPe.createBharatPeScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -86,8 +86,7 @@ test('run returns an empty list only when BharatPe exposes no public careers sur
         url,
       }
     },
-  })
+  }), /handoff/i)
 
-  assert.deepEqual(requestedUrls, [bharatPe.HOMEPAGE_URL, ...bharatPe.CAREERS_ROUTE_URLS])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [bharatPe.HOMEPAGE_URL, bharatPe.CAREERS_URL])
 })

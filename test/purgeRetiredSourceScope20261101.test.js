@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict'
-import fs from 'node:fs'
 import path from 'node:path'
 import test, {before,after} from 'node:test'
 import {execFile} from 'node:child_process'
@@ -14,9 +13,8 @@ const selected='purge-scope.wellfoundDirectory',peer='purge-scope.himalayas.app'
 const shared='Shared literal employer',blankCompany='Unrelated blank employer'
 let server,client,sequence=0
 before(async()=>{
-  const binary=process.env.MONGOMS_SYSTEM_BINARY || path.join(backend,'.cache/mongodb-binaries/mongod-x64-win32-8.2.6.exe')
-  assert.ok(fs.existsSync(binary),'The cached8.2.6 binary is required; no download or skip')
-  server=await MongoMemoryServer.create({binary:{systemBinary:binary,version:'8.2.6'},instance:{ip:'127.0.0.1'}})
+  process.env.MONGOMS_RUNTIME_DOWNLOAD='false'
+  server=await MongoMemoryServer.create({binary:{version:'8.2.6',downloadDir:process.env.MONGOMS_DOWNLOAD_DIR || path.join(backend,'.cache/mongodb-binaries')},instance:{ip:'127.0.0.1'}})
   client=await mongoose.mongo.MongoClient.connect(server.getUri('purge_scope_control'))
 })
 after(async()=>{await client?.close();await server?.stop()})

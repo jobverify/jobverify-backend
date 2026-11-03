@@ -188,15 +188,15 @@ export const hasSavedFilters = (filters = {}) => {
     .some((items) => items.length > 0) || normalized.experienceYear !== "";
 };
 
-export const jobMatchesSavedFilters = ({ job, filters, userProfile = {}, now = new Date() }) => {
+export const jobMatchesSavedFilters = ({ job, filters, userProfile = {}, now = new Date(), ignoreProfileEligibility = false }) => {
   const normalized = normalizeProfilePreferenceFilters(filters);
   if (!hasSavedFilters(normalized)) return false;
   const branch = String(userProfile.branch || "").trim().toLowerCase();
   const passingYear = Number(userProfile.passingYear);
   const branches = (job.branches || []).map((value) => String(value).trim().toLowerCase());
   const batches = (job.eligibleBatches || []).map(Number);
-  if (branches.length && !branches.includes(branch)) return false;
-  if (batches.length && !batches.includes(passingYear)) return false;
+  if (!ignoreProfileEligibility && branches.length && !branches.includes(branch)) return false;
+  if (!ignoreProfileEligibility && batches.length && !batches.includes(passingYear)) return false;
   const jobTypes = getPublicJobTypeMatches(normalizePublicJobCategory(job));
   const location = [job.city, job.location].filter(Boolean).join(" ").toLowerCase();
   const experienceMatches = matchesExperienceFilter(job, normalized.experienceYear, (legacy) => {

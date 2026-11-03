@@ -1,48 +1,19 @@
-export const CAREERS_URL = 'https://aarbeestructures.com/careers/'
+import METADATA from './catalog.js'
+import {createCurrentScraper} from './currentNative.js'
+import {possibleVacancyMarkup} from '../abmknowledgeware/publicIntake.js'
+import {document} from '../../scraper-support/shared/rmkNativePairHtml.js'
+export const SOURCE=METADATA.source,COMPANY=METADATA.companyName,COMPANY_DOMAIN=METADATA.companyDomain
+export const PROVIDER_METADATA=METADATA,VERIFIED_AT=null,VERIFIED_ON=null,VERIFIED_SURFACE_SUMMARY=METADATA.verifiedSurfaceSummary
+export const OFFICIAL_BRAND_NAME=METADATA.officialBrandName||COMPANY,LEGAL_ENTITY_NAME=METADATA.legalEntityName||COMPANY
+export const HOMEPAGE_URL="https://www.aarbeestructures.com/",CAREERS_URL=METADATA.companyCareerPage
 
-const STRUCTURED_JOB_LISTING_PATTERN = /<(?:article|li|div)[^>]+(?:job-card|job-listing|current-opening)[^>]*>[\s\S]*?<a[^>]+href=["'][^"']*(?:\/jobs?\/|\/careers?\/)[^"']*["'][^>]*>[^<]*(?:apply|view|details)/i
 
-export const hasOfficialCareersSignal = (html) => {
-  const page = String(html || '')
-
-  return /<title>\s*Careers\s*-\s*Aarbee Structures\s*<\/title>/i.test(page)
-    && /Aarbee Career/i.test(page)
-    && /Current Openings/i.test(page)
-    && /Aarbee Structures Pvt\.?\s*Ltd\.?/i.test(page)
-}
-
-export const pageExposesStructuredJobListings = (html) => STRUCTURED_JOB_LISTING_PATTERN.test(String(html || ''))
-
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
-      Accept: 'text/html,application/xhtml+xml',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
-
-export const createAarbeeStructuresScraper = () => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const pageHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersSignal(pageHtml)) {
-      throw new Error('Aarbee Structures official careers surface no longer matches the verified public page')
-    }
-
-    if (pageExposesStructuredJobListings(pageHtml)) {
-      throw new Error('Aarbee Structures careers page now exposes structured public job listings and needs a dedicated scraper')
-    }
-
-    return []
-  },
-})
-
-export const run = async () => createAarbeeStructuresScraper().run()
+export const hasOfficialCareersSignal=html=>new RegExp("Aarbee (?:Career|Structures)",'i').test(html)
+export const hasOfficialHomepageSignal=html=>/Aarbee/i.test(html)
+export const hasOfficialCompanyPageSignal=hasOfficialHomepageSignal
+export const pageExposesPublicJobListings=html=>possibleVacancyMarkup(html,CAREERS_URL).length>0
+export const pageExposesStructuredJobListings=pageExposesPublicJobListings
+export const hasPublicJobsSignal=pageExposesPublicJobListings
+export const hasFirstPartyCareerLikeLink=html=>document(html).nodes(node=>node.tag==='a'&&/^(?:https?:[/][/](?:www[.])?aarbeestructures[.]com)?[/](?:careers?|jobs?|join-us|openings|hiring)(?:[/]|$)/i.test(node.attrs.href||'')).length>0
+export const createAarbeeStructuresScraper=createCurrentScraper
+export const run=options=>createAarbeeStructuresScraper().run(options)

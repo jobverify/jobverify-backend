@@ -1,3 +1,4 @@
+import { createCurrentBharatForge } from "./currentPublic.js"
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -22,18 +23,9 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createBharatForgeScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const careersHtml = await fetchText(CAREER_PAGE_URL)
-    const jobs = extractSearchResults(careersHtml)
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
-  },
-})
+export const createBharatForgeScraper = () => createCurrentBharatForge()
 
-export const run = async () => createBharatForgeScraper().run()
+export const run = async (options = {}) => createBharatForgeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

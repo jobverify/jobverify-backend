@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://avglogistics.com/ is the live first-party AVG Logistics Limited marketing site, that it links to the first-party careers page at https://avglogistics.com/careers, that https://avglogistics.com/robots.txt points crawlers to https://www.avglogistics.com/sitemap.xml, and that the sitemap explicitly includes https://avglogistics.com/careers. Verified the careers page exposes recruiting copy such as "Explore your Future at AVG" and "Easily apply to multiple jobs with one click !" but the advertised jobs container is empty, with no public job cards, no JobPosting markup, no detail pages, and no trustworthy apply links beyond generic contact email addresses. Also verified that https://avglogistics.com/jobs, https://avglogistics.com/job, https://avglogistics.com/current-openings, https://avglogistics.com/openings, https://avglogistics.com/work-with-us, and https://avglogistics.com/join-us returned first-party 404 Page Not Found responses, while https://avglogistics.in/ is a separate operational parcel-tracking/login portal whose https://avglogistics.in/careers route returned a first-party 404. There is no trustworthy public jobs surface for AVG Logistics right now.'
+  "The current https://avglogistics.com/careers advertises Easily apply to multiple jobs with one click but renders an empty comment-only row. This is an observed configured panel with no reviewed native vacancy model, explicit count or empty-state assertion, so vacancy/India totals remain unknown. Opening/closing panel evidence never depends on guessed routes, robots/sitemaps, operational login or company-wide absence."
 
 export const AVG_LOGISTICS_CATALOG = {
   source: 'avglogistics',
@@ -30,12 +30,12 @@ export const AVG_LOGISTICS_CATALOG = {
   companyDomain: 'avglogistics.com',
   atsPlatform: 'official-company-site-no-public-careers',
   countryFilter: 'India',
-  paginationStrategy: 'verified-homepage-plus-static-careers-page-plus-robots-sitemap-and-common-route-validation',
+  paginationStrategy: "opening-and-closing-current-configured-public-surface",
   extractionStrategy:
-    'verified-homepage+verified-static-careers-page-without-public-job-cards+verified-robots-and-sitemap+verified-common-job-routes-and-portal-return-empty',
+    "current-employer-public-intake-or-unqualified-panel-observations;unknown-native-inventory",
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: null,
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

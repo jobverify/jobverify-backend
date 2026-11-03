@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { gunzipSync } from 'node:zlib'
+import { createHash } from 'node:crypto'
 import { parse } from 'acorn'
 import test from 'node:test'
 import { createCatalogScraper, getScraperCatalog } from '../../scraper-support/providers/index.js'
 import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
 import { createLinearScraper, extractRoleSummaries } from './script.js'
 
 const manifest = JSON.parse(readFileSync(new URL('./test-data/manifest.json', import.meta.url)))
@@ -52,18 +54,39 @@ test('Linear extracts all 31 current native identities rather than only 23 group
   assert.equal(rows.find(row => row.id === 'f16dd5e9-ed10-4b8e-b5d7-1b8b5e3f002f')?.location, 'North America')
 })
 
+test('Linear accepts only the exact current renderer cache metadata while preserving all31 bound native identities',()=>{
+ const html=gunzipSync(readFileSync(new URL('./test-data/careers-cache-metadata-20261103.html.gz',import.meta.url))).toString()
+ assert.equal(createHash('sha256').update(html).digest('hex'),'9b29da9b9f9c630726868e7669f576e47221f2173f55096f48bfa6698023f60b')
+ assert.equal(extractRoleSummaries(html).length,31)
+ assert.throws(()=>extractRoleSummaries(html.replace('"dynamicStaleTimeSeconds":0','"dynamicStaleTimeSeconds":1')),/runtime metadata changed/)
+ assert.throws(()=>extractRoleSummaries(html.replace('"dynamicStaleTimeSeconds":0','"dynamicStaleTimeSeconds":0,"otherPolicy":true')),/runtime metadata changed/)
+ assert.throws(()=>extractRoleSummaries(html.replaceAll('__vinext_streaming_metadata_body:route:/careers','__vinext_streaming_metadata_body:route:/unbound')),/metadata route binding missing/)
+ assert.throws(()=>extractRoleSummaries(html.replace('<link rel="canonical" href="https://linear.app/careers">','<link rel="canonical" href="https://other.example/careers">')),/metadata does not match original SSR fragment/)
+ assert.throws(()=>extractRoleSummaries('<template>'+html+'</template>'),/runtime handoff missing|runtime metadata/)
+})
+
 test('registered Linear execution records the checked 31-role public board and preserves its historical clock', async () => {
   const provider = getScraperCatalog().find(row => row.source === 'linear')
   const jobs = await createCatalogScraper(provider).run({ fetchText: async () => careers, transport: transport() })
   assert.equal(jobs.length, 0)
   const evidence = readInventoryEvidence(jobs)
-  assert.equal(evidence?.reportedTotal, null)
+  assert.equal(evidence?.reportedTotal, 31)
   assert.equal(evidence?.indiaFacetCount, 0)
-  assert.equal(evidence?.status, 'discovery-only')
-  assert.equal(evidence?.listingComplete, false)
+  assert.equal(evidence?.status, 'complete-inventory')
+  assert.equal(evidence?.listingComplete, true)
   assert.equal(evidence?.verifiedAt, '2026-10-31T22:39:41.377Z')
   assert.match(evidence?.reason, /official-roles=31;native-roles=31;checked-board-india=0/)
-  assert.match(evidence?.reason, /whole-company-scope-unverified/)
+  assert.match(evidence?.reason, /configured-board=complete;company-scope-and-cleanup-unverified/)
+  assert.equal(readSourceObservationEvidence(jobs, 'linear')?.observedVacancyCount, 31)
+})
+
+test('Linear compares closing native and corporate inventory without promoting company-wide coverage', async () => {
+  const requests = []
+  const result = await createLinearScraper().collect({ transport: transport({ requests }) })
+  assert.equal(requests.filter(url => url === 'https://api.ashbyhq.com/posting-api/job-board/Linear').length, 2)
+  assert.equal(result.closingInventoryStable, true)
+  assert.equal(result.inventoryEvidence.listingComplete, true)
+  assert.equal(result.sourceCompanyWideScopeComplete,false)
 })
 
 test('unbound or inert careers data cannot establish the current employer handoff', async () => {

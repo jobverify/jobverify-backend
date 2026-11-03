@@ -13,12 +13,15 @@ test('actual Ammachi records preserve native title/address geography without man
  assert.equal(jobs[0].location,'Wayanad district, Kerala');assert.equal(jobs[0].postingDate,'2026-05-26T04:41:14.000Z')
  assert.ok(jobs.every(j=>j.jobDescription&&j.sourceUrl===records.find(r=>String(r.id)===j.jobId).link))
 })
-test('registered Ammachi run forwards transport and retains unknown inventory/geography proof',async t=>{
- t.mock.method(globalThis,'fetch',async()=>{throw Object.assign(Error('Unexpected default network transport'),{abortRetries:true})})
- const calls=[],jobs=await run({fetchJson:async url=>{calls.push(url);assert.equal(url,JOBS_API_URL);return records}})
- assert.deepEqual(calls,[JOBS_API_URL]);assert.equal(jobs.length,23)
+import {nativeFixture} from '../alohatechnology/nativeFixture.js'
+import {readSourceObservationEvidence} from '../../scraper-support/utils/sourceObservationEvidence.js'
+test('registered Ammachi run forwards native transport and retains every original geography/scope observation',async t=>{
+ t.mock.method(globalThis,'fetch',async()=>{throw Error('Unexpected default network')})
+ const fixture=nativeFixture(import.meta.url),calls=[],reports=[],jobs=await run({fetchPage:async url=>{calls.push(url);return fixture.fetchPage(url)},onAudit:r=>reports.push(r)})
+ assert.equal(calls.filter(u=>u===JOBS_API_URL).length,2);assert.equal(jobs.length,22)
  assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
- assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null);assert.equal(jobs.nativeCollectionEvidence.nativeObservedRecordCount,23)
+ assert.equal(readSourceObservationEvidence(jobs,'ammachilabs').observedVacancyCount,23)
+ assert.equal(reports[0].observations.length,23);assert.equal(reports[0].unknownCountryRecords,23)
  assert.equal(jobs[0].nativeLocationEvidence.positionJobLocation,'')
 })
 test('Ammachi role-owned explicit foreign or India labels retain their country and native scope',()=>{

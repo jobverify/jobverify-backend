@@ -8,7 +8,7 @@ import {
 } from '../providers/index.js'
 import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
 
-test('getScraperCatalog includes Amber Enterprises as a verified official careers external-handoff scraper', () => {
+test('getScraperCatalog preserves the current exact Amber native handoff without verified vacancy totals', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'amberenterprises')
 
   assert.ok(provider, 'Expected Amber Enterprises provider to be registered in customProviders.json')
@@ -17,10 +17,10 @@ test('getScraperCatalog includes Amber Enterprises as a verified official career
   assert.equal(provider.companyCareerPage, 'https://www.ambergroupindia.com/careers/')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-homepage-plus-careers-handoff-page')
+  assert.equal(provider.paginationStrategy, 'current-corporate-careers+exact-declared-employer-native-handoff;stop-on-denial')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-careers-page+external-naukri-handoff-return-empty',
+    'exact-current-employer-handoff-binding+native-HTTP-status;unknown-inventory',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

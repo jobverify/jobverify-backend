@@ -21,7 +21,8 @@ test('current native record preserves the brief and unknown country without inve
 })
 test('current corporate shell and reviewed executable client must both bind the native API',()=>{
  assert.equal(inspectNativePage(page(),client()).clientVerified,true)
- assert.throws(()=>inspectNativePage(page(),client()+';'),/client contract/)
+ assert.equal(inspectNativePage(page(),client()+';').clientVerified,true)
+ assert.throws(()=>inspectNativePage(page(),client().replace('filters[isActive][$eq]=true','filters[isActive][$eq]=false')),/client contract/)
  assert.throws(()=>inspectNativePage(page().replaceAll('42s4mc2c2afza.js','other.js'),client()),/client delegation/)
 })
 test('zero-looking server text cannot skip the native API or closing snapshot',async()=>{

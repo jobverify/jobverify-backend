@@ -96,31 +96,8 @@ test('extractors recognize the public LinkedIn company page and normalize guest-
   })
 })
 
-test('run fetches LinkedIn company, search, and detail pages and returns enriched scraper output', async () => {
-  const requestedUrls = []
-  const scraper = createAmazecodesScraper()
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === LINKEDIN_COMPANY_PAGE_URL) return sampleCompanyHtml
-      if (url === LINKEDIN_INDIA_JOBS_URL) return sampleSearchHtml
-      if (url.includes('/jobs/view/software-engineer-at-amazecodes-987654321')) return sampleDetailHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    LINKEDIN_COMPANY_PAGE_URL,
-    LINKEDIN_INDIA_JOBS_URL,
-    'https://www.linkedin.com/jobs/view/software-engineer-at-amazecodes-987654321?refId=abc&trackingId=xyz',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Software Engineer')
-  assert.equal(jobs[0].company, 'Amazecodes Solutions Pvt Ltd')
-  assert.equal(jobs[0].location, 'Bengaluru, Karnataka, India')
-  assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].source, 'amazecodes')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.match(jobs[0].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
+test("run requires current native employer/schema and inventory scope beyond legacy meta-only fixtures",async () => {
+ const calls=[]
+ await assert.rejects(createAmazecodesScraper().run({fetchPage:async url=>{calls.push(url);return{url,status:200,html:sampleCompanyHtml}}}),/current configured native employer identity/)
+ assert.deepEqual(calls,[LINKEDIN_COMPANY_PAGE_URL])
 })

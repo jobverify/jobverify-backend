@@ -23,17 +23,17 @@ export const AUZMOR_CATALOG = {
     'https://auzmor.com/company/careers',
     'https://auzmor.com/about/careers',
   ],
-  atsPlatform: 'official-company-careers-nonlisting',
+  atsPlatform: 'auzmor-hire',
   countryFilter: 'India',
-  paginationStrategy: 'homepage-plus-careers-page-plus-sitemap-and-adjacent-route-validation',
+  paginationStrategy: 'native-grouped-pagination-filter-counts-and-closing-inventory',
   extractionStrategy:
-    'verified-homepage+verified-careers-marketing-page+verified-page-sitemap-single-careers-route+missing-adjacent-jobs-routes-return-empty',
+    'corporate-published-auzmor-hire-widget+native-employer+grouped-pagination-and-filter-counts+India-full-details+closing-inventory',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'auzmor.com',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-11-02',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://auzmor.com/ is the live first-party homepage and links Careers to https://auzmor.com/careers/. The careers page is live at https://auzmor.com/careers/ but currently serves Auzmor Hire product-marketing content titled "Auzmor Hire - Powerfully Integrating Your ATS & Careers Page" rather than a public jobs board. https://auzmor.com/page-sitemap.xml lists only the single career-like route https://auzmor.com/careers/, https://auzmor.com/career redirects back to that same page, and adjacent first-party routes such as /jobs, /join-us, /work-with-us, /openings, and /current-openings return 404. There is no trustworthy public jobs surface right now.',
+    'Verified on November 2, 2026 that https://auzmor.com/ links Careers to https://auzmor.com/careers/, which publishes the same-company Auzmor Hire widget, tenant auzmor, https://hire.auzmor.com/ and https://hire.api.auzmor.com/api/v1/. Native organization identity binds Auzmor.com; grouped pagination and independent department/location filter counts reconcile the public inventory. Native role location objects preserve the country behind Remote display labels. Full India job criteria and closing native inventory are validated without substituting current dates or job content.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

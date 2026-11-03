@@ -166,6 +166,8 @@ test('run fetches the official CEI careers page and Bullhorn jobs feed, then dec
     fetchText: async (url) => {
       requestedTexts.push(url)
       if (url === cei.CAREERS_PAGE_URL) return careersPageHtml
+      if (url === cei.JOBS_PORTAL_URL) return '<script src="main-es2015.js"></script>'
+      if (url === 'https://cei.ai/jobs/main-es2015.js') return 'const countries=[{code:"US",id:1,name:"United States",states:[]},{code:"IN",id:2262,name:"India",states:[]}];'
       throw new Error(`Unexpected text URL: ${url}`)
     },
     fetchJson: async (url) => {
@@ -176,10 +178,12 @@ test('run fetches the official CEI careers page and Bullhorn jobs feed, then dec
     },
   })
 
-  assert.deepEqual(requestedTexts, [cei.CAREERS_PAGE_URL])
+  assert.deepEqual(requestedTexts, [cei.CAREERS_PAGE_URL, cei.JOBS_PORTAL_URL, 'https://cei.ai/jobs/main-es2015.js', cei.CAREERS_PAGE_URL])
   assert.deepEqual(requestedJson, [
     cei.APP_CONFIG_URL,
     cei.buildSearchUrl(appConfig),
+    cei.buildSearchUrl(appConfig),
+    cei.APP_CONFIG_URL,
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'cei')

@@ -78,66 +78,25 @@ test('extractSearchResults keeps India jobs and maps official detail URLs', () =
   assert.equal(hasOfficialSearchResultsSignal(searchHtml), true)
 })
 
-test('run enriches India listings from official detail pages', async () => {
-  const requestedUrls = []
-  const scraper = createAmpereComputingScraper()
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === SEARCH_URL) return searchHtml
-      if (url === 'https://careers.amperecomputing.com/jobs/17948977-principal-cloud-and-devops-engineer') return detailHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    SEARCH_URL,
-    'https://careers.amperecomputing.com/jobs/17948977-principal-cloud-and-devops-engineer',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
-    title: 'Principal Cloud & DevOps Engineer',
-    company: 'Ampere Computing',
-    location: 'Pune, MH, India',
-    city: 'Pune',
-    country: 'India',
-    link: 'https://careers.amperecomputing.com/jobs/17948977-principal-cloud-and-devops-engineer',
-    applyUrl: 'https://careers.amperecomputing.com/jobs/17948977-principal-cloud-and-devops-engineer',
-    sourceUrl: 'https://careers.amperecomputing.com/jobs/17948977-principal-cloud-and-devops-engineer',
-    source: 'amperecomputing',
-    jobId: '17948977',
-    requisitionId: '17948977',
-    department: 'Information Technology',
-    employmentType: 'Full-time',
-    experienceRequired: null,
-    postingDate: '2026-07-01',
-    closingDate: null,
-    jobDescription: 'Build and operate cloud delivery systems.',
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    remoteStatus: 'On-site',
-    scrapedAt: jobs[0].scrapedAt,
-  })
+test('run rejects an unbound historical search sample even when it contains India cards and JSON-LD', async () => {
+  await assert.rejects(createAmpereComputingScraper().run({fetchText:async url=>url===SEARCH_URL?searchHtml:detailHtml}), /Ampere native contract/)
   assert.equal(CAREER_PAGE_URL, 'https://careers.amperecomputing.com/')
 })
 
-test('run returns [] when both Ampere search routes match the verified Cloudflare challenge shell', async () => {
+test('run reports a blocked inventory when the configured Ampere search route returns a Cloudflare challenge', async () => {
   const requestedUrls = []
   const scraper = createAmpereComputingScraper()
 
   assert.equal(hasVerifiedCloudflareChallengeSignal(blockedChallengePage), true)
 
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
       if (url === SEARCH_URL) return blockedChallengePage
       if (url === INDIA_SEARCH_URL) return blockedIndiaChallengePage
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), e=>e.failureKind==='blocked_or_access_denied'&&e.status===403)
 
-  assert.deepEqual(requestedUrls, [SEARCH_URL, INDIA_SEARCH_URL])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [SEARCH_URL])
 })

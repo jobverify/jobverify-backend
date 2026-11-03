@@ -125,6 +125,9 @@ test('Canva run returns normalized India jobs from the verified first-party jobs
       postingDate: null,
       remoteStatus: 'On-site',
       scrapedAt: '2026-08-14T00:00:00.000Z',
+      sourceListingComplete: false,
+      sourceScopeComplete: false,
+      lifecycleCleanupAllowed: false,
     },
   ])
 })

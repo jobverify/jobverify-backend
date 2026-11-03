@@ -1,3 +1,8 @@
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const currentPublicFixture=()=>JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/amberenterprises/test-data/current-public-20261103.json.gz',import.meta.url))))
+const currentCorporateHTML=()=>currentPublicFixture().responses[0].body
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import test from 'node:test'
@@ -17,7 +22,7 @@ const loadAmberEnterprisesModule = async () => {
 
 const readFixture = async (name) => readFile(path.join(fixturesDir, name), 'utf8')
 
-test('Amber Enterprises validates the verified official homepage and careers handoff before returning no first-party listings', async () => {
+test("Amber preserves legacy employer helper checks and current native denial instead of returning empty", async () => {
   const amberEnterprises = await loadAmberEnterprisesModule()
   const homepageHtml = await readFixture('homepage.html')
   const careersHtml = await readFixture('careers.html')
@@ -32,23 +37,10 @@ test('Amber Enterprises validates the verified official homepage and careers han
   assert.equal(amberEnterprises.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(amberEnterprises.hasExternalJobsHandoffSignal(careersHtml), true)
 
-  const jobs = await amberEnterprises.createAmberEnterprisesScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
 
-      if (url === amberEnterprises.HOMEPAGE_URL) return homepageHtml
-      if (url === amberEnterprises.CAREERS_URL) return careersHtml
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    'https://www.ambergroupindia.com/',
-    'https://www.ambergroupindia.com/careers/',
-  ])
-  assert.deepEqual(jobs, [])
-})
+  await assert.rejects(amberEnterprises.createAmberEnterprisesScraper().run({fetchPage:async url=>{requestedUrls.push(url);if(new URL(url).hostname==='www.naukri.com')return{url,status:403,html:'denied'};return{url,status:200,html:currentCorporateHTML()}}}),error=>error.status===403&&error.inventoryEvidence.reportedTotal===null)
+  assert.deepEqual(requestedUrls,[amberEnterprises.CAREERS_URL,'https://www.naukri.com/amber-enterprises-india-overview-4576343?tab=jobs&src=JDLogo'])
+ })
 
 test('Amber Enterprises accepts the current first-party homepage title variant', async () => {
   const amberEnterprises = await loadAmberEnterprisesModule()
@@ -64,81 +56,14 @@ test('Amber Enterprises accepts the current first-party homepage title variant',
   )
 })
 
-test('Amber Enterprises fails closed when the verified homepage or careers handoff changes', async () => {
-  const amberEnterprises = await loadAmberEnterprisesModule()
-  const careersHtml = await readFixture('careers.html')
-
-  await assert.rejects(
-    amberEnterprises.createAmberEnterprisesScraper().run({
-      fetchText: async (url) => {
-        if (url === amberEnterprises.HOMEPAGE_URL) {
-          return '<html><head><title>Unexpected</title></head><body>No brand markers</body></html>'
-        }
-
-        if (url === amberEnterprises.CAREERS_URL) {
-          return careersHtml
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /official homepage/i,
-  )
-
-  await assert.rejects(
-    amberEnterprises.createAmberEnterprisesScraper().run({
-      fetchText: async (url) => {
-        if (url === amberEnterprises.HOMEPAGE_URL) {
-          return await readFixture('homepage.html')
-        }
-
-        if (url === amberEnterprises.CAREERS_URL) {
-          return `
-            <!doctype html>
-            <html lang="en">
-              <head>
-                <title>Careers at Amber Group | Let's Innovate for a Better Tomorrow</title>
-              </head>
-              <body>
-                <a href="https://www.ambergroupindia.com/careers/">Careers</a>
-                <p>View Current Openings</p>
-                <p>Upload Resume</p>
-                <input type="file" name="resume" />
-              </body>
-            </html>
-          `
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /careers handoff/i,
-  )
+test("Amber holds current corporate employer/canonical and exact native employer handoff drift", async () => {
+ const amber=await loadAmberEnterprisesModule(),original=currentCorporateHTML()
+ for(const html of[original.replace('Careers at Amber Group','Careers at Other Employer'),original.replace('amber-enterprises-india-overview-4576343','other-employer-overview-4576343')]){
+  const calls=[];await assert.rejects(amber.run({fetchPage:async url=>{calls.push(url);return{url,status:200,html}}}),/employer.*handoff binding changed/);assert.deepEqual(calls,[amber.CAREERS_URL])
+ }
 })
 
-test('Amber Enterprises can recover with browser-backed first-party pages when direct requests time out', async () => {
-  const amberEnterprises = await loadAmberEnterprisesModule()
-  const homepageHtml = await readFixture('homepage.html')
-  const careersHtml = await readFixture('careers.html')
-  const browserUrls = []
-
-  const jobs = await amberEnterprises.createAmberEnterprisesScraper().run({
-    fetchText: async () => {
-      throw new TypeError('fetch failed')
-    },
-    fetchBrowserText: async (url) => {
-      browserUrls.push(url)
-
-      if (url === amberEnterprises.HOMEPAGE_URL) return homepageHtml
-      if (url === amberEnterprises.CAREERS_URL) return careersHtml
-
-      throw new Error(`Unexpected browser URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(browserUrls, [
-    amberEnterprises.HOMEPAGE_URL,
-    amberEnterprises.CAREERS_URL,
-  ])
-  assert.deepEqual(jobs, [])
+test("Amber never retries current unavailable public transport through an alternate browser", async () => {
+ const amber=await loadAmberEnterprisesModule(),error=new TypeError('fetch failed');let browserCalls=0
+ await assert.rejects(amber.run({fetchPage:async()=>{throw error},fetchBrowserText:async()=>{browserCalls++;return currentCorporateHTML()}}),caught=>caught===error);assert.equal(browserCalls,0)
 })

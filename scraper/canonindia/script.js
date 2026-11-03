@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -13,6 +14,9 @@ export const ORACLE_API_ORIGIN = 'https://cmaonehr-iaeatj.fa.ocs.oraclecloud.com
 export const ORACLE_LISTING_URL = `${ORACLE_API_ORIGIN}/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true&expand=requisitionList.secondaryLocations&finder=findReqs;siteNumber=CX_1,limit=5,offset=0`
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+const countryNames = new Intl.DisplayNames(['en'], { type: 'region', fallback: 'none' })
+const isExplicitForeignCountry = value => typeof value === 'string' && /^[A-Z]{2}$/.test(value)
+  && !['IN', 'ZZ', 'XA', 'XB', 'UN', 'EU', 'EZ', 'QO'].includes(value) && Boolean(countryNames.of(value))
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -82,12 +86,14 @@ export const hasVerifiedEmptyOracleInventory = ({ status, url, html } = {}) => {
   }
 }
 
-// Canon's Asia board currently advertises Singapore roles, without India openings.
+// Canon's Asia board publishes roles across countries. A complete foreign
+// inventory is valid evidence only after every native location is inspected.
 // Verify every page before treating that foreign inventory as an empty India result.
 const verifyNoIndiaInventory = async (fetchPage) => {
   const seenIds = new Set()
   let total = null
   let offset = 0
+  let pagesFetched = 0
 
   do {
     const url = ORACLE_LISTING_URL.replace('offset=0', 'offset=' + offset)
@@ -103,7 +109,7 @@ const verifyNoIndiaInventory = async (fetchPage) => {
       page?.status !== 200 || page?.url !== url
       || !Array.isArray(payload?.items) || payload.items.length !== 1
       || inventory?.SiteNumber !== 'CX_1' || inventory.Location !== null
-      || !Number.isInteger(inventory.TotalJobsCount) || inventory.TotalJobsCount < 0
+      || !Number.isInteger(inventory.TotalJobsCount) || inventory.TotalJobsCount < 0 || inventory.TotalJobsCount > 10000
       || (total !== null && inventory.TotalJobsCount !== total)
       || (inventory.Offset != null && inventory.Offset !== offset)
       || (inventory.Limit != null && inventory.Limit !== 5)
@@ -117,7 +123,8 @@ const verifyNoIndiaInventory = async (fetchPage) => {
       const id = normalizeWhitespace(record?.Id)
       if (
         !id || seenIds.has(id) || !normalizeWhitespace(record.Title)
-        || record.PrimaryLocationCountry !== 'SG' || record.PrimaryLocation !== 'Singapore'
+        || !isExplicitForeignCountry(record.PrimaryLocationCountry)
+        || !normalizeWhitespace(record.PrimaryLocation)
         || !Array.isArray(record.secondaryLocations) || record.secondaryLocations.length !== 0
       ) {
         throw new Error('Canon India Oracle career inventory changed or is unavailable')
@@ -125,7 +132,9 @@ const verifyNoIndiaInventory = async (fetchPage) => {
       seenIds.add(id)
     }
     offset += inventory.requisitionList.length
+    pagesFetched += 1
   } while (offset < total)
+  return { total, pagesFetched }
 }
 
 export const extractOpenings = () => []
@@ -146,14 +155,19 @@ export const createCanonIndiaScraper = ({
       throw new Error('Canon India external careers handoff no longer resolves to the verified Oracle board')
     }
 
-    await verifyNoIndiaInventory(fetchPage)
+    const inventory = await verifyNoIndiaInventory(fetchPage)
 
     const jobs = extractOpenings()
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    return attachInventoryEvidence(maxJobs ? jobs.slice(0, maxJobs) : jobs, {
+      status: inventory.total ? 'complete-inventory' : 'verified-empty', surface: ORACLE_LISTING_URL,
+      firstParty: true, listingComplete: true, pagesFetched: inventory.pagesFetched,
+      reportedTotal: inventory.total, indiaFacetCount: 0, verifiedAt: new Date().toISOString(),
+      reason: 'complete-corporate-published-oracle-board-with-explicit-foreign-countries-and-no-secondary-locations',
+    })
   },
 })
 
-export const run = async () => createCanonIndiaScraper().run()
+export const run = async (options = {}) => createCanonIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

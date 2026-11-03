@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { parseJavaScriptLiteral } from '../../scraper-support/utils/safeLiteral.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { OFFICE_LOCATIONS_URL, isAllCtOffices, hasPublishedOfficeHandoff, readIndiaOfficeWorksites } from './officeWorksites.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -275,16 +277,13 @@ export const extractIndiaCities = (location) => {
   const normalized = normalizeWhitespace(location)
   if (!normalized) return []
 
-  return normalized
-    .split(/[|,/]+/)
-    .map((part) => normalizeWhitespace(part)?.toLowerCase() || null)
-    .filter(Boolean)
-    .map((part) => INDIA_CITY_ALIASES.get(part) || null)
+  return [...normalized.toLowerCase().matchAll(/\b(?:navi mumbai|thiruvananthapuram|visakhapatnam|bhubaneswar|coimbatore|chandigarh|ahmedabad|trivandrum|bengaluru|bangalore|gurugram|gurgaon|hyderabad|jaipur|chennai|noida|pune|delhi|mumbai|indore|kochi|kolkata|lucknow|mohali|mysuru|mysore|nagpur|vadodara)\b/g)]
+    .map(match => INDIA_CITY_ALIASES.get(match[0]))
     .filter(Boolean)
     .filter((city, index, all) => all.indexOf(city) === index)
 }
 
-export const isIndiaRoleLocation = (location) => extractIndiaCities(location).length > 0
+export const isIndiaRoleLocation = (location) => /\bIndia\b/i.test(location || '') || extractIndiaCities(location).length > 0
 
 const normalizeSkills = (skills) => (Array.isArray(skills) ? skills : [])
   .map((skill) => normalizeWhitespace(skill))
@@ -319,6 +318,10 @@ const buildDescription = (role) => {
   if (qualifications.length > 0) {
     sections.push(`Qualifications: ${qualifications.join(' ')}`)
   }
+  for (const [field, heading] of [['desiredSkills', 'Desired skills'], ['goodToHave', 'Good to have']]) {
+    const values = (Array.isArray(role[field]) ? role[field] : []).map(stripHtmlToText).filter(Boolean)
+    if (values.length) sections.push(`${heading}: ${values.join(' ')}`)
+  }
 
   return sections.join('\n\n') || null
 }
@@ -334,17 +337,22 @@ const normalizeEmploymentType = (workMode) => {
   }
   if (normalized.includes('internship')) return 'Internship'
   if (normalized.includes('contract')) return 'Contract'
-  return 'Full-time'
+  if (/full\s*-?\s*time/.test(normalized)) return 'Full-time'
+  if (/part\s*-?\s*time/.test(normalized)) return 'Part-time'
+  return null
 }
 
 const buildIndiaLocation = (location) => {
   const cities = extractIndiaCities(location)
-  if (cities.length === 0) return 'India'
-
+  if (/\bIndia\b/i.test(location || '')) return normalizeWhitespace(location)
+  const parts = normalizeWhitespace(location)?.split(/[|,/]+/).map(part => part.trim()).filter(Boolean) || []
+  const otherWorksites = parts.filter(part => !INDIA_CITY_ALIASES.has(part.toLowerCase()) && !/^work from office$/i.test(part))
+  if (otherWorksites.length) return parts.map(part => INDIA_CITY_ALIASES.has(part.toLowerCase()) ? `${INDIA_CITY_ALIASES.get(part.toLowerCase())}, India` : part).join(' | ')
+  if (cities.length === 0) return normalizeWhitespace(location)
   return `${cities.join(', ')}, India`
 }
 
-export const normalizeRole = (role, { now = () => new Date().toISOString() } = {}) => {
+export const normalizeRole = (role, { now = () => new Date().toISOString(), countryEvidence = null } = {}) => {
   const cities = extractIndiaCities(role.location)
   const qualifications = normalizeQualifications(role)
   const detailUrl = buildDetailUrl(role.id)
@@ -357,6 +365,11 @@ export const normalizeRole = (role, { now = () => new Date().toISOString() } = {
     department: normalizeWhitespace(role.area),
     location: buildIndiaLocation(role.location),
     city: cities[0] || null,
+    country: isIndiaRoleLocation(role.location) || countryEvidence ? 'India' : null,
+    ...(countryEvidence ? { sourceCountryEvidence: { ...countryEvidence, nativeRoleLocation: normalizeWhitespace(role.location) } } : {}),
+    sourceNativeLocation: normalizeWhitespace(role.location),
+    sourceWorkMode: normalizeWhitespace(role.workMode),
+    remoteStatus: /work from office|onsite|on-site/i.test(role.workMode || '') ? 'On-site' : null,
     link: detailUrl,
     applyUrl: detailUrl,
     sourceUrl: detailUrl,
@@ -405,7 +418,9 @@ const findJobsBundle = async (chunkUrls, fetchText, visibleIds) => {
 
 export const createCelebalTechnologiesScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let pagesFetched = 0
+    const readText = async url => { pagesFetched += 1; return fetchText(url) }
+    const careersHtml = await readText(CAREERS_URL)
 
     if (!hasOfficialCareersSurface(careersHtml)) {
       throw new Error('Celebal verified official careers surface no longer matches the trusted first-party page')
@@ -423,21 +438,54 @@ export const createCelebalTechnologiesScraper = ({ now = () => new Date().toISOS
       throw new Error('Celebal official careers page no longer exposes public Next.js chunks')
     }
 
-    const roles = await findJobsBundle(chunkUrls, fetchText, visibleIds)
+    const roles = await findJobsBundle(chunkUrls, readText, visibleIds)
+    if (new Set(roles.map(role => role.id)).size !== roles.length) throw new Error('Celebal native role identities are repeated')
 
     if (Number.isInteger(advertisedJobCount) && roles.length !== advertisedJobCount) {
       throw new Error('Celebal advertised job count no longer matches the public first-party jobs bundle')
     }
+    let offices = null, officeFailure = null
+    if (roles.some(role => isAllCtOffices(role.location))) {
+      try {
+        if (!hasPublishedOfficeHandoff(careersHtml)) throw new Error('current careers page has no published worldwide office handoff')
+        offices = readIndiaOfficeWorksites(await readText(OFFICE_LOCATIONS_URL))
+      } catch (error) { officeFailure = error.message }
+    }
 
+    const closingHtml = await readText(CAREERS_URL)
+    if (!hasOfficialCareersSurface(closingHtml)) throw new Error('Celebal closing official employer surface changed')
+    const closingRoles = await findJobsBundle(extractChunkUrls(closingHtml), readText, extractVisibleListingIds(closingHtml))
+    const signature = rows => JSON.stringify([...rows].sort((a, b) => a.id.localeCompare(b.id)))
+    if (extractAdvertisedJobCount(closingHtml) !== advertisedJobCount || signature(closingRoles) !== signature(roles)) {
+      throw new Error('Celebal closing native inventory or role criteria changed')
+    }
+    let officeEvidence = null
+    if (offices) {
+      try {
+        if (!hasPublishedOfficeHandoff(closingHtml)) throw new Error('closing careers-to-office handoff changed')
+        const closingOffices = readIndiaOfficeWorksites(await readText(OFFICE_LOCATIONS_URL))
+        if (closingOffices.model !== offices.model) throw new Error('opening/closing native India office addresses changed')
+        officeEvidence = { method: 'native-role-all-company-offices-with-published-India-office-addresses',
+          officePageURL: OFFICE_LOCATIONS_URL, indiaOfficeAddresses: offices.indiaOfficeAddresses,
+          openingSHA256: offices.bodySHA256, closingSHA256: closingOffices.bodySHA256, openingClosingMatched: true }
+      } catch (error) { officeFailure = error.message }
+    }
+    const qualifies = role => isIndiaRoleLocation(role.location) || Boolean(officeEvidence && isAllCtOffices(role.location))
+    const unknown = roles.filter(role => !qualifies(role))
     const jobs = roles
-      .filter((role) => isIndiaRoleLocation(role.location))
-      .map((role) => normalizeRole(role, { now }))
+      .filter(qualifies)
+      .map((role) => normalizeRole(role, { now, countryEvidence: isAllCtOffices(role.location) ? officeEvidence : null }))
 
     if (jobs.length === 0) {
       throw new Error('Celebal first-party jobs bundle no longer exposes India roles')
     }
 
-    return jobs
+    if (jobs.length) jobs[0].nativeCollectionEvidence = { candidateRoles: roles.length, returnedIndia: jobs.length,
+      openingClosingStable: true, unknownCountry: unknown.map(role => ({ jobId: role.id, location: role.location })), officeFailure }
+    return attachInventoryEvidence(jobs, { status: unknown.length ? 'coverage-gap' : 'complete-inventory', firstParty: true,
+      listingComplete: unknown.length === 0, surface: CAREERS_URL, pagesFetched, reportedTotal: roles.length,
+      indiaFacetCount: unknown.length ? null : jobs.length, verifiedAt: new Date().toISOString(), reason:
+        `declared-Celebal-official-public-careers-bundle; opening-and-closing-count-identities-and-full-native-criteria-reconciled; all-CT-office-role-bound-to-current-India-office-section:${Boolean(officeEvidence)}; country-scope-unqualified:${unknown.map(role => `${role.id}(${role.location})`).join(';') || 'none'}${officeFailure ? '; office-evidence-gap:'+officeFailure : ''}` })
   },
 })
 

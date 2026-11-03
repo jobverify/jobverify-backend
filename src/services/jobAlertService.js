@@ -19,6 +19,15 @@ const MAX_JOBS_PER_MESSAGE = 1;
 const CLAIM_TTL_MS = 5 * 60 * 1000;
 const SEND_TIMEOUT_MS = 60 * 1000;
 const RECOVERY_LIMIT = 500;
+const TELEGRAM_MESSAGE_FOOTER = [
+  'Follow Jobverify 📈 channel for more jobs',
+  'http://bit.ly/4aATqJE',
+  'https://t.me/jobverifychannel',
+  '',
+  'Join Jobverify 📈 Group for discussion',
+  'https://bit.ly/4kI5HAJ',
+  'https://t.me/jobverifygroup',
+].join('\n');
 
 const compactText = (value, limit) => {
   const text = String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -26,7 +35,7 @@ const compactText = (value, limit) => {
   return text.slice(0, Math.max(0, limit - 1)).replace(/[\uD800-\uDBFF]$/u, '') + '\u2026';
 };
 
-function telegramJobLink(job) {
+export function telegramJobLink(job) {
   for (const value of [job.jobUrl, job.applicationUrl, job.applyUrl, job.sourceUrl, job.link]) {
     try {
       const url = new URL(value);
@@ -47,14 +56,19 @@ export const buildTelegramMessageBody = (jobs) => {
     .sort((a, b) => a - b).slice(0, 20);
   const category = normalizePublicJobCategory(job);
   const type = /^full[ -]time/i.test(category) ? 'Full time' : category;
+  const location = compactText(job.city || job.location, 100);
+  const details = [
+    ...(batches.length ? [`🎓 Batch :- ${batches.join(', ')}`] : []),
+    ...(type && type !== 'Unspecified' ? [`⚙️ Type :- ${compactText(type, 60)}`] : []),
+    ...(location ? [`📍 Location :- ${location}`] : []),
+  ];
   return [
     `📌 ${compactText(job.company, 100) || 'Company not specified'} is hiring ${compactText(job.title, 160) || 'Role not specified'}`,
-    '',
-    `🎓 Batch :- ${batches.length ? batches.join(', ') : 'Not specified'}`,
-    `⚙️ Type :- ${compactText(type, 60) || 'Not specified'}`,
-    `📍 Location :- ${compactText(job.city || job.location, 100) || 'Not specified'}`,
+    ...(details.length ? ['', ...details] : []),
     '',
     `👔 Job link\n${telegramJobLink(job)}`,
+    '',
+    TELEGRAM_MESSAGE_FOOTER,
   ].join('\n');
 };
 
@@ -193,6 +207,7 @@ export const stageJobAlertDeliveries = async (jobs = [], { session } = {}) => {
     deactivated: false,
     accountDeletingAt: null,
     "premium.telegramAlertsEnabled": true,
+    telegramAlertsAllowed: { $ne: false },
     ...(siteSettings.billingEnabled ? { $or: [{ role: "admin" }, { "premium.status": "active" }] } : {}),
   });
   if (session) query.session(session);
@@ -230,18 +245,32 @@ export const recoverQueuedJobAlerts = async () => {
   recoveryInProgress = true;
   try {
     await cleanupSentDeliveries();
-    const deliveries = await JobAlertDelivery.find(claimFilter()).sort({ createdAt: 1, _id: 1 }).limit(RECOVERY_LIMIT).populate("user").populate("job").lean().exec();
-    const grouped = new Map();
-    for (const delivery of deliveries) {
-      if (!delivery.user || !delivery.job) {
-        await mark([delivery], { status: "skipped", reason: "missing_delivery_context" });
-        continue;
+    const dueAt = new Date();
+    let cursor;
+    // Read bounded pages, but drain the due backlog during this scheduled run.
+    // The cursor also advances past deferred/retried rows without looping on them.
+    while (true) {
+      const filter = claimFilter(dueAt);
+      if (cursor) filter.$and.push({ $or: [
+        { createdAt: { $gt: cursor.createdAt } },
+        { createdAt: cursor.createdAt, _id: { $gt: cursor._id } },
+      ] });
+      const deliveries = await JobAlertDelivery.find(filter).sort({ createdAt: 1, _id: 1 }).limit(RECOVERY_LIMIT).populate("user").populate("job").lean().exec();
+      if (!deliveries.length) break;
+      cursor = deliveries[deliveries.length - 1];
+      const grouped = new Map();
+      for (const delivery of deliveries) {
+        if (!delivery.user || !delivery.job) {
+          await mark([delivery], { status: "skipped", reason: "missing_delivery_context" });
+          continue;
+        }
+        const key = String(delivery.user._id);
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push({ delivery, job: delivery.job });
       }
-      const key = String(delivery.user._id);
-      if (!grouped.has(key)) grouped.set(key, []);
-      grouped.get(key).push({ delivery, job: delivery.job });
+      for (const records of grouped.values()) await processRecords(records[0].delivery.user, records);
+      if (deliveries.length < RECOVERY_LIMIT) break;
     }
-    for (const records of grouped.values()) await processRecords(records[0].delivery.user, records);
   } finally {
     recoveryInProgress = false;
   }

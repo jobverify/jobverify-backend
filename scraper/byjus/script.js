@@ -1,3 +1,4 @@
+import { runCurrentByjus } from './currentPublic.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -161,54 +162,7 @@ export const isGenericSalesApplyRoute = (page = {}) =>
   && hasGenericSalesApplySignal(page.html)
   && !hasPublicJobsSignal(page.html)
 
-export const createByjusScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error("BYJU'S verified official homepage no longer matches the known first-party surface")
-    }
-
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error("BYJU'S homepage now appears to expose public jobs")
-    }
-
-    const careerPage = await fetchPage(CAREER_PAGE_URL)
-
-    if (careerPage.status !== 200 || !hasCareerLandingSignal(careerPage.html)) {
-      throw new Error("BYJU'S verified careers landing page no longer matches the known first-party surface")
-    }
-
-    for (const routeUrl of CHECKED_MISSING_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-
-      if (!isMissingCareerRoute(routePage)) {
-        throw new Error(`BYJU'S verified missing career route changed: ${routePage.url || routeUrl}`)
-      }
-    }
-
-    const techRoutePage = await fetchPage(MISDIRECTED_TECH_ROUTE_URL)
-
-    if (!isMisdirectedTechRoute(techRoutePage)) {
-      throw new Error("BYJU'S verified tech category route changed")
-    }
-
-    const salesRoutePage = await fetchPage(SALES_CATEGORY_ROUTE_URL)
-
-    if (!isGenericSalesApplyRoute(salesRoutePage)) {
-      throw new Error("BYJU'S verified sales category route changed")
-    }
-
-    const sitemapPage = await fetchPage(SITEMAP_URL)
-    const careerLikeUrls = extractCareerLikeUrlsFromSitemap(sitemapPage.html)
-
-    if (sitemapPage.status !== 200 || careerLikeUrls.length > 0) {
-      throw new Error("BYJU'S verified sitemap career surface changed")
-    }
-
-    return []
-  },
-})
+export const createByjusScraper = (defaults = {}) => ({ run: (options = {}) => runCurrentByjus({ ...defaults, ...options }) })
 
 export const run = async (options = {}) => createByjusScraper().run(options)
 

@@ -5,8 +5,18 @@ import { careers, description, fixture, transport } from './native.fixtures.js'
 globalThis.fetch = async () => { throw new Error('NETWORK_TRIPWIRE: inject the registered transport') }
 const { getScraperCatalog, createCatalogScraper } = await import('../../scraper-support/providers/index.js')
 const { readInventoryEvidence } = await import('../../scraper-support/utils/inventoryEvidence.js')
+const { readSourceObservationEvidence } = await import('../../scraper-support/utils/sourceObservationEvidence.js')
 const { visibleText } = await import('./nativeHtml.js')
 const run = options => createCatalogScraper(getScraperCatalog().find(p => p.source === 'delinea')).run({ now: () => '2026-10-27T09:00:00.000Z', ...options })
+
+test('Delinea retains native observed counts when an advertised migration channel remains unresolved', async () => {
+  const rows = [fixture({country:'United States',location:'Remote (United States)'})]
+  const injected = transport(rows)
+  const jobs = await run({...injected,fetchText:async url=>url==='https://delinea.com/careers'?careers+'<a href="https://other.example/jobs">Apply Today</a>':injected.fetchText(url)})
+  assert.equal(jobs.length,0)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+  assert.equal(readSourceObservationEvidence(jobs,'delinea')?.observedVacancyCount,1)
+})
 
 // Synthetic counterpart of the published UK dual-worksite shape.
 const ukDualWorksite = () => {

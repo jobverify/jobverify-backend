@@ -6,15 +6,15 @@
   modulePath: '../../scraper/campsystemsinternationalinc/script.js',
   companyCareerPage: 'https://www.campsystems.com/careers',
   companyDomain: 'campsystems.com',
-  atsPlatform: 'official-company-site-no-public-careers',
+  atsPlatform: 'ukg-pro',
   countryFilter: 'India',
-  paginationStrategy: 'verified-careers-landing-only',
-  extractionStrategy: 'verified-first-party-careers-landing+no-inline-public-jobs-return-empty',
+  paginationStrategy: 'native-unfiltered-search+offset+closing-membership',
+  extractionStrategy: 'current-corporate-handoff+anonymous-public-ukg-search+full-bound-role-models',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-11-03',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.campsystems.com/careers is the live first-party CAMP Systems careers landing page, that it still presents the "Innovative, forward-thinkers wanted" recruiting copy and a Find Opportunities handoff, and that the verified landing page does not expose a trustworthy inline public jobs list on the first-party surface itself.',
+    'The current https://www.campsystems.com/careers Find Opportunities handoff declares an external UKG board. Enumerate its anonymous unfiltered native search, explicit worksite countries and full public role models, then reconcile corporate binding, details and final listing. This configured board does not establish company-wide inventory or authorize lifecycle cleanup.',
   dryRunFile: 'campsystemsinternationalinc/jobs.json',
 }
 

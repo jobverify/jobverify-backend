@@ -1,3 +1,4 @@
+import { runCurrentAurobindo } from './currentPublic.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -110,35 +111,7 @@ export const hasBrokenTalentRecruitHostSignal = ({ status, html } = {}) => {
     && !hasPublicJobsSignal(page)
 }
 
-export const createAurobindoPharmaScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Aurobindo Pharma official homepage no longer matches the verified first-party surface')
-    }
-
-    const careersPage = await fetchPage(CAREERS_PAGE_URL)
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
-      throw new Error('Aurobindo Pharma careers page no longer matches the verified official handoff surface')
-    }
-
-    const handoffPage = await fetchPage(CAREERS_HANDOFF_URL)
-    if (!hasBrokenTalentRecruitSearchSignal(handoffPage)) {
-      throw new Error(
-        'Aurobindo Pharma TalentRecruit handoff no longer matches the verified broken state and may expose a public jobs surface',
-      )
-    }
-
-    const hostPage = await fetchPage(CAREERS_HOST_URL)
-    if (!hasBrokenTalentRecruitHostSignal(hostPage)) {
-      throw new Error(
-        'Aurobindo Pharma TalentRecruit host no longer matches the verified default-host broken state',
-      )
-    }
-
-    return []
-  },
-})
+export const createAurobindoPharmaScraper = (defaults = {}) => ({ run: (options = {}) => runCurrentAurobindo({ ...defaults, ...options }) })
 
 export const run = async (options = {}) => createAurobindoPharmaScraper().run(options)
 

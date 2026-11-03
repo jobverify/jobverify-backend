@@ -264,7 +264,8 @@ export const extractJobDetail = (payload, listing = {}) => {
   }
   const nativeDescription=joinDescriptionParts(detail.ExternalDescriptionStr,detail.ExternalResponsibilitiesStr)
   if(!nativeDescription||nativeDescription.length<150){
-    throw Object.assign(new Error('Amneal India native role description is missing or unqualified; listing teaser is not a full JD'),{abortRetries:true})
+    throw Object.assign(new Error('Amneal India native role description is missing or unqualified; listing teaser is not a full JD'),{
+      code:'AMNEAL_NATIVE_DESCRIPTION_UNAVAILABLE',nativeJobId:listing.jobId,abortRetries:true})
   }
   const location = normalizeLocation(detail.PrimaryLocation) || listing.location || null
   const jobId = normalizeWhitespace(detail.Id) || listing.jobId || null
@@ -337,14 +338,52 @@ export const createAmnealPharmaceuticalsIndiaScraper = ({
   fetchText = defaultFetchText,
   fetchJson = defaultFetchJson,
   now = () => new Date().toISOString(),
+  sourceTimeoutMs = 180000,
+  onAudit,
 } = {}) => ({
-  async run({signal}={}) {
-    let pagesFetched=0
-    const read=async(fn,url)=>{signal?.throwIfAborted();const result=await fn(url,{signal});signal?.throwIfAborted();pagesFetched++;return result}
-    const finish=jobs=>attachInventoryEvidence(jobs,{status:'coverage-gap',surface:CANDIDATE_EXPERIENCE_URL,
-      firstParty:true,listingComplete:false,pagesFetched,reportedTotal:null,indiaFacetCount:null,verifiedAt:null,
-      reason:'Native handoff and role details checked; opening/closing company and India cohorts not reconciled'})
+  async run({signal: callerSignal,onAudit: runAudit}={}) {
+    const signal=AbortSignal.any([AbortSignal.timeout(sourceTimeoutMs),...(callerSignal?[callerSignal]:[])])
+    const wait=promise=>new Promise((resolve,reject)=>{
+      const finish=(fn,value)=>{signal.removeEventListener('abort',abort);fn(value)},abort=()=>finish(reject,signal.reason)
+      signal.addEventListener('abort',abort,{once:true})
+      Promise.resolve(promise).then(value=>finish(resolve,value),error=>finish(reject,error));if(signal.aborted)abort()
+    })
+    let pagesFetched=0,listingPaginationComplete=false,observedListingCount=0,observedIndiaListingCount=0
+    const failures=[],seenJobIds=new Set(),openingPages=[]
+    const signature=payload=>JSON.stringify({total:payload?.items?.[0]?.TotalJobsCount,rows:getRequisitionList(payload)})
+    const read=async(fn,url)=>{signal.throwIfAborted();const result=await wait(fn(url,{signal}));signal.throwIfAborted();pagesFetched++;return result}
+    const finish=async jobs=>{
+      let closingInventoryMatches=false
+      if(listingPaginationComplete){
+        try{
+          closingInventoryMatches=true
+          for(const opening of openingPages)if(signature(await read(fetchJson,opening.url))!==opening.signature)closingInventoryMatches=false
+          const closingCareers=await read(fetchText,OFFICIAL_CAREERS_URL)
+          if(!hasOfficialCareersPageSignal(closingCareers)||readAmnealCareersHandoff(closingCareers)!==openingHandoff
+            ||!hasOfficialCandidateExperienceSignal(await read(fetchText,CANDIDATE_EXPERIENCE_URL)))closingInventoryMatches=false
+          if(!closingInventoryMatches)failures.push({stage:'native-inventory',failureKind:'closing-native-inventory-or-employer-handoff-changed'})
+        }catch(error){signal.throwIfAborted();closingInventoryMatches=false;failures.push({stage:'native-inventory',failureKind:'closing-native-inventory-unavailable',message:error.message})}
+      }
+      const expected=Number(openingPages[0]?.total)
+      const countsReconciled=listingPaginationComplete&&Number.isSafeInteger(expected)&&observedListingCount===expected
+        &&seenJobIds.size===observedIndiaListingCount&&observedListingCount===observedIndiaListingCount
+      if(listingPaginationComplete&&!countsReconciled)failures.push({stage:'native-inventory',failureKind:'native-total-unique-India-identities-or-country-scope-not-reconciled'})
+      const inventoryComplete=countsReconciled&&closingInventoryMatches
+      for(const job of jobs)job.sourceListingComplete=inventoryComplete
+      if(jobs.length)jobs[0].nativeCollectionEvidence={source:SOURCE,candidateDetails:seenJobIds.size,
+        extractedDetailJobs:jobs.length,jobs:jobs.map(job=>({id:job.jobId})),exclusions:[],failures,
+        observedListingCount,observedIndiaListingCount,nonIndiaListingCount:observedListingCount-observedIndiaListingCount,
+        listingPaginationComplete,closingInventoryMatches,sourceScopeComplete:false,declaredIndiaInventoryComplete:inventoryComplete}
+      attachInventoryEvidence(jobs,{status:inventoryComplete?'complete-inventory':'coverage-gap',surface:CANDIDATE_EXPERIENCE_URL,
+      firstParty:true,listingComplete:inventoryComplete,pagesFetched,reportedTotal:inventoryComplete?expected:null,indiaFacetCount:inventoryComplete?observedIndiaListingCount:null,verifiedAt:now(),
+      reason:'Declared native Amneal India board; full opening/closing listing models and employer handoff checked; company-wide channels not claimed'
+        +`; pagination-complete:${listingPaginationComplete}; closing-match:${closingInventoryMatches}; counts-reconciled:${countsReconciled}`
+        +(failures.length?'; retained-native-failures:'+failures.map(failure=>(failure.nativeJobId||'inventory')+':'+failure.failureKind).join(','):'')})
+      if(runAudit||onAudit)await wait((runAudit||onAudit)({source:SOURCE,observedListingCount,observedIndiaListingCount,listingPaginationComplete,closingInventoryMatches,inventoryComplete,failures,productionWrites:false}))
+      signal.throwIfAborted();return jobs
+    }
     const careersHtml = await read(fetchText,OFFICIAL_CAREERS_URL)
+    const openingHandoff=readAmnealCareersHandoff(careersHtml)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Amneal Pharmaceuticals India verified Amneal India careers landing page no longer matches the known first-party surface')
     }
@@ -362,19 +401,29 @@ export const createAmnealPharmaceuticalsIndiaScraper = ({
     }
 
     const jobs = []
-    const seenJobIds = new Set()
 
     for (let page = 0; page < maxPages; page += 1) {
       const payload = await read(fetchJson,buildSearchUrl({ page }))
       const pageJobs = extractSearchResults(payload)
       const summary = extractPaginationSummary(payload, { page })
+      const rawTotal=payload?.items?.[0]?.TotalJobsCount
+      if(rawTotal===null||rawTotal===undefined||rawTotal===''||!Number.isSafeInteger(Number(rawTotal))||Number(rawTotal)<0
+        ||getRequisitionList(payload).length>summary.pageSize)throw new Error('Amneal native listing total or page cardinality is unavailable')
+      openingPages.push({url:buildSearchUrl({page}),signature:signature(payload),total:rawTotal})
+      observedListingCount+=getRequisitionList(payload).length
+      observedIndiaListingCount+=pageJobs.length
 
       for (const listing of pageJobs) {
         if (seenJobIds.has(listing.jobId)) continue
         seenJobIds.add(listing.jobId)
 
         const detailPayload = await read(fetchJson,buildJobDetailApiUrl(listing.jobId))
-        const detail = extractJobDetail(detailPayload, listing)
+        let detail
+        try{detail=extractJobDetail(detailPayload,listing)}catch(error){
+          if(error?.code!=='AMNEAL_NATIVE_DESCRIPTION_UNAVAILABLE'||error.nativeJobId!==listing.jobId)throw error
+          failures.push({stage:'native-detail',nativeJobId:listing.jobId,sourceUrl:listing.sourceUrl,failureKind:'missing-native-description'})
+          continue
+        }
 
         jobs.push({
           ...detail,
@@ -389,7 +438,7 @@ export const createAmnealPharmaceuticalsIndiaScraper = ({
         }
       }
 
-      if (!summary.hasNext) break
+      if (!summary.hasNext){listingPaginationComplete=true;break}
     }
 
     return finish(jobs)

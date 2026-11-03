@@ -91,7 +91,7 @@ test('hasOfficialCareersSignal validates the verified Anora careers surface', as
 test('extractJobUrls keeps unique Anora apply-page links from the official careers page', async () => {
   const anora = await loadAnoraModule()
 
-  assert.equal(anora.CAREERS_PAGE_URL, 'http://anoralabs.com/careers')
+  assert.equal(anora.CAREERS_PAGE_URL, 'https://anoralabs.com/careers')
   assert.deepEqual(anora.extractJobUrls(LISTING_HTML), [
     'https://anoralabs.com/applyforjob.html',
     'https://anoralabs.com/applyforjobmd.html',
@@ -105,7 +105,7 @@ test('Anora extracts the current React jobs array without depending on its bundl
 
   assert.equal(
     anora.extractReactBundleUrl(REACT_SHELL_HTML),
-    'http://anoralabs.com/static/js/main.a1b2c3d4.js',
+    'https://anoralabs.com/static/js/main.a1b2c3d4.js',
   )
   assert.deepEqual(
     anora.extractReactJobOpenings(REACT_BUNDLE).map((job) => [
@@ -133,15 +133,15 @@ test('run maps every India role added to the React bundle and filters non-India 
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === anora.CAREERS_PAGE_URL) return REACT_SHELL_HTML
-      if (url === 'http://anoralabs.com/static/js/main.a1b2c3d4.js') return REACT_BUNDLE
+      if (url === 'https://anoralabs.com/static/js/main.a1b2c3d4.js') return REACT_BUNDLE
       throw new Error(`Unexpected URL: ${url}`)
     },
     now: () => '2026-09-12T18:30:00.000Z',
   })
 
   assert.deepEqual(requestedUrls, [
-    'http://anoralabs.com/careers',
-    'http://anoralabs.com/static/js/main.a1b2c3d4.js',
+    'https://anoralabs.com/careers',
+    'https://anoralabs.com/static/js/main.a1b2c3d4.js',
   ])
   assert.deepEqual(jobs.map((job) => job.title), [
     'Assembly Manager',
@@ -158,8 +158,8 @@ test('run maps every India role added to the React bundle and filters non-India 
     country: 'India',
     jobId: 'anorainstrumentation-1',
     requisitionId: 'anorainstrumentation-1',
-    sourceUrl: 'http://anoralabs.com/job-details/1',
-    applyUrl: 'http://anoralabs.com/job-details/1',
+    sourceUrl: 'https://anoralabs.com/job-details/1',
+    applyUrl: 'https://anoralabs.com/job-details/1',
     employmentType: 'Full-time',
     experienceRequired: '15 years',
     minimumQualification: null,
@@ -173,7 +173,7 @@ test('run maps every India role added to the React bundle and filters non-India 
     jobDescription: 'Lead electronics assembly, production planning, quality systems, and people management. Lead day-to-day assembly operations. Drive continuous improvement initiatives.',
     remoteStatus: 'On-site',
     source: 'anorainstrumentation',
-    link: 'http://anoralabs.com/job-details/1',
+    link: 'https://anoralabs.com/job-details/1',
     scrapedAt: '2026-09-12T18:30:00.000Z',
   })
   assert.equal(jobs[3].city, 'Bangalore')

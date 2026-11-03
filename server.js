@@ -16,6 +16,7 @@ import { tickScraperSchedule, scraperSchedulerEnabled } from './src/pipeline/sch
 import { recoverTailoredResumes } from './src/services/resumeTailoringService.js';
 import { processAutoApplyQueue } from './src/services/autoApplyService.js';
 import { recoverJobAlertOutbox } from './src/services/jobAlertOutboxService.js';
+import { recoverTelegramChannelAlerts } from './src/services/telegramChannelService.js';
 
 async function main() {
   const port = parsePort(process.env.PORT);
@@ -41,6 +42,10 @@ async function main() {
   console.log(`Server is running on 0.0.0.0:${port}`);
 
   const stopTasks = [
+    createPeriodicTask(recoverTelegramChannelAlerts, {
+      intervalMs: 15_000, runImmediately: true,
+      onError: () => console.error('[Telegram broadcasts] Posting worker will retry.'),
+    }),
     ...(scraperSchedulerEnabled() ? [createPeriodicTask(tickScraperSchedule, {
       intervalMs: 60_000, runImmediately: true,
       onError: error => console.error('[Scraper scheduler]', error.message),

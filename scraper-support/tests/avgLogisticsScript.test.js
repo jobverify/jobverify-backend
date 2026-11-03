@@ -1,3 +1,8 @@
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const currentPublicFixture=()=>JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/avglogistics/test-data/current-public-20261103.json.gz',import.meta.url))))
+const currentCorporateHTML=()=>currentPublicFixture().responses[0].body
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -156,13 +161,13 @@ const loadModule = async () => {
   }
 }
 
-test('AVG Logistics sentinel pins the verified marketing site, empty careers page, crawl surface, and operational portal contract', async () => {
+test('AVG legacy observation helpers preserve surface identities without granting native empty authority', async () => {
   const avgLogistics = await loadModule()
 
   assert.equal(avgLogistics.SOURCE, 'avglogistics')
   assert.equal(avgLogistics.COMPANY, 'AVG Logistics')
   assert.equal(avgLogistics.OFFICIAL_BRAND_NAME, 'AVG Logistics Limited')
-  assert.equal(avgLogistics.VERIFIED_AT, '2026-07-15')
+  assert.equal(avgLogistics.VERIFIED_AT, null)
   assert.equal(avgLogistics.HOMEPAGE_URL, 'https://avglogistics.com/')
   assert.equal(avgLogistics.CAREERS_URL, 'https://avglogistics.com/careers')
   assert.equal(avgLogistics.ROBOTS_TXT_URL, 'https://avglogistics.com/robots.txt')
@@ -177,11 +182,12 @@ test('AVG Logistics sentinel pins the verified marketing site, empty careers pag
   ])
   assert.equal(avgLogistics.OPERATIONS_PORTAL_URL, 'https://avglogistics.in/')
   assert.equal(avgLogistics.OPERATIONS_PORTAL_CAREERS_URL, 'https://avglogistics.in/careers')
-  assert.match(avgLogistics.VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
+  assert.match(avgLogistics.VERIFIED_SURFACE_SUMMARY, /native vacancy model.*unknown/i)
 
   assert.equal(avgLogistics.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(avgLogistics.hasOfficialCareersSignal(careersHtml), true)
-  assert.equal(avgLogistics.hasVerifiedEmptyJobsSection(careersHtml), true)
+  assert.equal(avgLogistics.hasVerifiedEmptyJobsSection(careersHtml), false)
+  assert.equal(avgLogistics.hasUnqualifiedEmptyJobsSection(careersHtml), true)
   assert.equal(avgLogistics.pageExposesPublicJobListings(careersHtml), false)
   assert.equal(avgLogistics.pageExposesPublicJobListings(publicJobsHtml), true)
   assert.equal(avgLogistics.hasExpectedRobotsTxtSignal(robotsTxt), true)
@@ -216,216 +222,14 @@ test('AVG Logistics sentinel pins the verified marketing site, empty careers pag
   )
 })
 
-test('AVG Logistics sentinel returns [] only while the marketing site, careers page, common job routes, and operational portal stay in the verified no-public-jobs state', async () => {
-  const avgLogistics = await loadModule()
-  const requestedUrls = []
-
-  const jobs = await avgLogistics.createAvgLogisticsScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === avgLogistics.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === avgLogistics.CAREERS_URL) {
-        return { status: 200, url, html: careersHtml }
-      }
-
-      if (url === avgLogistics.ROBOTS_TXT_URL) {
-        return { status: 200, url, html: robotsTxt }
-      }
-
-      if (url === avgLogistics.SITEMAP_URL) {
-        return { status: 200, url, html: sitemapXml }
-      }
-
-      if (avgLogistics.NO_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: notFoundHtml }
-      }
-
-      if (url === avgLogistics.OPERATIONS_PORTAL_URL) {
-        return { status: 200, url, html: operationalPortalHtml }
-      }
-
-      if (url === avgLogistics.OPERATIONS_PORTAL_CAREERS_URL) {
-        return { status: 404, url, html: operationalPortal404Html }
-      }
-
-      throw new Error(`Unexpected AVG Logistics URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    avgLogistics.HOMEPAGE_URL,
-    avgLogistics.CAREERS_URL,
-    avgLogistics.ROBOTS_TXT_URL,
-    avgLogistics.SITEMAP_URL,
-    ...avgLogistics.NO_PUBLIC_JOB_ROUTE_URLS,
-    avgLogistics.OPERATIONS_PORTAL_URL,
-    avgLogistics.OPERATIONS_PORTAL_CAREERS_URL,
-  ])
-  assert.deepEqual(jobs, [])
+test("AVG current configured panel records unknown totals without guessed routes or private operational prerequisites", async () => {
+ const avg=await loadModule(),calls=[];let audit
+ const jobs=await avg.run({fetchPage:async url=>{calls.push(url);assert.equal(url,avg.CAREERS_URL);return{url,status:200,html:currentCorporateHTML()}},onAudit:value=>{audit=value}})
+ assert.deepEqual(calls,[avg.CAREERS_URL,avg.CAREERS_URL]);assert.deepEqual(jobs,[]);assert.equal(readInventoryEvidence(jobs).reportedTotal,null);assert.equal(readInventoryEvidence(jobs).listingComplete,false);assert.equal(audit.advertisedJobRow.observedElementCount,0);assert.equal(audit.advertisedJobRow.nativeVacancyCount,null)
 })
 
-test('AVG Logistics sentinel fails closed when the homepage, careers page, crawl surface, common job routes, or operational portal drift into a jobs surface', async () => {
-  const avgLogistics = await loadModule()
-
-  await assert.rejects(
-    avgLogistics.createAvgLogisticsScraper().run({
-      fetchPage: async (url) => {
-        if (url === avgLogistics.HOMEPAGE_URL) {
-          return { status: 200, url, html: '<html><head><title>Placeholder</title></head><body>Welcome</body></html>' }
-        }
-
-        throw new Error(`Unexpected AVG Logistics URL: ${url}`)
-      },
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    avgLogistics.createAvgLogisticsScraper().run({
-      fetchPage: async (url) => {
-        if (url === avgLogistics.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === avgLogistics.CAREERS_URL) {
-          return { status: 200, url, html: publicJobsHtml }
-        }
-
-        throw new Error(`Unexpected AVG Logistics URL: ${url}`)
-      },
-    }),
-    /public jobs surface|verified careers page/i,
-  )
-
-  await assert.rejects(
-    avgLogistics.createAvgLogisticsScraper().run({
-      fetchPage: async (url) => {
-        if (url === avgLogistics.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === avgLogistics.CAREERS_URL) {
-          return { status: 200, url, html: careersHtml }
-        }
-
-        if (url === avgLogistics.ROBOTS_TXT_URL) {
-          return { status: 200, url, html: 'User-agent: *\nDisallow: /' }
-        }
-
-        throw new Error(`Unexpected AVG Logistics URL: ${url}`)
-      },
-    }),
-    /verified robots\.txt/i,
-  )
-
-  await assert.rejects(
-    avgLogistics.createAvgLogisticsScraper().run({
-      fetchPage: async (url) => {
-        if (url === avgLogistics.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === avgLogistics.CAREERS_URL) {
-          return { status: 200, url, html: careersHtml }
-        }
-
-        if (url === avgLogistics.ROBOTS_TXT_URL) {
-          return { status: 200, url, html: robotsTxt }
-        }
-
-        if (url === avgLogistics.SITEMAP_URL) {
-          return {
-            status: 200,
-            url,
-            html: `
-              <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-                <url><loc>https://avglogistics.com/</loc></url>
-              </urlset>
-            `,
-          }
-        }
-
-        throw new Error(`Unexpected AVG Logistics URL: ${url}`)
-      },
-    }),
-    /verified sitemap/i,
-  )
-
-  await assert.rejects(
-    avgLogistics.createAvgLogisticsScraper().run({
-      fetchPage: async (url) => {
-        if (url === avgLogistics.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === avgLogistics.CAREERS_URL) {
-          return { status: 200, url, html: careersHtml }
-        }
-
-        if (url === avgLogistics.ROBOTS_TXT_URL) {
-          return { status: 200, url, html: robotsTxt }
-        }
-
-        if (url === avgLogistics.SITEMAP_URL) {
-          return { status: 200, url, html: sitemapXml }
-        }
-
-        if (url === avgLogistics.NO_PUBLIC_JOB_ROUTE_URLS[0]) {
-          return { status: 200, url, html: publicJobsHtml }
-        }
-
-        if (avgLogistics.NO_PUBLIC_JOB_ROUTE_URLS.slice(1).includes(url)) {
-          return { status: 404, url, html: notFoundHtml }
-        }
-
-        if (url === avgLogistics.OPERATIONS_PORTAL_URL) {
-          return { status: 200, url, html: operationalPortalHtml }
-        }
-
-        if (url === avgLogistics.OPERATIONS_PORTAL_CAREERS_URL) {
-          return { status: 404, url, html: operationalPortal404Html }
-        }
-
-        throw new Error(`Unexpected AVG Logistics URL: ${url}`)
-      },
-    }),
-    /verified no-public-job route changed/i,
-  )
-
-  await assert.rejects(
-    avgLogistics.createAvgLogisticsScraper().run({
-      fetchPage: async (url) => {
-        if (url === avgLogistics.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === avgLogistics.CAREERS_URL) {
-          return { status: 200, url, html: careersHtml }
-        }
-
-        if (url === avgLogistics.ROBOTS_TXT_URL) {
-          return { status: 200, url, html: robotsTxt }
-        }
-
-        if (url === avgLogistics.SITEMAP_URL) {
-          return { status: 200, url, html: sitemapXml }
-        }
-
-        if (avgLogistics.NO_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
-          return { status: 404, url, html: notFoundHtml }
-        }
-
-        if (url === avgLogistics.OPERATIONS_PORTAL_URL) {
-          return { status: 200, url, html: '<html><body><h1>Current Openings</h1></body></html>' }
-        }
-
-        throw new Error(`Unexpected AVG Logistics URL: ${url}`)
-      },
-    }),
-    /verified operational portal/i,
-  )
+test("AVG current source holds wrong employer, newly public native vacancies and closing panel changes", async () => {
+ const avg=await loadModule(),original=currentCorporateHTML(),withJob=original.replace('<!-- Six job cards -->','<article class="job-card"><h2>Operations Manager</h2><a href="/jobs/operations-manager">View Details</a></article>');assert.notEqual(withJob,original)
+ for(const html of[original.replaceAll('AVG','OtherBrand').replaceAll('Avg','OtherBrand'),withJob])await assert.rejects(avg.run({fetchPage:async url=>({url,status:200,html})}),/binding changed|vacancy.*collector/)
+ let reads=0;await assert.rejects(avg.run({fetchPage:async url=>({url,status:200,html:++reads===1?original:withJob})}),/vacancy.*collector|closing.*changed/)
 })

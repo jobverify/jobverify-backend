@@ -46,20 +46,18 @@ test('Aurobindo Pharma local catalog captures the verified official careers page
   assert.equal(AUROBINDO_PHARMA_CATALOG.countryFilter, 'India')
   assert.equal(
     AUROBINDO_PHARMA_CATALOG.paginationStrategy,
-    'official-careers-page-plus-broken-talentrecruit-handoff-monitor',
+    'current-corporate-careers+exact-declared-native-handoff;stop-on-unavailable-inventory',
   )
   assert.equal(
     AUROBINDO_PHARMA_CATALOG.extractionStrategy,
-    'verified-homepage+verified-careers-page+broken-talentrecruit-handoff-return-empty',
+    'current-employer-handoff-binding+native-HTTP-evidence+explicit-unverified-inventory',
   )
   assert.equal(AUROBINDO_PHARMA_CATALOG.parser, 'custom-script')
   assert.equal(AUROBINDO_PHARMA_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(AUROBINDO_PHARMA_CATALOG.companyDomain, 'aurobindo.com')
-  assert.equal(AUROBINDO_PHARMA_CATALOG.verifiedOn, '2026-07-15')
-  assert.match(AUROBINDO_PHARMA_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.aurobindo\.com\//i)
-  assert.match(AUROBINDO_PHARMA_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.aurobindo\.com\/careers/i)
-  assert.match(AUROBINDO_PHARMA_CATALOG.verifiedSurfaceSummary, /https:\/\/aurobindo\.talentrecruit\.com\/Search\//i)
-  assert.match(AUROBINDO_PHARMA_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.equal(AUROBINDO_PHARMA_CATALOG.verifiedOn, null)
+  assert.match(AUROBINDO_PHARMA_CATALOG.verifiedSurfaceSummary, /exact Aurobindo TalentRecruit Search handoff/i)
+  assert.match(AUROBINDO_PHARMA_CATALOG.verifiedSurfaceSummary, /unknown.inventory/i)
   assert.equal(AUROBINDO_PHARMA_CATALOG.modulePath, aurobindoPharmaModulePath)
 
   assert.equal(aurobindoPharma.PROVIDER_METADATA.source, AUROBINDO_PHARMA_CATALOG.source)

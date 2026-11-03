@@ -117,11 +117,11 @@ test('extractSearchResults parses Botminds jobs embedded in __NEXT_DATA__ and ke
   })
 })
 
-test('run fetches the Botminds careers page and decorates extracted jobs', async () => {
+test('run rejects archived Next data without the current official native board identity', async () => {
   const requestedUrls = []
   const scraper = createBotmindsScraper()
 
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       return buildNextHtml([
@@ -147,12 +147,8 @@ test('run fetches the Botminds careers page and decorates extracted jobs', async
         },
       ])
     },
-  })
+  }), /Botminds native/)
 
   assert.equal(buildSearchUrl(), CAREER_PAGE_URL)
-  assert.deepEqual(requestedUrls, [CAREER_PAGE_URL])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'botminds')
-  assert.equal(jobs[0].link, 'https://botminds.ai/careers/full-stack-developer')
-  assert.equal(jobs[0].scrapedAt, jobs[0].scrapedAt)
+  assert.deepEqual(requestedUrls, ['https://www.botminds.ai/careers'])
 })

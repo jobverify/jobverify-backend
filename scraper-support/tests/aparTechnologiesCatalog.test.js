@@ -13,7 +13,7 @@ const loadAparTechnologiesCatalog = async () => {
   }
 }
 
-test('Apar Technologies catalog captures the verified first-party no-public-careers surface metadata', async () => {
+test('Apar Technologies catalog captures the runtime-only CV intake and unresolved vacancy metadata', async () => {
   const {
     APAR_TECHNOLOGIES_CATALOG,
     default: defaultCatalog,
@@ -42,19 +42,19 @@ test('Apar Technologies catalog captures the verified first-party no-public-care
     APAR_TECHNOLOGIES_CATALOG.officialContactEmail,
     'sales.apartech@apar.com',
   )
-  assert.equal(APAR_TECHNOLOGIES_CATALOG.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(APAR_TECHNOLOGIES_CATALOG.atsPlatform, "official-company-careers-cv-intake")
   assert.equal(APAR_TECHNOLOGIES_CATALOG.countryFilter, 'India')
   assert.equal(
     APAR_TECHNOLOGIES_CATALOG.paginationStrategy,
-    'verified-homepage-plus-careers-subpages-plus-page-sitemap-plus-missing-common-job-routes',
+    "current-homepage-and-redesigned-resume-upload-form-with-unresolved-inventory",
   )
   assert.equal(
     APAR_TECHNOLOGIES_CATALOG.extractionStrategy,
-    'verified-homepage-careers-link+verified-careers-page+verified-us-and-apac-placeholder-pages+verified-page-sitemap-careers-urls+verified-missing-common-job-routes-return-empty',
+    "current-corporate-careers-handoff+resume-form-hiring-signal+explicit-unknown-vacancy-inventory",
   )
   assert.equal(APAR_TECHNOLOGIES_CATALOG.parser, 'custom-script')
   assert.equal(APAR_TECHNOLOGIES_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(APAR_TECHNOLOGIES_CATALOG.verifiedOn, '2026-10-03')
+  assert.equal(APAR_TECHNOLOGIES_CATALOG.verifiedOn, null)
   assert.match(APAR_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.apartechnologies\.com\//i)
   assert.match(APAR_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.apartechnologies\.com\/careers\//i)
   assert.match(APAR_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.apartechnologies\.com\/job-posting\//i)

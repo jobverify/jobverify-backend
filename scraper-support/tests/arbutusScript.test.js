@@ -50,7 +50,7 @@ test('extractSearchResults keeps only India jobs from Arbutus official Paylocity
   ])
 })
 
-test('run returns zero jobs cleanly when the live Arbutus Paylocity board is empty', async () => {
+test('a bare historical Jobs array does not establish the current employer board or a verified zero', async () => {
   let arbutus
   try {
     arbutus = await import('../../scraper/arbutus/script.js')
@@ -58,9 +58,7 @@ test('run returns zero jobs cleanly when the live Arbutus Paylocity board is emp
     assert.fail('Expected Arbutus scraper module at ../../scraper/scraper/arbutus/script.js')
   }
 
-  const jobs = await arbutus.createArbutusScraper().run({
+  await assert.rejects(arbutus.createArbutusScraper().run({
     fetchText: async () => zeroJobsHtml,
-  })
-
-  assert.deepEqual(jobs, [])
+  }), /corporate employer identity/)
 })

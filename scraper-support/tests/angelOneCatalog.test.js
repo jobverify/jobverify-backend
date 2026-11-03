@@ -1,50 +1,7 @@
-import assert from 'node:assert/strict'
 import test from 'node:test'
+import assert from 'node:assert/strict'
+import{getScraperCatalog,buildScrapers}from'../providers/index.js'
+import{generateCompanyCoverageReport}from'../providers/companyCoverage.js'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import {
-  buildScrapers,
-  getScraperCatalog,
-} from '../providers/index.js'
-
-test('getScraperCatalog includes Angel One as a verified first-party zero-openings careers shell', () => {
-  const provider = getScraperCatalog().find((item) => item.source === 'angelone')
-
-  assert.ok(provider, 'Expected Angel One provider to be registered in customProviders.json')
-  assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyName, 'Angel One')
-  assert.equal(provider.companyCareerPage, 'https://www.angelone.in/careers')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
-  assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-jobs-page')
-  assert.equal(
-    provider.extractionStrategy,
-    'verified-first-party-zero-openings-jobs-shell-return-empty',
-  )
-  assert.equal(provider.parser, 'custom-script')
-  assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'angelone.in')
-  assert.match(provider.modulePath, /angelone[\\/]script\.js$/i)
-})
-
-test('buildScrapers and company coverage resolve Angel One to the angelone source', () => {
-  const report = generateCompanyCoverageReport({
-    csvText: 'Angel One,\n',
-    catalog: getScraperCatalog(),
-  })
-
-  assert.equal(report.matchedCount, 1)
-  assert.equal(report.unmatchedCount, 0)
-  assert.deepEqual(
-    report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
-    [['Angel One', 'angelone', 'Angel One']],
-  )
-
-  const scraper = buildScrapers().find((item) => item.name === 'angelone')
-
-  assert.ok(scraper, 'Expected buildScrapers() to return the Angel One scraper')
-  assert.equal(typeof scraper.run, 'function')
-  assert.equal(scraper.provider.source, 'angelone')
-  assert.equal(scraper.provider.companyCareerPage, 'https://www.angelone.in/careers')
-  assert.match(scraper.dryRunFile, /angelone[\\/]jobs\.json$/i)
-})
+test('angelone current catalog override wins and retains unknown company totals and cleanup guards',()=>{const p=getScraperCatalog().find(p=>p.source==='angelone');assert.ok(p);assert.equal(p.adapter,'script');assert.equal(p.companyCareerPage,'https://www.angelone.in/careers');assert.equal(p.sourceScopeComplete,false);assert.equal(p.lifecycleCleanupAllowed,false);assert.equal(p.verifiedPublicJobCount,null);assert.equal(p.verifiedIndiaJobCount,null);assert.equal(p.verifiedOn,null);assert.match(p.modulePath,/angelone[\\/]script\.js$/);assert.ok(!p.extractionStrategy.includes('return-empty'));assert.equal(p.catalogOverride,true)})
+test('angelone retains runnable source identity, jobs output path and direct company coverage',()=>{const p=getScraperCatalog().find(p=>p.source==='angelone'),s=buildScrapers().find(s=>s.name==='angelone');assert.ok(s);assert.equal(typeof s.run,'function');assert.match(s.dryRunFile,/angelone[\\/]jobs\.json$/);const report=generateCompanyCoverageReport({csvText:p.companyName+'\n',catalog:[p]});assert.equal(report.matchedCount,1)})

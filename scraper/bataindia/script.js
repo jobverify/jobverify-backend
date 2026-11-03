@@ -2,11 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { BATA_INDIA_CATALOG } from './catalog.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import {createCurrentBataIndiaScraper} from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const PROVIDER_METADATA = BATA_INDIA_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -258,107 +256,7 @@ export const extractSearchResults = (html) => {
     .filter(Boolean)
 }
 
-const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
-  signal,
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'bataindia-html',
-  timeoutMs: 15000,
-})
-
-const shouldFetchIframeSupplement = (summary, jobs) =>
-  summary.totalCount > jobs.length || summary.hasNext
-
-export const createBataIndiaScraper = ({
-  maxIframePages = Number.isInteger(config.maxPages) ? config.maxPages : 5,
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const { signal } = options
-    const rawFetchText = options.fetchText || defaultFetchText
-    const fetchText = async (url, options = {}) => {
-      signal?.throwIfAborted()
-      try {
-        const value = await rawFetchText(url, { ...options, signal: signal || options.signal })
-        signal?.throwIfAborted()
-        return value
-      } catch (error) {
-        signal?.throwIfAborted()
-        throw error
-      }
-    }
-
-    try {
-      const officialHomepageHtml = await fetchText(HOMEPAGE_URL)
-
-      if (!hasOfficialCareersPageSignal(officialHomepageHtml)) {
-        throw new Error('Bata India homepage no longer matches the verified official careers handoff')
-      }
-
-      if (extractSenseHqCareersUrl(officialHomepageHtml) !== normalizeUrl(CAREERS_BOARD_URL)) {
-        throw new Error('Bata India homepage Careers link changed materially')
-      }
-    } catch (error) {
-      signal?.throwIfAborted()
-      if (!isOfficialPageTimeoutError(error)) {
-        throw error
-      }
-    }
-
-    const jobs = []
-    const seenJobIds = new Set()
-
-    const pushUniqueJobs = (entries) => {
-      for (const job of entries) {
-        if (!job?.jobId || seenJobIds.has(job.jobId)) continue
-        seenJobIds.add(job.jobId)
-
-        jobs.push({
-          ...job,
-          source: SOURCE,
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return true
-        }
-      }
-
-      return false
-    }
-
-    const rootHtml = await fetchText(CAREERS_BOARD_URL)
-    const rootJobs = extractSearchResults(rootHtml)
-    const rootSummary = extractBoardSummary(rootHtml)
-
-    if (pushUniqueJobs(rootJobs)) {
-      return jobs
-    }
-
-    if (!shouldFetchIframeSupplement(rootSummary, rootJobs)) {
-      return jobs
-    }
-
-    const totalCount = rootSummary.totalCount || rootJobs.length
-
-    for (let page = 1; page <= maxIframePages; page += 1) {
-      const iframeHtml = await fetchText(buildIframeListingUrl({ page }))
-      const iframeJobs = extractSearchResults(iframeHtml)
-
-      if (pushUniqueJobs(iframeJobs)) {
-        return jobs
-      }
-
-      if (iframeJobs.length === 0) break
-      if (totalCount > 0 && jobs.length >= totalCount) break
-    }
-
-    return jobs
-  },
-})
+export const createBataIndiaScraper = createCurrentBataIndiaScraper
 
 export const run = async (options = {}) => createBataIndiaScraper().run(options)
 

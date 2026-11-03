@@ -138,19 +138,18 @@ test('BookMyShow returns no jobs only while the verified careers shell and empty
   assert.deepEqual(jobs, [])
 })
 
-test('BookMyShow returns no jobs when both verified careers routes are Cloudflare-blocked', async () => {
+test('BookMyShow reports unavailable inventory when both official careers routes are Cloudflare-blocked', async () => {
   const bookMyShow = await loadBookMyShowModule()
   const requestedUrls = []
 
-  const jobs = await bookMyShow.createBookMyShowScraper().run({
+  await assert.rejects(bookMyShow.createBookMyShowScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
       return { ...cloudflareBlockedPage, url }
     },
-  })
+  }), error => error.code === 'BOOKMYSHOW_PUBLIC_ACCESS_BLOCKED')
 
   assert.deepEqual(requestedUrls, [bookMyShow.CAREERS_URL, bookMyShow.JOB_LISTING_URL])
-  assert.deepEqual(jobs, [])
 })
 
 test('BookMyShow fails closed when the careers shell or job listing route drifts into a public jobs surface', async () => {

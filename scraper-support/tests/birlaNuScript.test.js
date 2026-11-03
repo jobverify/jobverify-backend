@@ -1,85 +1,10 @@
 import assert from 'node:assert/strict'
-import path from 'node:path'
-import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {createBirlaNuScraper,CAREERS_URL,VERIFIED_HANDOFF_URL,extractJoinUsUrl} from '../../scraper/birlanu/script.js'
+const html=JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/birlanu/test-data/current-public-20261103.json.gz',import.meta.url)))).responses[CAREERS_URL].body
 
-const fixturesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-  'birlanu',
-)
-
-const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
-
-const loadBirlaNuModule = async () => {
-  try {
-    return await import('../../scraper/birlanu/script.js')
-  } catch {
-    assert.fail('Expected BirlaNu scraper module at ../../scraper/birlanu/script.js')
-  }
-}
-
-test('BirlaNu scraper validates the verified first-party people page and current Darwinbox handoff', async () => {
-  const birlaNu = await loadBirlaNuModule()
-  const peoplePageHtml = readFixture('people-page.html')
-
-  assert.equal(birlaNu.SOURCE, 'birlanu')
-  assert.equal(birlaNu.COMPANY, 'BirlaNu')
-  assert.equal(birlaNu.HOMEPAGE_URL, 'https://birlanu.com/')
-  assert.equal(birlaNu.CAREERS_URL, 'https://birlanu.com/people')
-  assert.equal(
-    birlaNu.VERIFIED_HANDOFF_URL,
-    'https://iconnect-hil.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-  )
-  assert.equal(birlaNu.hasOfficialCareersSignal(peoplePageHtml), true)
-  assert.equal(
-    birlaNu.extractJoinUsUrl(peoplePageHtml),
-    'https://iconnect-hil.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-  )
-  assert.equal(birlaNu.pageExposesFirstPartyJobRecords(peoplePageHtml), false)
-
-  const requestedUrls = []
-  const jobs = await birlaNu.createBirlaNuScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === birlaNu.CAREERS_URL) return peoplePageHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [birlaNu.CAREERS_URL])
-  assert.deepEqual(jobs, [])
-})
-
-test('BirlaNu scraper fails closed when the verified handoff changes or first-party job cards appear', async () => {
-  const birlaNu = await loadBirlaNuModule()
-  const peoplePageHtml = readFixture('people-page.html')
-  const firstPartyJobsHtml = readFixture('people-page-first-party-jobs.html')
-
-  await assert.rejects(
-    birlaNu.createBirlaNuScraper().run({
-      fetchText: async (url) => {
-        if (url === birlaNu.CAREERS_URL) {
-          return peoplePageHtml.replace(
-            'https://iconnect-hil.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-            'https://birlanu.com/careers/openings',
-          )
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /verified .* handoff/i,
-  )
-
-  await assert.rejects(
-    birlaNu.createBirlaNuScraper().run({
-      fetchText: async (url) => {
-        if (url === birlaNu.CAREERS_URL) return firstPartyJobsHtml
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /first-party public job records/i,
-  )
-})
+test('BirlaNu current official page still actively delegates to the historical HIL tenant',()=>{assert.equal(extractJoinUsUrl(html),VERIFIED_HANDOFF_URL);assert.match(html,/formerly HIL Limited/);assert.equal(typeof createBirlaNuScraper().collect,'function')})
+test('BirlaNu requires observed HTTP metadata and rejects the obsolete landing-only sentinel transport',async()=>{await assert.rejects(createBirlaNuScraper().run({fetchText:async()=>html}),/status.*final URL fetchImpl/)})
+test('BirlaNu fails unavailable before native requests when current corporate binding changes',async()=>{const calls=[];await assert.rejects(createBirlaNuScraper().run({fetchImpl:async url=>{calls.push(url);const r=new Response(html.replaceAll(VERIFIED_HANDOFF_URL,'https://another.darwinbox.in/'));Object.defineProperty(r,'url',{value:url});return r}}),/handoff binding/);assert.deepEqual(calls,[CAREERS_URL])})

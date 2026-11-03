@@ -1,36 +1,35 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on August 17, 2026 that https://atomberg.com/ is the live first-party Atomberg Shopify storefront and that https://atomberg.com/careers now redirects to the first-party careers page at https://atomberg.com/pages/careers, where the public surface remains resume-only recruiting copy asking candidates to share resumes at career@atomberg.com. Also verified on August 17, 2026 that https://atomberg.com/jobs and https://atomberg.com/career return first-party Shopify 404 noindex pages. There is no trustworthy public jobs surface for Atomberg right now.'
-
-export const ATOMBERG_CATALOG = {
-  source: 'atomberg',
-  companyName: 'Atomberg',
-  officialBrandName: 'Atomberg',
-  adapter: 'script',
-  modulePath: path.resolve(currentDir, 'script.js'),
-  dryRunFile: 'atomberg/jobs.json',
-  companyCareerPage: 'https://atomberg.com/careers',
-  homepageUrl: 'https://atomberg.com/',
-  applicationEmail: 'career@atomberg.com',
-  applicationUrl: 'mailto:career@atomberg.com',
-  noPublicJobRouteUrls: [
-    'https://atomberg.com/jobs',
+import {fileURLToPath} from 'node:url'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+export const VERIFIED_SURFACE_SUMMARY="The configured Atomberg careers route currently redirects to /pages/careers. Its visible public recruiting contact asks for resumes at career@atomberg.com. Runtime verifies this exact current handoff and public employer contact twice, retains hiring observations with unknown vacancy/work-country scope and stops on public denial. Retail customer login, guessed alternate404 routes and private applications are not employee-inventory prerequisites. No company-wide vacancy zero or cleanup is authorized."
+export const ATOMBERG_CATALOG={...{
+  "source": "atomberg",
+  "companyName": "Atomberg",
+  "officialBrandName": "Atomberg",
+  "adapter": "script",
+  "dryRunFile": "atomberg/jobs.json",
+  "companyCareerPage": "https://atomberg.com/careers",
+  "homepageUrl": "https://atomberg.com/",
+  "applicationEmail": "career@atomberg.com",
+  "applicationUrl": "mailto:career@atomberg.com",
+  "noPublicJobRouteUrls": [
+    "https://atomberg.com/jobs"
   ],
-  brokenCareerRouteUrl: 'https://atomberg.com/career',
-  companyDomain: 'atomberg.com',
-  atsPlatform: 'official-company-site-no-public-careers',
-  countryFilter: 'India',
-  paginationStrategy: 'verified-shopify-homepage-plus-resume-only-careers-page-plus-shopify-404-validation',
-  extractionStrategy:
-    'verified-shopify-homepage+verified-careers-page-email-resume-handoff-without-public-listings+verified-shopify-404-routes-return-empty',
-  parser: 'custom-script',
-  normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-17',
-  verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
-}
-
+  "brokenCareerRouteUrl": "https://atomberg.com/career",
+  "companyDomain": "atomberg.com",
+  "atsPlatform": "official-public-email-hiring-contact",
+  "countryFilter": "India",
+  "paginationStrategy": "current-configured-redirect+public-careers-contact+closing",
+  "extractionStrategy": "first-party-employer-contact-observations+unknown-vacancy-country-and-company-scope",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": null,
+  "verifiedAt": null,
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "verifiedInventoryStatus": "coverage-gap",
+  "sourceScopeComplete": false,
+  "sourceListingComplete": false,
+  "lifecycleCleanupAllowed": false
+},verifiedSurfaceSummary:VERIFIED_SURFACE_SUMMARY,modulePath:path.resolve(currentDir,'script.js')}
 export default ATOMBERG_CATALOG

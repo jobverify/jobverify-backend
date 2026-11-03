@@ -1,4 +1,5 @@
 import path from 'node:path'
+import {createBoundDarwinboxScraper} from '../birlanu/currentNative.js'
 import { fileURLToPath } from 'node:url'
 
 import { BOOKUWARUNG_CATALOG } from './catalog.js'
@@ -157,37 +158,7 @@ export const hasBlockedDarwinboxListingApiSignal = ({ status, body } = {}) => {
     && normalized.includes('cloudflare ray id')
 }
 
-export const createBukuwarungScraper = () => ({
-  async run({
-    fetchPage = defaultFetchPage,
-    probeListingApi = defaultProbeListingApi,
-  } = {}) {
-    const careersPage = await fetchPage(OFFICIAL_CAREERS_URL)
-    if (Number(careersPage?.status) !== 200 || !hasOfficialCareersPageSignal(careersPage?.html)) {
-      throw new Error('Bukuwarung official careers page no longer matches the verified public surface')
-    }
-
-    const darwinboxJobsPage = await fetchPage(DARWINBOX_JOBS_URL)
-    if (!hasJobsRedirectToBlankDarwinboxHome(darwinboxJobsPage)) {
-      throw new Error('Bukuwarung Darwinbox jobs route no longer matches the verified blank public shell')
-    }
-
-    for (const routeUrl of DARWINBOX_SHELL_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-
-      if (Number(routePage?.status) !== 200 || !hasBlankDarwinboxShellSignal(routePage?.html)) {
-        throw new Error('Bukuwarung Darwinbox shell route no longer matches the verified blank public surface')
-      }
-    }
-
-    const listingApiResult = await probeListingApi(DARWINBOX_LISTING_API_URL)
-    if (!hasBlockedDarwinboxListingApiSignal(listingApiResult)) {
-      throw new Error('Bukuwarung listing API no longer matches the verified Cloudflare-blocked state')
-    }
-
-    return []
-  },
-})
+export const createBukuwarungScraper = (defaults={}) => createBoundDarwinboxScraper({source:SOURCE,companyName:COMPANY,employerNames:['BukuWarung','PT Buku Usaha Digital'],officialUrl:OFFICIAL_CAREERS_URL,handoffUrl:OFFICIAL_DARWINBOX_HANDOFF_URL,handoffLabel:'See Open Positions',origin:'https://bukuwarung.darwinbox.com',companySignal:'Start your journey with BukuWarung',title:/Work Smart.*BukuWarung/i},defaults)
 
 export const run = async (options = {}) => createBukuwarungScraper().run(options)
 

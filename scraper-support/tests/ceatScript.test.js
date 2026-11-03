@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
 
 const loadCeatModule = async () => {
   try {
@@ -80,6 +82,8 @@ test('run obtains a public TurboHire token, posts the observed CEAT filter body,
     createCeatScraper,
   } = await loadCeatModule()
   const requests = []
+  const {packets}=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/ceat/test-data/native-20261102.json.gz',import.meta.url))))
+  const nativeListing=JSON.parse(packets.find(row=>row.key==='jobs').body)
   const scraper = createCeatScraper()
 
   const jobs = await scraper.run({
@@ -91,10 +95,19 @@ test('run obtains a public TurboHire token, posts the observed CEAT filter body,
       }
 
       if (url === FILTERED_JOBS_URL) {
-        return sampleTurboHirePayload
+        return nativeListing
       }
-
+      const detail=packets.filter(row=>row.key.startsWith('full-detail-')).map(row=>JSON.parse(row.body))
+        .find(row=>url===`https://thapi.azurewebsites.net/api/publicjobs/${row.JobId}?fieldVisibility=CareerPage`)
+      if(detail)return detail
       throw new Error(`Unexpected CEAT URL: ${url}`)
+    },
+    fetchText:async url=>{
+      if(url==='https://www.ceat.com/career-landing.html')return packets.find(row=>row.key==='corporate').body
+      if(url===CAREER_PAGE_URL)return packets.find(row=>row.key==='board').body
+      const index=nativeListing.Result.findIndex(row=>url===`https://ceat.turbohire.co/job/publicjobs/${row.JobIdObfuscated}`)
+      assert.ok(index>=0)
+      return packets.find(row=>row.key===`public-${index}`).body
     },
   })
 
@@ -102,7 +115,7 @@ test('run obtains a public TurboHire token, posts the observed CEAT filter body,
   assert.equal(CAREER_PAGE_URL, 'https://ceat.turbohire.co/careerpage/4ae530fb-afba-4926-bdf9-9040b0e8774c')
   assert.equal(FILTERED_JOBS_URL, 'https://thapi.azurewebsites.net/api/careerpagev2/filteredjobs?orgId=4ae530fb-afba-4926-bdf9-9040b0e8774c&pageType=0')
 
-  assert.equal(requests.length, 2)
+  assert.equal(requests.length, 8)
   assert.equal(requests[0].url, NOAUTH_TOKEN_URL)
   assert.equal(requests[0].options.method, 'GET')
   assert.equal(requests[0].options.headers.Origin, 'https://ceat.turbohire.co')
@@ -115,12 +128,12 @@ test('run obtains a public TurboHire token, posts the observed CEAT filter body,
   assert.equal(requests[1].options.headers.Referer, CAREER_PAGE_URL)
   assert.equal(requests[1].options.body, JSON.stringify(LIVE_FILTER_BODY))
 
-  assert.equal(jobs.length, 1)
+  assert.equal(jobs.length, 5)
   assert.equal(jobs[0].company, 'CEAT Limited')
   assert.equal(jobs[0].source, 'ceat')
-  assert.equal(jobs[0].employmentType, 'Full Time')
+  assert.equal(jobs[0].employmentType, null)
   assert.equal(
     jobs[0].applyUrl,
-    'https://ceat.turbohire.co/job/publicjobs/PGFHqraKncn9fnokL1Z66CCbMQKrnA2WkPtVDw9mYmOZWXSAJcHsr92GQ7xg3pGA',
+    'https://ceat.turbohire.co/job/publicjobs/YHJA8N0QWQD_cZTtkj8UP7sP48I4A_E3MYD6xJbvwd2oJcyBzZGziE3pPnCRMEWu',
   )
 })

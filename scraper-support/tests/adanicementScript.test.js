@@ -21,21 +21,20 @@ const officialCareersHtml = `
   </html>
 `
 
-test('Adani Cement validates the official careers surface before returning no unverified listings', async () => {
+test('Adani Cement group careers identity cannot authorize a subsidiary empty inventory', async () => {
   const adaniCement = await import('../../scraper/adanicement/script.js')
   const requestedUrls = []
 
   assert.equal(adaniCement.hasOfficialCareersSignal(officialCareersHtml), true)
 
-  const jobs = await adaniCement.createAdaniCementScraper().run({
+  await assert.rejects(adaniCement.createAdaniCementScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       return officialCareersHtml
     },
-  })
+  }), /corporate Cement subsidiary identity changed/i)
 
-  assert.deepEqual(requestedUrls, [adaniCement.CAREERS_URL])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [adaniCement.CAREERS_URL, 'https://www.adani.com/businesses/materials/cement'])
 })
 
 test('Adani Cement fails closed when the official careers surface changes', async () => {

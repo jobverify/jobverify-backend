@@ -1,3 +1,4 @@
+import {createCurrentLinkedInProfileScraper} from "./currentPublic.js"
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -30,7 +31,8 @@ const getField = (text, pattern) => normalize(text.match(pattern)?.[1])
 const inferRemoteStatus = (location) => {
   if (/hybrid/i.test(location || '')) return 'Hybrid'
   if (/remote|work from home/i.test(location || '')) return 'Remote'
-  return 'On-site'
+  if (/on[ -]?site|work from office/i.test(location || '')) return 'On-site'
+  return null
 }
 
 const extractArticleParts = (html) => [...String(html ?? '').matchAll(
@@ -58,9 +60,10 @@ export const extractJobPostings = (html) => extractArticleParts(html)
     const title = getField(text, /\bposition\s*:\s*(.+?)(?=\s+location\s*:|\s+industry\s*:|\s+full[- ]?time\/part[- ]?time\s*:|$)/i)
     const rawLocation = getField(text, /\blocation\s*:\s*(.+?)(?=\s+industry\s*:|\s+full[- ]?time\/part[- ]?time\s*:|\s+work from office\s*:|$)/i)
     const employmentType = getField(text, /\bfull[- ]?time\/part[- ]?time\s*:\s*(.+?)(?=\s+work from office\s*:|\s+office time\s*:|\s+requirements\s*:|$)/i)
-    const description = normalize(text.split(/\bposition\s*:/i)[0])
+    const description = normalize(text)
       ?.replace(/^Academor(?:'s)? Post\s*/i, '') || null
-    const location = rawLocation ? `${rawLocation}, India` : 'India'
+    const location = rawLocation
+    const explicitIndia = /(?:^|,)\s*India\s*$/i.test(rawLocation || '')
     const city = rawLocation?.split(',')[0]?.trim() || null
 
     if (!title) return null
@@ -70,12 +73,12 @@ export const extractJobPostings = (html) => extractArticleParts(html)
       company: COMPANY,
       location,
       city,
-      country: 'India',
+      country: explicitIndia ? 'India' : null,
       employmentType,
       sourceUrl,
       applyUrl: applyUrl || sourceUrl,
       jobDescription: description,
-      remoteStatus: inferRemoteStatus(rawLocation),
+      remoteStatus: inferRemoteStatus(text),
     }
   })
   .filter(Boolean)
@@ -89,21 +92,9 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createAcademorEdutechScraper = () => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const jobs = extractJobPostings(await fetchText(LINKEDIN_COMPANY_URL))
+export const createAcademorEdutechScraper = defaults => createCurrentLinkedInProfileScraper("academoredutech", defaults)
 
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
-})
-
-export const run = async () => createAcademorEdutechScraper().run()
+export const run = async (options = {}) => createAcademorEdutechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const jobs = await run()

@@ -1,3 +1,6 @@
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+const currentPublicFixture=()=>JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/anaptycodeemy/test-data/current-public-20261103.json.gz',import.meta.url))))
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -34,26 +37,9 @@ test('extractSearchResults returns an empty list when ANAPTY CodeEmy LinkedIn gu
   assert.deepEqual(anaptyCodeemy.extractSearchResults(sampleSearchHtml), [])
 })
 
-test('run fetches ANAPTY CodeEmy company and search pages and returns no jobs when public guest search is empty', async () => {
-  const anaptyCodeemy = await loadAnaptyCodeemyModule()
-  const requestedUrls = []
-  const scraper = anaptyCodeemy.createAnaptyCodeemyScraper()
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === anaptyCodeemy.LINKEDIN_COMPANY_PAGE_URL) return sampleCompanyHtml
-      if (url === anaptyCodeemy.LINKEDIN_INDIA_JOBS_URL) return sampleSearchHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(
-    requestedUrls,
-    [
-      anaptyCodeemy.LINKEDIN_COMPANY_PAGE_URL,
-      anaptyCodeemy.LINKEDIN_INDIA_JOBS_URL,
-    ],
-  )
-  assert.deepEqual(jobs, [])
-})
+test("run reconciles current native employer/announcement and keyword-search observations without employer-zero authority",async () => {
+  const mod=await loadAnaptyCodeemyModule(),calls=[];let audit
+  const jobs=await mod.run({fetchPage:async url=>{calls.push(url);const row=currentPublicFixture().responses.find(row=>row.url===url);assert.ok(row);return{url:row.finalURL,status:row.status,html:row.body}},onAudit:value=>{audit=value}})
+  assert.deepEqual(calls,[mod.LINKEDIN_COMPANY_PAGE_URL,mod.LINKEDIN_INDIA_JOBS_URL,mod.LINKEDIN_COMPANY_PAGE_URL,mod.LINKEDIN_INDIA_JOBS_URL]);assert.deepEqual(jobs,[])
+  assert.equal(audit.inventoryEvidence.reportedTotal,null);assert.equal(audit.inventoryEvidence.indiaFacetCount,null);assert.equal(audit.configuredSearch.unexpectedKeywordRestriction,true);assert.equal(audit.nativeOrganizationId,'108095496');assert.equal(audit.lifecycleCleanupAllowed,false)
+ })

@@ -1,3 +1,4 @@
+import {createCurrentLinkedInProfileScraper} from "../academoredutech/currentPublic.js"
 import { extractLinkedinJobCards } from '../../scraper-support/utils/linkedinJobCards.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -179,44 +180,9 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-export const createAnaptyCodeemyScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const companyHtml = await fetchText(LINKEDIN_COMPANY_PAGE_URL)
+export const createAnaptyCodeemyScraper = defaults => createCurrentLinkedInProfileScraper("anaptycodeemy", defaults)
 
-    if (!pageIndicatesAnaptyCodeemyCompany(companyHtml)) {
-      throw new Error('ANAPTY CodeEmy LinkedIn company page no longer matches the expected public organization page')
-    }
-
-    const searchHtml = await fetchText(LINKEDIN_INDIA_JOBS_URL)
-    const listings = extractSearchResults(searchHtml)
-    const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
-    const enrichedJobs = []
-
-    for (const listing of selectedJobs) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml)
-
-      enrichedJobs.push({
-        ...listing,
-        ...Object.fromEntries(
-          Object.entries(detail).filter(([, value]) => value != null),
-        ),
-      })
-    }
-
-    return enrichedJobs.map((job) => ({
-      ...job,
-      source: 'anaptycodeemy',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
-})
-
-export const run = async () => createAnaptyCodeemyScraper().run()
+export const run = async (options = {}) => createAnaptyCodeemyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -37,6 +37,16 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+// The native editor prompt is not employer criteria. Keep its original value
+// separately while allowing the ordinary detail request to recover real text.
+const isNativeDescriptionPlaceholder = (value) => {
+  const text = normalizeWhitespace(String(value ?? '')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<(?:script|style)\b[^>]*>[\s\S]*?<\/(?:script|style)\s*>/gi, ' ')
+    .replace(/<[^>]*>/g, ' '))
+  return /^(?:please\s+)?enter\s+(?:the\s+)?job\s+description[.!\u2026]*$/i.test(text || '')
+}
+
 // Employer handoffs may render typographic dashes while the native API uses
 // ASCII hyphens. Preserve all title words, case and punctuation beyond dashes.
 const normalizeDetailTitle = (value) => normalizeWhitespace(value)?.replace(/\s*[-\u2010-\u2015]\s*/g, '-')
@@ -142,6 +152,37 @@ const parseNativeClosingDate = (record, source) => {
   return closingDate.toISOString()
 }
 
+const extractNativeListingPublication = (record, source) => {
+  const posted = record?.posted_on
+  // Retain legacy display dates unchanged; never infer publication from
+  // created_on, updated_on, or a careers.from value without posted_on.
+  const isEpoch = typeof posted === 'number'
+    || (typeof posted === 'string' && /^\d+$/.test(posted.trim()))
+  if (!isEpoch) return {}
+  const seconds = Number(posted)
+  const nativeFrom = record?.job_posting?.careers?.from
+  const from = typeof nativeFrom === 'number'
+    || (typeof nativeFrom === 'string' && /^\d+$/.test(nativeFrom.trim()))
+    ? Number(nativeFrom) : NaN
+  const date = new Date(seconds * 1000)
+  if (!Number.isSafeInteger(seconds) || seconds <= 0
+    || !Number.isSafeInteger(seconds * 1000) || !Number.isFinite(date.getTime())
+    || (nativeFrom != null && from !== seconds)) {
+    const error = new Error(`[${source}] Darwinbox native publication epochs are malformed or inconsistent for ${normalizeWhitespace(record?.id) || 'unknown job'}`)
+    error.name = 'DarwinboxListingContractError'
+    error.abortRetries = true
+    error.failureKind = 'parser_or_contract_error'
+    throw error
+  }
+  return {
+    postingDate: date.toISOString(),
+    sourcePostingDate: date.toISOString(),
+    sourceDateEvidence: 'darwinbox-native-posted-on-v1',
+    sourceNativePostedOn: posted,
+    ...(nativeFrom != null ? { sourceNativeCareersFrom: nativeFrom } : {}),
+  }
+}
+
 export class DarwinboxUpstreamUnavailableError extends Error {
   constructor(source, url, cause) {
     super('[' + source + '] Darwinbox listing unavailable at ' + url + ': ' + cause.message, { cause })
@@ -172,7 +213,10 @@ const validateListingPayload = (payload, source, pageNumber, pageSize) => {
     error.failureKind = 'parser_or_contract_error'
     throw error
   }
-  for (const record of payload.data) parseNativeClosingDate(record, source)
+  for (const record of payload.data) {
+    parseNativeClosingDate(record, source)
+    extractNativeListingPublication(record, source)
+  }
 }
 export const createDarwinboxScraper = ({
   companyName = DEFAULT_COMPANY_NAME,
@@ -253,9 +297,11 @@ export const createDarwinboxScraper = ({
         .map((record) => {
           const jobId = normalizeWhitespace(record.id)
           const location = normalizeWhitespace(record.locations)
-          const jobDescription = normalizeWhitespace(record.jd)
+          const nativePlaceholder = isNativeDescriptionPlaceholder(record.jd)
+          const jobDescription = nativePlaceholder ? null : normalizeWhitespace(record.jd)
           const experienceRequired = normalizeWhitespace(record.experience)
           const closingDate = parseNativeClosingDate(record, source)
+          const publication = extractNativeListingPublication(record, source)
 
           if (!jobId || !location) return null
 
@@ -275,9 +321,11 @@ export const createDarwinboxScraper = ({
             preferredQualification: null,
             requiredSkills: [],
             postingDate: normalizeWhitespace(record.posted_on),
+            ...publication,
             closingDate,
             ...(closingDate ? { sourceClosingDateIsExact: true } : {}),
             jobDescription,
+            ...(nativePlaceholder ? { sourceNativeListingDescription: record.jd } : {}),
             ...(jobDescription && !experienceRequired
               ? { publicExperienceChecked: true }
               : {}),
@@ -462,7 +510,10 @@ export const createDarwinboxScraper = ({
         }
         const description = validateJobDetail(payload, job)
         Object.assign(job, extractJobDetailFacts(payload, job))
-        if (hasSourceDescription({ jobDescription: description })) {
+        if (isNativeDescriptionPlaceholder(description)) {
+          job.sourceNativeDetailDescription = payload.message.job[0].jd
+        }
+        if (hasSourceDescription({ jobDescription: description }) && !isNativeDescriptionPlaceholder(description)) {
           job.jobDescription = description
           job.sourceDetailComplete = true
           if (!job.experienceRequired) job.publicExperienceChecked = true

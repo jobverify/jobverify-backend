@@ -17,7 +17,7 @@ const loadAirbaseCatalog = async () => {
   }
 }
 
-test('Airbase provider metadata captures the verified acquisition homepage and generic Paylocity careers redirect without aliases', async () => {
+test('Airbase provider metadata captures the current native recovery and unresolved broader hiring scope without aliases', async () => {
   const { AIRBASE_CATALOG } = await loadAirbaseCatalog()
   const provider = hydrateProviderCatalogEntry(AIRBASE_CATALOG)
 
@@ -25,22 +25,24 @@ test('Airbase provider metadata captures the verified acquisition homepage and g
   assert.equal(provider.companyName, 'Airbase')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.airbase.com/careers')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'paylocity-public-native-parent-board')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-acquisition-homepage-plus-generic-parent-careers-redirect-plus-missing-routes')
+  assert.equal(provider.paginationStrategy, 'full-parent-native-board+own-India-details-and-application-questions+closing-before-caps')
   assert.equal(
     provider.extractionStrategy,
-    'verified-acquisition-homepage+verified-generic-paylocity-careers-redirect-without-airbase-jobs+verified-missing-career-routes-return-empty',
+    'current-corporate-parent-redirect+exact-native-tenant+own-employer-brand-and-country+complete-published-criteria',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'airbase.com')
   assert.equal(provider.parentCareersPage, 'https://www.paylocity.com/company/careers/')
   assert.match(provider.modulePath, /airbase[\\/]script\.js$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.airbase\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.paylocity\.com\/company\/careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /parent board total is not an Airbase total/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Airbase'), false)
 })
 

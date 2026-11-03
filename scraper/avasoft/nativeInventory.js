@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto'
 import { readNativeDocument, decodeNativeEntities, extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
 import { readVisibleNativeDocument } from '../../scraper-support/utils/visibleNativeHtml.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
+import { withCurrentPublicProbe } from '../aurobindopharma/publicProbe.js'
 
 const H = 'https://avasoft.com/', C = H + 'career/', A = H + 'contact-us/'
 const LOADING_CLIENT_SHA256 = '1284289e77997e4fe3cdb392235b6548d60a278198f2f38d032ba88ee3c8ba4c'
@@ -229,15 +231,17 @@ const defaultFetchPage = async (url, init) => {
 }
 export const createAvasoftNativeInventory = (defaults = {}) => ({
   async run(options = {}) {
-    const settings = { ...defaults, ...options }, signal = settings.signal, load = settings.fetchPage || defaultFetchPage, maxJobs = settings.maxJobs ?? 0
+    const settings = { ...defaults, ...options }, maxJobs = settings.maxJobs ?? 0
     valid(!settings.fetchText || settings.fetchPage, 'current native transport requires fetchPage')
     valid(Number.isSafeInteger(maxJobs) && maxJobs >= 0, 'invalid native output budget')
-    signal?.throwIfAborted()
+    settings.signal?.throwIfAborted()
+    return withCurrentPublicProbe('avasoft', settings, async context => {
+    const signal = context.signal
     const observedAt = () => new Date((settings.now || (() => new Date().toISOString()))()).toISOString()
     const reasons = new Set(), references = new Set(); let requests = 0
     const pageAt = async url => {
       signal?.throwIfAborted()
-      const response = await load(url, { method: 'GET', headers: { Accept: 'text/html' }, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(25000)]) : AbortSignal.timeout(25000) })
+      const response = await context.read(url)
       signal?.throwIfAborted(); requests++
       valid(response?.url === url, 'native response redirected outside verified employer binding')
       if (response.status !== 200) { const error = Error('Avasoft native public HTTP ' + response.status); error.status = response.status; throw error }
@@ -254,25 +258,40 @@ export const createAvasoftNativeInventory = (defaults = {}) => ({
     }
     const initial = await readScope(), details = new Map()
     for (const row of initial.rows.values()) details.set(row.url, readDetail(await pageAt(row.url), row, reasons, observedAt()))
-    const contact = readContact(await pageAt(A)), closing = await readScope(), finalContact = readContact(await pageAt(A))
+    const contact = readContact(await pageAt(A)), closing = await readScope()
     const finalDetails = new Map()
     for (const row of closing.rows.values()) if (initial.rows.has(row.url)) finalDetails.set(row.url, readDetail(await pageAt(row.url), row, reasons, observedAt()))
+    const finalContact = readContact(await pageAt(A)), finalScope = await readScope()
     if (initial.homeId !== closing.homeId || initial.careersId !== closing.careersId || initial.rows.size !== closing.rows.size
       || [...initial.rows].some(([url, row]) => rowState(row) !== rowState(closing.rows.get(url)))) reasons.add('closing-native-card-inventory-changed')
+    if (initial.homeId !== finalScope.homeId || initial.careersId !== finalScope.careersId || initial.rows.size !== finalScope.rows.size
+      || [...initial.rows].some(([url, row]) => rowState(row) !== rowState(finalScope.rows.get(url)))) reasons.add('final-post-detail-native-card-inventory-changed')
     const stableContact = JSON.stringify(contact) === JSON.stringify(finalContact)
     if (!stableContact) reasons.add('closing-career-enquiry-application-changed')
     if ([...details].some(([url, job]) => detailState(job) !== detailState(finalDetails.get(url)))) reasons.add('closing-native-role-document-changed')
     if ([...references].some(url => !initial.rows.has(url) || !closing.rows.has(url))) reasons.add('unassigned-native-role-reference')
     const healthy = [...details].filter(([url, job]) => job?.country === 'India' && initial.rows.get(url).visible && closing.rows.get(url)?.visible
+      && finalScope.rows.get(url)?.visible && rowState(initial.rows.get(url)) === rowState(finalScope.rows.get(url))
       && rowState(initial.rows.get(url)) === rowState(closing.rows.get(url)) && detailState(job) === detailState(finalDetails.get(url)) && stableContact).map(([, job]) => job)
     const selected = maxJobs ? healthy.slice(0, maxJobs) : healthy
     if (selected.length !== healthy.length) reasons.add('source-job-limit')
     const complete = reasons.size === 0, now = observedAt()
-    for (const job of selected) Object.assign(job, { scrapedAt: now, sourceListingComplete: complete, sourceScopeComplete: complete,
-      lifecycleCleanupAllowed: complete, companyCareerPage: C, companyDomain: 'avasoft.com', atsPlatform: 'official-company-careers',
+    for (const job of selected) Object.assign(job, { scrapedAt: now, sourceListingComplete: complete, sourceDeclaredBoardScopeComplete: complete,
+      sourceScopeComplete: false, sourceCompanyWideScopeComplete: false, lifecycleCleanupAllowed: false, companyCareerPage: C, companyDomain: 'avasoft.com', atsPlatform: 'official-company-careers',
       sourceNativeApplicationEvidence: { declaredRoleApplyUrl: A, careerEnquiryEmail: contact.email, contactPageId: contact.pageId, roleSpecificForm: false } })
-    return attachInventoryEvidence(selected, { status: complete ? 'complete-inventory' : 'discovery-only', surface: C, firstParty: true,
+    const evidence = { status: complete ? 'complete-inventory' : 'discovery-only', surface: C, firstParty: true,
       listingComplete: complete, reportedTotal: complete ? initial.rows.size : null, indiaFacetCount: complete ? healthy.length : null,
-      verifiedAt: now, pagesFetched: requests, reason: complete ? 'avasoft-current-visible-native-inventory-and-role-documents-reconciled' : 'avasoft-native-incomplete:' + [...reasons].join(';') })
+      verifiedAt: now, pagesFetched: requests, reason: complete ? 'avasoft-current-visible-configured-native-inventory-and-role-documents-final-after-details;company-totals-and-cleanup-unverified' : 'avasoft-native-incomplete:' + [...reasons].join(';') }
+    const observations = [...initial.rows].map(([url,row]) => ({ nativeCard: row, nativeOpeningDetail: details.get(url), nativeClosingDetail: finalDetails.get(url), nativeFinalCard: finalScope.rows.get(url) ?? null,
+      activeVacancyCandidate: Boolean(row.visible && closing.rows.get(url)?.visible && finalScope.rows.get(url)?.visible), qualification: row.visible ? 'declared-visible-card-with-native-detail-observations' : 'responsive-hidden-content-observation-not-active-vacancy' }))
+    const audit = { configuredSource: C, observations, nativePublishedCardCount: initial.rows.size, nativeVisibleCardCount: [...initial.rows.values()].filter(row=>row.visible).length,
+      nativeUnpublishedCardCount: [...initial.rows.values()].filter(row=>!row.visible).length, inventoryEvidence: evidence, nativeInventoryComplete: complete, reasons: [...reasons],
+      originalPublicationDatesPreserved: true, closingAfterAllDetailAndPublicApplicationReads: true, sourceScopeComplete: false,
+      sourceCompanyWideScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null, lifecycleCleanupAllowed: false }
+    await context.audit(audit)
+    Object.defineProperty(selected,'sourceAudit',{value:audit})
+    attachSourceObservationEvidence(selected,{source:'avasoft',recordKind:'mixed',observedRecordCount:observations.length,observedVacancyCount:observations.filter(row=>row.activeVacancyCandidate).length,sourceScopeComplete:false,companyGlobalTotal:null,companyIndiaTotal:null})
+    return attachInventoryEvidence(selected,evidence)
+    })
   },
 })

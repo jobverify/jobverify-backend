@@ -1,4 +1,4 @@
-import {createAoSmithNativeScraper} from './native.js'
+import {createCurrentAoSmithScraper} from './currentInventory.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -31,7 +31,7 @@ export const pageIndicatesIndiaFalsePositive = (html) => {
   )
 }
 
-export const createAoSmithScraper = (defaults = {}) => createAoSmithNativeScraper(defaults)
+export const createAoSmithScraper = (defaults = {}) => createCurrentAoSmithScraper(defaults)
 
 export const run = options => createAoSmithScraper().run(options)
 

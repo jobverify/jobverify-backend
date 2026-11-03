@@ -15,6 +15,7 @@ test('getScraperCatalog includes the Botminds embedded careers provider with off
   assert.equal(botminds.atsPlatform, 'official-company-careers')
   assert.match(botminds.companyCareerPage, /botminds\.ai\/careers/i)
   assert.equal(botminds.companyDomain, 'botminds.ai')
+  assert.equal(botminds.paginationStrategy, 'complete-native-static-board-plus-closing-full-role-reconciliation')
 })
 
 test('buildScrapers exposes a runnable Botminds scraper without changing the runner contract', () => {

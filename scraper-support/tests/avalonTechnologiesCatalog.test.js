@@ -30,28 +30,28 @@ test('Avalon Technologies provider metadata captures the verified first-party ca
   assert.equal(provider.robotsTxtUrl, 'https://www.avalontec.com/robots.txt')
   assert.equal(provider.sitemapUrl, 'https://www.avalontec.com/sitemap.xml')
   assert.equal(provider.companyDomain, 'avalontec.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'official-company-site-general-resume-intake')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-homepage-plus-careers-form-plus-crawl-surface-plus-broken-common-job-routes',
+    'current-public-intake-model-and-closing-reconciliation;vacancy-count-unknown',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-careers-form-without-public-listings+verified-robots-and-sitemap-without-jobs-urls+verified-broken-common-job-routes-return-empty',
+    'current-corporate-careers+native-general-resume-intake+structural-executable-script-observations+bounded-audit',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, null)
   assert.match(provider.modulePath, /avalontechnologies[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /avalontechnologies[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /fresh runtime evidence/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.avalontec\.com\/careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.avalontec\.com\/robots\.txt/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.avalontec\.com\/sitemap\.xml/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.avalontec\.com\/jobs\//i)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false)
   assert.match(provider.verifiedSurfaceSummary, /Post your Resume/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /vacancy totals and criteria unknown/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Avalon Technologies'), false)
 })
 

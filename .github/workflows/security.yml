@@ -27,6 +27,8 @@ jobs:
           node-version: '24.14.0'
           cache: npm
       - run: npm ci --ignore-scripts
+      - name: Install Chromium for browser regression tests
+        run: npx --no-install playwright install --with-deps chromium
       - uses: actions/cache@v6
         with:
           path: .cache/mongodb-binaries

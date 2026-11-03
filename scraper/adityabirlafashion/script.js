@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import ADITYA_BIRLA_FASHION_CATALOG from './catalog.js'
+import { readFashionNative } from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -34,12 +35,14 @@ const normalizeFashionRetailHandoffUrl = (value) => (
     : value
 )
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, options = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      ...options.headers,
     },
+    signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
   })
 
   return {
@@ -110,7 +113,14 @@ export const hasBrokenStoreManagerSignal = ({ status, url } = {}) =>
   status === 404 && sameUrl(url, STORE_MANAGER_OPENINGS_URL)
 
 export const createAdityaBirlaFashionScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchPage: providedFetch = defaultFetchPage, signal, onAudit, now, maxJobs } = {}) {
+    const fetchPage = async (url, options = {}) => {
+      signal?.throwIfAborted()
+      const page = await providedFetch(url, { ...options, signal })
+      signal?.throwIfAborted()
+      if (page?.url !== url) throw new Error('Aditya Birla Fashion current first-party response identity changed')
+      return page
+    }
     const careersPage = await fetchPage(CAREERS_URL)
 
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
@@ -126,18 +136,23 @@ export const createAdityaBirlaFashionScraper = () => ({
     }
 
     const fashionRetailPage = await fetchPage(FASHION_RETAIL_OPENINGS_URL)
-    if (!hasZeroVacancyFashionRetailSignal(fashionRetailPage)) {
-      throw new Error('Aditya Birla Fashion fashion-retail zero-vacancy openings surface no longer matches the verified public handoff')
+    if (fashionRetailPage.status !== 200 || !/Current\s+vacancies\s+in\s+Fashion\s*&\s*Retail/i.test(normalizeWhitespace(fashionRetailPage.html))) {
+      throw new Error('Aditya Birla Fashion native sector public handoff changed')
     }
 
     const groupJobSearchPage = await fetchPage(GROUP_JOB_SEARCH_URL)
-    if (!hasZeroVacancyGroupJobSearchSignal(groupJobSearchPage)) {
-      throw new Error('Aditya Birla Fashion group job search zero-vacancy openings surface no longer matches the verified public handoff')
+    if (groupJobSearchPage.status !== 200 || !/Search Jobs at Aditya Birla Group/i.test(normalizeWhitespace(groupJobSearchPage.html))) {
+      throw new Error('Aditya Birla Fashion current group job-search public handoff changed')
     }
 
     const storeManagerPage = await fetchPage(STORE_MANAGER_OPENINGS_URL)
     if (hasBrokenStoreManagerSignal(storeManagerPage)) {
-      return []
+      const read = async (url, options) => {
+        const page = await fetchPage(url, options)
+        if (page.status !== 200 || typeof page.html !== 'string') throw new Error('Aditya Birla Fashion current native response unavailable')
+        return page.html
+      }
+      return readFashionNative({ read, searchHtml: groupJobSearchPage.html, sectorHtml: fashionRetailPage.html, storeManagerStatus: storeManagerPage.status, signal, onAudit, now, maxJobs })
     }
 
     throw new Error('Aditya Birla Fashion store manager openings surface no longer matches the verified broken public handoff')

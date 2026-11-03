@@ -6,13 +6,16 @@ import { normalizeScrapedJob } from '../../utils/normalizeScrapedJob.js'
 import { isIndiaJob } from '../../utils/indiaLocationFilter.js'
 import { readInventoryEvidence } from '../../utils/inventoryEvidence.js'
 import { readSourceObservationEvidence } from '../../utils/sourceObservationEvidence.js'
+import { createDeclaredJobFeedScraper, DECLARED_JOB_FEED_PROFILES } from './nativeCareers.js'
 
 globalThis.fetch = async () => { throw Error('Offline original-entity tests prohibit network and website execution') }
 const catalog = getScraperCatalog()
-for (const [source, expected] of Object.entries(fixture.oracle)) test(source + ': actual registered source preserves every complete native model before selection', async () => {
+for (const [source, expected] of Object.entries(fixture.oracle)) test(source + (source==='prefect'?': unchanged shared engine preserves the original native cohort before source-specific country proofs':': actual registered source preserves every complete native model before selection'), async () => {
   const r = replay(), provider = catalog.find(provider => provider.source === source)
   let jobs, error
-  try { jobs = await createCatalogScraper(provider).run(r.options) } catch (caught) { error = caught }
+  // The current Prefect wrapper has fresh source-specific HTTP fixtures. Keep
+  // this historical shared-engine cohort's original geography assertions.
+  try { jobs = await (source==='prefect'?createDeclaredJobFeedScraper(DECLARED_JOB_FEED_PROFILES.prefect):createCatalogScraper(provider)).run(r.options) } catch (caught) { error = caught }
   assert.equal(r.audits.length, 1, 'Every native record must reach an awaited audit; old result: ' + error?.message)
   assert.ifError(error)
   const audit = r.audits[0], profile = fixture.profiles[source]

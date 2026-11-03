@@ -18,12 +18,18 @@ test('Buildkite is registered as a bounded current first-party careers plus Gree
   assert.equal(provider.companyCareerPage, CAREERS_URL)
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'full-native-post-feed-and-office-index;all-native-post-GETs-opening-closing')
+  assert.equal(provider.paginationStrategy, 'complete-native-feed-and-office-index;all-own-details-opening-closing;final-native-feed-after-details')
   assert.equal(
     provider.extractionStrategy,
-    'all-published-original-post-models-and-complete-criteria-before-prospect-country-selection',
+    'active-public-inventory-program+original-native-models+explicit-own-JD-workplace-country-proof',
   )
-  assert.equal(provider.parser, 'current-declared-native-post-models')
+  assert.equal(provider.parser, 'bound-current-public-greenhouse-board')
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  assert.equal(provider.sourcePublicInventoryProgramReviewedOn, '2026-11-03')
+  assert.equal(provider.configuredBoardProofRequiresLiveEvidence, true)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'buildkite.com')
   assert.equal(provider.verifiedOn, null)

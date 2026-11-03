@@ -151,7 +151,7 @@ test('Apar Technologies sentinel helpers stay pinned to the verified first-party
 
   assert.equal(aparTechnologies.SOURCE, 'apartechnologies')
   assert.equal(aparTechnologies.COMPANY, 'Apar Technologies')
-  assert.equal(aparTechnologies.VERIFIED_AT, '2026-10-03')
+  assert.equal(aparTechnologies.VERIFIED_AT, null)
   assert.equal(aparTechnologies.HOMEPAGE_URL, 'https://www.apartechnologies.com/')
   assert.equal(aparTechnologies.CAREERS_URL, 'https://www.apartechnologies.com/careers/')
   assert.equal(

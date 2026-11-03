@@ -3,6 +3,8 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {readCdotAdvertisement} from './nativeAdvertisement.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -97,12 +99,13 @@ export const extractOpenings = (html) => extractRows(html)
       requiredSkills: [],
       postingDate: parseDate(stripTags(cells[2])),
       closingDate: parseDate(stripTags(cells[3])),
-      jobDescription: 'Official C-DOT opening. See the advertisement for role details.',
+      jobDescription: null,
     }
   })
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url,{signal}={}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -110,28 +113,47 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+const defaultFetchBinary=async(url,{signal}={})=>{
+  const parsed=new URL(url)
+  if(parsed.origin!=='https://cdot.in'||!parsed.pathname.startsWith('/cdotweb/assets/docs/curr_openings/adv/')||!parsed.pathname.endsWith('.pdf'))throw Error('C-DOT native: advertisement URL is outside the official surface')
+  const response=await fetch(url,{signal:signal?AbortSignal.any([signal,AbortSignal.timeout(30000)]):AbortSignal.timeout(30000),redirect:'error'})
+  if(response.status!==200||response.url!==url||!/application\/pdf/i.test(response.headers.get('content-type')||''))throw Error('C-DOT native: advertised PDF response changed')
+  return Buffer.from(await response.arrayBuffer())
+}
 
 export const createCdotScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CURRENT_OPENINGS_URL)
+  async run({ fetchText = defaultFetchText,fetchBinary=defaultFetchBinary,signal } = {}) {
+    signal?.throwIfAborted()
+    const html = await fetchText(CURRENT_OPENINGS_URL,{signal})
+    signal?.throwIfAborted()
     if (!hasCurrentOpeningsSignal(html)) {
       throw new Error('C-DOT current openings page no longer exposes the expected table')
     }
 
-    const jobs = extractOpenings(html)
+    const listings = extractOpenings(html),jobs=[]
+    if(!listings.length||new Set(listings.map(job=>job.jobId)).size!==listings.length)throw Error('C-DOT native: current vacancy identity inventory is unavailable')
+    for(const listing of listings){signal?.throwIfAborted();jobs.push(await readCdotAdvertisement(await fetchBinary(listing.sourceUrl,{signal}),listing,{signal}))}
+    const closing=await fetchText(CURRENT_OPENINGS_URL,{signal})
+    signal?.throwIfAborted()
+    if(!hasCurrentOpeningsSignal(closing)||JSON.stringify(extractOpenings(closing))!==JSON.stringify(listings))throw Error('C-DOT native: closing advertised vacancy identities changed')
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-    return selectedJobs.map((job) => ({
+    const complete=selectedJobs.length===jobs.length
+    return attachInventoryEvidence(selectedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: new Date().toISOString(),
-    }))
+      sourceListingComplete:complete,
+      lifecycleCleanupAllowed:complete,
+    })),{status:complete?'complete-inventory':'coverage-gap',surface:CURRENT_OPENINGS_URL,firstParty:true,listingComplete:complete,
+      pagesFetched:2+jobs.length,reportedTotal:listings.length,indiaFacetCount:jobs.length,verifiedAt:new Date().toISOString(),
+      reason:'Declared official C-DOT current-openings table and closing identities reconciled; complete bound native PDF criteria and domestic role workplace verified'})
   },
 })
 
-export const run = async () => createCdotScraper().run()
+export const run = async (options={}) => createCdotScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

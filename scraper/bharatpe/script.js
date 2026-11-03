@@ -1,11 +1,16 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createDarwinboxScraper } from '../darwinbox/script.js'
+import { document } from '../../scraper-support/shared/rmkNativePairHtml.js'
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'bharatpe'
 export const COMPANY = 'BharatPe'
 export const HOMEPAGE_URL = 'https://bharatpe.com/'
+export const CAREERS_URL = 'https://bharatpe.com/career'
+export const NATIVE_CAREERS_URL = 'https://bharatpe.darwinbox.in/ms/candidatev2/main/careers/allJobs'
 export const CAREERS_ROUTE_URLS = [
   'https://bharatpe.com/careers',
   'https://bharatpe.com/careers/',
@@ -66,12 +71,13 @@ const isSameOfficialDomain = (value) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    signal,
   })
 
   return {
@@ -114,27 +120,36 @@ export const isVerifiedNoPublicJobsRoute = (page = {}) => {
     || NOT_FOUND_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalized))
 }
 
-export const createBharatPeScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+export const createBharatPeScraper = ({ fetchImpl } = {}) => ({
+  async run(options = {}) {
+    const { fetchPage = defaultFetchPage, signal } = options
+    signal?.throwIfAborted()
+    const homepage = await fetchPage(HOMEPAGE_URL, { signal })
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (homepage.status !== 200 || !isSameOfficialDomain(homepage.url) || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('BharatPe verified official homepage no longer matches the known public surface')
     }
 
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('BharatPe homepage now appears to expose a public jobs surface')
+    const home = document(homepage.html)
+    const careerLinks = home.nodes(node => node.tag === 'a' && /^Careers$/i.test(home.text(node)))
+      .filter(node => { try { return new URL(node.attrs.href, HOMEPAGE_URL).href.replace(/\/$/, '') === CAREERS_URL } catch { return false } })
+    if (!careerLinks.length) throw new Error('BharatPe corporate careers handoff changed')
+    const careersPage = await fetchPage(CAREERS_URL, { signal })
+    if (careersPage.status !== 200 || !isSameOfficialDomain(careersPage.url)
+      || new URL(careersPage.url).pathname.replace(/\/$/, '') !== '/career'
+      || !/<title[^>]*>\s*Careers\s*-\s*BharatPe\s*<\/title>/i.test(careersPage.html)) {
+      throw new Error('BharatPe corporate careers handoff changed')
     }
-
-    for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
-      const careersRoute = await fetchPage(careersRouteUrl)
-
-      if (!isVerifiedNoPublicJobsRoute(careersRoute)) {
-        throw new Error('BharatPe careers routes changed materially or now expose public jobs')
-      }
-    }
-
-    return []
+    const careers = document(careersPage.html)
+    const nativeLinks = careers.nodes(node => node.tag === 'a' && node.attrs.href === NATIVE_CAREERS_URL && /See openings/i.test(careers.text(node)))
+    if (!nativeLinks.length) throw new Error('BharatPe visible same-company Darwinbox handoff changed')
+    signal?.throwIfAborted()
+    const native = createDarwinboxScraper({ companyName: COMPANY, source: SOURCE,
+      origin: 'https://bharatpe.darwinbox.in', companyId: 'main', pageSize: 10,
+      ...(options.fetchImpl || fetchImpl ? { fetchImpl: options.fetchImpl || fetchImpl } : {}) })
+    const jobs = await native.run(options)
+    return mapJobsWithInventoryEvidence(jobs, job => ({ ...job, companyCareerPage: CAREERS_URL,
+      companyDomain: 'bharatpe.com', atsPlatform: 'darwinbox' }))
   },
 })
 

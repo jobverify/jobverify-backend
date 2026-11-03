@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -57,10 +58,12 @@ const normalizeLocation = (value) => {
 
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeWhitespace(value)?.toLowerCase()
-  if (!normalized) return 'Full-time'
+  if (!normalized) return null
   if (/intern|internship|apprentice/.test(normalized)) return 'Internship'
   if (/contract|temporary|fixed term/.test(normalized)) return 'Contract'
-  return 'Full-time'
+  if (/full\s*-?\s*time/.test(normalized)) return 'Full-time'
+  if (/part\s*-?\s*time/.test(normalized)) return 'Part-time'
+  return null
 }
 
 const normalizeExperience = (value) => {
@@ -199,8 +202,9 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchJson = async (url) => {
+const defaultFetchJson = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'application/json,text/plain,*/*',
@@ -214,8 +218,9 @@ const defaultFetchJson = async (url) => {
   return response.json()
 }
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -238,11 +243,15 @@ export const createBankOfAmericaScraper = ({
     fetchText: overrideFetchText,
     maxPages: overrideMaxPages,
     rows: overrideRows,
+    signal,
+    onAudit,
   } = {}) => {
     const fetchJsonImpl = overrideFetchJson || fetchJson
     const fetchTextImpl = overrideFetchText || fetchText
-    const jobs = []
-    const seenJobIds = new Set()
+    signal?.throwIfAborted()
+    let requests = 0
+    const readJson = async url => { signal?.throwIfAborted(); requests += 1; return fetchJsonImpl(url, { signal }) }
+    const readText = async url => { signal?.throwIfAborted(); requests += 1; return fetchTextImpl(url, { signal }) }
     const maxPages = Number.isInteger(overrideMaxPages)
       ? overrideMaxPages
       : Number.isInteger(config.maxPages)
@@ -250,35 +259,66 @@ export const createBankOfAmericaScraper = ({
         : Number.POSITIVE_INFINITY
     const rows = Number.isInteger(overrideRows) ? overrideRows : DEFAULT_ROWS
 
-    for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+    const collect = async () => {
+      const records = [], listings = [], seen = new Set(), cache = new Map()
+      let total = null
+      let complete = false
+      for (let pageIndex = 0; pageIndex < Math.min(maxPages, 500); pageIndex += 1) {
       const start = pageIndex * rows
-      let listingPayload = await fetchJsonImpl(buildListingUrl({ start, rows }))
+      let listingPayload = cache.get(start) || await readJson(buildListingUrl({ start, rows }))
       let summary = extractListingSummary(listingPayload)
-      let listings = extractListings(listingPayload)
+      let pageListings = extractListings(listingPayload)
       let usedSinglePageFallback = false
 
       // Some BOA searches report the full total count but ignore non-zero offsets.
       // When that happens, retry once with a single larger first-page request.
-      if (pageIndex === 0 && summary.totalCount > listings.length && listings.length === rows) {
-        const offsetProbePayload = await fetchJsonImpl(buildListingUrl({ start: rows, rows }))
+      if (pageIndex === 0 && summary.totalCount > pageListings.length && pageListings.length === rows) {
+        const offsetProbePayload = await readJson(buildListingUrl({ start: rows, rows }))
         const offsetProbeListings = extractListings(offsetProbePayload)
-
-        if (offsetProbeListings.length === 0) {
-          listingPayload = await fetchJsonImpl(buildListingUrl({ start: 0, rows: summary.totalCount }))
+        if (offsetProbeListings.length === 0 || offsetProbeListings.some(job => pageListings.some(first => first.jobId === job.jobId))) {
+          listingPayload = await readJson(buildListingUrl({ start: 0, rows: summary.totalCount }))
           summary = extractListingSummary(listingPayload)
-          listings = extractListings(listingPayload)
+          pageListings = extractListings(listingPayload)
           usedSinglePageFallback = true
-        }
+        } else cache.set(rows, offsetProbePayload)
       }
-
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailHtml = await fetchTextImpl(listing.sourceUrl)
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
+      const nativeRows = listingPayload?.jobsList
+      if (!Array.isArray(nativeRows) || !Object.hasOwn(listingPayload, 'totalMatches')
+        || !Number.isSafeInteger(summary.totalCount) || summary.totalCount < 0 || summary.totalCount > 5000
+        || (total !== null && total !== summary.totalCount)) throw new Error('Bank of America native total metadata changed')
+      total = summary.totalCount
+      for (const row of nativeRows) {
+        const id = normalizeWhitespace(row.jobRequisitionId)
+        if (!id || seen.has(id)) throw new Error('Bank of America native role identities repeat or are missing')
+        seen.add(id); records.push(row)
+      }
+      listings.push(...pageListings)
+      if (records.length === total) { complete = true; break }
+      if (usedSinglePageFallback || nativeRows.length < rows || records.length > total) break
+      }
+      return { records, listings, total, complete }
+    }
+    const opening = await collect()
+    const results = new Array(opening.listings.length), failures = []
+    let cursor = 0
+    await Promise.all(Array.from({ length: Math.min(4, results.length) }, async () => {
+      while (cursor < opening.listings.length) {
+        const index = cursor++, listing = opening.listings[index]
+        try {
+          const source = new URL(listing.sourceUrl)
+          if (source.origin !== BASE_URL || !source.pathname.startsWith(`/en-us/job-detail/${listing.jobId}/`)) throw new Error('Native detail URL is outside its listed employer/post identity')
+          const detailHtml = await readText(listing.sourceUrl)
+          const attributes = extractAttributeMap(detailHtml)
+          const detail = extractJobDetail(detailHtml, listing)
+          if (normalizeWhitespace(attributes['data-jobRequisitionID']) !== listing.jobId
+            || normalizeWhitespace(attributes['data-jobTitle'])?.toLowerCase() !== listing.title?.toLowerCase()
+            || detail.jobId !== listing.jobId || detail.title?.toLowerCase() !== listing.title?.toLowerCase()) throw new Error('Native detail identity/title does not match the listed post')
+          if (attributes['data-jobCountry'] !== 'India' || attributes['data-jobCountryName'] !== 'India') throw new Error('Native detail India country is not qualified')
+          const application = new URL(detail.applyUrl)
+          if (application.protocol !== 'https:' || application.hostname !== 'ghr.wd1.myworkdayjobs.com'
+            || !new RegExp(`_${listing.jobId}(?:-\\d+)?/?$`).test(application.pathname)) throw new Error('Native Workday application is not bound to the same employer/post')
+          if (!detail.jobDescription || detail.jobDescription.length < 100) throw new Error('Full native role criteria unavailable')
+          results[index] = {
           jobId: detail.jobId || listing.jobId,
           requisitionId: detail.requisitionId || listing.requisitionId,
           title: detail.title || listing.title,
@@ -290,6 +330,8 @@ export const createBankOfAmericaScraper = ({
           applyUrl: detail.applyUrl || listing.applyUrl,
           sourceUrl: detail.sourceUrl || listing.sourceUrl,
           source: 'bankofamerica',
+          country: 'India',
+          sourceDetailComplete: true,
           employmentType: detail.employmentType || listing.employmentType,
           experienceRequired: detail.experienceRequired || listing.experienceRequired,
           jobDescription: detail.jobDescription,
@@ -299,14 +341,29 @@ export const createBankOfAmericaScraper = ({
           postingDate: detail.postingDate || listing.postingDate,
           closingDate: detail.closingDate || listing.closingDate,
           scrapedAt: new Date().toISOString(),
-        })
+          }
+        } catch (error) { signal?.throwIfAborted(); failures.push({ stage: 'native-detail', jobId: listing.jobId, message: error.message }) }
       }
-
-      if (usedSinglePageFallback) break
-      if ((start + rows) >= summary.totalCount || listings.length === 0) break
-    }
-
-    return jobs
+    }))
+    const closing = await collect()
+    const signature = records => JSON.stringify(records.map(row => [row.jobRequisitionId, row.postingTitle, row.primaryLocation, row.location, row.country, row.jcrURL, row.postedDate, row.applyByDate]).sort((a, b) => a[0].localeCompare(b[0])))
+    const stable = opening.total === closing.total && signature(opening.records) === signature(closing.records)
+    const countryQualified = opening.listings.length === opening.records.length && opening.records.every(row => !row.country || row.country === 'India')
+    const complete = opening.complete && closing.complete && stable && countryQualified && failures.length === 0
+    const jobs = results.filter(Boolean)
+    for (const job of jobs) job.sourceListingComplete = complete
+    const audit = { source: 'bankofamerica', candidateDetails: opening.listings.length, extractedDetailJobs: jobs.length,
+      jobs: jobs.map(job => ({ id: job.jobId })), exclusions: [], failures, observedListingCount: opening.records.length,
+      observedIndiaListingCount: opening.listings.length, nonIndiaListingCount: opening.records.length - opening.listings.length,
+      listingPaginationComplete: opening.complete, closingInventoryMatches: closing.complete && stable,
+      sourceScopeComplete: complete, openingTotal: opening.total, closingTotal: closing.total, countryQualified }
+    if (jobs.length) jobs[0].nativeCollectionEvidence = audit
+    onAudit?.(audit)
+    return attachInventoryEvidence(jobs, { status: complete ? 'complete-inventory' : 'coverage-gap', firstParty: true,
+      surface: buildListingUrl(), listingComplete: complete, pagesFetched: requests, reportedTotal: opening.total,
+      indiaFacetCount: countryQualified ? opening.listings.length : null, verifiedAt: new Date().toISOString(), reason: complete
+        ? 'declared-Bank-of-America-first-party-India-board; full-country-and-application-identity-bound-details; opening-and-closing-native-total-and-unique-roles-reconciled'
+        : `Bank-of-America-native-gap; opening-complete:${opening.complete}; closing-complete:${closing.complete}; stable:${stable}; country-qualified:${countryQualified}; failed-details:${failures.length}` })
   },
 })
 

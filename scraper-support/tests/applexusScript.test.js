@@ -31,22 +31,21 @@ test('extractSearchResults returns no jobs when Applexus only exposes generic ca
   assert.deepEqual(jobs, [])
 })
 
-test('run fetches the Applexus careers page and decorates an empty result set', async () => {
+test('run rejects an HTML-only shell as unverified current public inventory', async () => {
   const applexus = await loadApplexusModule()
   assert.ok(applexus)
 
   const requestedUrls = []
   const scraper = applexus.createApplexusScraper()
 
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === applexus.CAREER_PAGE_URL) return buildCareersHtml()
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), /legacy HTML-only|public client inventory/)
 
   assert.equal(applexus.buildSearchUrl(), applexus.CAREER_PAGE_URL)
-  assert.deepEqual(requestedUrls, [applexus.CAREER_PAGE_URL])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [])
 })

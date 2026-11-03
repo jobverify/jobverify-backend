@@ -113,11 +113,11 @@ test('Aditya Birla Group pins the verified public careers homepage and zero-jobs
   assert.equal(adityaBirlaGroup.hasPublicJobSignal(verifiedOpeningHtml), true)
 })
 
-test('Aditya Birla Group returns no jobs while the verified first-party public job-search surface remains empty', async () => {
+test('Aditya Birla Group does not treat an unhydrated zero-job shell as native inventory proof', async () => {
   const adityaBirlaGroup = await loadModule()
   const requestedUrls = []
 
-  const jobs = await adityaBirlaGroup.createAdityaBirlaGroupScraper().run({
+  await assert.rejects(adityaBirlaGroup.createAdityaBirlaGroupScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
 
@@ -135,14 +135,13 @@ test('Aditya Birla Group returns no jobs while the verified first-party public j
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), /anonymous public-page token unavailable/i)
 
   assert.deepEqual(requestedUrls, [
     adityaBirlaGroup.HOMEPAGE_URL,
     adityaBirlaGroup.CAREERS_HOME_URL,
     adityaBirlaGroup.JOB_SEARCH_URL,
   ])
-  assert.deepEqual(jobs, [])
 })
 
 test('Aditya Birla Group fails closed when the verified homepage, careers handoff, or public search surface drifts', async () => {
@@ -200,7 +199,7 @@ test('Aditya Birla Group fails closed when the verified homepage, careers handof
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /public jobs surface now exposes openings/i,
+    /anonymous public-page token unavailable/i,
   )
 })
 
@@ -219,20 +218,19 @@ const gatewayFailure = (status) => new Error('Shared fetch exhausted retries', {
 })
 
 for (const status of [502, 503, 504]) {
-  test('Aditya Birla Group verifies the careers inventory when its corporate homepage returns HTTP ' + status, async () => {
+  test('Aditya Birla Group still requires native proof after its corporate homepage returns HTTP ' + status, async () => {
     const adityaBirlaGroup = await loadModule()
-    const jobs = await adityaBirlaGroup.run({
+    await assert.rejects(adityaBirlaGroup.run({
       fetchText: fetchAfterHomepageFailure(adityaBirlaGroup, gatewayFailure(status)),
-    })
-    assert.deepEqual(jobs, [])
+    }), /anonymous public-page token unavailable/i)
   })
 }
 
 for (const [name, surface, expectedError] of [
   ['careers branding changes', { careersHtml: '<html><title>Other Company</title></html>' }, /verified public careers homepage/i],
   ['careers handoff changes', { careersHtml: verifiedCareersHomeHtml.replace('/job-search', '/different-openings') }, /verified public job-search route/i],
-  ['search exposes openings', { jobSearchHtml: verifiedOpeningHtml }, /public jobs surface now exposes openings/i],
-  ['zero-jobs evidence disappears', { jobSearchHtml: '<html><title>Maintenance</title></html>' }, /verified zero-jobs shell/i],
+  ['search exposes openings without its native protocol', { jobSearchHtml: verifiedOpeningHtml }, /anonymous public-page token unavailable/i],
+  ['zero-jobs evidence disappears', { jobSearchHtml: '<html><title>Maintenance</title></html>' }, /anonymous public-page token unavailable/i],
 ]) {
   test('Aditya Birla Group fails closed during a homepage outage when ' + name, async () => {
     const adityaBirlaGroup = await loadModule()

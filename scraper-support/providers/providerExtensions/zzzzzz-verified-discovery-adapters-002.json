@@ -38,7 +38,7 @@
         "proof/batch-007-open-33.json",
         "proof/batch-007-click-06.json"
       ],
-      "httpProofFile": "../artifacts/full-catalog/verified-discovery-adapters-002/aspentechnology-official-http.json",
+      "httpProofFile": "scraper-support/providers/evidence/verified-discovery-adapters-002/aspentechnology-official-http.json",
       "httpProofSha256": "dd06e441e898d19ca3960ce0c17da7ce98ab5421d5ff798063d0ded1448ce7e8",
       "officialMatchedLinks": [
         {
@@ -91,7 +91,7 @@
         "proof/batch-007-click-07.json",
         "proof/batch-007-click-11.json"
       ],
-      "httpProofFile": "../artifacts/full-catalog/verified-discovery-adapters-002/assembled-official-http.json",
+      "httpProofFile": "scraper-support/providers/evidence/verified-discovery-adapters-002/assembled-official-http.json",
       "httpProofSha256": "d813b05e5896dd309568c545e5582f591470b89323feaae14a089f3620c07d48",
       "officialMatchedLinks": [
         {
@@ -148,7 +148,7 @@
         "proof/batch-007-open-14.json",
         "proof/batch-007-click-08.json"
       ],
-      "httpProofFile": "../artifacts/full-catalog/verified-discovery-adapters-002/assemblyai-official-http.json",
+      "httpProofFile": "scraper-support/providers/evidence/verified-discovery-adapters-002/assemblyai-official-http.json",
       "httpProofSha256": "183decce2a238ce1cac85e72494d8899ae8634c397c4d9a0ea7fe745425e20fc",
       "officialMatchedLinks": [
         {

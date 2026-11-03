@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import provider from './provider.js'
 
@@ -62,12 +63,21 @@ export const hasOfficialCareersSignal = (html = '') => {
   return /<title>\s*Careers\s*(?:&|&amp;)\s*Jobs\s+at\s+Aiven/i.test(page)
     && /(?:og:url|canonical)["'][^>]+https:\/\/aiven\.io\/careers\/job/i.test(page)
     && />\s*Open positions\s*</i.test(page)
-    && /\/careers\/job\/\d+/i.test(page)
+    && /(?:\/careers\/job\/\d+|https:\/\/careers\.aiven\.io\/openings\/\d+)/i.test(page)
+}
+
+const isOfficialRoleUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && !url.username && !url.password
+      && ((url.hostname === 'aiven.io' && /^\/careers\/job\/\d+\/?$/.test(url.pathname))
+        || (url.hostname === 'careers.aiven.io' && /^\/openings\/\d+\/?$/.test(url.pathname)))
+  } catch { return false }
 }
 
 export const extractIndiaJobUrls = (html = '') => {
   const matches = String(html ?? '').matchAll(
-    /<a\b[^>]*href=["']([^"']*\/careers\/job\/\d+[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi,
+    /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
   )
 
   const urls = []
@@ -75,10 +85,10 @@ export const extractIndiaJobUrls = (html = '') => {
 
   for (const match of matches) {
     const label = stripTags(match[2]) || ''
-    if (!/india/i.test(label)) continue
+    if (!/\bIndia\b/i.test(label)) continue
 
     const url = toAbsoluteUrl(match[1])
-    if (!url || seen.has(url)) continue
+    if (!url || !isOfficialRoleUrl(url) || seen.has(url)) continue
 
     seen.add(url)
     urls.push(url)
@@ -106,7 +116,7 @@ const splitHeadingLocation = (heading) => {
   return { title, city, state, country, location }
 }
 
-const extractJobIdFromUrl = (url) => normalizeWhitespace(String(url ?? '').match(/\/careers\/job\/(\d+)/i)?.[1])
+const extractJobIdFromUrl = (url) => normalizeWhitespace(String(url ?? '').match(/\/(?:careers\/job|openings)\/(\d+)/i)?.[1])
 
 const extractDetailFragments = (html = '') => {
   const truncated = String(html ?? '').split(/How to Recognize and Avoid Employment Scams:/i)[0]
@@ -125,6 +135,24 @@ const buildJobDescription = (html = '', heading = null) => {
 }
 
 export const extractJobFromDetail = (url, html = '') => {
+  if (!isOfficialRoleUrl(url)) return null
+  for (const match of String(html).matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    let posting
+    try { posting = JSON.parse(match[1]) } catch { continue }
+    if (posting?.['@type'] !== 'JobPosting') continue
+    const address = posting.jobLocation?.address
+    const country = address?.addressCountry
+    if (posting.hiringOrganization?.name !== 'Aiven' || !/^(?:IN|India)$/i.test(country || '')) return null
+    const title = stripTags(posting.title)
+    const jobDescription = stripTags(posting.description)
+    if (!title || !jobDescription || (posting.url && posting.url !== url)) return null
+    const location = [address.addressLocality, address.addressRegion, 'India'].filter(Boolean).join(', ')
+    return { title, company: COMPANY, department: null, location, city: address.addressLocality || null,
+      state: address.addressRegion || null, country: 'India', jobId: extractJobIdFromUrl(url),
+      requisitionId: extractJobIdFromUrl(url), sourceUrl: url, applyUrl: url,
+      jobDescription, postingDate: posting.datePosted || null, closingDate: posting.validThrough || null,
+      employmentType: posting.employmentType || null }
+  }
   const heading = extractHeading(html)
   const parsedHeading = splitHeadingLocation(heading)
   const jobId = extractJobIdFromUrl(url)
@@ -169,29 +197,33 @@ export const createAivenScraper = ({
 
     const indiaJobUrls = extractIndiaJobUrls(listingHtml)
     const jobs = []
-
-    if (indiaJobUrls.length === 0) {
-      return []
-    }
+    const allRoleUrls = new Set([...String(listingHtml).matchAll(/<a\b[^>]*href=["']([^"']+)["']/gi)]
+      .map(match => toAbsoluteUrl(match[1])).filter(isOfficialRoleUrl))
+    const reportedTotal = Number(stripTags(listingHtml)?.match(/\b(\d+)\s+jobs\b/i)?.[1])
+    const listingComplete = Number.isInteger(reportedTotal) && reportedTotal === allRoleUrls.size
 
     for (const url of indiaJobUrls) {
       const detailHtml = await fetchText(url, { signal })
       const job = extractJobFromDetail(url, detailHtml)
-      if (job) jobs.push(job)
+      if (!job) throw new Error('Aiven first-party careers surface no longer exposes trusted public Aiven India jobs: ' + url)
+      jobs.push(job)
     }
 
-    if (!jobs.length) {
+    if (indiaJobUrls.length && !jobs.length) {
       throw new Error('Aiven first-party careers surface no longer exposes trusted public Aiven India jobs')
     }
 
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
-    return selectedJobs.map((job) => ({
+    return attachInventoryEvidence(selectedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
-    }))
+    })), { status: listingComplete && selectedJobs.length === jobs.length ? (reportedTotal ? 'complete-inventory' : 'verified-empty') : 'coverage-gap',
+      surface: CAREERS_URL, firstParty: true, listingComplete: listingComplete && selectedJobs.length === jobs.length,
+      reportedTotal: Number.isInteger(reportedTotal) ? reportedTotal : null, indiaFacetCount: indiaJobUrls.length,
+      pagesFetched: 1, verifiedAt: now(), reason: 'employer-published-role-links-reconciled-with-current-listing-count' })
   },
 })
 

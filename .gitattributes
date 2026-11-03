@@ -112,3 +112,8 @@ scraper/bmcsoftware/fixtures/role-47205-http.html -text
 /test/fixtures/successFactorsRmk/discovery/proof/batch-007-click-18.json -text
 /test/fixtures/successFactorsRmk/discovery/proof/batch-007-open-35.json -text
 /test/fixtures/successFactorsRmk/discovery/proof/batch-007-click-29.json -text
+
+# Preserve the original bytes checked by the publishing and discovery proofs.
+/scraper/aeriestechnology/script.js -text whitespace=cr-at-eol
+/test/fixtures/successFactorsRmk/discovery/batch-007.json -text whitespace=cr-at-eol
+/scraper-support/providers/evidence/** -text whitespace=cr-at-eol

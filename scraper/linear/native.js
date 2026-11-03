@@ -1,10 +1,11 @@
 import crypto from 'node:crypto'
-import { createHTMLTransport, MAX_HTML_BYTES } from '../../scraper-support/shared/firstPartyHtmlJobs.js'
+import { createHTMLTransport, MAX_HTML_BYTES, HTML_REQUEST_TIMEOUT_MS } from '../../scraper-support/shared/firstPartyHtmlJobs.js'
 import { nativeCountryName, nativeLocationCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 import { readVisibleNativeDocument } from '../../scraper-support/utils/visibleNativeHtml.js'
 import { extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
 import { parseBoundedProgram, parseRemoteLiteral } from '../../scraper-support/utils/remoteScriptData.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
 import LINEAR_CATALOG from './catalog.js'
 
 export const SOURCE = LINEAR_CATALOG.source
@@ -21,6 +22,9 @@ const one = (values, reason) => { requireLinear(values.length === 1, 'missing/am
 const executable = node => node.tag === 'script' && !node.attrs.src && !Object.hasOwn(node.attrs, 'nomodule')
   && /^(?:|module|text\/javascript|application\/javascript)$/i.test(node.attrs.type || '')
 const shape = node => JSON.stringify(node, (key, value) => ['start', 'end', 'raw'].includes(key) ? undefined : value)
+const stableData = value => Array.isArray(value) ? value.map(stableData) : value && typeof value === 'object'
+  ? Object.fromEntries(Object.keys(value).sort().map(key => [key, stableData(value[key])])) : value
+const dataSignature = value => JSON.stringify(stableData(value))
 const bootstrap = '((self[Symbol.for("vinext.navigationRuntime")]??={bootstrap:{routeManifest:null},functions:{}}).bootstrap.rsc??={rsc:[]})'
 const pushShape = shape(parseBoundedProgram(bootstrap + '.rsc.push("")').body[0].expression)
 const doneShape = shape(parseBoundedProgram(bootstrap + '.done=true').body[0].expression)
@@ -59,7 +63,9 @@ const executableRuntime = html => {
       } else if (keys === 'compatibilityId') {
         requireLinear(!compatibility && uuid.test(value.compatibilityId), 'careers runtime compatibility binding changed')
         compatibility = true
-      } else requireLinear(keys === 'initialCacheKind' && ['dynamic', 'static'].includes(value.initialCacheKind), 'careers runtime metadata changed')
+      } else requireLinear((keys === 'initialCacheKind'
+        || keys === 'dynamicStaleTimeSeconds,initialCacheKind' && value.dynamicStaleTimeSeconds === 0)
+        && ['dynamic', 'static'].includes(value.initialCacheKind), 'careers runtime metadata changed')
     }
   }
   requireLinear(done && nav && compatibility && chunks.length > 0, 'careers runtime handoff missing or incomplete')
@@ -107,12 +113,30 @@ const nativeUrl = (value, id, application = false) => value === `https://jobs.as
 
 export const extractRoleSummaries = html => {
   const { doc, payload } = executableRuntime(html)
-  const canonical = one(doc.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical'), 'careers canonical URL')
-  requireLinear(canonical.attrs.href === CAREERS_PAGE_URL
-    && doc.nodes(node => node.tag === 'title').some(node => /Linear/.test(node.raw || ''))
-    && doc.nodes(node => /^h[1-3]$/.test(node.tag)).some(node => doc.text(node) === 'Open roles'), 'careers identity changed')
   const records = flightRecords(payload), root = records.get('0')?.value
   requireLinear(root?.__route === 'route:/careers' && /^\$L[a-f\d]+$/i.test(root['page:/careers']), 'careers route model is not bound')
+  let metadataDocument = doc
+  if (doc.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical').length === 0) {
+    // The current renderer streams its nonvisual head metadata into a hidden
+    // SSR container and binds that same fragment to this route's Flight root.
+    // Read only that exact metadata slot; hidden vacancy content stays inert.
+    const reference = root['__vinext_streaming_metadata_body:route:/careers']?.match(/^\$L([a-f\d]+)$/i)?.[1]
+    const body = reference && records.get(reference)
+    requireLinear(body?.kind === 'model' && Array.isArray(body.value) && body.value.length === 2, 'streamed careers metadata route binding missing')
+    const entry = body.value[0], props = entry?.[3]
+    requireLinear(Array.isArray(entry) && entry.length === 4 && entry[0] === '$' && entry[1] === 'div' && entry[2] === null
+      && props && Object.keys(props).sort().join(',') === 'dangerouslySetInnerHTML,hidden,suppressHydrationWarning'
+      && props.hidden === true && props.suppressHydrationWarning === true
+      && Object.keys(props.dangerouslySetInnerHTML || {}).join(',') === '__html', 'streamed careers metadata model changed')
+    const textReference = props.dangerouslySetInnerHTML.__html?.match(/^\$([a-f\d]+)$/i)?.[1]
+    const fragment = textReference && records.get(textReference)
+    requireLinear(fragment?.kind === 'text' && html.includes(fragment.value), 'bound careers metadata does not match original SSR fragment')
+    metadataDocument = readVisibleNativeDocument(fragment.value, { strict: true })
+  }
+  const canonical = one(metadataDocument.nodes(node => node.tag === 'link' && node.attrs.rel === 'canonical'), 'careers canonical URL')
+  requireLinear(canonical.attrs.href === CAREERS_PAGE_URL
+    && metadataDocument.nodes(node => node.tag === 'title').some(node => /Linear/.test(node.raw || ''))
+    && doc.nodes(node => /^h[1-3]$/.test(node.tag)).some(node => doc.text(node) === 'Open roles'), 'careers identity changed')
   const pages = [], visited = new Set()
   const visit = (value, depth = 0) => {
     requireLinear(depth <= 80, 'careers bound model exceeds depth limit')
@@ -164,9 +188,12 @@ export const hasVerifiedCareersPageSignal = html => { try { extractRoleSummaries
 
 const locationScope = value => {
   requireLinear(value && typeof value === 'object' && !Array.isArray(value) && typeof value.location === 'string'
-    && norm(value.location), 'native geography record malformed')
+    && norm(value.location) && Object.keys(value).every(key => ['location', 'address'].includes(key)), 'native geography record malformed')
+  requireLinear(!Object.hasOwn(value.address || {}, 'postalAddress')
+    || Object.keys(value.address).every(key => ['postalAddress', '@type'].includes(key)), 'native geography wrapper has unreviewed fields')
   const address = value.address?.postalAddress || value.address || {}
   requireLinear(address && typeof address === 'object' && !Array.isArray(address)
+    && Object.keys(address).every(key => ['@type', 'addressCountry', 'addressLocality', 'addressRegion', 'streetAddress', 'postalCode'].includes(key))
     && ['addressCountry', 'addressLocality', 'addressRegion'].every(key => address[key] == null || typeof address[key] === 'string'), 'native geography address malformed')
   const raw = address.addressCountry || null, country = nativeCountryName(raw)
   const region = raw === 'European Union' ? 'European Union' : null
@@ -297,7 +324,8 @@ export const createLinearScraper = () => {
     const read = async url => {
       signal?.throwIfAborted(); validURL(url)
       requireLinear(responses.length < 64, 'response request budget exceeded')
-      const response = await readResponse(url, { signal })
+      const boundary=signal?AbortSignal.any([signal,AbortSignal.timeout(HTML_REQUEST_TIMEOUT_MS)]):AbortSignal.timeout(HTML_REQUEST_TIMEOUT_MS)
+      const response = await new Promise((resolve,reject)=>{const abort=()=>{boundary.removeEventListener('abort',abort);reject(signal?.aborted?signal.reason:boundary.reason)};if(boundary.aborted){abort();return}boundary.addEventListener('abort',abort,{once:true});Promise.resolve().then(()=>readResponse(url,{signal:boundary})).then(value=>{boundary.removeEventListener('abort',abort);boundary.aborted?abort():resolve(value)},error=>{boundary.removeEventListener('abort',abort);boundary.aborted?abort():reject(error)})})
       signal?.throwIfAborted()
       requireLinear(response?.url === url && response.bodyComplete === true && response.body instanceof Uint8Array,
         'response identity or complete bytes unavailable')
@@ -321,6 +349,7 @@ export const createLinearScraper = () => {
       && new Set(payload.jobs.map(row => row.id)).size === payload.jobs.length, 'native role inventory identity/status changed')
     requireLinear(native.length === roles.length, 'native role identities do not reconcile with current careers page')
     const byId = new Map(roles.map(row => [row.id, row]))
+    const corporateNativeLocationMismatches=native.filter(row=>norm(byId.get(row.id)?.location)!==norm(row.location)).map(row=>({jobId:row.id,corporateLocation:byId.get(row.id)?.location??null,nativeLocation:row.location}))
     let unknownGeography = false, selectedFailures = false, rowFailures = false
     for (const row of native) {
       const official = byId.get(row.id)
@@ -328,6 +357,9 @@ export const createLinearScraper = () => {
         && nativeUrl(row.applyUrl, row.id, true) && Array.isArray(row.secondaryLocations), 'native role/application identity changed')
       let scopes
       try {
+        requireLinear(Object.keys(row).every(key => ['id', 'title', 'department', 'team', 'employmentType', 'location',
+          'secondaryLocations', 'publishedAt', 'isListed', 'isRemote', 'workplaceType', 'address', 'jobUrl', 'applyUrl',
+          'descriptionHtml', 'descriptionPlain'].includes(key)), 'native row has unreviewed public fields')
         scopes = [{ location: row.location, address: row.address }, ...row.secondaryLocations].map(locationScope)
         geography.push({ jobId: row.id, scopes })
         if (scopes.some(scope => !scope.resolved)) unknownGeography = true
@@ -366,18 +398,45 @@ export const createLinearScraper = () => {
         failures.push({ jobId: row.id, stage: 'native-detail', reason: error.message })
       }
     }
+    let closingInventoryStable = false, closingPayload = null, closingRoles = null
+    try {
+      closingRoles = extractRoleSummaries(await read(CAREERS_PAGE_URL))
+      closingPayload = JSON.parse(await read(NATIVE_API_URL))
+      closingInventoryStable = dataSignature(payload) === dataSignature(closingPayload)
+        && dataSignature(roles) === dataSignature(closingRoles)
+      if (!closingInventoryStable) failures.push({ stage: 'closing-inventory', reason: 'native or corporate inventory, country, dates or full criteria changed' })
+    } catch (error) {
+      signal?.throwIfAborted()
+      failures.push({ stage: 'closing-inventory', reason: error.message })
+    }
+    if (Array.isArray(closingPayload?.jobs)) {
+      const current = new Map(closingPayload.jobs.map(row => [row.id, row]))
+      for (let index = jobs.length - 1; index >= 0; index--) {
+        const job = jobs[index]
+        if (dataSignature(current.get(job.jobId)) !== dataSignature(job.nativeSourceRecord)) {
+          failures.push({ jobId: job.jobId, stage: 'closing-native-role', reason: 'own native role changed or disappeared' })
+          jobs.splice(index, 1)
+        }
+      }
+    }
     const timestamps = responses.map(response => response.completedAt)
     const verifiedAt = timestamps.every(value => typeof value === 'string' && Number.isFinite(Date.parse(value)))
       ? timestamps.sort()[0] : null
-    const indiaFacetCount = unknownGeography || selectedFailures || rowFailures ? null : jobs.length
-    const evidence = { status: 'discovery-only', surface: NATIVE_API_URL, firstParty: true,
-      listingComplete: false, pagesFetched: responses.length, reportedTotal: null, indiaFacetCount, verifiedAt,
-      reason: `linear-bound-current-public-board:official-roles=${roles.length};native-roles=${native.length};checked-board-india=${indiaFacetCount ?? 'unknown'};whole-company-scope-unverified`
+    const indiaFacetCount = unknownGeography || selectedFailures || rowFailures || !closingInventoryStable || corporateNativeLocationMismatches.length ? null : jobs.length
+    const configuredBoardComplete=indiaFacetCount!==null&&failures.length===0&&verifiedAt!==null
+    for(const job of jobs)Object.assign(job,{sourceListingComplete:configuredBoardComplete,sourceDeclaredBoardScopeComplete:configuredBoardComplete,sourceCompanyWideScopeComplete:false})
+    const evidence = { status: configuredBoardComplete?'complete-inventory':'discovery-only', surface: NATIVE_API_URL, firstParty: true,
+      listingComplete: configuredBoardComplete, pagesFetched: responses.length, reportedTotal: configuredBoardComplete?native.length:null, indiaFacetCount, verifiedAt,
+      reason: `linear-bound-current-public-board:official-roles=${roles.length};native-roles=${native.length};checked-board-india=${indiaFacetCount ?? 'unknown'};configured-board=${configuredBoardComplete?'complete':'partial'};company-scope-and-cleanup-unverified`
         + (unknownGeography ? ';native-geography-unresolved' : '') + (selectedFailures ? ';native-detail-unverified' : '')
-        + (rowFailures ? ';native-row-unverified' : '') }
+        + (rowFailures ? ';native-row-unverified' : '') + (!closingInventoryStable ? ';closing-inventory-unverified' : '')
+        + (corporateNativeLocationMismatches.length?';corporate-native-location-disagreement':'') }
+    attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows', observedRecordCount: native.length, observedVacancyCount: native.length, sourceScopeComplete: false })
     attachInventoryEvidence(jobs, evidence)
-    return { jobs, officialRoles: roles, nativeRoles: native, geography, failures, exclusions, responses, inventoryEvidence: evidence,
-      observedPublicRoleCount: native.length, checkedBoardIndiaCount: indiaFacetCount, sourceScopeComplete: false, lifecycleCleanupAllowed: false }
+    return { jobs, officialRoles: roles, nativeRoles: native, originalNativePayload:structuredClone(payload),corporateNativeLocationMismatches,geography, failures, exclusions, responses, inventoryEvidence: evidence,
+      observedPublicRoleCount: native.length, checkedBoardIndiaCount: indiaFacetCount, closingInventoryStable, closingPayload, closingRoles,
+      configuredBoardComplete,sourceDeclaredBoardScopeComplete:configuredBoardComplete,sourceCompanyWideScopeComplete:false,
+      companyGlobalTotal:null,companyIndiaTotal:null,sourceScopeComplete: false, lifecycleCleanupAllowed: false }
   }
   return { collect, async run(options = {}) { return (await collect(options)).jobs } }
 }

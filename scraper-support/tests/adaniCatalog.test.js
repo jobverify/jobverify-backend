@@ -7,13 +7,15 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Adani Group as an official careers no-public-listings scraper', () => {
+test('getScraperCatalog includes Adani Group current native Oracle collector with runtime-only inventory', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'adani')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'oracle-hcm')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false)
   assert.equal(provider.companyCareerPage, 'https://www.adani.com/careers')
   assert.equal(provider.companyDomain, 'adani.com')
   assert.match(provider.modulePath, /adani[\\/]script\.js$/i)
@@ -26,7 +28,7 @@ test('buildScrapers exposes a runnable Adani Group scraper without changing the 
   assert.ok(provider)
   assert.equal(typeof provider.run, 'function')
   assert.equal(provider.provider.adapter, 'script')
-  assert.equal(provider.provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.provider.atsPlatform, 'oracle-hcm')
   assert.match(provider.dryRunFile, /adani[\\/]jobs\.json$/)
 })
 

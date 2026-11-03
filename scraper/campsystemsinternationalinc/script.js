@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { CAMP_SYSTEMS_INTERNATIONAL_INC_CATALOG } from './catalog.js'
+import { createCurrentCampScraper } from './currentNative.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -58,14 +60,36 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const createCampSystemsInternationalIncScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run(options = {}) {
+    if (!options.fetchText || options.fetchImpl) return createCurrentCampScraper().run(options)
+    const { fetchText = defaultFetchText } = options
+    const timeoutMs = options.timeoutMs ?? 20000
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300000) throw Error('Invalid CAMP legacy transport deadline')
+    if (options.signal != null && !(options.signal instanceof AbortSignal)) throw Error('Invalid CAMP caller cancellation signal')
+    options.signal?.throwIfAborted()
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(new DOMException('CAMP landing deadline exceeded', 'TimeoutError')), timeoutMs)
+    const signal = AbortSignal.any([controller.signal, ...(options.signal ? [options.signal] : [])])
+    let careersHtml
+    try {
+      careersHtml = await new Promise((resolve, reject) => {
+        const finish = (callback, value) => { signal.removeEventListener('abort', abort); callback(value) }
+        const abort = () => finish(reject, signal.reason)
+        signal.addEventListener('abort', abort, { once: true })
+        Promise.resolve().then(() => fetchText(CAREERS_URL, { signal: options.signal })).then(value => finish(resolve, value), error => finish(reject, error))
+        if (signal.aborted) abort()
+      })
+      signal.throwIfAborted()
+    } finally { clearTimeout(timer) }
 
     if (!hasVerifiedCareersSignal(careersHtml)) {
       throw new Error('The verified CAMP Systems careers landing no longer matches the trusted first-party surface')
     }
 
-    return []
+    return attachInventoryEvidence([], { status: 'unverified', surface: CAREERS_URL,
+      firstParty: true, listingComplete: false, pagesFetched: 1, reportedTotal: null,
+      indiaFacetCount: null, verifiedAt: new Date().toISOString(),
+      reason: 'An HTML-only marketing landing read does not establish the current public native inventory' })
   },
 })
 

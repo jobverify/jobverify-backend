@@ -71,25 +71,26 @@ test('buildDryRunExperienceMonitorConfig prepares the Windows PowerShell monitor
 })
 
 test('resolveDryRunScraperDir prefers the shared absolute dry-run root from the catalog', () => {
-  const fallbackDir = path.resolve('C:/repo/jobverify-backend/scraper')
+  const fallbackDir = path.resolve('/repo/jobverify-backend/scraper')
+  const sharedDir = path.resolve('/external/jobverify-backend/scraper')
   const resolved = resolveDryRunScraperDir({
     fallbackDir,
     scrapers: [
-      { dryRunFile: 'C:/external/jobverify-backend/scraper/alpha/jobs.json' },
-      { dryRunFile: 'C:/external/jobverify-backend/scraper/virtusa/jobs.json' },
+      { dryRunFile: path.join(sharedDir, 'alpha', 'jobs.json') },
+      { dryRunFile: path.join(sharedDir, 'virtusa', 'jobs.json') },
     ],
   })
 
-  assert.equal(path.normalize(resolved), path.resolve('C:/external/jobverify-backend/scraper'))
+  assert.equal(path.normalize(resolved), sharedDir)
 })
 
 test('resolveDryRunScraperDir falls back when absolute dry-run roots disagree', () => {
-  const fallbackDir = path.resolve('C:/repo/jobverify-backend/scraper')
+  const fallbackDir = path.resolve('/repo/jobverify-backend/scraper')
   const resolved = resolveDryRunScraperDir({
     fallbackDir,
     scrapers: [
-      { dryRunFile: 'C:/external-a/jobverify-backend/scraper/alpha/jobs.json' },
-      { dryRunFile: 'C:/external-b/jobverify-backend/scraper/virtusa/jobs.json' },
+      { dryRunFile: path.resolve('/external-a/jobverify-backend/scraper/alpha/jobs.json') },
+      { dryRunFile: path.resolve('/external-b/jobverify-backend/scraper/virtusa/jobs.json') },
     ],
   })
 

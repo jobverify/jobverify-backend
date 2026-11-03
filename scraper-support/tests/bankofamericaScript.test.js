@@ -61,7 +61,7 @@ test('extractListings maps Bank of America jobsearchservlet postings into the sh
     city: 'Mumbai',
     jobId: '26021140',
     requisitionId: '26021140',
-    employmentType: 'Full-time',
+    employmentType: null,
     experienceRequired: null,
     postingDate: '2026-06-29',
     closingDate: null,
@@ -223,7 +223,7 @@ test('run fetches Bank of America listings and detail pages, then decorates shar
     },
   })
 
-  assert.equal(requested.length, 3)
+  assert.equal(requested.length, 4)
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].company, 'Bank of America')
   assert.equal(jobs[0].source, 'bankofamerica')
@@ -319,7 +319,7 @@ test('run refetches the full first page when the Bank of America endpoint report
   assert.equal(jobs.length, 3)
   assert.equal(
     requested.filter((url) => url.includes('/services/jobssearchservlet?')).length,
-    3,
+    6,
   )
   assert.ok(requested.some((url) => url.includes('start=0') && url.includes('rows=3')))
 })

@@ -52,24 +52,19 @@ test("BYJU'S local catalog captures the verified first-party careers landing pag
   assert.equal(BYJUS_CATALOG.countryFilter, 'India')
   assert.equal(
     BYJUS_CATALOG.paginationStrategy,
-    'careers-landing-plus-broken-route-validation',
+    'current-declared-category-and-public-intake-routes+closing-careers-links',
   )
   assert.equal(
     BYJUS_CATALOG.extractionStrategy,
-    'verified-homepage+verified-careers-landing+verified-404-routes+verified-misdirected-tech-route+verified-generic-sales-apply-route-return-empty',
+    'current-careers-identity+declared-route-status+raw-public-role-campaign-criteria;unknown-vacancy-inventory',
   )
   assert.equal(BYJUS_CATALOG.parser, 'custom-script')
   assert.equal(BYJUS_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(BYJUS_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(BYJUS_CATALOG.verifiedOn, null)
   assert.equal(BYJUS_CATALOG.dryRunFile, 'byjus/jobs.json')
-  assert.match(BYJUS_CATALOG.verifiedSurfaceSummary, /https:\/\/byjus\.com\//i)
-  assert.match(BYJUS_CATALOG.verifiedSurfaceSummary, /https:\/\/byjus\.com\/careers-at-byjus\//i)
-  assert.match(
-    BYJUS_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/byjus\.com\/careers\/all-openings\/job-category\/tech\//i,
-  )
-  assert.match(BYJUS_CATALOG.verifiedSurfaceSummary, /https:\/\/byjus\.com\/sales-apply\//i)
-  assert.match(BYJUS_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(BYJUS_CATALOG.verifiedSurfaceSummary, /13 category routes/i)
+  assert.match(BYJUS_CATALOG.verifiedSurfaceSummary, /unknown|unresolved/i)
+  assert.doesNotMatch(BYJUS_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.equal(BYJUS_CATALOG.modulePath, byjusModulePath)
 
   assert.equal(byjus.PROVIDER_METADATA.source, BYJUS_CATALOG.source)

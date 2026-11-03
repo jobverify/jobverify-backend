@@ -18,14 +18,18 @@ test('Sigma Computing is registered as a verified first-party careers plus Green
   assert.equal(provider.companyCareerPage, CAREERS_URL)
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-careers-page-plus-public-greenhouse-board')
+  assert.equal(provider.paginationStrategy, 'full-native-board-and-advertised-role-ids+full-public-details+current-native-offices+final-listing-after-all-criteria')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+public-greenhouse-jobs-api+india-location-filter',
+    'original-native-envelope+full-public-criteria+exact-role-office-ID-address-and-membership-country-proof+original-publication-date',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'sigmacomputing.com')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
   assert.match(provider.modulePath, /sigmacomputing[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)
 })

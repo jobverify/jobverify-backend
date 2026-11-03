@@ -2,9 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getNextAlertDeliveryAt, normalizeAlertSchedule } from "../src/services/alertScheduleService.js";
 
-test("accounts without a schedule retain immediate delivery", () => {
-  assert.deepEqual(normalizeAlertSchedule(null), { frequency: "immediate", isActive: true, version: 0, deliveryTime: "09:00", weeklyDay: "Monday" });
-  assert.equal(getNextAlertDeliveryAt("immediate", new Date("2026-09-12T02:00:00Z")).toISOString(), "2026-09-12T02:00:00.000Z");
+test("accounts without a schedule wait until daily delivery at 09:00 IST", () => {
+  const schedule = normalizeAlertSchedule(null);
+  assert.deepEqual(schedule, { frequency: "daily", isActive: true, version: 0, deliveryTime: "09:00", weeklyDay: "Monday" });
+  assert.equal(getNextAlertDeliveryAt(schedule.frequency, new Date("2026-09-12T02:00:00Z"), schedule).toISOString(), "2026-09-12T03:30:00.000Z");
+  assert.throws(() => getNextAlertDeliveryAt("immediate"), TypeError);
+});
+
+test("legacy immediate schedules become daily and invalidate queued schedule versions", () => {
+  const schedule = normalizeAlertSchedule({ telegramSchedule: { frequency: "immediate", isActive: false, scheduleVersion: 4, deliveryTime: "18:20" } });
+  assert.equal(schedule.frequency, "daily");
+  assert.equal(schedule.version, 5);
+  assert.equal(schedule.isActive, false);
+  assert.equal(getNextAlertDeliveryAt(schedule.frequency, new Date("2026-09-12T02:00:00Z"), schedule).toISOString(), "2026-09-12T12:50:00.000Z");
 });
 
 test("daily digests are due at the next 09:00 IST, including the exact boundary", () => {

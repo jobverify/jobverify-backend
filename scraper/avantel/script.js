@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { parseRemoteLiteral } from '../../scraper-support/utils/remoteScriptData.js'
+import { parseBoundedProgram, parseRemoteLiteral } from '../../scraper-support/utils/remoteScriptData.js'
 import { fileURLToPath } from 'node:url'
 
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
@@ -309,7 +309,13 @@ export const extractEmbeddedJobListings = (bundle = '') => {
 
   let parsed
   try {
-    parsed = parseRemoteLiteral(arrayLiteral)
+    const wrapped = `(${arrayLiteral})`
+    const expression = parseBoundedProgram(wrapped).body[0]?.expression
+    if (expression?.type !== 'ArrayExpression') return []
+    // The native renderer uses Array.map: sparse slots do not render roles.
+    // Parse every present entry with the strict literal reader; never execute
+    // the application or relax the shared remote JavaScript grammar.
+    parsed = expression.elements.filter(Boolean).map(node => parseRemoteLiteral(wrapped.slice(node.start, node.end)))
   } catch {
     return []
   }
@@ -453,8 +459,11 @@ export const createAvantelScraper = ({
         duplicateIdCounts.set(baseId, (duplicateIdCounts.get(baseId) ?? 0) + 1)
       }
 
-      return listings.map((listing) =>
+      const jobs = listings.map((listing) =>
         mapListingToJob(listing, buildStableListingId(listing, duplicateIdCounts), now))
+      return attachInventoryEvidence(jobs, { status: 'complete-inventory', surface: careersBundleUrl,
+        firstParty: true, listingComplete: true, pagesFetched: 1, reportedTotal: listings.length,
+        indiaFacetCount: jobs.length, verifiedAt: now(), reason: 'complete-native-role-array-used-by-the-first-party-renderer' })
     } catch (error) {
       if (isDnsResolutionError(error)) return buildDiscoveryOnlyEvidence(now)
       throw error

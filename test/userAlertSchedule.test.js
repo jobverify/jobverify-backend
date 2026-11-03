@@ -10,7 +10,7 @@ const response = () => ({
   json(body) { this.body = body; return this; },
 });
 
-test("schedule GET returns immediate defaults and explains local delivery time", async (t) => {
+test("schedule GET returns daily defaults and explains local delivery time", async (t) => {
   t.mock.method(Subscription, "findOne", (filter) => {
     assert.deepEqual(filter, { user: "user-1" });
     return { lean: () => ({ exec: async () => null }) };
@@ -21,13 +21,14 @@ test("schedule GET returns immediate defaults and explains local delivery time",
     telegram: { chatId: "1001", linkedAt: new Date("2026-01-01") },
     profile: { telegramAlertFilters: { jobType: ["Internship"] } } } }, res);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.data.frequency, "immediate");
+  assert.equal(res.body.data.frequency, "daily");
   assert.equal(res.body.data.isActive, true);
   assert.equal(res.body.data.timeZone, "Asia/Kolkata");
 });
 
 test("schedule validation rejects invalid cadence and non-boolean pause values", async () => {
   for (const body of [
+    { frequency: "immediate", isActive: true },
     { frequency: "hourly", isActive: true },
     { frequency: "daily", isActive: "false" },
     { frequency: "daily" },

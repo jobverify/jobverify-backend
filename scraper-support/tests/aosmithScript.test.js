@@ -53,5 +53,5 @@ test('current reader refuses text-only old India signal instead of treating it a
   assert.equal(called,false);
 });
 test('unexpected original HTML is rejected instead of becoming an empty native inventory',async()=>{
-  await assert.rejects(createAoSmithScraper().run({fetchPage:async url=>({url,status:200,headers:{},bodyBase64:Buffer.from('<main>Unexpected careers experience</main>').toString('base64')})}),/published pagination client/i);
+  await assert.rejects(createAoSmithScraper().run({fetchPage:async url=>({url,status:200,headers:{},bodyBase64:Buffer.from('<main>Unexpected careers experience</main>').toString('base64')})}),/public tile initializer|published pagination client/i);
 });

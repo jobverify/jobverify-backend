@@ -1,3 +1,8 @@
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const currentPublicFixture=()=>JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/balajitelefilms/test-data/current-public-20261103.json.gz',import.meta.url))))
+const currentCorporateHTML=()=>currentPublicFixture().responses[0].body
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -103,26 +108,10 @@ test('Balaji Telefilms verifies the official homepage, email-only careers page, 
   assert.equal(balaji.hasVerifiedIncapsulaBlockedShell(incapsulaScriptShellHtml), true)
 })
 
-test('Balaji Telefilms returns an honest zero-job result while the careers surface remains email-only', async () => {
-  const balaji = await loadBalajiTelefilmsModule()
-
-  const requestedUrls = []
-  const jobs = await balaji.createBalajiTelefilmsScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-      if (url === balaji.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
-      if (url === balaji.CAREERS_URL) return { status: 200, url, html: careersHtml }
-      return { status: 404, url, html: missingRouteHtml }
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    'https://www.balajitelefilms.com/',
-    'https://www.balajitelefilms.com/career-opportunity.php',
-    'https://www.balajitelefilms.com/careers',
-    'https://www.balajitelefilms.com/career',
-  ])
-  assert.deepEqual(jobs, [])
+test("Balaji current email intake retains explicit unknown inventory and closing evidence", async () => {
+ const balaji=await loadBalajiTelefilmsModule(),calls=[];let audit
+ const jobs=await balaji.run({fetchPage:async url=>{calls.push(url);return{url,status:200,html:currentCorporateHTML()}},onAudit:value=>{audit=value}})
+ assert.deepEqual(calls,[balaji.CAREERS_URL,balaji.CAREERS_URL]);assert.deepEqual(jobs,[]);assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(readInventoryEvidence(jobs).reportedTotal,null);assert.equal(audit.observations[0].vacancy,false);assert.equal(audit.closingMatches,true)
 })
 
 test('Balaji Telefilms fails closed if the careers surface turns into a public jobs board', async () => {
@@ -142,36 +131,16 @@ test('Balaji Telefilms fails closed if the careers surface turns into a public j
         return { status: 404, url, html: missingRouteHtml }
       },
     }),
-    /public jobs surface/i,
+    /vacancy.*collector/i,
   )
 })
 
-test('Balaji Telefilms can recover with browser-backed pages when direct requests fail', async () => {
-  const balaji = await loadBalajiTelefilmsModule()
-  const browserUrls = []
-
-  const jobs = await balaji.createBalajiTelefilmsScraper().run({
-    fetchPage: async () => {
-      throw new TypeError('fetch failed')
-    },
-    fetchBrowserPage: async (url) => {
-      browserUrls.push(url)
-      if (url === balaji.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
-      if (url === balaji.CAREERS_URL) return { status: 200, url, html: careersHtml }
-      return { status: 404, url, html: missingRouteHtml }
-    },
-  })
-
-  assert.deepEqual(browserUrls, [
-    balaji.HOMEPAGE_URL,
-    balaji.CAREERS_URL,
-    'https://www.balajitelefilms.com/careers',
-    'https://www.balajitelefilms.com/career',
-  ])
-  assert.deepEqual(jobs, [])
+test("Balaji preserves current public transport failures without alternate browser retry", async () => {
+ const balaji=await loadBalajiTelefilmsModule(),error=new TypeError('fetch failed');let browserCalls=0
+ await assert.rejects(balaji.run({fetchPage:async()=>{throw error},fetchBrowserPage:async()=>{browserCalls++;return{status:200,url:balaji.CAREERS_URL,html:currentCorporateHTML()}}}),caught=>caught===error);assert.equal(browserCalls,0)
 })
 
-test('Balaji Telefilms falls back to the verified TLS-bypassing transport when Node fetch fails certificate validation', async () => {
+test('Balaji legacy TLS helper forwards its injected certificate-error collaborator outside the registered current runtime', async () => {
   const balaji = await loadBalajiTelefilmsModule()
 
   const requestedUrls = []
@@ -198,18 +167,7 @@ test('Balaji Telefilms falls back to the verified TLS-bypassing transport when N
   assert.equal(balaji.hasVerifiedIncapsulaBlockedShell(careers.html), true)
 })
 
-test('Balaji Telefilms stays empty when the Thursday, August 13, 2026 surface is currently hidden behind the verified Incapsula shell', async () => {
-  const balaji = await loadBalajiTelefilmsModule()
-
-  const jobs = await balaji.createBalajiTelefilmsScraper().run({
-    fetchPage: async (url) => {
-      if (url === balaji.HOMEPAGE_URL || url === balaji.CAREERS_URL) {
-        return { status: 200, url, html: incapsulaScriptShellHtml }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(jobs, [])
+test("Balaji current HTTP200 challenge shell is an explicit unavailable inventory, never verified empty", async () => {
+ const balaji=await loadBalajiTelefilmsModule()
+ await assert.rejects(balaji.run({fetchPage:async url=>({status:200,url,html:incapsulaScriptShellHtml})}),error=>error.status===200&&error.failureKind==='blocked_or_access_denied'&&error.inventoryEvidence.reportedTotal===null&&error.abortRetries===true)
 })

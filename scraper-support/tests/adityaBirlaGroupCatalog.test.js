@@ -43,24 +43,24 @@ test('Aditya Birla Group local catalog captures the verified first-party public 
   assert.equal(provider.companyName, 'Aditya Birla Group')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://careers.adityabirla.com/')
-  assert.equal(provider.companyDomain, 'careers.adityabirla.com')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.companyDomain, 'adityabirla.com')
+  assert.equal(provider.atsPlatform, 'official-aditya-birla-native-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-job-search-shell')
+  assert.equal(provider.paginationStrategy, 'native-page-index-pagination-with-organisation-counts-terminal-page-and-closing-comparison')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-careers-homepage+verified-job-search-zero-jobs-shell+peoplestrong-register-handoff',
+    'public-page-token+unfiltered-group-api+native-full-detail-model+explicit-country-hierarchy+full-criteria+retained-unqualified-observations',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.homepageUrl, 'https://www.adityabirla.com/')
   assert.equal(provider.jobSearchUrl, 'https://careers.adityabirla.com/job-search')
   assert.equal(provider.uploadCvUrl, 'https://abgcareers.peoplestrong.com/register')
-  assert.equal(provider.verifiedOn, '2026-07-14')
+  assert.equal(provider.verifiedOn, null)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.adityabirla\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.adityabirla\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.adityabirla\.com\/job-search/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/abgcareers\.peoplestrong\.com\/register/i)
+  assert.match(provider.verifiedSurfaceSummary, /runtime/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /adityabirlagroup[\\/]jobs\.json$/i)
 
@@ -95,6 +95,9 @@ test('buildScrapers and company coverage resolve Aditya Birla Group from the sha
 
   assert.ok(provider)
   assert.ok(scraper)
+  assert.equal(provider.atsPlatform, 'official-aditya-birla-native-api')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false)
   assert.equal(provider.companyName, 'Aditya Birla Group')
   assert.equal(provider.companyCareerPage, 'https://careers.adityabirla.com/')
   assert.match(scraper.dryRunFile, /adityabirlagroup[\\/]jobs\.json$/i)

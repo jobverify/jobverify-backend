@@ -22,7 +22,10 @@ test('BillEase reads both current native pages and preserves the corporate/nativ
   assert.equal(jobs.nativeInventorySummary.nativeRoleCount, 48)
   assert.ok(options.calls.includes(CAREERS_BOARD_URL + '?page=2'))
   assert.equal(options.calls.filter(url => url === CAREERS_BOARD_URL + '?page=2').length, 2)
-  assert.ok(!options.calls.some(url => /\/jobs\//.test(url)), 'Unresolved scope stays partial without making an unbounded set of detail requests')
+  const details = options.calls.filter(url => /\/jobs\//.test(url))
+  assert.ok(details.length > 0 && details.length <= jobs.nativeInventorySummary.nativeRoleCount)
+  assert.equal(new Set(details).size, details.length, 'Each unresolved native posting is read at most once')
+  assert.equal(jobs.nativeInventorySummary.publicDetailObservations.length + jobs.nativeInventorySummary.publicDetailFailures.filter(row => !row.notAttemptedAfterRateLimit).length, details.length)
 })
 test('BillEase extracts a future explicit India role with full nested native content and role-bound application', async () => {
   const { jobs } = await execute(packet => billEaseIndiaRole(packet))

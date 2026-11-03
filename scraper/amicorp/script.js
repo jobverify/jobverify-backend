@@ -246,12 +246,18 @@ export const extractJobDetail = ({ listing, html }) => {
 export const createAmicorpScraper = ({
   maxJobs = null,
   now = () => new Date().toISOString(),
+  sourceTimeoutMs = 180000,
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, signal } = {}) {
+  async run({ fetchText = defaultFetchText, signal: callerSignal, onAudit } = {}) {
+    const signal=AbortSignal.any([AbortSignal.timeout(sourceTimeoutMs),...(callerSignal?[callerSignal]:[])])
+    const wait=promise=>new Promise((resolve,reject)=>{
+      const finish=(fn,value)=>{signal.removeEventListener('abort',abort);fn(value)},abort=()=>finish(reject,signal.reason)
+      signal.addEventListener('abort',abort,{once:true});Promise.resolve(promise).then(value=>finish(resolve,value),error=>finish(reject,error));if(signal.aborted)abort()
+    })
     let pagesFetched=0
     const read=async url=>{
       signal?.throwIfAborted()
-      try{const html=await fetchText(url,{signal});signal?.throwIfAborted();pagesFetched++;return html}
+      try{const html=await wait(fetchText(url,{signal}));signal.throwIfAborted();pagesFetched++;return html}
       catch(error){signal?.throwIfAborted();throw error}
     }
     const careersHtml = await read(CAREERS_URL)
@@ -273,15 +279,50 @@ export const createAmicorpScraper = ({
       ? indiaListings.slice(0, maxJobs)
       : indiaListings
 
-    const jobs = []
+    let jobs = []
+    const failures=[]
     for (const listing of selectedListings) {
       if (!sitemapDetailUrls.has(normalizeUrlKey(listing.sourceUrl))) {
         throw new Error(`Amicorp page sitemap no longer advertises the verified detail URL: ${listing.sourceUrl}`)
       }
 
       const detailHtml = await read(listing.sourceUrl)
-      jobs.push(extractJobDetail({ listing, html: detailHtml }))
+      try{
+        const job=extractJobDetail({listing,html:detailHtml})
+        if(job.sourceDetailComplete===false&&job.sourceDetailFailureKind==='identity-mismatch'){
+          failures.push({stage:'native-detail',nativeJobId:job.requisitionId||job.jobId,sourceUrl:listing.sourceUrl,
+            failureKind:'identity-mismatch',identityEvidence:job.rawNativeRoleEvidence})
+        }else jobs.push(job)
+      }catch(error){
+        if(error?.code!=='AMICORP_NATIVE_PUBLICATION_DATE_CONFLICT')throw error
+        failures.push({stage:'native-detail',nativeJobId:error.nativeJobId,sourceUrl:listing.sourceUrl,
+          failureKind:'native-publication-date-conflict',listingDate:error.listingDate,detailDate:error.detailDate})
+      }
     }
+
+    let closingInventoryMatches=false
+    if(maxJobs===null){
+      try{
+        const closingHtml=await read(CAREERS_URL),closingSitemap=await read(PAGE_SITEMAP_URL)
+        const signature=rows=>JSON.stringify([...rows].sort((a,b)=>a.sourceUrl.localeCompare(b.sourceUrl)))
+        const closingListings=extractIndiaListings(closingHtml),closingByURL=new Map(closingListings.map(row=>[row.sourceUrl,JSON.stringify(row)]))
+        closingInventoryMatches=hasOfficialCareersSurface(closingHtml)&&hasOfficialPageSitemapSurface(closingSitemap)
+          &&signature(extractCareerListings(closingHtml))===signature(extractCareerListings(careersHtml))
+          &&JSON.stringify(getCareerDetailUrlsFromSitemap(closingSitemap).sort())===JSON.stringify(getCareerDetailUrlsFromSitemap(pageSitemapXml).sort())
+        jobs=jobs.filter(job=>{
+          const listing=indiaListings.find(row=>row.sourceUrl===job.sourceUrl)
+          if(closingByURL.get(job.sourceUrl)===JSON.stringify(listing))return true
+          failures.push({stage:'native-detail',nativeJobId:job.requisitionId||job.jobId,sourceUrl:job.sourceUrl,failureKind:'native-closing-role-removed-or-changed'})
+          return false
+        })
+      }catch(error){signal.throwIfAborted();failures.push({stage:'native-inventory',failureKind:'native-closing-inventory-unavailable',message:error.message})}
+    }
+    if(jobs.length)jobs[0].nativeCollectionEvidence={source:SOURCE,candidateDetails:selectedListings.length,
+      extractedDetailJobs:jobs.length,jobs:jobs.map(job=>({id:job.jobId})),exclusions:[],failures,
+      listingPaginationComplete:false,closingInventoryMatches,sourceScopeComplete:false,
+      observedNativeCardCount:extractCareerListings(careersHtml).length,observedIndiaCardCount:indiaListings.length}
+    if(onAudit)await wait(onAudit({source:SOURCE,observedNativeCardCount:extractCareerListings(careersHtml).length,
+      observedIndiaCardCount:indiaListings.length,returned:jobs.length,closingInventoryMatches,failures,productionWrites:false}))
 
     return attachInventoryEvidence(jobs.map((job) => ({
       ...job,
@@ -289,7 +330,8 @@ export const createAmicorpScraper = ({
       link: job.applyUrl,
       scrapedAt: now(),
     })),{status:'coverage-gap',surface:CAREERS_URL,firstParty:true,listingComplete:false,pagesFetched,
-      reportedTotal:null,indiaFacetCount:null,verifiedAt:null,reason:'Opening native careers cards and sitemap checked; closing/company-wide inventory not established'})
+      reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason:`Current native careers cards and sitemap checked; closing card/sitemap models matched:${closingInventoryMatches}; company-wide channels and independent pagination total unproven`
+        +(failures.length?'; unqualified-native-details:'+failures.map(failure=>failure.nativeJobId+':'+failure.failureKind).join(','):'')})
   },
 })
 

@@ -1,5 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { runCurrentPublicCapsitech } from './currentPublic.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -62,30 +63,11 @@ const defaultFetchJson = async (url) => {
 
 export const createCapsitechScraper = () => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const fetchJson = options.fetchJson || defaultFetchJson
-    const careerPageHtml = await fetchText(CAREER_PAGE_URL)
-
-    if (!hasCareerPageSignal(careerPageHtml)) {
-      return []
-    }
-
-    const resumeKey = extractResumeKey(careerPageHtml)
-    if (!resumeKey) {
-      throw new Error('Capsitech careers page no longer exposes the public position-options key')
-    }
-
-    const optionsPayload = await fetchJson(buildCareerOptionsUrl(resumeKey))
-    if (!hasPublicPositionOptions(optionsPayload)) {
-      throw new Error('Capsitech position-options endpoint no longer exposes public application categories')
-    }
-
-    // Capsitech publishes application categories, not verifiable opening records or detail URLs.
-    return []
+    return runCurrentPublicCapsitech(options)
   },
 })
 
-export const run = async () => createCapsitechScraper().run()
+export const run = async (options = {}) => createCapsitechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

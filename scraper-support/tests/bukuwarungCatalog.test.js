@@ -54,37 +54,27 @@ test('Bukuwarung local catalog captures the verified first-party careers page an
     'https://bukuwarung.darwinbox.com/ms/candidateapi/job/alljobs?companyId=main',
   )
   assert.equal(provider.companyDomain, 'bukuwarung.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'darwinbox-public-native')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'official-careers-page-plus-darwinbox-blank-shell-and-cloudflare-api-validation',
+    'full-native-board+all-public-details+final-listing-after-closing-details',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-careers-page+verified-darwinbox-handoff+verified-blank-public-shells+verified-cloudflare-blocked-listing-api-return-empty',
+    'current-active-corporate-handoff+strict-native-identity-country-and-public-criteria+blocked-host-cache',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /bukuwarung[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/bukuwarung\.com\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.bukuwarung\.com\/career\//i)
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/bukuwarung\.darwinbox\.com\/ms\/candidate\/careers/i,
-  )
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/bukuwarung\.darwinbox\.com\/ms\/candidatev2\/main\/careers\/allJobs/i,
-  )
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/bukuwarung\.darwinbox\.com\/ms\/candidateapi\/job\/alljobs\?companyId=main/i,
-  )
-  assert.match(provider.verifiedSurfaceSummary, /Cloudflare 403/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /native HTTP403/)
+  assert.match(provider.verifiedSurfaceSummary, /unknown totals, never verified empty/)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Bukuwarung'), false)
 })
 

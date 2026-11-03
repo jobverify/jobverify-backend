@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {createCurrentSencoGoldScraper} from './currentBoundary.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -12,22 +13,6 @@ const EXPIRED_TLS_PATTERNS = [
   /\bcert_has_expired\b/i,
   /\berr_cert_date_invalid\b/i,
 ]
-
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyScraper/1.0)',
-      Accept: 'text/html,application/xhtml+xml',
-    },
-    redirect: 'follow',
-  })
-
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
-}
 
 const normalizeText = (html) => String(html || '')
   .replace(/<[^>]+>/g, ' ')
@@ -71,29 +56,7 @@ export const hasVerifiedFormOnlySurface = (page = {}) => {
   return hasCareerForm && !hasPublicListingSignal
 }
 
-export const createSencoGoldScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    let page
-
-    try {
-      page = await fetchPage(CAREERS_URL)
-    } catch (error) {
-      // This source is a verified zero-openings sentinel, so an expired cert
-      // should preserve the empty fail-closed result instead of raising noise.
-      if (hasExpiredTlsFailure(error)) {
-        return []
-      }
-
-      throw error
-    }
-
-    if (!hasVerifiedFormOnlySurface(page)) {
-      throw new Error('Senco Gold official careers surface changed from the verified form-only state')
-    }
-
-    return []
-  },
-})
+export const createSencoGoldScraper = createCurrentSencoGoldScraper
 
 export const run = async (options = {}) => createSencoGoldScraper().run(options)
 

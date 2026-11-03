@@ -104,7 +104,7 @@ test('Auzmor constants stay pinned to the verified homepage, careers marketing p
   assert.equal(auzmor.SOURCE, 'auzmor')
   assert.equal(auzmor.COMPANY, 'Auzmor')
   assert.equal(auzmor.OFFICIAL_BRAND_NAME, 'Auzmor')
-  assert.equal(auzmor.VERIFIED_ON, '2026-07-15')
+  assert.equal(auzmor.VERIFIED_ON, '2026-11-02')
   assert.equal(auzmor.HOMEPAGE_URL, 'https://auzmor.com/')
   assert.equal(auzmor.CAREERS_PAGE_URL, 'https://auzmor.com/careers/')
   assert.equal(auzmor.PAGE_SITEMAP_URL, 'https://auzmor.com/page-sitemap.xml')
@@ -119,7 +119,7 @@ test('Auzmor constants stay pinned to the verified homepage, careers marketing p
     'https://auzmor.com/company/careers',
     'https://auzmor.com/about/careers',
   ])
-  assert.match(auzmor.VERIFIED_SURFACE_SUMMARY, /Powerfully Integrating Your ATS/i)
+  assert.match(auzmor.VERIFIED_SURFACE_SUMMARY, /same-company Auzmor Hire widget/i)
   assert.equal(auzmor.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(auzmor.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(auzmor.hasExpectedCareerRouteSet(pageSitemapXml), true)

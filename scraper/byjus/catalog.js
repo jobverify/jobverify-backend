@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  "Verified on July 15, 2026 that https://byjus.com/ is the live first-party BYJU'S homepage, that https://byjus.com/careers-at-byjus/ is the live first-party careers landing page, that https://byjus.com/jobs/, https://byjus.com/careers/all-openings/, and https://byjus.com/careers/all-openings/job-category/academics/ returned 404 during live checks, that https://byjus.com/careers/all-openings/job-category/tech/ redirected to the unrelated chemistry article https://byjus.com/chemistry/technetium/, that https://byjus.com/careers/all-openings/job-category/sales/ redirected to the generic application form https://byjus.com/sales-apply/ instead of a public jobs listing, and that https://byjus.com/sitemap.xml did not expose a trustworthy public jobs surface. There is no trustworthy public jobs surface on the first-party BYJU'S domain."
+  "Current corporate careers declares 13 category routes plus a public hiring intake. Missing/misdirected categories and two public role/campaign descriptions are retained as incomplete observations. Your-city/Indian-education-market text is not country proof; generic Sales campaign and thank-you text do not invent a job title. Document dates remain original document evidence. The current native vacancy total and role eligibility remain unknown; no whole-company absence is asserted."
 
 export const BYJUS_CATALOG = {
   source: 'byjus',
@@ -27,12 +27,17 @@ export const BYJUS_CATALOG = {
   companyDomain: 'byjus.com',
   atsPlatform: 'official-company-careers-broken-routes',
   countryFilter: 'India',
-  paginationStrategy: 'careers-landing-plus-broken-route-validation',
+  paginationStrategy: "current-declared-category-and-public-intake-routes+closing-careers-links",
   extractionStrategy:
-    'verified-homepage+verified-careers-landing+verified-404-routes+verified-misdirected-tech-route+verified-generic-sales-apply-route-return-empty',
+    "current-careers-identity+declared-route-status+raw-public-role-campaign-criteria;unknown-vacancy-inventory",
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: null,
+  verifiedAt: null,
+  verifiedPublicJobCount: null,
+  verifiedIndiaJobCount: null,
+  sourceScopeComplete: false,
+  lifecycleCleanupAllowed: false,
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'byjus/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

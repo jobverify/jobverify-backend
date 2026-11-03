@@ -16,14 +16,19 @@ export const AUROBINDO_PHARMA_CATALOG = {
   careersHostUrl: 'https://aurobindo.talentrecruit.com/',
   atsPlatform: 'official-company-careers-broken-handoff',
   countryFilter: 'India',
-  paginationStrategy: 'official-careers-page-plus-broken-talentrecruit-handoff-monitor',
-  extractionStrategy: 'verified-homepage+verified-careers-page+broken-talentrecruit-handoff-return-empty',
+  paginationStrategy: "current-corporate-careers+exact-declared-native-handoff;stop-on-unavailable-inventory",
+  extractionStrategy: "current-employer-handoff-binding+native-HTTP-evidence+explicit-unverified-inventory",
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'aurobindo.com',
-  verifiedOn: '2026-07-15',
+  verifiedOn: null,
+  verifiedAt: null,
+  verifiedPublicJobCount: null,
+  verifiedIndiaJobCount: null,
+  sourceScopeComplete: false,
+  lifecycleCleanupAllowed: false,
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://www.aurobindo.com/ is the live first-party homepage, that https://www.aurobindo.com/careers is the official careers page, and that this careers page hands off Work with us / Opportunities to https://aurobindo.talentrecruit.com/Search/. There is no trustworthy public jobs surface right now: direct public checks of the TalentRecruit handoff returned an IIS 404 page, while the TalentRecruit host root resolved only to a default IIS Windows Server shell rather than a stable public job board.',
+    "Current corporate careers declares the exact Aurobindo TalentRecruit Search handoff. HTTP404or an unavailable/unreviewed native board is an explicit unknown-inventory failure, never an empty board. Only declared public routes are read; no TalentRecruit host-root guess or private application action is used. Company totals and cleanup remain unknown.",
   modulePath: path.join(currentDir, 'script.js'),
 }
 

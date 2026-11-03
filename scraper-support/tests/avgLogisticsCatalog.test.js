@@ -30,7 +30,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('AVG Logistics local catalog captures the verified first-party careers page and no-public-jobs sentinel state', async () => {
+test('AVG Logistics local catalog retains the current configured panel and unknown native inventory', async () => {
   const { AVG_LOGISTICS_CATALOG } = await loadCatalogModule()
   const avgLogistics = await loadScriptModule()
 
@@ -57,26 +57,28 @@ test('AVG Logistics local catalog captures the verified first-party careers page
   assert.equal(AVG_LOGISTICS_CATALOG.countryFilter, 'India')
   assert.equal(
     AVG_LOGISTICS_CATALOG.paginationStrategy,
-    'verified-homepage-plus-static-careers-page-plus-robots-sitemap-and-common-route-validation',
+    'opening-and-closing-current-configured-public-surface',
   )
   assert.equal(
     AVG_LOGISTICS_CATALOG.extractionStrategy,
-    'verified-homepage+verified-static-careers-page-without-public-job-cards+verified-robots-and-sitemap+verified-common-job-routes-and-portal-return-empty',
+    'current-employer-public-intake-or-unqualified-panel-observations;unknown-native-inventory',
   )
   assert.equal(AVG_LOGISTICS_CATALOG.parser, 'custom-script')
   assert.equal(AVG_LOGISTICS_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AVG_LOGISTICS_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(AVG_LOGISTICS_CATALOG.verifiedOn, null)
+  assert.match(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary,/native vacancy model.*unknown/i)
+  assert.doesNotMatch(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary,/no trustworthy public jobs surface/i)
   assert.equal(AVG_LOGISTICS_CATALOG.dryRunFile, 'avglogistics/jobs.json')
   assert.equal(AVG_LOGISTICS_CATALOG.modulePath, avgLogisticsModulePath)
-  assert.match(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary, /https:\/\/avglogistics\.com\//i)
-  assert.match(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary, /https:\/\/avglogistics\.com\/careers/i)
-  assert.match(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary, /https:\/\/avglogistics\.com\/robots\.txt/i)
-  assert.match(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.avglogistics\.com\/sitemap\.xml/i)
-  assert.match(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary, /Easily apply to multiple jobs with one click/i)
-  assert.match(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary, /empty/i)
-  assert.match(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary, /https:\/\/avglogistics\.in\//i)
-  assert.match(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary, /404/i)
-  assert.match(AVG_LOGISTICS_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+
+
+
+
+
+
+
+
+
 
   assert.equal(avgLogistics.PROVIDER_METADATA.source, AVG_LOGISTICS_CATALOG.source)
   assert.equal(avgLogistics.PROVIDER_METADATA.companyName, AVG_LOGISTICS_CATALOG.companyName)

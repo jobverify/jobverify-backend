@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { ASCENT_HEALTH_CATALOG } from './catalog.js'
+import { createPublicIntakeScraper } from '../abmknowledgeware/publicIntake.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -18,9 +20,6 @@ export const PAGE_SITEMAP_URL = ASCENT_HEALTH_CATALOG.pageSitemapUrl
 export const SITEMAP_CAREER_ROUTE_URLS = ASCENT_HEALTH_CATALOG.sitemapCareerRouteUrls
 export const CAREER_ALIAS_ROUTE_URLS = ASCENT_HEALTH_CATALOG.careerAliasRouteUrls
 export const NO_PUBLIC_JOB_ROUTE_URLS = ASCENT_HEALTH_CATALOG.noPublicJobRouteUrls
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const KNOWN_CAREER_ROUTES = new Set(
   [CAREERS_PAGE_URL, ...CAREER_ALIAS_ROUTE_URLS].map((value) => normalizeUrl(value)),
@@ -164,59 +163,45 @@ export const isVerifiedMissingPublicJobRoute = (page = {}) => {
     && !hasPublicJobListingSignal(html)
 }
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
-
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
+const CURRENT_INTAKE = {
+  source: SOURCE, companyName: COMPANY, homepageUrl: HOMEPAGE_URL, careersUrl: CAREERS_PAGE_URL,
+  brand: /\bAscent\b/i, careersHeading: /Let['’]s rise beyond, together\./i,
+  intakeKind: 'general-resume-email', intakeEmail: 'careers@ascent-group.com',
 }
 
 export const createAscentHealthScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Ascent Health official homepage no longer matches the verified first-party surface')
-    }
-
-    const careersPage = await fetchPage(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersSignal(careersPage.html) || hasPublicJobListingSignal(careersPage.html)) {
-      throw new Error('Ascent Health careers page no longer matches the verified resume-intake careers surface')
-    }
-
-    const sitemapIndex = await fetchPage(SITEMAP_INDEX_URL)
-    if (sitemapIndex.status !== 200 || !hasExpectedSitemapIndex(sitemapIndex.html)) {
-      throw new Error('Ascent Health sitemap index no longer matches the verified first-party sitemap surface')
-    }
-
-    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
-    if (pageSitemap.status !== 200 || !hasExpectedCareerRouteSet(pageSitemap.html)) {
-      throw new Error('Ascent Health page sitemap no longer matches the verified career-route set')
-    }
-
-    for (const routeUrl of CAREER_ALIAS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedCareerAliasPage(routePage)) {
-        throw new Error(`Ascent Health career alias route changed materially or now exposes public jobs: ${routeUrl}`)
+  async run(options = {}) {
+    const injected = options.fetchPage || options.fetchText
+    const budgetMs = options.collectionBudgetMs ?? options.timeoutMs ?? 90000
+    if (!Number.isSafeInteger(budgetMs) || budgetMs < 1 || budgetMs > 600000) throw new TypeError('Invalid Ascent source deadline')
+    if (options.signal != null && !(options.signal instanceof AbortSignal)) throw new TypeError('Invalid Ascent caller signal')
+    const deadline = new AbortController()
+    const timer = injected ? null : setTimeout(() => deadline.abort(new DOMException('Ascent source deadline exceeded', 'TimeoutError')), budgetMs)
+    const signal = injected ? options.signal : AbortSignal.any([deadline.signal, ...(options.signal ? [options.signal] : [])])
+    const transport = injected || ((url) => fetchTextWithRetry(url, { label: SOURCE, timeoutMs: 20000,
+      signal, includeResponseMetadata: true, headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
+        Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+      } }))
+    const fetchPage = async (url, requestOptions) => {
+      const page = await transport(url, requestOptions)
+      if (page && typeof page === 'object' && Number.isInteger(page.status) && page.status !== 200) {
+        throw Object.assign(new Error('Ascent Health public source unavailable (HTTP ' + page.status + ')'), {
+          source: SOURCE, status: page.status, abortRetries: true, nativeJobTotal: null, nativeIndiaTotal: null,
+          failureKind: [401, 403, 429].includes(page.status) ? 'blocked_or_access_denied' : 'upstream_http_error',
+        })
       }
+      const html = typeof page === 'string' ? page : page?.html ?? page?.text
+      if (typeof html === 'string' && Buffer.byteLength(html) > 2_000_000) throw new Error('Ascent Health public HTML exceeds source bound')
+      return page
     }
-
-    for (const routeUrl of NO_PUBLIC_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedMissingPublicJobRoute(routePage)) {
-        throw new Error(`Ascent Health adjacent job route changed materially or now exposes public jobs: ${routeUrl}`)
-      }
-    }
-
-    return []
+    try { return await createPublicIntakeScraper(CURRENT_INTAKE).run({
+      ...options, signal, fetchPage, collectionBudgetMs: budgetMs,
+      now: () => new Date(options.now ? options.now() : Date.now()).toISOString(),
+      onAudit: report => options.onAudit?.({ ...report,
+        publicPages: report.publicPages.map(({ html: _html, ...receipt }) => receipt),
+      }),
+    }) } finally { clearTimeout(timer) }
   },
 })
 

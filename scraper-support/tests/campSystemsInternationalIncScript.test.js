@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const loadModule = async () => {
   try {
@@ -53,12 +54,12 @@ test('CAMP Systems International, Inc. sentinel pins the verified first-party ca
   assert.equal(campSystems.COMPANY, 'CAMP Systems International, Inc.')
   assert.equal(campSystems.OFFICIAL_BRAND_NAME, 'CAMP Systems')
   assert.equal(campSystems.CAREERS_URL, 'https://www.campsystems.com/careers')
-  assert.equal(campSystems.VERIFIED_ON, '2026-07-17')
+  assert.equal(campSystems.VERIFIED_ON, '2026-11-03')
   assert.equal(campSystems.hasVerifiedCareersSignal(careersHtml), true)
   assert.equal(campSystems.hasVerifiedCareersSignal(currentCareersHtml), true)
 })
 
-test('CAMP Systems International, Inc. returns [] while the verified first-party careers landing exposes no inline public jobs', async () => {
+test('CAMP legacy HTML-only transport retains unverified landing evidence without claiming a native vacancy total', async () => {
   const campSystems = await loadModule()
 
   const jobs = await campSystems.createCampSystemsInternationalIncScraper().run({
@@ -69,6 +70,8 @@ test('CAMP Systems International, Inc. returns [] while the verified first-party
   })
 
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
 })
 
 test('CAMP Systems International, Inc. fails closed when the verified landing page drifts', async () => {

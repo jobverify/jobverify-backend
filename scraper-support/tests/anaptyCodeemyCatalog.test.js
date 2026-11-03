@@ -14,7 +14,7 @@ test('getScraperCatalog includes ANAPTY CodeEmy as a LinkedIn guest-search scrap
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'linkedin-guest-search')
   assert.equal(provider.companyCareerPage, 'https://in.linkedin.com/company/codeemy')
-  assert.equal(provider.companyDomain, 'codeemy.com')
+  assert.equal(provider.companyDomain, 'codeemy.in')
   assert.equal(provider.parser, 'custom-script')
   assert.match(provider.modulePath, /anaptycodeemy[\\/]script\.js$/i)
 })

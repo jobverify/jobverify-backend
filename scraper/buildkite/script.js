@@ -1,4 +1,5 @@
-import { createNativeGreenhouseScraper, NATIVE_GREENHOUSE_PROFILES, nativeSourceMetadata } from '../../scraper-support/native-sources/declaredGreenhouse/nativeCareers.js'
+import { NATIVE_GREENHOUSE_PROFILES, nativeSourceMetadata } from '../../scraper-support/native-sources/declaredGreenhouse/nativeCareers.js'
+import { createCurrentGreenhouseScraper } from './currentNative.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -138,16 +139,16 @@ export const extractIndiaJobsFromGreenhousePayload = (
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: normalizeWhitespace(job?.updated_at || job?.first_published),
+      postingDate: normalizeWhitespace(job?.first_published) || null,
       closingDate: null,
       scrapedAt,
     }]
   })
 }
 
-export const createBuildkiteScraper = (defaults = {}) => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["buildkite"], defaults)
+export const createBuildkiteScraper = (defaults = {}) => createCurrentGreenhouseScraper('buildkite', defaults)
 
-export const run = options => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["buildkite"]).run(options)
+export const run = options => createBuildkiteScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
