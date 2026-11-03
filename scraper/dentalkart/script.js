@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { composeAbortSignals, fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { DENTALKART_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -23,24 +25,19 @@ const decodeHtml = value => String(value ?? '')
   .replace(/&quot;/gi, '"').replace(/&apos;/gi, "'")
   .replace(/&nbsp;/gi, ' ').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&amp;/gi, '&')
 const text = value => decodeHtml(value).replace(/\s+/g, ' ').trim()
-const hasHandoff = html => [...String(html).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi)]
-  .some(match => decodeHtml(match[1]) === CAREERS_PORTAL_URL)
+const hasHandoff = html => readNativeDocument(html).nodes(node => node.tag === 'a'
+  && node.attrs.href === CAREERS_PORTAL_URL).length > 0
 
 export const hasOfficialHomepageSignal = html => {
   const page = String(html ?? '')
-  return text(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]) === "Dentalkart - India's Largest Online Dental Store"
-    && /India&#x27;s largest online dental store\. Buy premium dental equipment, instruments, materials &amp; consumables at best prices\./i.test(page)
-    && /Search over 20,000 Dental Products/i.test(page)
+  return /^Dentalkart - India's Largest Online Dental Store(?: by SKU Count)?$/.test(text(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]))
     && /VASA DENTICITY LIMITED/i.test(page)
     && hasHandoff(page)
 }
 
 export const hasOfficialAboutPageSignal = html => {
   const page = String(html ?? '')
-  return /<title>\s*About Us\s*·\s*Dentalkart\s*<\/title>/i.test(page)
-    && /Dentalkart was built by dentists, for dentists\./i.test(page)
-    && /2 lakh\+ clinics/i.test(page)
-    && /Listed on NSE Emerge as DENTALKART/i.test(page)
+  return /<title>\s*About Us[\s\S]*?Dentalkart\s*<\/title>/i.test(page)
     && /VASA DENTICITY LIMITED/i.test(page)
     && hasHandoff(page)
 }
@@ -49,7 +46,6 @@ export const hasOfficialCareersShellSignal = html => {
   const page = String(html ?? '')
   return /<title>\s*Buy Dental Products\s*<\/title>/i.test(page)
     && /\/_next\/static\/chunks\/app\/careers\/page-[^"']+\.js/i.test(page)
-    && /Search over 20,000 Dental Products/i.test(page)
     && hasHandoff(page)
 }
 
@@ -171,7 +167,39 @@ export const createDentalkartScraper = () => ({
     const payload = await fetchJson(CAREERS_API_URL, { signal })
     signal?.throwIfAborted()
     const scrapedAt = now()
-    return extractIndiaJobs(payload, { portalJobs }).map(job => ({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt }))
+    let extracted = extractIndiaJobs(payload, { portalJobs })
+    let complete = false, reason = 'closing-native-inventory-unavailable'
+    let closingRecords = null
+    const canonical = records => JSON.stringify([...records].sort((a, b) => String(a.id).localeCompare(String(b.id))),
+      (_, value) => value && typeof value === 'object' && !Array.isArray(value)
+        ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value)
+    try {
+      const closing = await fetchJson(CAREERS_API_URL, { signal })
+      signal?.throwIfAborted()
+      extractIndiaJobs(closing)
+      closingRecords = closing.data
+      extractIndiaJobs(closing, { portalJobs })
+      complete = canonical(payload.data) === canonical(closing.data)
+      reason = complete ? 'current-legal-employer-and-complete-stable-public-zoho-inventory' : 'closing-native-role-records-changed'
+    } catch (error) {
+      signal?.throwIfAborted()
+      if (!extracted.length) throw error
+    }
+    if (closingRecords) {
+      const openingById = new Map(payload.data.map(row => [String(row.id), row]))
+      const closingById = new Map(closingRecords.map(row => [String(row.id), row]))
+      const count = extracted.length
+      extracted = extracted.filter(job => closingById.has(job.jobId)
+        && canonical([openingById.get(job.jobId)]) === canonical([closingById.get(job.jobId)]))
+      if (extracted.length !== count) reason += `;closing-native-roles-withheld:${count - extracted.length}`
+    }
+    return attachInventoryEvidence(extracted.map(job => ({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt,
+      sourceListingComplete: complete, sourceScopeComplete: complete, lifecycleCleanupAllowed: complete })), {
+      status: complete ? portalJobs.length ? 'complete-inventory' : 'verified-empty' : 'discovery-only',
+      surface: CAREERS_API_URL, firstParty: true, listingComplete: complete,
+      reportedTotal: portalJobs.length, indiaFacetCount: complete ? extracted.length : null,
+      pagesFetched: 6, verifiedAt: scrapedAt, reason,
+    })
   },
 })
 export const run = async (options = {}) => createDentalkartScraper().run(options)

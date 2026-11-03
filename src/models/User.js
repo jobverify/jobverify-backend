@@ -66,6 +66,7 @@ const ProfileSchema = new Schema(
       type: ProfilePreferenceFiltersSchema,
       default: () => ({}),
     },
+    telegramAlertTemplate: { type: String, maxlength: 3000, default: null },
   },
   { _id: false },
 );

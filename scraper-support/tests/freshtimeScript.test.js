@@ -71,18 +71,18 @@ test('Freshtime stays fail-closed on the informational Greencore surface even wh
   )
 })
 
-test('Freshtime stays fail-closed on the current Greencore not-found surface for the exact company route', async () => {
+test('Freshtime keeps the historical not-found helper and reports current HTTP 404 as a coverage failure', async () => {
   const freshtime = await loadModule()
 
   assert.doesNotThrow(() => freshtime.assertVerifiedOfficialPublicSurface(CURRENT_NOT_FOUND_PAGE_HTML))
   assert.doesNotThrow(() =>
     freshtime.assertNoPublicJobsSurface(CURRENT_NOT_FOUND_PAGE_HTML, freshtime.CAREERS_URL),
   )
-  assert.deepEqual(
-    await freshtime.createFreshtimeScraper().run({
-      fetchPage: async () => ({ status: 404, html: CURRENT_NOT_FOUND_PAGE_HTML }),
+  await assert.rejects(
+    freshtime.createFreshtimeScraper().run({
+      fetchPage: async url => ({ status: 404, url, html: CURRENT_NOT_FOUND_PAGE_HTML }),
     }),
-    [],
+    error => error.failureKind === 'coverage_gap' && error.recruitmentObservations.receipts.every(row => row.status === 404),
   )
 })
 

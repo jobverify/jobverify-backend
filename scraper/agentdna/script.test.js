@@ -125,7 +125,7 @@ test('AgentDNA scraper returns no jobs when the careers route is the current bra
   })
 
   assert.deepEqual(requests, [
-    HOMEPAGE_URL,
+    CAREERS_URL,
     CAREERS_URL,
   ])
   assert.deepEqual(jobs, [])
@@ -150,7 +150,7 @@ test('AgentDNA scraper returns no jobs when the public careers route matches the
   })
 
   assert.deepEqual(requests, [
-    HOMEPAGE_URL,
+    CAREERS_URL,
     CAREERS_URL,
   ])
   assert.deepEqual(jobs, [])
@@ -181,20 +181,20 @@ test('AgentDNA scraper rejects a careers route that starts exposing a public job
         return homepageHtml
       },
     }),
-    /public careers route now appears to expose job listings/i,
+    /public careers route now exposes unreviewed job/i,
   )
 })
 
 
-for (const route of ['homepage', 'careers']) {
+for (const route of ['configured careers']) {
   for (const [status, failureKind] of [[503, 'network_or_timeout'], [403, 'blocked_or_access_denied']]) {
     test('AgentDNA classifies HTTP ' + status + ' on ' + route + ' as an upstream failure', async () => {
-      const { createAgentDnaScraper, HOMEPAGE_URL } = await import('./script.js')
+      const { createAgentDnaScraper, CAREERS_URL } = await import('./script.js')
       const { classifyScraperError } = await import('../../scraper-support/utils/failureClassification.js')
       await assert.rejects(createAgentDnaScraper().run({
         fetchPage: async (url) => {
-          const failingRoute = route === 'homepage' ? url === HOMEPAGE_URL : url !== HOMEPAGE_URL
-          return { status: failingRoute ? status : 200, url, html: failingRoute ? 'The deployment is currently unavailable\nDEPLOYMENT_PAUSED' : homepageHtml }
+          assert.equal(url,CAREERS_URL)
+          return { status, url, html:'The deployment is currently unavailable\nDEPLOYMENT_PAUSED' }
         },
       }), (error) => {
         assert.deepEqual(classifyScraperError(error), { softFailure: true, upstreamOutage: true, failureKind })

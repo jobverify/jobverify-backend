@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { buildRewriteInput } from '../src/services/jobDescriptionPolicy.js';
+import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { buildRewriteInput, REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
 import { createRewriteClient, probeRewriteClient, rewriteCandidates, rewriteProgress } from '../rewriting/runner.js';
 import { validateProseRewrite } from '../rewriting/prose.js';
 import Job from '../src/models/Job.js';
@@ -58,6 +60,7 @@ test('embedded position and employment metadata never depend on model generation
   assert.equal(response.generationRequests, 0);
   assert.equal(response.renderedWithoutInference, true);
   assert.equal(checked.quality.modelEditedBlocks, 0);
+  assert.equal(checked.quality.outcome, 'metadata_only');
   assert.equal(checked.quality.sourceFallbackBlocks, 0);
 });
 
@@ -83,7 +86,7 @@ test('a model cannot leave a required heading that changes the next source block
   assert.equal(checked.quality.sourceFallbackBlocks, 1);
 });
 
-test('protected numbers, negation and preferred scope remain verbatim', async t => {
+test('numbers, negation and preferred scope are validated after attempting inference', async t => {
   const source = 'Required qualifications:\nAt least 2 years of Python experience is required.\nPreferred qualifications:\nAWS experience is nice-to-have.\nEmployment details:\nNo visa sponsorship is available.';
   const server = await serverFor(t, () => 'At most 10 years is required. Visa sponsorship is available.');
   const input = inputFor(source);
@@ -93,7 +96,78 @@ test('protected numbers, negation and preferred scope remain verbatim', async t 
   assert.match(checked.description, /At least 2 years of Python experience is required/);
   assert.match(checked.description, /AWS experience is nice-to-have/);
   assert.match(checked.description, /No visa sponsorship is available/);
-  assert.equal(server.requests.length, 0);
+  assert.ok(server.requests.length > 0);
+  assert.ok(checked.quality.sourceFallbackBlocks > 0);
+  assert.equal(checked.quality.outcome, 'source_fallback');
+});
+
+test('the Sattva internship body receives bounded inference despite numbers and negation', async t => {
+  const source = (await readFile(new URL('./test-data/descriptions/sattva-internship.txt', import.meta.url), 'utf8')).trim();
+  const server = await serverFor(t, text => text.replaceAll('. ', '.\n\n'));
+  const input = buildRewriteInput({ title: 'Sattva Internship Form', company: 'Sattva Media', sourceDescription: source });
+  const response = await createRewriteClient(server).generate(input);
+  const checked = validateProseRewrite(response.value, input, response.finishReason);
+  assert.equal(checked.ok, true);
+  assert.ok(response.generationRequests > 0);
+  assert.ok(server.requests.every(request => request.messages.at(-1).content.length <= 900));
+  assert.ok(server.requests.some(request => /25 countries and 5 continents/.test(request.messages.at(-1).content)));
+  assert.ok(server.requests.some(request => /no story|not just/.test(request.messages.at(-1).content)));
+  assert.equal(response.value.parts.map(part => part.source).join(''), source);
+  assert.match(checked.description, /25 countries and 5 continents/);
+  assert.match(checked.description, /no story should go unheard/);
+  assert.match(checked.description, /www\.sattva\.co\.in/);
+  assert.match(checked.description, /Location: Bengaluru \[India\]/);
+  assert.match(checked.description, /\n\n/);
+  assert.equal(checked.quality.outcome, 'model_edited');
+  assert.equal(checked.quality.sourceFallbackBlocks, 0);
+});
+
+test('conditional prose can be edited while preserving its numeric and required facts', async t => {
+  const source = 'If you enjoy media, build content for 3 months. No experience is required.';
+  const server = await serverFor(t, text => text.replace('build content', 'develop content'));
+  const input = inputFor(source);
+  const response = await createRewriteClient(server).generate(input);
+  const checked = validateProseRewrite(response.value, input, response.finishReason);
+  assert.equal(checked.ok, true);
+  assert.ok(response.generationRequests > 0);
+  assert.match(checked.description, /develop content for 3 months/);
+  assert.match(checked.description, /No experience is required/);
+  assert.equal(checked.quality.outcome, 'model_edited');
+});
+
+test('an unchanged model response is explicitly identified as source preservation', async t => {
+  const server = await serverFor(t, text => text);
+  const input = inputFor('If you enjoy media, build content for 3 months.');
+  const response = await createRewriteClient(server).generate(input);
+  const checked = validateProseRewrite(response.value, input, response.finishReason);
+  assert.equal(checked.ok, true);
+  assert.ok(response.generationRequests > 0);
+  assert.equal(checked.quality.modelEditedBlocks, 0);
+  assert.equal(checked.quality.outcome, 'source_preserved');
+  const stored = new Job({ descriptionRewrite: { quality: checked.quality } }).toObject();
+  assert.equal(stored.descriptionRewrite.quality.outcome, 'source_preserved');
+});
+
+test('an accepted v24 source-copy cache cannot bypass v25 inference', async t => {
+  const fs = await import('node:fs/promises'), os = await import('node:os'), path = await import('node:path');
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'prose-v24-copy-'));
+  t.after(async () => {
+    for (const file of await fs.readdir(directory)) await fs.unlink(path.join(directory, file));
+    await fs.rmdir(directory);
+  });
+  const source = 'If you enjoy media, build content for 3 months.';
+  const input = inputFor(source), sourceHash = createHash('sha256').update(source).digest('hex');
+  const legacyModel = { ...REWRITE_MODEL, policyVersion: 'job-description-prose-v24' };
+  const legacyKey = createHash('sha256').update(JSON.stringify(['prose-source-cache-v3', legacyModel, sourceHash, true])).digest('hex');
+  await fs.writeFile(path.join(directory, legacyKey + '.json'), JSON.stringify({ inputHash: input.inputHash, sourceHash,
+    parts: [{ source, text: source, sourceOffset: 0, protected: 'facts' }] }));
+  const server = await serverFor(t, text => text.replace('build content', 'develop content'));
+  const response = await createRewriteClient({ ...server, planCacheDir: directory }).generate(input);
+  assert.ok(response.generationRequests > 0);
+  assert.notEqual(response.cachedModelPlan, true);
+  const checked = validateProseRewrite(response.value, input, response.finishReason);
+  assert.equal(checked.ok, true);
+  assert.equal(checked.quality.outcome, 'model_edited');
 });
 
 test('source offsets and fallback contents are revalidated before a cached value can publish', async t => {

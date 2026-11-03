@@ -6,13 +6,13 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog registers MoEngage with its official Trakstar board', () => {
+test('getScraperCatalog registers MoEngage with its current official public Kula board', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'moengage')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'trakstar')
+  assert.equal(provider.atsPlatform, 'kula-public-careers')
   assert.equal(provider.companyCareerPage, 'https://www.moengage.com/careers/')
   assert.equal(provider.companyDomain, 'moengage.com')
   assert.equal(provider.parser, 'custom-script')

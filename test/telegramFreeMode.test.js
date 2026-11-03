@@ -50,6 +50,16 @@ test('Telegram routes support linking, settings and schedules for free members o
   assert.equal((await enabled.json()).data.canUseTelegramAlerts, true);
   assert.equal((await (await request('')).json()).data.canUseTelegramAlerts, true);
   assert.equal((await request('/schedule')).status, 200);
+  const template = '{title} at {company}\n{jobUrl}';
+  const savedTemplate = await request('', 'PUT', { template });
+  assert.equal(savedTemplate.status, 200);
+  assert.equal((await savedTemplate.json()).data.template, template);
+  assert.equal((await (await request('')).json()).data.template, template);
+  assert.equal((await request('', 'PUT', { template: '{unknown}\n{jobUrl}' })).status, 400);
+  const preview = await request('/preview', 'POST', { template, sample: 'minimal' });
+  assert.equal(preview.status, 200);
+  assert.match((await preview.json()).data.text, /Software Engineer at Example Company/);
+  assert.equal((await request('/preview', 'POST', { template, sample: 'unknown' })).status, 400);
   billingEnabled = true;
   assert.equal((await request('/link', 'POST')).status, 403);
   assert.equal((await request('', 'PUT', { enabled: true })).status, 403);

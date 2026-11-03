@@ -87,9 +87,10 @@ export const discoverOfficialAtsBoards = async (provider, { fetchPage = defaultF
         const target = resolve(anchor.attrs.href)
         if (!target) continue
         const hiringLink = CAREERS.test(document.text(anchor) + ' ' + target.pathname)
+        const publicBoard = identifyPublicAtsBoard(target.href)
         const nativePosting = careersPage && !/talent (?:community|network|pool)|general application/i.test(document.text(anchor))
           && (['jobs.ashbyhq.com', 'jobs.lever.co', 'jobs.eu.lever.co'].includes(target.hostname)
-            && /^\/[a-z\d][a-z\d._-]{0,100}\/[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}\/?$/i.test(target.pathname)
+            && publicBoard && /^\/[^/]+\/[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}\/?$/i.test(target.pathname)
           || ['boards.greenhouse.io', 'job-boards.greenhouse.io', 'boards.eu.greenhouse.io', 'job-boards.eu.greenhouse.io'].includes(target.hostname)
             && /^\/[a-z\d][a-z\d._-]{0,100}\/jobs\/\d+\/?$/i.test(target.pathname))
         if (hiringLink || nativePosting) addBoard(target.href, finalURL, finalURL,
@@ -118,8 +119,9 @@ export const discoverOfficialAtsBoards = async (provider, { fetchPage = defaultF
           && /^(?:|module|(?:text|application)\/javascript)$/i.test(node.attrs.type || ''))) {
           const target = resolve(script.attrs.src)
           if (!target || target.protocol !== 'https:' || target.username || target.password || target.port || target.hash) continue
-          const ashby = target.hostname === 'jobs.ashbyhq.com'
-            && /^\/[a-z\d][a-z\d._-]{0,100}\/embed$/i.test(target.pathname)
+          const embeddedBoard = identifyPublicAtsBoard(target.href)
+          const ashby = target.hostname === 'jobs.ashbyhq.com' && embeddedBoard?.atsPlatform === 'ashby'
+            && target.pathname === `/${encodeURIComponent(embeddedBoard.boardToken)}/embed`
             && (!target.search || [...target.searchParams].length === 1 && target.searchParams.get('version') === '2')
           const greenhouse = ['boards.greenhouse.io', 'boards.eu.greenhouse.io', 'job-boards.greenhouse.io', 'job-boards.eu.greenhouse.io'].includes(target.hostname)
             && target.pathname === '/embed/job_board/js' && target.searchParams.getAll('for').length === 1

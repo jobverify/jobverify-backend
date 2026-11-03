@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { IDFY_CATALOG } from './catalog.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { hydrateTurboHireJobs } from '../../scraper-support/utils/turboHireDetails.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -191,13 +192,15 @@ export const extractPublicJobs = (payload = {}) =>
     })
     .filter(Boolean)
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
     headers: {
       'User-Agent': DEFAULT_HEADERS['User-Agent'],
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
   })
 
   return {
@@ -212,6 +215,8 @@ const defaultFetchJson = async (url, options = {}) => {
     method: options.method || 'GET',
     headers: options.headers,
     body: options.body,
+    signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
+    redirect: 'error',
   })
 
   if (!response.ok) {
@@ -228,8 +233,11 @@ export const createIdfyScraper = ({
     const fetchPage = options.fetchPage || defaultFetchPage
     const fetchJson = options.fetchJson || defaultFetchJson
     const now = options.now || (() => new Date().toISOString())
+    const { signal } = options
+    signal?.throwIfAborted()
 
-    const careersPage = await fetchPage(OFFICIAL_CAREERS_URL)
+    const careersPage = await fetchPage(OFFICIAL_CAREERS_URL, { signal })
+    signal?.throwIfAborted()
     if (careersPage?.status !== 200) {
       throw new Error('IDfy official careers handoff changed; refusing to guess the public jobs source')
     }
@@ -242,7 +250,8 @@ export const createIdfyScraper = ({
       careersPage?.url === OFFICIAL_CAREERS_URL
       && hasOfficialCareersWrapperSignal(careersPage?.html)
     ) {
-      boardPage = await fetchPage(BOARD_URL)
+      boardPage = await fetchPage(BOARD_URL, { signal })
+      signal?.throwIfAborted()
     } else {
       throw new Error('IDfy official careers handoff changed; refusing to guess the public jobs source')
     }
@@ -258,16 +267,21 @@ export const createIdfyScraper = ({
     const tokenPayload = await fetchJson(NOAUTH_TOKEN_URL, {
       method: 'GET',
       headers: buildAuthenticatedHeaders(),
+      signal,
     })
+    signal?.throwIfAborted()
 
-    const listingsPayload = await fetchJson(FILTERED_JOBS_URL, {
+    const listingRequest = {
       method: 'POST',
       headers: {
         ...buildAuthenticatedHeaders(tokenPayload?.access_token),
         'Content-Type': 'application/json',
       },
       body: buildFilteredJobsRequestBody(),
-    })
+      signal,
+    }
+    const listingsPayload = await fetchJson(FILTERED_JOBS_URL, listingRequest)
+    signal?.throwIfAborted()
 
     const jobs = extractPublicJobs(listingsPayload).map((job) => ({
       ...job,
@@ -276,7 +290,10 @@ export const createIdfyScraper = ({
       scrapedAt: now(),
     }))
 
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    return hydrateTurboHireJobs({ source: SOURCE, orgId: ORG_ID, employer: COMPANY,
+      origin: ORIGIN, apiBaseUrl: API_BASE_URL, boardUrl: BOARD_URL, payload: listingsPayload, jobs,
+      fetchJson, headers: buildAuthenticatedHeaders(tokenPayload?.access_token),
+      listingUrl: FILTERED_JOBS_URL, listingRequest, maxJobs, signal, now })
   },
 })
 

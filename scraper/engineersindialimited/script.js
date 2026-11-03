@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { publicPostingDescription } from '../../rewriting/publicPostingDescription.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -221,12 +222,13 @@ export const createEngineersIndiaLimitedScraper = () => ({
     const legacyPortal = await fetchPage(CURRENT_OPENINGS_URL)
 
     if (!legacyPortal.errorKind && legacyPortal.status === 200 && hasCurrentOpeningsSignal(legacyPortal.html)) {
-      return extractOpenings(legacyPortal.html).map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: new Date().toISOString(),
-      }))
+      return extractOpenings(legacyPortal.html).map((job) => {
+        const posting = publicPostingDescription({ ...job, source: SOURCE }, legacyPortal.html,
+          legacyPortal.url || CURRENT_OPENINGS_URL)
+        return { ...job, sourceDescription: posting?.description ?? null,
+          jobDescription: posting?.description ?? null, source: SOURCE,
+          link: job.applyUrl || job.sourceUrl, scrapedAt: new Date().toISOString() }
+      })
     }
 
     if (!isExpectedLegacyPortalTimeout(legacyPortal)) {

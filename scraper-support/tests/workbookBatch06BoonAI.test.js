@@ -1,3 +1,4 @@
+import { registerCurrentRecruitmentContract } from './helpers/currentRecruitmentContract.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -95,62 +96,7 @@ const loadModule = async () => {
   }
 }
 
-test('BoonAI validates the verified public platform and recruiter surfaces and returns []', async () => {
-  const boonai = await loadModule()
-  const requestedUrls = []
 
-  const jobs = await boonai.createBoonAIScraper().run({
-    fetchHtml: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === boonai.HOME_URL) return VERIFIED_HOME_HTML
-      if (url === boonai.ABOUT_URL) return VERIFIED_ABOUT_HTML
-      if (url === boonai.PRICING_URL) return VERIFIED_PRICING_HTML
-      if (url === boonai.EMPLOYER_REGISTER_URL) return VERIFIED_EMPLOYER_REGISTER_HTML
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    boonai.HOME_URL,
-    boonai.ABOUT_URL,
-    boonai.PRICING_URL,
-    boonai.EMPLOYER_REGISTER_URL,
-  ])
-  assert.deepEqual(jobs, [])
-  assert.equal(boonai.SOURCE, 'boonai')
-  assert.equal(boonai.COMPANY, 'BoonAI')
-  assert.equal(boonai.OFFICIAL_BRAND, 'Boon.ai')
-  assert.equal(boonai.VERIFIED_ON, '2026-08-14')
-  assert.equal(boonai.CAREERS_URL, 'https://www.boonindia.ai/about')
-  assert.equal(
-    boonai.DISPOSITION,
-    'verified-public-platform-and-recruiter-surfaces-without-exact-company-careers-contract',
-  )
-  assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /Friday, August 14, 2026/)
-  assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.boonindia\.ai\/about/)
-  assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.boonindia\.ai\/pricing/)
-  assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /https:\/\/employer\.boonindia\.ai\/register/)
-  assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /registration-type chooser/i)
-  assert.equal(boonai.hasVerifiedHomeSurface(VERIFIED_HOME_HTML), true)
-  assert.equal(boonai.hasVerifiedAboutSurface(VERIFIED_ABOUT_HTML), true)
-  assert.equal(boonai.hasVerifiedPricingSurface(VERIFIED_PRICING_HTML), true)
-  assert.equal(
-    boonai.hasVerifiedEmployerRegisterSurface(VERIFIED_EMPLOYER_REGISTER_HTML),
-    true,
-  )
-  assert.equal(
-    boonai.hasVerifiedEmployerRegisterSurface(CURRENT_EMPLOYER_REGISTER_HTML),
-    true,
-  )
-  assert.equal(boonai.detectExactCompanyJobsSurface(VERIFIED_HOME_HTML, boonai.HOME_URL), null)
-  assert.equal(boonai.detectExactCompanyJobsSurface(VERIFIED_ABOUT_HTML, boonai.ABOUT_URL), null)
-  assert.equal(
-    boonai.detectExactCompanyJobsSurface(VERIFIED_PRICING_HTML, boonai.PRICING_URL),
-    null,
-  )
-})
 
 test('BoonAI rejects when the verified official marketplace or company-about markers disappear', async () => {
   const boonai = await loadModule()
@@ -281,3 +227,6 @@ test('BoonAI fails closed when exact-company JobPosting markup appears on the ve
     /exact-company public jobs surface|JobPosting markup/i,
   )
 })
+
+// Current production extraction replaces the old always-empty contract.
+registerCurrentRecruitmentContract('boonai', 'workbookBatch06BoonAI')

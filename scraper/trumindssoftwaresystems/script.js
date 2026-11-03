@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { hydrateTurboHireJobs } from '../../scraper-support/utils/turboHireDetails.js'
 
 import { TRUMINDS_SOFTWARE_SYSTEMS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -154,12 +155,15 @@ export const extractPublicJobs = (payload = {}) =>
     })
     .filter(Boolean)
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
     headers: {
       'User-Agent': DEFAULT_HEADERS['User-Agent'],
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
+    redirect: 'error',
   })
 
   if (!response.ok) {
@@ -174,6 +178,8 @@ const defaultFetchJson = async (url, options = {}) => {
     method: options.method || 'GET',
     headers: options.headers,
     body: options.body,
+    signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
+    redirect: 'error',
   })
 
   if (!response.ok) {
@@ -190,8 +196,11 @@ export const createTrumindsSoftwareSystemsScraper = ({
     const fetchText = options.fetchText || defaultFetchText
     const fetchJson = options.fetchJson || defaultFetchJson
     const now = options.now || (() => new Date().toISOString())
+    const { signal } = options
+    signal?.throwIfAborted()
 
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Truminds official careers page no longer matches the verified public surface')
     }
@@ -201,7 +210,8 @@ export const createTrumindsSoftwareSystemsScraper = ({
       throw new Error('Truminds official careers page no longer exposes the verified TurboHire handoff')
     }
 
-    const boardHtml = await fetchText(BOARD_URL)
+    const boardHtml = await fetchText(BOARD_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialBoardSignal(boardHtml)) {
       throw new Error('The official Truminds TurboHire board no longer matches the verified public surface')
     }
@@ -209,16 +219,21 @@ export const createTrumindsSoftwareSystemsScraper = ({
     const tokenPayload = await fetchJson(NOAUTH_TOKEN_URL, {
       method: 'GET',
       headers: buildAuthenticatedHeaders(),
+      signal,
     })
+    signal?.throwIfAborted()
 
-    const listingsPayload = await fetchJson(FILTERED_JOBS_URL, {
+    const listingRequest = {
       method: 'POST',
       headers: {
         ...buildAuthenticatedHeaders(tokenPayload?.access_token),
         'Content-Type': 'application/json',
       },
       body: '{}',
-    })
+      signal,
+    }
+    const listingsPayload = await fetchJson(FILTERED_JOBS_URL, listingRequest)
+    signal?.throwIfAborted()
 
     const jobs = extractPublicJobs(listingsPayload).map((job) => ({
       ...job,
@@ -227,12 +242,15 @@ export const createTrumindsSoftwareSystemsScraper = ({
       scrapedAt: now(),
     }))
 
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    return hydrateTurboHireJobs({ source: SOURCE, orgId: ORG_ID, employer: PROVIDER_METADATA.officialBrandName,
+      origin: ORIGIN, apiBaseUrl: API_BASE_URL, boardUrl: BOARD_URL, payload: listingsPayload, jobs,
+      fetchJson, headers: buildAuthenticatedHeaders(tokenPayload?.access_token),
+      listingUrl: FILTERED_JOBS_URL, listingRequest, maxJobs, signal, now })
   },
 })
 
 export const SOURCE = PROVIDER_METADATA.source
-export const run = async () => createTrumindsSoftwareSystemsScraper().run()
+export const run = async (options = {}) => createTrumindsSoftwareSystemsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

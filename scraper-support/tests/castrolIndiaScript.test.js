@@ -249,7 +249,7 @@ test('Castrol India scraper follows the verified Castrol handoff and parses publ
   const requestedUrls = []
   const algoliaRequests = []
 
-  const jobs = await castrolIndia.createCastrolIndiaScraper().run({
+  const jobs = await castrolIndia.createLegacyCastrolIndiaScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -289,7 +289,7 @@ test('Castrol India returns [] when the verified BP search surface reports no op
   const castrolIndia = await loadCastrolIndiaModule()
   const requestedUrls = []
 
-  const jobs = await castrolIndia.createCastrolIndiaScraper().run({
+  const jobs = await castrolIndia.createLegacyCastrolIndiaScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -324,7 +324,7 @@ test('Castrol India sentinel fails closed when the careers surface or BP handoff
   const castrolIndia = await loadCastrolIndiaModule()
 
   await assert.rejects(
-    castrolIndia.createCastrolIndiaScraper().run({
+    castrolIndia.createLegacyCastrolIndiaScraper().run({
       fetchPage: async (url) => {
         if (url === castrolIndia.SITEMAP_URL) {
           return { status: 200, url, html: sitemapHtml }
@@ -352,7 +352,7 @@ test('Castrol India sentinel fails closed when the careers surface or BP handoff
   )
 
   await assert.rejects(
-    castrolIndia.createCastrolIndiaScraper().run({
+    castrolIndia.createLegacyCastrolIndiaScraper().run({
       fetchPage: async (url) => {
         if (url === castrolIndia.SITEMAP_URL) {
           return { status: 200, url, html: sitemapHtml }

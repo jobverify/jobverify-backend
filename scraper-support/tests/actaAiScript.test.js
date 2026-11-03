@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const currentCaptures=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/actaai/test-data/current-public-20261103.json.gz',import.meta.url))))
 
 const loadActaAiModule = async () => {
   try {
@@ -133,7 +137,7 @@ test('extractJobDetail enriches a public LinkedIn ACTA.ai detail page using JobP
   })
 })
 
-test('run returns an empty list when ACTA.ai has no public India jobs on LinkedIn', async () => {
+test('run retains current ACTA.ai announcements without promoting a keyword-filtered guest query to employer zero', async () => {
   const actaAi = await loadActaAiModule()
   assert.ok(actaAi)
 
@@ -141,17 +145,20 @@ test('run returns an empty list when ACTA.ai has no public India jobs on LinkedI
   const scraper = actaAi.createActaAiScraper()
 
   const jobs = await scraper.run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === actaAi.LINKEDIN_COMPANY_PAGE_URL) return companyPageHtml
-      if (url === actaAi.LINKEDIN_INDIA_JOBS_URL) return zeroJobsSearchHtml
-      throw new Error(`Unexpected URL: ${url}`)
+      const row=currentCaptures.find(row=>row.url===url);assert.ok(row)
+      return{status:row.status,url:row.finalURL,html:row.body}
     },
   })
 
   assert.deepEqual(requestedUrls, [
     actaAi.LINKEDIN_COMPANY_PAGE_URL,
     actaAi.LINKEDIN_INDIA_JOBS_URL,
+    actaAi.LINKEDIN_COMPANY_PAGE_URL,
+    actaAi.LINKEDIN_INDIA_JOBS_URL,
   ])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
 })

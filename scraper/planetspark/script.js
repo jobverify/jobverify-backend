@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { publicPostingDescription } from '../../rewriting/publicPostingDescription.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -152,7 +153,7 @@ export const createPlanetSparkScraper = () => ({
     return extractRoleCards(html).map((job) => {
       const identitySlug = slugify(`${job.title}-${job.location}`)
 
-      return {
+      const currentJob = {
         ...job,
         company: COMPANY,
         department: null,
@@ -169,6 +170,9 @@ export const createPlanetSparkScraper = () => ({
         link: job.applyUrl || job.sourceUrl,
         scrapedAt: new Date().toISOString(),
       }
+      const posting = publicPostingDescription(currentJob, html, CAREERS_URL)
+      return { ...currentJob, sourceDescription: posting?.description ?? null,
+        jobDescription: posting?.description ?? null }
     })
   },
 })

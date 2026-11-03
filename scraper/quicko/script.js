@@ -1,13 +1,20 @@
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { runRecruitmentBatchSource } from '../../scraper-support/utils/recruitmentBatch20261103.js'
 
-export const SOURCE = 'quicko'
-export const COMPANY = 'Quicko'
-export const OFFICIAL_BRAND = 'Quicko'
-export const CAREERS_URL = 'https://quicko.com/'
-export const DISPOSITION = 'verified-exact-name-public-surface-fail-closed'
-export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://quicko.com/ was the live exact-name Quicko public company surface reviewed for Quicko. Local repo evidence does not establish a stable enumerable first-party jobs contract, so this company-specific scraper remains fail-closed and returns no jobs until a trustworthy public openings flow is verified.'
+// Historical public helper exports remain available; the production run below
+// uses the current recruitment extractor. Historical notes are not live proof.
+export * from './historicalBoundary20261103.js'
 
-// Local repo evidence only confirms the exact-name Quicko public company
-// surface, not a stable enumerable jobs contract, so this provider stays empty.
-export const run = async () => createFailClosedSentinelScraper().run()
+export const SOURCE = "quicko"
+export const COMPANY = "Quicko"
+export const CAREERS_URL = "https://quicko.com/"
+export const DISPOSITION = 'runtime-verified-recruitment'
+export const run = options => runRecruitmentBatchSource(SOURCE, options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const jobs = await run()
+  if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs.json'))
+  else await saveToDB(jobs, SOURCE)
+}

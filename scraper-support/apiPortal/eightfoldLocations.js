@@ -12,6 +12,7 @@ for (let a = 65; a <= 90; a++) for (let b = 65; b <= 90; b++) {
 }
 names.set('united states of america', 'US')
 names.set('usa', 'US')
+names.set('ind', 'IN')
 names.set('uk', 'GB')
 
 const fail = message => {
@@ -21,14 +22,24 @@ const fail = message => {
 }
 const explicitCountry = location => {
   const parts = location.split(',').map(clean), last = parts.at(-1)
+  // Eaton publishes complete native addresses such as "Hadapsar, Pune,
+  // Maharashtra, IND, 411013". The country is before the postal code here.
+  // Require that explicit country label; a postcode or city never supplies it.
+  if (parts.length >= 4 && parts.every(Boolean) && /^[1-9]\d{5}$/.test(last)
+    && /^(?:IND|India)$/i.test(parts.at(-2))) return 'IN'
   // A two-component raw label ending IN may mean a US state. The reviewed
   // standardized field supplies an ISO suffix; raw labels require a name or
   // an unambiguous three-component country-code position.
   return names.get(last.toLowerCase()) || (parts.length >= 3 && codes.has(last) ? last : null)
 }
-const standardizedCountry = location => {
+const standardizedCountry = (location, explicit) => {
   const parts = location.split(',').map(clean), last = parts.at(-1)
-  if (![1, 3].includes(parts.length) || parts.some(part => !part) || !codes.has(last)) fail('unrecognized standardized country format')
+  // State-wide roles can use a region/country pair (native Micron example:
+  // "Gujarat, India" / "GJ,IN"). Accept that shape only when the same raw
+  // workplace independently names its country. A bare city or state cannot
+  // acquire India scope from a two-component abbreviation alone.
+  const supported = [1, 3].includes(parts.length) || parts.length === 2 && explicit != null
+  if (!supported || parts.some(part => !part) || !codes.has(last)) fail('unrecognized standardized country format')
   return last
 }
 const sameCity = (raw, standardized) => {
@@ -56,7 +67,7 @@ export const readEightfoldLocationScope = record => {
   const countries = raw.map((location, index) => {
     const explicit = explicitCountry(location)
     if (standardized == null) return explicit
-    const normalized = clean(standardized[index]), code = standardizedCountry(normalized)
+    const normalized = clean(standardized[index]), code = standardizedCountry(normalized, explicit)
     if (explicit && explicit !== code) fail('contradictory explicit native country')
     if (!explicit && (normalized.split(',').length !== 3 || !sameCity(location, normalized))) fail('native city and standardized country are unaligned')
     return explicit || code

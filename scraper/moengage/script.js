@@ -1,4 +1,5 @@
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runCurrentMoEngage } from './currentKula.js'
 
 export const CAREERS_PAGE_URL = 'https://www.moengage.com/careers/'
 export const BOARD_URL = 'https://moengage.hire.trakstar.com/'
@@ -170,4 +171,4 @@ export const createMoEngageScraper = () => ({
   },
 })
 
-export const run = async () => createMoEngageScraper().run()
+export const run = options => runCurrentMoEngage(options)

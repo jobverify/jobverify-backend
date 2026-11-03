@@ -2,10 +2,9 @@ import { extractLinkedinJobCards } from '../../scraper-support/utils/linkedinJob
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { createCurrentProfileScraper } from './currentPublic.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const LINKEDIN_COMPANY_PAGE_URL = 'https://www.linkedin.com/company/acta-ai/'
 export const LINKEDIN_INDIA_JOBS_URL = 'https://www.linkedin.com/jobs/search/?f_C=98814926&geoId=102713980'
@@ -163,60 +162,9 @@ export const extractJobDetail = (html) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+export const createActaAiScraper = (defaults = {}) => createCurrentProfileScraper('actaai', defaults)
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
-
-export const createActaAiScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const companyHtml = await fetchText(LINKEDIN_COMPANY_PAGE_URL)
-
-    if (!pageIndicatesActaCompany(companyHtml)) {
-      throw new Error('ACTA.ai LinkedIn company page no longer matches the expected public organization page')
-    }
-
-    const searchHtml = await fetchText(LINKEDIN_INDIA_JOBS_URL)
-    const listings = extractSearchResults(searchHtml)
-    const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
-    const enrichedJobs = []
-
-    for (const listing of selectedJobs) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml)
-
-      enrichedJobs.push({
-        ...listing,
-        ...Object.fromEntries(
-          Object.entries(detail).filter(([, value]) => value != null),
-        ),
-      })
-    }
-
-    return enrichedJobs.map((job) => ({
-      ...job,
-      source: 'actaai',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
-})
-
-export const run = async () => createActaAiScraper().run()
+export const run = async (options = {}) => createActaAiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

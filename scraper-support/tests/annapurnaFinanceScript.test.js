@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { currentFixture } from '../../scraper/annapurnafinance/currentFixture.js'
 
 const loadAnnapurnaModule = async () => {
   try {
@@ -34,7 +35,7 @@ const missingRouteHtml = `
   </html>
 `
 
-test('Annapurna Finance scraper targets the verified homepage and missing public careers routes', async () => {
+test('Annapurna Finance historical missing-route helpers remain explicitly historical', async () => {
   const annapurna = await loadAnnapurnaModule()
 
   assert.equal(annapurna.HOMEPAGE_URL, 'https://annapurnafinance.in/')
@@ -47,63 +48,21 @@ test('Annapurna Finance scraper targets the verified homepage and missing public
   assert.equal(annapurna.isMissingCareerRoute({ status: 404, url: annapurna.CAREER_ROUTE_URLS[0], html: missingRouteHtml }), true)
 })
 
-test('Annapurna Finance run returns no jobs when public careers routes are verified missing', async () => {
+test('Annapurna Finance runtime follows the current public native portal instead of missing-route sentinels', async () => {
   const annapurna = await loadAnnapurnaModule()
-  const requestedUrls = []
-
-  const jobs = await annapurna.createAnnapurnaFinanceScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === annapurna.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (annapurna.CAREER_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: missingRouteHtml }
-      }
-
-      throw new Error(`Unexpected Annapurna URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    annapurna.HOMEPAGE_URL,
-    ...annapurna.CAREER_ROUTE_URLS,
-  ])
-  assert.deepEqual(jobs, [])
+  const fixture = currentFixture()
+  const jobs = await annapurna.createAnnapurnaFinanceScraper().run({ ...fixture, minRequestIntervalMs: 0 })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, '1947')
+  assert.equal(jobs[0].sourceDetailComplete, true)
+  assert.equal(jobs[0].country, null)
+  assert.ok(fixture.calls.some(row => row.method === 'POST'))
+  assert.ok(fixture.calls.every(row => !annapurna.CAREER_ROUTE_URLS.includes(row.url)))
 })
 
-test('Annapurna Finance run fails closed when homepage or missing public careers routes change', async () => {
+test('Annapurna Finance runtime cannot treat the old missing-route surface as a verified zero', async () => {
   const annapurna = await loadAnnapurnaModule()
-
-  await assert.rejects(
-    annapurna.createAnnapurnaFinanceScraper().run({
-      fetchPage: async (url) => {
-        if (url === annapurna.HOMEPAGE_URL) {
-          return { status: 200, url, html: '<html><body><h1>Unexpected</h1></body></html>' }
-        }
-
-        throw new Error(`Unexpected Annapurna URL: ${url}`)
-      },
-    }),
-    /official homepage/i,
-  )
-
-  await assert.rejects(
-    annapurna.createAnnapurnaFinanceScraper().run({
-      fetchPage: async (url) => {
-        if (url === annapurna.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (annapurna.CAREER_ROUTE_URLS.includes(url)) {
-          return { status: 200, url, html: '<html><body><h1>Current Openings</h1><a href="/apply">Apply now</a></body></html>' }
-        }
-
-        throw new Error(`Unexpected Annapurna URL: ${url}`)
-      },
-    }),
-    /career route changed materially or now exposes public jobs/i,
-  )
+  const fixture = currentFixture({ transform: ({ url, response }) => url === annapurna.HOMEPAGE_URL
+    ? { ...response, text: async () => homepageHtml } : undefined })
+  await assert.rejects(annapurna.run({ ...fixture, minRequestIntervalMs: 0 }), /official homepage\/careers handoff/i)
 })

@@ -94,6 +94,7 @@ export const createRuntimeVerifiedPublicAtsScraper = provider => ({
       throw error
     }
     const policy = provider.runtimeInventoryVerification || {}
+    const employerRoleLinks = policy.employerRoleLinks
     const expected = parsePublicUrl(policy.boardUrl)
     if (!expected || !['board-handoff', 'board-embed', 'role-links-exact'].includes(policy.mode)
       || expected.board.atsPlatform !== provider.atsPlatform || expected.board.boardToken !== provider.boardToken
@@ -104,6 +105,12 @@ export const createRuntimeVerifiedPublicAtsScraper = provider => ({
     if (policy.unavailableAdvertisedRoles !== undefined
       && (policy.unavailableAdvertisedRoles !== 'ashby-native-404' || provider.atsPlatform !== 'ashby'
         || policy.mode !== 'board-handoff')) fail('invalid configured unavailable advertised role scope')
+    if (employerRoleLinks !== undefined && (provider.atsPlatform !== 'greenhouse' || policy.mode !== 'role-links-exact'
+      || typeof employerRoleLinks !== 'object' || !employerRoleLinks
+      || typeof employerRoleLinks.pathname !== 'string' || !/^\/[a-z0-9/_-]+\/$/i.test(employerRoleLinks.pathname)
+      || typeof employerRoleLinks.idParameter !== 'string' || !/^[a-z][a-z0-9_]*$/i.test(employerRoleLinks.idParameter))) {
+      fail('invalid configured employer role identity links')
+    }
     const handoffPages = policy.employerHandoffPages
     if (handoffPages !== undefined && (!Array.isArray(handoffPages) || handoffPages.length < 1 || handoffPages.length > 3
       || handoffPages.some(value => {
@@ -140,10 +147,33 @@ export const createRuntimeVerifiedPublicAtsScraper = provider => ({
       signal?.throwIfAborted()
       employerPages.push(inspectEmployerPage(nextPage, handoffPages))
     }
+    const employerRoleId = candidate => {
+      if (!employerRoleLinks || candidate.url.origin !== new URL(provider.companyCareerPage).origin
+        || candidate.url.pathname !== employerRoleLinks.pathname || candidate.url.hash
+        || candidate.url.username || candidate.url.password || candidate.url.port) return null
+      const ids = candidate.url.searchParams.getAll(employerRoleLinks.idParameter)
+      return ids.length === 1 && /^\d+$/.test(ids[0]) ? ids[0] : null
+    }
+    const mappedEmployerLinks = employerPages.flatMap(page => page.anchorCandidates).filter(candidate => employerRoleId(candidate))
+    if (employerRoleLinks) {
+      if (!mappedEmployerLinks.length) fail('active employer role identity links not established')
+      // Follow a currently advertised first-party role, then require its active
+      // apply action to establish the same native board AND the same role ID.
+      // Query parameters on a marketing page alone cannot bind a native feed.
+      const advertised = mappedEmployerLinks[0]
+      const rolePage = await fetchPage(advertised.url.href, { signal })
+      signal?.throwIfAborted()
+      const inspected = inspectEmployerPage(rolePage, [advertised.url.href])
+      if (!inspected.anchorCandidates.some(candidate => roleId(parsePublicUrl(candidate.url.href), expected) === employerRoleId(advertised))) {
+        fail('employer role native apply identity not established')
+      }
+      employerPages.push(inspected)
+    }
     const anchorCandidates = employerPages.flatMap(page => page.anchorCandidates)
     const embedCandidates = employerPages.flatMap(page => page.embedCandidates)
     const anchors = anchorCandidates.map(candidate => parsePublicUrl(candidate.url.href)).filter(Boolean)
-    let advertisedIds = new Set(anchors.map(candidate => roleId(candidate, expected)).filter(Boolean))
+    let advertisedIds = new Set([...anchors.map(candidate => roleId(candidate, expected)),
+      ...mappedEmployerLinks.map(employerRoleId)].filter(Boolean))
     const hasBoardAnchor = anchors.some(candidate => rootBoard(candidate, expected))
     const embeds = embedCandidates.map(candidate => parsePublicUrl(candidate.url.href)).filter(Boolean)
     const hasEmbed = expected.board.atsPlatform === 'ashby' && embeds.some(candidate => sameBoard(candidate, expected)

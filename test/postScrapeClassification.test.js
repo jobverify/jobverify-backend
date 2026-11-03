@@ -275,11 +275,13 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     const blocked = await Job.create({ title: 'Testing Engineer (Fresher)', company: 'Trial Company',
       fingerprint: 'persisted-eligibility-conflict', sourceDescription: 'Minimum 3 years of professional experience required.',
       status: 'active', sourceEmploymentType: 'Full time', jobType: 'Unspecified', isPublicIndia: true, postedAt: now })
-    await Job.create({ title: 'Graduate Engineer Trainee', company: 'Trial Company', fingerprint: 'persisted-title-review',
+    await Job.create({ title: 'Graduate', company: 'Trial Company', fingerprint: 'persisted-title-review',
+      sourceDescription: 'Build and test software for our customers.', status: 'active', jobType: 'Unspecified' })
+    const trainee = await Job.create({ title: 'Graduate Engineer Trainee', company: 'Trial Company', fingerprint: 'persisted-entry-level-title',
       sourceDescription: 'Build and test software for our customers.', status: 'active', jobType: 'Unspecified' })
     const worker = { classify: async () => prediction('Full-time Experienced') }
     const result = await classifySavedJobs({ mode: 'policy', now: () => now, worker })
-    assert.equal(result.completed, 2)
+    assert.equal(result.completed, 3)
     const saved = await Job.findById(blocked._id).lean()
     assert.equal(getAuthoritativeClassification(saved).jobType, 'Unspecified')
     assert.ok(saved.classification.sourceQualityIssues.includes('conflicting_role_eligibility'))
@@ -290,9 +292,14 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     assert.equal(await Job.countDocuments(applyPublicJobVisibility({ _id: blocked._id, status: 'active' }, {}, now)), 0)
     const review = await Job.findOne({ fingerprint: 'persisted-title-review' }).lean()
     assert.deepEqual(review.classification.reviewReasons, ['entry_level_title_with_experienced_prediction'])
+    const savedTrainee = await Job.findById(trainee._id).lean()
+    assert.equal(savedTrainee.jobType, 'Full-time Fresher')
+    assert.equal(getAuthoritativeClassification(savedTrainee).jobType, 'Full-time Fresher')
+    assert.equal(savedTrainee.classification.resolved.employerExperienceProfile.minimumYears, null)
+    assert.deepEqual(savedTrainee.classification.reviewReasons, [])
     const diagnostics = []
     const rerun = await classifySavedJobs({ mode: 'policy', now: () => now, worker, onResult: row => diagnostics.push(row) })
-    assert.equal(rerun.cached, 2)
+    assert.equal(rerun.cached, 3)
     assert.equal(rerun.quality.reviewRequired, 2)
     assert.ok(diagnostics.find(row => row.id === String(blocked._id)).sourceQualityIssues.includes('conflicting_role_eligibility'))
     const fallback = diagnostics.find(row => row.id === String(review._id))

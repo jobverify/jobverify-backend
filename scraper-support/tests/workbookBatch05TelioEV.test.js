@@ -1,3 +1,4 @@
+import { registerCurrentRecruitmentContract } from './helpers/currentRecruitmentContract.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -9,13 +10,9 @@ import {
   run,
 } from '../../scraper/telioev/script.js'
 
-test('TelioEV exact-name scraper stays fail-closed without a verified jobs surface', async () => {
-  assert.deepEqual(await run(), [])
-})
 
-test('TelioEV exact-name scraper documents the verified public surface it guards', () => {
-  assert.equal(SOURCE, 'telioev')
-  assert.equal(COMPANY, 'TelioEV')
-  assert.equal(CAREERS_URL, 'https://telioev.com/')
-  assert.equal(DISPOSITION, 'verified-exact-name-public-surface-fail-closed')
-})
+
+
+
+// Current production extraction replaces the old always-empty contract.
+registerCurrentRecruitmentContract('telioev', 'workbookBatch05TelioEV')

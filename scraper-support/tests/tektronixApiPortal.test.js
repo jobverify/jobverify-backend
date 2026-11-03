@@ -1,3 +1,4 @@
+import { withEightfoldFixtureIdentity } from './fixtures/eightfoldIdentityMappingFixture.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -11,7 +12,7 @@ test('runApiPortalScraper maps Tektronix Eightfold jobs with detail-owned apply 
   const requests = []
   const jobs = await runApiPortalScraper({
     provider,
-    fetchJson: async (url, options = {}) => {
+    fetchJson: withEightfoldFixtureIdentity(provider, async (url, options = {}) => {
       requests.push({ url, options })
 
       if (url.includes('/api/pcsx/search')) {
@@ -69,7 +70,7 @@ test('runApiPortalScraper maps Tektronix Eightfold jobs with detail-owned apply 
       }
 
       throw new Error(`Unexpected fixture URL: ${url}`)
-    },
+    }),
   })
 
   assert.equal(jobs.length, 1)

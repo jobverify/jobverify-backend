@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
-  createCastrolIndiaScraper,
+  createLegacyCastrolIndiaScraper as createCastrolIndiaScraper,
   GREENHOUSE_BOARD_URL,
   GREENHOUSE_JOBS_URL,
 } from '../../scraper/castrolindia/script.js'

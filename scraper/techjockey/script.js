@@ -1,32 +1,20 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { runRecruitmentBatchSource } from '../../scraper-support/utils/recruitmentBatch20261103.js'
 
-import {
-  CAREERS_URL as SENTINEL_CAREERS_URL,
-  CONTACT_EMAIL,
-  createFailClosedSentinelScraper,
-} from './failClosedSentinel.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
+// Preserve historical public helper exports while the production run below
+// collects current recruitment data. Historical metadata is not live proof.
+export * from './historicalBoundary20261103.js'
 
 export const SOURCE = "techjockey"
 export const COMPANY = "Techjockey"
-export const CAREERS_URL = SENTINEL_CAREERS_URL
-export { CONTACT_EMAIL }
-export const DISPOSITION = "verified-first-party-careers-empty-result"
-export const VERIFIED_ON = "2026-07-25"
-export const VERIFIED_SURFACE_SUMMARY = "Verified on Saturday, July 25, 2026 that https://www.techjockey.com/company/careers was the live Techjockey public careers surface and explicitly stated that there were currently no job openings while directing candidates to career@techjockey.com. This provider returns an authoritative empty result until the verified surface changes."
-
-export const run = async () => createFailClosedSentinelScraper().run()
+export const CAREERS_URL = "https://www.techjockey.com/company/careers"
+export const DISPOSITION = 'runtime-verified-recruitment'
+export const run = options => runRecruitmentBatchSource(SOURCE, options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
-  }
+  if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs.json'))
+  else await saveToDB(jobs, SOURCE)
 }

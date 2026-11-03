@@ -1,3 +1,4 @@
+import { registerCurrentRecruitmentContract } from './helpers/currentRecruitmentContract.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -39,120 +40,15 @@ const loadModule = async () => {
   }
 }
 
-test('Fablestreet validates the verified official public surface and returns [] while no trustworthy public jobs contract is verified', async () => {
-  const fablestreet = await loadModule()
-  let requestedUrl = null
 
-  const jobs = await fablestreet.run({
-    fetchHtml: async (url) => {
-      requestedUrl = url
-      return VERIFIED_SURFACE_HTML
-    },
-  })
 
-  assert.equal(requestedUrl, fablestreet.CAREERS_URL)
-  assert.deepEqual(jobs, [])
-  assert.equal(fablestreet.SOURCE, 'fablestreet')
-  assert.equal(fablestreet.COMPANY, 'Fablestreet')
-  assert.equal(fablestreet.OFFICIAL_BRAND, 'FableStreet')
-  assert.equal(fablestreet.VERIFIED_ON, '2026-07-26')
-  assert.equal(fablestreet.CAREERS_URL, 'https://www.fablestreet.com/pages/about-us')
-  assert.equal(
-    fablestreet.DISPOSITION,
-    'verified-exact-name-official-public-surface-with-jobs-email-and-no-enumerable-public-jobs-contract',
-  )
-  assert.match(
-    fablestreet.VERIFIED_SURFACE_SUMMARY,
-    /Verified on Sunday, July 26, 2026 that https:\/\/www\.fablestreet\.com\/pages\/about-us remained the live exact-name FableStreet official public surface reviewed for workbook company Fablestreet/i,
-  )
-  assert.match(fablestreet.VERIFIED_SURFACE_SUMMARY, /careers@fablestreet\.com/i)
-  assert.match(
-    fablestreet.VERIFIED_SURFACE_SUMMARY,
-    /no trustworthy enumerable public jobs contract/i,
-  )
-})
 
-test('Fablestreet rejects when the verified official public surface markers disappear', async () => {
-  const fablestreet = await loadModule()
 
-  await assert.rejects(
-    fablestreet.run({
-      fetchHtml: async () => `
-        <html>
-          <body>
-            <main>
-              <h1>Welcome</h1>
-              <p>Premium fashion for women.</p>
-            </main>
-          </body>
-        </html>
-      `,
-    }),
-    /verified official public surface changed/i,
-  )
-})
 
-test('Fablestreet rejects when JobPosting markup appears on the verified public surface', async () => {
-  const fablestreet = await loadModule()
 
-  await assert.rejects(
-    fablestreet.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <script type="application/ld+json">
-          {"@context":"https://schema.org","@type":"JobPosting","title":"Store Manager"}
-        </script>
-      `,
-    }),
-    /JobPosting markup/i,
-  )
-})
 
-test('Fablestreet rejects when a trusted ATS or LinkedIn public jobs surface appears', async () => {
-  const fablestreet = await loadModule()
 
-  await assert.rejects(
-    fablestreet.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <a href="https://jobs.lever.co/fablestreet">Open Roles</a>
-      `,
-    }),
-    /public jobs surface/i,
-  )
 
-  await assert.rejects(
-    fablestreet.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <a href="https://www.linkedin.com/company/fablestreet/jobs/">LinkedIn Jobs</a>
-      `,
-    }),
-    /public jobs surface/i,
-  )
-})
 
-test('Fablestreet rejects when a same-origin jobs path or exact-company hiring copy appears on the verified public surface', async () => {
-  const fablestreet = await loadModule()
-
-  await assert.rejects(
-    fablestreet.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <a href="/careers/assistant-buyer">Assistant Buyer</a>
-      `,
-    }),
-    /public jobs surface/i,
-  )
-
-  await assert.rejects(
-    fablestreet.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <p>Careers at FableStreet</p>
-        <p>Join the FableStreet team.</p>
-      `,
-    }),
-    /exact-company hiring copy|public jobs surface/i,
-  )
-})
+// Current production extraction replaces the old always-empty contract.
+registerCurrentRecruitmentContract('fablestreet', 'workbookBatch06Fablestreet')

@@ -196,6 +196,32 @@ test('extractJobDetails enriches ACS detail pages with recruiter metadata', asyn
   })
 })
 
+test('ACS recruiter discovery rejects promoted jobs from other employers and unowned detail URLs', async () => {
+  const acs = await loadAcsNetworkTechnologiesModule()
+  const promoted = listingPageHtml.replace('ACS Network & Technology Private Limited</p>', 'Bhoomi Enterprises</p>')
+  assert.deepEqual(acs.extractSearchResults(promoted).map(job => job.jobId), ['1257006'])
+  const quoted = promoted.replaceAll('class="job-cname"', "class='job-cname extra'")
+  assert.deepEqual(acs.extractSearchResults(quoted).map(job => job.jobId), ['1257006'])
+  const unknownOwner = listingPageHtml.replace(/<p class="job-cname">[\s\S]*?<\/p>/g, '')
+    .replaceAll('team-leader-sales-in-acs-network-technology-private-limited-at-dehradun-1265304.htm',
+      'telesales-executive-in-another-employer-at-delhi-1265304.htm')
+  assert.deepEqual(acs.extractSearchResults(unknownOwner).map(job => job.jobId), ['1257006'])
+  const foreignHost = listingPageHtml.replaceAll('https://www.placementindia.com/job-detail/team-leader',
+    'https://another-employer.example/job-detail/team-leader')
+  assert.deepEqual(acs.extractSearchResults(foreignHost).map(job => job.jobId), ['1257006'])
+})
+
+test('ACS detail ownership mismatches cannot be relabeled as the recruiter company', async () => {
+  const acs = await loadAcsNetworkTechnologiesModule()
+  const jobs = await acs.createAcsNetworkTechnologiesScraper().run({ fetchText: async url => {
+    if (url === acs.CAREER_PAGE_URL) return listingPageHtml
+    return url.includes('1265304') ? detailPageHtml.replaceAll('ACS Network & Technology Private Limited', 'Bhoomi Enterprises')
+      .replace('class="jd-cname"', "class='extra jd-cname'") : detailPageHtml
+  } })
+  assert.deepEqual(jobs.map(job => job.jobId), ['1257006'])
+  assert.equal(jobs[0].sourceListingComplete, false)
+})
+
 test('run fetches the ACS recruiter page, enriches each job with detail metadata, and decorates output fields', async () => {
   const acsNetworkTechnologies = await loadAcsNetworkTechnologiesModule()
   assert.ok(acsNetworkTechnologies)

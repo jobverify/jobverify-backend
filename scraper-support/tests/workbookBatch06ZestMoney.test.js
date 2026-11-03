@@ -1,3 +1,4 @@
+import { registerCurrentRecruitmentContract } from './helpers/currentRecruitmentContract.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -42,112 +43,15 @@ const loadZestMoneyModule = async () => {
   }
 }
 
-test('ZestMoney validates the verified careers surface and returns [] while the public contract remains non-enumerable', async () => {
-  const zestmoney = await loadZestMoneyModule()
-  let requestedUrl = null
 
-  const jobs = await zestmoney.run({
-    fetchHtml: async (url) => {
-      requestedUrl = url
-      return VERIFIED_SURFACE_HTML
-    },
-  })
 
-  assert.equal(requestedUrl, zestmoney.CAREERS_URL)
-  assert.deepEqual(jobs, [])
-  assert.equal(zestmoney.SOURCE, 'zestmoney')
-  assert.equal(zestmoney.COMPANY, 'ZestMoney')
-  assert.equal(zestmoney.OFFICIAL_BRAND, 'ZestMoney')
-  assert.equal(zestmoney.CAREERS_URL, 'https://www.zestmoney.in/join-us-1/')
-  assert.equal(zestmoney.ICIMS_HANDOFF_URL, 'https://careers-zestmoney.icims.com/')
-  assert.equal(
-    zestmoney.DISPOSITION,
-    'verified-public-careers-surface-with-dead-external-icims-handoff',
-  )
-  assert.match(
-    zestmoney.VERIFIED_SURFACE_SUMMARY,
-    /Verified on Saturday, July 25, 2026 that https:\/\/www\.zestmoney\.in\/join-us-1\/ was the live official public careers surface reviewed for ZestMoney/i,
-  )
-  assert.match(
-    zestmoney.VERIFIED_SURFACE_SUMMARY,
-    /standard public search paths returned 404/i,
-  )
-  assert.equal(
-    zestmoney.extractVerifiedIcimsHandoffUrl(VERIFIED_SURFACE_HTML),
-    'https://careers-zestmoney.icims.com/',
-  )
-})
 
-test('ZestMoney rejects when the verified public careers surface markers disappear', async () => {
-  const zestmoney = await loadZestMoneyModule()
 
-  await assert.rejects(
-    zestmoney.run({
-      fetchHtml: async () => `
-        <html>
-          <body>
-            <main>
-              <h1>Careers</h1>
-              <p>Explore opportunities with us.</p>
-            </main>
-          </body>
-        </html>
-      `,
-    }),
-    /verified public careers surface changed/i,
-  )
-})
 
-test('ZestMoney rejects when the verified iCIMS handoff changes', async () => {
-  const zestmoney = await loadZestMoneyModule()
 
-  await assert.rejects(
-    zestmoney.run({
-      fetchHtml: async () => VERIFIED_SURFACE_HTML.replace(
-        'https://careers-zestmoney.icims.com/',
-        'https://boards.greenhouse.io/zestmoney/jobs/123',
-      ),
-    }),
-    /verified iCIMS handoff changed/i,
-  )
-})
 
-test('ZestMoney rejects when an enumerable ATS surface appears alongside the pinned handoff', async () => {
-  const zestmoney = await loadZestMoneyModule()
 
-  await assert.rejects(
-    zestmoney.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <a href="https://careers-zestmoney.icims.com/jobs/search?ss=1">Browse all jobs</a>
-      `,
-    }),
-    /public jobs surface/i,
-  )
-})
 
-test('ZestMoney rejects when first-party jobs signals appear on the verified careers surface', async () => {
-  const zestmoney = await loadZestMoneyModule()
 
-  await assert.rejects(
-    zestmoney.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <a href="/jobs/software-engineer">Software Engineer</a>
-      `,
-    }),
-    /public jobs surface/i,
-  )
-
-  await assert.rejects(
-    zestmoney.run({
-      fetchHtml: async () => `
-        ${VERIFIED_SURFACE_HTML}
-        <script type="application/ld+json">
-          {"@context":"https://schema.org","@type":"JobPosting","title":"Software Engineer"}
-        </script>
-      `,
-    }),
-    /JobPosting markup/i,
-  )
-})
+// Current production extraction replaces the old always-empty contract.
+registerCurrentRecruitmentContract('zestmoney', 'workbookBatch06ZestMoney')

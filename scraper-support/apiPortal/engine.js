@@ -332,6 +332,20 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
     throw Object.assign(new Error('API portal traversalMode must be interleaved or staged-snapshot'), { abortRetries: true })
   }
   const stagedTraversal = traversalMode === 'staged-snapshot'
+  const publicAccessRecovery = provider.publicAccessPolicy === 'preserve-verified-stop-denied-origin'
+  if (provider.publicAccessPolicy !== undefined && (!publicAccessRecovery || provider.atsPlatform !== 'eightfold'
+    || config.detail.enabled !== true || config.detail.requireListingIdentity !== true)) {
+    throw Object.assign(new Error('API portal public access recovery requires verified Eightfold detail identities'), { abortRetries: true })
+  }
+  const deniedOrigins = new Map(), verifiedPublicJobs = new Set()
+  const denialStatus = error => {
+    const seen = new Set()
+    for (let current = error; current && !seen.has(current); current = current.cause) {
+      seen.add(current)
+      if ([401, 403, 429, 451].includes(Number(current.status))) return Number(current.status)
+    }
+    return null
+  }
   const maxPages = Number(config.pagination.maxPages ?? 1000)
   if (!Number.isSafeInteger(maxPages) || maxPages < 1) throw new Error('API portal inventory requires a positive page limit')
   if (
@@ -398,11 +412,17 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
     return slot
   }
   const fetchPortalJson = (url, options = {}) => traceRetryPressure(async () => {
+    const origin = new URL(url).origin
+    if (publicAccessRecovery && deniedOrigins.has(origin)) {
+      signal?.throwIfAborted()
+      throw deniedOrigins.get(origin)
+    }
     const requestSignal = signal && options.signal ? AbortSignal.any([signal, options.signal]) : signal || options.signal
     const pacingSignal = rateLimit ? AbortSignal.any([pacingController.signal, ...(requestSignal ? [requestSignal] : [])]) : requestSignal
     for (let attempt = 0; ; attempt += 1) {
       if (rateLimit) await reserveRequestSlot(pacingSignal)
       requestSignal?.throwIfAborted()
+      if (publicAccessRecovery && deniedOrigins.has(origin)) throw deniedOrigins.get(origin)
       recordRetryAttempt(attempt + 1)
       try {
         return await requestJson(url, options)
@@ -410,9 +430,13 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         recordRetryFailure()
         requestSignal?.throwIfAborted()
         if (!rateLimit || !(/HTTP 429\b/i.test(String(error?.message)) || error?.status === 429)) {
+          if (publicAccessRecovery && denialStatus(error)) deniedOrigins.set(origin, error)
           throw error
         }
-        if (error?.abortRetries === true || attempt >= rateLimit.maxRetries) throw exhaustPortalRetries(error)
+        if (error?.abortRetries === true || attempt >= rateLimit.maxRetries) {
+          if (publicAccessRecovery) deniedOrigins.set(origin, error)
+          throw exhaustPortalRetries(error)
+        }
         const backoffMs = Math.min(
           rateLimit.maxDelayMs,
           rateLimit.baseDelayMs * (2 ** Math.min(attempt, 31)),
@@ -420,7 +444,10 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         const retryAfterMs = error.retryDelayMs == null ? 0 : Math.ceil(Number(error.retryDelayMs))
         const delayMs = Math.max(backoffMs, retryAfterMs)
         // Never shorten a server delay or let an oversized timeout wrap to 1 ms.
-        if (!Number.isSafeInteger(delayMs) || delayMs > maximumTimerDelayMs) throw exhaustPortalRetries(error)
+        if (!Number.isSafeInteger(delayMs) || delayMs > maximumTimerDelayMs) {
+          if (publicAccessRecovery) deniedOrigins.set(origin, error)
+          throw exhaustPortalRetries(error)
+        }
         cooldownUntil = Math.max(cooldownUntil, Date.now() + delayMs)
         recordRetryDelay(delayMs)
       }
@@ -512,6 +539,11 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         }
 
         const mapped = mapRecord(record, provider, config, detailPayload, detailObservation)
+        if (publicAccessRecovery && mapped && detailObservation === 'observed'
+          && typeof mapped.jobDescription === 'string' && mapped.jobDescription.length >= 150) {
+          const location = readEightfoldLocationScope(record)
+          if (!location.unresolved && location.indiaLocations.length && isIndiaJob(mapped)) verifiedPublicJobs.add(mapped)
+        }
         if (!mapped) markIncomplete('unmappable-listing')
         if (mapped) {
           const identity = mapped.jobId ?? mapped.requisitionId ?? mapped.sourceUrl
@@ -555,14 +587,27 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         url.searchParams.set(key, value)
       })
 
-      const listingPayload = await fetchPortalJson(url.toString(), {
-        method: config.request.method,
-        headers: config.request.headers,
-        body: serializeRequestBody(
-          mergeRequestBody(config.request.body, nextPage.body),
-          config.request.headers,
-        ),
-      })
+      let listingPayload
+      try {
+        listingPayload = await fetchPortalJson(url.toString(), {
+          method: config.request.method,
+          headers: config.request.headers,
+          body: serializeRequestBody(
+            mergeRequestBody(config.request.body, nextPage.body),
+            config.request.headers,
+          ),
+        })
+      } catch (error) {
+        checkTraversalAbort()
+        if (!publicAccessRecovery || stagedTraversal || !denialStatus(error) || cohortPagesFetched < 1
+          || !jobs.some(job => verifiedPublicJobs.has(job))) throw error
+        // A later denial cannot erase full native details already bound to an
+        // exact employer role. Stop this origin and keep only those proofs.
+        const retained = jobs.filter(job => verifiedPublicJobs.has(job))
+        jobs.splice(0, jobs.length, ...retained)
+        markIncomplete(`native-listing-access-denied-http${denialStatus(error)}`)
+        break
+      }
       checkTraversalAbort()
       const records = getValueAtPath(listingPayload, config.pagination.resultsPath)
       // Eightfold includes this exact blank error object in successful search
@@ -676,15 +721,24 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
 
 
     checkTraversalAbort()
+    if (publicAccessRecovery && deniedOrigins.size) {
+      const retained = jobs.filter(job => verifiedPublicJobs.has(job))
+      if (!retained.length) throw deniedOrigins.values().next().value
+      jobs.splice(0, jobs.length, ...retained)
+      markIncomplete('native-access-denied-unconsumed-inventory')
+    }
     const complete = inventoryComplete && state.done && !continuation
       && (reportedTotal == null || reportedTotal === recordsFetched)
-    if (!complete) for (const job of jobs) job.sourceListingComplete = false
+    if (!complete) for (const job of jobs) {
+      job.sourceListingComplete = false
+      if (publicAccessRecovery) { job.sourceScopeComplete = false; job.lifecycleCleanupAllowed = false }
+    }
     return attachInventoryEvidence(jobs, {
       status: complete ? recordsFetched === 0 ? 'verified-empty' : 'complete-inventory' : 'discovery-only',
       surface: config.discovery.listingApiUrl, firstParty: true, listingComplete: complete,
       pagesFetched, reportedTotal,
       indiaFacetCount: incompleteReasons.has('native-location-scope-unresolved')
-        || incompleteReasons.has('native-india-location-unmapped') ? null : indiaCount,
+        || incompleteReasons.has('native-india-location-unmapped') || deniedOrigins.size ? null : indiaCount,
       verifiedAt: new Date().toISOString(),
       reason: complete ? stagedTraversal ? 'api-portal-complete-opening-and-closing-native-pagination' : 'api-portal-complete-native-pagination'
         : `api-portal-incomplete-listing-or-role-details:${[...incompleteReasons,

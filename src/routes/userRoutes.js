@@ -7,6 +7,7 @@ import {
   deleteTelegramAlertSettings,
   deleteUserAccount,
   getTelegramAlertSettings,
+  previewUserTelegramAlert,
   getUserProfile,
   getSavedJobs,
   removeSavedJob,
@@ -78,6 +79,7 @@ router.post(
 );
 
 router.use('/telegram-alerts', protect, requireTelegramAccess);
+router.post('/telegram-alerts/preview', createRateLimiter({ windowMs: 60_000, max: 120 }), previewUserTelegramAlert);
 
 router.route("/telegram-alerts/schedule")
   .get(loadSiteSettings, getUserTelegramAlertSchedule)

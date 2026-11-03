@@ -61,38 +61,30 @@ test('Zeno Health validates the verified fail-closed careers contract', async ()
   assert.doesNotThrow(() => zenoHealth.assertNoPublicJobsSurface(officialCareersHtml))
 })
 
-test('Zeno Health falls back to a browser-rendered careers page when static fetch returns a shell', async () => {
+test('Zeno Health keeps a JavaScript shell unresolved without activating a browser', async () => {
   const zenoHealth = await loadZenoHealthModule()
-  const requestedStaticUrls = []
   const requestedBrowserUrls = []
 
-  const jobs = await zenoHealth.createZenoHealthScraper().run({
-    fetchHtml: async (url) => {
-      requestedStaticUrls.push(url)
-      return jsShellHtml
-    },
+  await assert.rejects(zenoHealth.createZenoHealthScraper().run({
+    fetchPage: async url => ({ status: 200, url, html: jsShellHtml }),
     fetchBrowserHtml: async (url) => {
       requestedBrowserUrls.push(url)
       return officialCareersHtml
     },
-  })
+  }), error => error.failureKind === 'coverage_gap')
 
-  assert.deepEqual(requestedStaticUrls, [zenoHealth.CAREERS_URL])
-  assert.deepEqual(requestedBrowserUrls, [zenoHealth.CAREERS_URL])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedBrowserUrls, [])
 })
 
-test('Zeno Health accepts the current first-party shell with no public openings flow', async () => {
+test('Zeno Health cannot certify current inventory from the captured first-party shell', async () => {
   const zenoHealth = await loadZenoHealthModule()
 
-  const jobs = await zenoHealth.createZenoHealthScraper().run({
-    fetchHtml: async () => currentShellHtml,
+  await assert.rejects(zenoHealth.createZenoHealthScraper().run({
+    fetchPage: async url => ({ status: 200, url, html: currentShellHtml }),
     fetchBrowserHtml: async () => {
       assert.fail('Browser fallback was not expected for the current verified shell')
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), error => error.failureKind === 'coverage_gap' && error.recruitmentObservations.nativeRecords === 0)
 })
 
 test('Zeno Health fails closed when the browser-rendered contract also changes', async () => {
@@ -100,9 +92,9 @@ test('Zeno Health fails closed when the browser-rendered contract also changes',
 
   await assert.rejects(
     zenoHealth.createZenoHealthScraper().run({
-      fetchHtml: async () => jsShellHtml,
+      fetchPage: async url => ({ status: 200, url, html: jsShellHtml }),
       fetchBrowserHtml: async () => '<main><h1>Careers</h1></main>',
     }),
-    /verified public careers surface changed/i,
+    error => error.failureKind === 'coverage_gap',
   )
 })

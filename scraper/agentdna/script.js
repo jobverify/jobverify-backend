@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createCurrentAgentDnaScraper } from './currentPublic.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -83,59 +84,9 @@ export const validateJobResults = (jobs) => {
   return jobs
 }
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
+export const createAgentDnaScraper = () => createCurrentAgentDnaScraper()
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
-}
-
-const createFetchPageFromText = (fetchText) => async (url) => ({
-  status: 200,
-  url,
-  html: await fetchText(url),
-})
-
-export const createAgentDnaScraper = () => ({
-  async run({ fetchText, fetchPage = fetchText ? createFetchPageFromText(fetchText) : defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200) {
-      throw new Error(`HTTP ${homepage.status} for ${HOMEPAGE_URL}`)
-    }
-    const homepageHtml = homepage.html
-
-    if (!hasOfficialAgentDnaSignal(homepageHtml)) {
-      throw new Error('AgentDNA homepage no longer matches the verified official public surface')
-    }
-
-    const careers = await fetchPage(CAREERS_URL)
-    if (careers.status !== 200 && careers.status !== 404) {
-      throw new Error(`HTTP ${careers.status} for ${CAREERS_URL}`)
-    }
-    const careersHtml = careers.html
-
-    if (hasPublicJobBoardSignal(homepageHtml) || hasPublicJobBoardSignal(careersHtml)) {
-      throw new Error('AgentDNA public careers route now appears to expose job listings')
-    }
-
-    if (!matchesBrandedExperience(homepageHtml, careersHtml) && !hasMissingCareersRouteSignal(careersHtml)) {
-      throw new Error('AgentDNA careers route no longer matches the verified branded public experience')
-    }
-
-    return validateJobResults([])
-  },
-})
-
-export const run = async () => createAgentDnaScraper().run()
+export const run = async (options = {}) => createAgentDnaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

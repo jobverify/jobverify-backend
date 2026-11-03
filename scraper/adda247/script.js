@@ -1,8 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createCurrentAdda247Scraper } from './currentNative.js'
 import { ADDA247_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -219,88 +218,7 @@ export const extractKekaJobs = (payload = [], { now = () => new Date().toISOStri
     .filter(Boolean)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json,text/plain,*/*',
-    Referer: KEKA_CAREERS_URL,
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-const isBrowserFallbackError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
-    .test(String(error?.message ?? error ?? ''))
-
-export const createAdda247Scraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchBrowserText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
-    }
-
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchPageText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
-    }
-
-    try {
-      const careersHtml = await fetchPageText(CAREERS_URL)
-      const firstPartyJobRecordUrls = extractFirstPartyJobRecordUrls(careersHtml)
-
-      if (firstPartyJobRecordUrls.length > 0) {
-        throw new Error('Adda247 first-party careers page now exposes public job records')
-      }
-
-      if (
-        !hasOfficialCareersSignal(careersHtml)
-        || !isExpectedJoinUsUrl(extractJoinUsUrl(careersHtml))
-        || extractExternalHandoffUrl(careersHtml) !== EXTERNAL_HANDOFF_URL
-      ) {
-        throw new Error('Adda247 verified first-party careers shell no longer matches the current external handoff sentinel')
-      }
-
-      const payload = await fetchJson(KEKA_ACTIVE_JOBS_API_URL)
-      return extractKekaJobs(payload, { now })
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
-    }
-  },
-})
+export const createAdda247Scraper = () => createCurrentAdda247Scraper()
 
 export const run = async (options = {}) => createAdda247Scraper().run(options)
 

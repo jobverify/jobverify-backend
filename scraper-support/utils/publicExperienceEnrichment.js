@@ -8,6 +8,7 @@ import { normalizeScrapedJob } from './normalizeScrapedJob.js'
 import { resolveJobPublicationDate, sourcePublicationDateFields } from '../../src/utils/jobPublicationDate.js'
 import { hasSourceDescription, getSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { publicPostingDescription, isExactPublicJobUrl } from '../../rewriting/publicPostingDescription.js'
+import { visiblePostingProfile } from '../../rewriting/visiblePostingDescription.js'
 import { ActiveNativeContentError, activeIframeSources, extractActiveDescription, readNativeDocument } from './activeNativeHtml.js'
 import { normalizeLifecycleDate } from '../../src/utils/jobLifecycle.js'
 
@@ -1534,17 +1535,22 @@ export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
     ? html.url : null
   html = publicPageHtml(html)
   // A normalized listing may explicitly carry a missing immutable description.
-  // Only an exact employer/role schema can fill that field; inferred visible
-  // page text and generated display summaries remain separate evidence.
-  const recoveredPosting = responseUrl && !hasSourceDescription(job)
+  // Only exact employer/role schemas or the bounded, source-specific visible
+  // readers can fill that field. Other page text stays separate evidence.
+  const scopedProfile = visiblePostingProfile(job, publicJobUrl)
+  const posting = responseUrl && (!hasSourceDescription(job) || scopedProfile)
     ? publicPostingDescription({ ...job, sourceUrl: publicJobUrl }, html, responseUrl)
     : null
+  if (scopedProfile && !posting) return { ...job }
+  const titleOnlySource = job.source === 'tudiptechnologies'
+    && normalizeExistingPublicEvidenceValue(getSourceDescription(job)) === normalizeExistingPublicEvidenceValue(job.title)
+  const recoveredPosting = !hasSourceDescription(job) || titleOnlySource ? posting : null
   const sourceJob = recoveredPosting
     ? { ...job, sourceDescription: recoveredPosting.description }
     : job
-  const pageText = stripHtmlToText(recoveredPosting?.description || html)
+  const pageText = stripHtmlToText(posting?.description || html)
   const trimmedPageText = trimTrailingJobSiteChrome(pageText) || pageText
-  const pageSummary = extractPageSummary(html)
+  const pageSummary = posting ? null : extractPageSummary(html)
   const pageTitle = extractTitle(html)
   const primaryHeading = extractPrimaryHeading(html)
   const smartRecruitersJobAdId = extractMetaContent('sr:job-ad-id', html)

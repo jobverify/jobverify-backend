@@ -354,7 +354,7 @@ const verifyBlockedBpHandoff = async ({ fetchPage, url, label }) => {
 
 const legacyEvidence = jobs => attachInventoryEvidence(jobs.map(job=>({...job,sourceListingComplete:false,sourceDetailComplete:false,sourceDetailStatus:'legacy-native-contract-unqualified'})),{status:'discovery-only',surface:GREENHOUSE_JOBS_URL,firstParty:true,listingComplete:false,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason:'legacy-unreconciled-native-contract'})
 
-export const createCastrolIndiaScraper = () => ({
+export const createLegacyCastrolIndiaScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
     fetchAlgoliaJobs = defaultFetchAlgoliaJobs,
@@ -420,9 +420,8 @@ export const createCastrolIndiaScraper = () => ({
   },
 })
 
-export const run = async (options = {}) => options.fetchPage || options.fetchAlgoliaJobs || options.fetchGreenhouseJobs
-  ? createCastrolIndiaScraper().run(options)
-  : runNativeCastrol(options)
+export const createCastrolIndiaScraper = (defaults = {}) => ({run:(options = {})=>runNativeCastrol({...defaults,...options})})
+export const run = async (options = {}) => runNativeCastrol(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

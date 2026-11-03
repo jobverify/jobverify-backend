@@ -115,21 +115,97 @@ test('lead generation is a task rather than a mandatory seniority requirement', 
   assert.equal(result.resolved.employerExperienceProfile.minimumYears, null)
 })
 
-test('ambiguous entry-level title predictions carry review reasons without invented employer years', () => {
-  for (const title of ['Graduate Engineer Trainee', 'Trainee Associate Engineer', 'Entry Level Associate', 'Apprentice - Desktop Support']) {
+test('entry-level vacancies resolve as freshers before an experienced model fallback', () => {
+  for (const title of ['Graduate Engineer Trainee', 'Trainee Associate Engineer', 'Entry Level Associate', 'Apprentice - Desktop Support',
+    'Formal Verification Engineer - New College Graduate 2026', 'Graduate Engineer - AV/IT',
+    'Trainee Resident Manager', 'Graduate Apprentice Trainee - Recruiter', 'Apprentice - Talent Acquisition']) {
     const result = classify({ title, sourceDescription: description })
-    assert.equal(result.resolved.jobType, 'Full-time Experienced', title)
-    assert.equal(result.resolved.experienceProfile.minimumYears, null, title)
-    assert.ok(result.reviewReasons?.includes('entry_level_title_with_experienced_prediction'), title)
+    assert.equal(result.resolved.jobType, 'Full-time Fresher', title)
+    assert.equal(result.decisionSource, 'source_policy', title)
+    assert.equal(result.resolved.experienceProfile.minimumYears, 0, title)
+    assert.equal(result.resolved.experienceBasis, 'entry_level_title', title)
+    assert.equal(result.resolved.experienceProfile.hasExplicitExperience, false, title)
+    assert.equal(result.resolved.employerExperienceProfile.minimumYears, null, title)
+    assert.deepEqual(result.reviewReasons, [], title)
   }
-  const supported = classify({ title: 'Graduate Engineer Trainee', sourceDescription: 'Minimum 3 years of professional experience required.' })
-  assert.equal(supported.resolved.jobType, 'Full-time Experienced')
-  assert.deepEqual(supported.reviewReasons, [])
+  for (const sourceDescription of ['Minimum 3 years of professional experience required.',
+    'Requirements: You must have prior professional experience in software engineering.']) {
+    const supported = classify({ title: 'Graduate Engineer Trainee', sourceDescription })
+    assert.equal(supported.resolved.jobType, 'Full-time Experienced')
+    assert.deepEqual(supported.reviewReasons, [])
+  }
+})
+
+test('recruiting and supervising entry-level applicants does not establish fresher eligibility', () => {
+  for (const title of ['Graduate Recruitment Manager', 'Apprentice Training Officer', 'Trainee Program Manager',
+    'Graduate Program Coordinator', 'Trainer for Apprentices', 'Supervisor of Trainees',
+    'Senior Graduate Engineer', 'Engineer - No Trainees', 'Graduate']) {
+    assert.notEqual(sourceGuardedClassification({ title, sourceDescription: description }, { now }).resolved.jobType, 'Full-time Fresher', title)
+  }
+})
+
+test('entry-level title defaults preserve explicit internship, contract and cohort rules', () => {
+  for (const sourceEmploymentType of ['Internship', 'Contract']) {
+    const result = classify({ title: 'Graduate Engineer Trainee', sourceDescription: description, sourceEmploymentType })
+    assert.equal(result.resolved.jobType, sourceEmploymentType === 'Internship' ? 'Intern' : 'Contract')
+  }
+  const pastCohort = classify({ title: 'Graduate Engineer', sourceDescription: 'Full-time recruitment for the 2025 batch.' })
+  assert.equal(pastCohort.resolved.jobType, 'Full-time Experienced')
+})
+
+test('an ambiguous graduate title still requires review instead of inventing eligibility', () => {
+  const result = classify({ title: 'Graduate', sourceDescription: description })
+  assert.equal(result.resolved.jobType, 'Full-time Experienced')
+  assert.equal(result.resolved.experienceProfile.minimumYears, null)
+  assert.deepEqual(result.reviewReasons, ['entry_level_title_with_experienced_prediction'])
+})
+
+test('degree duration does not manufacture conflicting professional experience for a fresher', () => {
+  for (const education of ["3 + years bachelor's degree", "four-year bachelor's degree", "two years master's degree"]) {
+    const result = classify({ title: 'Fresher Role', sourceDescription:
+      `Education: ${education} in commerce. Experience: 0-6 months of work experience. Fresher is required.` })
+    assert.equal(result.resolved.jobType, 'Full-time Fresher', education)
+    assert.equal(result.resolved.employerExperienceProfile.minimumYears, 0, education)
+    assert.equal(result.resolved.employerExperienceProfile.maximumYears, .5, education)
+    assert.deepEqual(result.sourceQualityIssues, [], education)
+  }
+})
+
+test('explicit zero-experience eligibility for a fresher survives an older graduation cohort', () => {
+  const result = classify({ title: 'Fresher Role', sourceExperienceRequired: '0-6 months',
+    sourceDescription: "BCom graduates from the 2024/2025 batch only. Three years bachelor's degree. Fresher is required." })
+  assert.equal(result.resolved.jobType, 'Full-time Fresher')
+  assert.equal(result.resolved.employerExperienceProfile.minimumYears, 0)
+  assert.equal(result.resolved.experienceProfile.minimumYears, 0)
+  assert.deepEqual(result.sourceQualityIssues, [])
+})
+
+test('education duration cleanup preserves professional experience following a degree', () => {
+  const result = classify({ title: 'Engineer', sourceDescription:
+    "Requirements: A four-year bachelor's degree with minimum 3 years of professional experience required." })
+  assert.equal(result.resolved.jobType, 'Full-time Experienced')
+  assert.equal(result.resolved.employerExperienceProfile.minimumYears, 3)
+})
+
+test('a skills and competencies section does not turn client familiarity into mandatory work experience', () => {
+  const body = 'QUALIFICATION\nBachelor degree.\nEXPERIENCE\nFresher\nSKILLS AND COMPETENCIES\nStrong communication and experience in working with overseas clients.'
+  for (const sourceDescription of [body, body.replace(/\n/g, ' ')]) {
+    const result = classify({ title: 'Fresher - Benefit Analyst Junior', sourceDescription })
+    assert.equal(result.resolved.jobType, 'Full-time Fresher')
+    assert.equal(result.resolved.employerExperienceProfile.minimumYears, null)
+    assert.deepEqual(result.reviewReasons, [])
+  }
+  for (const requirement of ['You must have prior professional experience in healthcare operations.',
+    'Must have prior professional experience in healthcare operations.']) {
+    const mandatory = classify({ title: 'Fresher - Benefit Analyst Junior', sourceDescription: `${body}\n${requirement}` })
+    assert.equal(mandatory.resolved.jobType, 'Unspecified')
+    assert.ok(mandatory.reviewReasons.includes('conflicting_role_eligibility'))
+  }
 })
 
 test('review flags survive report aggregation and do not become classification failures', () => {
   const part = createClassificationReport()
-  recordClassificationDecision(part, { result: classify({ title: 'Graduate Engineer Trainee', sourceDescription: description }), prediction: prediction() })
+  recordClassificationDecision(part, { result: classify({ title: 'Graduate', sourceDescription: description }), prediction: prediction() })
   const summary = aggregateClassificationSummaries([part])
   assert.equal(summary.quality.reviewRequired, 1)
   assert.equal(summary.quality.reviewReasons.entry_level_title_with_experienced_prediction, 1)

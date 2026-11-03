@@ -161,6 +161,8 @@ test('Truminds Software Systems exact backlog row resolves from the local catalo
   assert.equal(report.unmatchedCount, 0)
 })
 
+const FULL_DESCRIPTION = 'Responsibilities: Build high-performance network software for product engineering clients. Required qualifications: Design reliable networking services, test distributed systems and maintain production software with strong engineering practices.'
+
 test('Truminds Software Systems TurboHire scraper validates the official handoff and maps India jobs', async () => {
   const truminds = await loadScriptModule()
   const requested = []
@@ -182,6 +184,12 @@ test('Truminds Software Systems TurboHire scraper validates the official handoff
       if (url === truminds.FILTERED_JOBS_URL) {
         return SAMPLE_TURBOHIRE_PAYLOAD
       }
+      if (url === `${truminds.API_BASE_URL}/api/publicjobs/truminds-job-1?fieldVisibility=CareerPage`) {
+        const record = structuredClone(SAMPLE_TURBOHIRE_PAYLOAD.Result[0])
+        return { ...record, JobDescriptionV2: `<p>${FULL_DESCRIPTION}</p>`,
+          PublishedDates: { CAREERPAGE: record.PublishedDate }, IsPublic: true,
+          JobStatus: 'Active', PublishedJobBoards: ['CAREERPAGE'] }
+      }
 
       throw new Error(`Unexpected Truminds json URL: ${url}`)
     },
@@ -195,6 +203,8 @@ test('Truminds Software Systems TurboHire scraper validates the official handoff
     { type: 'text', url: truminds.OFFICIAL_CAREERS_URL },
     { type: 'text', url: truminds.BOARD_URL },
     { type: 'json', url: truminds.NOAUTH_TOKEN_URL, method: 'GET' },
+    { type: 'json', url: truminds.FILTERED_JOBS_URL, method: 'POST' },
+    { type: 'json', url: `${truminds.API_BASE_URL}/api/publicjobs/truminds-job-1?fieldVisibility=CareerPage`, method: 'GET' },
     { type: 'json', url: truminds.FILTERED_JOBS_URL, method: 'POST' },
   ])
   assert.deepEqual(jobs, [
@@ -216,7 +226,15 @@ test('Truminds Software Systems TurboHire scraper validates the official handoff
       requiredSkills: ['C++', 'Networking'],
       postingDate: '2026-07-11T10:30:00.000Z',
       closingDate: '2026-07-31T00:00:00',
-      jobDescription: 'Build high-performance network software for product engineering clients.',
+      jobDescription: FULL_DESCRIPTION,
+      sourceDescription: FULL_DESCRIPTION,
+      sourceDetailComplete: true,
+      sourceDescriptionApiUrl: `${truminds.API_BASE_URL}/api/publicjobs/truminds-job-1?fieldVisibility=CareerPage`,
+      sourceNativeGeneralPublishedDate: '2026-07-11T10:30:00.000Z',
+      sourceNativeLocations: ['Bengaluru, Karnataka, India'],
+      sourceListingComplete: false,
+      lifecycleCleanupAllowed: false,
+      sourceInventoryScope: 'declared-first-party-trumindssoftwaresystems-TurboHire-careers-board',
       source: 'trumindssoftwaresystems',
       link: 'https://truminds.turbohire.co/job/publicjobs/truminds-public-role-1',
       scrapedAt: '2026-07-18T00:00:00.000Z',

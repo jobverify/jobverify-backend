@@ -28,6 +28,7 @@ export const DEFAULT_PROVIDER_EXTENSION_DIR = path.join(SUPPORT_PROVIDER_DIR, 'p
 const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobverify.workday.authoritative-empty')
 const WORKDAY_COUNTRY_INVENTORY_PROOF = Symbol.for('jobverify.workday.country-inventory-proof')
 const OFFICIAL_ATS_DISCOVERY = Symbol.for('jobverify.official-ats-discovery')
+const RECRUITMENT_OBSERVATIONS = Symbol.for('jobverify.verified-recruitment-observations')
 const workdayCompanies = JSON.parse(
   readFileSync(path.resolve(currentDir, '../myworkday/companies.json'), 'utf-8'),
 )
@@ -581,6 +582,11 @@ export const decorateJobsWithProviderMetadata = (jobs, provider) => {
   if (jobs[OFFICIAL_ATS_DISCOVERY]) {
     Object.defineProperty(decoratedJobs, OFFICIAL_ATS_DISCOVERY, {
       value: jobs[OFFICIAL_ATS_DISCOVERY],
+    })
+  }
+  if (jobs[RECRUITMENT_OBSERVATIONS]) {
+    Object.defineProperty(decoratedJobs, RECRUITMENT_OBSERVATIONS, {
+      value: jobs[RECRUITMENT_OBSERVATIONS],
     })
   }
   return decoratedJobs

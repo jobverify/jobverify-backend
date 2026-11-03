@@ -38,15 +38,18 @@ test('Adda247 local catalog captures the verified first-party careers shell and 
   assert.equal(ADDA247_CATALOG.countryFilter, 'India')
   assert.equal(
     ADDA247_CATALOG.paginationStrategy,
-    'single-first-party-careers-page-plus-keka-active-jobs-api',
+    'configured-native-Keka-array+two-public-detail-passes+final-after-details-listing',
   )
   assert.equal(
     ADDA247_CATALOG.extractionStrategy,
-    'verified-first-party-careers-shell+official-keka-active-jobs-api',
+    'configured-native-tenant+organization+role-identity;current-corporate-handoff-unverified',
   )
   assert.equal(ADDA247_CATALOG.parser, 'custom-script')
   assert.equal(ADDA247_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(ADDA247_CATALOG.verifiedOn, '2026-07-19')
+  assert.equal(ADDA247_CATALOG.verifiedOn, null)
+  assert.equal(ADDA247_CATALOG.historicalHandoffVerifiedOn,'2026-07-19')
+  assert.equal(ADDA247_CATALOG.corporateHandoffVerified,false)
+  assert.equal(ADDA247_CATALOG.lifecycleCleanupAllowed,false)
   assert.equal(ADDA247_CATALOG.externalHandoffUrl, 'https://adda247.kekahire.com/')
   assert.equal(ADDA247_CATALOG.kekaCareersUrl, 'https://adda247.keka.com/careers/')
   assert.equal(
@@ -56,7 +59,7 @@ test('Adda247 local catalog captures the verified first-party careers shell and 
   assert.match(ADDA247_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.adda247\.com\/careers\.html/i)
   assert.match(ADDA247_CATALOG.verifiedSurfaceSummary, /https:\/\/adda247\.kekahire\.com\/?/i)
   assert.match(ADDA247_CATALOG.verifiedSurfaceSummary, /adda247\.keka\.com\/careers/i)
-  assert.match(ADDA247_CATALOG.verifiedSurfaceSummary, /active public India jobs/i)
+  assert.match(ADDA247_CATALOG.verifiedSurfaceSummary, /Full public India jobs/i)
   assert.equal(ADDA247_CATALOG.modulePath, adda247ModulePath)
 
   assert.equal(adda247.PROVIDER_METADATA.source, ADDA247_CATALOG.source)
@@ -79,6 +82,11 @@ test('buildScrapers and company coverage resolve Adda247 from the shared catalog
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Adda247')
   assert.equal(provider.companyCareerPage, 'https://www.adda247.com/careers.html')
+  assert.equal(provider.configuredNativeUrl,'https://adda247.keka.com/careers/')
+  assert.equal(provider.sourceCurrentPublicContractReviewedOn,'2026-11-03')
+  assert.equal(provider.verifiedPublicJobCount,null)
+  assert.equal(provider.corporateHandoffVerified,false)
+  assert.equal(provider.lifecycleCleanupAllowed,false)
   assert.match(scraper.dryRunFile, /adda247[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({
