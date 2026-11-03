@@ -101,7 +101,7 @@ test('extractSearchResults keeps only India jobs from the public BootLabs Linked
     city: 'Bengaluru',
     country: 'India',
     jobId: '4060905526',
-    requisitionId: '4060905526',
+    requisitionId: null,
     sourceUrl: 'https://in.linkedin.com/jobs/view/lead-devops-engineer-at-bootlabs-4060905526?position=1&pageNum=0',
     applyUrl: 'https://in.linkedin.com/jobs/view/lead-devops-engineer-at-bootlabs-4060905526?position=1&pageNum=0',
     employmentType: null,
@@ -130,33 +130,12 @@ test('extractJobDetail enriches a public BootLabs LinkedIn detail page using Job
   })
 })
 
-test('run validates the official BootLabs LinkedIn handoff and decorates India jobs', async () => {
-  const bootlabs = await loadBootLabsModule()
-  const requestedUrls = []
-  const scraper = bootlabs.createBootLabsTechnologiesScraper()
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === bootlabs.CAREER_PAGE_URL) return officialSiteHtml
-      if (url === bootlabs.LINKEDIN_INDIA_JOBS_URL) return searchResultsHtml
-      if (url.startsWith('https://in.linkedin.com/jobs/view/lead-devops-engineer-at-bootlabs-4060905526')) {
-        return detailHtml
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    bootlabs.CAREER_PAGE_URL,
-    bootlabs.LINKEDIN_INDIA_JOBS_URL,
-    'https://in.linkedin.com/jobs/view/lead-devops-engineer-at-bootlabs-4060905526?position=1&pageNum=0',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'bootlabstechnologies')
-  assert.equal(jobs[0].company, 'BootLabs Technologies')
-  assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].link, 'https://in.linkedin.com/jobs/view/lead-devops-engineer-at-bootlabs-4060905526?position=1&pageNum=0')
+import {nativeFixture} from '../../scraper/bizongo/nativeFixture.js'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+test('run forwards caller options, validates the current native employer and retains complete public announcement observations',async()=>{
+ const bootlabs=await loadBootLabsModule(),fixture=nativeFixture(new URL('../../scraper/bootlabstechnologies/script.js',import.meta.url)),reports=[]
+ const jobs=await bootlabs.run({fetchPage:fixture.fetchPage,onAudit:r=>reports.push(r)})
+ assert.equal(jobs.length,0);assert.equal(readInventoryEvidence(jobs).listingComplete,false);assert.equal(reports.length,1)
+ assert.equal(reports[0].nativeCompanyId,'14621861');assert.equal(reports[0].observations.length,10)
+ assert.ok(reports[0].observations.every(r=>r.jobId===null&&r.requisitionId===null&&r.country===null&&r.originalText))
 })

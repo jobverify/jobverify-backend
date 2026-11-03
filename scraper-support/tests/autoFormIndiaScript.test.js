@@ -7,7 +7,7 @@ const {readInventoryEvidence}=await import('../utils/inventoryEvidence.js')
 
 test('AutoForm India exposes current company identity and native first-party URLs',()=>{
  assert.equal(m.SOURCE,'autoformindia');assert.equal(m.COMPANY_NAME,'AutoForm India')
- assert.equal(m.VERIFIED_AT,'2026-10-27')
+ assert.equal(m.VERIFIED_AT,'2026-11-03')
  assert.equal(m.JOBS_RSS_URL,'https://careers.autoform.com/en/jobs.rss')
  assert.match(m.VERIFIED_SURFACE_SUMMARY,/conflicting work countries/)
 })
@@ -22,13 +22,14 @@ test('AutoForm India actual native RSS keeps publication offset and complete ite
 test('AutoForm India rejects an RSS feed outside the evidenced native envelope',()=>{
  assert.throws(()=>m.extractRssItems(original()[m.JOBS_RSS_URL].body.replace('TYPO3 EXT:news','Unexpected Feed')),/RSS envelope/)
 })
-test('AutoForm India current detailed inventory has unknown India total while a native role conflicts',async()=>{
+test('AutoForm India exact global country conflict is retained while all native alternatives exclude India',async()=>{
  let audit
  const jobs=await m.createAutoFormIndiaScraper().run({...transport(),onAudit:a=>audit=a})
  assert.equal(audit.observedNative,5);assert.equal(audit.healthyNative,4)
  assert.equal(audit.nativeJobs.find(j=>j.jobId==='5162').requisitionId,'26/16/pts')
- assert.equal(readInventoryEvidence(jobs).listingComplete,false)
- assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null)
+ assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+ assert.equal(readInventoryEvidence(jobs).indiaFacetCount,0)
+ assert.equal(audit.companyComplete,false)
 })
 test('AutoForm India fetchText injection is used through all native detail and closing reads',async()=>{
  const io=transport();let audit

@@ -1,3 +1,4 @@
+import {createCurrentLinkedInProfileScraper} from "../academoredutech/currentPublic.js"
 export const LINKEDIN_COMPANY_PAGE_URL = 'https://in.linkedin.com/company/campus-sutra'
 export const LINKEDIN_INDIA_JOBS_URL = 'https://www.linkedin.com/jobs/search/?f_C=3032227&geoId=102713980'
 
@@ -148,27 +149,6 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-export const createCampusSutraScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const companyHtml = await fetchText(LINKEDIN_COMPANY_PAGE_URL)
-    if (!pageIndicatesCampusSutraCompany(companyHtml)) {
-      throw new Error('Campus Sutra LinkedIn company page no longer matches the expected public organization page')
-    }
+export const createCampusSutraScraper = defaults => createCurrentLinkedInProfileScraper("campussutra", defaults)
 
-    const listings = extractSearchResults(await fetchText(LINKEDIN_INDIA_JOBS_URL))
-    const jobs = maxJobs ? listings.slice(0, maxJobs) : listings
-
-    return Promise.all(jobs.map(async (listing) => {
-      const detail = extractJobDetail(await fetchText(listing.sourceUrl))
-      return {
-        ...listing,
-        ...Object.fromEntries(Object.entries(detail).filter(([, value]) => value != null)),
-        source: 'campussutra',
-        link: listing.applyUrl,
-        scrapedAt: new Date().toISOString(),
-      }
-    }))
-  },
-})
-
-export const run = async () => createCampusSutraScraper().run()
+export const run = async (options = {}) => createCampusSutraScraper().run(options)

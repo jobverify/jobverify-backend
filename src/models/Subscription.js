@@ -7,7 +7,7 @@ import { Schema, model } from "mongoose";
 import { ALERT_FREQUENCIES, ALERT_WEEKDAYS, ALERT_TIME_PATTERN, DEFAULT_ALERT_TIME, DEFAULT_ALERT_DAY } from "../constants/alertSchedule.js";
 
 const TelegramScheduleSchema = new Schema({
-  frequency: { type: String, enum: ALERT_FREQUENCIES, default: "immediate" },
+  frequency: { type: String, enum: ALERT_FREQUENCIES, default: "daily" },
   isActive: { type: Boolean, default: true },
   deliveryTime: { type: String, match: ALERT_TIME_PATTERN, default: DEFAULT_ALERT_TIME },
   weeklyDay: { type: String, enum: ALERT_WEEKDAYS, default: DEFAULT_ALERT_DAY },

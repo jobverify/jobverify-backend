@@ -1,4 +1,5 @@
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { inspectCurrentCementHandoffs } from './currentHandoffs.js'
 
 export const CAREERS_URL = 'https://www.adani.com/careers'
 
@@ -18,24 +19,34 @@ export const hasOfficialCareersSignal = (html) => {
     && OPENINGS_HANDOFF_PATTERN.test(page)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'adanicement',
   timeoutMs: 15000,
+  signal: options.signal,
+  includeResponseMetadata: true,
 })
 
 export const createAdaniCementScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, signal, onAudit, now } = {}) {
+    const read = async url => {
+      signal?.throwIfAborted()
+      const response = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      if (typeof response === 'string') return response
+      if (response?.status !== 200 || response.url !== url || typeof response.html !== 'string') throw new Error('Adani Cement current first-party response identity changed')
+      return response.html
+    }
+    const careersHtml = await read(CAREERS_URL)
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Adani Cement official careers surface changed; refusing to assume no public listings')
     }
 
-    return []
+    return inspectCurrentCementHandoffs({ read, signal, onAudit, now })
   },
 })
 

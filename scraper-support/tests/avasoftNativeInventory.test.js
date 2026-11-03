@@ -20,7 +20,7 @@ test('Avasoft excludes all currently responsive-hidden cards without certifying 
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
   assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
   assert.match(readInventoryEvidence(jobs).reason, /responsive-hidden/)
-  assert.equal(options.calls.length, 18)
+  assert.equal(options.calls.length, 20)
   assert.equal(options.calls.filter(call => /architect|trainee|executive|human-resource/.test(call.url)).length, 12)
   assert.ok(options.calls.every(call => call.method === 'GET'))
 })
@@ -159,7 +159,7 @@ test('Avasoft excludes a role hidden again in the closing career inventory', asy
 test('Avasoft applies output caps only after all discovered details and closing application checks', async () => {
   const { jobs, options } = await execute(visible(), { maxJobs: 1 })
   assert.equal(jobs.length, 1)
-  assert.equal(options.calls.length, 18)
+  assert.equal(options.calls.length, 20)
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
   assert.equal(jobs[0].lifecycleCleanupAllowed, false)
 })

@@ -49,7 +49,11 @@ export function validateCastrolInventory(payload,board,{now=new Date().toISOStri
  const seen=new Set(),rows=payload.jobs.map(raw=>{failureEnvelope(raw);check(id(raw.id)&&!seen.has(raw.id)&&id(raw.internal_job_id),'Duplicate or malformed native job ID');seen.add(raw.id);check(title(raw.title)&&raw.company_name==='Castrol'&&raw.absolute_url===BOARD+'/jobs/'+raw.id,'Native role company/title/URL mismatch');check(typeof raw.content==='string','Native content type invalid');const geo=geography(raw,board.officeMap),postedAt=iso(raw.first_published,now,true),closingDate=raw.application_deadline==null?null:iso(raw.application_deadline,now);check(closingDate==null||Date.parse(closingDate)>=Date.parse(postedAt),'Native expiry before publication');return{raw,...geo,postedAt,closingDate}})
  check(new Set(board.posts.data.map(j=>j.id)).size===board.posts.data.length,'Duplicate visible board ID')
  for(const item of board.posts.data){const row=rows.find(r=>r.raw.id===item.id);check(row&&row.raw.title===item.title&&row.raw.location.name===item.location&&row.raw.absolute_url===item.absolute_url,'Native visible board/API role mismatch')}
- return{rows,india:rows.filter(r=>r.india),scopeComplete:rows.every(r=>r.scopeComplete)}
+ // An explicit own India alternative proves configured inclusion even when
+ // another alternative remains unresolved. A negative row needs every native
+ // alternative and office to explicitly exclude India.
+ for(const row of rows)row.configuredCountryMembershipComplete=row.india||row.scopeComplete
+ return{rows,india:rows.filter(r=>r.india),scopeComplete:rows.every(r=>r.scopeComplete),configuredCountryMembershipComplete:rows.every(r=>r.configuredCountryMembershipComplete)}
 }
 export function validateCastrolDetail(html,row,{now=new Date().toISOString()}={}){
  const{doc,loaders}=model(html,true),r=loaders['routes/$url_token_.jobs_.$job_post_id'],raw=row.raw;failureEnvelope(r);const p=r.jobPost;failureEnvelope(p)
@@ -62,5 +66,5 @@ export function validateCastrolDetail(html,row,{now=new Date().toISOString()}={}
  check(!description||apiDescription?.includes(description),'Native API/detail full content disagreement')
  // A missing/hidden role field remains incomplete. API company introduction
  // and conclusion are never used as replacement role content.
- return{jobId:String(raw.id),title:norm(raw.title),location:row.location,locations:row.locations,city:row.city,country:'India',sourceUrl:raw.absolute_url,applyUrl:raw.absolute_url,link:raw.absolute_url,nativeLocation:row.nativeLocation,nativeOffices:row.nativeOffices,nativeUnresolvedLocations:row.unresolvedLocations,nativeEmployer:raw.company_name,nativeInternalJobId:raw.internal_job_id,postedAt:row.postedAt,postingDate:row.postedAt,closingDate:row.closingDate,sourceClosingDateIsExact:row.closingDate!=null,jobDescription:description,sourceDescription:description,sourceDetailComplete:Boolean(description),sourceDetailStatus:description?'complete':'native-full-description-missing',sourceScopeComplete:row.scopeComplete,sourceListingComplete:false,scrapedAt:now}
+ return{jobId:String(raw.id),title:norm(raw.title),location:row.location,locations:row.locations,city:row.city,country:'India',sourceUrl:raw.absolute_url,applyUrl:raw.absolute_url,link:raw.absolute_url,nativeLocation:row.nativeLocation,nativeOffices:row.nativeOffices,nativeUnresolvedLocations:row.unresolvedLocations,nativeEmployer:raw.company_name,nativeInternalJobId:raw.internal_job_id,postedAt:row.postedAt,postingDate:row.postedAt,closingDate:row.closingDate,sourceClosingDateIsExact:row.closingDate!=null,jobDescription:description,sourceDescription:description,nativeRoleCriteriaHtml:p.content,sourceDetailComplete:Boolean(description),sourceDetailStatus:description?'complete':'native-full-description-missing',sourceScopeComplete:row.scopeComplete,sourceListingComplete:false,scrapedAt:now}
 }

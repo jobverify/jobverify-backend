@@ -5,6 +5,10 @@ import { changeRun, completeWorkflow, createPipeline, dispatchNext, failPipeline
 /** Refresh a missed completion before a scheduled/manual workflow claims the shared slot. */
 export async function createDirectGithubPipeline(options,{token=process.env.GITHUB_PAT}={}) {
   const active=await PipelineRun.findOne({activeKey:'database'}).lean();
+  // Another tick can claim this interval after the caller's slot lookup.
+  if(options.scheduleSlot&&active?.scheduleSlot===options.scheduleSlot) {
+    throw pipelineError('This scheduled interval already started.',409,{scheduleAlreadyClaimed:true});
+  }
   // A GitHub worker cannot establish the liveness of another repository or local process.
   if(active?.target==='github'&&active.repo===options.repo)await reconcileGithub(active,{token});
   try { return await createPipeline(options); }

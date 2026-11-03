@@ -1,4 +1,5 @@
 import { createNativeGreenhouseScraper, NATIVE_GREENHOUSE_PROFILES, nativeSourceMetadata } from '../../scraper-support/native-sources/declaredGreenhouse/nativeCareers.js'
+import { createCurrentGreenhouseScraper } from '../buildkite/currentNative.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -79,9 +80,9 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createTripadvisorScraper = (defaults = {}) => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["tripadvisor"], defaults)
+export const createTripadvisorScraper = (defaults = {}) => createCurrentGreenhouseScraper('tripadvisor', defaults)
 
-export const run = options => createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES["tripadvisor"]).run(options)
+export const run = options => createTripadvisorScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -17,7 +17,7 @@ export const AEON_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'verified-homepage-plus-careers-pages-plus-blocked-peoplestrong-handoff',
   extractionStrategy:
-    'verified-official-homepage+verified-careers-hub+verified-join-us-page+verified-blocked-peoplestrong-joblist-return-empty',
+    'verified-official-homepage+verified-careers-hub+verified-join-us-page+declared-peoplestrong-access-failure-with-unknown-inventory',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   verifiedOn: '2026-07-14',

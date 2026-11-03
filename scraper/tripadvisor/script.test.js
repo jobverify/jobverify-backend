@@ -1,4 +1,4 @@
-import { checkCurrentFactory,checkChangedPublisher } from '../../scraper-support/native-sources/declaredGreenhouse/replayControls.js'
+import { checkCurrentSourceFactory } from '../buildkite/test-data/replayCurrent.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -54,5 +54,5 @@ test('Tripadvisor maps only valid India jobs from the official Greenhouse feed',
 })
 
 test('tripadvisor actual factory retains complete original native models before selection',async()=>{
- await checkCurrentFactory('tripadvisor',createTripadvisorScraper)
+ await checkCurrentSourceFactory('tripadvisor',createTripadvisorScraper)
 })

@@ -1,4 +1,4 @@
-import { checkCurrentFactory,checkChangedPublisher } from '../../scraper-support/native-sources/declaredGreenhouse/replayControls.js'
+import { checkCurrentSourceFactory,checkChangedSourcePublisher } from './test-data/replayCurrent.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -71,6 +71,7 @@ test('Buildkite Greenhouse extraction keeps only India jobs and maps canonical d
         location: { name: 'Bengaluru, India' },
         departments: [{ name: 'Sales' }],
         requisition_id: 'REQ-222',
+        first_published: '2026-07-20T08:30:00Z',
         updated_at: '2026-07-25T08:30:00Z',
         content: '<p>Help customers adopt CI/CD pipelines.</p>',
       },
@@ -96,16 +97,16 @@ test('Buildkite Greenhouse extraction keeps only India jobs and maps canonical d
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '2026-07-25T08:30:00Z',
+    postingDate: '2026-07-20T08:30:00Z',
     closingDate: null,
     scrapedAt: '2026-07-25T09:00:00.000Z',
   }])
 })
 
 test('buildkite actual factory retains complete original native models before selection',async()=>{
- await checkCurrentFactory('buildkite',createBuildkiteScraper)
+ await checkCurrentSourceFactory('buildkite',createBuildkiteScraper)
 })
 
 test('buildkite changed primary publisher holds current source qualification',async()=>{
- await checkChangedPublisher('buildkite',createBuildkiteScraper)
+ await checkChangedSourcePublisher('buildkite',createBuildkiteScraper)
 })

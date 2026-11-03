@@ -71,7 +71,7 @@ const processVerifiedTelegramWebhook = async (req, res) => {
     let user;
     try {
       user = await User.findOneAndUpdate(
-        { _id: userId },
+        { _id: userId, telegramAlertsAllowed: { $ne: false }, deactivated: { $ne: true }, accountDeletingAt: null },
         {
           $set: {
             "telegram.chatId": String(chatId),

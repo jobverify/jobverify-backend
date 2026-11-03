@@ -1,4 +1,4 @@
-import { createDeclaredJobFeedScraper, DECLARED_JOB_FEED_PROFILES } from '../../scraper-support/native-sources/declaredJobFeeds/nativeCareers.js'
+import { createCurrentPrefectScraper } from './currentNative.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -205,7 +205,7 @@ export const extractAshbyJobs = (payload = {}) =>
     })
     .filter(Boolean)
 
-export const createPrefectScraper = (options = {}) => createDeclaredJobFeedScraper(DECLARED_JOB_FEED_PROFILES.prefect, options)
+export const createPrefectScraper = (options = {}) => createCurrentPrefectScraper(options)
 
 export const run = async (options = {}) => createPrefectScraper(options).run(options)
 

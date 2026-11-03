@@ -1,139 +1,19 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
-const searchHtml = `
-<!doctype html>
-<html>
-  <body>
-    <div class="row">
-      <div class="large-6 columns">
-        <h3 class="heading-6 space-none">
-          <a href="https://careers.amperecomputing.com/jobs/12345-senior-software-engineer">Senior Software Engineer</a>
-        </h3>
-      </div>
-      <div class="large-3 columns"><span class="hide-for-large">Category: </span>Engineering</div>
-      <div class="large-3 columns"><span class="hide">Location: </span>Bangalore, Karnataka, India</div>
-    </div>
-    <div class="row">
-      <div class="large-6 columns">
-        <h3 class="heading-6 space-none">
-          <a href="https://careers.amperecomputing.com/jobs/99999-us-role">US Role</a>
-        </h3>
-      </div>
-      <div class="large-3 columns"><span class="hide-for-large">Category: </span>Engineering</div>
-      <div class="large-3 columns"><span class="hide">Location: </span>Santa Clara, California, United States</div>
-    </div>
-  </body>
-</html>
-`
-
-const detailHtml = `
-<!doctype html>
-<html>
-  <head>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "JobPosting",
-        "title": "Senior Software Engineer",
-        "description": "<p>Build platform software for Ampere systems.</p>",
-        "employmentType": "FULL_TIME",
-        "datePosted": "2026-07-20",
-        "validThrough": "2026-08-20",
-        "jobLocation": {
-          "@type": "Place",
-          "address": {
-            "@type": "PostalAddress",
-            "addressLocality": "Bangalore",
-            "addressRegion": "Karnataka",
-            "addressCountry": "India"
-          }
-        }
-      }
-    </script>
-  </head>
-  <body></body>
-</html>
-`
-
-const loadModule = async () => {
-  try {
-    return await import('../../scraper/amperecomputing/script.js')
-  } catch {
-    assert.fail('Expected Ampere Computing scraper module at ../../scraper/amperecomputing/script.js')
-  }
-}
-
-test('Ampere Computing parses India search results and detail JSON-LD', async () => {
-  const ampere = await loadModule()
-
-  const jobs = await ampere.createAmpereComputingScraper().run({
-    fetchText: async (url) => {
-      if (url === ampere.SEARCH_URL) return searchHtml
-      if (url === 'https://careers.amperecomputing.com/jobs/12345-senior-software-engineer') {
-        return detailHtml
-      }
-
-      throw new Error(`Unexpected Ampere Computing URL: ${url}`)
-    },
-  })
-
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Senior Software Engineer')
-  assert.equal(jobs[0].location, 'Bangalore, Karnataka, India')
-  assert.equal(jobs[0].city, 'Bangalore')
-  assert.equal(jobs[0].department, 'Engineering')
-  assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].jobId, '12345')
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {createCatalogScraper,getScraperCatalog} from '../providers/index.js'
+import {createAmpereComputingScraper,SEARCH_URL} from '../../scraper/amperecomputing/script.js'
+const fixture=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/amperecomputing/test-data/native-talemetry-20261103.json.gz',import.meta.url))))
+test('registered Ampere Computing runtime retains all complete public India roles while keeping private form fields separately unknown',async()=>{
+ const provider=getScraperCatalog().find(p=>p.source==='amperecomputing')
+ let audit
+ const jobs=await createCatalogScraper(provider).run({fetchPage:async url=>{const p=fixture.responses[url];assert.ok(p,'Unexpected native URL');return {...p,url:p.finalUrl}},onNativeAudit:a=>{audit=a}})
+ assert.equal(jobs.length,30)
+ assert.equal(audit.publicObservations.length,30)
+ assert.ok(audit.publicObservations.every(j=>j.country==='India'&&j.sourceDescription.length>500&&j.postingDate===null&&j.remoteStatus===null&&j.requisitionId===null))
+ assert.ok(audit.publicObservations.every(j=>j.sourceNativeApplicationOptions.applyCompany==='amperecomputing'&&j.sourceDetailComplete===true&&j.sourcePrivateApplicationFieldsKnown===false))
 })
-
-test('Ampere Computing accepts the verified Friday, August 14, 2026 Cloudflare challenge shell as an empty state', async () => {
-  const ampere = await loadModule()
-
-  const blockedChallengePage = {
-    status: 403,
-    url: ampere.SEARCH_URL,
-    headers: {
-      server: 'cloudflare',
-      'cf-ray': 'a2abc87858e29f61-MAA',
-      'cf-mitigated': 'challenge',
-    },
-    html: `
-<!DOCTYPE html>
-<html lang="en-US">
-  <head>
-    <title>Just a moment...</title>
-  </head>
-  <body>
-    <noscript>
-      <div>Enable JavaScript and cookies to continue</div>
-    </noscript>
-    <script src="https://challenges.cloudflare.com"></script>
-  </body>
-</html>
-`,
-  }
-
-  const requestedUrls = []
-  const jobs = await ampere.createAmpereComputingScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-      if (url === ampere.SEARCH_URL) return blockedChallengePage
-      if (url === ampere.INDIA_SEARCH_URL) {
-        return {
-          ...blockedChallengePage,
-          url,
-        }
-      }
-
-      throw new Error(`Unexpected Ampere Computing URL: ${url}`)
-    },
-  })
-
-  assert.equal(ampere.hasVerifiedCloudflareChallengeSignal(blockedChallengePage), true)
-  assert.deepEqual(requestedUrls, [
-    ampere.SEARCH_URL,
-    ampere.INDIA_SEARCH_URL,
-  ])
-  assert.deepEqual(jobs, [])
+test('Ampere Computing reports access denied instead of treating challenge HTML as India zero',async()=>{
+ await assert.rejects(createAmpereComputingScraper().run({fetchPage:async url=>({url,status:403,html:'<title>Just a moment...</title>'})}),e=>e.failureKind==='blocked_or_access_denied'&&e.status===403)
 })

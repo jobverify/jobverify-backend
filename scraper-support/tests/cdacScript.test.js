@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs'
+import { gunzipSync } from 'node:zlib'
 
 import {
   CAREER_PAGE_URL,
@@ -36,9 +38,9 @@ test('extractSearchResults maps official C-DAC current and rolling announcements
     title: 'Applications are invited (online only) for C-DAC Adjunct Engineer (CAE) scheme from motivated and experienced researchers for doing research in C-DAC interest areas',
     company: 'C-DAC',
     department: null,
-    location: 'India',
+    location: null,
     city: null,
-    country: 'India',
+    country: null,
     jobId: 'cdac-job-corp-cae-2020',
     requisitionId: 'job_corp_CAE_2020',
     sourceUrl: CAREER_PAGE_URL,
@@ -50,23 +52,31 @@ test('extractSearchResults maps official C-DAC current and rolling announcements
     requiredSkills: [],
     postingDate: null,
     closingDate: null,
-    jobDescription: 'Official C-DAC career announcement. Review the official posting for eligibility and application details.',
+    jobDescription: null,
   })
   assert.equal(jobs[1].requisitionId, 'walkin-CINE-REC-2026-01.pdf')
   assert.equal(jobs[1].applyUrl, 'https://cdac.in/index.aspx?id=pdf_hrd_sil&dynamicId=walkin-CINE-REC-2026-01.pdf')
 })
 
-test('run fetches the official C-DAC careers page and decorates extracted announcements', async () => {
+test('run follows the official C-DAC rolling role inventory and hydrates full individual native criteria', async () => {
+  const native = JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/cdac/test-data/native-20261102.json.gz', import.meta.url))))
   const requestedUrls = []
   const jobs = await createCdacScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      return sampleHtml
+      if (url === CAREER_PAGE_URL) return sampleHtml
+      const receipt = [...native.ads, ...native.details].find(row => row.url === url)
+      assert.ok(receipt, url)
+      return receipt.body
     },
+    fetchBinary: async url => Buffer.from(native.ads.find(row => row.url === url).body, 'base64'),
+    now: () => new Date('2026-11-02T18:00:00Z'),
   })
 
-  assert.deepEqual(requestedUrls, [CAREER_PAGE_URL])
-  assert.equal(jobs.length, 2)
+  assert.equal(requestedUrls.filter(url => url === CAREER_PAGE_URL).length, 2)
+  assert.equal(requestedUrls.filter(url => url.includes('job_corp_CAE_2020')).length, 2)
+  assert.ok(requestedUrls.includes('https://cdac.in/index.aspx?id=ca_CHN-CAE-01'))
+  assert.equal(jobs.length, 49)
   assert.equal(jobs[0].source, 'cdac')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.ok(Date.parse(jobs[0].scrapedAt))

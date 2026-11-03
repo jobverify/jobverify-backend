@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { ANR_SOFTWARE_PRIVATE_LIMITED_CATALOG } from './catalog.js'
 import {readNativeDocument,decodeNativeEntities} from '../../scraper-support/utils/activeNativeHtml.js'
-import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {runCurrentAnr} from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -11,25 +11,6 @@ export const PROVIDER_METADATA = ANR_SOFTWARE_PRIVATE_LIMITED_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
-
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
-
-const defaultFetchText = async (url, {signal} = {}) => {
-  signal?.throwIfAborted()
-  const response = await fetch(url, {
-    signal,
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
 
 // These are declared source observations, never a rendering or vacancy proof.
 // Traverse inert nodes too: hidden/disabled criteria and duplicate controls must
@@ -98,25 +79,7 @@ export const inspectAnrCareersPage = (html = '') => {
   }
 }
 
-export const createAnrsoftwareprivatelimitedScraper = () => ({
-  async run({fetchText=defaultFetchText,signal,onAudit=()=>{},now=()=>new Date().toISOString()} = {}) {
-    signal?.throwIfAborted()
-    const careersHtml = await fetchText(CAREERS_URL,{signal})
-    signal?.throwIfAborted()
-    const audit = inspectAnrCareersPage(careersHtml)
-    audit.stage = 'declared-card-criteria-source-unresolved'
-    await onAudit(structuredClone(audit))
-    signal?.throwIfAborted()
-    if (!hasVerifiedCareersPageSignal(careersHtml)) {
-      throw new Error('ANR careers identity/headings changed; retained observations are unverified')
-    }
-    return attachInventoryEvidence([],{
-      status:'discovery-only',surface:CAREERS_URL,firstParty:false,listingComplete:false,
-      pagesFetched:1,reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),
-      reason:'anr-country-identity-styles-activation-and-closing-scope-unresolved',
-    })
-  },
-})
+export const createAnrsoftwareprivatelimitedScraper = () => ({run:(options={})=>runCurrentAnr(options,inspectAnrCareersPage)})
 
 export const run = async (options = {}) => createAnrsoftwareprivatelimitedScraper().run(options)
 

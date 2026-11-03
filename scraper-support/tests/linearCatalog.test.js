@@ -11,6 +11,10 @@ test('the registered Linear source preserves unknown company scope and requires 
   assert.equal(provider.zeroResultPolicy, 'evidence-required')
   assert.equal(provider.verifiedPublicJobCount, null)
   assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.configuredBoardProofRequiresLiveEvidence,true)
+  assert.equal(provider.sourceCompanyWideScopeComplete,false)
+  assert.equal(provider.lifecycleCleanupAllowed,false)
+  assert.match(provider.modulePath,/linear[\\/]script\.js$/)
   const scraper = createCatalogScraper(provider)
   await assert.rejects(scraper.run({ transport: async url => ({ url, status: 200,
     headers: { 'content-type': 'text/html' }, body: Buffer.from('<h1>Careers unavailable</h1>'), bodyComplete: true }) }), /careers runtime handoff/i)

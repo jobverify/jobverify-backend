@@ -206,6 +206,9 @@ test('Canva run paginates the official first-party jobs board and keeps only Ind
     postingDate: null,
     remoteStatus: 'On-site',
     scrapedAt: '2026-07-14T00:00:00.000Z',
+    sourceListingComplete: false,
+    sourceScopeComplete: false,
+    lifecycleCleanupAllowed: false,
   })
 
   assert.deepEqual(jobs[1], {
@@ -230,6 +233,9 @@ test('Canva run paginates the official first-party jobs board and keeps only Ind
     postingDate: null,
     remoteStatus: 'Remote',
     scrapedAt: '2026-07-14T00:00:00.000Z',
+    sourceListingComplete: false,
+    sourceScopeComplete: false,
+    lifecycleCleanupAllowed: false,
   })
 
   assert.equal(jobs[2].title, 'Platform Product Manager')

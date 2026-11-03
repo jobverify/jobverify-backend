@@ -1,228 +1,44 @@
-import assert from 'node:assert/strict'
 import test from 'node:test'
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import * as scraper from '../../scraper/acmesolar/script.js'
+const source="acmesolar",entry="https://www.acmesolar.in/career"
+const captures=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/acmesolar/test-data/native-20261103.json.gz',import.meta.url))))
+const page=async url=>{const row=captures.findLast(row=>row.requestedUrl===url);assert.ok(row,'unexpected public/private request '+url);return {status:row.status,url:row.finalUrl,html:row.html}}
+const run=options=>scraper.createAcmeSolarScraper().run({fetchText:page,...options})
 
-const APP_SHELL_HTML = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <link rel="icon" type="image/png" href="/media/images/favicon.png" />
-    <script type="module" crossorigin src="/assets/index-chbzrSRS.js"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>
-`
-
-const CAREERS_PAGE_HTML = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <link rel="icon" type="image/png" href="/media/images/favicon.png" />
-    <script type="module" crossorigin src="/assets/index-chbzrSRS.js"></script>
-  </head>
-  <body>
-    <div id="root">
-      <main>
-        <h1>Career Opportunities at ACME Solar</h1>
-        <p>Careers at ACME Solar</p>
-        <a href="/career_form">Join us</a>
-      </main>
-    </div>
-  </body>
-</html>
-`
-
-const CAREER_FORM_PAGE_HTML = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <link rel="icon" type="image/png" href="/media/images/favicon.png" />
-    <script type="module" crossorigin src="/assets/index-chbzrSRS.js"></script>
-  </head>
-  <body>
-    <div id="root">
-      <form>
-        <label>Upload CV*</label>
-        <label>Email ID*</label>
-        <button>Send Message</button>
-        <p>For career opportunities, reach out to us at hr@acme.in</p>
-      </form>
-    </div>
-  </body>
-</html>
-`
-
-const CAREERS_BUNDLE = `
-const headline = "Career Opportunities at ACME Solar";
-const body = "Careers at ACME Solar";
-const apply = "/career_form";
-const contact = "hr@acme.in";
-`
-
-const LIVE_STYLE_CAREERS_BUNDLE = `
-const hero = "Career Opportunities at ACME Solar";
-const nav = "/career_form";
-const upload = "Upload CV*";
-const email = "Enter Your Email ID*";
-const send = "Send Message";
-`
-
-const loadAcmeSolarModule = async () => {
-  try {
-    return await import('../../scraper/acmesolar/script.js')
-  } catch {
-    assert.fail('Expected ACME Solar scraper module at ../../scraper/acmesolar/script.js')
-  }
-}
-
-test('ACME Solar pins the verified official SPA careers and career form surface', async () => {
-  const acmeSolar = await loadAcmeSolarModule()
-
-  assert.equal(acmeSolar.SOURCE, 'acmesolar')
-  assert.equal(acmeSolar.COMPANY, 'ACME Solar')
-  assert.equal(acmeSolar.COMPANY_DOMAIN, 'acmesolar.in')
-  assert.equal(acmeSolar.VERIFIED_AT, '2026-07-19')
-  assert.equal(acmeSolar.HOMEPAGE_URL, 'https://www.acmesolar.in/')
-  assert.equal(acmeSolar.CAREERS_URL, 'https://www.acmesolar.in/career')
-  assert.equal(acmeSolar.CAREER_FORM_URL, 'https://www.acmesolar.in/career_form')
-  assert.equal(acmeSolar.APPLY_EMAIL, 'hr@acme.in')
-  assert.equal(acmeSolar.hasOfficialAppShellSignal(APP_SHELL_HTML), true)
-  assert.equal(acmeSolar.hasOfficialCareersBundleSignal(CAREERS_BUNDLE), true)
-  assert.equal(acmeSolar.hasPublicJobListingsSignal(CAREERS_BUNDLE), false)
-  assert.deepEqual(acmeSolar.extractScriptAssetUrls(APP_SHELL_HTML, acmeSolar.CAREERS_URL), [
-    'https://www.acmesolar.in/assets/index-chbzrSRS.js',
-  ])
+test('ACME Solar exports its original source and current first-party entry without a static inventory verification date',()=>{
+ assert.equal(scraper.SOURCE,"acmesolar")
+ assert.equal(scraper.COMPANY,"ACME Solar")
+ assert.equal(scraper.COMPANY_DOMAIN,"acmesolar.in")
+ assert.equal(scraper.CAREERS_URL,entry)
+ assert.equal(scraper.VERIFIED_ON,null)
+ assert.equal(scraper.VERIFIED_AT,null)
+ if(source==='acmesolar')assert.equal(scraper.APPLY_EMAIL,'careers@acme.in')
 })
 
-test('ACME Solar run verifies the live official no-public-jobs SPA before returning []', async () => {
-  const acmeSolar = await loadAcmeSolarModule()
-  const requestedUrls = []
-
-  const jobs = await acmeSolar.createAcmeSolarScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (
-        url === acmeSolar.HOMEPAGE_URL
-        || url === acmeSolar.CAREERS_URL
-        || url === acmeSolar.CAREER_FORM_URL
-      ) {
-        return APP_SHELL_HTML
-      }
-
-      if (url === 'https://www.acmesolar.in/assets/index-chbzrSRS.js') {
-        return CAREERS_BUNDLE
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    acmeSolar.HOMEPAGE_URL,
-    acmeSolar.CAREERS_URL,
-    acmeSolar.CAREER_FORM_URL,
-    'https://www.acmesolar.in/assets/index-chbzrSRS.js',
-  ])
-  assert.deepEqual(jobs, [])
+test('ACME Solar identifies active role links while excluding commented and unrevealed role markup',()=>{
+ const html=captures.find(row=>row.requestedUrl===entry).html
+ const role='<article class="job-card"><h2>Public Native Engineer</h2><a href="/jobs/engineer">View role</a></article>'
+ assert.equal(scraper.pageExposesPublicJobListings(html),false)
+ assert.equal(scraper.pageExposesPublicJobListings(html+role),true)
+ assert.equal(scraper.pageExposesPublicJobListings(html+'<!-- '+role+' --><template>'+role+'</template><div hidden>'+role+'</div>'),false)
 })
 
-test('ACME Solar accepts the verified no-public-jobs careers pages even when the bundle text changes', async () => {
-  const acmeSolar = await loadAcmeSolarModule()
-
-  const jobs = await acmeSolar.createAcmeSolarScraper().run({
-    fetchText: async (url) => {
-      if (url === acmeSolar.HOMEPAGE_URL) return APP_SHELL_HTML
-      if (url === acmeSolar.CAREERS_URL) return CAREERS_PAGE_HTML
-      if (url === acmeSolar.CAREER_FORM_URL) return CAREER_FORM_PAGE_HTML
-      if (url === 'https://www.acmesolar.in/assets/index-chbzrSRS.js') {
-        return 'const hydrationOnly = true;'
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(jobs, [])
+test('ACME Solar rejects a changed native employer or handoff before claiming source observations',async()=>{
+ await assert.rejects(run({fetchText:async url=>{
+  const value=await page(url)
+  if(source==='aadyahaerospace'&&url.endsWith('/options/header'))return {...value,html:value.html.replace(/AADYAH/gi,'DifferentEmployer')}
+  if(source==='aarbeestructures'&&url===entry)return {...value,html:value.html.replace('https://docs.google.com/forms/','https://different-employer.invalid/forms/')}
+  if(source==='acmesolar'&&url.includes('/assets/index-'))return {...value,html:value.html.replace('careers@acme.in','jobs@different-employer.invalid')}
+  if(source==='aayushmantech'&&url===entry)return {...value,html:'<html><body><h1>Unrelated employer</h1></body></html>'}
+  return value
+ }}),/employer|identity|binding/i)
 })
 
-test('ACME Solar accepts the live bundle when the official form flow remains but the legacy contact email string disappears', async () => {
-  const acmeSolar = await loadAcmeSolarModule()
-
-  const jobs = await acmeSolar.createAcmeSolarScraper().run({
-    fetchText: async (url) => {
-      if (
-        url === acmeSolar.HOMEPAGE_URL
-        || url === acmeSolar.CAREERS_URL
-        || url === acmeSolar.CAREER_FORM_URL
-      ) {
-        return APP_SHELL_HTML
-      }
-
-      if (url === 'https://www.acmesolar.in/assets/index-chbzrSRS.js') {
-        return LIVE_STYLE_CAREERS_BUNDLE
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-})
-
-test('ACME Solar fails closed when the verified no-jobs SPA shape changes or jobs appear', async () => {
-  const acmeSolar = await loadAcmeSolarModule()
-
-  await assert.rejects(
-    acmeSolar.createAcmeSolarScraper().run({
-      fetchText: async (url) => {
-        if (url === acmeSolar.HOMEPAGE_URL) return '<html><body>Different site</body></html>'
-        return APP_SHELL_HTML
-      },
-    }),
-    /official ACME Solar web app shell/i,
-  )
-
-  await assert.rejects(
-    acmeSolar.createAcmeSolarScraper().run({
-      fetchText: async (url) => {
-        if (
-          url === acmeSolar.HOMEPAGE_URL
-          || url === acmeSolar.CAREERS_URL
-          || url === acmeSolar.CAREER_FORM_URL
-        ) {
-          return APP_SHELL_HTML
-        }
-
-        if (url === 'https://www.acmesolar.in/assets/index-chbzrSRS.js') {
-          return 'const headline = "Career Opportunities at Another Company";'
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /careers bundle no longer matches/i,
-  )
-
-  await assert.rejects(
-    acmeSolar.createAcmeSolarScraper().run({
-      fetchText: async (url) => {
-        if (
-          url === acmeSolar.HOMEPAGE_URL
-          || url === acmeSolar.CAREERS_URL
-          || url === acmeSolar.CAREER_FORM_URL
-        ) {
-          return APP_SHELL_HTML
-        }
-
-        if (url === 'https://www.acmesolar.in/assets/index-chbzrSRS.js') {
-          return `${CAREERS_BUNDLE}; const api = "/api/jobs"; const label = "Current Openings";`
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /public jobs surface/i,
-  )
+test('ACME Solar preserves clock error identity and does not convert it into upstream absence',async()=>{
+ const reason={opaque:'observation clock failed'};let calls=0
+ await assert.rejects(run({now:()=>{throw reason},onAudit:()=>{calls++}}),error=>error===reason)
+ assert.equal(calls,0)
 })

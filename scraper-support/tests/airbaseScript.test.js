@@ -75,7 +75,7 @@ const loadAirbaseModule = async () => {
   }
 }
 
-test('Airbase scraper constants stay pinned to the verified acquisition homepage, Paylocity careers redirect, and missing routes', async () => {
+test('Airbase scraper constants stay pinned to the verified acquisition homepage, Paylocity careers redirect, and historical missing routes', async () => {
   const airbase = await loadAirbaseModule()
 
   assert.equal(airbase.SOURCE, 'airbase')
@@ -94,165 +94,21 @@ test('Airbase scraper constants stay pinned to the verified acquisition homepage
   assert.equal(airbase.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(airbase.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(airbase.hasGenericParentCareersSignal(genericPaylocityCareersHtml), true)
-  assert.equal(airbase.hasGenericParentCareersSignal(paylocityJsShellHtml), true)
+  assert.equal(airbase.hasGenericParentCareersSignal(paylocityJsShellHtml), false)
   assert.equal(airbase.isMissingCareerRoute({ status: 404, url: airbase.NO_PUBLIC_CAREER_ROUTE_URLS[0] }), true)
 })
 
-test('Airbase accepts the current Paylocity JavaScript shell as a generic parent careers handoff', async () => {
+test('Airbase rejects a JavaScript-only parent response as evidence of no public jobs', async () => {
   const airbase = await loadAirbaseModule()
-
-  const jobs = await airbase.createAirbaseScraper().run({
-    fetchPage: async (url) => {
-      if (url === airbase.HOMEPAGE_URL) {
-        return { status: 200, url, html: currentHomepageHtml }
-      }
-
-      if (url === airbase.CAREERS_ROUTE_URL) {
-        return {
-          status: 200,
-          url: airbase.PARENT_CAREERS_URL,
-          html: paylocityJsShellHtml,
-        }
-      }
-
-      if (airbase.NO_PUBLIC_CAREER_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: notFoundHtml }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(jobs, [])
+  await assert.rejects(airbase.createAirbaseScraper().run({fetchPage: async url =>
+    url === airbase.HOMEPAGE_URL ? {status:200,url,html:currentHomepageHtml} :
+    {status:200,url:airbase.PARENT_CAREERS_URL,html:paylocityJsShellHtml}
+  }), /response redirected|corporate careers parent handoff/)
 })
 
-test('Airbase returns no jobs only while the first-party careers route redirects to the generic parent Paylocity careers page and the checked Airbase routes stay missing', async () => {
+test('Airbase rejects missing or conflicting current corporate identity before requesting native roles', async () => {
   const airbase = await loadAirbaseModule()
-  const requestedUrls = []
-
-  const jobs = await airbase.createAirbaseScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === airbase.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === airbase.CAREERS_ROUTE_URL) {
-        return {
-          status: 200,
-          url: airbase.PARENT_CAREERS_URL,
-          html: genericPaylocityCareersHtml,
-        }
-      }
-
-      if (airbase.NO_PUBLIC_CAREER_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: notFoundHtml }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    airbase.HOMEPAGE_URL,
-    airbase.CAREERS_ROUTE_URL,
-    ...airbase.NO_PUBLIC_CAREER_ROUTE_URLS,
-  ])
-  assert.deepEqual(jobs, [])
-})
-
-test('Airbase fails closed when the homepage, parent careers redirect, or checked missing routes drift', async () => {
-  const airbase = await loadAirbaseModule()
-
-  await assert.rejects(
-    airbase.createAirbaseScraper().run({
-      fetchPage: async (url) => {
-        if (url === airbase.HOMEPAGE_URL) {
-          return { status: 200, url, html: '<html><title>Unexpected</title></html>' }
-        }
-
-        if (url === airbase.CAREERS_ROUTE_URL) {
-          return {
-            status: 200,
-            url: airbase.PARENT_CAREERS_URL,
-            html: genericPaylocityCareersHtml,
-          }
-        }
-
-        return { status: 404, url, html: notFoundHtml }
-      },
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    airbase.createAirbaseScraper().run({
-      fetchPage: async (url) => {
-        if (url === airbase.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === airbase.CAREERS_ROUTE_URL) {
-          return {
-            status: 200,
-            url: airbase.CAREERS_ROUTE_URL,
-            html: genericPaylocityCareersHtml,
-          }
-        }
-
-        return { status: 404, url, html: notFoundHtml }
-      },
-    }),
-    /verified parent careers redirect/i,
-  )
-
-  await assert.rejects(
-    airbase.createAirbaseScraper().run({
-      fetchPage: async (url) => {
-        if (url === airbase.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === airbase.CAREERS_ROUTE_URL) {
-          return {
-            status: 200,
-            url: airbase.PARENT_CAREERS_URL,
-            html: genericPaylocityCareersHtml.replace(
-              'Join us as we help clients solve problems and shape the future of work.',
-              'Join Airbase as we build the future of finance.',
-            ),
-          }
-        }
-
-        return { status: 404, url, html: notFoundHtml }
-      },
-    }),
-    /verified generic parent careers surface/i,
-  )
-
-  await assert.rejects(
-    airbase.createAirbaseScraper().run({
-      fetchPage: async (url) => {
-        if (url === airbase.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === airbase.CAREERS_ROUTE_URL) {
-          return {
-            status: 200,
-            url: airbase.PARENT_CAREERS_URL,
-            html: genericPaylocityCareersHtml,
-          }
-        }
-
-        if (url === airbase.NO_PUBLIC_CAREER_ROUTE_URLS[0]) {
-          return { status: 200, url, html: '<html><body>Open roles</body></html>' }
-        }
-
-        return { status: 404, url, html: notFoundHtml }
-      },
-    }),
-    /verified no-public-careers route/i,
-  )
+  await assert.rejects(airbase.createAirbaseScraper().run({fetchPage: async url =>
+    ({status:200,url,html:'<html><title>Unexpected</title></html>'})
+  }), /current Airbase acquisition homepage/i)
 })

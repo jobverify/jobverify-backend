@@ -143,11 +143,11 @@ test('AEON scraper constants stay pinned to the verified India careers hub and b
   assert.equal(aeon.hasBlockedPublicJobListingsSignal(blockedPeopleStrongPage), true)
 })
 
-test('AEON accepts the current blocked PeopleStrong portal/home handoff without masking public jobs', async () => {
+test('AEON reports the current blocked PeopleStrong portal/home handoff as unavailable', async () => {
   const aeon = await loadAeonModule()
   const requestedUrls = []
 
-  const jobs = await aeon.createAeonScraper().run({
+  await assert.rejects(aeon.createAeonScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -173,7 +173,7 @@ test('AEON accepts the current blocked PeopleStrong portal/home handoff without 
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), error => error.status === 403 && error.abortRetries === true)
 
   assert.deepEqual(requestedUrls, [
     aeon.HOMEPAGE_URL,
@@ -181,14 +181,13 @@ test('AEON accepts the current blocked PeopleStrong portal/home handoff without 
     aeon.JOIN_US_URL,
     'https://careers-aeoncredit.peoplestrong.com/portal/home',
   ])
-  assert.deepEqual(jobs, [])
 })
 
-test('AEON returns no jobs only while the verified join-us page still hands applicants to a blocked PeopleStrong joblist', async () => {
+test('AEON preserves unknown inventory when the legacy declared PeopleStrong joblist is blocked', async () => {
   const aeon = await loadAeonModule()
   const requestedUrls = []
 
-  const jobs = await aeon.createAeonScraper().run({
+  await assert.rejects(aeon.createAeonScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -210,7 +209,7 @@ test('AEON returns no jobs only while the verified join-us page still hands appl
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), error => error.status === 403 && error.abortRetries === true)
 
   assert.deepEqual(requestedUrls, [
     aeon.HOMEPAGE_URL,
@@ -218,7 +217,6 @@ test('AEON returns no jobs only while the verified join-us page still hands appl
     aeon.JOIN_US_URL,
     aeon.JOB_LISTINGS_URL,
   ])
-  assert.deepEqual(jobs, [])
 })
 
 test('AEON fails closed when the homepage, careers hub, join-us handoff, or blocked PeopleStrong contract drifts', async () => {
@@ -324,11 +322,11 @@ test('AEON fails closed when the homepage, careers hub, join-us handoff, or bloc
   )
 })
 
-test('AEON can recover with browser-backed pages when direct requests fail', async () => {
+test('AEON preserves the access denial after permitted browser transport recovery', async () => {
   const aeon = await loadAeonModule()
   const browserUrls = []
 
-  const jobs = await aeon.createAeonScraper().run({
+  await assert.rejects(aeon.createAeonScraper().run({
     fetchPage: async () => {
       throw new TypeError('fetch failed')
     },
@@ -357,7 +355,7 @@ test('AEON can recover with browser-backed pages when direct requests fail', asy
 
       throw new Error(`Unexpected browser URL: ${url}`)
     },
-  })
+  }), error => error.status === 403 && error.abortRetries === true)
 
   assert.deepEqual(browserUrls, [
     aeon.HOMEPAGE_URL,
@@ -365,5 +363,4 @@ test('AEON can recover with browser-backed pages when direct requests fail', asy
     aeon.JOIN_US_URL,
     'https://careers-aeoncredit.peoplestrong.com/portal/home',
   ])
-  assert.deepEqual(jobs, [])
 })

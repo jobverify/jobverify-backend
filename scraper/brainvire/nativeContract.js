@@ -14,6 +14,14 @@ const official = value => {
   try { const url = new URL(value); return url.protocol === 'https:' && url.hostname === 'www.brainvire.com' && !url.username && !url.password && !url.port && !url.search && !url.hash && url.pathname === '/' } catch { return false }
 }
 const sameSet = (a,b) => canonical([...new Set(a)].sort()) === canonical([...new Set(b)].sort())
+const matchesExperience = (requirement, visible) => {
+  if (typeof requirement === 'string') return clean(requirement) === visible
+  if (!requirement || Array.isArray(requirement) || requirement['@type'] !== 'OccupationalExperienceRequirements'
+    || !Number.isSafeInteger(requirement.monthsOfExperience) || requirement.monthsOfExperience < 0
+    || Object.keys(requirement).some(key => !['@type','monthsOfExperience'].includes(key))) return false
+  const years = /^(\d+)\+\s+Years?$/i.exec(visible)
+  return Boolean(years) && Number(years[1]) * 12 === requirement.monthsOfExperience
+}
 const typedCountry = new Map(), display = new Intl.DisplayNames(['en'], {type:'region',fallback:'none'})
 for (let a=65;a<=90;a++) for (let b=65;b<=90;b++) {
   const code=String.fromCharCode(a,b), name=display.of(code)
@@ -109,7 +117,7 @@ export function inspectNativeInventory(html, {now = new Date().toISOString()} = 
     check(!usedKeys.has(nativeLabel),'duplicate native application identity'); usedKeys.add(nativeLabel)
     const cardCountries=fields.location.split(/[,;/]/).map(country).filter(Boolean)
     const locations=fields.location.replace(/\s*\/\s*Remote\s*$/i,'').split(/\s*[,;]\s*/).filter(label => !country(label))
-    const matches=models.filter(model => !usedModels.has(model) && clean(model.title) === title && clean(model.experienceRequirements) === fields.experience && sameSet((Array.isArray(model.jobLocation) ? model.jobLocation : [model.jobLocation]).map(place => clean(place?.address?.addressLocality)),locations))
+    const matches=models.filter(model => !usedModels.has(model) && clean(model.title) === title && matchesExperience(model.experienceRequirements,fields.experience) && sameSet((Array.isArray(model.jobLocation) ? model.jobLocation : [model.jobLocation]).map(place => clean(place?.address?.addressLocality)),locations))
     const model=one(matches,'role-owned matching structured record'); usedModels.add(model)
     check(model.customFields == null,'unreviewed native custom fields scope')
     check(model.hiringOrganization && ['Brainvire Infotech','Brainvire Infotech Inc.','Brainvire'].includes(model.hiringOrganization.name) && official(model.hiringOrganization.sameAs || model.hiringOrganization.url),'native role employer/domain mismatch')

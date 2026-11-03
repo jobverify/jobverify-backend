@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { AVALON_TECHNOLOGIES_CATALOG } from './catalog.js'
+import {runCurrentAvalon} from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -21,9 +22,6 @@ export const BROKEN_JOB_ROUTE_URLS = [
   'https://www.avalontec.com/job1/',
   'https://www.avalontec.com/job2/',
 ]
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -61,23 +59,6 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
-
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'manual',
-  })
-
-  return {
-    status: response.status,
-    url: response.url,
-    location: response.headers.get('location'),
-    html: await response.text(),
-  }
-}
 
 export const hasPublicJobListingSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
@@ -152,46 +133,7 @@ export const isKnownBrokenJobRoute = (page = {}, requestedUrl) => {
 }
 
 export const createAvalonTechnologiesScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Avalon Technologies verified official homepage no longer matches the known public surface')
-    }
-
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (hasPublicJobListingSignal(careersPage.html)) {
-      throw new Error('Avalon Technologies careers page now appears to expose a public jobs board')
-    }
-
-    if (careersPage.status !== 200 || !hasResumeOnlyCareersSignal(careersPage.html)) {
-      throw new Error('Avalon Technologies verified careers page no longer matches the known public surface')
-    }
-
-    const robotsTxt = await fetchPage(ROBOTS_TXT_URL)
-    if (robotsTxt.status !== 200 || !hasExpectedRobotsTxtSignal(robotsTxt.html)) {
-      throw new Error('Avalon Technologies verified robots.txt no longer matches the known public surface')
-    }
-
-    const sitemap = await fetchPage(SITEMAP_URL)
-    if (sitemap.status !== 200 || !hasExpectedSitemapSignal(sitemap.html)) {
-      throw new Error('Avalon Technologies verified sitemap no longer matches the known public surface')
-    }
-
-    const careerAlias = await fetchPage(CAREER_ALIAS_URL)
-    if (!isKnownCareerAliasRedirect(careerAlias)) {
-      throw new Error('Avalon Technologies verified career alias route changed')
-    }
-
-    for (const routeUrl of BROKEN_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-
-      if (!isKnownBrokenJobRoute(routePage, routeUrl)) {
-        throw new Error(`Avalon Technologies verified no-public-job route changed: ${routePage.location || routePage.url || routeUrl}`)
-      }
-    }
-
-    return []
-  },
+  run: options => runCurrentAvalon(options || {}),
 })
 
 export const run = async (options = {}) => createAvalonTechnologiesScraper().run(options)

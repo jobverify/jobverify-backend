@@ -1,3 +1,8 @@
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const currentPublicFixture=()=>JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/bharatforge/test-data/current-public-20261103.json.gz',import.meta.url))))
+const currentCorporateHTML=()=>currentPublicFixture().responses[0].body
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -31,21 +36,8 @@ test('extractSearchResults returns no openings when the Bharat Forge page only e
   assert.deepEqual(bharatForge.extractSearchResults(careerPageHtml), [])
 })
 
-test('run fetches the Bharat Forge careers page and returns an empty job list when no structured openings are published', async () => {
-  const bharatForge = await loadBharatForgeModule()
-  assert.ok(bharatForge)
-
-  const requestedTexts = []
-  const scraper = bharatForge.createBharatForgeScraper()
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedTexts.push(url)
-      if (url === bharatForge.CAREER_PAGE_URL) return careerPageHtml
-      throw new Error(`Unexpected text URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedTexts, [bharatForge.CAREER_PAGE_URL])
-  assert.deepEqual(jobs, [])
+test("Bharat Forge current public general-intake observations do not invent native vacancy inventory", async () => {
+ const bharat=await loadBharatForgeModule(),calls=[];let audit
+ const jobs=await bharat.run({fetchPage:async url=>{calls.push(url);return{url,status:200,html:currentCorporateHTML()}},onAudit:value=>{audit=value}})
+ assert.deepEqual(calls,[bharat.CAREER_PAGE_URL,bharat.CAREER_PAGE_URL]);assert.deepEqual(jobs,[]);assert.equal(readInventoryEvidence(jobs).reportedTotal,null);assert.equal(audit.observations[0].kind,'general-expertise-resume-intake');assert.equal(audit.observations[0].country,null);assert.equal(audit.observations[0].descriptionComplete,false)
 })

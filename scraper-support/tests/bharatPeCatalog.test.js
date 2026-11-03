@@ -7,24 +7,32 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes BharatPe as a verified no-public-jobs first-party source', () => {
+test('getScraperCatalog routes BharatPe through the current official Darwinbox handoff with runtime evidence', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'bharatpe')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'darwinbox')
   assert.equal(provider.companyName, 'BharatPe')
   assert.equal(provider.companyCareerPage, 'https://bharatpe.com/career')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-common-careers-route-validation')
+  assert.equal(provider.officialSiteUrl, 'https://bharatpe.com/')
+  assert.equal(provider.officialCareersHandoffUrl, 'https://bharatpe.darwinbox.in/ms/candidatev2/main/careers/allJobs')
+  assert.equal(provider.darwinboxOrigin, 'https://bharatpe.darwinbox.in')
+  assert.equal(provider.darwinboxCompanyId, 'main')
+  assert.equal(provider.publicAllJobsUrl, provider.officialCareersHandoffUrl)
+  assert.equal(provider.paginationStrategy, 'public-darwinbox-listing-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage-plus-missing-first-party-careers-routes-return-empty',
+    'official-corporate-careers-handoff+employer-bound-darwinbox-listing-api+native-role-detail-hydration',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'bharatpe.com')
   assert.match(provider.modulePath, /bharatpe[\\/]script\.js$/i)
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  assert.ok(provider.verifiedIndiaJobCount == null)
+  assert.notEqual(provider.verifiedInventoryStatus, 'verified-empty')
 })
 
 test('buildScrapers and company coverage resolve BharatPe to bharatpe', () => {

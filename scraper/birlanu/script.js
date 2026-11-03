@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {createBoundDarwinboxScraper} from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -96,26 +97,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createBirlaNuScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('BirlaNu people page no longer matches the verified official careers surface')
-    }
-
-    const joinUsUrl = extractJoinUsUrl(careersHtml)
-    if (joinUsUrl !== VERIFIED_HANDOFF_URL) {
-      throw new Error('BirlaNu people page no longer links to the verified Darwinbox handoff')
-    }
-
-    if (pageExposesFirstPartyJobRecords(careersHtml)) {
-      throw new Error('BirlaNu first-party public job records now appear on the verified people page')
-    }
-
-    return []
-  },
-})
+export const createBirlaNuScraper = (defaults={}) => createBoundDarwinboxScraper({source:SOURCE,companyName:COMPANY,employerNames:['BirlaNu','BirlaNu Limited','HIL Limited'],officialUrl:CAREERS_URL,handoffUrl:VERIFIED_HANDOFF_URL,handoffLabel:'Join Us',origin:'https://iconnect-hil.darwinbox.in',companySignal:'BirlaNu Limited (formerly HIL Limited)',title:/People at BirlaNu/i},defaults)
 
 export const run = async (options = {}) => createBirlaNuScraper().run(options)
 

@@ -9,13 +9,13 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const IST_OFFSET_MS = 330 * 60 * 1000;
 
 export const normalizeAlertSchedule = (subscription) => {
-  // Older Telegram accounts shared the root schedule. Preserve their cadence
-  // and pause state until they save the dedicated Telegram settings.
+  // Preserve saved daily/weekly schedules and pause state. Immediate accounts
+  // move to daily delivery; a version change reschedules their pending rows.
   const source = subscription?.telegramSchedule ?? subscription;
   return {
-    frequency: ALERT_FREQUENCIES.includes(source?.frequency) ? source.frequency : "immediate",
+    frequency: ALERT_FREQUENCIES.includes(source?.frequency) ? source.frequency : "daily",
     isActive: source?.isActive !== false,
-    version: source?.scheduleVersion ?? 0,
+    version: (source?.scheduleVersion ?? 0) + (source?.frequency === "immediate" ? 1 : 0),
     deliveryTime: ALERT_TIME_PATTERN.test(source?.deliveryTime) ? source.deliveryTime : DEFAULT_ALERT_TIME,
     weeklyDay: ALERT_WEEKDAYS.includes(source?.weeklyDay) ? source.weeklyDay : DEFAULT_ALERT_DAY,
   };
@@ -26,7 +26,6 @@ export const getNextAlertDeliveryAt = (frequency, now = new Date(), { deliveryTi
     throw new TypeError("Choose a valid frequency, time and weekday.");
   }
   const reference = new Date(now);
-  if (frequency === "immediate") return reference;
   // Compute the calendar day in IST before translating back to UTC. This also
   // handles local midnight, whose UTC timestamp falls on the preceding day.
   const local = new Date(reference.getTime() + IST_OFFSET_MS);
@@ -48,7 +47,7 @@ export const toPublicAlertSchedule = (subscription, now = new Date()) => {
     timeZone: "Asia/Kolkata",
     deliveryTime: schedule.deliveryTime ?? DEFAULT_ALERT_TIME,
     weeklyDay: schedule.weeklyDay ?? DEFAULT_ALERT_DAY,
-    nextDeliveryAt: schedule.isActive && schedule.frequency !== "immediate"
+    nextDeliveryAt: schedule.isActive
       ? getNextAlertDeliveryAt(schedule.frequency, now, schedule).toISOString() : null,
     lastSentAt: subscription?.telegramLastSentAt ?? null,
   };
@@ -56,7 +55,7 @@ export const toPublicAlertSchedule = (subscription, now = new Date()) => {
 
 export const updateAlertSchedule = async (userId, { frequency, isActive, deliveryTime = DEFAULT_ALERT_TIME, weeklyDay = DEFAULT_ALERT_DAY }, now = new Date()) => {
   if (!ALERT_FREQUENCIES.includes(frequency) || typeof isActive !== "boolean" || !ALERT_TIME_PATTERN.test(deliveryTime) || !ALERT_WEEKDAYS.includes(weeklyDay)) {
-    throw new TypeError("Choose immediate, daily or weekly delivery and a valid enabled state.");
+    throw new TypeError("Choose daily or weekly delivery and a valid enabled state.");
   }
   return mongoose.connection.transaction(async (session) => {
     const current = await Subscription.findOne({ user: userId }).session(session).lean().exec();

@@ -37,12 +37,12 @@
       ],
       "httpProofs": [
         {
-          "file": "../artifacts/full-catalog/verified-discovery-adapters-003/ataccama-official-http-1.json",
+          "file": "scraper-support/providers/evidence/verified-discovery-adapters-003/ataccama-official-http-1.json",
           "sha256": "9afd5d3f47fd060c969805edc89121f4b570b15ff4e8fd0f41ff617f56a26d8c",
           "checkedAt": "2026-10-20T20:21:34.108Z"
         },
         {
-          "file": "../artifacts/full-catalog/verified-discovery-adapters-003/ataccama-official-http-2.json",
+          "file": "scraper-support/providers/evidence/verified-discovery-adapters-003/ataccama-official-http-2.json",
           "sha256": "df58897d9fe5b9a7bc6a1319de2b0f6821279b987ad9cc980ab72617657f310b",
           "checkedAt": "2026-10-20T20:21:34.405Z"
         }
@@ -109,7 +109,7 @@
       ],
       "httpProofs": [
         {
-          "file": "../artifacts/full-catalog/verified-discovery-adapters-003/aurecon-official-http-1.json",
+          "file": "scraper-support/providers/evidence/verified-discovery-adapters-003/aurecon-official-http-1.json",
           "sha256": "284b6c28cad71b58daa1145f106d69832a8064cbf5f92a5c191085620a92c572",
           "checkedAt": "2026-10-20T20:21:34.776Z"
         }
@@ -168,7 +168,7 @@
       ],
       "httpProofs": [
         {
-          "file": "../artifacts/full-catalog/verified-discovery-adapters-003/automox-official-http-1.json",
+          "file": "scraper-support/providers/evidence/verified-discovery-adapters-003/automox-official-http-1.json",
           "sha256": "92ac36d9eedd00416d6d262cc1b6930c8c62a129a17c64bf81329c4797ef34b3",
           "checkedAt": "2026-10-20T20:21:33.654Z"
         }
@@ -230,12 +230,12 @@
       ],
       "httpProofs": [
         {
-          "file": "../artifacts/full-catalog/verified-discovery-adapters-003/avisbudgetgroup-official-http-1.json",
+          "file": "scraper-support/providers/evidence/verified-discovery-adapters-003/avisbudgetgroup-official-http-1.json",
           "sha256": "7bc17bd2756abd7be05fc6be072b06327af324a96d921d66b5daea9483f0bb69",
           "checkedAt": "2026-10-20T20:21:35.718Z"
         },
         {
-          "file": "../artifacts/full-catalog/verified-discovery-adapters-003/avisbudgetgroup-official-http-2.json",
+          "file": "scraper-support/providers/evidence/verified-discovery-adapters-003/avisbudgetgroup-official-http-2.json",
           "sha256": "98530b7376f106a45e77f07fd438d2e7ce4ad1f632920e988cc102b65dedf3b9",
           "checkedAt": "2026-10-20T20:21:37.819Z"
         }

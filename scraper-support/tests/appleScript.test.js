@@ -101,7 +101,19 @@ test('run paginates Apple search pages, hydrates detail pages, and decorates sha
 
       if (url === buildSearchUrl()) return page1Html
       if (url === buildSearchUrl({ page: 2 })) return page2Html
-      if (expectedDetailUrls.includes(url)) return detailHtml
+      if (expectedDetailUrls.includes(url)) {
+        // Bind the synthetic detail to the requested role. One unrelated
+        // Software Engineer fixture must not hydrate several different jobs.
+        const job = firstPageJobs.find(job => job.sourceUrl === url)
+        const native = { loaderData: { jobDetails: { jobsData: {
+          reqId: job.jobId, postingTitle: job.title,
+          jobSummary: `Build production services as ${job.title}.`,
+          description: 'Design scalable data pipelines for enterprise analytics.',
+          minimumQualifications: 'Bachelor degree with 4+ years in data engineering.',
+          preferredQualifications: 'Experience with AWS, GCP, or Azure.',
+        } } } }
+        return `<script>window.__staticRouterHydrationData = JSON.parse(${JSON.stringify(JSON.stringify(native))});</script>`
+      }
       throw new Error(`Unexpected Apple URL: ${url}`)
     },
   })

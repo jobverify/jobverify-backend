@@ -167,3 +167,35 @@ test('AT&T keeps unexpected request implementation errors observable', async () 
   await assert.rejects(getAttNative(roleUrl, {requestImpl: () => { throw original }}), failure => failure === original)
   assert.equal(original.softFailure, undefined)
 })
+
+test('AT&T retries one interrupted successful response body within the original request deadline',async()=>{
+  const {getAttNative}=await transport()
+  let calls=0
+  await localResponse((_request,response)=>{
+    response.setHeader('Content-Type','text/html')
+    if(++calls===1){
+      response.flushHeaders()
+      response.write('<html>interrupted native response')
+      setImmediate(()=>response.destroy())
+    }else response.end('<html>complete native response</html>')
+  },async requestImpl=>{
+    const result=await getAttNative(roleUrl,{requestImpl,timeoutMs:500})
+    assert.equal(result.body,'<html>complete native response</html>')
+    assert.equal(calls,2)
+  })
+})
+
+test('AT&T persistent body interruption stops after the bounded second attempt without returning partial HTML',async()=>{
+  const {getAttNative}=await transport()
+  let calls=0
+  await localResponse((_request,response)=>{
+    calls++
+    response.writeHead(200,{'Content-Type':'text/html'})
+    response.flushHeaders()
+    response.write('<html>incomplete native body')
+    setImmediate(()=>response.destroy())
+  },async requestImpl=>{
+    await assert.rejects(getAttNative(roleUrl,{requestImpl,timeoutMs:500}),error=>error.code==='ATT_NATIVE_BODY_ABORTED')
+    assert.equal(calls,2)
+  })
+})

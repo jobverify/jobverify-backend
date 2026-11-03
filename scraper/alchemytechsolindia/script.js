@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runDeclaredAlchemy } from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -254,31 +255,8 @@ const buildListingsRequest = (page) => ({
 export const createAlchemyTechsolIndiaScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
-    const html = await fetchText(CAREERS_URL)
-    const openings = extractCurrentOpenings(html)
-
-    const firstListingsPayload = await fetchJson(JOB_LISTINGS_AJAX_URL, buildListingsRequest(1))
-    if (!hasExpectedAjaxListingsSignal(firstListingsPayload)) {
-      throw new Error('Alchemy Techsol dynamic listings feed no longer matches the verified public contract')
-    }
-
-    const ajaxOpenings = extractAjaxOpenings(firstListingsPayload)
-    const maxPages = Number(firstListingsPayload.max_num_pages)
-    for (let page = 2; page <= maxPages; page += 1) {
-      const payload = await fetchJson(JOB_LISTINGS_AJAX_URL, buildListingsRequest(page))
-      if (!hasExpectedAjaxListingsSignal(payload) || Number(payload.max_num_pages) !== maxPages) {
-        throw new Error('Alchemy Techsol dynamic listings feed pagination no longer matches the verified public contract')
-      }
-      ajaxOpenings.push(...extractAjaxOpenings(payload))
-    }
-
-    const seenJobIds = new Set()
-
-    return [...openings, ...ajaxOpenings]
-      .filter((opening) => isIndiaOpening(opening))
-      .map((opening) => normalizeOpening(opening, { now }))
-      .filter((job) => job && !seenJobIds.has(job.jobId) && seenJobIds.add(job.jobId))
+  async run(options = {}) {
+    return runDeclaredAlchemy({ now, ...options })
   },
 })
 

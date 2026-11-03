@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -53,13 +54,14 @@ const normalizeWhitespace = (value) => String(value ?? '')
 const extractTitle = (html) =>
   normalizeWhitespace(String(html ?? '').match(/<title>([\s\S]*?)<\/title>/i)?.[1] ?? '')
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     redirect: 'follow',
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
   })
 
   return {
@@ -80,6 +82,7 @@ export const hasOfficialHomepageSignal = (html) => {
     && (
       visibleText.includes('fastest growing biopharmaceutical companies in India')
       || visibleText.includes('BSV (A Mankind Group Company)')
+      || (visibleText.includes('Bharat Serums and Vaccines Limited') && visibleText.includes('Mankind Pharma Limited'))
     )
     && visibleText.includes('Life at BSV')
   }
@@ -105,8 +108,14 @@ export const pageExposesPublicJobListings = (html) => {
 export const isVerifiedMissingJobsRoute = (page = {}) => page.status === 404
 
 export const createBharatSerumsAndVaccinesScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, signal } = {}) {
+    const get = async url => {
+      signal?.throwIfAborted()
+      const result = await fetchPage(url, { signal })
+      signal?.throwIfAborted()
+      return result
+    }
+    const homepage = await get(HOMEPAGE_URL)
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Bharat Serums and Vaccines verified official homepage no longer matches the known public surface')
@@ -116,7 +125,7 @@ export const createBharatSerumsAndVaccinesScraper = () => ({
       throw new Error('Bharat Serums and Vaccines homepage now exposes public job listings')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
+    const careersPage = await get(CAREERS_URL)
 
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('Bharat Serums and Vaccines verified official careers surface no longer matches the known public page')
@@ -127,14 +136,16 @@ export const createBharatSerumsAndVaccinesScraper = () => ({
     }
 
     for (const routeUrl of CHECKED_NO_JOBS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+      const routePage = await get(routeUrl)
 
       if (!isVerifiedMissingJobsRoute(routePage)) {
         throw new Error(`Bharat Serums and Vaccines checked alternate first-party jobs route changed materially: ${routePage.url || routeUrl}`)
       }
     }
 
-    return []
+    return attachInventoryEvidence([], { status: 'coverage-gap', firstParty: true, surface: CAREERS_URL,
+      listingComplete: false, reportedTotal: null, pagesFetched: 2 + CHECKED_NO_JOBS_ROUTE_URLS.length,
+      verifiedAt: new Date().toISOString(), reason: 'native-culture-and-testimonial-page-without-authoritative-vacancy-inventory' })
   },
 })
 

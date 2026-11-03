@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { AVANSE_CATALOG } from './catalog.js'
+import{createCurrentSurfaceScraper}from'../atomberg/currentSurface.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -195,44 +196,8 @@ export const isVerifiedNoTrustPublicJobRoute = (page = {}, requestedUrl) =>
   && /(?:\b404 Not Found\b|\b404\s*-\s*Error\b|\bPage Not Found\b|unable to serve your request as the page you requested could not be found|Like The Fact That This Page Doesn't Exist)/i.test(String(page?.html ?? ''))
   && !careerPageExposesTrustworthyPublicJobs(page?.html ?? '')
 
-export const createAvanseScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
 
-    if (
-      homepage.status !== 200
-      || !hasOfficialHomepageSignal(homepage.html)
-      || extractCareersUrl(homepage.html) !== CAREERS_URL
-    ) {
-      throw new Error('Avanse verified official homepage no longer matches the known public surface')
-    }
-
-    const careersPage = await fetchPage(CAREERS_URL)
-
-    if (careerPageExposesTrustworthyPublicJobs(careersPage.html)) {
-      throw new Error('Avanse careers shell now exposes a trustworthy public jobs surface')
-    }
-
-    if (careersPage.status !== 200 || !hasUnreliableJobsShellSignal(careersPage.html)) {
-      throw new Error('Avanse verified career jobs shell no longer matches the known public surface')
-    }
-
-    const jobsApiResponse = await fetchPage(JOBS_API_URL)
-    if (!isVerifiedJobsApiGatewayTimeout(jobsApiResponse, JOBS_API_URL)) {
-      throw new Error('Avanse verified first-party jobs api no longer matches the known timed-out public surface')
-    }
-
-    for (const routeUrl of NO_TRUST_PUBLIC_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-
-      if (!isVerifiedNoTrustPublicJobRoute(routePage, routeUrl)) {
-        throw new Error(`Avanse verified no-trust public job route changed: ${routePage.url || routeUrl}`)
-      }
-    }
-
-    return []
-  },
-})
+export const createAvanseScraper=defaults=>createCurrentSurfaceScraper({source:SOURCE,url:CAREERS_URL,canonicalUrl:CAREERS_URL,title:/Career At Avanse Financial Services/i,companySignal:'Working at Avanse'},defaults)
 
 export const run = async (options = {}) => createAvanseScraper().run(options)
 

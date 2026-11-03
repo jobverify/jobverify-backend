@@ -1,3 +1,6 @@
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+const currentPublicPage=(source,url)=>{const fixture=JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/'+source+'/test-data/current-public-20261103.json.gz',import.meta.url)))),row=fixture.responses.find(r=>r.url===url);assert.ok(row,'Only current captured declared public URL: '+url);return{url:row.finalURL,status:row.status,headers:row.headers,html:row.body}}
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -130,7 +133,7 @@ test("BYJU'S helpers stay pinned to the verified homepage, careers landing page,
   assert.equal(byjus.SOURCE, 'byjus')
   assert.equal(byjus.COMPANY, "BYJU'S")
   assert.equal(byjus.OFFICIAL_BRAND_NAME, "BYJU'S")
-  assert.equal(byjus.VERIFIED_ON, '2026-07-15')
+  assert.equal(byjus.VERIFIED_ON, null)
   assert.equal(byjus.HOMEPAGE_URL, 'https://byjus.com/')
   assert.equal(byjus.CAREER_PAGE_URL, 'https://byjus.com/careers-at-byjus/')
   assert.equal(byjus.SALES_CATEGORY_ROUTE_URL, 'https://byjus.com/careers/all-openings/job-category/sales/')
@@ -179,215 +182,15 @@ test("BYJU'S helpers stay pinned to the verified homepage, careers landing page,
   )
 })
 
-test("BYJU'S returns [] only while the verified careers page remains a stale shell and the public jobs routes stay broken or generic", async () => {
-  const byjus = await loadByjusModule()
-  const requestedUrls = []
-
-  const jobs = await byjus.createByjusScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === byjus.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === byjus.CAREER_PAGE_URL) {
-        return { status: 200, url, html: careersLandingHtml }
-      }
-
-      if (url === byjus.SALES_CATEGORY_ROUTE_URL) {
-        return { status: 200, url: byjus.SALES_APPLY_URL, html: salesApplyHtml }
-      }
-
-      if (url === byjus.MISDIRECTED_TECH_ROUTE_URL) {
-        return { status: 200, url: byjus.MISDIRECTED_TECH_FINAL_URL, html: technetiumHtml }
-      }
-
-      if (url === byjus.SITEMAP_URL) {
-        return { status: 200, url, html: sitemapXml }
-      }
-
-      if (byjus.CHECKED_MISSING_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: missingRouteHtml }
-      }
-
-      throw new Error(`Unexpected BYJU'S URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    byjus.HOMEPAGE_URL,
-    byjus.CAREER_PAGE_URL,
-    ...byjus.CHECKED_MISSING_ROUTE_URLS,
-    byjus.MISDIRECTED_TECH_ROUTE_URL,
-    byjus.SALES_CATEGORY_ROUTE_URL,
-    byjus.SITEMAP_URL,
-  ])
-  assert.deepEqual(jobs, [])
+test('BYJUS current declared categories and campaigns retain unknown inventory without guessed routes',async()=>{
+ const module=await loadByjusModule(),reads=[]
+ await assert.rejects(module.createByjusScraper().run({fetchPage:async url=>{reads.push(url);return currentPublicPage('byjus',url)}}),error=>error.failureKind==='source_inventory_unavailable'&&error.inventoryEvidence.reportedTotal===null)
+ assert.equal(reads.length,17);assert.ok(!reads.includes(module.HOMEPAGE_URL));assert.ok(!reads.includes(module.SITEMAP_URL));assert.ok(!reads.includes('https://byjus.com/jobs/'))
 })
 
-test("BYJU'S fails closed when the homepage, careers landing page, broken-route validation, tech misdirection, sales-apply handoff, or sitemap drift changes", async () => {
-  const byjus = await loadByjusModule()
-
-  await assert.rejects(
-    byjus.createByjusScraper().run({
-      fetchPage: async (url) => {
-        if (url === byjus.HOMEPAGE_URL) {
-          return { status: 200, url, html: '<html><head><title>Unexpected</title></head><body></body></html>' }
-        }
-
-        throw new Error(`Unexpected BYJU'S URL: ${url}`)
-      },
-    }),
-    /official homepage/i,
-  )
-
-  await assert.rejects(
-    byjus.createByjusScraper().run({
-      fetchPage: async (url) => {
-        if (url === byjus.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === byjus.CAREER_PAGE_URL) {
-          return { status: 200, url, html: '<html><head><title>Unexpected</title></head><body></body></html>' }
-        }
-
-        throw new Error(`Unexpected BYJU'S URL: ${url}`)
-      },
-    }),
-    /careers landing page/i,
-  )
-
-  await assert.rejects(
-    byjus.createByjusScraper().run({
-      fetchPage: async (url) => {
-        if (url === byjus.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === byjus.CAREER_PAGE_URL) {
-          return { status: 200, url, html: careersLandingHtml }
-        }
-
-        if (url === byjus.CHECKED_MISSING_ROUTE_URLS[0]) {
-          return { status: 200, url, html: publicJobsHtml }
-        }
-
-        if (url === byjus.MISDIRECTED_TECH_ROUTE_URL) {
-          return { status: 200, url: byjus.MISDIRECTED_TECH_FINAL_URL, html: technetiumHtml }
-        }
-
-        if (url === byjus.SALES_CATEGORY_ROUTE_URL) {
-          return { status: 200, url: byjus.SALES_APPLY_URL, html: salesApplyHtml }
-        }
-
-        if (url === byjus.SITEMAP_URL) {
-          return { status: 200, url, html: sitemapXml }
-        }
-
-        return { status: 404, url, html: missingRouteHtml }
-      },
-    }),
-    /missing career route changed/i,
-  )
-
-  await assert.rejects(
-    byjus.createByjusScraper().run({
-      fetchPage: async (url) => {
-        if (url === byjus.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === byjus.CAREER_PAGE_URL) {
-          return { status: 200, url, html: careersLandingHtml }
-        }
-
-        if (byjus.CHECKED_MISSING_ROUTE_URLS.includes(url)) {
-          return { status: 404, url, html: missingRouteHtml }
-        }
-
-        if (url === byjus.MISDIRECTED_TECH_ROUTE_URL) {
-          return { status: 200, url, html: careersLandingHtml }
-        }
-
-        if (url === byjus.SALES_CATEGORY_ROUTE_URL) {
-          return { status: 200, url: byjus.SALES_APPLY_URL, html: salesApplyHtml }
-        }
-
-        if (url === byjus.SITEMAP_URL) {
-          return { status: 200, url, html: sitemapXml }
-        }
-
-        throw new Error(`Unexpected BYJU'S URL: ${url}`)
-      },
-    }),
-    /tech category route/i,
-  )
-
-  await assert.rejects(
-    byjus.createByjusScraper().run({
-      fetchPage: async (url) => {
-        if (url === byjus.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === byjus.CAREER_PAGE_URL) {
-          return { status: 200, url, html: careersLandingHtml }
-        }
-
-        if (byjus.CHECKED_MISSING_ROUTE_URLS.includes(url)) {
-          return { status: 404, url, html: missingRouteHtml }
-        }
-
-        if (url === byjus.MISDIRECTED_TECH_ROUTE_URL) {
-          return { status: 200, url: byjus.MISDIRECTED_TECH_FINAL_URL, html: technetiumHtml }
-        }
-
-        if (url === byjus.SALES_CATEGORY_ROUTE_URL) {
-          return { status: 200, url, html: publicJobsHtml }
-        }
-
-        if (url === byjus.SITEMAP_URL) {
-          return { status: 200, url, html: sitemapXml }
-        }
-
-        throw new Error(`Unexpected BYJU'S URL: ${url}`)
-      },
-    }),
-    /sales category route/i,
-  )
-
-  await assert.rejects(
-    byjus.createByjusScraper().run({
-      fetchPage: async (url) => {
-        if (url === byjus.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === byjus.CAREER_PAGE_URL) {
-          return { status: 200, url, html: careersLandingHtml }
-        }
-
-        if (byjus.CHECKED_MISSING_ROUTE_URLS.includes(url)) {
-          return { status: 404, url, html: missingRouteHtml }
-        }
-
-        if (url === byjus.MISDIRECTED_TECH_ROUTE_URL) {
-          return { status: 200, url: byjus.MISDIRECTED_TECH_FINAL_URL, html: technetiumHtml }
-        }
-
-        if (url === byjus.SALES_CATEGORY_ROUTE_URL) {
-          return { status: 200, url: byjus.SALES_APPLY_URL, html: salesApplyHtml }
-        }
-
-        if (url === byjus.SITEMAP_URL) {
-          return { status: 200, url, html: sitemapWithCareerUrls }
-        }
-
-        throw new Error(`Unexpected BYJU'S URL: ${url}`)
-      },
-    }),
-    /sitemap career surface changed/i,
-  )
+test('BYJUS current employer identity drift and denied declared routes cannot become a successful empty source',async()=>{
+ const module=await loadByjusModule()
+ await assert.rejects(module.createByjusScraper().run({fetchPage:async url=>({...currentPublicPage('byjus',url),html:'<title>Another company</title>'})}),/identity/i)
+ const reads=[];await assert.rejects(module.createByjusScraper().run({fetchPage:async url=>{reads.push(url);return url===module.CAREER_PAGE_URL?currentPublicPage('byjus',url):{url,status:403,html:'Denied'}}}),error=>error.status===403&&error.abortRetries===true&&error.inventoryEvidence.reportedTotal===null)
+ assert.equal(reads.length,2)
 })

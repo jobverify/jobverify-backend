@@ -15,6 +15,7 @@ test('getScraperCatalog includes the Apollo Tyres scraper with official metadata
   assert.equal(apollo.atsPlatform, 'cornerstone-csod')
   assert.match(apollo.companyCareerPage, /apollotyres\.csod\.com\/ux\/ats\/careersite\/1\/home/i)
   assert.equal(apollo.companyDomain, 'apollotyres.csod.com')
+  assert.equal(apollo.paginationStrategy, 'anonymous-native-unfiltered-search+closing-corporate-tenant-client-inventory-proof')
 })
 
 test('buildScrapers exposes a runnable Apollo Tyres scraper without changing the runner contract', () => {

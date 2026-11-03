@@ -1,3 +1,4 @@
+import { createCurrentAmber } from "./currentPublic.js"
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -61,59 +62,7 @@ const isBrowserFallbackError = (error) =>
   /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
 
-export const createAmberEnterprisesScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
-    }
-
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchPageText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
-    }
-
-    try {
-      const homepageHtml = await fetchPageText(HOMEPAGE_URL)
-      const careersHtml = await fetchPageText(CAREERS_URL)
-
-      if (!hasOfficialHomepageSignal(homepageHtml)) {
-        throw new Error('Amber Enterprises official homepage no longer matches the verified first-party surface')
-      }
-
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Amber Enterprises official careers page no longer matches the verified first-party surface')
-      }
-
-      if (!hasExternalJobsHandoffSignal(careersHtml)) {
-        throw new Error('Amber Enterprises careers handoff changed; refusing to assume the verified external jobs route still applies')
-      }
-
-      return []
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
-    }
-  },
-})
+export const createAmberEnterprisesScraper = () => createCurrentAmber()
 
 export const run = async (options = {}) => createAmberEnterprisesScraper().run(options)
 

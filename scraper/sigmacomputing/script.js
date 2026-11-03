@@ -9,7 +9,11 @@ import { SIGMA_COMPUTING_CATALOG } from './catalog.js'
 import {retainSigmaNativeRecords} from './nativeRecords.js'
 import {createPublishingGapAtsScraper} from '../../scraper-support/utils/publishingGapAts.js'
 import {attachInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {attachSourceObservationEvidence} from '../../scraper-support/utils/sourceObservationEvidence.js'
 import {readNativeDocument} from '../../scraper-support/utils/activeNativeHtml.js'
+import {hydrateSigmaNativeDetails,sigmaNativeCountryIssues} from './nativeDetails.js'
+import {composeAbortSignals} from '../../scraper-support/utils/fetch.js'
+import {projectSigmaWorksiteCountries,SIGMA_OFFICES_URL} from './worksiteCountry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -40,6 +44,12 @@ const normalizeWhitespace = (value) => {
 }
 
 const decodeHtml = (value) => normalizeWhitespace(value)
+const advertisedRoleIds = html => {
+  const document = readNativeDocument(html)
+  return [...new Set(document.nodes(node => node.tag === 'a' && node.attrs.href).flatMap(node => {
+    try { const url = new URL(node.attrs.href, CAREERS_URL); return url.origin === 'https://job-boards.greenhouse.io' ? url.pathname.match(/^\/sigmacomputing\/jobs\/(\d+)\/?$/)?.slice(1) || [] : [] } catch { return [] }
+  }))].sort()
+}
 
 const collectLocationValues = (job = {}) => [
   normalizeWhitespace(job?.location?.name),
@@ -65,6 +75,7 @@ const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
+  attempts: 1,
   timeoutMs: 15000,
   signal,
 })
@@ -77,6 +88,7 @@ const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
     Referer: CAREERS_URL,
   },
   label: SOURCE,
+  attempts: 1,
   timeoutMs: 15000,
   signal,
 })
@@ -111,8 +123,17 @@ export const createSigmaComputingScraper = () => ({
     now = () => new Date().toISOString(),
     signal,
     onAudit,
+    maxJobs = null,
+    totalBudgetMs = 180000,
+    requestTimeoutMs = 15000,
   } = {}) {
     signal?.throwIfAborted()
+    if(!Number.isFinite(totalBudgetMs)||totalBudgetMs<=0||!Number.isFinite(requestTimeoutMs)||requestTimeoutMs<=0)throw Error('Sigma native detail finite budgets required')
+    signal=composeAbortSignals(signal,AbortSignal.timeout(totalBudgetMs))
+    const wait=(operation,boundary=signal)=>new Promise((resolve,reject)=>{const abort=()=>{boundary.removeEventListener('abort',abort);reject(signal.aborted?signal.reason:boundary.reason)};if(boundary.aborted){abort();return}boundary.addEventListener('abort',abort,{once:true});Promise.resolve().then(operation).then(value=>{boundary.removeEventListener('abort',abort);boundary.aborted?abort():resolve(value)},error=>{boundary.removeEventListener('abort',abort);boundary.aborted?abort():reject(error)})})
+    const textReader=fetchText,jsonReader=fetchJson,deniedHosts=new Map()
+    const read=async(reader,url,options)=>{const host=new URL(url).host;if(deniedHosts.has(host))throw deniedHosts.get(host);const boundary=composeAbortSignals(signal,AbortSignal.timeout(requestTimeoutMs));try{return await wait(()=>reader(url,{...options,signal:boundary}),boundary)}catch(error){signal.throwIfAborted();if([401,403,429].includes(error?.status))deniedHosts.set(host,error);throw error}}
+    fetchText=(url,options)=>read(textReader,url,options);fetchJson=(url,options)=>read(jsonReader,url,options)
     const careersHtml = await fetchText(CAREERS_URL, { signal })
     signal?.throwIfAborted()
     if (!hasOfficialCareersPageSignal(careersHtml)) {
@@ -129,16 +150,51 @@ export const createSigmaComputingScraper = () => ({
     }))].sort(),unreconciledEmployerRoleIds=employerAdvertisedRoleIds.filter(id=>!nativeById.has(id))
     // Pass the original COMPLETE envelope to the CURRENT strongest GH engine.
     // Enrichment never replaces its country/detail/identity/date/content proof.
-    const strong=await createPublishingGapAtsScraper({...PROVIDER_METADATA,boardToken:'sigmacomputing',sourceScopeComplete:false,lifecycleCleanupAllowed:false}).run({fetchJson:async url=>{if(url!==buildGreenhouseJobsApiUrl())throw Error('Unexpected Sigma native endpoint');return payload},signal})
+    const strongFactory=createPublishingGapAtsScraper({...PROVIDER_METADATA,boardToken:'sigmacomputing',sourceScopeComplete:false,lifecycleCleanupAllowed:false})
+    const strong=await strongFactory.run({fetchJson:async url=>{if(url!==buildGreenhouseJobsApiUrl())throw Error('Unexpected Sigma native endpoint');return payload},signal})
     signal?.throwIfAborted()
-    const strongestEngineEvidence=readInventoryEvidence(strong),jobs=strong.map(job=>{
+    let nativeOfficePayload=null,officeFailure=null,boardProjection={records:payload.jobs,proofs:[],unreconciledDirectoryRoleIds:[]}
+    try{nativeOfficePayload=await fetchJson(SIGMA_OFFICES_URL,{signal});boardProjection=projectSigmaWorksiteCountries(payload.jobs,nativeOfficePayload)}catch(error){signal.throwIfAborted();officeFailure=error.message}
+    const nativeDetails=await hydrateSigmaNativeDetails(payload.jobs,{fetchJson,signal,requestTimeoutMs})
+    // Each detail is the publisher's original response. Keep its richer native
+    // office/country/application fields separate from the unchanged board.
+    let selected=strong,detailedEngineEvidence=null,detailProjection={records:nativeDetails.records.map(r=>r.countryRecord),proofs:[],unreconciledDirectoryRoleIds:[]}
+    if(nativeDetails.records.length===payload.jobs.length){
+      if(nativeOfficePayload&&!officeFailure)detailProjection=projectSigmaWorksiteCountries(nativeDetails.records.map(r=>r.countryRecord),nativeOfficePayload)
+      selected=await strongFactory.run({fetchJson:async()=>({...payload,jobs:detailProjection.records}),signal})
+      detailedEngineEvidence=readInventoryEvidence(selected)
+    }
+    const strongestEngineEvidence=readInventoryEvidence(strong);let jobs=selected.filter(job=>nativeDetails.byId.has(String(job.jobId))&&nativeDetails.byId.get(String(job.jobId)).issues.length===0&&nativeById.get(String(job.jobId))?.sourceCriteriaSchemaKnown).map(job=>{
       const native=nativeById.get(String(job.jobId));if(!native)throw Error('Sigma strongest engine returned unknown native identity')
       const {sourceFirstPublished,sourceUpdatedAt,sourceNativeEducation,sourceNativeMetadata,sourceNativeRecord,sourceNativeContent,sourceNativeRequisitionId,sourceCriteriaIssues,sourceCriteriaSchemaKnown,sourcePublisher,legalHiringEmployer}=native
-      return {...job,sourceFirstPublished,sourceUpdatedAt,sourceNativeEducation,sourceNativeMetadata,sourceNativeRecord,sourceNativeContent,sourceNativeRequisitionId,sourceCriteriaIssues,sourceCriteriaSchemaKnown,sourcePublisher,legalHiringEmployer,sourceScopeComplete:false,lifecycleCleanupAllowed:false}
+      const detail=nativeDetails.byId.get(String(job.jobId))
+      return {...job,sourceFirstPublished,sourceUpdatedAt,sourceNativeEducation,sourceNativeMetadata,sourceNativeRecord,sourceNativeContent,sourceNativeRequisitionId,sourceCriteriaIssues,sourceCriteriaSchemaKnown,sourcePublisher,legalHiringEmployer,sourceNativeDetailRecord:detail.record,sourceNativeApplicationQuestions:detail.jobOwnedQuestions,sourceNativeWorksiteCountryProof:detailProjection.proofs.find(p=>p.jobId===String(job.jobId))??null,sourceScopeComplete:false,lifecycleCleanupAllowed:false}
     })
-    const audit={source:SOURCE,productionWrites:false,currentLiveQualification:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,authoritativeSourceTotal:null,authoritativeIndiaFacetCount:null,observedNativeBoardCount:payload.jobs.length,originalNativePayload:structuredClone(payload),nativeRecords,strongestEngineEvidence,employerAdvertisedRoleIds,unreconciledEmployerRoleIds,noClosingCaptureClaimed:true,missingProofs:['current active corporate renderer/programs/styles and all hiring channels','all role-owned country alternatives and public full native detail/schema','fresh opening/closing global inventory']}
-    Object.defineProperty(jobs,'sourceAudit',{value:audit});onAudit?.(structuredClone(audit));signal?.throwIfAborted()
-    return attachInventoryEvidence(jobs,{...strongestEngineEvidence,status:'discovery-only',listingComplete:false,reportedTotal:null,indiaFacetCount:null,reason:'sigma-native-criteria-retained-source-scope-unresolved:'+strongestEngineEvidence.reason+(unreconciledEmployerRoleIds.length?';official-role-links-not-reconciled':'')})
+    let closingNativePayload=null,finalNativePayload=null,closingInventoryStable=false,closingFailure=null,closingNativeDetails=null,nativeDetailsStable=false,closingNativeOfficePayload=null,closingOfficeFailure=null,closingWorksiteProjection=null,worksiteCountryProofsStable=false,changedWorksiteCountryRoleIds=[]
+    try {
+      const closingCareers=await fetchText(CAREERS_URL,{signal});signal?.throwIfAborted()
+      if(!hasOfficialCareersPageSignal(closingCareers))throw Error('Sigma closing official handoff changed')
+      closingNativePayload=await fetchJson(buildGreenhouseJobsApiUrl(),{signal});signal?.throwIfAborted()
+      retainSigmaNativeRecords(closingNativePayload,{scrapedAt:now()})
+      closingNativeDetails=await hydrateSigmaNativeDetails(closingNativePayload.jobs,{fetchJson,signal,requestTimeoutMs})
+      nativeDetailsStable=nativeDetails.failures.length===0&&closingNativeDetails.failures.length===0&&nativeDetails.records.length===closingNativeDetails.records.length&&nativeDetails.records.every(row=>row.snapshot===closingNativeDetails.byId.get(String(row.record.id))?.snapshot)
+      try{closingNativeOfficePayload=await fetchJson(SIGMA_OFFICES_URL,{signal});closingWorksiteProjection=projectSigmaWorksiteCountries(closingNativeDetails.records.map(r=>r.countryRecord),closingNativeOfficePayload);const current=new Map(closingWorksiteProjection.proofs.map(p=>[p.jobId,p.bindingSHA256]));changedWorksiteCountryRoleIds=detailProjection.proofs.filter(p=>current.get(p.jobId)!==p.bindingSHA256).map(p=>p.jobId);worksiteCountryProofsStable=!officeFailure&&changedWorksiteCountryRoleIds.length===0}catch(error){signal.throwIfAborted();closingOfficeFailure=error.message;changedWorksiteCountryRoleIds=detailProjection.proofs.map(p=>p.jobId)}
+      // Recheck active membership after every full closing criterion read.
+      finalNativePayload=await fetchJson(buildGreenhouseJobsApiUrl(),{signal});signal.throwIfAborted()
+      retainSigmaNativeRecords(finalNativePayload,{scrapedAt:now()})
+      await strongFactory.run({fetchJson:async()=>finalNativePayload,signal})
+      closingInventoryStable=JSON.stringify(payload)===JSON.stringify(closingNativePayload)&&JSON.stringify(closingNativePayload)===JSON.stringify(finalNativePayload)&&JSON.stringify(employerAdvertisedRoleIds)===JSON.stringify(advertisedRoleIds(closingCareers))
+      const current=new Map(finalNativePayload.jobs.map(row=>[String(row.id),row]))
+      jobs=jobs.filter(job=>!changedWorksiteCountryRoleIds.includes(String(job.jobId))&&JSON.stringify(current.get(String(job.jobId)))===JSON.stringify(nativeById.get(String(job.jobId))?.sourceNativeRecord)&&nativeDetails.byId.get(String(job.jobId))?.snapshot===closingNativeDetails.byId.get(String(job.jobId))?.snapshot)
+    }catch(error){signal?.throwIfAborted();closingFailure=error.message;jobs=[]}
+    if(Number.isSafeInteger(maxJobs)&&maxJobs>0)jobs=jobs.slice(0,maxJobs)
+    const nativeCriteriaIssues=[...nativeRecords.flatMap(row=>row.sourceCriteriaIssues.map(reason=>({id:row.jobId,reason}))),...nativeDetails.records.flatMap(row=>row.issues.map(reason=>({id:row.record.id,reason})))],nativeBoardCountryIssues=sigmaNativeCountryIssues(payload.jobs),nativeDetailCountryIssues=sigmaNativeCountryIssues(nativeDetails.records.map(row=>row.countryRecord)),projectedNativeBoardCountryIssues=sigmaNativeCountryIssues(boardProjection.records),projectedNativeDetailCountryIssues=sigmaNativeCountryIssues(detailProjection.records)
+    const worksiteBindingRequired=detailProjection.proofs.length>0,worksiteBindingComplete=!worksiteBindingRequired||worksiteCountryProofsStable
+    const configuredBoardComplete=!nativeCriteriaIssues.length&&!projectedNativeDetailCountryIssues.length&&!nativeDetails.failures.length&&nativeDetailsStable&&closingInventoryStable&&worksiteBindingComplete&&!unreconciledEmployerRoleIds.length&&!boardProjection.unreconciledDirectoryRoleIds.length&&!closingWorksiteProjection?.unreconciledDirectoryRoleIds.length
+    const audit={source:SOURCE,productionWrites:false,currentLiveQualification:configuredBoardComplete,configuredBoardComplete,sourceScopeComplete:false,lifecycleCleanupAllowed:false,authoritativeSourceTotal:configuredBoardComplete?payload.jobs.length:null,authoritativeIndiaFacetCount:configuredBoardComplete?selected.length:null,observedNativeBoardCount:payload.jobs.length,originalNativePayload:structuredClone(payload),nativeRecords,nativeDetailRecords:nativeDetails.records,nativeDetailFailures:nativeDetails.failures,closingNativeDetailRecords:closingNativeDetails?.records||[],closingNativeDetailFailures:closingNativeDetails?.failures||[],nativeDetailsStable,nativeCriteriaIssues,nativeBoardCountryIssues,nativeDetailCountryIssues,projectedNativeBoardCountryIssues,projectedNativeDetailCountryIssues,nativeOfficePayload,closingNativeOfficePayload,officeFailure,closingOfficeFailure,worksiteCountryProofs:detailProjection.proofs,closingWorksiteCountryProofs:closingWorksiteProjection?.proofs||[],changedWorksiteCountryRoleIds,worksiteCountryProofsStable,unreconciledDirectoryRoleIds:boardProjection.unreconciledDirectoryRoleIds,strongestEngineEvidence,detailedEngineEvidence,employerAdvertisedRoleIds,unreconciledEmployerRoleIds,noClosingCaptureClaimed:false,closingInventoryStable,closingNativePayload,finalNativePayload,closingFailure,missingProofs:[...(unreconciledEmployerRoleIds.length||boardProjection.unreconciledDirectoryRoleIds.length?['current additional advertised employer roles']:[]),...(projectedNativeDetailCountryIssues.length?['all role-owned country alternatives']:[]),...(nativeCriteriaIssues.length?['unreviewed published native criteria']:[]),...(!nativeDetailsStable?['fresh opening/closing full native details changed or unavailable']:[]),...(!closingInventoryStable?['fresh opening/closing inventory changed or unavailable']:[]),...(!worksiteCountryProofsStable?['current complete native worksite country binding']:[])]}
+    Object.defineProperty(jobs,'sourceAudit',{value:audit});if(onAudit)await wait(()=>onAudit(structuredClone(audit)));signal?.throwIfAborted()
+    attachSourceObservationEvidence(jobs,{source:SOURCE,recordKind:'vacancy-rows',observedRecordCount:nativeRecords.length,observedVacancyCount:nativeRecords.length,sourceScopeComplete:false})
+    return attachInventoryEvidence(jobs,{...strongestEngineEvidence,status:configuredBoardComplete?'complete-inventory':'discovery-only',listingComplete:configuredBoardComplete,pagesFetched:(closingNativePayload?2:1)+(finalNativePayload?1:0)+(nativeOfficePayload?1:0)+(closingNativeOfficePayload?1:0),reportedTotal:configuredBoardComplete?payload.jobs.length:null,indiaFacetCount:configuredBoardComplete?selected.length:null,reason:'sigma-native-criteria-and-exact-worksite-evidence:'+strongestEngineEvidence.reason+(unreconciledEmployerRoleIds.length?';official-role-links-not-reconciled':'')+(!closingInventoryStable?';closing-inventory-unverified':'')+(!nativeDetailsStable?';full-native-detail-closing-unverified':'')+(nativeCriteriaIssues.length?';unreviewed-native-criteria':'')+(projectedNativeDetailCountryIssues.length?';unresolved-native-country-roles='+projectedNativeDetailCountryIssues.length:'')+(!worksiteCountryProofsStable?';current-worksite-binding-unverified':'')})
   },
 })
 

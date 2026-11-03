@@ -1,12 +1,14 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readCurrentAccionRoles } from './currentNative.js'
+import CURRENT_NATIVE_METADATA from '../../scraper-support/providers/providerExtensions/zzzz-accionlabs-native-20261103.json' with { type: 'json' }
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'accionlabs'
 export const COMPANY = 'Accion Labs'
 export const COMPANY_DOMAIN = 'accionlabs.com'
-export const VERIFIED_AT = '2026-07-14'
+export const VERIFIED_AT = null
 export const HOMEPAGE_URL = 'https://www.accionlabs.com/'
 export const CAREERS_URL = 'https://www.accionlabs.com/careers'
 export const US_OPPORTUNITIES_URL = 'https://www.accionlabs.com/us-opportunities'
@@ -24,6 +26,7 @@ export const SCRAPER_METADATA = {
     'verified-first-party-homepage+verified-careers-intake-page+verified-supplemental-no-public-job-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
+  ...CURRENT_NATIVE_METADATA,
 }
 
 const USER_AGENT =
@@ -60,13 +63,14 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, options = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
   })
 
   return {
@@ -136,7 +140,16 @@ export const isVerifiedUsOpportunitiesRedirect = (page = {}) => {
 }
 
 export const createAccionLabsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchPage: providedFetch = defaultFetchPage, signal, now, onAudit } = {}) {
+    const fetchPage = async url => {
+      signal?.throwIfAborted()
+      const page = await providedFetch(url, { signal })
+      signal?.throwIfAborted()
+      if ((page?.finalUrl || page?.url) !== url && !(url === US_OPPORTUNITIES_URL && page.finalUrl === CAREERS_URL)) {
+        throw new Error('Accion Labs current first-party response identity changed')
+      }
+      return page
+    }
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (!homepage.ok || !hasOfficialHomepageSignal(homepage.text)) {
       throw new Error('The official Accion Labs homepage no longer matches the verified public surface')
@@ -150,6 +163,9 @@ export const createAccionLabsScraper = () => ({
     if (!careersPage.ok || !hasOfficialCareersSignal(careersPage.text)) {
       throw new Error('The official Accion Labs resume-only careers surface no longer matches the verified public contract')
     }
+
+    const current = await readCurrentAccionRoles({ careersHtml: careersPage.text, read: fetchPage, signal, now, onAudit })
+    if (current) return current
 
     if (pageExposesPublicJobListings(careersPage.text)) {
       throw new Error('The official Accion Labs careers page appears to expose public job listings')

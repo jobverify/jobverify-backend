@@ -24,22 +24,22 @@ test('getScraperCatalog includes Sentry as a verified first-party script provide
   assert.equal(provider.officialBrandName, 'Sentry')
   assert.equal(provider.companyCareerPage, 'https://sentry.io/careers')
   assert.equal(provider.companyDomain, 'sentry.io')
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-page')
+  assert.equal(provider.atsPlatform, 'official-sentry-careers-ashby')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-open-roles-page-current-empty-india-slice')
+  assert.equal(provider.paginationStrategy, 'full-native-board-and-corporate-hydration-with-closing-comparison-before-caps')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-open-roles-page+same-domain-role-links+return-empty-when-no-india-locations',
+    'active-OpeningsStickySection-Astro+own-Ashby-role-binding+full-native-criteria-and-country-proof',
   )
-  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.parser, 'current-company-and-native-ats')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, null)
   assert.match(provider.modulePath, /sentry[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /sentry[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/sentry\.io\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /\b48 open positions\b/i)
-  assert.match(provider.verifiedSurfaceSummary, /zero India locations/i)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.match(provider.verifiedSurfaceSummary, /Missing role-owned native countries remain unresolved/i)
 })
 
 test('Sentry scraper extracts UUID-backed same-domain role rows from the verified first-party page contract', () => {

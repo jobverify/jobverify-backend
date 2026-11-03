@@ -15,12 +15,16 @@ test('BirlaNu is registered against the verified first-party people page without
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'BirlaNu')
   assert.equal(provider.companyCareerPage, 'https://birlanu.com/people')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'darwinbox-public-native')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-landing')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
+  assert.equal(provider.paginationStrategy, 'full-native-board+all-public-details+final-listing-after-closing-details')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+darwinbox-handoff-no-first-party-job-records',
+    'current-active-corporate-handoff+strict-native-identity-country-and-public-criteria+blocked-host-cache',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

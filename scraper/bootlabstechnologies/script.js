@@ -1,6 +1,7 @@
 import { extractLinkedinJobCards } from '../../scraper-support/utils/linkedinJobCards.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {runCurrentBootLabs} from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -129,7 +130,7 @@ export const extractSearchResults = (html) => extractLinkedinJobCards(html)
       city: locationData.city,
       country: locationData.country,
       jobId,
-      requisitionId: jobId,
+      requisitionId: null,
       sourceUrl,
       applyUrl: sourceUrl,
       employmentType: null,
@@ -161,57 +162,11 @@ export const extractJobDetail = (html) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
-
 export const createBootLabsTechnologiesScraper = () => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const careersHtml = await fetchText(CAREER_PAGE_URL)
-
-    if (!pageIndicatesLinkedinHandoff(careersHtml)) {
-      throw new Error('BootLabs careers page no longer exposes the expected LinkedIn jobs handoff')
-    }
-
-    const searchHtml = await fetchText(LINKEDIN_INDIA_JOBS_URL)
-    const listings = extractSearchResults(searchHtml)
-    const enrichedJobs = []
-
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml)
-
-      enrichedJobs.push({
-        ...listing,
-        ...Object.fromEntries(
-          Object.entries(detail).filter(([, value]) => value != null),
-        ),
-      })
-    }
-
-    return enrichedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
+  run: options => runCurrentBootLabs(options || {}),
 })
 
-export const run = async () => createBootLabsTechnologiesScraper().run()
+export const run = async (options = {}) => createBootLabsTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -74,13 +74,14 @@ export const hasOfficialBigBasketCareersSignals = (html = '') => {
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'bigbasket-official',
   timeoutMs: 15000,
+  signal,
 })
 
 export const createBigBasketScraper = ({
@@ -91,14 +92,19 @@ export const createBigBasketScraper = ({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
     fetchListingPage,
+    ...darwinboxOptions
   } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    const { signal } = darwinboxOptions
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL, { signal })
+    signal?.throwIfAborted()
 
     if (!hasOfficialBigBasketCareersSignals(careersHtml)) {
       throw new Error('BigBasket verified official careers page no longer matches the verified public surface')
     }
 
     const jobs = await darwinboxScraper.run({
+      ...darwinboxOptions,
       maxPages,
       maxJobs,
       fetchListingPage,

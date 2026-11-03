@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { ATOMBERG_CATALOG } from './catalog.js'
+import{createCurrentSurfaceScraper}from'./currentSurface.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -174,38 +175,8 @@ export const hasVerifiedInternalServerErrorRoute = (page = {}, requestedUrl) =>
   )
   && !pageExposesPublicJobListings(page.html)
 
-export const createAtombergScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Atomberg verified official homepage no longer matches the known public surface')
-    }
 
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (careersPage.status !== 200 || !hasResumeOnlyCareersSignal(careersPage.html)) {
-      if (pageExposesPublicJobListings(careersPage.html)) {
-        throw new Error('Atomberg careers page now appears to expose a public jobs surface')
-      }
-
-      throw new Error('Atomberg verified resume-only careers surface no longer matches the known public page')
-    }
-
-    for (const routeUrl of NO_PUBLIC_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-
-      if (!hasVerifiedNext404Route(routePage, routeUrl)) {
-        throw new Error(`Atomberg verified no-public-job route changed: ${routeUrl}`)
-      }
-    }
-
-    const brokenCareerRoute = await fetchPage(BROKEN_CAREER_ROUTE_URL)
-    if (!hasVerifiedInternalServerErrorRoute(brokenCareerRoute, BROKEN_CAREER_ROUTE_URL)) {
-      throw new Error('Atomberg verified broken career route changed materially')
-    }
-
-    return []
-  },
-})
+export const createAtombergScraper=defaults=>createCurrentSurfaceScraper({source:SOURCE,url:CAREERS_URL,canonicalUrl:'https://atomberg.com/pages/careers',title:/Careers at Atomberg \| Join Our Team/i,companySignal:'Careers',email:'career@atomberg.com',recruitingCopy:/Interested candidates can share their updated resumes on/i},defaults)
 
 export const run = async (options = {}) => createAtombergScraper().run(options)
 

@@ -139,10 +139,7 @@ test('regenerateCompanyCoverageReport CLI prints a JSON summary and supports exp
     const csvPath = path.join(tempDir, 'fresh-company-list.csv')
     const backendReportPath = path.join(tempDir, 'backend-company-coverage-report.json')
     const frontendReportPath = path.join(tempDir, 'frontend-company-coverage-report.json')
-    const backendDir = path.resolve(
-      path.dirname(new URL(import.meta.url).pathname.replace(/^\//, '')),
-      '..',
-    )
+    const backendDir = path.resolve(import.meta.dirname, '..')
 
     writeFileSync(
       csvPath,

@@ -1,67 +1,44 @@
-import assert from 'node:assert/strict'
 import test from 'node:test'
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import * as scraper from '../../scraper/aarbeestructures/script.js'
+const source="aarbeestructures",entry="https://aarbeestructures.com/careers/"
+const captures=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/aarbeestructures/test-data/native-20261103.json.gz',import.meta.url))))
+const page=async url=>{const row=captures.findLast(row=>row.requestedUrl===url);assert.ok(row,'unexpected public/private request '+url);return {status:row.status,url:row.finalUrl,html:row.html}}
+const run=options=>scraper.createAarbeeStructuresScraper().run({fetchText:page,...options})
 
-const officialCareersHtml = `
-  <!doctype html>
-  <html>
-    <head><title>Careers - Aarbee Structures</title></head>
-    <body>
-      <header>Aarbee Structures Pvt. Ltd.</header>
-      <main>
-        <h1>Careers</h1>
-        <h2>Aarbee Career</h2>
-        <p>We are searching for great talent to join our team</p>
-        <a href="https://docs.google.com/forms/d/e/example/viewform">Work with Us</a>
-        <h4>Current Openings</h4>
-        <img src="/wp-content/uploads/2025-jr-system-administrator.png" alt="2025 Jr System Administrator">
-      </main>
-      <footer>Aarbee Structures Pvt. Ltd.</footer>
-    </body>
-  </html>
-`
-
-test('Aarbee Structures validates its official image-only careers surface and returns no unverified jobs', async () => {
-  const aarbee = await import('../../scraper/aarbeestructures/script.js')
-  const requestedUrls = []
-
-  assert.equal(aarbee.hasOfficialCareersSignal(officialCareersHtml), true)
-  assert.equal(aarbee.pageExposesStructuredJobListings(officialCareersHtml), false)
-
-  const jobs = await aarbee.createAarbeeStructuresScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return officialCareersHtml
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [aarbee.CAREERS_URL])
-  assert.deepEqual(jobs, [])
+test('Aarbee Structures Pvt. Ltd. exports its original source and current first-party entry without a static inventory verification date',()=>{
+ assert.equal(scraper.SOURCE,"aarbeestructures")
+ assert.equal(scraper.COMPANY,"Aarbee Structures Pvt. Ltd.")
+ assert.equal(scraper.COMPANY_DOMAIN,"aarbeestructures.com")
+ assert.equal(scraper.CAREERS_URL,entry)
+ assert.equal(scraper.VERIFIED_ON,null)
+ assert.equal(scraper.VERIFIED_AT,null)
+ if(source==='acmesolar')assert.equal(scraper.APPLY_EMAIL,'careers@acme.in')
 })
 
-test('Aarbee Structures scraper fails closed when the careers identity changes', async () => {
-  const aarbee = await import('../../scraper/aarbeestructures/script.js')
-
-  await assert.rejects(
-    aarbee.createAarbeeStructuresScraper().run({
-      fetchText: async () => '<html><body>Unrelated site</body></html>',
-    }),
-    /official careers surface/i,
-  )
+test('Aarbee Structures Pvt. Ltd. identifies active role links while excluding commented and unrevealed role markup',()=>{
+ const html=captures.find(row=>row.requestedUrl===entry).html
+ const role='<article class="job-card"><h2>Public Native Engineer</h2><a href="/jobs/engineer">View role</a></article>'
+ assert.equal(scraper.pageExposesPublicJobListings(html),false)
+ assert.equal(scraper.pageExposesPublicJobListings(html+role),true)
+ assert.equal(scraper.pageExposesPublicJobListings(html+'<!-- '+role+' --><template>'+role+'</template><div hidden>'+role+'</div>'),false)
 })
 
-test('Aarbee Structures scraper requires review when a structured job link appears', async () => {
-  const aarbee = await import('../../scraper/aarbeestructures/script.js')
-  const listedJobsHtml = officialCareersHtml.replace(
-    '</main>',
-    '<article class="job-card"><h3>Junior System Administrator</h3><a href="/jobs/junior-system-administrator">Apply now</a></article></main>',
-  )
+test('Aarbee Structures Pvt. Ltd. rejects a changed native employer or handoff before claiming source observations',async()=>{
+ await assert.rejects(run({fetchText:async url=>{
+  const value=await page(url)
+  if(source==='aadyahaerospace'&&url.endsWith('/options/header'))return {...value,html:value.html.replace(/AADYAH/gi,'DifferentEmployer')}
+  if(source==='aarbeestructures'&&url===entry)return {...value,html:value.html.replace('https://docs.google.com/forms/','https://different-employer.invalid/forms/')}
+  if(source==='acmesolar'&&url.includes('/assets/index-'))return {...value,html:value.html.replace('careers@acme.in','jobs@different-employer.invalid')}
+  if(source==='aayushmantech'&&url===entry)return {...value,html:'<html><body><h1>Unrelated employer</h1></body></html>'}
+  return value
+ }}),/employer|identity|binding/i)
+})
 
-  assert.equal(aarbee.pageExposesStructuredJobListings(listedJobsHtml), true)
-
-  await assert.rejects(
-    aarbee.createAarbeeStructuresScraper().run({
-      fetchText: async () => listedJobsHtml,
-    }),
-    /structured public job listings/i,
-  )
+test('Aarbee Structures Pvt. Ltd. preserves clock error identity and does not convert it into upstream absence',async()=>{
+ const reason={opaque:'observation clock failed'};let calls=0
+ await assert.rejects(run({now:()=>{throw reason},onAudit:()=>{calls++}}),error=>error===reason)
+ assert.equal(calls,0)
 })

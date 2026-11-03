@@ -54,7 +54,7 @@ const sitemapIndexXml = `
   </sitemapindex>
 `
 
-test('Cashfree Payments scraper pins the verified homepage and email-only careers surface', async () => {
+test('Cashfree Payments retains archived official-surface discovery helpers', async () => {
   const cashfree = await loadCashfreeModule()
 
   assert.equal(cashfree.HOMEPAGE_URL, 'https://www.cashfree.com/')
@@ -67,11 +67,11 @@ test('Cashfree Payments scraper pins the verified homepage and email-only career
   assert.equal(cashfree.hasOfficialSitemapSignal(sitemapIndexXml), true)
 })
 
-test('Cashfree Payments run returns no jobs when the verified careers page remains email-only and checked routes stay blocked', async () => {
+test('Cashfree Payments cannot certify an archived email-only page as the current native job inventory', async () => {
   const cashfree = await loadCashfreeModule()
   const requestedUrls = []
 
-  const jobs = await cashfree.createCashfreePaymentsScraper().run({
+  await assert.rejects(cashfree.createCashfreePaymentsScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -84,15 +84,9 @@ test('Cashfree Payments run returns no jobs when the verified careers page remai
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), /Cashfree native Kula.*(?:identity|canonical|handoff)/i)
 
-  assert.deepEqual(requestedUrls, [
-    cashfree.HOMEPAGE_URL,
-    cashfree.CAREERS_PAGE_URL,
-    cashfree.SITEMAP_URL,
-    ...cashfree.NO_PUBLIC_ROUTE_URLS,
-  ])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [cashfree.CAREERS_PAGE_URL])
 })
 
 test('Cashfree Payments run fails closed when the careers page starts exposing public listings', async () => {
@@ -113,6 +107,6 @@ test('Cashfree Payments run fails closed when the careers page starts exposing p
         return { status: 403, url, html: '<html><body>Forbidden</body></html>' }
       },
     }),
-    /email-only careers surface/i,
+    /Cashfree native Kula.*(?:identity|canonical|handoff)/i,
   )
 })

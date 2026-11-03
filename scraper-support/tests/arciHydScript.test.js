@@ -1,97 +1,29 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
-const loadArciHydModule = async () => {
-  try {
-    return await import('../../scraper/arcihyd/script.js')
-  } catch {
-    assert.fail('Expected ARCI Hyderabad scraper module at ../../scraper/scraper/arcihyd/script.js')
-  }
-}
-
-const careersPageHtml = `
-  <html>
-    <head>
-      <title>Careers | International Advanced Research Centre for Powder Metallurgy and New Materials</title>
-    </head>
-    <body>
-      <a href="/careers/vacancies">Vacancies</a>
-      <a href="/recruitment-results">Recruitment Results</a>
-    </body>
-  </html>
-`
-
-const vacanciesPageHtml = `
-  <html>
-    <head>
-      <title>Vacancies | International Advanced Research Centre for Powder Metallurgy and New Materials</title>
-    </head>
-    <body>
-      <div class="views-element-container">
-        <div class="view view-vacancies view-id-vacancies view-display-id-page_1 js-view-dom-id-12345">
-        </div>
-      </div>
-      <script type="application/json">{"views":{"ajax_path":"\\/views\\/ajax"},"ajaxViews":{"views_dom_id:12345":{"view_name":"vacancies","view_path":"\\/careers\\/vacancies"}}}</script>
-    </body>
-  </html>
-`
-
-test('extractOpenings returns no jobs when the public ARCI vacancies page shows an empty Drupal vacancies view', async () => {
-  const arcihyd = await loadArciHydModule()
-
-  assert.equal(arcihyd.hasCareersPageSignal(careersPageHtml), true)
-  assert.equal(arcihyd.hasVacanciesPageSignal(vacanciesPageHtml), true)
-  assert.equal(arcihyd.hasNoJobsSignal(vacanciesPageHtml), true)
-  assert.deepEqual(arcihyd.extractOpenings(vacanciesPageHtml), [])
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {run,createArciHydScraper,CAREERS_PAGE_URL,VACANCIES_PAGE_URL} from '../../scraper/arcihyd/script.js'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const packets=JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/arcihyd/test-data/native-20261103.json.gz',import.meta.url))))
+globalThis.fetch=()=>{throw Error('offline ARCI network tripwire')}
+test('ARCI public current advertisement runtime exposes its seven native role types and qualified office subset',async()=>{
+ const pages=new Map(packets.flatMap(row=>[[row.requestedUrl,row],[row.url,row]]));let audit
+ const jobs=await createArciHydScraper({maxJobs:0}).run({fetchPage:async url=>structuredClone(pages.get(url)),onAudit:value=>{audit=value}})
+ assert.equal(CAREERS_PAGE_URL,'https://arci.res.in/offerings/careers')
+ assert.equal(VACANCIES_PAGE_URL,'https://arci.res.in/careers/vacancies')
+ assert.equal(audit.candidatePostTypes,7)
+ assert.equal(jobs.length,1)
+ assert.equal(jobs[0].sourceNativePostCode,'AA001')
+ assert.equal(jobs[0].sourceNativeIndiaPositions,6)
+ assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
-
-test('run fetches the official ARCI careers pages and returns an honest zero-openings result', async () => {
-  const arcihyd = await loadArciHydModule()
-  const requestedUrls = []
-
-  const jobs = await arcihyd.createArciHydScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === arcihyd.CAREERS_PAGE_URL) {
-        return careersPageHtml
-      }
-
-      if (url === arcihyd.VACANCIES_PAGE_URL) {
-        return vacanciesPageHtml
-      }
-
-      throw new Error(`Unexpected URL ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    arcihyd.CAREERS_PAGE_URL,
-    arcihyd.VACANCIES_PAGE_URL,
-  ])
-  assert.deepEqual(jobs, [])
+test('ARCI legacy empty Drupal shell cannot qualify an empty current advertisement inventory',async()=>{
+ let calls=0
+ await assert.rejects(run({fetchPage:async url=>{calls++;return{status:200,url,html:'<html><title>Careers | International Advanced Research Centre</title><a href="/careers/vacancies">Vacancies</a><a href="/organization/locations-hyderabad">Offices</a></html>'}}}),/current vacancies publisher|advertisement inventory/)
+ assert.equal(calls,2)
 })
-
-test('run can recover with browser-backed ARCI careers pages when direct requests fail', async () => {
-  const arcihyd = await loadArciHydModule()
-  const browserUrls = []
-
-  const jobs = await arcihyd.createArciHydScraper().run({
-    fetchText: async () => {
-      throw new TypeError('fetch failed')
-    },
-    fetchBrowserText: async (url) => {
-      browserUrls.push(url)
-
-      if (url === arcihyd.CAREERS_PAGE_URL) return careersPageHtml
-      if (url === arcihyd.VACANCIES_PAGE_URL) return vacanciesPageHtml
-
-      throw new Error(`Unexpected browser URL ${url}`)
-    },
-  })
-
-  assert.deepEqual(browserUrls, [
-    arcihyd.CAREERS_PAGE_URL,
-    arcihyd.VACANCIES_PAGE_URL,
-  ])
-  assert.deepEqual(jobs, [])
+test('ARCI injected transport denial preserves the failure and never starts a browser fallback',async()=>{
+ let browser=0;const reason=Object.assign(Error('source timeout'),{code:'SOURCE_TIMEOUT'})
+ await assert.rejects(run({fetchText:async()=>{throw reason},fetchBrowserText:()=>{browser++;return''}}),error=>error===reason)
+ assert.equal(browser,0)
 })

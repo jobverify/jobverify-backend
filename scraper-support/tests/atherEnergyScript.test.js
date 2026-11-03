@@ -59,11 +59,11 @@ test('extractJobs returns no jobs when the official Ather careers page shows no 
   assert.deepEqual(atherenergy.extractJobs(allJobsHtml), [])
 })
 
-test('run fetches the official Ather careers pages and returns an honest zero-openings result', async () => {
+test('run fetches the official Ather careers pages but empty-filter copy cannot prove zero native openings', async () => {
   const atherenergy = await loadAtherEnergyModule()
   const requestedUrls = []
 
-  const jobs = await atherenergy.createAtherEnergyScraper().run({
+  await assert.rejects(atherenergy.createAtherEnergyScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === atherenergy.CAREERS_HOME_URL) {
@@ -76,13 +76,14 @@ test('run fetches the official Ather careers pages and returns an honest zero-op
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), error => error.failureKind === 'source_inventory_unavailable'
+    && error.inventoryEvidence.listingComplete === false
+    && error.inventoryEvidence.reportedTotal === null)
 
   assert.deepEqual(requestedUrls, [
     atherenergy.CAREERS_HOME_URL,
     atherenergy.ALL_JOBS_URL,
   ])
-  assert.deepEqual(jobs, [])
 })
 
 test('run reports an API-only migration error when direct HTTP access to Ather careers is blocked', async () => {

@@ -182,6 +182,10 @@ test('Amaze sentinel returns [] only while the official pages keep the dead care
         return { status: 404, url, html: brokenLeverBoardHtml }
       }
 
+      if (url === amaze.NATIVE_POSTINGS_URL) {
+        return { status: 404, url, html: '{"ok":false,"error":"Document not found"}' }
+      }
+
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
@@ -191,6 +195,9 @@ test('Amaze sentinel returns [] only while the official pages keep the dead care
     amaze.ABOUT_PAGE_URL,
     amaze.CONTACT_PAGE_URL,
     ...amaze.CAREERS_ROUTE_URLS,
+    amaze.BROKEN_CAREERS_HANDOFF_URL,
+    amaze.NATIVE_POSTINGS_URL,
+    amaze.HOMEPAGE_ENTRY_URL,
     amaze.BROKEN_CAREERS_HANDOFF_URL,
   ])
   assert.deepEqual(jobs, [])

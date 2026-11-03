@@ -7,17 +7,17 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Cashfree Payments as a verified email-only careers source', () => {
+test('getScraperCatalog includes the current declared Cashfree public Kula board', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'cashfreepayments')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'Cashfree Payments')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers-nonlisting')
+  assert.equal(provider.atsPlatform, 'kula-public-careers')
   assert.equal(provider.companyCareerPage, 'https://www.cashfree.com/careers/')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-email-only-careers-validation')
-  assert.equal(provider.extractionStrategy, 'verified-email-only-careers-page-return-empty')
+  assert.equal(provider.paginationStrategy, 'all-public-api-pages+rendered-board+closing-full-native-models')
+  assert.equal(provider.extractionStrategy, 'current-official-iframe+account1291+same-ID-full-public-criteria+typed-worksite-country')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'cashfree.com')

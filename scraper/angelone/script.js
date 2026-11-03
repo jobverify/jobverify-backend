@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import{createCurrentAngelScraper}from'./currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -58,25 +59,8 @@ export const extractJobCards = (html) => Array.from(
 export const hasOpenJobCards = (html) => extractJobCards(html).length > 0
   || /\\?"jobs\\?"\s*:\s*\[\s*{[\s\S]*}\s*\]/i.test(String(html ?? ''))
 
-export const createAngelOneScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
 
-    if (!hasVerifiedCareersShellSignal(careersHtml)) {
-      throw new Error('Angel One verified first-party zero-openings shell no longer matches the known public surface')
-    }
-
-    if (!hasEmbeddedEmptyJobsSignal(careersHtml)) {
-      throw new Error('Angel One verified embedded empty jobs payload no longer matches the known public surface')
-    }
-
-    if (hasOpenJobCards(careersHtml)) {
-      throw new Error('Angel One careers shell now exposes public openings')
-    }
-
-    return []
-  },
-})
+export const createAngelOneScraper=createCurrentAngelScraper
 
 export const run = async (options = {}) => createAngelOneScraper().run(options)
 

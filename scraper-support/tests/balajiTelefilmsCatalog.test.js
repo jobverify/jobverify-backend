@@ -4,7 +4,7 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('getScraperCatalog includes Balaji Telefilms as the Thursday, August 13, 2026 Incapsula-blocked first-party careers surface', () => {
+test('getScraperCatalog preserves current Balaji email-intake identity with unknown inventory', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'balajitelefilms')
 
   assert.ok(provider)
@@ -14,12 +14,12 @@ test('getScraperCatalog includes Balaji Telefilms as the Thursday, August 13, 20
   assert.equal(provider.companyCareerPage, 'https://www.balajitelefilms.com/career-opportunity.php')
   assert.equal(provider.companyDomain, 'balajitelefilms.com')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-career-opportunity-php-with-incapsula-block-shell-fallback')
-  assert.equal(provider.extractionStrategy, 'verified-official-homepage+verified-email-only-careers-page-or-incapsula-block-shell+empty-result')
+  assert.equal(provider.paginationStrategy, 'opening-and-closing-current-configured-public-surface')
+  assert.equal(provider.extractionStrategy, 'current-employer-public-intake-or-unqualified-panel-observations;unknown-native-inventory')
   assert.equal(provider.parser, 'custom-script')
-  assert.equal(provider.verifiedOn, '2026-08-13')
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /_Incapsula_Resource/i)
+  assert.equal(provider.verifiedOn, null)
+  assert.match(provider.verifiedSurfaceSummary, /unknown vacancy/i)
+  assert.match(provider.verifiedSurfaceSummary, /blocked Incapsula shell/i)
   assert.match(provider.verifiedSurfaceSummary, /career-opportunity\.php/i)
   assert.match(provider.modulePath, /balajitelefilms[\\/]script\.js$/i)
 })

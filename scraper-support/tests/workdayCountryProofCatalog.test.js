@@ -10,7 +10,7 @@ import {WORKDAY_COUNTRY_INVENTORY_PROOF} from '../myworkday/countryInventoryProo
 
 const capture = JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/workdayCountryInventoryProof/capture.json.gz', import.meta.url))))
 
-for (const source of ['csg', 'temenos']) {
+for (const source of ['csg']) {
   test(`selected ${source} scraper uses a fresh complete-board country proof instead of an India keyword zero`, async t => {
     const scraper = buildScrapers().find(item => item.name === source)
     assert.equal(scraper.provider.adapter, 'workday')
@@ -73,3 +73,19 @@ for (const source of ['csg', 'temenos']) {
     }
   })
 }
+
+test('registered Temenos source composes current CXS and exact public worksite proof without a keyword zero',async t=>{
+ const fixture=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/temenos.workday/test-data/worksites-native-20261103.json.gz',import.meta.url)))),scraper=buildScrapers().find(r=>r.name==='temenos'),calls=[]
+ assert.equal(scraper.provider.adapter,'script');assert.match(scraper.provider.modulePath,/temenos\.workday[\\/]script\.js$/);assert.equal(scraper.provider.lifecycleCleanupAllowed,false)
+ const mock=t.mock.method(globalThis,'fetch',async(input,init={})=>{
+  const url=String(input),method=init.method||'GET',request=init.body?JSON.parse(init.body):null;calls.push({url,method})
+  if(request){assert.deepEqual(request.appliedFacets,{});assert.equal(request.searchText,'')}
+  const row=fixture.responses.find(r=>r.url===url&&(r.method||'GET')===method&&(method!=='POST'||r.requestBody.offset===request.offset));assert.ok(row,'Unexpected declared Temenos request '+url)
+  const response=new Response(row.body,{status:row.status,headers:{'content-type':row.contentType}});Object.defineProperty(response,'url',{value:url});return response
+ })
+ try{
+  const jobs=await scraper.run({requestScheduler:{acquire:async()=>()=>{},recordRateLimit:()=>{}}}),evidence=readInventoryEvidence(jobs),proof=jobs[WORKDAY_COUNTRY_INVENTORY_PROOF]
+  assert.equal(jobs.length,0);assert.equal(evidence.reportedTotal,22);assert.equal(evidence.indiaFacetCount,0);assert.equal(evidence.listingComplete,true);assert.equal(resolveZeroJobOutcome(scraper,jobs,[]),'fetched-zero')
+  assert.equal(proof.initial.count,22);assert.equal(proof.closing.count,22);assert.equal(proof.initial.sha256,proof.closing.sha256);assert.ok(calls.some(c=>c.url==='https://www.temenos.com/offices/page/6/'))
+ }finally{mock.mock.restore()}
+})

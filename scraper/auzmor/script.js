@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { AUZMOR_CATALOG } from './catalog.js'
+import { hasCurrentWidget, readCurrentJobs } from './nativeJobs.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -154,13 +155,14 @@ export const isVerifiedMissingPublicJobRoute = (page = {}) => {
     && !hasPublicJobListingSignal(html)
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
   })
 
   return {
@@ -171,13 +173,18 @@ const defaultFetchPage = async (url) => {
 }
 
 export const createAuzmorScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+  async run({ fetchPage = defaultFetchPage, signal, maxJobs, maxPages, now } = {}) {
+    signal?.throwIfAborted()
+    const homepage = await fetchPage(HOMEPAGE_URL, { signal })
+    if (homepage.status !== 200 || homepage.url !== HOMEPAGE_URL || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Auzmor official homepage no longer matches the verified first-party surface')
     }
 
-    const careersPage = await fetchPage(CAREERS_PAGE_URL)
+    const careersPage = await fetchPage(CAREERS_PAGE_URL, { signal })
+    signal?.throwIfAborted()
+    if (careersPage.status === 200 && careersPage.url === CAREERS_PAGE_URL && hasCurrentWidget(careersPage.html)) {
+      return readCurrentJobs({ fetchPage, signal, maxJobs, maxPages, now })
+    }
     if (!hasOfficialCareersSignal(careersPage.html) || hasPublicJobListingSignal(careersPage.html)) {
       throw new Error('Auzmor careers page no longer matches the verified careers marketing page')
     }

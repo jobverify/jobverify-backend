@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
 
 const loadCdotModule = async () => {
   try {
@@ -58,7 +60,7 @@ test('extractOpenings maps C-DOT official current-opening rows into shared job f
     requiredSkills: [],
     postingDate: '2026-07-04T00:00:00.000Z',
     closingDate: '2026-08-17T00:00:00.000Z',
-    jobDescription: 'Official C-DOT opening. See the advertisement for role details.',
+    jobDescription: null,
   }])
 })
 
@@ -67,14 +69,17 @@ test('run fetches the official C-DOT current-openings page and decorates the job
   assert.ok(cdot)
 
   const requestedUrls = []
+  const {packets}=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/cdot/test-data/native-20261102.json.gz',import.meta.url))))
   const jobs = await cdot.createCdotScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      return openingsHtml
+      assert.equal(url,cdot.CURRENT_OPENINGS_URL)
+      return Buffer.from(packets[0].bodyBase64,'base64').toString('utf8')
     },
+    fetchBinary:async url=>{requestedUrls.push(url);assert.equal(url,packets[1].url);return Buffer.from(packets[1].bodyBase64,'base64')},
   })
 
-  assert.deepEqual(requestedUrls, [cdot.CURRENT_OPENINGS_URL])
+  assert.deepEqual(requestedUrls, [cdot.CURRENT_OPENINGS_URL,packets[1].url,cdot.CURRENT_OPENINGS_URL])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'cdot')
   assert.equal(jobs[0].link, jobs[0].applyUrl)

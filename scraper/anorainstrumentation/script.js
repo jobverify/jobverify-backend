@@ -3,10 +3,11 @@ import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { parseJavaScriptLiteral } from '../../scraper-support/utils/safeLiteral.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const CAREERS_PAGE_URL = 'http://anoralabs.com/careers'
+export const CAREERS_PAGE_URL = 'https://anoralabs.com/careers'
 
 const SOURCE = 'anorainstrumentation'
 const COMPANY = 'Anora Instrumentation Private Limited'
@@ -123,7 +124,7 @@ export const extractReactBundleUrl = (html, pageUrl = CAREERS_PAGE_URL) => {
 
 const hasOfficialReactShellSignal = (html) => {
   const page = String(html ?? '')
-  return /<title>\s*Anora Website\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Anora Website|Anoralabs)\s*<\/title>/i.test(page)
     && /<div\b[^>]*\bid=["']root["'][^>]*>/i.test(page)
     && /You need to enable JavaScript to run this app/i.test(page)
     && Boolean(extractReactBundleUrl(page))
@@ -339,7 +340,7 @@ const mapReactJob = (opening) => {
     requiredSkills: requirements,
     postingDate: null,
     closingDate: null,
-    jobDescription: normalizeWhitespace([opening.description, ...requirements].join(' ')),
+    jobDescription: normalizeWhitespace([opening.description, ...requirements, opening.preferredSkills].filter(Boolean).join(' ')),
     remoteStatus: /\bremote\b/i.test(opening.location) ? 'Remote' : 'On-site',
   }
 }
@@ -370,13 +371,18 @@ export const createAnoraInstrumentationScraper = ({ fetchText = defaultFetchText
     }
 
     let jobs = []
+    let inventory = null
 
     if (jobUrls.length === 0) {
       const bundleUrl = extractReactBundleUrl(listingHtml)
       const bundle = await fetcher(bundleUrl)
-      jobs = extractReactJobOpenings(bundle)
+      const openings = extractReactJobOpenings(bundle)
+      jobs = openings
         .filter((opening) => isIndiaLocation(opening.location))
         .map(mapReactJob)
+      inventory = { status: 'complete-inventory', surface: bundleUrl, firstParty: true, listingComplete: true,
+        pagesFetched: 1, reportedTotal: openings.length, indiaFacetCount: jobs.length,
+        verifiedAt: (overrideNow || now)(), reason: 'complete-static-native-jobs-array-used-by-current-careers-and-role-detail-routes' }
     }
 
     for (const jobUrl of jobUrls) {
@@ -388,12 +394,13 @@ export const createAnoraInstrumentationScraper = ({ fetchText = defaultFetchText
       jobs.push(detail)
     }
 
-    return jobs.map((job) => ({
+    const mapped = jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: (overrideNow || now)(),
     }))
+    return inventory ? attachInventoryEvidence(mapped, inventory) : mapped
   },
 })
 

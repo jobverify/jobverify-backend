@@ -159,6 +159,8 @@ const UserSchema = new Schema(
       type: TelegramSchema,
       default: () => ({}),
     },
+    // Administrative permission, independent of the member's delivery opt-in.
+    telegramAlertsAllowed: { type: Boolean, default: true },
     profile: { type: ProfileSchema, default: () => ({}) },
     savedJobs: {
       type: [{
@@ -201,6 +203,9 @@ const UserSchema = new Schema(
 // password reset. Explicit increments and defaults on new accounts still save.
 UserSchema.pre('save', function preserveSessionRevocation() {
   if (!this.isNew && this.$isDefault('sessionVersion')) this.$ignore('sessionVersion');
+  // Do not let an in-flight save of a legacy account persist a hydrated default
+  // over an administrator's concurrent Telegram access change.
+  if (!this.isNew && this.$isDefault('telegramAlertsAllowed')) this.$ignore('telegramAlertsAllowed');
 });
 
 UserSchema.index({ role: 1 });

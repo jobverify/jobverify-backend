@@ -1691,6 +1691,133 @@ const fetchWorkdayScopePayload = async ({
 }
 
 const workdayLocationEvidenceKey = value => String(value || '').trim().toLowerCase()
+export const WORKDAY_ADDITIONAL_WORKSITE_PROOF = Symbol.for('jobverify.workday.additional-worksite-country-proof')
+
+// Opt-in data from a source-owned, fully reconciled public office directory.
+// This does not resolve a city globally or replace any typed CXS country.
+export const validateWorkdayAdditionalWorksiteProof = (input, {
+  source, baseUrl, jobsApiUrl, officialCareersUrl, countryProof, now = Date.now(),
+}) => {
+  if (input == null) return null
+  const requireProof = condition => {
+    if (!condition) throw Object.assign(new Error('Invalid current Workday worksite country proof'), { abortRetries: true })
+  }
+  const plain = value => value && typeof value === 'object' && !Array.isArray(value)
+  const dataOnly = root => {
+    const stack = [[root, false]], visited = new Set(), active = new Set()
+    let fields = 0
+    while (stack.length) {
+      const [value, leaving] = stack.pop()
+      if (leaving) { active.delete(value); visited.add(value); continue }
+      if (value === null || typeof value === 'string' || typeof value === 'boolean'
+        || typeof value === 'number' && Number.isFinite(value)) continue
+      if (typeof value !== 'object' || active.has(value)
+        || ![Object.prototype, Array.prototype, null].includes(Object.getPrototypeOf(value))) return false
+      if (visited.has(value)) continue
+      active.add(value); stack.push([value, true])
+      for (const key of Reflect.ownKeys(value)) {
+        const descriptor = Object.getOwnPropertyDescriptor(value, key)
+        if (++fields > 100000 || typeof key !== 'string' || !Object.hasOwn(descriptor, 'value')) return false
+        stack.push([descriptor.value, false])
+      }
+    }
+    return true
+  }
+  const sha = value => typeof value === 'string' && /^[a-f\d]{64}$/.test(value)
+  const text = value => typeof value === 'string' && !!value.trim()
+  const time = value => typeof value === 'string' && Number.isFinite(Date.parse(value))
+  requireProof(dataOnly(input) && plain(input) && countryProof === true && input.version === 'workday-additional-worksites-v1'
+    && input.source === source && input.jobsApiUrl === jobsApiUrl && input.boardUrl === baseUrl
+    && input.officialCareersUrl === officialCareersUrl && time(input.verifiedAt))
+  const startedAt = Date.parse(input.attemptStartedAt), deadlineAt = Date.parse(input.attemptDeadlineAt), verifiedAt = Date.parse(input.verifiedAt)
+  // A directory receipt is current only inside this bounded source attempt.
+  // Ten minutes is the existing extraction-audit ceiling; the source supplies
+  // its own shorter deadline (Temenos uses three minutes by default).
+  requireProof(Number.isFinite(now) && Number.isFinite(startedAt) && Number.isFinite(deadlineAt)
+    && startedAt <= verifiedAt && verifiedAt <= now && now <= deadlineAt
+    && deadlineAt > startedAt && deadlineAt - startedAt <= 600000)
+  const inCurrentAttempt = value => time(value) && Date.parse(value) >= startedAt && Date.parse(value) <= verifiedAt
+  let directory, corporate
+  try { directory = new URL(input.directoryUrl); corporate = new URL(officialCareersUrl) } catch { requireProof(false) }
+  requireProof(directory.protocol === 'https:' && directory.origin === corporate.origin
+    && !directory.username && !directory.password && !directory.search && !directory.hash && directory.pathname.endsWith('/'))
+  const receipt = input.corporateReceipt
+  const nativeBoard = new URL(baseUrl)
+  const nativeBoardKey = nativeBoard.origin + '/' + nativeBoard.pathname.split('/').filter(Boolean)
+    .filter(part => !/^[a-z]{2}-[a-z]{2}$/i.test(part)).join('/')
+  requireProof(plain(receipt) && receipt.status === 200 && receipt.requestedUrl === officialCareersUrl
+    && receipt.responseUrl === officialCareersUrl && sha(receipt.sha256) && inCurrentAttempt(receipt.fetchedAt)
+    && receipt.board === nativeBoardKey
+    && /^(?:text\/html|application\/xhtml\+xml)(?:\s*;|$)/i.test(receipt.contentType || '')
+    && inferWorkdayJobsApiConfig(receipt.anchorUrl)?.jobsApiUrl === jobsApiUrl
+    && inferWorkdayJobsApiConfig(baseUrl)?.jobsApiUrl === jobsApiUrl)
+  requireProof(Array.isArray(input.snapshots) && input.snapshots.length === 2)
+  const snapshots = structuredClone(input.snapshots)
+  // These are explicit country-name spellings, never city/HQ aliases. Keep
+  // the original publisher line; compare only its recognized country identity.
+  const countryNames = new Map([['the netherlands', 'Netherlands'], ['republic of south africa', 'South Africa'],
+    ['kingdom of saudi arabia', 'Saudi Arabia'], ['bosnia and herzegovina', 'Bosnia & Herzegovina']])
+  const pageNumber = value => {
+    let url
+    try { url = new URL(value) } catch { return null }
+    if (url.origin !== directory.origin || url.search || url.hash || url.username || url.password) return null
+    if (url.pathname === directory.pathname) return 1
+    const suffix = url.pathname.startsWith(directory.pathname) && url.pathname.slice(directory.pathname.length)
+    return typeof suffix === 'string' && /^page\/[1-9]\d*\/$/.test(suffix) ? Number(suffix.split('/')[1]) : null
+  }
+  const groupSnapshots = snapshots.map(snapshot => {
+    requireProof(plain(snapshot) && Number.isSafeInteger(snapshot.reportedTotal) && snapshot.reportedTotal >= 0
+      && snapshot.reportedTotal <= 1000 && Array.isArray(snapshot.records) && snapshot.records.length === snapshot.reportedTotal
+      && Array.isArray(snapshot.pages) && snapshot.pages.length > 0 && snapshot.pages.length <= 20)
+    const ids = new Map(), positions = new Set(), pages = new Map(), covered = new Set(), groups = new Map()
+    for (const record of snapshot.records) {
+      requireProof(plain(record) && Number.isSafeInteger(record.id) && record.id > 0 && !ids.has(record.id)
+        && Number.isSafeInteger(record.position) && record.position > 0 && record.position <= snapshot.reportedTotal
+        && !positions.has(record.position) && text(record.label) && text(record.employerEntity)
+        && Array.isArray(record.addressLines) && record.addressLines.length >= 2 && record.addressLines.every(text)
+        && record.publisherCountryText === record.addressLines.at(-1) && sha(record.sourceCardSHA256)
+        && pageNumber(record.sourceUrl) !== null && (record.country === null || plain(record.country)
+          && /^[A-Z]{2}$/.test(record.country.alpha2Code || '') && text(record.country.descriptor)
+          && hasRecognizedWorkdayCountry(record.country) && hasRecognizedWorkdayCountry({
+            descriptor: countryNames.get(record.publisherCountryText.trim().toLowerCase()) || record.publisherCountryText,
+            alpha2Code: record.country.alpha2Code })))
+      ids.set(record.id, record); positions.add(record.position)
+      const key = workdayLocationEvidenceKey(record.label)
+      const group = groups.get(key) || []; group.push(record); groups.set(key, group)
+    }
+    for (const page of snapshot.pages) {
+      requireProof(plain(page) && page.status === 200 && sha(page.sha256) && inCurrentAttempt(page.fetchedAt)
+        && Number.isSafeInteger(page.pageNumber) && page.pageNumber > 0
+        && pageNumber(page.url) === page.pageNumber && !pages.has(page.pageNumber)
+        && page.reportedTotal === snapshot.reportedTotal && Array.isArray(page.worksiteIds)
+        && page.worksiteIds.every(id => ids.has(id) && !covered.has(id) && ids.get(id).sourceUrl === page.url))
+      for (const id of page.worksiteIds) { requireProof(!covered.has(id)); covered.add(id) }
+      pages.set(page.pageNumber, page)
+    }
+    requireProof(covered.size === ids.size && [...pages.keys()].every(n => n >= 1 && n <= pages.size)
+      && Array.from({ length: snapshot.reportedTotal }, (_, i) => i + 1).every(n => positions.has(n)))
+    return groups
+  })
+  requireProof(Math.max(...snapshots[0].pages.map(p => Date.parse(p.fetchedAt)))
+    <= Math.min(...snapshots[1].pages.map(p => Date.parse(p.fetchedAt))))
+  const byLabel = new Map()
+  const stableRecords = records => JSON.stringify(records.map(({ sourceUrl, position, ...record }) => record).sort((a, b) => a.id - b.id))
+  for (const [label, records] of groupSnapshots[0]) {
+    const closing = groupSnapshots[1].get(label)
+    if (!closing || /\b(?:remote|hybrid|global|worldwide|anywhere|unknown|multiple|various)\b/i.test(label)
+      || isGroupedLocationLabel(label) || explicitWorkdayCountryScope(label)
+      || stableRecords(records) !== stableRecords(closing) || records.some(record => !record.country)) continue
+    const codes = new Set(records.map(record => new Intl.Locale('und-' + record.country.alpha2Code).region))
+    if (codes.size !== 1) continue
+    const code = [...codes][0]
+    byLabel.set(label, { label: records[0].label, country: { descriptor: records[0].country.descriptor, alpha2Code: code },
+      scope: code === 'IN' ? 'india' : 'foreign', worksiteIds: records.map(record => record.id).sort((a, b) => a - b),
+      directoryUrl: directory.href, worksiteRecords: structuredClone(records),
+      snapshots: snapshots.map(snapshot => ({ reportedTotal: snapshot.reportedTotal, pages: structuredClone(snapshot.pages) })) })
+  }
+  return { source, jobsApiUrl, boardUrl: baseUrl, directoryUrl: directory.href,
+    corporateReceipt: structuredClone(receipt), verifiedAt: input.verifiedAt, snapshots, byLabel }
+}
 // City-only secondary labels do not carry the primary location's country.
 // These known non-India cities can be excluded independently; unknown campus
 // labels still require current native country evidence from this board.
@@ -1744,7 +1871,7 @@ const buildWorkdayLocationCountryEvidence = candidates => {
   return evidence
 }
 
-const resolveWorkdayScopeLocations = (candidate, countryEvidence, source, countryProof = false) => {
+const resolveWorkdayScopeLocations = (candidate, countryEvidence, source, countryProof = false, worksiteProof = null) => {
   try {
     if (candidate.scopeCountryConflict) throw new Error('CXS primary country fields conflict')
     const info = candidate.scopePayload.jobPostingInfo
@@ -1761,19 +1888,35 @@ const resolveWorkdayScopeLocations = (candidate, countryEvidence, source, countr
     const primaryScope = resolveWorkdayCxsPrimaryCountryScope(info)
     const scopes = locations.map((location, index) => {
       const known = countryEvidence.get(workdayLocationEvidenceKey(location))
+      const worksite = index > 0 ? worksiteProof?.byLabel.get(workdayLocationEvidenceKey(location)) : null
+      if (worksite && known && (known.scope !== worksite.scope || [...known.identifiers].some(value => {
+        if (value.startsWith('code:')) return !hasRecognizedWorkdayCountry({ descriptor: worksite.country.descriptor, alpha2Code: value.slice(5) })
+        if (value.startsWith('name:')) return !hasRecognizedWorkdayCountry({ descriptor: value.slice(5), alpha2Code: worksite.country.alpha2Code })
+        return false
+      }))) throw new Error('CXS typed country conflicts with current source worksite country: ' + location)
       if (countryProof && known?.conflict) throw new Error('CXS location has conflicting current primary-country evidence: ' + location)
       if (countryProof && index === 0 && primaryScope && explicitWorkdayCountryScope(location)
         && primaryScope !== explicitWorkdayCountryScope(location)) throw new Error('CXS location and country fields conflict: ' + location)
       if (index === 0 && primaryScope) return primaryScope
       if (known?.conflict) throw new Error('CXS location has conflicting current primary-country evidence: ' + location)
       if (known) return known.scope
-      if (countryProof) return explicitWorkdayCountryScope(location)
+      if (countryProof) {
+        const explicit = explicitWorkdayCountryScope(location)
+        if (explicit) return explicit
+        if (worksite) {
+          candidate.additionalWorksiteCountryBindings ||= []
+          candidate.additionalWorksiteCountryBindings.push(structuredClone(worksite))
+          return worksite.scope
+        }
+        return null
+      }
       if (isWorkdayJobInPublicIndiaScope({ location })) return 'india'
       if (WORKDAY_NON_INDIA_CITY_LABELS.has(workdayLocationEvidenceKey(location))) return 'foreign'
       if (isClearlyOutsidePublicIndiaScope({ location })) return 'foreign'
       return null
     })
-    if (!scopes.includes('india') && !scopes.every(scope => scope === 'foreign')) {
+    if (worksiteProof && scopes.some(scope => !scope)
+      || !scopes.includes('india') && !scopes.every(scope => scope === 'foreign')) {
       throw Object.assign(new Error('CXS job locations do not establish India or foreign scope: '
         + locations.filter((_location, index) => !scopes[index]).join(' / ')),
       { code: 'WORKDAY_NATIVE_LOCATIONS_UNRESOLVED' })
@@ -1805,6 +1948,7 @@ const runWorkdayJobsApiScraper = async ({
   detailEnrichmentState = { disabled: false, noticeLogged: false },
   detailEnrichmentBudgetMs = null,
   nativeDetailRecovery = null,
+  sourceWorksiteCountryProof = null,
 }) => {
   throwIfAborted(signal)
   const countryProof = config.inventoryScope === 'complete-board-country-proof'
@@ -1821,6 +1965,9 @@ const runWorkdayJobsApiScraper = async ({
   )
   const jobsApiUrl = config.jobsApiUrl
   const detailUrlBase = config.detailUrlBase || baseUrl
+  const worksiteProof = validateWorkdayAdditionalWorksiteProof(sourceWorksiteCountryProof, {
+    source, baseUrl, jobsApiUrl, officialCareersUrl: config.officialCareersUrl, countryProof,
+  })
   // The shared maxPages setting limits DOM traversal; it must not truncate an
   // authoritative Workday API snapshot. An explicit API cap fails closed.
   const maxPages = Number.isInteger(config.workdayMaxPages) && config.workdayMaxPages > 0
@@ -2283,7 +2430,7 @@ const runWorkdayJobsApiScraper = async ({
         continue
       }
       try {
-        const scope = resolveWorkdayScopeLocations(candidate, countryEvidence, source, countryProof)
+        const scope = resolveWorkdayScopeLocations(candidate, countryEvidence, source, countryProof, worksiteProof)
         candidate.scopeLocations = scope.locations
         candidate.scopeIndiaLocations = scope.indiaLocations
         candidate.scopeCountryScopes = scope.countryScopes
@@ -2515,6 +2662,14 @@ const runWorkdayJobsApiScraper = async ({
       } })
       pagesFetched += closingPages
     }
+    if (worksiteProof) Object.defineProperty(allJobs, WORKDAY_ADDITIONAL_WORKSITE_PROOF, { value: {
+      source, directoryUrl: worksiteProof.directoryUrl, corporateReceipt: worksiteProof.corporateReceipt,
+      snapshots: worksiteProof.snapshots, verifiedAt: worksiteProof.verifiedAt,
+      roles: scopeCandidates.map(candidate => ({ url: candidate.canonicalLink,
+        requisitionId: candidate.scopePayload.jobPostingInfo.jobReqId,
+        nativePayload: structuredClone(candidate.scopePayload),
+        additionalWorksiteCountryBindings: candidate.additionalWorksiteCountryBindings || [] })),
+    } })
     if (unresolvedCountryRoles.length) for (const job of allJobs) Object.assign(job, {
       sourceScopeComplete: false, sourceListingComplete: false, lifecycleCleanupAllowed: false,
       sourceUnresolvedCountryRoleCount: unresolvedCountryRoles.length,
@@ -2592,6 +2747,7 @@ export const runWorkdayScraper = async (options) => {
         detailEnrichmentState,
         detailEnrichmentBudgetMs,
         nativeDetailRecovery,
+        sourceWorksiteCountryProof: options.sourceWorksiteCountryProof,
       })
     } catch (error) {
       throwIfAborted(signal)
@@ -2621,6 +2777,7 @@ export const runWorkdayScraper = async (options) => {
         detailEnrichmentState,
         detailEnrichmentBudgetMs,
         nativeDetailRecovery,
+        sourceWorksiteCountryProof: options.sourceWorksiteCountryProof,
       })
     } catch (error) {
       throwIfAborted(signal)

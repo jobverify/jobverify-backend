@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { BOOK_MY_SHOW_CATALOG } from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -25,13 +26,14 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, options = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
   })
 
   return {
@@ -114,20 +116,29 @@ export const hasVerifiedEmptyJobListingShell = (html) => {
 }
 
 export const createBookMyShowScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchPage: providedFetch = defaultFetchPage, signal, onAudit, now = () => new Date().toISOString() } = {}) {
+    const fetchPage = async url => {
+      signal?.throwIfAborted()
+      const response = await providedFetch(url, { signal })
+      signal?.throwIfAborted()
+      if (response?.url !== url) throw new Error('BookMyShow current first-party response identity changed')
+      return response
+    }
     const careersPage = await fetchPage(CAREERS_URL)
     const jobListingPage = await fetchPage(JOB_LISTING_URL)
 
-    if (hasCloudflareBlockSignal(careersPage) && hasCloudflareBlockSignal(jobListingPage)) {
-      return []
+    if ([careersPage, jobListingPage].some(page => Number(page.status) === 403)) {
+      const evidence = { status: 'coverage-gap', surface: CAREERS_URL, firstParty: true, listingComplete: false,
+        pagesFetched: 2, reportedTotal: null, indiaFacetCount: null, verifiedAt: now(), reason: 'official-india-public-recruiting-access-blocked' }
+      await onAudit?.({ source: SOURCE, observations: [{ url: CAREERS_URL, status: careersPage.status },
+        { url: JOB_LISTING_URL, status: jobListingPage.status }], inventoryEvidence: evidence, productionWrites: false })
+      signal?.throwIfAborted()
+      throw Object.assign(new Error('BookMyShow official India public recruiting access blocked; inventory unavailable'),
+        { code: 'BOOKMYSHOW_PUBLIC_ACCESS_BLOCKED', status: 403 })
     }
 
     if (careersPage.status !== 200 || !hasVerifiedCareersShell(careersPage.html)) {
       throw new Error('BookMyShow verified first-party careers page no longer matches the known public surface')
-    }
-
-    if (hasCloudflareBlockSignal(jobListingPage)) {
-      return []
     }
 
     if (extractLikelyJobLinks(jobListingPage.html).length > 0 || hasStructuredJobPostingSignal(jobListingPage.html)) {
@@ -138,7 +149,12 @@ export const createBookMyShowScraper = () => ({
       throw new Error('BookMyShow verified job listing surface no longer matches the known empty-shell contract')
     }
 
-    return []
+    const jobs = [], evidence = { status: 'coverage-gap', surface: JOB_LISTING_URL, firstParty: true, listingComplete: false,
+      pagesFetched: 2, reportedTotal: null, indiaFacetCount: null, verifiedAt: now(), reason: 'listing-shell-without-count-checked-native-india-inventory' }
+    attachInventoryEvidence(jobs, evidence)
+    await onAudit?.({ source: SOURCE, observations: [], inventoryEvidence: evidence, productionWrites: false })
+    signal?.throwIfAborted()
+    return jobs
   },
 })
 

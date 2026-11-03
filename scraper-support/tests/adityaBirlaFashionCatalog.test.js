@@ -13,7 +13,7 @@ const loadAdityaBirlaFashionCatalog = async () => {
   }
 }
 
-test('Aditya Birla Fashion catalog captures the verified zero-opening ABFRL public surface without a shared alias', async () => {
+test('Aditya Birla Fashion catalog captures the runtime-only ABFRL sector and unresolved employer scope without a shared alias', async () => {
   const {
     ADITYA_BIRLA_FASHION_CATALOG,
     default: defaultCatalog,
@@ -36,19 +36,19 @@ test('Aditya Birla Fashion catalog captures the verified zero-opening ABFRL publ
     ADITYA_BIRLA_FASHION_CATALOG.storeManagerOpeningsUrl,
     'https://abfrlcareers.peoplestrong.com/home',
   )
-  assert.equal(ADITYA_BIRLA_FASHION_CATALOG.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(ADITYA_BIRLA_FASHION_CATALOG.atsPlatform, "official-aditya-birla-native-api")
   assert.equal(ADITYA_BIRLA_FASHION_CATALOG.countryFilter, 'India')
   assert.equal(
     ADITYA_BIRLA_FASHION_CATALOG.paginationStrategy,
-    'official-careers-page-plus-zero-vacancy-group-handoffs-plus-broken-store-manager-handoff',
+    "native-sector-page-index-terminal-page-and-closing-criteria-comparison-with-independent-store-scope",
   )
   assert.equal(
     ADITYA_BIRLA_FASHION_CATALOG.extractionStrategy,
-    'verified-official-careers-page+verified-fashion-retail-zero-vacancy-page+verified-group-job-search-zero-vacancy-page+verified-broken-abfrl-store-manager-handoff',
+    "current-corporate-handoffs+hydrated-sector-api+explicit-native-employer-binding+full-criteria+unresolved-sector-records-retained",
   )
   assert.equal(ADITYA_BIRLA_FASHION_CATALOG.parser, 'custom-script')
   assert.equal(ADITYA_BIRLA_FASHION_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(ADITYA_BIRLA_FASHION_CATALOG.verifiedOn, '2026-07-14')
+  assert.equal(ADITYA_BIRLA_FASHION_CATALOG.verifiedOn, null)
   assert.match(ADITYA_BIRLA_FASHION_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.abfrl\.com\/careers\//)
   assert.match(ADITYA_BIRLA_FASHION_CATALOG.verifiedSurfaceSummary, /https:\/\/careers\.adityabirla\.com\/fashion-retail/)
   assert.match(ADITYA_BIRLA_FASHION_CATALOG.verifiedSurfaceSummary, /https:\/\/careers\.adityabirla\.com\/job-search/)

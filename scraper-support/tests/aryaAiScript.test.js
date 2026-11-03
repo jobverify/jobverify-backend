@@ -157,174 +157,34 @@ test('Arya.ai helpers stay pinned to the verified first-party homepage, careers 
   ])
 })
 
-test('Arya.ai run returns the visible first-party role card and preserves the external apply handoff', async () => {
-  const aryaAi = await loadAryaAiModule()
-  const requestedUrls = []
-
-  const jobs = await aryaAi.createAryaAiScraper({
-    now: () => '2026-07-15T00:00:00.000Z',
-  }).run({
+test('Arya.ai current run retains a brief observation instead of promoting it to a full vacancy', async () => {
+  const aryaAi = await loadAryaAiModule(), requestedUrls = [], audits = []
+  const jobs = await aryaAi.createAryaAiScraper({now: () => '2026-07-15T00:00:00.000Z'}).run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
-
-      if (url === aryaAi.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === aryaAi.CAREERS_URL) {
-        return { status: 200, url, html: careersHtml }
-      }
-
-      if (url === aryaAi.SITEMAP_URL) {
-        return { status: 200, url, html: sitemapXml }
-      }
-
-      if (aryaAi.CHECKED_MISSING_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: missingRouteHtml }
-      }
-
-      throw new Error(`Unexpected Arya.ai URL: ${url}`)
-    },
+      if (url === aryaAi.HOMEPAGE_URL) return {status:200,url,html:homepageHtml}
+      if (url === aryaAi.CAREERS_URL) return {status:200,url,html:careersHtml}
+      if (url === aryaAi.VERIFIED_APPLY_URLS[0]) return {status:410,url,html:'<title>Gone</title>'}
+      throw Error('Unexpected public URL: '+url)
+    }, onAudit:a=>audits.push(a),
   })
-
-  assert.deepEqual(requestedUrls, [
-    aryaAi.HOMEPAGE_URL,
-    aryaAi.CAREERS_URL,
-    aryaAi.SITEMAP_URL,
-    ...aryaAi.CHECKED_MISSING_ROUTE_URLS,
-  ])
-  assert.deepEqual(jobs, [
-    {
-      title: 'Senior Data Scientist',
-      company: 'Arya.ai',
-      department: 'Research',
-      location: 'On-site',
-      city: null,
-      country: null,
-      jobId: '3542202-senior-data-scientist',
-      requisitionId: '3542202-senior-data-scientist',
-      sourceUrl: 'https://arya.ai/careers',
-      applyUrl: 'https://wellfound.com/jobs/3542202-senior-data-scientist',
-      employmentType: 'Full Time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription:
-        'As a Senior Research Scientist, you will be responsible for designing and validating the deep learning models that power our core product. You will lead research initiatives to convert theoretical concepts into scalable, production-grade AI modules that solve critical industry challenges.',
-      source: 'aryaai',
-      link: 'https://wellfound.com/jobs/3542202-senior-data-scientist',
-      scrapedAt: '2026-07-15T00:00:00.000Z',
-    },
-  ])
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls,[aryaAi.HOMEPAGE_URL,aryaAi.CAREERS_URL,aryaAi.VERIFIED_APPLY_URLS[0],aryaAi.HOMEPAGE_URL,aryaAi.CAREERS_URL])
+  assert.equal(audits[0].observations.length,1)
+  assert.equal(audits[0].observations[0].jobId,'3542202')
+  assert.equal(audits[0].observations[0].requisitionId,null)
+  assert.equal(audits[0].observations[0].country,null)
+  assert.equal(audits[0].observations[0].sourceDetailComplete,false)
+  assert.equal(audits[0].inventoryEvidence.listingComplete,false)
 })
 
-test('Arya.ai fails closed when the homepage, careers page, sitemap, missing-route topology, or role-card apply handoff drifts', async () => {
-  const aryaAi = await loadAryaAiModule()
-
-  await assert.rejects(
-    aryaAi.createAryaAiScraper().run({
-      fetchPage: async (url) => {
-        if (url === aryaAi.HOMEPAGE_URL) {
-          return { status: 200, url, html: '<html><head><title>Unexpected</title></head><body></body></html>' }
-        }
-
-        throw new Error(`Unexpected Arya.ai URL: ${url}`)
-      },
-    }),
-    /homepage/i,
-  )
-
-  await assert.rejects(
-    aryaAi.createAryaAiScraper().run({
-      fetchPage: async (url) => {
-        if (url === aryaAi.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: homepageHtml.replace('https://arya.ai/careers', 'https://arya.ai/jobs'),
-          }
-        }
-
-        throw new Error(`Unexpected Arya.ai URL: ${url}`)
-      },
-    }),
-    /homepage careers link/i,
-  )
-
-  await assert.rejects(
-    aryaAi.createAryaAiScraper().run({
-      fetchPage: async (url) => {
-        if (url === aryaAi.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === aryaAi.CAREERS_URL) {
-          return {
-            status: 200,
-            url,
-            html: careersHtml.replace(
-              'https://wellfound.com/jobs/3542202-senior-data-scientist',
-              'https://example.com/jobs/senior-data-scientist',
-            ),
-          }
-        }
-
-        throw new Error(`Unexpected Arya.ai URL: ${url}`)
-      },
-    }),
-    /careers page/i,
-  )
-
-  await assert.rejects(
-    aryaAi.createAryaAiScraper().run({
-      fetchPage: async (url) => {
-        if (url === aryaAi.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === aryaAi.CAREERS_URL) {
-          return { status: 200, url, html: careersHtml }
-        }
-
-        if (url === aryaAi.SITEMAP_URL) {
-          return { status: 200, url, html: '<urlset></urlset>' }
-        }
-
-        throw new Error(`Unexpected Arya.ai URL: ${url}`)
-      },
-    }),
-    /sitemap/i,
-  )
-
-  await assert.rejects(
-    aryaAi.createAryaAiScraper().run({
-      fetchPage: async (url) => {
-        if (url === aryaAi.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === aryaAi.CAREERS_URL) {
-          return { status: 200, url, html: careersHtml }
-        }
-
-        if (url === aryaAi.SITEMAP_URL) {
-          return { status: 200, url, html: sitemapXml }
-        }
-
-        if (aryaAi.CHECKED_MISSING_ROUTE_URLS.includes(url)) {
-          return {
-            status: url === aryaAi.CHECKED_MISSING_ROUTE_URLS[0] ? 200 : 404,
-            url,
-            html: url === aryaAi.CHECKED_MISSING_ROUTE_URLS[0] ? careersHtml : missingRouteHtml,
-          }
-        }
-
-        throw new Error(`Unexpected Arya.ai URL: ${url}`)
-      },
-    }),
-    /missing careers route changed/i,
-  )
+test('Arya.ai holds changed homepage identity, active careers handoff and exact native role URL', async () => {
+  const aryaAi=await loadAryaAiModule()
+  for(const variant of ['homepage','careers-link','native-link']){
+    await assert.rejects(aryaAi.run({fetchPage:async url=>{
+      if(url===aryaAi.HOMEPAGE_URL)return{status:200,url,html:variant==='homepage'?'<title>Unexpected</title>':variant==='careers-link'?homepageHtml.replace('https://arya.ai/careers','https://arya.ai/jobs'):homepageHtml}
+      if(url===aryaAi.CAREERS_URL)return{status:200,url,html:careersHtml.replace('https://wellfound.com/jobs/3542202-senior-data-scientist','https://example.com/jobs/3542202')}
+      throw Error('Unqualified handoff was fetched')
+    }}))
+  }
 })

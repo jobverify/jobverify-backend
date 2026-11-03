@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {nativeFixture} from '../alkemlaboratories/nativeFixture.js'
+import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+const fixture=nativeFixture(import.meta.url)
+globalThis.fetch=async()=>{throw Error('OFFLINE Amura native source tripwire')}
 
 const loadModule = async () => {
   try {
@@ -50,7 +54,7 @@ const changedJobsHtml = `
   </html>
 `
 
-test('Amura Health scraper recognizes the verified jobs blog surface and known non-role post', async () => {
+test('Amura Health preliminary blog identity and title cannot establish a non-role vacancy inventory', async () => {
   const amura = await loadModule()
   assert.ok(amura, 'Amura Health scraper module should load')
 
@@ -66,26 +70,28 @@ test('Amura Health scraper recognizes the verified jobs blog surface and known n
   assert.equal(JOBS_PAGE_URL, 'https://amura.ai/jobs/')
   assert.equal(hasVerifiedJobsBlogSurface(jobsBlogHtml), true)
   assert.deepEqual(extractPublicPostTitles(jobsBlogHtml), ['Growth is addictive'])
-  assert.equal(hasKnownNonRolePostsOnly(jobsBlogHtml), true)
+  assert.equal(hasKnownNonRolePostsOnly(jobsBlogHtml), false)
 })
 
-test('Amura Health scraper returns no jobs while the public jobs blog has only the verified non-role post', async () => {
+test('Amura Health retains current full public editorial while returning explicitly unverified vacancy inventory', async () => {
   const amura = await loadModule()
   assert.ok(amura, 'Amura Health scraper module should load')
 
-  const { JOBS_PAGE_URL, createAmuraHealthScraper } = amura
+  const { createAmuraHealthScraper } = amura
 
   const requestedUrls = []
   const jobs = await createAmuraHealthScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      assert.equal(url, JOBS_PAGE_URL)
-      return jobsBlogHtml
+      return fixture.get(url)
     },
   })
 
-  assert.deepEqual(requestedUrls, [JOBS_PAGE_URL])
+  assert.equal(requestedUrls.filter(url=>url==='https://amura.ai/jobs/').length,2)
+  assert.equal(requestedUrls.filter(url=>url==='https://amura.ai/jobs/2023/10/04/growth-is-addictive/').length,2)
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
 })
 
 test('Amura Health scraper fails loudly when the public jobs surface changes', async () => {
@@ -98,13 +104,13 @@ test('Amura Health scraper fails loudly when the public jobs surface changes', a
     createAmuraHealthScraper().run({
       fetchText: async () => '<html><title>Home</title></html>',
     }),
-    /verified official public surface/i,
+    /employer identity|official public jobs/i,
   )
 
   await assert.rejects(
     createAmuraHealthScraper().run({
-      fetchText: async () => changedJobsHtml,
+      fetchText: async url => url==='https://amura.ai/jobs/'?fixture.get(url)+'<script type="application/ld+json">{"@type":"JobPosting","title":"Backend Engineer"}</script>':fixture.get(url),
     }),
-    /new or structured openings/i,
+    /public native role|collector/i,
   )
 })

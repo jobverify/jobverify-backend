@@ -9,12 +9,14 @@ test('Adani Cement is registered against the official Adani careers page', () =>
   assert.ok(provider)
   assert.equal(provider.companyName, 'Adani Cement')
   assert.equal(provider.companyCareerPage, 'https://www.adani.com/careers')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'official-company-group-handoff')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-careers-page-plus-cement-business-signal-dynamic-handoff-no-public-listings',
+    'corporate-subsidiary-binding+current-native-handoff-inspection+explicit-unresolved-Cement-scope-no-parent-substitution',
   )
   assert.equal(provider.companyDomain, 'adani.com')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false)
   assert.match(provider.modulePath, /adanicement[\\/]script\.js$/i)
 })
 

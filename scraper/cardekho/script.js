@@ -83,13 +83,14 @@ const assertOfficialCareersSurface = (html) => {
   return darwinboxUrl
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'cardekho-official',
   timeoutMs: 15000,
+  signal,
 })
 
 export const createCarDekhoScraper = ({
@@ -99,18 +100,24 @@ export const createCarDekhoScraper = ({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
     fetchListingPage,
+    ...darwinboxOptions
   } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    const { signal } = darwinboxOptions
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL, { signal })
+    signal?.throwIfAborted()
     assertOfficialCareersSurface(careersHtml)
 
     if (!fetchListingPage) {
       return darwinboxScraper.run({
+        ...darwinboxOptions,
         maxPages,
         maxJobs,
       })
     }
 
     return darwinboxScraper.run({
+      ...darwinboxOptions,
       maxPages,
       maxJobs,
       fetchListingPage,

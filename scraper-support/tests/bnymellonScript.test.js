@@ -27,7 +27,7 @@ const sampleDetailPayload = {
   PostedDate: '2026-06-29',
   PrimaryLocation: 'Pune, MH, India',
   PrimaryLocationCountry: 'IN',
-  ExternalDescriptionStr: '<p>Build and support full-stack platforms for enterprise workflows.</p>',
+  ExternalDescriptionStr: '<p>Build and support full-stack platforms for enterprise workflows. Collaborate with engineers to design, test and operate reliable customer services.</p>',
   ExternalQualificationsStr: '<ul><li>2-6 years of software engineering experience</li><li>Bachelor degree in computer science</li></ul>',
 }
 
@@ -83,7 +83,7 @@ test('extractSearchResults normalizes BNY Oracle Cloud requisitions and keeps on
     requisitionId: '74699',
     sourceUrl: 'https://eofe.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/BNY-Careers/job/74699/',
     applyUrl: 'https://eofe.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/BNY-Careers/job/74699/',
-    employmentType: 'Full-time',
+    employmentType: null,
     experienceRequired: null,
     minimumQualification: null,
     preferredQualification: null,
@@ -121,7 +121,7 @@ test('extractJobDetail derives experience from BNY Oracle detail qualifications'
     requiredSkills: [],
     postingDate: '2026-06-29',
     closingDate: null,
-    jobDescription: 'Build and support full-stack platforms for enterprise workflows. 2-6 years of software engineering experience Bachelor degree in computer science',
+    jobDescription: 'Build and support full-stack platforms for enterprise workflows. Collaborate with engineers to design, test and operate reliable customer services. 2-6 years of software engineering experience Bachelor degree in computer science',
   })
 })
 
@@ -135,10 +135,16 @@ test('run paginates BNY Oracle Cloud pages, hydrates detail, and decorates share
     maxJobs: 1,
     fetchImpl: async (url) => {
       requests.push(url)
+      if (url === bny.OFFICIAL_CAREERS_URL) return { ok: true, text: async () => `<a href="${bny.PUBLIC_SITE_URL}">Explore jobs</a>` }
+      if (url === bny.PUBLIC_SITE_URL) return { ok: true, text: async () => '<base href="/hcmUI/CandidateExperience/en/sites/BNY-Careers" data-sitenumber="CX_3001">' }
       if (url === bny.buildSearchUrl()) {
         return {
           ok: true,
-          json: async () => readJsonFixture('search-results.json'),
+          json: async () => {
+            const payload = readJsonFixture('search-results.json')
+            Object.assign(payload.items[0], { SiteNumber: 'CX_3001', Offset: 0 })
+            return payload
+          },
         }
       }
       if (url === bny.buildJobDetailApiUrl('74699')) {
@@ -152,8 +158,13 @@ test('run paginates BNY Oracle Cloud pages, hydrates detail, and decorates share
   })
 
   assert.deepEqual(requests, [
+    bny.OFFICIAL_CAREERS_URL,
+    bny.PUBLIC_SITE_URL,
     bny.buildSearchUrl(),
     bny.buildJobDetailApiUrl('74699'),
+    bny.buildSearchUrl(),
+    bny.OFFICIAL_CAREERS_URL,
+    bny.PUBLIC_SITE_URL,
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'bnymellon')

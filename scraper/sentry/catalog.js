@@ -12,16 +12,23 @@ export const SENTRY_CATALOG = {
   dryRunFile: 'sentry/jobs.json',
   companyCareerPage: 'https://sentry.io/careers',
   companyDomain: 'sentry.io',
-  atsPlatform: 'official-first-party-careers-page',
+  atsPlatform: 'official-sentry-careers-ashby',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-open-roles-page-current-empty-india-slice',
+  paginationStrategy: 'full-native-board-and-corporate-hydration-with-closing-comparison-before-caps',
   extractionStrategy:
-    'verified-first-party-open-roles-page+same-domain-role-links+return-empty-when-no-india-locations',
-  parser: 'custom-script',
+    'active-OpeningsStickySection-Astro+own-Ashby-role-binding+full-native-criteria-and-country-proof',
+  parser: 'current-company-and-native-ats',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-25',
+  verifiedOn: null,
+  verifiedAt: null,
+  verifiedPublicJobCount: null,
+  verifiedIndiaJobCount: null,
+  verifiedInventoryStatus: 'discovery-only',
+  sourceScopeComplete: false,
+  sourceListingComplete: false,
+  lifecycleCleanupAllowed: false,
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 25, 2026 that https://sentry.io/careers was the live first-party Sentry careers page, that its inline openings list exposed 48 open positions on same-domain UUID-based /careers/{id}/ detail links, and that the visible role locations covered San Francisco, Toronto, Vienna, Sydney, Amsterdam, and New York City with zero India locations.',
+    'Current Sentry corporate careers publishes its active OpeningsStickySection Astro model with employer-bound Ashby application links and full visible job criteria. Runtime reconciles all corporate and native posting identities, countries, full descriptions and publishedAt dates, then verifies closing native and corporate inventories before caps. Missing role-owned native countries remain unresolved; neither a city nor employer headquarters authorizes a verified India zero or source cleanup.',
 }
 
 export default SENTRY_CATALOG

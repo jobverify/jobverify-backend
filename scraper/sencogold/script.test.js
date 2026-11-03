@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { getScraperCatalog } from '../../scraper-support/providers/index.js'
@@ -32,7 +35,7 @@ test('Senco Gold matches the exact company name through the shared catalog', () 
   )
 })
 
-test('Senco Gold stays fail-closed for the verified form-only careers surface', async () => {
+test('Senco Gold retains the legacy form recognizer while current CV intake stays incomplete', async () => {
   assert.equal(
     hasVerifiedFormOnlySurface({ status: 200, url: CAREERS_URL, html: verifiedCareerPage }),
     true,
@@ -47,19 +50,19 @@ test('Senco Gold stays fail-closed for the verified form-only careers surface', 
   )
 
   const jobs = await createSencoGoldScraper().run({
-    fetchPage: async () => ({ status: 200, url: CAREERS_URL, html: verifiedCareerPage }),
+    fetchPage: async () => ({status:200,url:CAREERS_URL,html:gunzipSync(readFileSync(new URL('./test-data/current-20261103/career.html.gz',import.meta.url))).toString('utf8')}),
   })
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
 })
 
-test('Senco Gold stays fail-closed when the verified careers page certificate is expired', async () => {
-  const jobs = await createSencoGoldScraper().run({
+test('Senco Gold preserves a certificate failure instead of a successful empty return', async () => {
+  await assert.rejects(createSencoGoldScraper().run({
     fetchPage: async () => {
       const error = new Error('fetch failed')
       error.cause = new Error('certificate has expired')
       throw error
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }),error=>error.cause?.message==='certificate has expired')
 })

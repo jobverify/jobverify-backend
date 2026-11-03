@@ -3,6 +3,10 @@ import { fileURLToPath } from 'node:url'
 
 import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { currentAindraAppEntry, extractCurrentAindraBriefs } from './currentApp.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 
 import { AINDRA_SYSTEMS_CATALOG } from './catalog.js'
 
@@ -222,7 +226,7 @@ export const extractOpenings = (html, { sourceUrl = HOMEPAGE_URL } = {}) => {
   return openings
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -230,6 +234,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
+  signal,
 })
 
 export const isTrustedUnavailableFailure = (error) => {
@@ -260,26 +265,31 @@ const isBrowserFallbackError = (error) =>
 export const createAindraSystemsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText, now: overrideNow } = {}) {
+  async run({ fetchText = defaultFetchText, fetchBrowserText, now: overrideNow, signal, onAudit } = {}) {
+    signal?.throwIfAborted()
     let browserSession = null
 
     const getBrowserSession = async () => {
       if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT, signal })
       }
 
       return browserSession
     }
 
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
+    const browserTextFetcher = fetchBrowserText || (async (url, options) => {
       const session = await getBrowserSession()
-      return session.fetchText(url)
+      return session.fetchText(url, options)
     })
 
     const fetchPageText = async (url) => {
+      signal?.throwIfAborted()
       try {
-        return await fetchText(url)
+        const html = await fetchText(url, { signal })
+        signal?.throwIfAborted()
+        return html
       } catch (error) {
+        signal?.throwIfAborted()
         if (isTrustedUnavailableFailure(error)) {
           throw error
         }
@@ -288,29 +298,46 @@ export const createAindraSystemsScraper = ({
           throw error
         }
 
-        return browserTextFetcher(url)
+        const html = await browserTextFetcher(url, { signal })
+        signal?.throwIfAborted()
+        return html
+      }
+    }
+
+    // Only transport failures describe an unavailable host. Parser, clock and
+    // audit callback errors must remain visible to the caller.
+    const readTrustedHost = async url => {
+      try { return { html: await fetchPageText(url) } }
+      catch (error) {
+        signal?.throwIfAborted()
+        if (isTrustedUnavailableFailure(error)) return { unavailable: true }
+        throw error
       }
     }
 
     try {
       for (const url of CANDIDATE_HOMEPAGE_URLS) {
-        try {
-          const homepageHtml = await fetchPageText(url)
-          const jobs = extractOpenings(homepageHtml, { sourceUrl: url })
-
-          return jobs.map((job) => ({
-            ...job,
-            source: SOURCE,
-            link: job.applyUrl || job.sourceUrl,
-            scrapedAt: (overrideNow || now)(),
-          }))
-        } catch (error) {
-          if (isTrustedUnavailableFailure(error)) {
-            continue
-          }
-
-          throw error
+        const homepage = await readTrustedHost(url)
+        if (homepage.unavailable) continue
+        const entry = currentAindraAppEntry(homepage.html, url)
+        if (entry) {
+          const client = await readTrustedHost(entry)
+          if (client.unavailable) continue
+          const briefs = extractCurrentAindraBriefs(client.html, { sourceUrl: url, now: overrideNow || now })
+          // Native card labels alone cannot establish an India vacancy with
+          // full criteria. Keep these observations outside persistence rows.
+          const jobs = briefs.filter(job => job.country === 'India' && hasSourceDescription(job))
+          attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows',
+            observedRecordCount: briefs.length, observedVacancyCount: briefs.length, sourceScopeComplete: false })
+          attachInventoryEvidence(jobs, readInventoryEvidence(briefs))
+          await onAudit?.({ source: SOURCE, nativeBriefs: structuredClone(briefs),
+            inventoryEvidence: readInventoryEvidence(briefs), productionWrites: false })
+          signal?.throwIfAborted()
+          return jobs
         }
+        const jobs = extractOpenings(homepage.html, { sourceUrl: url })
+        return jobs.map((job) => ({ ...job, source: SOURCE, link: job.applyUrl || job.sourceUrl,
+          scrapedAt: (overrideNow || now)() }))
       }
 
       return []

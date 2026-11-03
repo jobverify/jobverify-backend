@@ -20,9 +20,11 @@ export const LINEAR_CATALOG = {
   dryRunFile: 'linear/jobs.json',
   verifiedOn: null,
   sourceScopeComplete: false,
+  sourceCompanyWideScopeComplete: false,
+  lifecycleCleanupAllowed: false,
   zeroResultPolicy: 'evidence-required',
   verifiedSurfaceSummary:
-    'The current careers component binds grouped native Ashby role identities and public application URLs. The checked public board and native geography are reconciled at runtime. Whole-company scope and lifecycle cleanup remain unverified; a checked-board zero is not company-wide absence.',
+    'The current careers component binds grouped native Ashby role identities and public application URLs. Runtime can qualify the configured board when every advertised identity, native worksite, full public criterion and closing payload reconciles. Unknown or conflicting countries, unreviewed public fields, missing criteria and changed closing records retain partial evidence. Company totals and lifecycle cleanup remain unknown independently of configured-board completion.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

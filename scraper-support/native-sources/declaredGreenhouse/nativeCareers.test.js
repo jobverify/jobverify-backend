@@ -5,8 +5,6 @@ import * as banyansoftware from '../../../scraper/banyansoftware/script.js'
 import * as doximity from '../../../scraper/doximity/script.js'
 import * as elationhealth from '../../../scraper/elationhealth/script.js'
 import * as eqtcorporation from '../../../scraper/eqtcorporation.workday/script.js'
-import * as buildkite from '../../../scraper/buildkite/script.js'
-import * as tripadvisor from '../../../scraper/tripadvisor/script.js'
 import * as prophecy from '../../../scraper/prophecy/script.js'
 import * as dutchie from '../../../scraper/dutchie/script.js'
 import * as biofourmis from '../../../scraper/biofourmis/script.js'
@@ -18,7 +16,13 @@ import { readInventoryEvidence } from '../../utils/inventoryEvidence.js'
 globalThis.fetch = async () => { throw Error('Offline original-entity controls prohibit all network and website execution') }
 // FT's reusable channel profile is tested here; its broader registered source
 // has separate original-entity traversal tests in financialtimes/native.test.js.
-const sources = { banyansoftware, doximity, elationhealth, eqtcorporation, buildkite, tripadvisor, prophecy, dutchie, biofourmis,
+// Buildkite/Tripadvisor's current source wrappers additionally prove the active
+// public client and a final post-detail traversal with Nov03 original fixtures.
+// This archived cohort keeps exercising the unchanged reusable engine and all
+// original native identity/content/date assertions below.
+const sources = { banyansoftware, doximity, elationhealth, eqtcorporation,
+  buildkite:createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES.buildkite),
+  tripadvisor:createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES.tripadvisor), prophecy, dutchie, biofourmis,
   'financialtimes-channel-only':createNativeGreenhouseScraper(NATIVE_GREENHOUSE_PROFILES.financialtimes) }
 
 // The Oct31 cohort predates Biofourmis's additional departments scope read.

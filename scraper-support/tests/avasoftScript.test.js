@@ -108,7 +108,7 @@ test('Avasoft exported run excludes current dormant cards and preserves partial 
   const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
   const options = avasoftNativeOptions(), jobs = await avasoft.run(options)
   assert.equal(jobs.length, 0)
-  assert.equal(options.calls.length, 18)
+  assert.equal(options.calls.length, 20)
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
 })
 

@@ -36,7 +36,7 @@ const detailHtml = `
 </main>
 `
 
-test('extractListings maps ASIP careers cards to shared job fields', () => {
+test('archived ASIP cards retain unknown country and requisition identity', () => {
   const jobs = extractListings(careersHtml)
 
   assert.deepEqual(jobs, [
@@ -44,11 +44,11 @@ test('extractListings maps ASIP careers cards to shared job fields', () => {
       title: 'End-of-Line (EOL) Manager',
       company: 'ASIP Technologies',
       department: 'Engineering',
-      location: 'Hyderabad, India',
+      location: 'Hyderabad',
       city: 'Hyderabad',
-      country: 'India',
+      country: null,
       jobId: 'end-of-line-eol-manager',
-      requisitionId: 'end-of-line-eol-manager',
+      requisitionId: null,
       sourceUrl: 'https://asip-tech.com/career/end-of-line-eol-manager/',
       applyUrl: 'https://asip-tech.com/career/end-of-line-eol-manager/',
       employmentType: 'Full Time',
@@ -64,11 +64,11 @@ test('extractListings maps ASIP careers cards to shared job fields', () => {
       title: 'DFT Architect, Sr. DFT Engineer, DFT Engineer',
       company: 'ASIP Technologies',
       department: 'Engineering',
-      location: 'Hyderabad, India',
+      location: 'Hyderabad',
       city: 'Hyderabad',
-      country: 'India',
+      country: null,
       jobId: 'test',
-      requisitionId: 'test',
+      requisitionId: null,
       sourceUrl: 'https://asip-tech.com/career/test/',
       applyUrl: 'https://asip-tech.com/career/test/',
       employmentType: 'Full Time',
@@ -83,11 +83,11 @@ test('extractListings maps ASIP careers cards to shared job fields', () => {
   ])
 })
 
-test('run fetches ASIP listings and enriches them from first-party detail pages', async () => {
+test('run refuses archived card markup that cannot establish the current native inventory', async () => {
   const requestedUrls = []
   const scraper = createAsipTechnologiesScraper()
 
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === CAREERS_PAGE_URL) return careersHtml
@@ -95,16 +95,9 @@ test('run fetches ASIP listings and enriches them from first-party detail pages'
       if (url === 'https://asip-tech.com/career/test/') return detailHtml.replace('End-of-Line (EOL) Manager', 'DFT Architect, Sr. DFT Engineer, DFT Engineer')
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), /native listing container/)
 
   assert.deepEqual(requestedUrls, [
     CAREERS_PAGE_URL,
-    'https://asip-tech.com/career/end-of-line-eol-manager/',
-    'https://asip-tech.com/career/test/',
   ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'asiptechnologies')
-  assert.equal(jobs[0].link, 'https://asip-tech.com/career/end-of-line-eol-manager/')
-  assert.equal(jobs[0].jobDescription, 'Oversee End-of-Line operations and lead the production team.')
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
 })

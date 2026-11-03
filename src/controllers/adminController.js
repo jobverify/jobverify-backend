@@ -523,6 +523,41 @@ export const updateUserRole = async (req, res) => {
   }
 };
 
+// Updates the administrator-managed Telegram permission independently of opt-in.
+export const updateUserTelegramAccess = async (req, res) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid user ID" });
+    }
+    if (typeof req.body?.enabled !== "boolean") {
+      return res.status(400).json({ success: false, message: "enabled must be a boolean" });
+    }
+    // Update only the administrative permission; a concurrent member save of
+    // their Telegram preferences cannot overwrite this separate field.
+    const user = await User.findOneAndUpdate(
+      { _id: req.params.id },
+      { $set: { telegramAlertsAllowed: req.body.enabled } },
+      { new: true, runValidators: true },
+    );
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    await AdminAudit.create({
+      admin: req.user._id,
+      action: "updateUserTelegramAccess",
+      targetType: "User",
+      targetId: user._id,
+      details: `Telegram alerts access ${user.telegramAlertsAllowed ? "enabled" : "disabled"}`,
+    });
+    return res.status(200).json({
+      success: true,
+      data: { id: user._id, telegramAlertsAllowed: user.telegramAlertsAllowed },
+    });
+  } catch (err) {
+    return respondWithAdminInternalError(res, err);
+  }
+};
+
 // Updates a user's plan role and premium expiry, with automatic expiry defaults for paid plans.
 export const updateUserAccess = async (req, res) => {
   try {

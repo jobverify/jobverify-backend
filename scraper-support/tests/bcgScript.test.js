@@ -132,6 +132,7 @@ test('run keeps BCG jobs on the official Phenom route and decorates shared runne
   assert.deepEqual(requestedUrls, [
     'https://careers.bcg.com/global/en/search-results',
     'https://careers.bcg.com/global/en/job/58414/Office-Operations-Coordinator',
+    'https://careers.bcg.com/global/en/search-results',
   ])
   assert.equal(jobs.length, 1)
   assert.deepEqual({ ...jobs[0], scrapedAt: 'ignored' }, {

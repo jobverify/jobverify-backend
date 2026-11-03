@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { AMAZE_CATALOG } from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -16,6 +17,7 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const ABOUT_PAGE_URL = PROVIDER_METADATA.aboutPageUrl
 export const CONTACT_PAGE_URL = PROVIDER_METADATA.contactPageUrl
 export const BROKEN_CAREERS_HANDOFF_URL = PROVIDER_METADATA.brokenCareersHandoffUrl
+export const NATIVE_POSTINGS_URL = 'https://api.lever.co/v0/postings/amaze?mode=json'
 export const CAREERS_ROUTE_URLS = [
   'https://amaze.co/careers',
   'https://amaze.co/jobs',
@@ -80,8 +82,9 @@ const getExpectedRouteFinalUrl = (routeUrl) => {
   return routeUrl
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -175,7 +178,22 @@ export const hasVerifiedBrokenLeverBoardSurface = (page = {}) => {
 }
 
 export const createAmazeScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run(options = {}) {
+    const signal = AbortSignal.any([AbortSignal.timeout(90000), ...(options.signal ? [options.signal] : [])])
+    signal.throwIfAborted()
+    let pagesFetched = 0
+    const fetchPage = async url => {
+      signal.throwIfAborted(); pagesFetched++
+      const promise = (options.fetchPage || defaultFetchPage)(url, { signal })
+      const page = await new Promise((resolve, reject) => {
+        const finish = (fn, value) => { signal.removeEventListener('abort', abort); fn(value) }
+        const abort = () => finish(reject, signal.reason)
+        signal.addEventListener('abort', abort, { once: true })
+        Promise.resolve(promise).then(value => finish(resolve, value), error => finish(reject, error))
+        if (signal.aborted) abort()
+      })
+      signal.throwIfAborted(); return page
+    }
     const homepage = await fetchPage(HOMEPAGE_ENTRY_URL)
     if (
       Number(homepage.status) !== 200
@@ -222,7 +240,20 @@ export const createAmazeScraper = () => ({
       throw new Error('Amaze verified careers handoff changed materially')
     }
 
-    return []
+    const native = await fetchPage(NATIVE_POSTINGS_URL)
+    let payload
+    try { payload = JSON.parse(native.html) } catch { throw Error('Amaze native postings API did not publish its expected current response') }
+    if (native.status !== 404 || native.url !== NATIVE_POSTINGS_URL || payload?.ok !== false || payload.error !== 'Document not found') {
+      throw Error('Amaze current native postings inventory changed and requires native job extraction')
+    }
+    const closingHome = await fetchPage(HOMEPAGE_ENTRY_URL), closingBoard = await fetchPage(BROKEN_CAREERS_HANDOFF_URL)
+    if (closingHome.status !== 200 || !sameUrl(closingHome.url, HOMEPAGE_URL) || !hasOfficialHomepageSignal(closingHome.html)
+      || !sameUrl(closingBoard.url, BROKEN_CAREERS_HANDOFF_URL) || !hasVerifiedBrokenLeverBoardSurface(closingBoard)) {
+      throw Error('Amaze official careers handoff or board changed during the current check')
+    }
+    return attachInventoryEvidence([], { firstParty: true, surface: BROKEN_CAREERS_HANDOFF_URL,
+      status: 'coverage-gap', listingComplete: false, reportedTotal: null, indiaFacetCount: null, pagesFetched,
+      verifiedAt: new Date().toISOString(), reason: 'Current official homepage declares the same Lever tenant at opening and closing; board404 and native API404 prevent observing its native inventory, role countries and full criteria; unknown totals' })
   },
 })
 

@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { runCurrentCashfree } from './currentKula.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -83,35 +84,8 @@ export const hasPublicJobsSignal = (value) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
 
 export const createCashfreePaymentsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Cashfree Payments homepage no longer matches the verified official surface')
-    }
-
-    const careers = await fetchPage(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersSignal(careers.html) || hasPublicJobsSignal(careers.html)) {
-      throw new Error('Cashfree Payments careers page no longer matches the verified email-only careers surface')
-    }
-
-    const sitemap = await fetchPage(SITEMAP_URL)
-    if (!hasOfficialSitemapSignal(sitemap.html)) {
-      throw new Error('Cashfree Payments sitemap no longer matches the verified official surface')
-    }
-
-    for (const url of NO_PUBLIC_ROUTE_URLS) {
-      const route = await fetchPage(url)
-
-      if (hasPublicJobsSignal(route.html)) {
-        throw new Error(`Cashfree Payments checked route now exposes public job listings: ${url}`)
-      }
-
-      if (Number(route.status) < 400) {
-        throw new Error(`Cashfree Payments verified blocked route changed: ${url}`)
-      }
-    }
-
-    return []
+  async run(options = {}) {
+    return runCurrentCashfree(options)
   },
 })
 

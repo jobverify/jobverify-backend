@@ -1,3 +1,4 @@
+import { createAmpereNativeScraper } from './native.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -8,8 +9,6 @@ export const COMPANY = 'Ampere Computing'
 export const CAREER_PAGE_URL = 'https://careers.amperecomputing.com/'
 export const SEARCH_URL = 'https://careers.amperecomputing.com/search/jobs'
 export const INDIA_SEARCH_URL = 'https://careers.amperecomputing.com/search/jobs/in/country/india'
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -40,16 +39,6 @@ const getHeader = (page = {}, name) => {
     return String(headers.get(normalizedName) || headers.get(name) || '')
   }
   return String(headers[normalizedName] || headers[name] || '')
-}
-
-const parseLocation = (value) => {
-  const location = normalizeWhitespace(value)
-  const parts = location?.split(',').map(normalizeWhitespace).filter(Boolean) || []
-  return {
-    location,
-    city: parts[0] || null,
-    country: parts.at(-1) || null,
-  }
 }
 
 const extractLabeledText = (html, className) => stripTags(
@@ -130,48 +119,6 @@ export const hasOfficialSearchResultsSignal = (html = '') => {
     || hasLegacyVerifiedListings
 }
 
-const extractJsonLd = (html) => {
-  const raw = String(html ?? '').match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i)?.[1]
-  if (!raw) return null
-
-  try {
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed.find((entry) => entry?.['@type'] === 'JobPosting') : parsed
-  } catch {
-    return null
-  }
-}
-
-const normalizeEmploymentType = (value) => {
-  const normalized = normalizeWhitespace(value)?.toLowerCase()
-  if (!normalized) return null
-  if (normalized.includes('full')) return 'Full-time'
-  if (normalized.includes('part')) return 'Part-time'
-  if (normalized.includes('contract')) return 'Contract'
-  if (normalized.includes('intern')) return 'Internship'
-  return normalizeWhitespace(value)
-}
-
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
-      Referer: CAREER_PAGE_URL,
-    },
-    redirect: 'follow',
-    signal: AbortSignal.timeout(30000),
-  })
-
-  return {
-    status: response.status,
-    url: response.url || url,
-    headers: Object.fromEntries(response.headers.entries()),
-    html: await response.text(),
-  }
-}
-
 export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
   const html = getPageHtml(page)
   const text = normalizeWhitespace(html) || ''
@@ -192,121 +139,7 @@ export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
     && hasVerifiedCloudflareChallengeSignal(page)
 }
 
-const createFetchPageFromText = (fetchText) => async (url) => ({
-  status: 200,
-  url,
-  headers: {},
-  html: await fetchText(url),
-})
-
-const buildJobRecord = (listing, detail, now) => {
-  const parsedLocation = parseLocation(
-    detail.jobLocation?.address
-      ? [
-          detail.jobLocation.address.addressLocality,
-          detail.jobLocation.address.addressRegion,
-          detail.jobLocation.address.addressCountry,
-        ].filter(Boolean).join(', ')
-      : listing.location,
-  )
-
-  return {
-    title: normalizeWhitespace(detail.title) || listing.title,
-    company: COMPANY,
-    location: parsedLocation.location,
-    city: parsedLocation.city,
-    country: parsedLocation.country,
-    link: listing.sourceUrl,
-    applyUrl: listing.sourceUrl,
-    sourceUrl: listing.sourceUrl,
-    source: SOURCE,
-    jobId: listing.jobId,
-    requisitionId: listing.jobId,
-    department: listing.category,
-    employmentType: normalizeEmploymentType(detail.employmentType),
-    experienceRequired: null,
-    postingDate: normalizeWhitespace(detail.datePosted),
-    closingDate: normalizeWhitespace(detail.validThrough),
-    jobDescription: stripTags(detail.description),
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    remoteStatus: 'On-site',
-    scrapedAt: now(),
-  }
-}
-
-const hydrateListings = async (listings, { fetchPage, now }) => {
-  const jobs = []
-
-  for (const listing of listings) {
-    const detailPage = await fetchPage(listing.sourceUrl)
-    if (isVerifiedCloudflareChallengedPage(detailPage, listing.sourceUrl)) {
-      throw new Error('Ampere Computing job detail page no longer matches the verified first-party contract')
-    }
-
-    const detail = extractJsonLd(getPageHtml(detailPage)) || {}
-    jobs.push(buildJobRecord(listing, detail, now))
-  }
-
-  return jobs
-}
-
-export const createAmpereComputingScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({ fetchPage, fetchText } = {}) {
-    const effectiveFetchPage = typeof fetchPage === 'function'
-      ? fetchPage
-      : typeof fetchText === 'function'
-        ? createFetchPageFromText(fetchText)
-        : defaultFetchPage
-
-    const searchPage = await effectiveFetchPage(SEARCH_URL)
-    const searchHtml = getPageHtml(searchPage)
-
-    if (isVerifiedCloudflareChallengedPage(searchPage, SEARCH_URL)) {
-      const indiaSearchPage = await effectiveFetchPage(INDIA_SEARCH_URL)
-      if (isVerifiedCloudflareChallengedPage(indiaSearchPage, INDIA_SEARCH_URL)) {
-        return []
-      }
-
-      const indiaSearchHtml = getPageHtml(indiaSearchPage)
-      if (!hasOfficialSearchResultsSignal(indiaSearchHtml)) {
-        throw new Error('Ampere Computing India search route no longer matches the verified first-party jobs surface')
-      }
-
-      return hydrateListings(extractSearchResults(indiaSearchHtml), {
-        fetchPage: effectiveFetchPage,
-        now,
-      })
-    }
-
-    if (!hasOfficialSearchResultsSignal(searchHtml)) {
-      throw new Error('Ampere Computing search results page no longer matches the verified first-party surface')
-    }
-
-    let listings = extractSearchResults(searchHtml)
-    if (listings.length === 0) {
-      const indiaSearchPage = await effectiveFetchPage(INDIA_SEARCH_URL)
-      if (isVerifiedCloudflareChallengedPage(indiaSearchPage, INDIA_SEARCH_URL)) {
-        return []
-      }
-
-      const indiaSearchHtml = getPageHtml(indiaSearchPage)
-      if (!hasOfficialSearchResultsSignal(indiaSearchHtml)) {
-        throw new Error('Ampere Computing India search route no longer matches the verified first-party jobs surface')
-      }
-
-      listings = extractSearchResults(indiaSearchHtml)
-    }
-
-    return hydrateListings(listings, {
-      fetchPage: effectiveFetchPage,
-      now,
-    })
-  },
-})
+export const createAmpereComputingScraper = createAmpereNativeScraper
 
 export const run = async (options = {}) => createAmpereComputingScraper().run(options)
 

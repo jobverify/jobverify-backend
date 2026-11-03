@@ -2,7 +2,6 @@ import http from 'node:http'
 import https from 'node:https'
 import { setTimeout as sleep } from 'node:timers/promises'
 
-import { extractTextFromPdfBuffer } from './pdfText.js'
 import { composeAbortSignals } from '../utils/fetch.js'
 
 const DEFAULT_BROWSER_TIMEOUT_MS = 60000
@@ -230,10 +229,12 @@ const readResponseContent = async (response, {
   if (PDF_CONTENT_TYPE_PATTERN.test(contentType) || /\.pdf(?:$|\?)/i.test(responseUrl)) {
     try {
       const bytes = await checkedRead(() => response.arrayBuffer(), context)
-      return await checkedRead(() => extractTextFromPdfBuffer(
-        new Uint8Array(bytes),
-        { timeoutMs: pdfTextExtractionTimeoutMs, signal },
-      ), context)
+      return await checkedRead(async () => {
+        // HTML/JSON sources do not require the PDF renderer's native addons.
+        const { extractTextFromPdfBuffer } = await import('./pdfText.js')
+        checkAbort(context)
+        return extractTextFromPdfBuffer(new Uint8Array(bytes), { timeoutMs: pdfTextExtractionTimeoutMs, signal })
+      }, context)
     } catch {
       checkAbort(context)
       return ''

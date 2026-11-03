@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
 import { extractAshbyExperienceRequired } from '../../scraper-support/utils/ashbyExperience.js'
 import { decode, text, visibleText, readAppData, readSchemas, qualificationSections } from './nativeHtml.js'
 import { createDelineaPublicReader } from './publicRead.js'
@@ -129,7 +130,8 @@ export const createDelineaScraper = ({ maxJobs = Number.isInteger(config.maxJobs
     const advertisedChannels = [...new Set([...openingChannels.channels, ...Object.values(localizedChannels).flat()])].sort()
     for (const channel of advertisedChannels.filter(url => url !== ASHBY_PUBLIC_BOARD_URL)) await inspectAdditionalChannel(channel, 'opening')
     const opening = boardSnapshot(await getText(ASHBY_PUBLIC_BOARD_URL))
-    const jobs = feedSnapshot(await getJson(ASHBY_JOB_BOARD_URL))
+    const originalNativeFeed = await getJson(ASHBY_JOB_BOARD_URL)
+    const jobs = feedSnapshot(originalNativeFeed)
     if (!same(opening.jobs.map(j => j.id).sort(), jobs.map(j => j.id).sort())) issues.push('opening-board-feed-identity-mismatch')
     for (const job of jobs) {
       const brief = opening.jobs.find(j => j.id === job.id)
@@ -158,8 +160,10 @@ export const createDelineaScraper = ({ maxJobs = Number.isInteger(config.maxJobs
     const pagesFetched = reader.audit.requests
     const result = (cap ? indiaRows.slice(0, maxJobs) : indiaRows).map(({ isIndia, ...job }) => ({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt, sourceListingComplete: complete,
       ...(!complete ? { sourceScopeComplete: false, lifecycleCleanupAllowed: false } : {}) }))
-    const audit = { source: SOURCE, verifiedAt: scrapedAt, complete, issues, advertisedChannels, additionalChannelChecks, openingChannels, localizedChannels, closingChannels, opening: { organization: opening.organization, ids: opening.jobs.map(j => j.id).sort() }, closing: closing && { organization: closing.organization, ids: closing.jobs.map(j => j.id).sort() }, nativeCount: jobs.length, fullyHealthyCount: rows.length, indiaCount: indiaRows.length, eligibleCount: result.length, pagesFetched, rows, publicRead: reader.audit }
+    const audit = { source: SOURCE, verifiedAt: scrapedAt, complete, issues, advertisedChannels, additionalChannelChecks, openingChannels, localizedChannels, closingChannels, opening: { organization: opening.organization, ids: opening.jobs.map(j => j.id).sort() }, closing: closing && { organization: closing.organization, ids: closing.jobs.map(j => j.id).sort() }, originalNativeFeed, nativeCount: jobs.length, fullyHealthyCount: rows.length, indiaCount: indiaRows.length, eligibleCount: result.length, pagesFetched, rows, publicRead: reader.audit }
     onNativeAudit?.(audit)
+    signal?.throwIfAborted()
+    attachSourceObservationEvidence(result, { source: SOURCE, recordKind: 'vacancy-rows', observedRecordCount: jobs.length, observedVacancyCount: jobs.length, sourceScopeComplete: false })
     return attachInventoryEvidence(result, { status: complete ? 'complete-inventory' : 'coverage-gap', surface: ASHBY_PUBLIC_BOARD_URL, firstParty: true, listingComplete: complete, pagesFetched,
       reportedTotal: complete ? jobs.length : null, indiaFacetCount: complete ? indiaRows.length : null, verifiedAt: scrapedAt,
       reason: complete ? 'native-board-feed-all-details-and-closing-inventory-reconciled' : [...new Set(issues)].join('; ') || 'incomplete-native-details' })

@@ -33,6 +33,7 @@ test('run keeps Unacademy jobs on the hosted Darwinbox routes and decorates the 
   const requestedPages = []
 
   const jobs = await scraper.run({
+    fetchJobDetail: async () => { throw new Error('Native detail is unavailable in this listing-only fixture') },
     fetchListingPage: async ({ page }) => {
       requestedPages.push(page)
 
@@ -69,7 +70,10 @@ test('run keeps Unacademy jobs on the hosted Darwinbox routes and decorates the 
     'https://unacademy.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a67de6108bb994',
   )
   assert.equal(jobs[0].location, 'Bangalore, Karnataka , India')
-  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
+  assert.equal(jobs[0].jobDescription, null)
+  assert.equal(jobs[0].sourceNativeListingDescription, 'Please enter job description')
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.notEqual(jobs[0].publicExperienceChecked, true)
 })
 
 test('runStandalone writes Darwinbox dry-run results to the provider jobs.json path', async () => {
@@ -79,6 +83,7 @@ test('runStandalone writes Darwinbox dry-run results to the provider jobs.json p
 
   await module.runStandalone({
     argv: ['node', 'unacademy/script.js', '--dry-run'],
+    fetchJobDetail: async () => { throw new Error('Native detail is unavailable in this listing-only fixture') },
     fetchListingPage: async ({ page }) => {
       assert.equal(page, 1)
       return {
@@ -111,5 +116,8 @@ test('runStandalone writes Darwinbox dry-run results to the provider jobs.json p
   assert.equal(savedDatabases.length, 0)
   assert.match(savedFiles[0].filePath, /unacademy[\\/]jobs\.json$/)
   assert.equal(savedFiles[0].jobs.length, 1)
-  assert.ok(savedFiles[0].jobs.every((job) => job.publicExperienceChecked === true))
+  assert.equal(savedFiles[0].jobs[0].jobDescription, null)
+  assert.equal(savedFiles[0].jobs[0].sourceNativeListingDescription, 'Please enter job description')
+  assert.equal(savedFiles[0].jobs[0].sourceDetailComplete, false)
+  assert.notEqual(savedFiles[0].jobs[0].publicExperienceChecked, true)
 })

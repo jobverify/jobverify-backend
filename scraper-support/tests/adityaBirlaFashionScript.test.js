@@ -97,11 +97,11 @@ test('Aditya Birla Fashion scraper pins the verified ABFRL careers page and both
   assert.equal(adityaBirlaFashion.hasBrokenStoreManagerSignal(brokenStoreManagerPage), true)
 })
 
-test('Aditya Birla Fashion returns no jobs while the verified ABFRL handoffs stay empty or broken', async () => {
+test('Aditya Birla Fashion SSR empty labels and a broken handoff cannot prove zero jobs', async () => {
   const adityaBirlaFashion = await loadAdityaBirlaFashionModule()
   const requestedUrls = []
 
-  const jobs = await adityaBirlaFashion.createAdityaBirlaFashionScraper().run({
+  await assert.rejects(adityaBirlaFashion.createAdityaBirlaFashionScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -123,7 +123,7 @@ test('Aditya Birla Fashion returns no jobs while the verified ABFRL handoffs sta
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), /current anonymous public recruiting protocol unavailable/i)
 
   assert.deepEqual(requestedUrls, [
     adityaBirlaFashion.CAREERS_URL,
@@ -131,7 +131,6 @@ test('Aditya Birla Fashion returns no jobs while the verified ABFRL handoffs sta
     adityaBirlaFashion.GROUP_JOB_SEARCH_URL,
     adityaBirlaFashion.STORE_MANAGER_OPENINGS_URL,
   ])
-  assert.deepEqual(jobs, [])
 })
 
 test('Aditya Birla Fashion fails closed when the verified ABFRL handoffs change or become usable', async () => {
@@ -186,7 +185,7 @@ test('Aditya Birla Fashion fails closed when the verified ABFRL handoffs change 
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /zero-vacancy openings surface/i,
+    /current anonymous public recruiting protocol unavailable/i,
   )
 
   await assert.rejects(

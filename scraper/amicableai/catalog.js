@@ -13,17 +13,17 @@ export const AMICABLE_AI_CATALOG = {
   officialHomepageUrl: 'https://amicable.io/',
   officialScreenloopBoardUrl: 'https://app.screenloop.com/careers/amicable',
   officialSpeculativeApplyEmail: 'jobs@amicable.co.uk',
-  atsPlatform: 'official-company-site-no-public-careers',
+  atsPlatform: 'screenloop-public-careers',
   countryFilter: 'India',
   paginationStrategy:
-    'verified-homepage-plus-careers-no-openings-message-plus-non-india-screenloop-board',
+    'declared-current-jobPosts-complete-array-local-pagination+final-inventory-after-public-details',
   extractionStrategy:
-    'verified-homepage-careers-link+verified-careers-no-openings-message+verified-non-india-screenloop-board-return-empty',
+    'current-corporate-handoff+bound-public-components+same-ID-full-criteria+native-countries+closing',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-10-03',
+  verifiedOn: null,
   verifiedSurfaceSummary:
-    'Verified https://amicable.io/, https://amicable.io/careers, and https://app.screenloop.com/careers/amicable on October 3, 2026. The homepage title now includes prenups. There is no trustworthy India jobs surface for the backlog company Amicable AI: the first-party careers page still says there are currently no open positions and asks speculative applicants to email jobs@amicable.co.uk, while the hidden Screenloop board lists seven non-India roles with Remote or London locations.',
+    'The configured https://amicable.io/ homepage links to https://amicable.io/careers, whose active vacancies section declares https://app.screenloop.com/careers/amicable. Current runtime qualifies the complete native jobPosts array and public same-ID full descriptions/countries, then checks final membership after closing details. The native employer is amicable; the historical Amicable AI catalog label does not assert a separate legal-employer identity. Missing dates stay null. Contradictory marketing copy and private application forms are not public-JD prerequisites. Company-wide recruitment absence and lifecycle cleanup remain unproved.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

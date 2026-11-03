@@ -23,10 +23,11 @@ test('synthetic future India record uses native UID, formal requisition and full
  assert.equal(jobs[0].sourceDetailComplete,true);assert.equal(audit.wholeCompanyGlobal,5)
  assert.equal(evidence.listingComplete,true);assert.equal(evidence.indiaFacetCount,1)
 })
-test('synthetic healthy India role survives an unrelated native country conflict with unknown totals',async()=>{
+test('synthetic healthy India role preserves the unrelated exact foreign conflict and independently complete India count',async()=>{
  const {jobs,audit,evidence}=await snapshot(p=>withIndia(p))
  assert.equal(jobs.length,1);assert.equal(audit.healthyNative,4)
- assert.equal(evidence.listingComplete,false);assert.equal(evidence.indiaFacetCount,null)
+ assert.equal(evidence.listingComplete,true);assert.equal(evidence.indiaFacetCount,1)
+ assert.equal(audit.companyComplete,false);assert.equal(audit.wholeCompanyGlobal,null)
  assert.equal(jobs[0].lifecycleCleanupAllowed,false)
 })
 test('synthetic secondary India schema address is eligible even with foreign primary worksite',async()=>{
@@ -45,11 +46,12 @@ test('synthetic output cap is applied after the full native inventory and disabl
  assert.equal(calls.filter(u=>u.includes('/advertisement/')).length,10)
  assert.equal(evidence.listingComplete,false);assert.ok(audit.issues.includes('output-capped-after-full-native-inventory'))
 })
-test('synthetic closing native body mutation withholds completion',async()=>{
+test('synthetic closing foreign body mutation withholds global details while preserving the unchanged India exclusion',async()=>{
  const {audit,evidence}=await snapshot(corrected,{onResponse:(page,{call,url})=>{
   if(call===2&&url.includes('/advertisement/cloud-operations'))page.body=page.body.replace('Your Responsibilities','Changed Responsibilities')
  }})
- assert.equal(evidence.listingComplete,false);assert.ok(audit.issues.some(i=>i.startsWith('closing-native-detail-drift:')))
+ assert.equal(evidence.listingComplete,true);assert.equal(evidence.indiaFacetCount,0);assert.equal(audit.companyComplete,false)
+ assert.ok(audit.issues.some(i=>i.startsWith('closing-native-detail-drift:')))
 })
 test('synthetic closing corporate extra channel withholds completion',async()=>{
  const {audit,evidence}=await snapshot(corrected,{onResponse:(page,{call,url})=>{if(call===2&&url===HOME)page.body=page.body.replace('</body>','<a href="https://jobs.example.com/india/">Jobs India</a></body>')}})

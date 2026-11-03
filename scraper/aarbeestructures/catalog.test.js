@@ -9,13 +9,16 @@ test('Aarbee Structures is registered against its official careers page', () => 
   assert.ok(provider)
   assert.equal(provider.companyName, 'Aarbee Structures Pvt. Ltd.')
   assert.equal(provider.companyCareerPage, 'https://aarbeestructures.com/careers/')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'official-company-careers-application-intake')
   assert.equal(provider.companyDomain, 'aarbeestructures.com')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-careers-page-plus-no-public-listings',
+    'current-first-party-client-and-handoff+native-context-retention+executable-script-structure+unknown-inventory+bounded-caller-observer',
   )
   assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
   assert.match(provider.modulePath, /aarbeestructures[\\/]script\.js$/i)
 })
 

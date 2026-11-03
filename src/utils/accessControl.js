@@ -70,7 +70,8 @@ export const getEffectiveAccess = (user, now = new Date(), siteSettings) => {
       || new Date(telegramLinkedAt).getTime() > new Date(telegramOptedOutAt).getTime()),
   );
   const canUseTelegram =
-    (siteSettings?.billingEnabled === false || isAdmin || (!expired && planConfig.hasTelegramAlerts && safeUser?.premium?.status === "active"))
+    safeUser.telegramAlertsAllowed !== false
+    && (siteSettings?.billingEnabled === false || isAdmin || (!expired && planConfig.hasTelegramAlerts && safeUser?.premium?.status === "active"))
     && Boolean(safeUser?.premium?.telegramAlertsEnabled)
     && hasLinkedTelegram;
 
@@ -111,7 +112,9 @@ export const buildAccessSummary = (user, now = new Date()) => {
     isPremium: access.isPremium,
     canUseFilters: access.canUseFilters,
     canSkipAds: !access.shouldShowAds,
-    hasTelegramAlerts: access.isAdmin || Boolean(access.planConfig.hasTelegramAlerts && !access.isExpired && access.status === "active"),
+    telegramAlertsAllowed: user?.telegramAlertsAllowed !== false,
+    hasTelegramAlerts: user?.telegramAlertsAllowed !== false
+      && (access.isAdmin || Boolean(access.planConfig.hasTelegramAlerts && !access.isExpired && access.status === "active")),
     expiresAt,
     daysRemaining,
     status: access.status,

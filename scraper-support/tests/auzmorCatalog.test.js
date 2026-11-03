@@ -28,7 +28,7 @@ const loadAuzmorModule = async () => {
   }
 }
 
-test('Auzmor local catalog captures the verified first-party careers-marketing surface without public job listings', async () => {
+test('Auzmor local catalog binds the current corporate Auzmor Hire widget and native inventory contract', async () => {
   const { AUZMOR_CATALOG } = await loadCatalogModule()
   const auzmor = await loadAuzmorModule()
 
@@ -51,24 +51,24 @@ test('Auzmor local catalog captures the verified first-party careers-marketing s
     'https://auzmor.com/company/careers',
     'https://auzmor.com/about/careers',
   ])
-  assert.equal(AUZMOR_CATALOG.atsPlatform, 'official-company-careers-nonlisting')
+  assert.equal(AUZMOR_CATALOG.atsPlatform, 'auzmor-hire')
   assert.equal(AUZMOR_CATALOG.countryFilter, 'India')
   assert.equal(
     AUZMOR_CATALOG.paginationStrategy,
-    'homepage-plus-careers-page-plus-sitemap-and-adjacent-route-validation',
+    'native-grouped-pagination-filter-counts-and-closing-inventory',
   )
   assert.equal(
     AUZMOR_CATALOG.extractionStrategy,
-    'verified-homepage+verified-careers-marketing-page+verified-page-sitemap-single-careers-route+missing-adjacent-jobs-routes-return-empty',
+    'corporate-published-auzmor-hire-widget+native-employer+grouped-pagination-and-filter-counts+India-full-details+closing-inventory',
   )
   assert.equal(AUZMOR_CATALOG.parser, 'custom-script')
   assert.equal(AUZMOR_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(AUZMOR_CATALOG.companyDomain, 'auzmor.com')
-  assert.equal(AUZMOR_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(AUZMOR_CATALOG.verifiedOn, '2026-11-02')
   assert.match(AUZMOR_CATALOG.verifiedSurfaceSummary, /https:\/\/auzmor\.com\//i)
   assert.match(AUZMOR_CATALOG.verifiedSurfaceSummary, /https:\/\/auzmor\.com\/careers\//i)
-  assert.match(AUZMOR_CATALOG.verifiedSurfaceSummary, /Powerfully Integrating Your ATS/i)
-  assert.match(AUZMOR_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(AUZMOR_CATALOG.verifiedSurfaceSummary, /hire\.api\.auzmor\.com\/api\/v1/i)
+  assert.match(AUZMOR_CATALOG.verifiedSurfaceSummary, /native.*location/i)
   assert.equal(AUZMOR_CATALOG.modulePath, auzmorModulePath)
 
   assert.equal(auzmor.PROVIDER_METADATA.source, AUZMOR_CATALOG.source)

@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { runPublicCollection } from '../skyscanner/publicBoundary.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -242,7 +243,10 @@ export const createBnppScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
+    return runPublicCollection('bnpparibas', options, async boundary => {
+    const fetchText = options.fetchText
+      ? url => boundary.read(url, context => options.fetchText(url, { signal: context.signal }))
+      : async url => (await boundary.fetchPage(url, options.fetchImpl || globalThis.fetch, { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36' })).html
     const jobs = []
     const seenJobIds = new Set()
     let nextUrl = buildSearchUrl()
@@ -294,10 +298,11 @@ export const createBnppScraper = ({
     }
 
     return jobs
+    })
   },
 })
 
-export const run = async () => createBnppScraper().run()
+export const run = async (options = {}) => createBnppScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

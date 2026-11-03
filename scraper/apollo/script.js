@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { runCurrentApollo } from './currentNative.js'
 import {
   fetchJsonWithRetry,
   fetchTextWithRetry,
@@ -214,50 +215,11 @@ export const createApolloTyresScraper = ({
   pageSize = 20,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const fetchJson = options.fetchJson || defaultFetchJson
-
-    const homePageHtml = await fetchText(CAREER_PAGE_URL)
-    const context = extractContextFromHomePage(homePageHtml)
-    const requisitions = await fetchAllRequisitions({
-      fetchJson,
-      token: context.token,
-      cultureId: context.cultureID || CULTURE_ID,
-      cultureName: context.cultureName || CULTURE_NAME,
-      pageSize,
-    })
-
-    const detailPayloadById = {}
-    await Promise.all(requisitions.map(async (requisition) => {
-      if (!requisition?.requisitionId) return
-
-      const detailPayload = await fetchJson(
-        buildDetailUrl(requisition.requisitionId, context.cultureID || CULTURE_ID),
-        {
-          headers: buildHeaders(context.token),
-        },
-      )
-      detailPayloadById[requisition.requisitionId] = detailPayload
-    }))
-
-    const jobs = extractSearchResults({
-      data: {
-        requisitions,
-      },
-    }, { detailPayloadById })
-
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: 'apollo',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+    return runCurrentApollo({ maxJobs, pageSize, ...options })
   },
 })
 
-export const run = async () => createApolloTyresScraper().run()
+export const run = async (options = {}) => createApolloTyresScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

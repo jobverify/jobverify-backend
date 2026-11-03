@@ -44,7 +44,8 @@ const canonicalUrl = (html) => {
 const pageTitle = (html) => normalizeWhitespace(String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
 const hasCanonicalTitle = (html, url, title) => canonicalUrl(html) === url && pageTitle(html) === title
 
-export const hasOfficialRootSignal = (html = '') => hasCanonicalTitle(html, ROOT_URL, 'Home - Allied Digital')
+export const hasOfficialRootSignal = (html = '') => canonicalUrl(html) === ROOT_URL
+  && /^(?:Home - Allied Digital|Allied Digital \| AI-Led Technology Transformation & IT Services)$/.test(pageTitle(html) || '')
   && [...String(html).matchAll(/<a\b[^>]*>/gi)].some(([tag]) => attribute(tag, 'href') === CAREERS_URL)
 
 export const hasOfficialCareersSignal = (html = '') => hasCanonicalTitle(html, CAREERS_URL, 'Careers - Allied Digital')

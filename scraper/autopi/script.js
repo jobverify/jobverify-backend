@@ -2,8 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readCurrentEmptyInventory, waitForSource } from './currentEmpty.js'
 
 import { AUTO_PI_CATALOG } from './catalog.js'
 
@@ -114,14 +115,15 @@ const extractLocationParts = (location) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url, { fetchImpl = fetch, signal } = {}) => {
+  const response = await waitForSource(fetchImpl(url, { method: 'GET', redirect: 'manual', signal,
+    headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' } }), signal)
+  if (response?.status !== 200 || response.url !== url) {
+    await waitForSource(Promise.resolve().then(() => response?.body?.cancel?.()), signal).catch(() => {})
+    throw new Error('AutoPi public response unavailable or redirected (HTTP' + response?.status + ')')
+  }
+  return waitForSource(Promise.resolve().then(() => response.text()), signal)
+}
 
 const hasVerifiedEmptyRoleInventory = (html) => {
   const page = String(html ?? '')
@@ -241,11 +243,39 @@ export const createAutoPiScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchImpl = fetch,
+    signal: callerSignal,
+    onAudit,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const signal = AbortSignal.any([AbortSignal.timeout(45000), ...(callerSignal ? [callerSignal] : [])])
+    signal.throwIfAborted()
+    const page = async url => {
+      const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(15000)])
+      const html = await waitForSource(Promise.resolve().then(() => fetchText(url, { fetchImpl, signal: requestSignal })), requestSignal)
+      requestSignal.throwIfAborted()
+      if (typeof html !== 'string' || html.length > 2000000) throw new Error('AutoPi public response exceeds native page budget')
+      return html
+    }
+    const careersHtml = await page(CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('AutoPi verified official careers surface changed materially')
+    }
+
+    const openingEmpty = readCurrentEmptyInventory(careersHtml)
+    if (openingEmpty) {
+      const closingEmpty = readCurrentEmptyInventory(await page(CAREERS_URL))
+      if (!closingEmpty || JSON.stringify(openingEmpty) !== JSON.stringify(closingEmpty)) {
+        throw new Error('AutoPi native zero changed during closing inventory reconciliation')
+      }
+      const inventoryEvidence = { status: 'verified-empty', surface: CAREERS_URL, firstParty: true,
+        listingComplete: true, pagesFetched: 2, reportedTotal: 0, indiaFacetCount: 0,
+        verifiedAt: new Date(now()).toISOString(), reason: 'Current declared public board explicitly reports0open and no open positions; opening and closing native empty states reconcile' }
+      if (onAudit) await waitForSource(Promise.resolve().then(() => onAudit({ source: SOURCE, opening: openingEmpty,
+        closing: closingEmpty, closingInventoryMatches: true, inventoryEvidence, productionWrites: false,
+        companyWideRecruitingScopeComplete: false, lifecycleComplete: false })), signal)
+      signal.throwIfAborted()
+      return attachInventoryEvidence([], inventoryEvidence)
     }
 
     const roleCards = extractRoleCards(careersHtml)
@@ -257,7 +287,7 @@ export const createAutoPiScraper = ({
     const detailHtmlByUrl = {}
 
     await Promise.all(selectedRoles.map(async (role) => {
-      detailHtmlByUrl[role.sourceUrl] = await fetchText(role.sourceUrl)
+      detailHtmlByUrl[role.sourceUrl] = await page(role.sourceUrl)
     }))
 
     return selectedRoles.map((role) =>

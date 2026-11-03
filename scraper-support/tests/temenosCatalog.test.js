@@ -14,7 +14,9 @@ test('registers Temenos against the official first-party Workday careers source'
 
   assert.ok(temenos)
   assert.equal(temenos.companyName, 'Temenos')
-  assert.equal(temenos.adapter, 'workday')
+  assert.equal(temenos.adapter, 'script')
+  assert.match(temenos.modulePath, /temenos\.workday[\\/]script\.js$/)
+  assert.equal(temenos.lifecycleCleanupAllowed, false)
   assert.equal(temenos.atsPlatform, 'workday')
   assert.equal(temenos.companyCareerPage, 'https://www.temenos.com/about-us/careers/')
   assert.equal(temenos.companyDomain, 'temenos.com')

@@ -31,15 +31,15 @@ export const ASCENT_HEALTH_CATALOG = {
   ],
   atsPlatform: 'official-company-careers-nonlisting',
   countryFilter: 'India',
-  paginationStrategy: 'homepage-plus-careers-page-plus-sitemap-and-adjacent-route-validation',
+  paginationStrategy: 'current-corporate-careers-and-closing-hiring-entry',
   extractionStrategy:
-    'verified-homepage+verified-resume-intake-careers-page+verified-sitemap-career-routes-and-aliases-without-public-listings-return-empty',
+    'current-first-party-resume-entry+closing-comparison+unknown-vacancy-inventory',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'ascenthealthcare.com',
-  verifiedOn: '2026-07-15',
+  verifiedOn: null,
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://www.ascenthealthcare.com/ links Explore Careers to the first-party careers page at https://www.ascenthealthcare.com/careers/. That careers page currently offers only resume-intake via careers@ascent-group.com plus an upload form, while the first-party career-like sitemap routes are limited to /careers/, /jobs/, and /job-openings/ and the alias routes resolve back to the same intake page. No trustworthy public job listings surface was exposed.',
+    'https://www.ascenthealthcare.com/ links to the current first-party careers page at https://www.ascenthealthcare.com/careers/. A general CV entry via careers@ascent-group.com and a resume form do not identify individual vacancies, full criteria or job-owned countries. Retain bounded opening/closing hiring-entry receipts with unknown vacancy and India totals; no authoritative empty inventory or lifecycle cleanup is established.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

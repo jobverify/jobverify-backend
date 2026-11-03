@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { runPublicCollection } from '../skyscanner/publicBoundary.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -133,11 +134,12 @@ export const createAtherEnergyScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
+    return runPublicCollection('atherenergy', options, async boundary => {
     const loadPage = typeof options.fetchPage === 'function'
-      ? options.fetchPage
+      ? url => boundary.read(url, context => options.fetchPage(url, { signal: context.signal }))
       : typeof options.fetchText === 'function'
-        ? createFetchPageFromText(options.fetchText)
-        : defaultFetchPage
+        ? url => boundary.read(url, async context => ({ status: 200, url, html: await options.fetchText(url, { signal: context.signal }) }))
+        : url => boundary.fetchPage(url, options.fetchImpl || globalThis.fetch, { 'User-Agent': USER_AGENT, 'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8', Referer: CAREERS_HOME_URL })
 
     let careersHomePage = null
     try {
@@ -174,9 +176,8 @@ export const createAtherEnergyScraper = ({
     }
     if (!hasNoOpenJobsSignal(allJobsHtml)) throw new Error('Ather Energy current full native extraction unavailable; inventory unknown')
 
-    const jobs = extractJobs(allJobsHtml)
-
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+    throw boundary.unavailable('Ather Energy empty team/location copy does not establish a complete native inventory; inventory unknown')
+    })
   },
 })
 

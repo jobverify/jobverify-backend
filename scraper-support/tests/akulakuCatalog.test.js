@@ -30,52 +30,13 @@ const loadAkulakuModule = async () => {
   }
 }
 
-test('Akulaku local catalog captures the verified first-party careers shell and linked official jobs board', async () => {
-  const { AKULAKU_CATALOG } = await loadAkulakuCatalog()
-  const akulaku = await loadAkulakuModule()
-
-  assert.equal(AKULAKU_CATALOG.source, 'akulaku')
-  assert.equal(AKULAKU_CATALOG.companyName, 'Akulaku')
-  assert.equal(AKULAKU_CATALOG.officialBrandName, 'Akulaku')
-  assert.equal(AKULAKU_CATALOG.adapter, 'script')
-  assert.equal(AKULAKU_CATALOG.companyCareerPage, 'https://www.akulaku.com/staff-life')
-  assert.equal(AKULAKU_CATALOG.firstPartyCareersUrl, 'https://www.akulaku.com/staff-life')
-  assert.equal(AKULAKU_CATALOG.officialJobsBoardUrl, 'https://akulaku.zhiye.com/')
-  assert.equal(AKULAKU_CATALOG.jobListingsUrl, 'https://akulaku.zhiye.com/alljob/?o=1')
-  assert.equal(AKULAKU_CATALOG.companyDomain, 'akulaku.com')
-  assert.equal(AKULAKU_CATALOG.atsPlatform, 'official-company-careers')
-  assert.equal(AKULAKU_CATALOG.countryFilter, 'India')
-  assert.equal(
-    AKULAKU_CATALOG.paginationStrategy,
-    'first-party-careers-shell-plus-linked-zhiye-next-link-pagination',
-  )
-  assert.equal(
-    AKULAKU_CATALOG.extractionStrategy,
-    'first-party-shell-link-verification+zhiye-list-parse-or-verified-beisen-maintenance+india-location-filter+detail-fetch-for-india-matches',
-  )
-  assert.equal(AKULAKU_CATALOG.parser, 'custom-script')
-  assert.equal(AKULAKU_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AKULAKU_CATALOG.verifiedOn, '2026-08-07')
-  assert.equal(AKULAKU_CATALOG.verifiedPublicJobCount, 0)
-  assert.equal(AKULAKU_CATALOG.verifiedIndiaJobCount, 0)
-  assert.equal(AKULAKU_CATALOG.dryRunFile, 'akulaku/jobs.json')
-  assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.akulaku\.com\/staff-life/i)
-  assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /https:\/\/akulaku\.zhiye\.com\//i)
-  assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /https:\/\/akulaku\.zhiye\.com\/alljob\/\?o=1/i)
-  assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
-  assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary, /System Upgrade Maintenance/i)
-  assert.equal(AKULAKU_CATALOG.modulePath, akulakuModulePath)
-
-  assert.equal(akulaku.PROVIDER_METADATA.source, AKULAKU_CATALOG.source)
-  assert.equal(akulaku.PROVIDER_METADATA.companyName, AKULAKU_CATALOG.companyName)
-  assert.equal(
-    akulaku.PROVIDER_METADATA.officialJobsBoardUrl,
-    AKULAKU_CATALOG.officialJobsBoardUrl,
-  )
-  assert.equal(
-    akulaku.PROVIDER_METADATA.jobListingsUrl,
-    AKULAKU_CATALOG.jobListingsUrl,
-  )
+test('Akulaku local catalog requires current public native evidence without historical empty counts',async()=>{
+ const{AKULAKU_CATALOG}=await loadAkulakuCatalog(),akulaku=await loadAkulakuModule()
+ assert.equal(AKULAKU_CATALOG.source,'akulaku');assert.equal(AKULAKU_CATALOG.companyName,'Akulaku');assert.equal(AKULAKU_CATALOG.officialBrandName,'Akulaku')
+ assert.equal(AKULAKU_CATALOG.adapter,'script');assert.equal(AKULAKU_CATALOG.officialJobsBoardUrl,'https://akulaku.zhiye.com/');assert.equal(AKULAKU_CATALOG.companyDomain,'akulaku.com');assert.equal(AKULAKU_CATALOG.countryFilter,'India')
+ assert.equal(AKULAKU_CATALOG.verifiedOn,null);assert.equal(AKULAKU_CATALOG.verifiedPublicJobCount,null);assert.equal(AKULAKU_CATALOG.verifiedIndiaJobCount,null);assert.equal(AKULAKU_CATALOG.zeroResultPolicy,'evidence-required')
+ assert.equal(AKULAKU_CATALOG.sourceCompanyWideScopeComplete,false);assert.equal(AKULAKU_CATALOG.lifecycleCleanupAllowed,false);assert.equal(AKULAKU_CATALOG.modulePath,akulakuModulePath);assert.equal(akulaku.PROVIDER_METADATA.source,AKULAKU_CATALOG.source)
+ assert.match(AKULAKU_CATALOG.paginationStrategy,/final-enumerations-after-closing-details/);assert.match(AKULAKU_CATALOG.verifiedSurfaceSummary,/private account\/application fields never establish India or verified empty/)
 })
 
 test('Akulaku backlog row hydrates locally without requiring a shared alias entry', async () => {

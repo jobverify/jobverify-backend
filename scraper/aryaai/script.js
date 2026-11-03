@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {createCurrentAryaAiScraper} from './currentNative.js'
 
 import { ARYAAI_CATALOG } from './catalog.js'
 
@@ -15,9 +16,6 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const SITEMAP_URL = PROVIDER_METADATA.sitemapUrl
 export const CHECKED_MISSING_ROUTE_URLS = [...PROVIDER_METADATA.checkedMissingRouteUrls]
 export const VERIFIED_APPLY_URLS = [...PROVIDER_METADATA.verifiedApplyUrls]
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -73,22 +71,6 @@ const toAbsoluteUrl = (value, baseUrl) => {
 const extractTitle = (html = '') => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return normalizeWhitespace(match?.[1]) || null
-}
-
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
-
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
 }
 
 const isWellfoundJobUrl = (value) => {
@@ -214,80 +196,7 @@ export const isMissingCareersRoute = (page = {}) => {
     && extractTitle(page.html) === 'Not Found'
   }
 
-const mapCardToJob = (card, now) => ({
-  title: card.title,
-  company: COMPANY,
-  department: card.department,
-  location: card.location,
-  city: null,
-  country: null,
-  jobId: card.jobId,
-  requisitionId: card.requisitionId,
-  sourceUrl: CAREERS_URL,
-  applyUrl: card.applyUrl,
-  employmentType: card.employmentType,
-  experienceRequired: null,
-  minimumQualification: null,
-  preferredQualification: null,
-  requiredSkills: [],
-  postingDate: null,
-  closingDate: null,
-  jobDescription: card.jobDescription,
-  source: SOURCE,
-  link: card.applyUrl,
-  scrapedAt: now(),
-})
-
-export const createAryaAiScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (
-      homepage.status !== 200
-      || !sameUrl(homepage.url, HOMEPAGE_URL)
-      || !hasOfficialHomepageSignal(homepage.html)
-    ) {
-      throw new Error('Arya.ai verified homepage no longer matches the trusted first-party surface')
-    }
-
-    if (extractCareersUrl(homepage.html) !== CAREERS_URL) {
-      throw new Error('Arya.ai verified homepage careers link changed materially')
-    }
-
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (
-      careersPage.status !== 200
-      || !sameUrl(careersPage.url, CAREERS_URL)
-      || !hasVerifiedCareersPageSignal(careersPage.html)
-    ) {
-      throw new Error('Arya.ai verified careers page no longer matches the trusted first-party surface')
-    }
-
-    const sitemapPage = await fetchPage(SITEMAP_URL)
-    if (
-      sitemapPage.status !== 200
-      || !sameUrl(sitemapPage.url, SITEMAP_URL)
-      || !hasSitemapCareersSignal(sitemapPage.html)
-    ) {
-      throw new Error('Arya.ai verified sitemap no longer advertises the trusted careers surface')
-    }
-
-    for (const routeUrl of CHECKED_MISSING_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isMissingCareersRoute(routePage)) {
-        throw new Error(`Arya.ai verified missing careers route changed: ${routePage.url || routeUrl}`)
-      }
-    }
-
-    const cards = extractJobCards(careersPage.html)
-    if (cards.length === 0) {
-      throw new Error('Arya.ai verified careers page no longer exposes trusted first-party role cards')
-    }
-
-    return cards.map((card) => mapCardToJob(card, now))
-  },
-})
+export const createAryaAiScraper = createCurrentAryaAiScraper
 
 export const run = async (options = {}) => createAryaAiScraper(options).run(options)
 

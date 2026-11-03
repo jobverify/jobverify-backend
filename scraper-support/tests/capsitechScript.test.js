@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const {captures}=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/capsitech/test-data/native-20261103.json.gz',import.meta.url))))
+const currentNativeHtml=Buffer.from(captures['production-careers'].body,'base64').toString()
+const currentNativePayload=JSON.parse(Buffer.from(captures['production-listing'].body,'base64').toString())
 
 const loadCapsitechModule = async () => {
   try {
@@ -50,18 +56,22 @@ test('run returns no jobs when Capsitech exposes application categories without 
     fetchText: async (url) => {
       requestedUrls.push(url)
       assert.equal(url, capsitech.CAREER_PAGE_URL)
-      return careerPageHtml
+      return currentNativeHtml
     },
     fetchJson: async (url) => {
       requestedUrls.push(url)
-      assert.equal(url, capsitech.buildCareerOptionsUrl('resume/key='))
-      return careerOptionsPayload
+      assert.equal(url, capsitech.buildCareerOptionsUrl(capsitech.extractResumeKey(currentNativeHtml)))
+      return currentNativePayload
     },
   })
 
   assert.deepEqual(requestedUrls, [
     capsitech.CAREER_PAGE_URL,
-    capsitech.buildCareerOptionsUrl('resume/key='),
+    capsitech.buildCareerOptionsUrl(capsitech.extractResumeKey(currentNativeHtml)),
+    capsitech.CAREER_PAGE_URL,
+    capsitech.buildCareerOptionsUrl(capsitech.extractResumeKey(currentNativeHtml)),
   ])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status,'coverage-gap')
+  assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
 })

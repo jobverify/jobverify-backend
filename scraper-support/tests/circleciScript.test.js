@@ -68,7 +68,7 @@ test('CircleCI pins the verified first-party careers page and extracts same-doma
   assert.equal(circleci.SOURCE, 'circleci')
   assert.equal(circleci.COMPANY, 'CircleCI')
   assert.equal(circleci.OFFICIAL_BRAND_NAME, 'CircleCI')
-  assert.equal(circleci.VERIFIED_ON, '2026-07-25')
+  assert.equal(circleci.VERIFIED_ON, null)
   assert.equal(circleci.CAREERS_PAGE_URL, 'https://circleci.com/careers/jobs/')
   assert.equal(circleci.hasVerifiedCareersPageSignal(OFFICIAL_CAREERS_HTML), true)
   assert.deepEqual(circleci.extractRoleSummaries(OFFICIAL_CAREERS_HTML), [
@@ -111,35 +111,30 @@ test('CircleCI pins the verified first-party careers page and extracts same-doma
   ])
 })
 
-test('CircleCI returns an honest empty array when the verified first-party careers page exposes no India locations', async () => {
+test('CircleCI does not promote a legacy summary-only page into verified India absence', async () => {
   const circleci = await loadCircleCiModule()
   const requestedUrls = []
 
-  const jobs = await circleci.createCircleCiScraper().run({
-    fetchText: async (url) => {
+  await assert.rejects(circleci.createCircleCiScraper({
+    fetchImpl: async (url) => {
       requestedUrls.push(url)
-      return OFFICIAL_CAREERS_HTML
+      const response = new Response(OFFICIAL_CAREERS_HTML)
+      Object.defineProperty(response, 'url', { value: url })
+      return response
     },
-  })
+  }).run(), /official current open roles scope changed/)
 
   assert.deepEqual(requestedUrls, [circleci.CAREERS_PAGE_URL])
-  assert.deepEqual(jobs, [])
 })
 
-test('CircleCI fails closed when the verified careers surface drifts or starts exposing India roles', async () => {
+test('CircleCI requires current native inventory proof for changed pages and legacy India cards', async () => {
   const circleci = await loadCircleCiModule()
 
-  await assert.rejects(
-    circleci.createCircleCiScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-    }),
-    /verified circleci careers page/i,
-  )
-
-  await assert.rejects(
-    circleci.createCircleCiScraper().run({
-      fetchText: async () => INDIA_ROLE_HTML,
-    }),
-    /verified circleci india slice changed materially/i,
-  )
+  for (const html of ['<html><body><h1>Unexpected</h1></body></html>', INDIA_ROLE_HTML]) {
+    await assert.rejects(circleci.createCircleCiScraper({ fetchImpl: async url => {
+      const response = new Response(html)
+      Object.defineProperty(response, 'url', { value: url })
+      return response
+    } }).run(), /official current open roles scope changed/)
+  }
 })

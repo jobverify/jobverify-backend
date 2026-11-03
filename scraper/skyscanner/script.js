@@ -5,6 +5,7 @@ import { createAshbyApiScraper } from '../../scraper-support/utils/ashbyApi.js'
 import { readNativeDocument, activeHead } from '../../scraper-support/utils/activeNativeHtml.js'
 import { inspectRecruitingBundle } from '../../scraper-support/utils/recruitingBundleContracts.js'
 import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { runPublicCollection } from './publicBoundary.js'
 
 import { SKYSCANNER_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -72,7 +73,12 @@ export const hasChallengeGateSignal = (html = '') => {
 }
 
 export const createSkyscannerScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchPage = defaultFetchPage, fetchJson, signal } = {}) {
+  async run(options = {}) {
+    return runPublicCollection(SOURCE, options, async boundary => {
+    const signal = boundary.signal, fetchJson = options.fetchJson
+    const fetchPage = options.fetchPage
+      ? url => boundary.read(url, context => options.fetchPage(url, { signal: context.signal }))
+      : url => boundary.fetchPage(url, options.fetchImpl || globalThis.fetch, { 'User-Agent': USER_AGENT, Accept: 'text/html,*/*' })
     const loadPage = async url => {
       signal?.throwIfAborted()
       const page = await fetchPage(url, { signal })
@@ -105,7 +111,7 @@ export const createSkyscannerScraper = ({ maxJobs = null } = {}) => ({
     const ashbyUrls = facts.fetchUrls.filter(url => url.startsWith('https://api.ashbyhq.com/posting-api/job-board/'))
     if (ashbyUrls.length !== 1 || ashbyUrls[0] !== ASHBY_JOB_BOARD_URL) throw new Error('Skyscanner current bundle native board contract changed')
     const jobs = await createAshbyApiScraper({ source: SOURCE, companyName: COMPANY, ashbyJobBoardUrl: ASHBY_JOB_BOARD_URL })
-      .run({ fetchJson, signal })
+      .run({ fetchJson: fetchJson ? url => boundary.read(url, context => fetchJson(url, { signal: context.signal })) : undefined, signal })
     const evidence = readInventoryEvidence(jobs), reasons = []
     const proven = jobs.filter(job => /^(?:India|IN|IND)$/i.test(job.country || '') || /\bIndia\b/i.test(job.location || ''))
     if (proven.length !== jobs.length) reasons.push('native-location-scope-unresolved:india-country-evidence-unavailable')
@@ -121,6 +127,7 @@ export const createSkyscannerScraper = ({ maxJobs = null } = {}) => ({
       listingComplete: reasons.length === 0, status: reasons.length ? 'discovery-only' : evidence.status,
       indiaFacetCount: reasons.some(reason => /location-scope-unresolved/.test(reason)) ? null : evidence.indiaFacetCount,
       reason: reasons.length ? `skyscanner-native-incomplete:${reasons.join(';')}` : 'skyscanner-current-jobs-bundle-and-native-ashby-inventory-verified',
+    })
     })
   },
 })

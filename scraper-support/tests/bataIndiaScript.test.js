@@ -87,77 +87,27 @@ test('extractSearchResults keeps open India jobs and normalizes the Bata India r
   })
 })
 
-test('run verifies the official Bata India handoff, merges root and iframe listings, and deduplicates repeated jobs', async () => {
-  const {
-    CAREERS_BOARD_URL,
-    HOMEPAGE_URL,
-    buildIframeListingUrl,
-    createBataIndiaScraper,
-  } = await loadBataIndiaModule()
-  const requests = []
-  const scraper = createBataIndiaScraper({ maxJobs: 3 })
+const currentNativeFixture=async()=>{
+  const {readFileSync}=await import('node:fs'),{gunzipSync}=await import('node:zlib'),base=new URL('../../scraper/bataindia/test-data/current-20261103/',import.meta.url)
+  const manifest=JSON.parse(readFileSync(new URL('manifest.json',base)))
+  const rows=new Map(manifest.files.map(row=>[row.url,gunzipSync(readFileSync(new URL(row.file,base))).toString('utf8')]))
+  return async url=>{assert(rows.has(url),'Unexpected current native URL '+url);return{status:200,url,html:rows.get(url)}}
+}
 
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requests.push(url)
-
-      if (url === HOMEPAGE_URL) return OFFICIAL_HOMEPAGE_HTML
-      if (url === CAREERS_BOARD_URL) return ROOT_LISTING_HTML
-      if (url === buildIframeListingUrl({ page: 1 })) return IFRAME_LISTING_HTML
-
-      throw new Error(`Unexpected Bata India URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requests, [
-    HOMEPAGE_URL,
-    CAREERS_BOARD_URL,
-    buildIframeListingUrl({ page: 1 }),
-  ])
-  assert.equal(jobs.length, 3)
-  assert.equal(jobs[0].source, 'bataindia')
-  assert.equal(jobs[0].company, 'Bata India')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[2].title, 'Franchisee Business Development Manager')
-  assert.deepEqual(jobs[2].requiredSkills, [
-    'Franchise Sales',
-    'Expansion Planning',
-  ])
-  assert.ok(jobs.every((job) => typeof job.scrapedAt === 'string' && job.scrapedAt.length > 0))
+test('current run reconciles the whole configured board and both own-detail passes before applying a caller cap',async()=>{
+  const {createBataIndiaScraper}=await loadBataIndiaModule(),fetchPage=await currentNativeFixture(),requests=[]
+  const jobs=await createBataIndiaScraper({maxJobs:3}).run({minRequestIntervalMs:0,fetchPage:async url=>{requests.push(url);return fetchPage(url)}})
+  assert.equal(jobs.length,3)
+  assert(jobs.every(job=>job.country==='India'&&job.sourceDetailComplete&&job.source==='bataindia'))
+  assert.equal(requests.filter(url=>/\/jobs\/\d+$/.test(url)).length,22)
+  assert.equal(requests.at(-2),'https://bata.sensehq.com/careers')
 })
 
-test('run falls back to the verified SenseHQ board when the official Bata India homepage times out from Node', async () => {
-  const {
-    CAREERS_BOARD_URL,
-    HOMEPAGE_URL,
-    buildIframeListingUrl,
-    createBataIndiaScraper,
-  } = await loadBataIndiaModule()
-  const requests = []
-  const scraper = createBataIndiaScraper({ maxJobs: 3 })
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requests.push(url)
-
-      if (url === HOMEPAGE_URL) {
-        const error = new TypeError('fetch failed')
-        error.cause = { code: 'UND_ERR_CONNECT_TIMEOUT' }
-        throw error
-      }
-
-      if (url === CAREERS_BOARD_URL) return ROOT_LISTING_HTML
-      if (url === buildIframeListingUrl({ page: 1 })) return IFRAME_LISTING_HTML
-
-      throw new Error(`Unexpected Bata India URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requests, [
-    HOMEPAGE_URL,
-    CAREERS_BOARD_URL,
-    buildIframeListingUrl({ page: 1 }),
-  ])
-  assert.equal(jobs.length, 3)
-  assert.equal(jobs[2].jobId, '272')
+test('configured native board has its own current employer proof and preserves2blank-description gaps',async()=>{
+  const {run}=await loadBataIndiaModule(),audits=[]
+  const jobs=await run({minRequestIntervalMs:0,fetchPage:await currentNativeFixture(),onAudit:a=>audits.push(a)})
+  assert.equal(jobs.length,9);assert.equal(audits[0].nativeTotal,11)
+  assert.equal(audits[0].publicEmployer.id,5079)
+  assert.deepEqual(audits[0].detailGaps.map(gap=>gap.jobId).sort(),['234','465'])
+  assert.equal(audits[0].inventoryEvidence.listingComplete,false)
 })

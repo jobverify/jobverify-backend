@@ -154,13 +154,13 @@ test('extractSearchResults maps Apollo Tyres CSOD requisitions and detail payloa
   })
 })
 
-test('run fetches Apollo Tyres openings from the public CSOD search API and decorates runner fields', async () => {
+test('current Apollo runtime rejects unbound archived positive fixtures while retaining native URL/search builders', async () => {
   const requests = []
   const scraper = createApolloTyresScraper({
     maxJobs: null,
   })
 
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchText: async (url) => {
       requests.push({ type: 'text', url })
       return sampleHomePage
@@ -178,7 +178,7 @@ test('run fetches Apollo Tyres openings from the public CSOD search API and deco
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), /Apollo native CSOD.*identity/i)
 
   assert.equal(CAREER_PAGE_URL, 'https://apollotyres.csod.com/ux/ats/careersite/1/home?c=apollotyres')
   assert.deepEqual(buildSearchRequest(), {
@@ -203,14 +203,7 @@ test('run fetches Apollo Tyres openings from the public CSOD search API and deco
   assert.deepEqual(
     requests.map((request) => request.url),
     [
-      CAREER_PAGE_URL,
-      SEARCH_API_URL,
-      buildDetailUrl(1744),
-      buildDetailUrl(1752),
+      'https://corporate.apollotyres.com/careers/',
     ],
   )
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'apollo')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
 })

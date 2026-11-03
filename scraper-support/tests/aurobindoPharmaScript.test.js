@@ -1,3 +1,6 @@
+import {readFileSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+const currentPublicPage=(source,url)=>{const fixture=JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/'+source+'/test-data/current-public-20261103.json.gz',import.meta.url)))),row=fixture.responses.find(r=>r.url===url);assert.ok(row,'Only current captured declared public URL: '+url);return{url:row.finalURL,status:row.status,headers:row.headers,html:row.body}}
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -102,7 +105,7 @@ test('Aurobindo Pharma constants stay pinned to the verified homepage, careers p
   assert.equal(aurobindoPharma.SOURCE, 'aurobindopharma')
   assert.equal(aurobindoPharma.COMPANY, 'Aurobindo Pharma')
   assert.equal(aurobindoPharma.OFFICIAL_BRAND_NAME, 'Aurobindo Pharma')
-  assert.equal(aurobindoPharma.VERIFIED_ON, '2026-07-15')
+  assert.equal(aurobindoPharma.VERIFIED_ON, null)
   assert.equal(aurobindoPharma.HOMEPAGE_URL, 'https://www.aurobindo.com/')
   assert.equal(aurobindoPharma.CAREERS_PAGE_URL, 'https://www.aurobindo.com/careers')
   assert.equal(aurobindoPharma.CAREERS_HANDOFF_URL, 'https://aurobindo.talentrecruit.com/Search/')
@@ -127,119 +130,14 @@ test('Aurobindo Pharma constants stay pinned to the verified homepage, careers p
   assert.equal(aurobindoPharma.hasPublicJobsSignal(publicJobsHtml), true)
 })
 
-test('Aurobindo Pharma sentinel returns [] only while the verified broken TalentRecruit handoff persists', async () => {
-  const aurobindoPharma = await loadAurobindoPharmaModule()
-  const requestedUrls = []
-
-  const jobs = await aurobindoPharma.createAurobindoPharmaScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === aurobindoPharma.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === aurobindoPharma.CAREERS_PAGE_URL) {
-        return { status: 200, url, html: careersHtml }
-      }
-
-      if (url === aurobindoPharma.CAREERS_HANDOFF_URL) {
-        return { status: 404, url, html: brokenTalentRecruitSearchHtml }
-      }
-
-      if (url === aurobindoPharma.CAREERS_HOST_URL) {
-        return { status: 200, url, html: brokenTalentRecruitHostHtml }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    aurobindoPharma.HOMEPAGE_URL,
-    aurobindoPharma.CAREERS_PAGE_URL,
-    aurobindoPharma.CAREERS_HANDOFF_URL,
-    aurobindoPharma.CAREERS_HOST_URL,
-  ])
-  assert.deepEqual(jobs, [])
+test('Aurobindo current native404is an explicit unknown-inventory failure, never successful empty',async()=>{
+ const module=await loadAurobindoPharmaModule(),reads=[]
+ await assert.rejects(module.createAurobindoPharmaScraper().run({fetchPage:async url=>{reads.push(url);return currentPublicPage('aurobindopharma',url)}}),error=>error.status===404&&error.abortRetries===true&&error.inventoryEvidence.reportedTotal===null)
+ assert.deepEqual(reads,[module.CAREERS_PAGE_URL,module.CAREERS_HANDOFF_URL])
 })
 
-test('Aurobindo Pharma sentinel fails closed when the official pages drift or the TalentRecruit handoff becomes a real public board', async () => {
-  const aurobindoPharma = await loadAurobindoPharmaModule()
-
-  await assert.rejects(
-    aurobindoPharma.createAurobindoPharmaScraper().run({
-      fetchPage: async (url) => {
-        if (url === aurobindoPharma.HOMEPAGE_URL) {
-          return { status: 200, url, html: '<html><body><h1>Unexpected homepage</h1></body></html>' }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /official homepage/i,
-  )
-
-  await assert.rejects(
-    aurobindoPharma.createAurobindoPharmaScraper().run({
-      fetchPage: async (url) => {
-        if (url === aurobindoPharma.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === aurobindoPharma.CAREERS_PAGE_URL) {
-          return { status: 200, url, html: '<html><body><h1>Careers</h1></body></html>' }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /careers page/i,
-  )
-
-  await assert.rejects(
-    aurobindoPharma.createAurobindoPharmaScraper().run({
-      fetchPage: async (url) => {
-        if (url === aurobindoPharma.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === aurobindoPharma.CAREERS_PAGE_URL) {
-          return { status: 200, url, html: careersHtml }
-        }
-
-        if (url === aurobindoPharma.CAREERS_HANDOFF_URL) {
-          return { status: 200, url, html: publicJobsHtml }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /talentrecruit handoff no longer matches the verified broken state/i,
-  )
-
-  await assert.rejects(
-    aurobindoPharma.createAurobindoPharmaScraper().run({
-      fetchPage: async (url) => {
-        if (url === aurobindoPharma.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === aurobindoPharma.CAREERS_PAGE_URL) {
-          return { status: 200, url, html: careersHtml }
-        }
-
-        if (url === aurobindoPharma.CAREERS_HANDOFF_URL) {
-          return { status: 404, url, html: brokenTalentRecruitSearchHtml }
-        }
-
-        if (url === aurobindoPharma.CAREERS_HOST_URL) {
-          return { status: 200, url, html: '<html><body><h1>TalentRecruit</h1></body></html>' }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /talentrecruit host no longer matches the verified default-host broken state/i,
-  )
+test('Aurobindo employer drift and newly available unreviewed native job models cannot establish empty inventory',async()=>{
+ const module=await loadAurobindoPharmaModule()
+ await assert.rejects(module.createAurobindoPharmaScraper().run({fetchPage:async url=>({...currentPublicPage('aurobindopharma',url),html:'<title>Other employer</title>'})}),/employer|identity|handoff/i)
+ await assert.rejects(module.createAurobindoPharmaScraper().run({fetchPage:async url=>url===module.CAREERS_HANDOFF_URL?{url,status:200,html:publicJobsHtml}:currentPublicPage('aurobindopharma',url)}),error=>error.failureKind==='source_inventory_unavailable'&&error.inventoryEvidence.reportedTotal===null)
 })

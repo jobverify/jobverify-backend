@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { buildHttpError } from '../../scraper-support/utils/fetch.js'
+import { runPublicCollection } from '../skyscanner/publicBoundary.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -247,16 +248,14 @@ export const createCanvaScraper = ({
   maxJobs = null,
   maxPages = null,
 } = {}) => ({
-  async run({
-    fetchPage,
-    fetchText,
-    now = () => new Date().toISOString(),
-  } = {}) {
+  async run(options = {}) {
+    return runPublicCollection(SOURCE, options, async boundary => {
+    const { fetchPage, fetchText, now = () => new Date().toISOString() } = options
     const effectiveFetchPage = typeof fetchPage === 'function'
-      ? fetchPage
+      ? url => boundary.read(url, context => fetchPage(url, { signal: context.signal }))
       : typeof fetchText === 'function'
-        ? createFetchPageFromText(fetchText)
-        : defaultFetchPage
+        ? url => boundary.read(url, async context => ({ status: 200, url, headers: {}, html: await fetchText(url, { signal: context.signal }) }))
+        : url => boundary.fetchPage(url, options.fetchImpl || globalThis.fetch, { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' })
 
     const selectedMaxPages = Number.isInteger(maxPages) && maxPages > 0
       ? maxPages
@@ -335,6 +334,7 @@ export const createCanvaScraper = ({
     }
 
     return jobs
+    })
   },
 })
 

@@ -100,8 +100,12 @@ test('Celebal parses the first-party Next.js jobs bundle and keeps India roles f
     title: 'Data Scientist (Fresher)',
     company: 'Celebal Technologies',
     department: 'Data Science',
-    location: 'Jaipur, India',
+    location: 'Houston | Calgary | Jaipur, India | Bogotá',
     city: 'Jaipur',
+    country: 'India',
+    sourceNativeLocation: 'Houston | Calgary | Jaipur| Bogotá',
+    sourceWorkMode: 'Internship + Fulltime',
+    remoteStatus: null,
     link: 'https://celebaltech.com/careers/data-scientist-fresher',
     applyUrl: 'https://celebaltech.com/careers/data-scientist-fresher',
     sourceUrl: 'https://celebaltech.com/careers/data-scientist-fresher',
@@ -159,6 +163,9 @@ test('Celebal run consumes the verified careers shell plus first-party jobs bund
     celebal.CAREERS_URL,
     'https://celebaltech.com/_next/static/chunks/223-layout.js',
     'https://celebaltech.com/_next/static/chunks/9835-jobs.js',
+    celebal.CAREERS_URL,
+    'https://celebaltech.com/_next/static/chunks/223-layout.js',
+    'https://celebaltech.com/_next/static/chunks/9835-jobs.js',
   ])
   assert.equal(jobs.length, 6)
   assert.equal(jobs[0].company, 'Celebal Technologies')
@@ -167,7 +174,7 @@ test('Celebal run consumes the verified careers shell plus first-party jobs bund
   assert.equal(jobs[3].title, 'Fullstack Developer - Python with AI')
   assert.equal(jobs[4].city, 'Gurugram')
   assert.equal(jobs[5].location, 'Noida, Jaipur, India')
-  assert.ok(jobs.every((job) => job.location.endsWith('India')))
+  assert.ok(jobs.every((job) => job.country === 'India'))
 })
 
 test('Celebal fails closed when the verified careers shell drifts or the public jobs bundle no longer matches the official contract', async () => {

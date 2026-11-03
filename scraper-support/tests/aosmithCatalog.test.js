@@ -20,7 +20,10 @@ test('getScraperCatalog includes the A. O. Smith official careers scraper with p
   assert.equal(aosmith.lifecycleCleanupAllowed, false)
   assert.equal(aosmith.verifiedPublicJobCount, null)
   assert.equal(aosmith.verifiedIndiaJobCount, null)
-  assert.equal(aosmith.zeroResultPolicy, 'coverage-gap')
+  assert.equal(aosmith.zeroResultPolicy, 'evidence-required')
+  assert.equal(aosmith.runtimeInventoryVerification, true)
+  assert.match(aosmith.extractionStrategy, /final-after-details/)
+  assert.equal(aosmith.scraperTimeoutMs, 400000)
 })
 
 test('buildScrapers exposes a runnable A. O. Smith scraper without changing the runner contract', () => {

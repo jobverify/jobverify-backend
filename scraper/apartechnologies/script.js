@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import APAR_TECHNOLOGIES_CATALOG from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -115,14 +117,14 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, options = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
-    signal: createTimeoutSignal(15000),
+    signal: options.signal ? AbortSignal.any([options.signal, createTimeoutSignal(15000)]) : createTimeoutSignal(15000),
   })
 
   return {
@@ -263,7 +265,13 @@ export const isKnownMissingJobRoute = (page = {}, requestedUrl) => {
   }
 
 export const createAparTechnologiesScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchPage: providedFetch = defaultFetchPage, signal, onAudit, now = () => new Date().toISOString() } = {}) {
+    const fetchPage = async url => {
+      signal?.throwIfAborted()
+      const response = await providedFetch(url, { signal })
+      signal?.throwIfAborted()
+      return response
+    }
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (homepage.status === 200 && sameUrl(homepage.url, HOMEPAGE_URL)
       && hasCurrentHomepageSignal(homepage.html)) {
@@ -272,7 +280,16 @@ export const createAparTechnologiesScraper = () => ({
         || !hasCurrentCareersSignal(careers.html)) {
         throw new Error('Apar Technologies current careers form no longer matches the known first-party surface')
       }
-      return []
+      const jobs = [], observations = [{ kind: 'general-cv-intake', url: CAREERS_URL, vacancy: false, descriptionComplete: false, country: null }]
+      const evidence = { status: 'coverage-gap', surface: CAREERS_URL, firstParty: true, listingComplete: false,
+        pagesFetched: 2, reportedTotal: null, indiaFacetCount: null, verifiedAt: now(),
+        reason: 'current-resume-upload-form-without-a-native-vacancy-inventory-or-zero-count' }
+      attachInventoryEvidence(jobs, evidence)
+      attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'hiring-signals', observedRecordCount: 1,
+        observedVacancyCount: 0, sourceScopeComplete: false })
+      await onAudit?.({ source: SOURCE, observations, inventoryEvidence: evidence, productionWrites: false })
+      signal?.throwIfAborted()
+      return jobs
     }
 
     if (

@@ -41,6 +41,7 @@ const searchResultsHtml = `
 const detailHtml = `
   <html>
     <head>
+      <link rel="canonical" href="https://in.linkedin.com/jobs/view/high-end-specialist-at-ab-inbev-4429614938">
       <title>AB InBev hiring High End Specialist in Mumbai, Maharashtra, India | LinkedIn</title>
       <script type="application/ld+json">
         {
@@ -52,7 +53,8 @@ const detailHtml = `
           "title": "High End Specialist",
           "hiringOrganization": {
             "@type": "Organization",
-            "name": "AB InBev"
+            "name": "AB InBev",
+            "sameAs": "https://www.linkedin.com/company/ab-inbev"
           },
           "jobLocation": {
             "@type": "Place",

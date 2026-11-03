@@ -25,7 +25,7 @@ const loadAscentHealthModule = async () => {
   }
 }
 
-test('Ascent Health local catalog captures the verified first-party no-public-jobs surface', async () => {
+test('Ascent Health local catalog keeps current hiring entries separate from vacancy inventory', async () => {
   const { ASCENT_HEALTH_CATALOG } = await loadCatalogModule()
   const ascentHealth = await loadAscentHealthModule()
 
@@ -58,20 +58,20 @@ test('Ascent Health local catalog captures the verified first-party no-public-jo
   assert.equal(ASCENT_HEALTH_CATALOG.countryFilter, 'India')
   assert.equal(
     ASCENT_HEALTH_CATALOG.paginationStrategy,
-    'homepage-plus-careers-page-plus-sitemap-and-adjacent-route-validation',
+    'current-corporate-careers-and-closing-hiring-entry',
   )
   assert.equal(
     ASCENT_HEALTH_CATALOG.extractionStrategy,
-    'verified-homepage+verified-resume-intake-careers-page+verified-sitemap-career-routes-and-aliases-without-public-listings-return-empty',
+    'current-first-party-resume-entry+closing-comparison+unknown-vacancy-inventory',
   )
   assert.equal(ASCENT_HEALTH_CATALOG.parser, 'custom-script')
   assert.equal(ASCENT_HEALTH_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(ASCENT_HEALTH_CATALOG.companyDomain, 'ascenthealthcare.com')
-  assert.equal(ASCENT_HEALTH_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(ASCENT_HEALTH_CATALOG.verifiedOn, null)
   assert.match(ASCENT_HEALTH_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.ascenthealthcare\.com\//i)
   assert.match(ASCENT_HEALTH_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.ascenthealthcare\.com\/careers\//i)
   assert.match(ASCENT_HEALTH_CATALOG.verifiedSurfaceSummary, /careers@ascent-group\.com/i)
-  assert.match(ASCENT_HEALTH_CATALOG.verifiedSurfaceSummary, /no trustworthy public job listings surface/i)
+  assert.match(ASCENT_HEALTH_CATALOG.verifiedSurfaceSummary, /unknown vacancy and India totals/i)
   assert.equal(ASCENT_HEALTH_CATALOG.modulePath, ascentHealthModulePath)
 
   assert.equal(ascentHealth.PROVIDER_METADATA.source, ASCENT_HEALTH_CATALOG.source)

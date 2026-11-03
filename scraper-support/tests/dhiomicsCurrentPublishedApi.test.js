@@ -115,9 +115,14 @@ test('ADA preserves native careers posting and closing dates as ISO values',asyn
  const jobs=await source.createDhiOmicsScraper({now:()=> '2026-10-09T00:00:00Z'}).run({fetchPage:officialPage,fetchListingPage:async()=>body})
  const job=jobs.find(j=>j.jobId===active.id);assert.equal(job.postingDate,new Date(active.job_posting.careers.from*1000).toISOString());assert.equal(job.closingDate,'2026-12-01T00:00:00.000Z')
 })
-for(const[label,change]of[['ended',r=>{r.job_posting.careers.to=Date.parse('2026-10-01')/1000}],['future',r=>{r.job_posting.careers.from=Date.parse('2026-11-01')/1000}]])test('ADA excludes '+label+' native careers lifecycle',async()=>{
+for(const[label,change]of[['ended',r=>{r.job_posting.careers.to=Date.parse('2026-10-01')/1000}],['future',r=>{r.posted_on=r.job_posting.careers.from=Date.parse('2026-11-01')/1000}]])test('ADA excludes '+label+' native careers lifecycle',async()=>{
  const body=structuredClone(payload);change(body.data.find(r=>r.country==='India'))
  const jobs=await source.createDhiOmicsScraper({now:()=> '2026-10-09T00:00:00Z'}).run({fetchPage:officialPage,fetchListingPage:async()=>body});assert.equal(jobs.length,1);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+})
+
+test('ADA rejects contradictory native original publication fields',async()=>{
+ const body=structuredClone(payload);body.data.find(r=>r.country==='India').job_posting.careers.from=Date.parse('2026-11-01')/1000
+ await assert.rejects(source.createDhiOmicsScraper({now:()=> '2026-10-09T00:00:00Z'}).run({fetchPage:officialPage,fetchListingPage:async()=>body}),/publication epochs are malformed or inconsistent/)
 })
 
 test('ADA run-level caller cap remains incomplete',async()=>{

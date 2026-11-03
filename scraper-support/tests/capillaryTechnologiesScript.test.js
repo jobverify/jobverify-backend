@@ -35,7 +35,7 @@ test('recognizes Capillary Technologies official careers page while its new expe
   assert.equal(isCareersExperiencePending(pendingCareersHtml), true)
 })
 
-test('returns no jobs while Capillary Technologies has no public job records', async () => {
+test('keeps inventory unknown while Capillary Technologies publishes a pending hiring experience', async () => {
   const requestedUrls = []
   const jobs = await createCapillaryTechnologiesScraper().run({
     fetchText: async (url) => {
@@ -44,7 +44,7 @@ test('returns no jobs while Capillary Technologies has no public job records', a
     },
   })
 
-  assert.deepEqual(requestedUrls, [CAREER_PAGE_URL])
+  assert.deepEqual(requestedUrls, [CAREER_PAGE_URL, CAREER_PAGE_URL])
   assert.deepEqual(jobs, [])
 })
 
@@ -59,10 +59,10 @@ test('surfaces Capillary Technologies direct-request failures without a browser 
   )
 })
 
-test('returns no jobs when the verified Capillary Technologies careers route is Cloudflare-blocked on Thursday, August 13, 2026', async () => {
+test('reports a source-local denial when the Capillary careers route is blocked', async () => {
   const requestedPageUrls = []
 
-  const jobs = await createCapillaryTechnologiesScraper().run({
+  await assert.rejects(createCapillaryTechnologiesScraper().run({
     fetchText: async (url) => {
       throw new Error(`HTTP 403 for ${url}`)
     },
@@ -74,8 +74,7 @@ test('returns no jobs when the verified Capillary Technologies careers route is 
         html: cloudflareBlockedPageHtml,
       }
     },
-  })
+  }), error => error.status===403 && error.failureKind==='blocked')
 
   assert.deepEqual(requestedPageUrls, [CAREER_PAGE_URL])
-  assert.deepEqual(jobs, [])
 })

@@ -48,7 +48,7 @@ test('extra seniority or duties after the native head-title prefix cannot masque
   assert.throws(()=>parse(changed),/title contradiction/i)
  }
 })
-test('registered default transport replays current two-role cap and remains partial with null company totals',async t=>{
+test('registered default transport keeps the bound role from a two-candidate cap and retains its identity-mismatch failure',async t=>{
  const calls=[],controller=new AbortController()
  t.mock.method(globalThis,'fetch',async(url,init)=>{
   calls.push(String(url));const packet=packets.find(row=>row.url===String(url));assert.ok(packet,'Only captured first-party URLs')
@@ -57,7 +57,10 @@ test('registered default transport replays current two-role cap and remains part
  })
  const provider=getScraperCatalog().find(row=>row.source==='amicorp')
  const jobs=await createCatalogScraper(provider).run({maxJobs:2,signal:controller.signal})
- assert.equal(jobs.length,2);assert.equal(calls.length,4)
+ assert.equal(jobs.length,1);assert.equal(calls.length,4)
+ assert.equal(jobs[0].title,'Client Messaging & WhatsApp Lead')
+ assert.equal(jobs[0].nativeCollectionEvidence.failures.length,1)
+ assert.equal(jobs[0].nativeCollectionEvidence.failures[0].failureKind,'identity-mismatch')
  const evidence=readInventoryEvidence(jobs)
  assert.equal(evidence.listingComplete,false);assert.equal(evidence.reportedTotal,null);assert.equal(evidence.indiaFacetCount,null)
  assert.ok(jobs.every(job=>job.source==='amicorp'&&job.company==='Amicorp'&&job.sourceListingComplete===false))

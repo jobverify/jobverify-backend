@@ -9,7 +9,7 @@ import { hasSavedFilters } from "../services/jobFilterMatcher.js";
 import { normalizeProfilePreferenceFilters } from "../utils/profilePreferenceFilters.js";
 
 export const telegramAlertScheduleValidation = [
-  body("frequency").isIn(ALERT_FREQUENCIES).withMessage("Choose immediate, daily or weekly delivery."),
+  body("frequency").isIn(ALERT_FREQUENCIES).withMessage("Choose daily or weekly delivery."),
   body("isActive").custom((value) => typeof value === "boolean").withMessage("Enabled must be a boolean."),
   body("deliveryTime").isString().bail().matches(ALERT_TIME_PATTERN).withMessage("Choose a valid time in HH:mm format (IST)."),
   body("weeklyDay").isString().bail().isIn(ALERT_WEEKDAYS).withMessage("Choose a valid weekday."),

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { gunzipSync } from 'node:zlib'
 
 import { normalizeScrapedJob } from '../utils/normalizeScrapedJob.js'
 
@@ -96,33 +97,38 @@ test('normalizeScrapedJob composes Armstrong India sales roles from the public c
   assert.equal(normalized.jobType, 'Full-time Experienced')
 })
 
-test('run fetches the Armstrong public careers page and decorates shared runner fields', async () => {
+test('run follows the current official BambooHR handoff and decorates all full India details', async () => {
   const armstrong = await loadArmstrongModule()
   assert.ok(armstrong)
 
   const requests = []
   const scraper = armstrong.createArmstrongFluidTechnologyScraper()
+  const native = JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/armstrongfluidtechnology/test-data/native-20261103.json.gz', import.meta.url))))
 
   const jobs = await scraper.run({
     fetchText: async (url) => {
       requests.push(url)
-      if (url === armstrong.buildCareersPageUrl()) {
-        return readFixture('careers.html')
-      }
+      if (url === armstrong.buildCareersPageUrl()) return native.company
+      if (url === 'https://armstrongfluidtechnology.bamboohr.com/careers/') return native.board
       throw new Error(`Unexpected Armstrong URL: ${url}`)
+    },
+    fetchJson: async url => {
+      requests.push(url)
+      if (url.endsWith('/careers/list')) return structuredClone(native.listing)
+      const detail = native.details.find(row => row.url === url)
+      assert.ok(detail, url)
+      return structuredClone(detail.body)
     },
   })
 
-  assert.deepEqual(requests, [
-    armstrong.buildCareersPageUrl(),
-  ])
-  assert.equal(jobs.length, 1)
+  assert.equal(requests.length, 164)
+  assert.equal(jobs.length, 34)
   assert.equal(jobs[0].source, 'armstrongfluidtechnology')
   assert.equal(jobs[0].company, 'Armstrong Fluid Technology')
-  assert.equal(jobs[0].jobId, 'Sales-Manager-Retrofit-Northern-Region-Bengaluru-Karnataka')
+  assert.equal(jobs[0].jobId, '588')
   assert.equal(
     jobs[0].applyUrl,
-    'https://armstrongfluidtechnology.bamboohr.com/careers/401?source=aWQ9OA%3D%3D',
+    'https://armstrongfluidtechnology.bamboohr.com/careers/588',
   )
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })

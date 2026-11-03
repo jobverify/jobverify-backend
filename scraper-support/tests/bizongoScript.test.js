@@ -26,55 +26,13 @@ const officialCareersHtml = `
 </html>
 `
 
-test('Bizongo verifies the official careers handoff and returns an honest zero-job result only while the careers host stays broken', async () => {
-  const bizongo = await loadBizongoModule()
-
-  const jobs = await bizongo.createBizongoScraper().run({
-    fetchPage: async (url) => {
-      if (url === bizongo.CAREERS_URL) {
-        return {
-          status: 200,
-          url,
-          html: officialCareersHtml,
-        }
-      }
-
-      throw new Error('fetch failed')
-    },
-  })
-
-  assert.equal(bizongo.hasOfficialCareersSignal(officialCareersHtml), true)
-  assert.deepEqual(jobs, [])
+test('Bizongo preserves an unavailable public handoff as the original source failure with native evidence',async()=>{
+ const bizongo=await loadBizongoModule(),reason=Error('fetch failed'),reports=[]
+ await assert.rejects(bizongo.run({fetchPage:async url=>{if(url===bizongo.CAREERS_URL)return{status:200,url,html:officialCareersHtml};throw reason},onAudit:r=>reports.push(r)}),e=>e===reason)
+ assert.equal(bizongo.hasOfficialCareersSignal(officialCareersHtml),true);assert.equal(reports.length,1);assert.equal(reports[0].companyGlobalTotal,null)
 })
-
-test('Bizongo fails closed when the official careers page changes or the broken host becomes a real public board', async () => {
-  const bizongo = await loadBizongoModule()
-
-  await assert.rejects(
-    bizongo.createBizongoScraper().run({
-      fetchPage: async (url) => ({
-        status: 200,
-        url,
-        html: '<html><body>Jobs</body></html>',
-      }),
-    }),
-    /verified Bizongo careers page/i,
-  )
-
-  await assert.rejects(
-    bizongo.createBizongoScraper().run({
-      fetchPage: async (url) => {
-        if (url === bizongo.CAREERS_URL) {
-          return { status: 200, url, html: officialCareersHtml }
-        }
-
-        return {
-          status: 200,
-          url,
-          html: '<html><body><h1>Open Positions</h1><a href="/jobs/1">Apply now</a></body></html>',
-        }
-      },
-    }),
-    /verified broken Bizongo careers host state/i,
-  )
+test('Bizongo rejects changed corporate identity and requests native review if the current handoff becomes available',async()=>{
+ const bizongo=await loadBizongoModule()
+ await assert.rejects(bizongo.run({fetchPage:async url=>({status:200,url,html:'<html>Jobs</html>'})}),/official careers identity/i)
+ await assert.rejects(bizongo.run({fetchPage:async url=>({status:200,url,html:url===bizongo.CAREERS_URL?officialCareersHtml:'<h1>Open Positions</h1>'})}),e=>e.code==='PUBLIC_VACANCY_COLLECTOR_REQUIRED')
 })

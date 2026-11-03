@@ -10,7 +10,7 @@ test('getScraperCatalog includes BootLabs Technologies Pvt Ltd as a LinkedIn-rou
   assert.ok(provider)
   assert.equal(provider.companyName, 'BootLabs Technologies Pvt Ltd')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'linkedin-guest-search')
+  assert.equal(provider.atsPlatform, 'linkedin-public-employer-announcements')
   assert.equal(provider.companyCareerPage, 'https://www.bootlabstech.com/careers')
   assert.equal(provider.companyDomain, 'bootlabstech.com')
   assert.equal(provider.parser, 'custom-script')

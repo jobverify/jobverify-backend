@@ -20,21 +20,20 @@ const officialCareersHtml = `
   </html>
 `
 
-test('Adani Group validates its official careers surface before returning no unverified listings', async () => {
+test('Adani Group careers identity alone cannot authorize an empty inventory', async () => {
   const adani = await import('../../scraper/adani/script.js')
   const requestedUrls = []
 
   assert.equal(adani.hasOfficialCareersSignal(officialCareersHtml), true)
 
-  const jobs = await adani.createAdaniScraper().run({
+  await assert.rejects(adani.createAdaniScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       return officialCareersHtml
     },
-  })
+  }), /current corporate careers subdomain handoff missing/i)
 
   assert.deepEqual(requestedUrls, [adani.CAREERS_URL])
-  assert.deepEqual(jobs, [])
 })
 
 test('Adani Group fails closed when the official careers surface changes', async () => {

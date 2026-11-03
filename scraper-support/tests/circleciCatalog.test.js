@@ -22,22 +22,22 @@ test('getScraperCatalog includes CircleCI as a verified first-party script provi
   assert.equal(provider.officialBrandName, 'CircleCI')
   assert.equal(provider.companyCareerPage, 'https://circleci.com/careers/jobs/')
   assert.equal(provider.companyDomain, 'circleci.com')
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-page')
+  assert.equal(provider.atsPlatform, 'official-circleci-careers-greenhouse')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-open-roles-page-current-empty-india-slice')
+  assert.equal(provider.paginationStrategy, 'full-native-board-and-corporate-inventory-with-closing-comparison-before-caps')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-open-roles-page+same-domain-role-links+return-empty-when-no-india-locations',
+    'active-corporate-role-greenhouse-embed+full-native-job-criteria+own-country-proof',
   )
-  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.parser, 'current-company-and-native-ats')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, null)
   assert.match(provider.modulePath, /circleci[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /circleci[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/circleci\.com\/careers\/jobs\//i)
-  assert.match(provider.verifiedSurfaceSummary, /\b9 public openings\b/i)
-  assert.match(provider.verifiedSurfaceSummary, /zero India locations/i)
+  assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.match(provider.verifiedSurfaceSummary, /count disagreements and unresolved native worksite countries/i)
 })
 
 test('buildScrapers exposes a runnable CircleCI scraper without changing the runner contract', () => {

@@ -11,13 +11,13 @@ test('Brihaspathi is registered on the verified first-party careers page and pub
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Brihaspathi Technologies Limited')
-  assert.equal(provider.companyCareerPage, 'https://www.brihaspathi.com/careers')
+  assert.equal(provider.companyCareerPage, 'https://brihaspathi.com/careers')
   assert.equal(provider.atsPlatform, 'first-party-strapi-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'reviewed-native-first-100-ceiling-and-full-closing-snapshot-before-cap')
+  assert.equal(provider.paginationStrategy, 'all-declared-native-api-pages-and-full-closing-models;published-first-100-render-ceiling-explicit')
   assert.equal(
     provider.extractionStrategy,
-    'current-native-react-client+public-strapi-role-cards+native-modal-identity',
+    'reviewed-public-native-client-semantics+active-Strapi-enumeration+strict-declared-zero+positive-criteria-and-country-gaps+bounded-audit',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -49,6 +49,6 @@ test('Brihaspathi is runnable through the scraper provider catalog', () => {
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'brihaspathi')
-  assert.equal(scraper.provider.companyCareerPage, 'https://www.brihaspathi.com/careers')
+  assert.equal(scraper.provider.companyCareerPage, 'https://brihaspathi.com/careers')
   assert.match(scraper.dryRunFile, /brihaspathi[\\/]jobs\.json$/i)
 })

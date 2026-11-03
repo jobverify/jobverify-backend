@@ -61,7 +61,7 @@ test('extractSearchResults maps the Ammachi Labs WordPress jobs API into shared 
     city: 'Wayanad district',
     country: null,
     jobId: '58601',
-    requisitionId: '58601',
+    requisitionId: null,
     sourceUrl: 'https://ammachilabs.org/job/field-investigator/',
     applyUrl: 'https://ammachilabs.org/job/field-investigator/',
     employmentType: 'Full-time',
@@ -72,7 +72,7 @@ test('extractSearchResults maps the Ammachi Labs WordPress jobs API into shared 
     postingDate: '2026-05-26T04:41:14.000Z',
     closingDate: null,
     jobDescription: 'Lead community eye-care programs. Responsibilities Coordinate field visits Qualifications BSW/MSW preferred',
-    remoteStatus: 'On-site',
+    remoteStatus: null,
   })
   assert.equal(jobs[1].title, 'Remote Learning Designer')
   assert.equal(jobs[1].city, null)
@@ -83,42 +83,13 @@ test('extractSearchResults maps the Ammachi Labs WordPress jobs API into shared 
   assert.equal(jobs[2].remoteStatus, null)
 })
 
-test('run fetches the Ammachi Labs jobs API and decorates jobs', async () => {
-  const ammachi = await loadAmmachiModule()
-  assert.ok(ammachi)
-
-  const requestedUrls = []
-  const scraper = ammachi.createAmmachiLabsScraper()
-
-  const jobs = await scraper.run({
-    fetchJson: async (url) => {
-      requestedUrls.push(url)
-      if (url === ammachi.JOBS_API_URL) {
-        return [
-          {
-            id: 59001,
-            link: 'https://ammachilabs.org/job/stem-educator/',
-            date_gmt: '2026-06-01T04:00:00',
-            title: { rendered: 'STEM Educator' },
-            position_title: 'STEM Educator',
-            position_employment_type: ['FULL_TIME'],
-            position_job_location: 'Amritapuri, Kerala, India',
-            position_description: '<p>Teach STEM programs across community cohorts.</p>',
-            position_responsibilities: '<ul><li>Facilitate lab sessions</li></ul>',
-            position_qualifications: '<ul><li>Education background preferred</li></ul>',
-          },
-        ]
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.equal(ammachi.buildSearchUrl(), ammachi.JOBS_API_URL)
-  assert.deepEqual(requestedUrls, [ammachi.JOBS_API_URL])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'ammachilabs')
-  assert.equal(jobs[0].link, 'https://ammachilabs.org/job/stem-educator/')
-  assert.equal(jobs[0].company, 'Ammachi Labs')
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
+import {nativeFixture} from '../../scraper/alohatechnology/nativeFixture.js'
+import {readSourceObservationEvidence} from '../utils/sourceObservationEvidence.js'
+test('run reads current native archive, authoritative API and all full details before returning lab-scoped candidates',async()=>{
+ const source=await loadAmmachiModule(),fixture=nativeFixture(new URL('../../scraper/ammachilabs/x.js',import.meta.url)),calls=[],reports=[]
+ const jobs=await source.run({fetchPage:async u=>{calls.push(u);return fixture.fetchPage(u)},onAudit:r=>reports.push(r)})
+ assert.equal(source.buildSearchUrl(),source.JOBS_API_URL);assert.equal(calls.filter(u=>u===source.JOBS_API_URL).length,2)
+ assert.equal(jobs.length,22);assert.equal(readSourceObservationEvidence(jobs,'ammachilabs').observedVacancyCount,23)
+ assert.equal(reports[0].scopeGapRecords[0].jobId,'26893');assert.match(reports[0].scopeGapRecords[0].nativeEmployerName,/CWEGE/)
+ assert.ok(jobs.every(j=>j.source==='ammachilabs'&&j.requisitionId===null&&j.country===null&&j.sourceDetailComplete))
 })

@@ -112,10 +112,10 @@ test('the captured public AT&T runtime reconciles all 36 roles and all three clo
   assert.equal(new Set(jobs.map(job => job.jobId)).size, 36)
   assert.equal(new Set(jobs.map(job => job.nativeJobId)).size, 36)
   assert.equal([...responses.values()].every(queue => queue.length === 0), true)
-  assert.equal(readInventoryEvidence(jobs).status, 'coverage-gap')
+  assert.equal(readInventoryEvidence(jobs).status, 'complete-inventory')
   assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 36)
-  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
-  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 36)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })
 
 for (const [name, id, change] of [

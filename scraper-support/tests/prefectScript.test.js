@@ -1,4 +1,6 @@
-import { checkCurrentReplay, assertCurrentProvider } from '../native-sources/declaredJobFeeds/legacyReplayControls.js'
+import { fixture, replay } from '../native-sources/declaredJobFeeds/fixtureReplay.js'
+import { createCatalogScraper, getScraperCatalog } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -215,8 +217,29 @@ test('Prefect extracts only listed India jobs from the verified Ashby payload', 
   ])
 })
 
-test('prefect: current original-entity complete replay (legacy case 217)', async () => checkCurrentReplay('prefect', 'complete'))
+test('Prefect original public replay now verifies configured board scope while retaining company scope limits',async()=>{
+  const mock=replay(),provider=getScraperCatalog().find(row=>row.source==='prefect')
+  const jobs=await createCatalogScraper(provider).run(mock.options),audit=mock.audits[0]
+  assert.equal(mock.audits.length,1)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal,fixture.oracle.prefect.records.length)
+  assert.equal(audit.sourceScopeComplete,false)
+  assert.equal(audit.authoritativeSourceTotal,null)
+  for(const expected of fixture.oracle.prefect.records){
+    const row=audit.observations.find(row=>row.jobId===expected.id)
+    assert.deepEqual(row.sourceNativeListingRecord,expected.originalFeedRecord)
+    assert.ok(row.jobDescription.includes(expected.bodyText))
+    assert.equal(row.sourceDetailComplete,true)
+    assert.equal(row.lifecycleCleanupAllowed,false)
+  }
+})
 
-test('prefect: current original-entity complete replay (legacy case 241)', async () => checkCurrentReplay('prefect', 'complete'))
-
-test('prefect: current original-entity primary replay (legacy case 266)', async () => checkCurrentReplay('prefect', 'primary'))
+test('Prefect original closing corporate failure withholds candidates and complete inventory',async()=>{
+  const url=fixture.profiles.prefect.primaryURL
+  const mock=replay((target,page,visit)=>target===url&&visit===2?{...page,status:502}:page)
+  const provider=getScraperCatalog().find(row=>row.source==='prefect')
+  const jobs=await createCatalogScraper(provider).run(mock.options)
+  assert.equal(jobs.length,0)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null)
+})

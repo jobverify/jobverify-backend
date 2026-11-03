@@ -36,6 +36,10 @@ const additionalHiringScope = (html, base) => {
     || n.tag === 'script' && n.attrs.src && (!n.attrs.type || /^(?:module|(?:application|text)\/(?:javascript|ecmascript))$/i.test(n.attrs.type))).some(node => {
     let target
     try { target = new URL(node.tag === 'script' ? node.attrs.src : node.attrs.href, base) } catch { return true }
+    // This menu enters an authenticated employee profile. It is not another
+    // public vacancy inventory or a condition for reading public criteria.
+    if (target.origin === new URL(BOARD).origin && target.pathname === '/candidate/profile'
+      && target.search === '?tab=internal_jobs' && !target.hash) return false
     const external = target.origin !== new URL(BOARD).origin
     const hiring = /\b(?:careers?|jobs?|open roles|positions|join our team|opportunities)\b/i.test(document.text(node))
       || external && /(?:^|\.)(?:jobs?|careers?|recruit(?:ment)?)\./i.test(target.hostname)
@@ -134,6 +138,38 @@ const parseNativePage = (html, page) => {
 }
 const state = row => JSON.stringify([row?.id, row?.title, row?.country, row?.city, row?.location, row?.url, row?.applyUrl])
 const equalRoles = (first, second) => first.size === second.size && [...first].every(([id, row]) => state(row) === state(second.get(id)))
+export const inspectBillEasePublicDetail = (html, row) => {
+  const document = readVisibleNativeDocument(html)
+  verifyTenant(document)
+  valid(clean(decodeNativeEntities(one(document.nodes(n => n.tag === 'title'), 'native detail title').raw)) === row.title + ' | billease', 'native detail title identity conflicts')
+  const container = one(document.nodes(n => cls(n, 'single-job-content')), 'native full role')
+  valid(document.text(one(descendants(container, n => cls(n, 'single-job-title')), 'native role heading')) === row.title, 'native detail heading/title identity conflicts')
+  const applications = descendants(container, n => n.tag === 'a' && n.attrs['data-type'] === 'apply')
+  valid(applications.length > 0 && applications.every(n => n.attrs['data-job-id'] === row.id
+    && roleUrl(n.attrs.href, row.id, true) === row.applyUrl), 'native detail application identity conflicts')
+  const block = one(descendants(container, n => cls(n, 'job-location')), 'native role location')
+  const list = one(descendants(block, n => n.tag === 'ul'), 'native role location list')
+  const items = descendants(list, n => n.tag === 'li').map(n => document.text(n))
+  const nativeLocation = clean(items[0]) === '-' ? null : clean(items[0])
+  const descriptions = descendants(container, n => cls(n, 'job-post-description'))
+  const description = descriptions.length === 1 ? extractActiveDescription(document.text(descriptions[0])) : null
+  const metadataCountry = nativeLocation && !/[\/;|]/.test(nativeLocation) ? /(?:^|,\s*)(India|Philippines)$/i.exec(nativeLocation)?.[1] : null
+  const labels = descriptions.flatMap(description => descendants(description, n => ['p', 'li'].includes(n.tag)))
+    .map(n => clean(document.text(n))).filter(text => /^Location\s*:/i.test(text))
+  const labelledCountries = [...new Set(labels.map(text => /^Location\s*:\s*(India|Philippines)(?:\s*\([^)]*\))?\s*[·.]?$/i.exec(text)?.[1]?.toLowerCase()).filter(Boolean))]
+  const explicit = [metadataCountry?.toLowerCase(), ...(labelledCountries.length === 1 ? labelledCountries : [])].filter(Boolean)
+  const labelCountryWords = [...new Set(labels.flatMap(text => [...text.matchAll(/\b(?:India|Philippines)\b/gi)].map(match => match[0].toLowerCase())))]
+  const country = explicit.length && new Set([...explicit, ...labelCountryWords]).size === 1 ? explicit[0] === 'india' ? 'India' : 'Philippines' : null
+  const locationConflict = row.location && nativeLocation && clean(row.location) !== nativeLocation
+  const listingConflict = row.country && country && row.country !== country
+  const closed = /\b(?:this (?:role|position) (?:is|has been) (?:closed|filled)|no longer accepting applications)\b/i.test(document.text(container))
+  const qualifiedCountry = !locationConflict && !listingConflict && !closed ? country : null
+  return { id: row.id, title: row.title, sourceUrl: row.url, country: qualifiedCountry,
+    countryEvidence: qualifiedCountry && metadataCountry ? 'native public detail worksite' : qualifiedCountry ? 'native full-description Location label' : null,
+    nativeLocation, location: nativeLocation || country, sourceDescription: description,
+    employmentType: clean(items[1]) || null, remoteStatus: clean(items[2]) || null,
+    sourceDetailComplete: Boolean(description) && !closed, nativeClosed: closed }
+}
 const parseDetail = (html, row, reasons) => {
   const document = readVisibleNativeDocument(html)
   verifyTenant(document)
@@ -172,7 +208,13 @@ const defaultFetchPage = async (url, init) => {
 }
 export const createBillEaseNativeInventory = (defaults = {}) => ({
   async run(options = {}) {
-    const settings = { ...defaults, ...options }, signal = settings.signal, fetchPage = settings.fetchPage || defaultFetchPage
+    const settings = { ...defaults, ...options }, signal = AbortSignal.any([AbortSignal.timeout(180000), ...(settings.signal ? [settings.signal] : [])]), fetchPage = settings.fetchPage || defaultFetchPage
+    const wait = promise => new Promise((resolve, reject) => {
+      const finish = (fn, value) => { signal.removeEventListener('abort', abort); fn(value) }, abort = () => finish(reject, signal.reason)
+      signal.addEventListener('abort', abort, { once: true })
+      Promise.resolve(promise).then(value => finish(resolve, value), error => finish(reject, error))
+      if (signal.aborted) abort()
+    })
     const now = settings.now || (() => new Date().toISOString()), maxJobs = settings.maxJobs ?? 0, reasons = new Set()
     valid(Number.isSafeInteger(maxJobs) && maxJobs >= 0, 'invalid job output limit')
     valid(!(settings.fetchText || settings.fetchJson) || settings.fetchPage, 'current native transport requires fetchPage')
@@ -180,11 +222,11 @@ export const createBillEaseNativeInventory = (defaults = {}) => ({
     let requests = 0
     const pageAt = async (url, json = false) => {
       signal?.throwIfAborted()
-      const response = await fetchPage(url, { method: 'GET', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(25000)]) : AbortSignal.timeout(25000),
-        headers: { Accept: json ? 'application/json' : 'text/html' } })
+      const response = await wait(fetchPage(url, { method: 'GET', signal: AbortSignal.any([signal, AbortSignal.timeout(25000)]),
+        headers: { Accept: json ? 'application/json' : 'text/html' } }))
       signal?.throwIfAborted(); requests++
       valid(response.url === url, 'native response redirected')
-      if (response.status !== 200) throw Error('BillEase public native HTTP ' + response.status)
+      if (response.status !== 200) throw Object.assign(Error('BillEase public native HTTP ' + response.status), { httpStatus: response.status })
       valid(typeof response.body === 'string' && Buffer.byteLength(response.body) <= 4 * 1024 * 1024
         && (json ? /^application\/json\b/i : /^text\/html\b/i).test(response.contentType || ''), 'native response format changed')
       return response.body
@@ -218,19 +260,62 @@ export const createBillEaseNativeInventory = (defaults = {}) => ({
       }
     }
     reconcile(corporate.roles, initial)
+    const publicDetailObservations = [], publicDetailFailures = [], qualifiedCountries = new Map()
+    let detailRateLimited = false
     for (const row of initial.values()) {
       if (row.country !== 'India') {
-        if (row.country !== 'Philippines') reasons.add('native-country-unresolved:' + row.id)
+        if (row.country !== 'Philippines') {
+          if (detailRateLimited) {
+            publicDetailFailures.push({ id: row.id, stage: 'public-native-detail', httpStatus: null,
+              notAttemptedAfterRateLimit: true, message: 'Current native detail HTTP429 stopped further unresolved detail requests; country remains unknown' })
+            reasons.add('native-country-unresolved:' + row.id)
+            continue
+          }
+          try {
+            // Read only public role pages. The employee profile and candidate
+            // application session are deliberately outside this extraction.
+            if (!settings.fetchPage) await wait(new Promise(resolve => setTimeout(resolve, 600)))
+            const detail = inspectBillEasePublicDetail(await pageAt(row.url), row)
+            publicDetailObservations.push(detail)
+            if (detail.country && detail.sourceDetailComplete) qualifiedCountries.set(row.id, detail.country)
+            if (detail.country === 'India' && detail.sourceDetailComplete) jobs.set(row.id, {
+              source: 'billease', company: 'BillEase', jobId: row.id, requisitionId: null, title: row.title,
+              sourceUrl: row.url, applyUrl: row.applyUrl, link: row.applyUrl, country: 'India', location: detail.location, city: null,
+              employmentType: detail.employmentType, remoteStatus: detail.remoteStatus,
+              sourceDescription: detail.sourceDescription, jobDescription: detail.sourceDescription, sourceDetailComplete: true,
+              postingDate: null, closingDate: null, sourcePublicationDateUnavailable: true,
+              sourceNativeCountryEvidence: { nativeListing: row.country, nativeDetail: detail.nativeLocation, method: detail.countryEvidence },
+              companyCareerPage: CORPORATE, companyDomain: 'billease.ph', atsPlatform: 'manatal-careers-page',
+            })
+          } catch (error) {
+            signal.throwIfAborted()
+            publicDetailFailures.push({ id: row.id, stage: 'public-native-detail', message: error.message, httpStatus: error.httpStatus || null })
+            if (error.httpStatus === 429) detailRateLimited = true
+          }
+          if (!qualifiedCountries.has(row.id)) reasons.add('native-country-unresolved:' + row.id)
+        }
         continue
       }
       const job = parseDetail(await pageAt(row.url), row, reasons)
       if (job) jobs.set(row.id, job)
     }
-    const closingCorporate = await collectCorporate(), closing = await collectNative()
-    reconcile(closingCorporate.roles, closing)
-    if (corporate.reference.url !== closingCorporate.reference.url || JSON.stringify([...corporate.roles]) !== JSON.stringify([...closingCorporate.roles])) reasons.add('closing-corporate-inventory-changed')
-    if (!equalRoles(initial, closing)) reasons.add('closing-native-inventory-changed')
-    const healthy = [...jobs].filter(([id]) => state(initial.get(id)) === state(closing.get(id))).map(([, job]) => job)
+    for (const [id, country] of qualifiedCountries) {
+      const advertised = corporate.roles.get(id)
+      if (advertised && !new RegExp('\\b' + country + '\\b', 'i').test(advertised.location)) reasons.add('corporate-native-country-differs:' + id)
+    }
+    let closingCorporate = null, closing = null, closingFailure = null
+    try {
+      closingCorporate = await collectCorporate(); closing = await collectNative()
+      reconcile(closingCorporate.roles, closing)
+      if (corporate.reference.url !== closingCorporate.reference.url || JSON.stringify([...corporate.roles]) !== JSON.stringify([...closingCorporate.roles])) reasons.add('closing-corporate-inventory-changed')
+      if (!equalRoles(initial, closing)) reasons.add('closing-native-inventory-changed')
+    } catch (error) {
+      signal.throwIfAborted()
+      if (error instanceof BillEaseIdentityError) throw error
+      closingFailure = { message: error.message, httpStatus: error.httpStatus || null, transportCode: error.cause?.code || error.code || null }
+      reasons.add('closing-public-inventory-unavailable:' + (error.httpStatus || error.cause?.code || error.name))
+    }
+    const healthy = [...jobs].filter(([id]) => !closing || state(initial.get(id)) === state(closing.get(id))).map(([, job]) => job)
     const selected = maxJobs ? healthy.slice(0, maxJobs) : healthy
     if (selected.length !== healthy.length) reasons.add('source-job-limit')
     const complete = reasons.size === 0, verifiedAt = new Date(now()).toISOString()
@@ -240,9 +325,12 @@ export const createBillEaseNativeInventory = (defaults = {}) => ({
       indiaFacetCount: complete ? healthy.length : null, pagesFetched: requests, verifiedAt,
       reason: complete ? 'billease-current-native-inventory-reconciled' : 'billease-native-incomplete:' + [...reasons].join(';') })
     Object.defineProperty(selected, 'nativeInventorySummary', { value: { corporateRoleCount: corporate.roles.size, nativeRoleCount: initial.size,
-      closingCorporateRoleCount: closingCorporate.roles.size, closingNativeRoleCount: closing.size,
-      unresolvedCountryCount: [...initial.values()].filter(row => !['India', 'Philippines'].includes(row.country)).length,
+      closingCorporateRoleCount: closingCorporate?.roles.size ?? null, closingNativeRoleCount: closing?.size ?? null,
+      closingFailure, closingInventoryMatches: closing ? equalRoles(initial, closing) : false,
+      unresolvedCountryCount: [...initial.values()].filter(row => !['India', 'Philippines'].includes(row.country) && !qualifiedCountries.has(row.id)).length,
+      publicDetailObservations, publicDetailFailures,
       nativeRoleIds: [...initial.keys()], corporateRoleIds: [...corporate.roles.keys()], lifecycleCleanupAllowed: complete } })
+    if (settings.onReport) await wait(settings.onReport({ source: 'billease', inventoryEvidence: selected[Symbol.for('jobverify.inventory-evidence')], ...selected.nativeInventorySummary }))
     return selected
   },
 })

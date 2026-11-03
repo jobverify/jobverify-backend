@@ -14,8 +14,8 @@ test('getScraperCatalog includes Campus Sutra through its public company hiring 
   assert.equal(campusSutra.atsPlatform, 'linkedin-guest-search')
   assert.equal(campusSutra.companyCareerPage, 'https://in.linkedin.com/company/campus-sutra')
   assert.equal(campusSutra.companyDomain, 'campussutra.com')
-  assert.equal(campusSutra.paginationStrategy, 'start-offset-with-dedupe')
-  assert.equal(campusSutra.extractionStrategy, 'public-company-page+guest-listing-api+guest-detail-dom')
+  assert.equal(campusSutra.paginationStrategy, 'current-native-employer-profile-and-configured-guest-search-observations+closing-models')
+  assert.equal(campusSutra.extractionStrategy, 'exact-native-organization-identity+complete-original-announcements+explicit-unqualified-keyword-search;no-country-or-vacancy-zero-inference')
 })
 
 test('buildScrapers exposes a runnable Campus Sutra scraper', () => {

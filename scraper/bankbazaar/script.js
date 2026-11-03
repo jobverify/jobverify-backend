@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -57,30 +59,50 @@ export const hasOfficialCareersSignal = (html) => {
 export const hasPublicJobListingSignal = (html) =>
   PUBLIC_JOB_LISTING_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'bankbazaar',
   timeoutMs: 15000,
+  signal: options.signal,
+  includeResponseMetadata: true,
 })
 
 export const createBankBazaarScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, signal, onAudit, now = () => new Date().toISOString() } = {}) {
+    const read = async url => {
+      signal?.throwIfAborted()
+      const response = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      if (typeof response === 'string') return response
+      if (response?.status !== 200 || response.url !== url || typeof response.html !== 'string') throw new Error('BankBazaar current first-party response identity changed')
+      return response.html
+    }
+    const homepageHtml = await read(HOMEPAGE_URL)
 
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('BankBazaar homepage no longer matches the verified official surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    const careersHtml = await read(CAREERS_PAGE_URL)
 
     if (!hasOfficialCareersSignal(careersHtml) || hasPublicJobListingSignal(careersHtml)) {
       throw new Error('BankBazaar careers page no longer matches the verified nonlisting careers surface')
     }
 
-    return []
+    const jobs = [], evidence = { status: 'coverage-gap', surface: CAREERS_PAGE_URL, firstParty: true,
+      listingComplete: false, pagesFetched: 2, reportedTotal: null, indiaFacetCount: null,
+      verifiedAt: now(), reason: 'general-cv-intake-without-a-native-vacancy-inventory-or-zero-count' }
+    const observations = /careers\s*\[@\]\s*bankbazaar\s*\[dot\]\s*com/i.test(normalizeWhitespace(careersHtml) || '')
+      ? [{ kind: 'general-cv-intake', url: CAREERS_PAGE_URL, vacancy: false, descriptionComplete: false, country: null }] : []
+    attachInventoryEvidence(jobs, evidence)
+    attachSourceObservationEvidence(jobs, { source: 'bankbazaar', recordKind: 'hiring-signals', observedRecordCount: observations.length,
+      observedVacancyCount: 0, sourceScopeComplete: false })
+    await onAudit?.({ source: 'bankbazaar', observations, inventoryEvidence: evidence, productionWrites: false })
+    signal?.throwIfAborted()
+    return jobs
   },
 })
 

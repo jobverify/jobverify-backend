@@ -21,16 +21,23 @@ export const BOOKUWARUNG_CATALOG = {
   ],
   darwinboxListingApiUrl: 'https://bukuwarung.darwinbox.com/ms/candidateapi/job/alljobs?companyId=main',
   companyDomain: 'bukuwarung.com',
-  atsPlatform: 'official-company-site-no-public-careers',
+  atsPlatform: 'darwinbox-public-native',
   countryFilter: 'India',
-  paginationStrategy: 'official-careers-page-plus-darwinbox-blank-shell-and-cloudflare-api-validation',
+  paginationStrategy: 'full-native-board+all-public-details+final-listing-after-closing-details',
   extractionStrategy:
-    'verified-official-careers-page+verified-darwinbox-handoff+verified-blank-public-shells+verified-cloudflare-blocked-listing-api-return-empty',
+    'current-active-corporate-handoff+strict-native-identity-country-and-public-criteria+blocked-host-cache',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: null,
+  verifiedAt: null,
+  sourceScopeComplete: false,
+  sourceListingComplete: false,
+  lifecycleCleanupAllowed: false,
+  verifiedPublicJobCount: null,
+  verifiedIndiaJobCount: null,
+  verifiedInventoryStatus: 'unverified',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://bukuwarung.com/ redirects to the live first-party homepage at https://www.bukuwarung.com/, that the official Karir route is https://www.bukuwarung.com/career/, and that this first-party careers page links See Open Positions directly to https://bukuwarung.darwinbox.com/ms/candidate/careers. On the linked Darwinbox tenant, https://bukuwarung.darwinbox.com/jobs resolves to https://bukuwarung.darwinbox.com/ms/candidatev2/main/careers/home, while https://bukuwarung.darwinbox.com/ms/candidate/careers, https://bukuwarung.darwinbox.com/ms/candidatev2/main/careers/home, and https://bukuwarung.darwinbox.com/ms/candidatev2/main/careers/allJobs each returned only a minimal blank shell titled Bukuwarung. The public candidate jobs API at https://bukuwarung.darwinbox.com/ms/candidateapi/job/alljobs?companyId=main returned a Cloudflare 403 blocked page during live verification, so there is no trustworthy public jobs surface for Bukuwarung on the verified date.',
+    'The current https://www.bukuwarung.com/career/ actively advertises See Open Positions at https://bukuwarung.darwinbox.com/ms/candidate/careers. Runtime uses the declared tenant native inventory API and retains all raw roles, public details, native countries and publisher dates, with a final inventory after all closing details. Current native HTTP403 is unavailable inventory with unknown totals, never verified empty. A run-local denied-host cache prevents further denied-host requests; broader company scope and cleanup remain unverified.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

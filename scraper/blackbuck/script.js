@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import{createCurrentSurfaceScraper}from'../atomberg/currentSurface.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -129,42 +130,8 @@ export const hasSuspiciousPublicJobsSignal = (html) =>
 
 export const isVerifiedBrokenRoute = ({ status }) => status === 502
 
-export const createBlackBuckScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('BlackBuck verified official homepage no longer matches the known public surface')
-    }
-
-    if (hasSuspiciousPublicJobsSignal(homepage.html)) {
-      throw new Error('BlackBuck homepage now appears to expose a public jobs surface')
-    }
-
-    const careersPage = await fetchPage(CAREERS_URL)
-
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
-      throw new Error('BlackBuck verified first-party team page no longer matches the known public surface')
-    }
-
-    if (!hasEmailOnlyCareersSignal(careersPage.html)) {
-      throw new Error('BlackBuck verified email-only careers surface changed')
-    }
-
-    if (hasSuspiciousPublicJobsSignal(careersPage.html)) {
-      throw new Error('BlackBuck verified email-only careers surface drifted to a public jobs surface')
-    }
-
-    for (const brokenRouteUrl of BROKEN_ROUTE_URLS) {
-      const brokenRoute = await fetchPage(brokenRouteUrl)
-      if (!isVerifiedBrokenRoute(brokenRoute)) {
-        throw new Error('BlackBuck broken alternate careers routes changed materially')
-      }
-    }
-
-    return []
-  },
-})
+export const createBlackBuckScraper=defaults=>createCurrentSurfaceScraper({source:SOURCE,url:CAREERS_URL,canonicalUrl:CAREERS_URL,requireCanonical:false,title:/Life@BlackBuck.*BlackBuck/i,companySignal:'Blackbuck',email:'careers@blackbuck.com',recruitingCopy:/Ready to Join\?/i},defaults)
 
 export const run = async (options = {}) => createBlackBuckScraper().run(options)
 

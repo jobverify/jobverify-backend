@@ -11,11 +11,17 @@ import { fixture, replay } from './fixtureReplay.js'
 globalThis.fetch = async () => { throw Error('Registry controls prohibit all real network') }
 for (const [source, profile] of Object.entries(fixture.profiles)) test(source + ': actual registry selects the native reader and clears static verification', () => {
   const provider = getScraperCatalog().find(row => row.source === source)
+  const sourceOwnedCurrent = ['buildkite', 'tripadvisor'].includes(source)
   assert.equal(provider.adapter, 'script');assert.equal(provider.atsPlatform, 'greenhouse')
-  assert.equal(provider.zeroResultPolicy, 'coverage-gap');assert.equal(provider.sourceScopeComplete, false)
+  assert.equal(provider.zeroResultPolicy, sourceOwnedCurrent ? 'evidence-required' : 'coverage-gap');assert.equal(provider.sourceScopeComplete, false)
   assert.equal(provider.lifecycleCleanupAllowed, false);assert.equal(provider.verifiedOn, null)
   assert.equal(provider.verifiedInventoryStatus, 'unverified');assert.equal(provider.verifiedIndiaJobCount, null)
-  assert.equal(provider.verifiedPublicJobCount, null);assert.equal(provider.scraperTimeoutMs, 900000)
+  assert.equal(provider.verifiedPublicJobCount, null);assert.equal(provider.scraperTimeoutMs, sourceOwnedCurrent ? 240000 : 900000)
+  if (sourceOwnedCurrent) {
+    assert.equal(provider.sourcePublicInventoryProgramReviewedOn, '2026-11-03')
+    assert.equal(provider.configuredBoardProofRequiresLiveEvidence, true)
+    assert.match(provider.paginationStrategy, /final-native-feed-after-details/)
+  }
   const directory = ['eqtcorporation', 'financialtimes'].includes(source) ? source + '.workday' : source
   assert.equal(path.normalize(provider.modulePath), path.normalize(fileURLToPath(new URL('../../../scraper/' + directory + '/script.js', import.meta.url))))
   assert.equal(provider.companyCareerPage, profile.primaryURL)

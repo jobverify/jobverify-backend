@@ -7,17 +7,20 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Alkem Laboratories as a broken first-party careers handoff monitor', () => {
+test('getScraperCatalog includes current Alkem native handoff with runtime-only inventory evidence', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'alkemlaboratories')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'Alkem Laboratories')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'turbohire-public-careerpage')
   assert.equal(provider.companyCareerPage, 'https://www.alkemlabs.com/career')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-page-plus-unreachable-careers-handoff-monitor')
-  assert.equal(provider.extractionStrategy, 'official-careers-page+broken-careers-host-return-empty')
+  assert.equal(provider.paginationStrategy, 'current-public-unfiltered-native-array-total-and-closing-reconciliation')
+  assert.equal(provider.extractionStrategy, 'current-corporate-SearchJobs-client+employer-bound-native-public-careerpage+runtime-inventory-evidence')
+  assert.equal(provider.verifiedPublicJobCount,null)
+  assert.equal(provider.verifiedIndiaJobCount,null)
+  assert.equal(provider.zeroResultPolicy,'evidence-required')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'alkemlabs.com')

@@ -1,134 +1,41 @@
+import test from 'node:test'
 import assert from 'node:assert/strict'
 import path from 'node:path'
-import test from 'node:test'
-import { fileURLToPath } from 'node:url'
+import {fileURLToPath} from 'node:url'
+import {getScraperCatalog,buildScrapers} from '../providers/index.js'
+import {generateCompanyCoverageReport} from '../providers/companyCoverage.js'
+import metadata from '../../scraper/ananthtechnologies/catalog.js'
+const directory=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../scraper/ananthtechnologies')
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import {
-  buildScrapers,
-  getScraperCatalog,
-  hydrateProviderCatalogEntry,
-} from '../providers/index.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const ananthModulePath = path.resolve(currentDir, '../../scraper/ananthtechnologies/script.js')
-
-const loadCatalogModule = async () => {
-  try {
-    return await import('../../scraper/ananthtechnologies/catalog.js')
-  } catch {
-    assert.fail('Expected Ananth Technologies catalog module at ../../scraper/ananthtechnologies/catalog.js')
-  }
-}
-
-const loadScriptModule = async () => {
-  try {
-    return await import('../../scraper/ananthtechnologies/script.js')
-  } catch {
-    assert.fail('Expected Ananth Technologies scraper module at ../../scraper/ananthtechnologies/script.js')
-  }
-}
-
-test('Ananth Technologies local catalog captures the verified first-party resume-only careers surface', async () => {
-  const { ANANTH_TECHNOLOGIES_CATALOG } = await loadCatalogModule()
-  const ananth = await loadScriptModule()
-
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.source, 'ananthtechnologies')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.companyName, 'Ananth Technologies')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.officialBrandName, 'Ananth Technologies')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.adapter, 'script')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.companyCareerPage, 'https://ananthtech.com/careers/')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.careersEntryUrl, 'https://ananthtech.com/careers')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.homepageUrl, 'https://ananthtech.com/')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.applicationEmail, 'jobs@ananthtech.com')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.applicationUrl, 'mailto:jobs@ananthtech.com')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.companyDomain, 'ananthtech.com')
-  assert.equal(
-    ANANTH_TECHNOLOGIES_CATALOG.atsPlatform,
-    'official-company-site-no-public-careers',
-  )
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.countryFilter, 'India')
-  assert.equal(
-    ANANTH_TECHNOLOGIES_CATALOG.paginationStrategy,
-    'verified-homepage-plus-resume-only-careers-page-plus-403-job-route-validation',
-  )
-  assert.equal(
-    ANANTH_TECHNOLOGIES_CATALOG.extractionStrategy,
-    'verified-homepage+verified-careers-page-email-resume-handoff-without-public-listings+verified-403-job-routes-return-empty',
-  )
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.parser, 'custom-script')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.verifiedOn, '2026-07-15')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.dryRunFile, 'ananthtechnologies/jobs.json')
-  assert.equal(ANANTH_TECHNOLOGIES_CATALOG.modulePath, ananthModulePath)
-  assert.match(ANANTH_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/ananthtech\.com\//i)
-  assert.match(ANANTH_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/ananthtech\.com\/careers\//i)
-  assert.match(ANANTH_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/ananthtech\.com\/jobs/i)
-  assert.match(ANANTH_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /jobs@ananthtech\.com/i)
-  assert.match(ANANTH_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /403/i)
-  assert.match(
-    ANANTH_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary,
-    /no trustworthy public jobs surface/i,
-  )
-
-  assert.equal(ananth.PROVIDER_METADATA.source, ANANTH_TECHNOLOGIES_CATALOG.source)
-  assert.equal(ananth.PROVIDER_METADATA.companyName, ANANTH_TECHNOLOGIES_CATALOG.companyName)
-  assert.equal(
-    ananth.PROVIDER_METADATA.companyCareerPage,
-    ANANTH_TECHNOLOGIES_CATALOG.companyCareerPage,
-  )
-  assert.equal(
-    ananth.PROVIDER_METADATA.applicationEmail,
-    ANANTH_TECHNOLOGIES_CATALOG.applicationEmail,
-  )
+test('Ananth Technologies local and registered metadata preserve authority with runtime-only vacancy counts',()=>{
+ const registered=getScraperCatalog().find(row=>row.source==="ananthtechnologies")
+ assert.ok(registered)
+ for(const value of [metadata,registered]){
+  assert.equal(value.source,"ananthtechnologies")
+  assert.equal(value.companyName,"Ananth Technologies")
+  assert.equal(value.companyDomain,"ananthtech.com")
+  assert.equal(value.adapter,'script')
+  assert.equal(value.modulePath,path.join(directory,'script.js'))
+  assert.equal(value.zeroResultPolicy,'evidence-required')
+  assert.equal(value.verifiedOn,null)
+  assert.equal(value.verifiedPublicJobCount,null)
+  assert.equal(value.verifiedIndiaJobCount,null)
+  assert.equal(value.sourceScopeComplete,false)
+  assert.equal(value.sourceListingComplete,false)
+  assert.equal(value.lifecycleCleanupAllowed,false)
+ }
+ assert.equal(registered.companyCareerPage,metadata.companyCareerPage)
 })
 
-test('Ananth Technologies local catalog hydrates into coverage without needing an alias entry', async () => {
-  const { ANANTH_TECHNOLOGIES_CATALOG } = await loadCatalogModule()
-  const provider = hydrateProviderCatalogEntry(ANANTH_TECHNOLOGIES_CATALOG)
-
-  assert.equal(provider.companyName, 'Ananth Technologies')
-  assert.equal(provider.companyDomain, 'ananthtech.com')
-  assert.match(provider.modulePath, /ananthtechnologies[\\/]script\.js$/i)
-  assert.match(provider.dryRunFile, /ananthtechnologies[\\/]jobs\.json$/i)
-
-  const report = generateCompanyCoverageReport({
-    csvText: 'Ananth Technologies\n',
-    catalog: [provider],
-  })
-
-  assert.equal(report.matchedCount, 1)
-  assert.equal(report.unmatchedCount, 0)
-  assert.deepEqual(
-    report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
-    [['Ananth Technologies', 'ananthtechnologies', 'Ananth Technologies']],
-  )
-  assert.equal(
-    Object.prototype.hasOwnProperty.call(companyAliases, 'Ananth Technologies'),
-    false,
-  )
+test('Ananth Technologies remains runnable under its original source identity and local dry-run file',()=>{
+ const registered=buildScrapers().find(row=>row.name==="ananthtechnologies")
+ assert.ok(registered)
+ assert.equal(registered.dryRunFile,path.join(directory,'jobs.json'))
 })
 
-test('buildScrapers and company coverage resolve Ananth Technologies from the shared catalog', () => {
-  const provider = getScraperCatalog().find((item) => item.source === 'ananthtechnologies')
-  const scraper = buildScrapers().find((item) => item.name === 'ananthtechnologies')
-
-  assert.ok(provider)
-  assert.ok(scraper)
-  assert.equal(provider.companyName, 'Ananth Technologies')
-  assert.equal(provider.companyCareerPage, 'https://ananthtech.com/careers/')
-  assert.match(scraper.dryRunFile, /ananthtechnologies[\\/]jobs\.json$/i)
-
-  const report = generateCompanyCoverageReport({
-    csvText: 'Ananth Technologies\n',
-    catalog: getScraperCatalog(),
-  })
-
-  assert.equal(report.matchedCount, 1)
-  assert.equal(report.unmatchedCount, 0)
-  assert.deepEqual(
-    report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
-    [['Ananth Technologies', 'ananthtechnologies', 'Ananth Technologies']],
-  )
+test('Ananth Technologies retains its original company-coverage mapping',()=>{
+ const report=generateCompanyCoverageReport({csvText:"Ananth Technologies\n",catalog:getScraperCatalog()})
+ assert.equal(report.matchedCount,1)
+ assert.equal(report.unmatchedCount,0)
+ assert.deepEqual(report.matched.map(row=>[row.companyName,row.source,row.provider.companyName]),[["Ananth Technologies","ananthtechnologies","Ananth Technologies"]])
 })

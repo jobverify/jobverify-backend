@@ -1,5 +1,7 @@
 import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {resolveWorksiteCountry} from './worksiteCountry.js'
+import {resolveNativeApplicationCountry} from './nativeApplicationCountry.js'
+export {resolveNativeApplicationCountry}
 import {CORPORATE,CAREERS,BOARD,BOARD_ROOT,API,listingJobs,jobDetail,pagination,searchBody,validateCorporate,validateClient,isExactNativeHandoff,countryOf} from './nativeContract.js'
 export const LISTING_PAGE_URL=BOARD
 export const DETAIL_PAGE_URL_PREFIX='https://careers.brillio.com/job-details?job-id='
@@ -78,8 +80,15 @@ export const createBrillioScraper=({maxJobs=null}={})=>({
     if(detail.title&&detail.title!==row.title){detail.sourceDetailComplete=false;detail.sourceDetailFailureKind='native-title-identity-mismatch'}
     if(detail.location&&detail.location!==row.location){detail.sourceDetailComplete=false;detail.sourceDetailFailureKind='native-location-identity-mismatch'}
     const contextCountry=resolveWorksiteCountry({location:detail.location,description:detail.jobDescription,roleWorksiteStatements:detail.sourceRoleWorksiteStatements,complete:detail.sourceDetailComplete})
-    const detailCountry=countryOf(detail.location)||(contextCountry.country==='United States'?'foreign':null)
+    let detailCountry=countryOf(detail.location)||(contextCountry.country==='United States'?'foreign':null)
     if(contextCountry.country)contextualCountryEvidence.push({jobId:row.jobId,...contextCountry})
+    if(!listingCountry&&!detailCountry&&detail.sourceDetailComplete){
+     try{
+      const applicationCountry=await resolveNativeApplicationCountry(row,detail,get)
+      contextualCountryEvidence.push(applicationCountry)
+      detailCountry=applicationCountry.country==='India'?'India':'foreign'
+     }catch(error){options.signal?.throwIfAborted();errors.push({jobId:row.jobId,reason:error.message})}
+    }
     if(listingCountry==='India'&&detailCountry==='foreign'||listingCountry==='foreign'&&detailCountry==='India'){unknownCount++;errors.push({jobId:row.jobId,reason:'conflicting native country'});continue}
     if(listingCountry!=='India'&&detailCountry!=='India'){if(detailCountry==='foreign')foreignCount++;else unknownCount++;continue}
     if(detail.sourceDetailComplete)fullCount++

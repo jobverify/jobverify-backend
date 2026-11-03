@@ -1,5 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { runNativeArmstrong } from './nativeBamboo.js'
 
 const BASE_URL = 'https://armstrongfluidtechnology.com'
 const CAREERS_PAGE_URL = `${BASE_URL}/en/about-armstrong/careers`
@@ -149,16 +150,7 @@ const defaultFetchText = async (url) => {
 
 export const createArmstrongFluidTechnologyScraper = () => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const careersHtml = await fetchText(buildCareersPageUrl())
-    const listings = extractListings(careersHtml)
-
-    return listings.map((listing) => ({
-      ...listing,
-      link: listing.applyUrl || listing.sourceUrl,
-      source: 'armstrongfluidtechnology',
-      scrapedAt: new Date().toISOString(),
-    }))
+    return runNativeArmstrong(options)
   },
 })
 

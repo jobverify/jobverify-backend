@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readNativeTable, readNativeDetailIdentity } from './nativeInventory.js'
 
 import { APEXON_CATALOG } from './catalog.js'
 
@@ -127,9 +129,9 @@ export const hasOfficialExploreJobsSignal = (html) => {
     && text.includes('Find out more')
 }
 
-export const extractListingCards = (html) =>
+export const extractListingCards = (html, { allLocations = false } = {}) =>
   [...String(html ?? '').matchAll(
-    /<div class="table_row">[\s\S]*?<div class="table_small jobTitle">[\s\S]*?<a href="([^"]*career-job-detail\/\?id=0&amp;jobid=(\d+))" title="([^"]+)">[\s\S]*?<\/a>[\s\S]*?<div class="table_small openPosiTitle">[\s\S]*?<a [^>]*>(\d+)<\/a>[\s\S]*?<div class="table_small locationTitle">[\s\S]*?<a [^>]*>([^<]+)<\/a>[\s\S]*?Find out more[\s\S]*?<\/div>\s*<\/div>/gi,
+    /<div class="table_row">[\s\S]*?<div class="table_small jobTitle">[\s\S]*?<a href="([^"]*career-job-detail\/\?id=\d+&amp;jobid=(\d+))" title="([^"]+)">[\s\S]*?<\/a>[\s\S]*?<div class="table_small openPosiTitle">[\s\S]*?<a [^>]*>(\d+)<\/a>[\s\S]*?<div class="table_small locationTitle">[\s\S]*?<a [^>]*>([^<]+)<\/a>[\s\S]*?Find out more[\s\S]*?<\/div>\s*<\/div>/gi,
   )]
     .map((match) => ({
       title: normalizeText(match[3]),
@@ -143,7 +145,7 @@ export const extractListingCards = (html) =>
       && listing.requisitionId
       && listing.openings
       && listing.location
-      && listing.sourceUrl)
+      && listing.sourceUrl && (allLocations || /\bIndia\b/i.test(listing.location)))
 
 export const hasOfficialDetailPageSignal = (html) => {
   const page = String(html ?? '')
@@ -164,13 +166,18 @@ const extractDetailPageData = (html, listing) => {
   const title = normalizeText(
     extractMatch(html, /<h1 class="jobtitle dtitle text-left">([\s\S]*?)<\/h1>/i) || listing.title,
   )
+  const identity = readNativeDetailIdentity(html)
+  if (identity.requisitionId !== listing.requisitionId || title !== listing.title
+    || identity.location !== listing.location || !/\bIndia\b/i.test(identity.location || '')) {
+    throw new Error('Apexon native detail requisition, title or country identity changed')
+  }
   const applyUrl = toAbsoluteUrl(
     extractMatch(
       html,
       /<a class="btn btn-primary print" href="([^"]*apexon\.talentrecruit\.com\/career-page\/apply\/[^"]+)"[^>]*>\s*Apply\s*<\/a>/i,
     ),
   )
-  const descriptionHtml = extractDescriptionHtml(html)
+  const descriptionHtml = extractDescriptionHtml(html)?.replace(/<!--[\s\S]*?-->/g, '')
   const descriptionLines = extractDescriptionLines(descriptionHtml)
   const requiredSkills = extractListItems(descriptionHtml)
 
@@ -203,21 +210,31 @@ const extractDetailPageData = (html, listing) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
+  signal: options.signal,
+  includeResponseMetadata: options.includeResponseMetadata === true,
 })
 
 export const createApexonScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, now: overrideNow, signal } = {}) {
+    const get = async url => {
+      signal?.throwIfAborted()
+      const response = await fetchText(url, { signal, includeResponseMetadata: true })
+      signal?.throwIfAborted()
+      if (typeof response === 'string') return response
+      if (response?.status !== 200 || response.url !== url) throw new Error('Apexon first-party response identity changed')
+      return response.html
+    }
+    const homepageHtml = await get(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Apexon verified official homepage no longer matches the trusted first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersHtml = await get(CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Apexon verified careers page no longer matches the trusted first-party surface')
     }
@@ -227,30 +244,43 @@ export const createApexonScraper = ({
       throw new Error('Apexon verified careers page no longer links to the expected explore-jobs surface')
     }
 
-    const exploreJobsHtml = await fetchText(EXPLORE_JOBS_URL)
+    const exploreJobsHtml = await get(EXPLORE_JOBS_URL)
     if (!hasOfficialExploreJobsSignal(exploreJobsHtml)) {
       throw new Error('Apexon verified explore-jobs page no longer matches the trusted first-party surface')
     }
 
-    const listings = extractListingCards(exploreJobsHtml)
+    const inventory = readNativeTable(exploreJobsHtml, extractListingCards)
+    const { listings } = inventory
     if (listings.length === 0) {
       throw new Error('Apexon explore-jobs page no longer exposes verified first-party listing rows')
     }
 
     const jobs = []
     for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
+      const detailHtml = await get(listing.sourceUrl)
       jobs.push(extractDetailPageData(detailHtml, listing))
     }
-
-    return jobs.map((job) => ({
+    let pagesFetched = 1
+    if (inventory.complete) {
+      const closingHtml = await get(EXPLORE_JOBS_URL)
+      pagesFetched++
+      if (!hasOfficialExploreJobsSignal(closingHtml)) throw new Error('Apexon closing jobs page identity changed')
+      const closing = readNativeTable(closingHtml, extractListingCards)
+      if (!closing.complete || closing.total !== inventory.total || closing.identities.size !== inventory.identities.size
+        || [...inventory.identities].some(([id, identity]) => closing.identities.get(id) !== identity)) inventory.reasons.add('closing-native-inventory-changed')
+    }
+    const complete = inventory.reasons.size === 0
+    return attachInventoryEvidence(jobs.map((job) => ({
       ...job,
       source: SOURCE,
       companyDomain: PROVIDER_METADATA.companyDomain,
       atsPlatform: PROVIDER_METADATA.atsPlatform,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: (overrideNow || now)(),
-    }))
+    })), { status: complete ? 'complete-inventory' : 'coverage-gap', surface: EXPLORE_JOBS_URL,
+      firstParty: true, listingComplete: complete, reportedTotal: inventory.total,
+      indiaFacetCount: listings.length, pagesFetched, verifiedAt: (overrideNow || now)(),
+      reason: complete ? 'complete-native-static-table-country-labels-role-bound-full-details-and-closing-inventory' : [...inventory.reasons].join(';') })
   },
 })
 

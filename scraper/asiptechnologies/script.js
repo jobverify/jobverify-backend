@@ -1,5 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { createCurrentAsipScraper, readCurrentAsipListings } from './currentNative.js'
 
 const BASE_URL = 'https://asip-tech.com'
 export const CAREERS_PAGE_URL = `${BASE_URL}/careers/`
@@ -29,12 +30,9 @@ const extractField = (html, label) => {
   return match ? normalizeWhitespace(match[1]) : null
 }
 
-const extractDescription = (html) => {
-  const match = String(html || '').match(/<div[^>]+class=["'][^"']*entry-content[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)
-  return normalizeWhitespace(match ? match[1] : '') || null
-}
-
 export const extractListings = (html) => {
+  const current = readCurrentAsipListings(html, { allowMissing: true })
+  if (current) return current
   const source = String(html || '')
   const listingBlocks = [...source.matchAll(/<div[^>]+class=["'][^"']*job-listing[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi)]
     .map((match) => match[1])
@@ -57,11 +55,11 @@ export const extractListings = (html) => {
         title,
         company: 'ASIP Technologies',
         department,
-        location: `${city}, India`,
+        location: city,
         city,
-        country: 'India',
+        country: null,
         jobId,
-        requisitionId: jobId,
+        requisitionId: null,
         sourceUrl,
         applyUrl: sourceUrl,
         employmentType,
@@ -77,40 +75,7 @@ export const extractListings = (html) => {
     .filter(Boolean)
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html,application/xhtml+xml' },
-  })
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
-}
-
-export const createAsipTechnologiesScraper = () => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const listings = extractListings(await fetchText(CAREERS_PAGE_URL))
-
-    return Promise.all(listings.map(async (listing) => {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detailDescription = extractDescription(detailHtml)
-      const detailType = extractField(detailHtml, 'Job Type')
-      const detailDepartment = extractField(detailHtml, 'Job Category')
-      const detailCity = extractField(detailHtml, 'Job Location')
-
-      return {
-        ...listing,
-        department: detailDepartment || listing.department,
-        employmentType: detailType || listing.employmentType,
-        location: detailCity ? `${detailCity}, India` : listing.location,
-        city: detailCity || listing.city,
-        jobDescription: detailDescription,
-        link: listing.applyUrl,
-        source: 'asiptechnologies',
-        scrapedAt: new Date().toISOString(),
-      }
-    }))
-  },
-})
+export const createAsipTechnologiesScraper = (defaults = {}) => createCurrentAsipScraper(defaults)
 
 export const run = async (options = {}) => createAsipTechnologiesScraper().run(options)
 

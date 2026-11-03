@@ -23,7 +23,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('BookMyShow local catalog captures the verified first-party careers shell and empty-or-blocked job listing state', async () => {
+test('BookMyShow local catalog captures the unavailable India recruiting surface with runtime-only counts', async () => {
   const { BOOK_MY_SHOW_CATALOG } = await loadCatalogModule()
   const provider = buildCatalogReadyProvider(BOOK_MY_SHOW_CATALOG)
 
@@ -34,27 +34,27 @@ test('BookMyShow local catalog captures the verified first-party careers shell a
   assert.equal(provider.homepageUrl, 'https://in.bookmyshow.com/')
   assert.equal(provider.jobListingUrl, 'https://in.bookmyshow.com/careers/job-listing')
   assert.equal(provider.companyDomain, 'in.bookmyshow.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, "official-company-careers")
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-first-party-careers-shell-plus-empty-job-listing-shell-or-cloudflare-block',
+    "current-india-careers-and-listing-response-identity-with-explicit-access-failure",
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-empty-job-listing-shell-or-cloudflare-block-return-empty',
+    "official-india-response-identity+blocked-upstream-failure-or-unqualified-listing-shell-no-country-mirror-substitution",
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, null)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /bookmyshow[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /public access blocks/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/in\.bookmyshow\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/in\.bookmyshow\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/in\.bookmyshow\.com\/careers\/job-listing/i)
-  assert.match(provider.verifiedSurfaceSummary, /Cloudflare 403 blocked pages/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare403/i)
+  assert.match(provider.verifiedSurfaceSummary, /unavailable inventory/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'BookMyShow'), false)
 })
 

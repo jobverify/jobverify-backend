@@ -4,6 +4,7 @@ import https from 'node:https'
 import {checkServerIdentity} from 'node:tls'
 import {Readable,pipeline} from 'node:stream'
 import {createGunzip,createInflate,createBrotliDecompress} from 'node:zlib'
+import {createPinnedProxyAgent,publicProxyError} from './pinnedProxyAgent.js'
 
 const denied=new BlockList()
 for(const [network,prefix] of [['0.0.0.0',8],['10.0.0.0',8],['100.64.0.0',10],['127.0.0.0',8],['169.254.0.0',16],['172.16.0.0',12],['192.0.0.0',24],['192.0.2.0',24],['192.168.0.0',16],['198.18.0.0',15],['198.51.100.0',24],['203.0.113.0',24],['224.0.0.0',4],['240.0.0.0',4]])denied.addSubnet(network,prefix,'ipv4')
@@ -27,10 +28,11 @@ const within=(promise,signal,milliseconds=15000)=>new Promise((resolve,reject)=>
  Promise.resolve(promise).then(value=>finish(resolve,value),error=>finish(reject,error));if(signal?.aborted)abort()
 })
 
-// Both DNS lookup and socket acceptance are bound to this request's validated
-// addresses. The URL hostname remains the HTTP Host and TLS identity/SNI.
+// Direct sockets use validated DNS and peer addresses. An explicitly configured
+// Node proxy CONNECTs to a validated IP with the original Host and TLS identity.
 export const pinnedHTTPSFetch=(value,init)=>new Promise((resolve,reject)=>{
  const url=new URL(value),host=url.hostname.replace(/^\[|\]$/g,''),addresses=(init.validatedAddresses||[]).map(a=>({address:a.address,family:isIP(a.address)}))
+ if(init.signal?.aborted){reject(init.signal.reason);return}
  if(!addresses.length||addresses.some(a=>!isPublicAddress(a.address))){reject(Error('No validated public destination'));return}
  const allowed=new BlockList();for(const a of addresses)allowed.addAddress(a.address,a.family===6?'ipv6':'ipv4')
  const pinnedLookup=(hostname,options,callback)=>{
@@ -41,18 +43,28 @@ export const pinnedHTTPSFetch=(value,init)=>new Promise((resolve,reject)=>{
   if(options.all)callback(null,candidates.map(a=>({...a})))
   else callback(null,candidates[0].address,candidates[0].family)
  }
- let request,connected=false
- const fail=error=>{request?.destroy(error);reject(error)}
+ let request,proxy,connected=false
+ const abort=()=>fail(init.signal.reason||Error('Public GET aborted'))
+ const cleanup=()=>{init.signal?.removeEventListener('abort',abort);proxy?.agent.destroy()}
+ const fail=error=>{request?.destroy(error);cleanup();reject(error)}
  const inspectSocket=socket=>{
+  if(proxy){
+   if(socket.encrypted!==true||socket.authorized!==true){fail(Error('Origin TLS certificate was not verified'));return false}
+   connected=true;init.onConnected?.({url:url.href,connectionMode:'validated-public-ip-connect',pinnedAddress:proxy.address,
+    validatedAddresses:addresses.map(a=>({...a})),originCertificateVerified:true,publicDestinationBound:true});return true
+  }
   const address=socket.remoteAddress,family=isIP(address||'')
   if(!family||!isPublicAddress(address)||!allowed.check(address,family===6?'ipv6':'ipv4')){fail(Error('Socket destination is outside the validated public set'));return false}
   connected=true;init.onConnected?.({url:url.href,remoteAddress:address,validatedAddresses:addresses.map(a=>({...a})),publicDestinationBound:true});return true
  }
  try{
-  request=https.request({protocol:'https:',hostname:host,port:url.port||443,path:url.pathname+url.search,method:'GET',headers:init.headers,agent:false,
-   lookup:pinnedLookup,autoSelectFamily:true,servername:isIP(host)?undefined:host,rejectUnauthorized:true,
+  proxy=createPinnedProxyAgent(url,addresses)
+  const headersForOrigin=new Headers(init.headers);if(proxy)headersForOrigin.set('Host',url.host)
+  request=https.request({protocol:'https:',hostname:proxy?proxy.address:host,port:url.port||443,path:url.pathname+url.search,method:'GET',headers:proxy?Object.fromEntries(headersForOrigin):init.headers,agent:proxy?proxy.agent:false,
+   ...(!proxy?{lookup:pinnedLookup,autoSelectFamily:true}:{}),servername:isIP(host)?undefined:host,rejectUnauthorized:true,
    checkServerIdentity:(_hostname,certificate)=>checkServerIdentity(host,certificate),signal:init.signal},incoming=>{
    try{
+    if(proxy)incoming.once('close',cleanup)
     if(!connected&&!inspectSocket(incoming.socket)){incoming.destroy();return}
     const headers=new Headers()
     for(const [name,value] of Object.entries(incoming.headers))if(value!=null){if(Array.isArray(value))for(const item of value)headers.append(name,item);else headers.set(name,String(value))}
@@ -66,8 +78,9 @@ export const pinnedHTTPSFetch=(value,init)=>new Promise((resolve,reject)=>{
     },error=>{incoming.destroy(error);fail(error)})
    }catch(error){incoming.destroy(error);fail(error)}
   })
-  request.once('error',reject)
-  request.on('socket',socket=>{if(socket.connecting)socket.once('connect',()=>inspectSocket(socket));else inspectSocket(socket)})
+  request.once('error',error=>{cleanup();reject(proxy?publicProxyError(error):error)})
+  request.on('socket',socket=>{if(socket.connecting||(proxy&&socket.secureConnecting))socket.once(proxy?'secureConnect':'connect',()=>inspectSocket(socket));else inspectSocket(socket)})
+  if(proxy){init.signal?.addEventListener('abort',abort,{once:true});if(init.signal?.aborted){abort();return}}
   request.end()
  }catch(error){fail(error)}
 })

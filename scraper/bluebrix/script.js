@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -75,9 +76,12 @@ export const hasOfficialCareersSignal = (html) => {
 const extractRoleCards = (html) => [...String(html ?? '').matchAll(/<article\b[^>]*>([\s\S]*?)<\/article>/gi)]
   .map((match) => match[1])
 
-const extractCurrentRoleCards = (html) =>
-  [...String(html ?? '').matchAll(/<div\b[^>]*class=["'][^"']*\broles-card\b[^"']*["'][^>]*>([\s\S]*?)(?=<div\b[^>]*class=["'][^"']*\broles-card\b|<div\b[^>]*class=["'][^"']*\bmodal\b|<\/section>)/gi)]
+const extractCurrentRoleCards = (html) => {
+  const published = [...String(html ?? '').matchAll(/<div\b[^>]*class=["']job-roles-card-info["'][^>]*>([\s\S]*?)<\/div>/gi)].map(match => match[1])
+  if (published.length) return published
+  return [...String(html ?? '').matchAll(/<div\b[^>]*class=["'][^"']*\broles-card\b[^"']*["'][^>]*>([\s\S]*?)(?=<div\b[^>]*class=["'][^"']*\broles-card\b|<div\b[^>]*class=["'][^"']*\bmodal\b|<\/section>)/gi)]
     .map((match) => match[1])
+}
 
 const extractHref = (html) => {
   const href = String(html ?? '').match(/<a\b[^>]+href=["']([^"']+)["']/i)?.[1]
@@ -100,7 +104,8 @@ const parseRoleCard = (cardHtml) => {
   const title = normalizeText(cardHtml.match(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1])
   const department = normalizeText(cardHtml.match(/<div\b[^>]*class=["'][^"']*\broles-header\b[^"']*["'][^>]*>[\s\S]*?<span\b[^>]*>([\s\S]*?)<\/span>/i)?.[1])
   const jobDescription = normalizeText(cardHtml.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1])
-  const actionText = normalizeText(cardHtml.match(/<div\b[^>]*class=["'][^"']*\broles-action\b[^"']*["'][^>]*>[\s\S]*?<span\b[^>]*>([\s\S]*?)<\/span>/i)?.[1])
+  const actionText = normalizeText(cardHtml.match(/<div\b[^>]*class=["'][^"']*\broles-action\b[^"']*["'][^>]*>[\s\S]*?<span\b[^>]*>([\s\S]*?)<\/span>/i)?.[1]
+    || cardHtml.match(/<span\b[^>]*>([\s\S]*?)<\/span>/i)?.[1])
   const sourceUrl = extractHref(cardHtml) || CAREERS_URL
   const metaParts = extractMetaParts(actionText)
   const locationData = normalizeLocation(metaParts.at(-1))
@@ -208,15 +213,58 @@ export const createBlueBrixScraper = ({ now = () => new Date().toISOString() } =
       throw new Error('blueBriX verified official homepage no longer matches the trusted first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml = await fetchText(CAREERS_URL)
+    let listingUrl = CAREERS_URL
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      const handoffs = [...String(careersHtml).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+        .filter(match => /^(?:All roles|Explore all open roles)$/i.test(normalizeText(match[2]) || ''))
+        .map(match => new URL(match[1], CAREERS_URL).href)
+      const urls = [...new Set(handoffs)].filter(url => url === new URL('/all-roles/', CAREERS_URL).href)
+      if (urls.length !== 1 || !/blueBriX/i.test(careersHtml)) {
+        throw new Error('blueBriX verified first-party careers page no longer matches the trusted public surface')
+      }
+      listingUrl = urls[0]
+      careersHtml = await fetchText(listingUrl)
+    }
     const jobs = extractJobCards(careersHtml)
+    const currentListing = listingUrl !== CAREERS_URL
+    let publishedTotal = null
+    if (currentListing) {
+      const counts = [...careersHtml.matchAll(/<div\b[^>]*class=["']job-roles-card-left["'][^>]*>([\s\S]*?)<\/div>/gi)]
+        .map(match => Number(normalizeText(match[1])?.match(/\b(\d+)\s+positions?\b/i)?.[1]))
+      publishedTotal = counts.reduce((sum, count) => sum + count, 0)
+      if (!counts.length || counts.some(count => !Number.isSafeInteger(count) || count < 0)
+        || publishedTotal !== extractCurrentRoleCards(careersHtml).length) {
+        throw new Error('blueBriX native inventory disagrees with its published department counts')
+      }
+      for (const job of jobs) {
+        const url = new URL(job.sourceUrl)
+        if (url.origin !== new URL(CAREERS_URL).origin || !/^\/roles\/[^/]+\/$/.test(url.pathname)) {
+          throw new Error('blueBriX role link left the verified first-party careers host')
+        }
+        const html = await fetchText(job.sourceUrl)
+        const canonical = html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)?.[1]
+        const headings = [...html.matchAll(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/gi)].map(match => normalizeText(match[1]))
+        const sections = [...html.matchAll(/<section\b[^>]*class=["'][^"']*\bjob-description-section\b[^"']*["'][^>]*>([\s\S]*?)<\/section>/gi)]
+        const description = sections.length === 1 ? normalizeText(sections[0][1]) : null
+        if (canonical !== job.sourceUrl || !headings.includes(job.title) || !description) {
+          throw new Error('blueBriX complete first-party role detail changed: ' + job.sourceUrl)
+        }
+        job.jobDescription = description
+      }
+    }
 
-    return jobs.map((job) => ({
+    const mapped = jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl,
       scrapedAt: now(),
     }))
+    if (!currentListing) return mapped
+    return attachInventoryEvidence(mapped, { status: 'complete-inventory', surface: listingUrl,
+      firstParty: true, listingComplete: true, pagesFetched: 1,
+      reportedTotal: publishedTotal, indiaFacetCount: jobs.length,
+      verifiedAt: now(), reason: 'employer-published-all-roles-page-and-full-first-party-role-details' })
   },
 })
 

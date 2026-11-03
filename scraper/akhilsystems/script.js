@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import AKHIL_SYSTEMS_CATALOG from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readNativeCareerModels } from './nativeJobs.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -135,9 +137,9 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*Healthcare Software Solutions\s*\|\s*Hospital Information System\s*\|\s*Akhil Systems\s*<\/title>/i.test(page)
+  return /^(?:Healthcare Software Solutions\s*\|\s*Hospital Information System\s*\|\s*Akhil Systems|India's Leading Hospital Management Software - Akhil Systems)$/i.test(extractTitle(page) || '')
     && text.includes('Akhil Systems Pvt. Ltd.')
-    && text.includes('Hospital Information System')
+    && /Hospital (?:Management )?Information Systems?/i.test(text)
     && /\bCareer\b/i.test(text)
 }
 
@@ -167,6 +169,7 @@ export const hasOfficialCareersSignal = (html) => {
 }
 
 export const extractCareerListings = (html) => {
+  html = String(html ?? '').replace(/<!--[\s\S]*?-->/g, '')
   const jobs = []
 
   for (const match of String(html ?? '').matchAll(
@@ -241,7 +244,7 @@ const normalizeListing = (listing, { now }) => {
     department: null,
     employmentType: null,
     experienceRequired: normalizeWhitespace(listing?.experienceRequired),
-    jobDescription: null,
+    jobDescription: listing?.jobDescription || null,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
@@ -289,8 +292,13 @@ export const createAkhilSystemsScraper = ({
       throw new Error('Akhil Systems verified official careers surface changed materially')
     }
 
+    const nativeModels = await readNativeCareerModels(careersPage.html, { baseUrl: CAREERS_URL, fetchPage: fetchApiOnlyPage })
+    const listings = extractCareerListings(careersPage.html)
+    if (nativeModels && (nativeModels.length !== listings.length || nativeModels.some(model => !listings.some(listing => listing.title === model.title && listing.location === model.location)))) {
+      throw new Error('Akhil Systems native model and rendered listings disagree')
+    }
     const seenJobIds = new Set()
-    const jobs = extractCareerListings(careersPage.html)
+    const jobs = (nativeModels || listings)
       .map((listing) => normalizeListing(listing, { now }))
       .filter((job) => job && !seenJobIds.has(job.jobId) && seenJobIds.add(job.jobId))
 
@@ -298,7 +306,10 @@ export const createAkhilSystemsScraper = ({
       throw new Error('Akhil Systems verified careers page no longer exposes trusted first-party job cards')
     }
 
-    return jobs
+    if (!nativeModels) return jobs
+    return attachInventoryEvidence(jobs, { status: 'complete-inventory', surface: CAREERS_URL,
+      firstParty: true, listingComplete: true, pagesFetched: 1, reportedTotal: nativeModels.length,
+      indiaFacetCount: jobs.length, verifiedAt: now(), reason: 'current-rendered-cards-reconciled-with-complete-static-native-client-models' })
   },
 })
 

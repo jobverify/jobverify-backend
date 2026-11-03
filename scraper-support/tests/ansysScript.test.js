@@ -80,13 +80,23 @@ test('Ansys scraper pins the verified first-party careers handoff to the Synopsy
   )
   assert.equal(
     ansys.extractNextPageUrl(searchPageOneHtml),
-    'https://careers.synopsys.com/search-jobs/ansys/44408/1&p=2',
+    'https://careers.synopsys.com/search-jobs/ansys/44408/1?p=2',
   )
 })
 
 test('Ansys scraper validates the official careers handoff and keeps only India jobs from the Synopsys search pages', async () => {
   const ansys = await loadAnsysModule()
   const requestedUrls = []
+  const details = {
+    'https://careers.synopsys.com/job/pune/technical-support-engineer-optics-photonics-zemax/44408/96200212480': {
+      id: '1001', title: 'Technical Support Engineer - Optics, Photonics, Zemax', city: 'Pune', date: '2026-07-13',
+      description: '<p>Design reliable optical simulation tools and help customers resolve engineering problems.</p>',
+    },
+    'https://careers.synopsys.com/job/bengaluru/application-engineer/44408/96200212481': {
+      id: '1002', title: 'Application Engineer', city: 'Bengaluru', date: '2026-07-12',
+      description: '<p>Develop engineering applications and deliver reliable systems for customers.</p>',
+    },
+  }
 
   const jobs = await ansys.createAnsysScraper({
     maxJobs: 5,
@@ -97,7 +107,15 @@ test('Ansys scraper validates the official careers handoff and keeps only India 
 
       if (url === ansys.CAREERS_PAGE_URL) return officialCareersHtml
       if (url === ansys.SEARCH_PAGE_URL) return searchPageOneHtml
-      if (url === 'https://careers.synopsys.com/search-jobs/ansys/44408/1&p=2') return searchPageTwoHtml
+      if (url === 'https://careers.synopsys.com/search-jobs/ansys/44408/1?p=2') return searchPageTwoHtml
+      if (details[url]) {
+        const detail = details[url]
+        return '<script type="application/ld+json">' + JSON.stringify({ '@type': 'JobPosting',
+          url, title: detail.title, identifier: { value: detail.id }, description: detail.description,
+          datePosted: detail.date, hiringOrganization: { name: 'Synopsys' },
+          jobLocation: [{ address: { addressLocality: detail.city, addressCountry: 'IN' } }],
+        }) + '</script>'
+      }
 
       throw new Error(`Unexpected URL: ${url}`)
     },
@@ -106,53 +124,21 @@ test('Ansys scraper validates the official careers handoff and keeps only India 
   assert.deepEqual(requestedUrls, [
     ansys.CAREERS_PAGE_URL,
     ansys.SEARCH_PAGE_URL,
-    'https://careers.synopsys.com/search-jobs/ansys/44408/1&p=2',
+    'https://careers.synopsys.com/search-jobs/ansys/44408/1?p=2',
+    'https://careers.synopsys.com/job/pune/technical-support-engineer-optics-photonics-zemax/44408/96200212480',
+    'https://careers.synopsys.com/job/bengaluru/application-engineer/44408/96200212481',
   ])
   assert.equal(jobs.length, 2)
-  assert.deepEqual(jobs[0], {
-    title: 'Technical Support Engineer - Optics, Photonics, Zemax',
-    company: 'Ansys',
-    department: 'Customer Support',
-    location: 'Pune, India',
-    city: 'Pune',
-    jobId: '1001',
-    requisitionId: '1001',
-    sourceUrl: 'https://careers.synopsys.com/job/pune/technical-support-engineer-optics-photonics-zemax/44408/96200212480',
-    applyUrl: 'https://careers.synopsys.com/job/pune/technical-support-engineer-optics-photonics-zemax/44408/96200212480',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: '07/13/2026',
-    closingDate: null,
-    jobDescription: null,
-    source: 'ansys',
-    link: 'https://careers.synopsys.com/job/pune/technical-support-engineer-optics-photonics-zemax/44408/96200212480',
-    scrapedAt: '2026-07-14T00:00:00.000Z',
-  })
-  assert.deepEqual(jobs[1], {
-    title: 'Application Engineer',
-    company: 'Ansys',
-    department: 'Engineering',
-    location: 'Bengaluru, India',
-    city: 'Bengaluru',
-    jobId: '1002',
-    requisitionId: '1002',
-    sourceUrl: 'https://careers.synopsys.com/job/bengaluru/application-engineer/44408/96200212481',
-    applyUrl: 'https://careers.synopsys.com/job/bengaluru/application-engineer/44408/96200212481',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: '07/12/2026',
-    closingDate: null,
-    jobDescription: null,
-    source: 'ansys',
-    link: 'https://careers.synopsys.com/job/bengaluru/application-engineer/44408/96200212481',
-    scrapedAt: '2026-07-14T00:00:00.000Z',
-  })
+  assert.deepEqual(jobs.map(job => [job.title, job.jobId, job.location, job.company, job.nativeEmployer, job.country, job.postingDate]), [
+    ['Technical Support Engineer - Optics, Photonics, Zemax', '1001', 'Pune, India', 'Ansys', 'Synopsys', 'India', '2026-07-13'],
+    ['Application Engineer', '1002', 'Bengaluru, India', 'Ansys', 'Synopsys', 'India', '2026-07-12'],
+  ])
+  assert.deepEqual(jobs.map(job => job.jobDescription), [
+    '<p>Design reliable optical simulation tools and help customers resolve engineering problems.</p>',
+    '<p>Develop engineering applications and deliver reliable systems for customers.</p>',
+  ])
+  assert.ok(jobs.every(job => job.sourceDetailComplete === true && job.sourceListingComplete === false
+    && job.source === 'ansys' && job.link === job.applyUrl && job.scrapedAt === '2026-07-14T00:00:00.000Z'))
 })
 
 test('Ansys scraper fails closed when the first-party careers handoff changes', async () => {

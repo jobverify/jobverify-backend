@@ -125,6 +125,20 @@ export const hasBlockedPublicJobListingsSignal = ({ status, url, html } = {}) =>
     && normalized.includes('request forbidden by administrative rules')
 }
 
+export class AeonAccessDeniedError extends Error {
+  constructor({ status, url }) {
+    super(`AEON public job inventory unavailable: HTTP${status} at the declared careers board`)
+    this.name = 'AeonAccessDeniedError'
+    this.status = status
+    this.surface = url
+    this.source = SOURCE
+    this.failureKind = 'blocked_or_access_denied'
+    this.abortRetries = true
+    this.nativeJobTotal = null
+    this.nativeIndiaTotal = null
+  }
+}
+
 export const createAeonScraper = () => ({
   async run({ fetchPage = defaultFetchPage, fetchBrowserPage, signal } = {}) {
     signal?.throwIfAborted()
@@ -193,8 +207,8 @@ export const createAeonScraper = () => ({
       }
 
       const jobListingsPage = await fetchVerifiedPage(jobListingsUrl)
-      if (hasBlockedPublicJobListingsSignal(jobListingsPage)) {
-        return []
+      if ([401, 403, 429].includes(jobListingsPage.status) && isAcceptedJobListingsUrl(jobListingsPage.url)) {
+        throw new AeonAccessDeniedError(jobListingsPage)
       }
 
       if (jobListingsPage.status === 200 && PUBLIC_JOB_SIGNAL_PATTERN.test(jobListingsPage.html || '')) {

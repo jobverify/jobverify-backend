@@ -6,7 +6,7 @@ const {getScraperCatalog,createCatalogScraper}=await import('../../scraper-suppo
 const {readInventoryEvidence}=await import('../../scraper-support/utils/inventoryEvidence.js')
 const run=io=>createCatalogScraper(getScraperCatalog().find(p=>p.source==='autoformindia')).run({now:()=> '2026-10-27T10:00:00Z',...io})
 
-test('actual retained native listing/details expose five records and the live country conflict, not company zero',async()=>{
+test('retained October native roles keep the exact foreign-country conflict while proving configured India zero',async()=>{
  let audit
  const jobs=await run({...transport(),onAudit:a=>audit=a})
  assert.ok(audit,'registered source must inspect native detail fields')
@@ -23,8 +23,10 @@ test('actual retained native listing/details expose five records and the live co
  const conflict=audit.nativeJobs.find(j=>j.jobId==='5150')
  assert.equal(conflict.country,null)
  assert.equal(conflict.sourceCountryConflict,true)
- assert.equal(readInventoryEvidence(jobs).listingComplete,false)
- assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null)
+ assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+ assert.equal(readInventoryEvidence(jobs).indiaFacetCount,0)
+ assert.equal(audit.companyComplete,false)
+ assert.equal(audit.wholeCompanyGlobal,null)
  assert.equal(jobs.length,0)
 })
 

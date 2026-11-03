@@ -1,5 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { runCurrentArbutus } from './currentNative.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -61,18 +62,7 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-export const createArbutusScraper = ({ fetchText = defaultFetchText } = {}) => ({
-  async run({ fetchText: overrideFetchText } = {}) {
-    const jobs = extractSearchResults(await (overrideFetchText || fetchText)(CAREER_PAGE_URL))
-
-    return jobs.map((job) => ({
-      ...job,
-      source: 'arbutus',
-      link: job.applyUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
-})
+export const createArbutusScraper = (defaults = {}) => ({run: options => runCurrentArbutus({ ...defaults, ...options })})
 
 export const run = async (options = {}) => createArbutusScraper().run(options)
 
