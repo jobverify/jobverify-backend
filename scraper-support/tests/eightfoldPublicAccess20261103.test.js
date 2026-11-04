@@ -7,6 +7,7 @@ import {getScraperCatalog} from '../providers/index.js'
 import {runApiPortalScraper} from '../apiPortal/engine.js'
 import {readEightfoldLocationScope} from '../apiPortal/eightfoldLocations.js'
 import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+import {withRetry} from '../utils/retry.js'
 
 const captures=JSON.parse(gunzipSync(readFileSync(new URL('./fixtures/eightfold-public-access-20261103.json.gz',import.meta.url)))).sources
 const catalog=getScraperCatalog()
@@ -46,7 +47,9 @@ for(const capture of captures){
  })
  test(`${capture.source} verified full descriptions survive a later denial with incomplete inventory explicit`,async()=>{
   const{jobs}=await replay(capture.source)
-  assert.equal(jobs.length,{eaton:8,eightfoldai:10,ericsson:10,fluke:6}[capture.source])
+  // Explicit native IND postal addresses also include New Delhi and
+  // Ranjangaon; the former city regex incorrectly dropped those two roles.
+  assert.equal(jobs.length,{eaton:10,eightfoldai:10,ericsson:10,fluke:6}[capture.source])
   const evidence=readInventoryEvidence(jobs)
   assert.equal(evidence.listingComplete,capture.source==='fluke')
   for(const job of jobs){assert.ok(job.jobDescription.length>=150);assert.equal(job.country,'India')}
@@ -61,6 +64,24 @@ for(const status of[401,403,429,451])test(`initial HTTP ${status} remains a fail
  const error=denial(status);let reads=0
  await assert.rejects(replay('eightfoldai',{load:async()=>{reads++;throw error}}),value=>value===error)
  assert.equal(reads,1)
+})
+
+test('an ordinary native HTTP 429 stops an opted-in origin on its first denial even when retries are configured',async()=>{
+ const provider=configured('eightfoldai'),error=Object.assign(Error('HTTP 429 native rate limit'),{status:429})
+ provider.config.rateLimit.maxRetries=2
+ let reads=0
+ await assert.rejects(replay('eightfoldai',{provider,load:async()=>{reads++;throw error}}),value=>value===error)
+ assert.equal(reads,1)
+})
+
+test('the outer source retry wrapper cannot restart an opted-in origin after its first ordinary HTTP429',async()=>{
+ const provider=configured('eightfoldai'),error=Object.assign(Error('HTTP 429 native rate limit'),{status:429})
+ let reads=0
+ await assert.rejects(withRetry(()=>replay('eightfoldai',{provider,load:async()=>{reads++;throw error}}),{
+  attempts:3,baseDelayMs:0,label:'eightfold-first-denial',
+ }),/HTTP 429/)
+ assert.equal(reads,1)
+ assert.equal(error.abortRetries,true)
 })
 
 test('a detail denial stops further native requests and retains only already verified roles',async()=>{

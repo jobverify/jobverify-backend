@@ -32,7 +32,8 @@ export const createGenerationPool = ({ generate, keyFor, bindResult, requestMs }
           const ownsCost = entry.waiters.size === 1 && !entry.accounted;
           if (ownsCost) entry.accounted = true;
           try { Object.assign(caller.reason, { rawText: entry.progress?.rawText,
-            generationRequests: ownsCost ? entry.progress?.generationRequests || 0 : 0 }); } catch { /* Caller-owned reasons may be immutable. */ }
+            generationRequests: ownsCost ? entry.progress?.generationRequests || 0 : 0,
+            transportRetries: ownsCost ? entry.progress?.transportRetries || 0 : 0 }); } catch { /* Caller-owned reasons may be immutable. */ }
         }
         cleanup(); reject(caller.reason);
       };
@@ -50,7 +51,8 @@ export const createGenerationPool = ({ generate, keyFor, bindResult, requestMs }
         cleanup();
         if (ownsCost) return reject(error);
         const copy = Object.assign(Object.setPrototypeOf(new Error(error.message, { cause: error.cause }), Object.getPrototypeOf(error)),
-          error, { name: error.name, stack: error.stack, generationRequests: 0, usage: undefined, timings: undefined, generations: [] });
+          error, { name: error.name, stack: error.stack, generationRequests: 0, transportRetries: 0,
+            usage: undefined, timings: undefined, generations: [] });
         reject(copy);
       });
       if (caller.aborted) abort();

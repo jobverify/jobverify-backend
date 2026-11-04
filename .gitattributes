@@ -117,3 +117,6 @@ scraper/bmcsoftware/fixtures/role-47205-http.html -text
 /scraper/aeriestechnology/script.js -text whitespace=cr-at-eol
 /test/fixtures/successFactorsRmk/discovery/batch-007.json -text whitespace=cr-at-eol
 /scraper-support/providers/evidence/** -text whitespace=cr-at-eol
+
+# The compiler entrypoint must execute inside Linux containers on every checkout.
+/resume-tailoring/compiler/compile.sh text eol=lf

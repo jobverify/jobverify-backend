@@ -36,12 +36,22 @@ const nativeJobs = doc => {
     if (Array.isArray(args) && args[0] === 1 && typeof args[1] === 'string') chunks.push(args[1])
   }
   const candidates = []
+  const walk = (node, inBoard = false, depth = 0) => {
+    if (!Array.isArray(node) || depth > 40) return
+    if (node[0] !== '$') { for (const child of node) walk(child, inBoard, depth + 1); return }
+    const props = node[3]
+    if (!props || typeof props !== 'object' || Array.isArray(props)) return
+    const scoped = inBoard || node[1] === 'section' && props.id === 'open-roles'
+    if (scoped && typeof node[1] === 'string' && /^\$L[\da-f]+$/i.test(node[1]) && Object.hasOwn(props, 'jobs')) candidates.push(props)
+    walk(props.children, scoped, depth + 1)
+  }
   for (const line of chunks.join('').split('\n')) {
     const match = /^[a-f\d]+:(\[.*)$/i.exec(line)
     if (!match || !line.includes('"jobs":')) continue
     let data
     try { data = JSON.parse(match[1]) } catch { fail('malformed native job payload') }
     if (data?.[0] === '$' && data[3] && Object.hasOwn(data[3], 'jobs')) candidates.push(data[3])
+    else walk(data)
   }
   const props = one(candidates, 'complete native job payload')
   if (Object.keys(props).some(key => !['intro', 'jobs', 'buttonLabel', 'emptyMessage'].includes(key))) fail('unreviewed native payload fields')

@@ -22,6 +22,12 @@ const fail = message => {
 }
 const explicitCountry = location => {
   const parts = location.split(',').map(clean), last = parts.at(-1)
+  const parenthetical = /\(([A-Za-z][A-Za-z ]+)\)$/.exec(location)
+  const namedSuffix = parenthetical && names.get(clean(parenthetical[1]).toLowerCase())
+  if (namedSuffix) return namedSuffix
+  const countryPrefix = /^([A-Za-z][A-Za-z ]+) - .+/.exec(location)
+  const namedPrefix = countryPrefix && names.get(clean(countryPrefix[1]).toLowerCase())
+  if (namedPrefix) return namedPrefix
   // Eaton publishes complete native addresses such as "Hadapsar, Pune,
   // Maharashtra, IND, 411013". The country is before the postal code here.
   // Require that explicit country label; a postcode or city never supplies it.
@@ -30,7 +36,7 @@ const explicitCountry = location => {
   // A two-component raw label ending IN may mean a US state. The reviewed
   // standardized field supplies an ISO suffix; raw labels require a name or
   // an unambiguous three-component country-code position.
-  return names.get(last.toLowerCase()) || (parts.length >= 3 && codes.has(last) ? last : null)
+  return names.get(last.toLowerCase()) || (parts.length >= 3 && codes.has(last.toUpperCase()) ? last.toUpperCase() : null)
 }
 const standardizedCountry = (location, explicit) => {
   const parts = location.split(',').map(clean), last = parts.at(-1)
@@ -39,8 +45,9 @@ const standardizedCountry = (location, explicit) => {
   // workplace independently names its country. A bare city or state cannot
   // acquire India scope from a two-component abbreviation alone.
   const supported = [1, 3].includes(parts.length) || parts.length === 2 && explicit != null
-  if (!supported || parts.some(part => !part) || !codes.has(last)) fail('unrecognized standardized country format')
-  return last
+  const code = codes.has(last) ? last : names.get(last.toLowerCase())
+  if (!supported || parts.some(part => !part) || !code) fail('unrecognized standardized country format')
+  return code
 }
 const sameCity = (raw, standardized) => {
   const rawParts = raw.split(',').map(clean), standardizedParts = standardized.split(',').map(clean)
@@ -48,7 +55,9 @@ const sameCity = (raw, standardized) => {
     && rawParts[1].toLowerCase() !== standardizedParts[1]?.toLowerCase()) return false
   const city = value => {
     const name = clean(value).toLowerCase()
-    return clean(CANONICAL_CITIES[name] || name).toLowerCase()
+    // Demonstrated role-owned campus/city aliases, not arbitrary suffix removal.
+    const alias = { 'bangalore btp': 'bangalore', 'bangalore mg': 'bangalore', melaka: 'malacca' }[name] || name
+    return clean(CANONICAL_CITIES[alias] || alias).toLowerCase()
   }
   const left = city(rawParts[0]), right = city(standardizedParts[0])
   return Boolean(left && right && left === right)
@@ -64,20 +73,38 @@ export const readEightfoldLocationScope = record => {
   const standardized = record.standardizedLocations
   if (standardized != null && (!Array.isArray(standardized) || standardized.length !== raw.length
     || standardized.some(value => !clean(value)))) fail('native location arrays disagree')
-  const countries = raw.map((location, index) => {
+  const scopes = raw.map((location, index) => {
     const explicit = explicitCountry(location)
-    if (standardized == null) return explicit
-    const normalized = clean(standardized[index]), code = standardizedCountry(normalized, explicit)
+    if (standardized == null) return { country: explicit, location, unresolved: explicit == null }
+    const normalized = clean(standardized[index])
+    // A native Remote/Remote pair supplies no country and must not abort the
+    // other verified roles or certify a complete country inventory.
+    if (!explicit && /^remote$/i.test(location) && /^remote$/i.test(normalized)) return { country: null, location, unresolved: true }
+    // Delhi is also a native region. Match the demonstrated region/country
+    // pair exactly; unrelated city-only or ambiguous state codes stay invalid.
+    const regional = location === 'Delhi' && /^DL,\s*IN$/.test(normalized)
+    const code = standardizedCountry(normalized, explicit || (regional ? 'IN' : null))
     if (explicit && explicit !== code) fail('contradictory explicit native country')
-    if (!explicit && (normalized.split(',').length !== 3 || !sameCity(location, normalized))) fail('native city and standardized country are unaligned')
-    return explicit || code
+    if (!explicit && !regional) {
+      const site = /^([A-Z]{2})-([^(),]+) \((\d+)\)$/.exec(location)
+      if (site && site[1] !== code) fail('contradictory site and standardized country')
+      const alternatives = location.includes(' / ') ? location.split(' / ').map(clean) : null
+      if (alternatives) {
+        const matching = alternatives.filter(value => sameCity(value, normalized))
+        if (alternatives.length > 8 || alternatives.some(value => !value || /\b(?:remote|worldwide|global|anywhere|region)\b/i.test(value))
+          || matching.length !== 1 || normalized.split(',').length !== 3) fail('native alternative workplaces are unaligned')
+        return { country: code, location: matching[0], unresolved: true }
+      }
+      if (normalized.split(',').length !== 3 || !sameCity(site ? site[2] : location, normalized)) fail('native city and standardized country are unaligned')
+    }
+    return { country: explicit || code, location, unresolved: false }
   })
-  const indiaLocations = [...new Set(raw.filter((location, index) => countries[index] === 'IN'))]
+  const indiaLocations = [...new Set(scopes.filter(scope => scope.country === 'IN').map(scope => scope.location))]
   return { location: indiaLocations[0] || raw[0],
-    country: indiaLocations.length ? 'India' : countries[0], indiaLocations,
+    country: indiaLocations.length ? 'India' : scopes[0].country, indiaLocations,
     nativeLocations: [...record.locations],
     standardizedLocations: standardized == null ? null : [...standardized],
-    unresolved: countries.some(country => country === null) }
+    unresolved: scopes.some(scope => scope.unresolved) }
 }
 
 export const nativeEightfoldLocationPairs = record => {

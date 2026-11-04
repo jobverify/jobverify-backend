@@ -148,7 +148,7 @@ test('an unchanged model response is explicitly identified as source preservatio
   assert.equal(stored.descriptionRewrite.quality.outcome, 'source_preserved');
 });
 
-test('an accepted v24 source-copy cache cannot bypass v25 inference', async t => {
+test('an accepted v24 source-copy cache cannot bypass current-policy inference', async t => {
   const fs = await import('node:fs/promises'), os = await import('node:os'), path = await import('node:path');
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'prose-v24-copy-'));
   t.after(async () => {
@@ -227,4 +227,59 @@ test('published fallback metrics are persisted and counted as warnings without c
   const stored = new Job({ descriptionRewrite: { quality: saved.$set['descriptionRewrite.quality'] } }).toObject();
   assert.equal(stored.descriptionRewrite.quality.sourceFallbackBlocks, 1);
   assert.equal(stored.descriptionRewrite.quality.fullSourceCoverage, true);
+});
+
+test('Sattva source fallback is displayed as readable paragraphs without being counted as a model edit', async t => {
+  const source = await readFile(new URL('./test-data/descriptions/sattva-internship.txt', import.meta.url), 'utf8');
+  const input = inputFor(source);
+  const server = await serverFor(t, () => 'Unrelated employer text.');
+  const response = await createRewriteClient(server).generate(input);
+  const result = validateProseRewrite(response.value, input, 'stop');
+  assert.equal(result.ok, true);
+  assert.ok(result.quality.layoutParagraphBreaks >= 2);
+  assert.ok(result.description.split('\n\n').length >= 3);
+  assert.equal(result.description.replace(/\s+/g, ' '), source.trim().replace(/\s+/g, ' '));
+  assert.match(result.description, /25 countries and 5 continents/);
+  assert.match(result.description, /www\.sattva\.co\.in/);
+  assert.match(result.description, /Please avoid reaching out to any individual from Sattva/);
+  assert.match(result.description, /Location: Bengaluru \[India\]/);
+  assert.equal(result.quality.modelEditedBlocks, 0);
+  assert.ok(result.quality.sourceFallbackBlocks > 0);
+  assert.equal(result.quality.outcome, 'source_fallback');
+  assert.ok(response.value.parts.filter(part => part.fallbackReason).every(part => part.text === part.source));
+  const stored = new Job({ descriptionRewrite: { quality: result.quality } }).toObject();
+  assert.equal(stored.descriptionRewrite.quality.layoutParagraphBreaks, result.quality.layoutParagraphBreaks);
+});
+
+test('existing Markdown paragraphs and long list items retain their layout', () => {
+  const source = '## Responsibilities\n\n- ' + 'Build reliable Python services. '.repeat(24) + '\n\nLocation: Pune';
+  const input = inputFor(source);
+  const result = validateProseRewrite({ inputHash: input.inputHash, parts: [{ source, text: source }] }, input, 'stop');
+  assert.equal(result.ok, true);
+  assert.equal(result.description, source);
+  assert.equal(result.quality.layoutParagraphBreaks, 0);
+});
+
+for (const [name, output, wording, layout] of [
+  ['paragraph formatting', '- Build reliable Python services.\n- Maintain automated tests.', 0, 1],
+  ['wording changes', 'Develop reliable Python services. Maintain automated tests.', 1, 0],
+]) test(`quality distinguishes model ${name} from server paragraph formatting`, async t => {
+  const input = inputFor('Build reliable Python services. Maintain automated tests.');
+  const server = await serverFor(t, () => output);
+  const response = await createRewriteClient(server).generate(input);
+  const result = validateProseRewrite(response.value, input, 'stop');
+  assert.equal(result.ok, true);
+  assert.equal(result.quality.modelEditedBlocks, 1);
+  assert.equal(result.quality.modelWordingEditedBlocks, wording);
+  assert.equal(result.quality.modelLayoutEditedBlocks, layout);
+  assert.equal(result.quality.layoutParagraphBreaks, 0);
+});
+
+test('final assembly preserves long indented Markdown list continuations', () => {
+  const source = '- Implement customer workflows.\n  ' + 'Build reliable Python services. '.repeat(25).trim();
+  const input = inputFor(source);
+  const result = validateProseRewrite({ inputHash: input.inputHash, parts: [{ source, text: source }] }, input, 'stop');
+  assert.equal(result.ok, true);
+  assert.equal(result.description, source);
+  assert.equal(result.quality.layoutParagraphBreaks, 0);
 });

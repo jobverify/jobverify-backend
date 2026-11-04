@@ -11,7 +11,7 @@ jobs:
   tailor:
     name: Prepare and tailor requested resumes
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 30
     env:
       NODE_OPTIONS: '--use-system-ca'
     steps:
@@ -34,8 +34,33 @@ jobs:
           cache: 'npm'
       - name: Install document worker dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Restore pinned model, runtime, and compiler dependencies
+        id: resume-dependencies
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+            .cache/resume-runtime/b11146/llama-b11146-bin-ubuntu-x64.tar.gz
+            .cache/resume-compiler/image.tar
+          key: resume-qwen4b-3605803b-runtime-c150306e-${{ hashFiles('resume-tailoring/compiler/**') }}
       - name: Prepare or tailor one requested resume
-        timeout-minutes: 1
+        timeout-minutes: 28
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: node scripts/runTailoredResumes.js
+      - name: Check immutable dependency cache completeness
+        id: complete-cache
+        if: ${{ !cancelled() && steps.resume-dependencies.outputs.cache-hit != 'true' }}
+        run: |
+          if test -f .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf && test -f .cache/resume-runtime/b11146/llama-b11146-bin-ubuntu-x64.tar.gz && test -f .cache/resume-compiler/image.tar; then
+            printf 'ready=true\n' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Save immutable dependencies after document processing
+        if: ${{ !cancelled() && steps.complete-cache.outputs.ready == 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+            .cache/resume-runtime/b11146/llama-b11146-bin-ubuntu-x64.tar.gz
+            .cache/resume-compiler/image.tar
+          key: ${{ steps.resume-dependencies.outputs.cache-primary-key }}

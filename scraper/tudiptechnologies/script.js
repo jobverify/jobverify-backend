@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { enrichRoleDescriptions } from '../../scraper-support/utils/enrichRoleDescriptions.js'
 
 import { TUDIP_TECHNOLOGIES_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -74,6 +75,11 @@ export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
     const slug = getSlugFromUrl(href)
 
     if (!title || !href || !slug) return null
+    const roleUrl = new URL(href)
+    if (roleUrl.protocol !== 'https:' || roleUrl.hostname !== 'tudip.com' || roleUrl.username || roleUrl.password
+      || roleUrl.search || roleUrl.hash || !/^\/jobs?\/india\/[a-z0-9-]+\/?$/i.test(roleUrl.pathname)) {
+      throw new Error('Tudip India card no longer matches the trusted role identity')
+    }
 
     return {
       title,
@@ -94,12 +100,14 @@ export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription: title,
+      jobDescription: null,
     }
   })
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal, includeResponseMetadata = false } = {}) => fetchTextWithRetry(url, {
+  signal,
+  includeResponseMetadata,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -111,8 +119,11 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const createTudipTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, now: overrideNow, signal } = {}) {
+    signal?.throwIfAborted()
+    const careersResponse = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
+    const careersHtml = typeof careersResponse === 'object' ? careersResponse?.html : careersResponse
     if (!hasOfficialJobsSignal(careersHtml)) {
       throw new Error('Tudip Technologies verified jobs page no longer matches the trusted first-party surface')
     }
@@ -122,7 +133,7 @@ export const createTudipTechnologiesScraper = ({
       throw new Error('Tudip Technologies jobs page no longer exposes the verified India job listings')
     }
 
-    return jobs.map((job) => ({
+    return enrichRoleDescriptions(jobs.map((job) => ({
       ...job,
       source: SOURCE,
       company: COMPANY,
@@ -131,7 +142,7 @@ export const createTudipTechnologiesScraper = ({
       atsPlatform: PROVIDER_METADATA.atsPlatform,
       link: job.applyUrl,
       scrapedAt: (overrideNow || now)(),
-    }))
+    })), { fetchText, signal })
   },
 })
 

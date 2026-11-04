@@ -88,3 +88,13 @@ test('aggregation merges quality counters and keeps per-runner CPU and memory me
   assert.equal(summary.skipReasons.oversized_description, 1)
   assert.equal(summary.budgetExhausted, true)
 })
+
+test('phase timing aggregation sums measured shards and keeps older missing measurements absent', () => {
+  const summary = aggregateClassificationSummaries([
+    { shard: 0, timingMs: { sourceRead: 100, modelRoundTrip: 400, reporting: 10 } },
+    { shard: 1, timingMs: { sourceRead: 200, modelRoundTrip: 600, reporting: 20 } },
+    { shard: 2 },
+  ])
+  assert.deepEqual(summary.timingMs, { sourceRead: 300, modelRoundTrip: 1000, reporting: 30 })
+  assert.equal(aggregateClassificationSummaries([{ shard: 0 }]).timingMs?.modelRoundTrip, undefined)
+})

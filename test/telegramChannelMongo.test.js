@@ -8,6 +8,7 @@ import TelegramBroadcastSettings from '../src/models/TelegramBroadcastSettings.j
 import TelegramChannelDelivery from '../src/models/TelegramChannelDelivery.js';
 import TelegramChannelSchedule from '../src/models/TelegramChannelSchedule.js';
 import { DEFAULT_BROADCAST_TEMPLATE } from '../src/services/telegramBroadcastTemplate.js';
+import { saveBroadcastSettings, listBroadcastSettings } from '../src/services/telegramBroadcastSettingsService.js';
 import { stageTelegramChannelDeliveries, recoverTelegramChannelAlerts, nextChannelPostAt } from '../src/services/telegramChannelService.js';
 
 test('channel interval includes the default 20 and 30 minute boundaries', () => {
@@ -72,6 +73,98 @@ test('admin broadcast queues are independent, durable, filtered and paced', { ti
     assert.equal(messages.length, 0, 'No broadcast should be sent.');
   };
 
+  for (const id of ['channel', 'group']) {
+    await t.test(`${id} dynamic slots persist, pace queued jobs, hold gaps and resume after deleting all slots`, async st => {
+      st.mock.timers.enable({ apis: ['Date'], now: new Date('2026-11-04T03:30:00Z') });
+      await reset({ channel: false }); await configure(id, { minIntervalMinutes: 20, maxIntervalMinutes: 20 });
+      const current = (await listBroadcastSettings()).find(item => item.id === id);
+      const { id: _id, stats: _stats, ...body } = current;
+      const postingWindows = [{ startTime: '09:00', endTime: '09:30' }, { startTime: '16:00', endTime: '17:00' }];
+      let saved = await saveBroadcastSettings(id, { ...body, postingWindows }, new mongoose.Types.ObjectId());
+      assert.deepEqual(saved.postingWindows, postingWindows);
+      await stageTelegramChannelDeliveries([await job(), await job(), await job()]);
+      const targets = [];
+      const provider = { sendTextMessage: async payload => { targets.push(payload.chatId); return send(payload); } };
+      await recoverTelegramChannelAlerts({ provider });
+      assert.equal(targets.length, 0);
+      st.mock.timers.setTime(new Date('2026-11-04T03:50:00Z').getTime());
+      await recoverTelegramChannelAlerts({ provider }); assert.equal(targets.length, 1);
+      assert.equal((await TelegramChannelSchedule.findById(saved.chatId)).nextPostAt.toISOString(), '2026-11-04T10:30:00.000Z');
+      st.mock.timers.setTime(new Date('2026-11-04T06:00:00Z').getTime());
+      await due(); await recoverTelegramChannelAlerts({ provider }); assert.equal(targets.length, 1);
+      st.mock.timers.setTime(new Date('2026-11-04T10:30:00Z').getTime());
+      await recoverTelegramChannelAlerts({ provider }); assert.equal(targets.length, 2);
+      saved = await saveBroadcastSettings(id, { ...body, revision: saved.revision, postingWindows: [] }, new mongoose.Types.ObjectId());
+      assert.deepEqual(saved.postingWindows, []); assert.equal(saved.stats.nextPostAt, null);
+      assert.equal((await TelegramChannelSchedule.findById(saved.chatId)).nextPostAt, null);
+      await stageTelegramChannelDeliveries([await job()]); await due(); await assertNoSend();
+      assert.equal(await TelegramChannelDelivery.countDocuments({ status: 'queued' }), 2);
+      saved = await saveBroadcastSettings(id, { ...body, revision: saved.revision, postingWindows }, new mongoose.Types.ObjectId());
+      assert.deepEqual((await listBroadcastSettings()).find(item => item.id === id).postingWindows, postingWindows);
+      st.mock.timers.setTime(new Date('2026-11-04T10:50:00Z').getTime());
+      await recoverTelegramChannelAlerts({ provider }); assert.equal(targets.length, 3);
+    });
+  }
+
+  await t.test('midnight queues wait for independent channel and group openings, then pause at closing', async st => {
+    st.mock.timers.enable({ apis: ['Date'], now: new Date('2026-11-03T18:30:00Z') });
+    await reset();
+    await TelegramBroadcastSettings.updateOne({ _id: 'channel' }, { $set: { startTime: '09:00', endTime: '21:00' } });
+    await configure('group', { startTime: '10:00', endTime: '20:00' });
+    await stageTelegramChannelDeliveries([await job(), await job()]);
+    assert.equal(await TelegramChannelDelivery.countDocuments({ status: 'queued' }), 4);
+    assert.equal((await TelegramChannelSchedule.findById('@examplechannel')).nextPostAt.toISOString(), '2026-11-04T03:30:00.000Z');
+    assert.equal((await TelegramChannelSchedule.findById('@examplegroup')).nextPostAt.toISOString(), '2026-11-04T04:30:00.000Z');
+    await due(); await assertNoSend();
+    assert.equal(await TelegramChannelDelivery.countDocuments({ status: 'queued' }), 4);
+    const targets = [];
+    const provider = { sendTextMessage: async payload => { targets.push(payload.chatId); return send(payload); } };
+    st.mock.timers.setTime(new Date('2026-11-04T03:30:00Z').getTime());
+    await recoverTelegramChannelAlerts({ provider });
+    assert.deepEqual(targets, ['@examplechannel']);
+    st.mock.timers.setTime(new Date('2026-11-04T04:30:00Z').getTime());
+    await recoverTelegramChannelAlerts({ provider });
+    assert.deepEqual(targets, ['@examplechannel', '@examplechannel', '@examplegroup']);
+    st.mock.timers.setTime(new Date('2026-11-04T15:30:00Z').getTime());
+    await due(); await assertNoSend();
+    assert.equal(await TelegramChannelDelivery.countDocuments({ destination: 'group', status: 'queued' }), 1);
+  });
+
+  for (const id of ['channel', 'group']) {
+    await t.test(`${id} window survives saving and moves its queued schedule to the next opening`, async st => {
+      st.mock.timers.enable({ apis: ['Date'], now: new Date('2026-11-03T18:30:00Z') });
+      await reset({ channel: false }); await configure(id);
+      await stageTelegramChannelDeliveries([await job()]);
+      const current = (await listBroadcastSettings()).find(item => item.id === id);
+      const { id: _id, stats: _stats, ...body } = current;
+      const saved = await saveBroadcastSettings(id, { ...body, startTime: '09:00', endTime: '21:00' }, new mongoose.Types.ObjectId());
+      assert.equal(saved.startTime, '09:00'); assert.equal(saved.endTime, '21:00');
+      assert.equal(saved.stats.nextPostAt.toISOString(), '2026-11-04T03:30:00.000Z');
+      assert.equal((await listBroadcastSettings()).find(item => item.id === id).startTime, '09:00');
+      assert.equal(await TelegramChannelDelivery.countDocuments({ status: 'queued' }), 1);
+    });
+  }
+
+  await t.test('a worker crossing the closing boundary leaves the job queued', async st => {
+    st.mock.timers.enable({ apis: ['Date'], now: new Date('2026-11-04T15:29:59Z') });
+    await reset();
+    await TelegramBroadcastSettings.updateOne({ _id: 'channel' }, { $set: { startTime: '09:00', endTime: '21:00' } });
+    await stageTelegramChannelDeliveries([await job()]); await due();
+    const find = Job.findById.bind(Job);
+    st.mock.method(Job, 'findById', (...args) => {
+      const query = find(...args); const lean = query.lean.bind(query);
+      query.lean = async () => {
+        const listing = await lean();
+        st.mock.timers.setTime(new Date('2026-11-04T15:30:00Z').getTime());
+        return listing;
+      };
+      return query;
+    });
+    await assertNoSend();
+    assert.equal((await TelegramChannelDelivery.findOne()).status, 'queued');
+    assert.equal((await TelegramChannelSchedule.findById('@examplechannel')).nextPostAt.toISOString(), '2026-11-05T03:30:00.000Z');
+  });
+
   await t.test('missing or disabled admin settings stage no broadcasts', async () => {
     await reset({ channel: false }); const listing = await job();
     await stageTelegramChannelDeliveries([listing]);
@@ -80,6 +173,36 @@ test('admin broadcast queues are independent, durable, filtered and paced', { ti
     await stageTelegramChannelDeliveries([listing]);
     assert.equal(await TelegramChannelDelivery.countDocuments(), 0);
     assert.equal(await TelegramChannelSchedule.countDocuments(), 0);
+  });
+
+  await t.test('a send transaction completing at closing requeues without contacting Telegram', async st => {
+    st.mock.timers.enable({ apis: ['Date'], now: new Date('2026-11-04T15:29:59Z') });
+    await reset();
+    await TelegramBroadcastSettings.updateOne({ _id: 'channel' }, { $set: { startTime: '09:00', endTime: '21:00' } });
+    await stageTelegramChannelDeliveries([await job()]); await due();
+    const transaction = mongoose.connection.transaction.bind(mongoose.connection);
+    st.mock.method(mongoose.connection, 'transaction', async (...args) => {
+      const result = await transaction(...args);
+      st.mock.timers.setTime(new Date('2026-11-04T15:30:00Z').getTime());
+      return result;
+    });
+    await assertNoSend();
+    assert.equal((await TelegramChannelDelivery.findOne()).status, 'queued');
+    assert.equal((await TelegramChannelSchedule.findById('@examplechannel')).nextPostAt.toISOString(), '2026-11-05T03:30:00.000Z');
+  });
+
+  await t.test('rate-limit retry-after falling in quiet hours waits until the next opening', async st => {
+    st.mock.timers.enable({ apis: ['Date'], now: new Date('2026-11-04T14:30:00Z') });
+    await reset();
+    await TelegramBroadcastSettings.updateOne({ _id: 'channel' }, { $set: { startTime: '09:00', endTime: '21:00' } });
+    await stageTelegramChannelDeliveries([await job()]); await due();
+    await recoverTelegramChannelAlerts({ provider: { sendTextMessage: async () => {
+      throw Object.assign(new Error('Rate limited'), { statusCode: 429, retryAfterSeconds: 7200 });
+    } } });
+    const receipt = await TelegramChannelDelivery.findOne();
+    assert.equal(receipt.status, 'queued');
+    assert.equal(receipt.retryAt.toISOString(), '2026-11-05T03:30:00.000Z');
+    assert.equal((await TelegramChannelSchedule.findById('@examplechannel')).nextPostAt.toISOString(), '2026-11-05T03:30:00.000Z');
   });
 
   await t.test('matching jobs queue once without a member, wait initially and send one job per interval', async () => {

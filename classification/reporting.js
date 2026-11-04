@@ -18,6 +18,7 @@ export const classificationSkipReason = (input, maxInputBytes) => !input.body ? 
 
 export const createClassificationReport = (configuration = {}) => ({
   reportingVersion: 2, modelRequests: 0,
+  timingMs: {},
   resolvedCategories: counter(resolvedTypes), publicCategories: {}, modelCategories: counter(resolvedTypes.slice(0, 4)),
   descriptionOrigins: {}, skipReasons: counter(['missing_description', 'oversized_description']),
   quality: { uncertain: 0, unavailable: 0, modelAgreement: 0, modelDisagreement: 0,
@@ -83,6 +84,7 @@ export function aggregateClassificationSummaries(parts) {
     summary.elapsedSeconds = Math.max(summary.elapsedSeconds, finite(part.elapsedSeconds) ? part.elapsedSeconds : 0)
     summary.workerSeconds += finite(part.elapsedSeconds) ? part.elapsedSeconds : 0
     for (const key of ['resolvedCategories', 'publicCategories', 'modelCategories', 'descriptionOrigins', 'skipReasons']) merge(summary[key], part[key])
+    merge(summary.timingMs, part.timingMs)
     for (const key of ['uncertain', 'unavailable', 'modelAgreement', 'modelDisagreement',
       'modelFinalAgreement', 'modelFinalDisagreement', 'modelFinalUnavailable', 'modelFallback', 'reviewRequired']) {
       if (finite(part.quality?.[key])) summary.quality[key] += part.quality[key]

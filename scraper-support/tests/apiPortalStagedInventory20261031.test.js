@@ -125,13 +125,15 @@ test('the opted-in complete source budget cancels stalled hydration and skips cl
   assert.equal(replay.events.some(event => event.phase === 'closing'), false)
 })
 
-for (const phase of ['opening', 'closing']) test('paced retries retain traversal order and report recovered HTTP429 once during ' + phase, async () => {
+for (const phase of ['opening', 'closing']) test('portals without the denial-stop policy retain paced retry order and telemetry during ' + phase, async () => {
   let failed = false
   const replay = stagedReplay({ listingAction: ({ phase: current, payload, url }) => {
     if (!failed && current === phase) { failed = true; throw buildHttpError(new Response(null, { status: 429, headers: { 'Retry-After': '0' } }), url) }
     return payload
   } })
-  const jobs = await withRetry(() => run(replay), { attempts: 1, baseDelayMs: 0, label: 'staged-recovered-rate-limit' })
+  const provider = stagedProvider()
+  delete provider.publicAccessPolicy // Exercise the ordinary portal retry contract.
+  const jobs = await withRetry(() => run(replay, provider), { attempts: 1, baseDelayMs: 0, label: 'staged-recovered-rate-limit' })
   retainedOpening(jobs)
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)
   assert.equal(getRetryPressure(jobs).nestedRetries, 1)
@@ -139,14 +141,28 @@ for (const phase of ['opening', 'closing']) test('paced retries retain traversal
   assert.deepEqual(getRetryPressure(jobs).httpStatusCounts, { 429: 1 })
 })
 
-test('exhausted closing retries preserve opening positives without restarting discovery', async () => {
+test('exhausted closing retries on an ordinary portal preserve opening positives without restarting discovery', async () => {
   const replay = stagedReplay({ listingAction: ({ phase, payload, url }) => {
     if (phase === 'closing') throw buildHttpError(new Response(null, { status: 429 }), url)
     return payload
   } })
-  const jobs = await run(replay)
+  const provider = stagedProvider()
+  delete provider.publicAccessPolicy
+  const jobs = await run(replay, provider)
   retainedOpening(jobs); partial(jobs)
   assert.equal(replay.events.filter(event => event.phase === 'closing').length, 2)
+})
+
+test('a denial-stop staged source preserves opening positives and stops after its first closing HTTP429', async () => {
+  const replay = stagedReplay({ listingAction: ({ phase, payload, url }) => {
+    if (phase === 'closing') throw buildHttpError(new Response(null, { status: 429 }), url)
+    return payload
+  } })
+  const jobs = await withRetry(() => run(replay), { attempts: 1, baseDelayMs: 0, label: 'staged-first-denial' })
+  retainedOpening(jobs); partial(jobs)
+  assert.equal(replay.events.filter(event => event.phase === 'closing').length, 1)
+  assert.equal(getRetryPressure(jobs).nestedRetries, 0)
+  assert.deepEqual(getRetryPressure(jobs).httpStatusCounts, {429:1})
 })
 
 test('staged hydration retains the required native identity guard', async () => {

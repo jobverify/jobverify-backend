@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { enrichRoleDescriptions } from '../../scraper-support/utils/enrichRoleDescriptions.js'
 
 import { FLEXSIN_TECHNOLOGIES_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -20,9 +21,10 @@ const LOCATION_MAP = {
   'sector 63, noida': 'Sector 63, Noida, Uttar Pradesh, India',
 }
 
-const defaultFetchText = (url, { signal } = {}) =>
+const defaultFetchText = (url, { signal, includeResponseMetadata = false } = {}) =>
   fetchTextWithRetry(url, {
     signal,
+    includeResponseMetadata,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -131,12 +133,12 @@ export const createFlexsinTechnologiesScraper = () => ({
 
     const verifiedJobs = jobs.filter(job => job.country === 'India')
     if (!verifiedJobs.length) throw new Error('Flexsin incomplete country scope: no verified India roles')
-    return verifiedJobs.map((job) => ({
+    return enrichRoleDescriptions(verifiedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl,
       scrapedAt: new Date().toISOString(),
-    }))
+    })), { fetchText, signal })
   },
 })
 

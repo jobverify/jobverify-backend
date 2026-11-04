@@ -10,6 +10,7 @@ import { tailoringError } from './resumeTailoringContent.js';
 import { remainingBudget } from '../../resume-tailoring/resumeBudget.js';
 
 export const activeResumeStatuses = ['queued', 'running'];
+export const isRetiredTemplateVersion = version => typeof version === 'string' && version.startsWith('source-template:');
 export const activeResumeOwner = user => ({ _id: user, deactivated: { $ne: true }, accountDeletingAt: null });
 const ownerFilter = user => ({ _id: user, user });
 export const evidenceMatches = (version, hash, evidence) => version == null ? evidence.version === 0 : version === evidence.version && hash === evidence.hash;
@@ -18,7 +19,8 @@ export function preparationMetadata(record, evidence) {
   const valid = Boolean(p.generationId && p.outputResumeSha === record.sha256);
   return { status: p.status || 'unprepared', phase: p.phase || '', error: p.error || '', revision: p.revision || 0,
     sourceHash: p.sourceSha || record?.sha256 || '', attempts: p.attempts || 0,
-    stale: Boolean(valid && evidence && !evidenceMatches(p.outputEvidenceVersion, p.outputEvidenceHash, evidence)),
+    stale: Boolean(valid && (isRetiredTemplateVersion(p.modelVersion)
+      || (evidence && !evidenceMatches(p.outputEvidenceVersion, p.outputEvidenceHash, evidence)))),
     retryable: ['unprepared', 'failed'].includes(p.status || 'unprepared'),
     hasPdf: valid, hasLatex: valid, pageCount: valid ? p.pageCount || null : null, generatedAt: p.generatedAt || null };
 }
@@ -29,7 +31,7 @@ export function resumeMetadata(record, evidence) {
 }
 export function requirePreparedResume(record) {
   const p = record?.preparation;
-  if (!p?.generationId || p.outputResumeSha !== record.sha256 || activeResumeStatuses.includes(p.status)) {
+  if (!p?.generationId || p.outputResumeSha !== record.sha256 || activeResumeStatuses.includes(p.status) || isRetiredTemplateVersion(p.modelVersion)) {
     throw tailoringError('Prepare your resume before creating a job-specific version. Resume preparation is a separate step.', 409);
   }
   return p;
@@ -43,7 +45,7 @@ export async function requestResumePreparation(user, { regenerate = false, autom
   if (expectedSourceSha && current.sha256 !== expectedSourceSha) return resumeMetadata(current);
   const p = current.preparation || {};
   const evidence = await getCandidateEvidenceSnapshot(user._id);
-  if (activeResumeStatuses.includes(p.status) || (!regenerate && p.status === 'completed' && preparationMetadata(current).hasPdf
+  if (activeResumeStatuses.includes(p.status) || (!regenerate && p.status === 'completed' && !isRetiredTemplateVersion(p.modelVersion) && preparationMetadata(current).hasPdf
     && evidenceMatches(p.outputEvidenceVersion, p.outputEvidenceHash, evidence))) return resumeMetadata(current, evidence);
   if (!automatic && dispatch === dispatchTailoredResumes) requireTailoredResumeActions();
   const revisionFilter = p.revision === undefined ? { $or: [{ 'preparation.revision': { $exists: false } }, { 'preparation.revision': 0 }] } : { 'preparation.revision': p.revision };

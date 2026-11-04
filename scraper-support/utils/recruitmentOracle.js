@@ -20,12 +20,20 @@ export async function readOracleRecruitment(board, io) {
   const publicBase = new URL(base.attrs.href, page.url), apiOrigin = new URL(base.attrs['data-apibaseurl'])
   const declared = new URL(board.url)
   need(publicBase.origin === declared.origin && publicBase.pathname.replace(/\/$/, '') === declared.pathname.replace(/\/$/, '')
-    && !publicBase.search && !publicBase.hash && apiOrigin.origin === declared.origin
+    && !publicBase.search && !publicBase.hash
     && apiOrigin.protocol === 'https:' && !apiOrigin.username && !apiOrigin.password && !apiOrigin.port, 'native API or candidate site changed authority')
   const publishers = doc.nodes(node => node.tag === 'title').map(node => decodeNativeEntities(node.raw || ''))
   publishers.push(...doc.nodes(node => node.tag === 'meta' && node.attrs.property === 'og:site_name').map(node => node.attrs.content || ''))
-  need(publishers.some(io.matchingPublisher), 'native candidate-site publisher does not match the source')
-  const publisher = publishers.find(io.matchingPublisher)
+  const publisher = publishers.find(io.matchingPublisher) || null
+  const generic = publishers.length > 0 && publishers.every(value => /^\s*Candidate Experience site\s*$/i.test(value))
+    && board.bindingEvidence?.verified === true && board.bindingEvidence?.bindingMethod === 'runtime-current-careers-link'
+  need(publisher || generic, 'native candidate-site publisher does not match the source')
+  const oracleHost = /^[a-z\d-]+\.fa\.[a-z\d-]+\.oraclecloud\.com$/i
+  const declaredOracleAPI = !oracleHost.test(declared.hostname) && oracleHost.test(apiOrigin.hostname)
+    && apiOrigin.pathname === '/' && !apiOrigin.search && !apiOrigin.hash && publisher
+    && board.bindingEvidence?.verified === true
+    && ['runtime-current-careers-link','runtime-current-native-candidate-site'].includes(board.bindingEvidence.bindingMethod)
+  need(apiOrigin.origin === declared.origin || declaredOracleAPI, 'native API or candidate site changed authority')
   const prefix = apiOrigin.origin + '/hcmRestApi/resources/latest/'
   io.permit(prefix)
   io.permit(publicBase.href)
@@ -67,7 +75,7 @@ export async function readOracleRecruitment(board, io) {
       const india = locations.filter(location => location.country === 'India')
       if (!india.length) { io.unresolved('native-location-scope-unresolved'); continue }
       const employer = text(detail.LegalEmployer) ? { name: detail.LegalEmployer } : null
-      if (employer && !io.matchingEmployer(employer.name) || !employer && io.requireNativeEmployerName) {
+      if (employer && !io.matchingEmployer(employer.name) || !employer && (io.requireNativeEmployerName || !publisher)) {
         io.unresolved('native-employer-mismatch'); continue
       }
       const url = publicBase.href.replace(/\/$/, '') + '/job/' + row.Id

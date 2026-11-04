@@ -40,7 +40,9 @@ const normalizeWhitespace = (value) => {
 
 const stripHtml = (value) => normalizeWhitespace(value)
 
-const isAcsEmployer = value => /^acsnetworks?technolog(?:y|ies)$/.test(String(value || '')
+// PlacementIndia also uses this exact misspelling for the same ACS employer.
+// Keep the alias bounded instead of accepting arbitrary fuzzy company matches.
+const isAcsEmployer = value => /^acsnetworks?(?:technolog(?:y|ies)|technoloiges)$/.test(String(value || '')
   .toLowerCase().replace(/\b(?:private|limited|pvt|ltd|and)\b/g, '').replace(/[^a-z]/g, ''))
 const trustedJobUrl = value => {
   try { const url = new URL(value); return url.protocol === 'https:' && url.hostname === 'www.placementindia.com'

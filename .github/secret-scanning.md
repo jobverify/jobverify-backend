@@ -51,3 +51,11 @@ then rerun both Gitleaks modes using the workflow's filtering steps. The tests
 cover replacement credentials, additional findings in a reviewed fixture,
 moved values, changed rules, invalid paths, malformed input, scanner errors,
 raw-report cleanup, and metadata-only output.
+
+The 2026-11-03 review covers Paylocity's anonymous public board UUID, the
+Alkem TurboHire public-method checksum, public capture-manifest lookup labels
+for Akulaku, Bikayi, Bounteous and BillEase, and the exact Capsitech browser
+position-category value captured from `window.RESUME_KEY`. It also covers the
+Claroty manifest's literal limitation prose `persistence/publication`. These
+entries retain the rule + exact file + detected-value SHA256 matching policy;
+new credentials and replacement values remain blocked.

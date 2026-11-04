@@ -24,12 +24,12 @@ async function hashFile(file) {
   return hash.digest('hex');
 }
 async function immutableDownload(url, target, digest, deadline) {
-  remainingBudget(deadline, 600000);
+  remainingBudget(deadline, 2147483647);
   try { if (await hashFile(target) === digest) return; } catch { /* no cached asset */ }
   await fs.mkdir(path.dirname(target), { recursive: true });
   const temporary = `${target}.${randomUUID()}.download`;
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(remainingBudget(deadline, 600000)) });
+    const response = await fetch(url, { signal: AbortSignal.timeout(remainingBudget(deadline, 2147483647)) });
     if (!response.ok || !response.body) throw new Error('Pinned resume model/runtime download failed.');
     await pipeline(Readable.fromWeb(response.body), createWriteStream(temporary, { flags: 'wx', mode: 0o600 }));
     if (await hashFile(temporary) !== digest) throw new Error('Pinned resume model/runtime checksum mismatch.');
@@ -63,15 +63,18 @@ export async function prepareResumeModel({ cacheRoot = root, deadline = Date.now
   });
   let startupError;
   server.once('error', error => { startupError = error; });
+  // Health checks stay on loopback even when the host enables an HTTP proxy.
+  const healthDispatcher = new Agent({ headersTimeout: 0, bodyTimeout: 0 });
   try {
     const readyBy = Math.min(deadline, Date.now() + 120000);
     while (Date.now() < readyBy) {
       if (startupError || server.exitCode !== null) throw new Error('The resume model server could not start.');
-      try { if ((await fetch(`${serverUrl}/health`, { signal: AbortSignal.timeout(remainingBudget(readyBy, 1000)) })).ok) return { stop: () => server.kill('SIGTERM') }; } catch { /* model loading */ }
+      try { if ((await fetch(`${serverUrl}/health`, { dispatcher: healthDispatcher, signal: AbortSignal.timeout(remainingBudget(readyBy, 1000)) })).ok) return { stop: () => server.kill('SIGTERM') }; } catch { /* model loading */ }
       await new Promise(resolve => setTimeout(resolve, 500));
     }
     throw new Error('The resume model server did not become ready.');
   } catch (error) { server.kill('SIGTERM'); throw error; }
+  finally { await healthDispatcher.destroy(); }
 }
 const comparisonSchema = { type: 'object', additionalProperties: false, required: ['evidence', 'missingFacts', 'unsupportedClaims', 'supported'], properties: {
   evidence: { type: 'string', minLength: 1, maxLength: 4096 },
@@ -82,11 +85,12 @@ function modelRequestFailure(error, signal, fallbackCode) {
   const timedOut = signal.aborted || modelTimeoutCodes.has(error?.code) || modelTimeoutCodes.has(error?.cause?.code);
   return resumeFailure(timedOut ? 'model_timeout' : fallbackCode);
 }
-export async function generateResumeText(prompt, { fetchImpl = fetch, deadline = Date.now() + 480000, comparison = false, onDiagnostic = () => {} } = {}) {
+export async function generateResumeText(prompt, { fetchImpl = fetch, deadline = Date.now() + 480000, signal: parentSignal, comparison = false, onDiagnostic = () => {} } = {}) {
   const messages = [{ role: 'user', content: prompt }];
   const maxTokens = comparison ? RESUME_MODEL.comparisonOutputTokens : RESUME_MODEL.maxOutputTokens;
   const request = async (endpoint, body) => {
-    const signal = AbortSignal.timeout(remainingBudget(deadline, RESUME_MODEL.requestSeconds * 1000));
+    const timeout = AbortSignal.timeout(remainingBudget(deadline, RESUME_MODEL.requestSeconds * 1000));
+    const signal = parentSignal ? AbortSignal.any([parentSignal, timeout]) : timeout;
     // The abort signal bounds the whole request, including the response body.
     // Undici's separate five-minute timers must not preempt that deadline.
     const dispatcher = new Agent({ headersTimeout: 0, bodyTimeout: 0 });

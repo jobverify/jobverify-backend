@@ -1,9 +1,24 @@
 import { nativeCountryName } from '../shared/nativeJobPosting.js'
+import { isNativeBareCityInPublicScope } from '../shared/nativeCityScope.js'
+
+const cleanWorksite = value => typeof value === 'string' ? value.normalize('NFKC').trim().replace(/\s+/g, ' ') : ''
+const streetWorksite = (street, visibleLocations) => {
+  const label = cleanWorksite(street)
+  if (!label || !visibleLocations.some(visible => cleanWorksite(visible) === label)) return null
+  const parts = label.split(',').map(part => part.trim())
+  if (parts.length < 2 || parts.some(part => !part)) return null
+  const tail = parts.at(-1), candidate = /\d/.test(tail) ? parts.at(-2) : tail
+  // A full native country name is unambiguous. IN alone also denotes Indiana
+  // and RMK truncates Indonesia to "In"; require an own India city and PIN.
+  const country = candidate.length > 2 ? nativeCountryName(candidate)
+    : candidate === 'IN' && /^[1-9]\d{5}$/.test(tail) && isNativeBareCityInPublicScope(parts[0]) ? 'India' : null
+  return country ? { country, locality: parts[0] } : null
+}
 
 // Read only active, own-scope HTML microdata. Nested organizations or unrelated
 // postings cannot donate country, employer or title fields to another role.
-export function recruitmentMicrodataPostings(document, pageURL) {
-  const scopes = document.nodes(node => Object.hasOwn(node.attrs, 'itemscope')
+export function recruitmentMicrodataPostings(document, pageURL, {scope = null} = {}) {
+  const scopes = scope ? [scope] : document.nodes(node => Object.hasOwn(node.attrs, 'itemscope')
     && (node.attrs.itemtype || '').split(/\s+/).some(type => /^https?:\/\/schema\.org\/JobPosting\/?$/.test(type)))
   return scopes.map(scope => {
     const issues = new Set()
@@ -45,8 +60,24 @@ export function recruitmentMicrodataPostings(document, pageURL) {
     // RMK sometimes writes the first two letters of a country name into its
     // microdata, including "In" for Indonesia. Correlate its own full visible
     // worksite label before interpreting those letters as an ISO country code.
-    if (visibleLocations.length) for (const location of locations) {
+    for (const location of locations) {
       const address = location.address, original = address.addressCountry
+      if (address.streetAddress && !address.addressLocality) {
+        const worksite = streetWorksite(address.streetAddress, visibleLocations)
+        if (worksite) {
+          if (original && nativeCountryName(original) !== worksite.country) {
+            issues.add('native-microdata-country-conflict'); continue
+          }
+          address.nativeAddressCountry = original
+          address.addressCountry = worksite.country
+          address.addressLocality = worksite.locality
+          continue
+        }
+        if (!nativeCountryName(original)) {
+          issues.add(visibleLocations.length ? 'native-microdata-visible-country-unresolved' : 'native-location-scope-unresolved'); continue
+        }
+      }
+      if (!visibleLocations.length) continue
       const labels = [...new Set(visibleLocations)].filter(label => address.addressLocality
         && label.toLowerCase().startsWith(address.addressLocality.toLowerCase() + ','))
       const countries = [...new Set(labels.map(label => {

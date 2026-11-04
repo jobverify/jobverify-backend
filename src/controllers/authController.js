@@ -289,6 +289,7 @@ export const verifyEmail = async (req, res) => {
 
     const user = new User({
       email: pendingUser.email,
+      telegramAlertsAllowed: false,
       password: pendingUser.password,
       profile: pendingUser.profile ? { name: pendingUser.profile.name } : {},
       isVerified: true,
@@ -699,6 +700,7 @@ export const authenticateWithGoogle = async (req, res) => {
     if (pendingUser) {
       const promotedUser = new User({
         email: normalizedEmail,
+        telegramAlertsAllowed: false,
         // Pending registration data may belong to someone else. Trust only the
         // verified Google identity; email sign-in can be added by password reset.
         password: null,
@@ -715,6 +717,7 @@ export const authenticateWithGoogle = async (req, res) => {
 
     const newUser = new User({
       email: normalizedEmail,
+      telegramAlertsAllowed: false,
       password: null,
       profile: identity.name
         ? {

@@ -7,6 +7,7 @@ export function summarizeRewriteCapacity(results, { startedAt, finishedAt, attem
   const sum = key => published.reduce((total, result) => total + (result.quality?.[key] || 0), 0);
   const capacity = { elapsedSeconds: seconds,
     modelRequests: results.reduce((total, result) => total + (result.generationRequests || 0), 0),
+    transportRetries: results.reduce((total, result) => total + (result.transportRetries || 0), 0),
     attemptsPerHour: seconds ? attempted / seconds * 3600 : 0,
     publishedPerHour: seconds ? published.length / seconds * 3600 : 0,
     p50DurationMs: durations[Math.floor(durations.length * .5)] ?? null,
@@ -17,6 +18,10 @@ export function summarizeRewriteCapacity(results, { startedAt, finishedAt, attem
     modelEditedDescriptions: published.filter(result => (result.quality?.modelEditedBlocks ?? result.quality?.modelEditedItems ?? 0) > 0).length,
     sourcePreservedDescriptions: published.filter(result => (result.quality?.modelEditedBlocks ?? result.quality?.modelEditedItems) === 0).length,
     modelEditedBlocks: sum('modelEditedBlocks'), sourcePreservedBlocks: sum('sourcePreservedBlocks'),
+    modelWordingEditedBlocks: sum('modelWordingEditedBlocks'), modelLayoutEditedBlocks: sum('modelLayoutEditedBlocks'),
+    wordingMetricsRecordedDescriptions: published.filter(result => Number.isInteger(result.quality?.modelWordingEditedBlocks)
+      && Number.isInteger(result.quality?.modelLayoutEditedBlocks)).length,
+    layoutParagraphBreaks: sum('layoutParagraphBreaks'),
     protectedSourceBlocks: sum('protectedSourceBlocks'), sourceFallbackBlocks: sum('sourceFallbackBlocks'),
   };
   if (published.some(result => Number.isInteger(result.quality?.modelEditedItems))) {

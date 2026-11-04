@@ -45,11 +45,16 @@ const statements = (text, inheritedRole = 'neutral') => {
   const pieces = [];
   let offset = 0;
   for (const title of proseHeadings(text)) {
-    pieces.push(text.slice(offset, title.start), '\n', text.slice(title.start, title.end));
+    const prefix = text.slice(offset, title.start);
+    // Do not manufacture a blank paragraph before an already separated heading.
+    pieces.push(prefix, prefix.endsWith('\n') ? '' : '\n', text.slice(title.start, title.end));
     offset = title.end;
   }
-  const marked = pieces.join('') + text.slice(offset);
-  for (let fragment of marked.split(/\n+|(?<=[.!?])\s+(?=[\p{Lu}])/u)) {
+  const marked = (pieces.join('') + text.slice(offset)).replace(/\n[ \t]+(?=\n)/g, '\n');
+  const fragments = marked.split(/(\n+|(?<=[.!?])\s+(?=[\p{Lu}]))/u);
+  for (let index = 0; index < fragments.length; index += 2) {
+    let fragment = fragments[index];
+    const paragraphEnd = index === fragments.length - 1 || /\n\n/.test(fragments[index + 1]);
     fragment = fragment.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').replace(/\*\*|__/g, '').trim();
     const title = fragment.match(heading);
     if (title) {
@@ -61,7 +66,7 @@ const statements = (text, inheritedRole = 'neutral') => {
     // scope across the conjunction would require guessing.
     const clauses = /\b(?:must|can|could|may|might|will|shall)\b/i.test(fragment) || negative.test(fragment) ? [fragment]
       : fragment.split(/\s+and\s+(?=(?:build|develop|maintain|design|collaborate|support|create|manage|lead|implement|deliver|ensure|work|write|analyze|test|review|monitor|document|coordinate|provide|assist|improve)\b)/i);
-    for (const clause of clauses) {
+    for (const [clauseIndex, clause] of clauses.entries()) {
       const tokens = terms(clause);
       if (!tokens.length) continue;
       const explicitRole = preferred.test(clause) ? 'preferred' : required.test(clause) ? 'required' : role;
@@ -69,6 +74,7 @@ const statements = (text, inheritedRole = 'neutral') => {
         : /\b(?:will|shall)\b/i.test(clause) ? 'commitment'
           : /\b(?:must|required|mandatory|necessary|essential)\b/i.test(clause) || explicitRole === 'required' ? 'obligation' : 'neutral';
       result.push({ text: clause, tokens, layoutTokens: terms(clause, true), role: explicitRole, modality,
+        paragraphEnd: paragraphEnd && clauseIndex === clauses.length - 1,
         negative: negative.test(clause.replace(/\bno (?:less|more) than\b/gi, '')),
         numbers: normalize(clause).match(/\d+(?:\.\d+)*/g) || [] });
     }
@@ -93,25 +99,47 @@ const signature = unit => JSON.stringify([unit.role, unit.modality, unit.negativ
   // boundaries must stay attached to their terms even in glued ATS prose.
   unit.layoutTokens.filter((token, index, tokens) => index !== tokens.length - 1 || !/^[.!?;]$/.test(token))]);
 const anchorTerms = unit => new Set(unit.tokens.filter(token => !/^\d/.test(token) && !['gte', 'lte', 'gt', 'lt'].includes(token)));
-const layoutSignature = units => {
+const punctuation = token => /^[.!?;]$/.test(token);
+const layoutGroups = units => {
   const groups = [];
   for (const unit of units) {
     const scope = JSON.stringify([unit.role, unit.modality, unit.negative]);
     let group = groups.at(-1);
-    if (group?.scope !== scope) { group = { scope, tokens: [] }; groups.push(group); }
-    for (const token of unit.layoutTokens) group.tokens.push(token);
+    if (group?.scope !== scope) {
+      group = { scope, tokens: [], ends: new Set(), boundaries: new Set(), punctuated: new Set(), words: 0 };
+      groups.push(group);
+    }
+    for (const token of unit.layoutTokens) {
+      group.tokens.push(token);
+      if (!punctuation(token)) group.words++;
+      else group.punctuated.add(group.words);
+    }
+    group.ends.add(group.tokens.length - 1);
+    if (unit.paragraphEnd) group.boundaries.add(group.words);
   }
-  return JSON.stringify(groups);
+  return groups;
+};
+const layoutSignature = (units, originals) => {
+  const sourceGroups = layoutGroups(originals);
+  return JSON.stringify(layoutGroups(units).map((group, index) => {
+    const source = sourceGroups[index];
+    let words = 0;
+    return { scope: group.scope, tokens: group.tokens.filter((token, position) => {
+      if (!punctuation(token)) { words++; return true; }
+      // Ignore only an ADDED full stop at an explicit source paragraph end.
+      // Original punctuation stays mandatory; a soft wrap can be mid-clause.
+      return !(token === '.' && group.ends.has(position) && source?.scope === group.scope
+        && source.boundaries.has(words) && !source.punctuated.has(words));
+    }) };
+  }));
 };
 
 export const checkProseStatements = (source, text, { sectionContext } = {}) => {
   const inheritedRole = proseSectionRole(sectionContext);
   const originals = statements(source, inheritedRole), rewritten = statements(text, inheritedRole);
-  // Line wrapping may split a statement into several fragments. Accept that
-  // layout change only when ordered terms AND sentence punctuation retain
-  // scope, modality and negation. Moving a full stop can change the actors or
-  // numeric subject even when the ordered word sequence stays identical.
-  if (layoutSignature(originals) === layoutSignature(rewritten)) return { reason: null };
+  // Ordered words, scope and internal sentence boundaries must agree. Only the
+  // original's blank paragraphs/end can make a terminal full stop optional.
+  if (layoutSignature(originals, originals) === layoutSignature(rewritten, originals)) return { reason: null };
   const available = new Map(), consumed = new Set(), unmatched = [];
   rewritten.forEach((unit, index) => {
     const key = signature(unit);

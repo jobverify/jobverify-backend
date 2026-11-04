@@ -16,10 +16,8 @@ test('getScraperCatalog includes the Eaton Eightfold apiPortal provider with off
   assert.match(eaton.companyCareerPage, /jobs\.eaton\.com\/jobs/i)
   assert.equal(eaton.companyDomain, 'jobs.eaton.com')
   assert.match(eaton.config.discovery.listingApiUrl, /eaton\.eightfold\.ai\/api\/pcsx\/search/i)
-  assert.deepEqual(eaton.config.mapping.location, [
-    'standardizedLocations.0',
-    'locations.0',
-  ])
+  assert.deepEqual(eaton.config.mapping.location, {strategy:'eightfold-location'})
+  assert.deepEqual(eaton.config.mapping.country, {strategy:'eightfold-country'})
 })
 
 test('buildScrapers exposes a runnable Eaton apiPortal scraper without changing the runner contract', () => {

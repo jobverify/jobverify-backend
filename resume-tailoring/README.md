@@ -1,19 +1,24 @@
-# Source-only resume documents
+# AI resume preparation and tailoring
 
-The active worker prepares and tailors resumes from existing source text and candidate-confirmed profile evidence. It does not call an AI model or run the Docker/LaTeX compiler. Legacy inference helpers remain for compatibility; `resumePipeline.js` is the active document path.
+The active worker in `resumePipeline.js` runs the pinned Qwen3-4B-Instruct-2507 Q4_K_M model locally with llama.cpp. It generates a complete LaTeX resume from the original document and entered or confirmed profile evidence. Tailoring also supplies the prepared base LaTeX and the saved job's candidate-facing requirements. Supported experience can be rewritten, selected, and ordered for the job; job requirements never become unsupported candidate claims.
 
-`sourceTemplate.js` builds an ordered document, renders a native PDF with bundled licensed fonts, and creates an escaped, editable LaTeX export from the same content. Tailoring can reorder clearly identified achievement bullets within a dated experience record. Ambiguous records retain their original order. Job requirements never become candidate claims.
+Generated LaTeX passes a strict preflight and is compiled into the published PDF by Tectonic inside an isolated Docker container. Compilation has no network, host mounts, credentials, writable root filesystem, or shell escape. The PDF and downloadable TeX come from the same model output. Contact icons can be omitted while their values and link destinations are preserved.
 
-Before publication, PDF.js renders and inspects the PDF. Extracted characters and their order must match the template, source facts must be retained, and actual link destinations must match the original. PDF wrapping may change whitespace in contact details. No candidate text or raw errors are logged.
+Before publication, PDF.js inspects and renders every page. Readable text, minimum 10pt size, page boundaries, identity, contacts, employer/title/date associations, education, numbers, skills, and link destinations are checked. A separate model call audits factual support. One repair is allowed; a failed repair preserves the previous successful version. Public diagnostics contain fixed codes and counts only.
 
-The worker uses a 60-second budget starting with the first workflow step. Source extraction, progress updates, rendering and inspection respect the remaining budget. GitHub queuing/provisioning and unavailable external services can still prevent a complete result within one minute; this is not a measured Actions latency guarantee.
+The Actions job allows 30 minutes. The worker's 28-minute deadline starts at the first workflow step, includes dependency setup, and leaves time for cleanup and saving immutable dependencies. Cold downloads and compilation warmup can take several minutes. Model weights, the verified runtime archive, and the trusted compiler image are cached; candidate documents and model responses are excluded from caches.
 
-Body text is 11pt. Base documents retain long content; tailored documents that cannot fit two readable pages fail with an actionable message instead of silently losing facts. The font set supports Latin, Greek and Cyrillic text. Unsupported characters and complex scripts fail explicitly; universal script support is not claimed.
+Base documents retain substantive source facts without a two-page target. Tailored documents must fit two readable pages while preserving protected employment and education facts. The application has no monthly Actions run cap. The existing allowance of ten tailoring requests per user per UTC day remains.
 
-Run the local synthetic benchmark with:
+Existing `source-template:` generations are marked stale and require a fresh AI preparation or tailoring request. Their stored artifacts remain in revision history.
 
-```powershell
-node scripts/benchmarkSourceResumes.js --output .cache/source-only-benchmark
+Install and verify the runtime on Linux x64 with Docker available, then run the real synthetic model/LaTeX/PDF benchmark:
+
+```sh
+npm run resume:setup
+npm run resume:benchmark -- --output .cache/ai-resume-benchmark
 ```
 
-The benchmark includes source extraction and actual PDF validation for PDF, Word and TeX fixtures. It excludes MongoDB and GitHub setup/queue latency. Font files are pinned to `dejavu-fonts-ttf` 2.37.3 in `fonts/manifest.json`; their original license and README are included. This font set also covers common mathematical and decorative symbols.
+These commands load no environment file or live database, process only synthetic data, and write QA documents beneath `.cache/`. The worker installs the same pinned dependencies automatically on an Actions cache miss. Model and runtime identities are recorded in `resume-model.json`; compiler identities and warmed dependencies are in `compiler/`.
+
+`sourceTemplate.js` and `sourceTemplatePipeline.js` remain synthetic fixture helpers with licensed bundled fonts. They are not a generation fallback in the application worker. `benchmarkSourceResumes.js` exercises those helpers and source extraction separately from AI quality and compilation.

@@ -1,6 +1,7 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { inspectResumeArchive } from './resumeText.js';
 import { normalizeResumeLinks, resumeLinksFromText } from './resumeSource.js';
+import { resumePdfText } from './resumePdfText.js';
 
 const unescapeTex = value => value.replace(/\\([&%_$#{}])/g, '$1').replace(/\\textasciitilde\s*\{?\}?/g, '~');
 const decodeHtml = value => value.replace(/&(?:amp|quot|apos|lt|gt|#\d+|#x[\da-f]+);/gi, entity => {
@@ -46,16 +47,7 @@ async function read() {
       for (let index = 1; index <= document.numPages; index++) {
         const page = await document.getPage(index);
         const content = await page.getTextContent();
-        let text = '', previousY;
-        for (const item of content.items) {
-          if (typeof item.str !== 'string') continue;
-          const y = item.transform?.[5];
-          if (text && !text.endsWith('\n') && previousY !== undefined && y !== undefined && Math.abs(y - previousY) > 2) text += '\n';
-          text += item.str;
-          text += item.hasEOL ? '\n' : ' ';
-          previousY = y;
-        }
-        pages.push(text.replace(/[ \t]+\n/g, '\n').trim());
+        pages.push(resumePdfText(content.items));
         for (const annotation of await page.getAnnotations()) if (annotation.subtype === 'Link') links.push(annotation.url || annotation.unsafeUrl || '');
       }
       const text = pages.join('\n\n');

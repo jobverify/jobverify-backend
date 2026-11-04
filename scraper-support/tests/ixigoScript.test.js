@@ -74,12 +74,18 @@ test('ixigo reads the public openings API even when server HTML says No Jobs Fou
     requested.push(url)
     if (url === ixigo.CURRENT_CAREERS_URL) return { status: 200, url, html: currentCareersHtml }
     if (url === apiUrl) return { status: 200, url, html: JSON.stringify({ data: { results: [opening], numFound: 1 } }) }
+    if (url === 'https://api.smartrecruiters.com/v1/companies/ixigo/postings/'+opening.jobVacancyId) return {status:200,url,html:JSON.stringify({
+      id:opening.jobVacancyId,name:opening.vacancyName,refNumber:opening.refNumber,company:{name:'ixigo',identifier:'ixigo'},location:{country:'in'},active:true,visibility:'PUBLIC',
+      postingUrl:'https://jobs.smartrecruiters.com/ixigo/744000148960834-full-stack-intern-b2b',applyUrl:'https://jobs.smartrecruiters.com/ixigo/744000148960834-full-stack-intern-b2b?oga=true',
+      jobAd:{sections:{jobDescription:{text:'<p>Develop production services for the travel platform, collaborate with engineers on technical designs, investigate incidents and improve the reliability and performance of customer applications.</p>'}}},
+    })}
     throw new Error('Retired legacy careers redirect should not be required')
   } })
-  assert.deepEqual(requested, [ixigo.CURRENT_CAREERS_URL, apiUrl])
+  assert.deepEqual(requested, [ixigo.CURRENT_CAREERS_URL, apiUrl,'https://api.smartrecruiters.com/v1/companies/ixigo/postings/'+opening.jobVacancyId])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Full-Stack Intern - B2B')
-  assert.equal(jobs[0].link, 'https://jobs.smartrecruiters.com/ixigo/13351237674')
+  assert.equal(jobs[0].link, 'https://jobs.smartrecruiters.com/ixigo/744000148960834-full-stack-intern-b2b')
+  assert.ok(jobs[0].sourceDescription.length>100)
   assert.equal(jobs[0].country, 'India')
   assert.equal(jobs[0].location, 'Gurugram')
   assert.equal(jobs[0].requisitionId, 'REF392P')

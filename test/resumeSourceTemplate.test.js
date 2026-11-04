@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { extractResumeSource } from '../src/services/resumeSource.js';
-import { processResumeDocument } from '../resume-tailoring/resumePipeline.js';
+import { processSourceTemplateDocument } from '../resume-tailoring/sourceTemplatePipeline.js';
 import { inspectResumePdf } from '../resume-tailoring/latexCompiler.js';
 import { validateLatexSource } from '../src/services/resumeLatexContent.js';
 
@@ -15,7 +15,7 @@ const noInference = {
   compile: async () => assert.fail('source-only output must never invoke the Docker compiler'),
 };
 async function prepare(input = {}, options = {}) {
-  const output = await processResumeDocument({ mode: 'base', source, ...input }, { ...noInference, ...options });
+  const output = await processSourceTemplateDocument({ mode: 'base', source, ...input }, { ...noInference, ...options });
   return { output, inspected: await inspectResumePdf(output.pdf) };
 }
 
@@ -75,6 +75,46 @@ test('Unicode names and currency survive PDF rendering and extraction', async ()
   const { inspected } = await prepare({ source: original });
   assert.match(inspected.text, /José García/);
   assert.match(inspected.text, /₹\s*250/);
+});
+
+test('contact icons preserve readable text and clickable links in base and tailored PDFs', async () => {
+  const icons = ['\u{1F4E7}', '\u{1F4F1}', '\u{1F310}', '\u{1F4CD}\uFE0F'];
+  const engineer = '\u{1F9D1}\u200D\u{1F4BB}';
+  const original = { ...source, text: source.text.replace('alex@example.com | +91 98765 43210',
+    `${icons[0]} alex@example.com | ${icons[1]} +91 98765 43210\n${icons[2]} https://example.com/alex\n${icons[3]} Pune, India`)
+    .replace('Software engineer building', `Software engineer ${engineer} building`) };
+  for (const mode of ['base', 'tailored']) {
+    const { output, inspected } = await prepare({ mode, source: original });
+    assert.equal(output.pageCount, 1);
+    for (const icon of icons) assert.ok(inspected.text.includes(icon), `preserves ${icon} in ${mode}`);
+    assert.ok(inspected.text.includes(engineer), `preserves the joined emoji in ${mode}`);
+    assert.match(inspected.text, /alex@example\.com/);
+    assert.match(inspected.text, /Pune, India/);
+    assert.match(inspected.text, /Software Engineer.*Jan 2022/s);
+    for (const link of source.links) assert.ok(inspected.links.includes(link), `preserves ${link} in ${mode}`);
+    assert.equal(validateLatexSource(output.latex), output.latex);
+  }
+  const { output } = await prepare({ source: original });
+  const extracted = await extractResumeSource({ extension: 'pdf', data: output.pdf });
+  const { inspected } = await prepare({ mode: 'tailored', source: extracted });
+  for (const icon of [...icons, engineer]) assert.ok(inspected.text.includes(icon), 'PDF upload retains its icon sequences');
+  for (const link of source.links) assert.ok(inspected.links.includes(link), 'PDF upload retains original destinations');
+});
+
+test('font fallback covers symbols and characters absent from the requested bold font', async () => {
+  // The styled A is available in regular DejaVu, but not in its bold face.
+  const name = '\u{1D5A0}lex Example';
+  const arrow = '\u2B95';
+  const original = { ...source, text: source.text.replace('Alex Example', name).replace('- Built SQL', `${arrow} Built SQL`) };
+  const { inspected } = await prepare({ source: original });
+  assert.ok(inspected.text.replace(/\s+/gu, '').includes(name.replace(/\s+/gu, '')));
+  assert.ok(inspected.text.includes(arrow));
+  assert.match(inspected.text, /Built SQL reporting/);
+});
+
+test('characters absent from every bundled font still fail instead of losing source text', async () => {
+  await assert.rejects(prepare({ source: { ...source, text: `${source.text}\n\u{1D400}` } }),
+    { code: 'source_invalid', statusCode: 422 });
 });
 
 test('legacy Word symbols survive the source-only PDF pipeline', async () => {
@@ -162,7 +202,7 @@ test('deadlines cancel slow PDF inspection and phase callbacks promptly', async 
     let observedSignal;
     const delay = () => new Promise(resolve => setTimeout(resolve, 500));
     const started = Date.now();
-    await assert.rejects(processResumeDocument({ mode: 'base', source }, {
+    await assert.rejects(processSourceTemplateDocument({ mode: 'base', source }, {
       deadline: started + 100,
       render: async () => Buffer.from('%PDF-synthetic-timing-test'),
       inspect: async (_pdf, { signal } = {}) => { observedSignal = signal; if (slowStage === 'inspection') await delay(); return { pageCount: 1, text: source.text, links: source.links }; },

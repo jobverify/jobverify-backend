@@ -73,17 +73,16 @@ test('missing configuration and explicit disablement reject before GitHub or quo
   }
 });
 
-test('the monthly Actions cap is reserved before dispatch and cannot be bypassed by retries', async t => {
-  configure(t);
-  t.mock.method(ResumeUsage, 'findOneAndUpdate', async filter => {
-    assert.equal(filter.key, 'actions:tailored-resumes:2026-10');
-    assert.equal(filter.used.$lte, 9);
-    return null;
-  });
-  await assert.rejects(dispatchTailoredResumes({ now: new Date('2026-10-20'), request: async (_repo, endpoint, options) => {
-    assert.notEqual(options?.method, 'POST');
+test('dispatch ignores retired monthly caps and exhausted historical usage', async t => {
+  configure(t, { TAILORED_RESUME_ACTIONS_MONTHLY_RUN_LIMIT: '0' });
+  t.mock.method(ResumeUsage, 'findOneAndUpdate', async () => assert.fail('dispatch must not reserve monthly usage'));
+  let posts = 0;
+  await dispatchTailoredResumes({ request: async (_repo, endpoint, options) => {
+    if (options?.method === 'POST') { posts++; return; }
     return endpoint ? { workflow_runs: [] } : { default_branch: 'main' };
-  } }), error => error.statusCode === 429 && /resume.*allowance/i.test(error.message));
+  } });
+  assert.equal(posts, 1);
+  assert.equal(ResumeUsage.updateOne.mock.callCount(), 0);
 });
 
 test('invalid GitHub responses and failed dispatches are retryable and do not leak upstream details', async t => {
@@ -100,16 +99,21 @@ test('invalid GitHub responses and failed dispatches are retryable and do not le
   assert.equal(posts, 1, 'a rejected dispatch must release the in-process lock');
 });
 
-test('dedicated source-only workflow avoids model and compiler startup on standard CPU runners', async () => {
+test('dedicated AI workflow caches pinned model and compiler dependencies on CPU runners', async () => {
   const workflow = await readFile(new URL('../.github/workflows/tailored-resumes.yml', import.meta.url), 'utf8');
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /group: jobverify-tailored-resumes/);
   assert.match(workflow, /cancel-in-progress: false/);
   assert.match(workflow, /runs-on: ubuntu-latest/);
-  assert.match(workflow, /timeout-minutes: 2/);
+  assert.match(workflow, /timeout-minutes: 30/);
+  assert.match(workflow, /timeout-minutes: 28/);
   assert.match(workflow, /sparse-checkout:/);
   assert.match(workflow, /cache: 'npm'/);
-  assert.doesNotMatch(workflow, /Qwen|llama|\.cache\/resume-(?:models|runtime|compiler)|actions\/cache|docker/i);
+  assert.match(workflow, /\.cache\/resume-models\/Qwen3-4B-Instruct-2507-Q4_K_M\.gguf/);
+  assert.match(workflow, /\.cache\/resume-runtime\/b11146\/llama-b11146-bin-ubuntu-x64\.tar\.gz/);
+  assert.match(workflow, /\.cache\/resume-compiler\/image\.tar/);
+  assert.match(workflow, /actions\/cache\/restore@/);
+  assert.match(workflow, /actions\/cache\/save@/);
   assert.match(workflow, /secrets\.MONGO_URI/);
   assert.match(workflow, /node scripts\/runTailoredResumes\.js/);
   assert.doesNotMatch(workflow, /upload-artifact|GITHUB_PAT|INFERENCE_API|OPENAI_API/);
@@ -141,11 +145,12 @@ test('sparse worker checkout covers the complete local import closure and its fo
   for (const file of ['package.json', 'package-lock.json', 'resume-tailoring/fonts/manifest.json', 'src/services/resumeTextWorker.js']) assert.ok(included(file));
 });
 
-test('worker budget includes setup time and cannot extend beyond one minute', async () => {
+test('worker budget includes setup time and reserves cleanup time within its Actions job', async () => {
   const budget = await import('../resume-tailoring/resumeBudget.js');
   assert.equal(typeof budget.resumeWorkerDeadline, 'function');
   const now = Date.parse('2026-11-01T15:00:30Z');
-  assert.equal(budget.resumeWorkerDeadline('2026-11-01T15:00:00Z', now), now + 30000);
-  assert.equal(budget.resumeWorkerDeadline(undefined, now), now + 60000);
-  assert.equal(budget.resumeWorkerDeadline('2026-11-01T16:00:00Z', now), now + 60000);
+  assert.equal(budget.RESUME_WORKER_BUDGET_MS, 28 * 60000);
+  assert.equal(budget.resumeWorkerDeadline('2026-11-01T15:00:00Z', now), now + 28 * 60000 - 30000);
+  assert.equal(budget.resumeWorkerDeadline(undefined, now), now + 28 * 60000);
+  assert.equal(budget.resumeWorkerDeadline('2026-11-01T16:00:00Z', now), now + 28 * 60000);
 });

@@ -141,7 +141,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -153,7 +155,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -176,8 +181,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "india|bengaluru|bangalore|chennai|hyderabad|gurgaon|gurugram|noida|pune|kolkata|mumbai"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
@@ -245,10 +250,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": [
-          "standardizedLocations.0",
-          "locations.0"
-        ],
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -260,7 +264,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -283,8 +290,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "india|hyderabad|pune|pondicherry|ahilyanagar"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
@@ -348,7 +355,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -360,7 +369,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -383,8 +395,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "india|bengaluru|bangalore|noida|hyderabad|pune|chennai|mumbai|remote"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
@@ -448,7 +460,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -460,7 +474,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -481,7 +498,12 @@
         "concurrency": 1
       },
       "resultFilter": {
-        "include": [],
+        "include": [
+          {
+            "field": "country",
+            "pattern": "^India$"
+          }
+        ],
         "exclude": []
       },
       "discovery": {
@@ -544,7 +566,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -556,7 +580,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -579,8 +606,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "india|bengaluru|bangalore|chennai|mumbai|hyderabad|pune|remote"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
@@ -645,7 +672,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -657,7 +686,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -680,8 +712,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "india|bengaluru|bangalore|hyderabad|pune|mumbai|noida|gurgaon|gurugram|chennai|kolkata"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
@@ -745,7 +777,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -757,7 +791,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -780,8 +817,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "india|bengaluru|bangalore|hyderabad|pune|chennai|mumbai|gurugram|gurgaon|kolkata|thiruvananthapuram"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
@@ -848,7 +885,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -870,7 +909,10 @@
           }
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -893,8 +935,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "\\bIndia\\b"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
@@ -959,7 +1001,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -971,7 +1015,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -994,8 +1041,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "\\bIndia\\b"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
@@ -1055,7 +1102,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -1067,7 +1116,10 @@
           "valuePath": "positionUserActions.applyAction.applyUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -1090,8 +1142,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "\\bIndia\\b|bangalore|bengaluru|hyderabad|pune|mumbai|gurgaon|gurugram|noida|delhi|chennai"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
@@ -1156,10 +1208,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": [
-          "standardizedLocations.0",
-          "locations.0"
-        ],
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -1171,7 +1222,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -1192,7 +1246,12 @@
         "concurrency": 1
       },
       "resultFilter": {
-        "include": [],
+        "include": [
+          {
+            "field": "country",
+            "pattern": "^India$"
+          }
+        ],
         "exclude": []
       },
       "discovery": {
@@ -1256,7 +1315,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -1268,7 +1329,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -1291,8 +1355,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "\\bIndia\\b|pune|bangalore|bengaluru|hyderabad|gurgaon|gurugram|noida|delhi|chennai|mumbai|remote"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
@@ -1359,7 +1423,9 @@
       },
       "mapping": {
         "title": "name",
-        "location": "locations.0",
+        "location": {
+          "strategy": "eightfold-location"
+        },
         "jobId": "id",
         "requisitionId": "displayJobId",
         "sourceUrl": {
@@ -1371,7 +1437,10 @@
           "valuePath": "publicUrl"
         },
         "department": "department",
-        "postingDate": "postedTs"
+        "postingDate": "postedTs",
+        "country": {
+          "strategy": "eightfold-country"
+        }
       },
       "detail": {
         "enabled": true,
@@ -1394,8 +1463,8 @@
       "resultFilter": {
         "include": [
           {
-            "field": "location",
-            "pattern": "india|remote|chennai|pune|navi mumbai|mumbai|gurgaon|gurugram|hyderabad|bangalore|bengaluru|noida"
+            "field": "country",
+            "pattern": "^India$"
           }
         ]
       },
