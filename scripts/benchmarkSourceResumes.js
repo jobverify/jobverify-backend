@@ -6,7 +6,7 @@ import { performance } from 'node:perf_hooks';
 import PDFDocument from 'pdfkit';
 import JSZip from 'jszip';
 import { extractResumeSource } from '../src/services/resumeSource.js';
-import { processResumeDocument } from '../resume-tailoring/resumePipeline.js';
+import { processSourceTemplateDocument as processResumeDocument } from '../resume-tailoring/sourceTemplatePipeline.js';
 import { buildSourceTemplate } from '../resume-tailoring/sourceTemplate.js';
 
 const text = [

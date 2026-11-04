@@ -1,48 +1,101 @@
-import { remainingBudget, withinResumeBudget } from './resumeBudget.js';
-import { inspectResumePdf } from './latexCompiler.js';
+import { prepareResumeModel, generateResumeText, RESUME_MODEL } from './resumeRuntime.js';
+import { prepareResumeCompiler, compileResumeLatex } from './latexCompiler.js';
+import { remainingBudget, withinResumeBudget, RESUME_WORKER_BUDGET_MS } from './resumeBudget.js';
 import { safeResumeDiagnostic, resumeFailure } from './resumeDiagnostics.js';
-import { validateResumeFidelity } from '../src/services/resumeLatexContent.js';
-import { buildSourceTemplate, renderSourceTemplate, templateTextKey, SOURCE_TEMPLATE_VERSION, SOURCE_TEMPLATE_STYLE } from './sourceTemplate.js';
+import { buildSourceFacts, sourceWithCandidateEvidence, buildPreparationPrompt, buildLatexTailoringPrompt,
+  buildLatexRepairPrompt, buildComparisonPrompt, validateLatexSource, validateResumeFidelity } from '../src/services/resumeLatexContent.js';
 
-export async function prepareResumeRuntime({ deadline = Date.now() + 60000 } = {}) {
-  remainingBudget(deadline, 60000);
-  return { stop() {} };
+export async function prepareResumeRuntime({ deadline = Date.now() + RESUME_WORKER_BUDGET_MS,
+  prepareCompiler = prepareResumeCompiler, prepareModel = prepareResumeModel, ...options } = {}) {
+  remainingBudget(deadline, RESUME_WORKER_BUDGET_MS);
+  try { await prepareCompiler({ deadline }); }
+  catch (error) { throw resumeFailure(error.code || 'compiler_failed', { statusCode: error.statusCode || 502 }); }
+  try { return await prepareModel({ ...options, deadline }); }
+  catch (error) { throw resumeFailure(error.code || 'model_unavailable', { statusCode: error.statusCode || 502 }); }
 }
 
-export async function processResumeDocument(input, { deadline = Date.now() + 60000,
-  onPhase = async () => {}, onDiagnostic = () => {}, render = renderSourceTemplate, inspect = inspectResumePdf } = {}) {
-  const started = Date.now();
-  let stage = 'formatting';
-  const diagnose = (code, extra = {}) => onDiagnostic(safeResumeDiagnostic({ stage, code, seconds: (Date.now() - started) / 1000, ...extra }));
-  const phase = () => withinResumeBudget(deadline, signal => onPhase(stage, { deadline, signal }));
-  try {
-    remainingBudget(deadline, 60000);
-    await phase(); diagnose('started');
-    const document = buildSourceTemplate(input);
-    stage = 'rendering'; await phase(); diagnose('started');
-    const pdf = await withinResumeBudget(deadline, signal => render(document, { deadline, signal }));
-    remainingBudget(deadline, 60000);
-    stage = 'validating'; await phase();
-    const result = await withinResumeBudget(deadline, signal => inspect(pdf, { deadline, signal }));
-    remainingBudget(deadline, 60000);
-    if (input.mode === 'tailored' && result.pageCount > 2) throw resumeFailure('pagination_failed');
-    // Exact text coverage complements the existing protected-fact checks. The
-    // only new text is trusted section labels and original link destinations.
-    // Once the extracted characters and their order match exactly, restore the
-    // template's logical whitespace for fact checks. PDF wrapping may split an
-    // email or a word even though every visible character is preserved.
-    const textPreserved = templateTextKey(result.text) === templateTextKey(document.text);
-    const fidelity = textPreserved ? validateResumeFidelity({ facts: document.facts, text: document.text, links: result.links, tailored: input.mode === 'tailored' }) : { valid: false, issues: [] };
-    if (!fidelity.valid) {
-      diagnose('factual_validation_failed', { issueCount: Math.max(1, fidelity.issues.length) });
-      throw resumeFailure('factual_validation_failed');
-    }
-    stage = 'completed'; diagnose('passed', { pageCount: result.pageCount });
-    return { latex: document.latex, pdf, pageCount: result.pageCount, facts: document.facts,
-      modelVersion: SOURCE_TEMPLATE_VERSION, styleVersion: SOURCE_TEMPLATE_STYLE };
-  } catch (error) {
-    const code = safeResumeDiagnostic({ stage, code: error.code || (stage === 'validating' ? 'pdf_invalid' : 'processing_failed') }).code;
-    diagnose(code);
-    throw resumeFailure(code, { statusCode: error.statusCode || 502 });
+function readComparison(value) {
+  let result;
+  try { result = JSON.parse(value); } catch { throw resumeFailure('comparison_invalid'); }
+  if (!result || typeof result.evidence !== 'string' || !result.evidence.trim() || typeof result.supported !== 'boolean'
+    || !['missingFacts', 'unsupportedClaims'].every(key => Array.isArray(result[key]) && result[key].every(item => typeof item === 'string'))) {
+    throw resumeFailure('comparison_invalid');
   }
+  return result;
+}
+
+export async function processResumeDocument(input, { deadline = Date.now() + RESUME_WORKER_BUDGET_MS,
+  onPhase = async () => {}, onDiagnostic = () => {}, generate = generateResumeText, compile = compileResumeLatex } = {}) {
+  remainingBudget(deadline, RESUME_WORKER_BUDGET_MS);
+  const tailored = input.mode === 'tailored';
+  const source = sourceWithCandidateEvidence(input.source, input.candidateEvidence);
+  // Always derive protections from this request's source, including new profile
+  // evidence. Historic artifact metadata cannot weaken factual validation.
+  const facts = buildSourceFacts(source);
+  const originalPrompt = tailored ? buildLatexTailoringPrompt({ ...input, source, facts }) : buildPreparationPrompt({ ...input, source, facts });
+  let prompt = originalPrompt;
+  let failureCode = 'processing_failed';
+  let stage = 'generating';
+  const started = Date.now();
+  const phase = async next => {
+    stage = next;
+    await withinResumeBudget(deadline, signal => onPhase(stage, { deadline, signal }));
+  };
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const diagnose = (code, extra = {}) => onDiagnostic(safeResumeDiagnostic({ stage, code, attempt,
+      seconds: (Date.now() - started) / 1000, ...extra }));
+    let latex = '', result;
+    const issues = [];
+    try {
+      await phase(attempt === 1 ? 'generating' : 'repairing');
+      diagnose('started');
+      latex = await withinResumeBudget(deadline, signal => generate(prompt, { deadline, signal, onDiagnostic }));
+      await phase('latex');
+      latex = validateLatexSource(latex);
+      await phase('compiling');
+      // The published PDF must be compiled from the validated model output.
+      // There is no template-renderer fallback on generation or compile failure.
+      result = await withinResumeBudget(deadline, signal => compile(latex, { deadline, signal }));
+      await phase('validating');
+      if (tailored && result.pageCount > 2) {
+        failureCode = 'pagination_failed';
+        issues.push('The tailored PDF exceeds two pages. Shorten less relevant prose while retaining all protected employment and education facts and text of at least 10pt.');
+      }
+      const fidelity = validateResumeFidelity({ facts, text: result.text, links: result.links, tailored });
+      if (!fidelity.valid) { failureCode = 'factual_validation_failed'; issues.push(...fidelity.issues); }
+      // Avoid spending a comparison call on a document that already needs repair.
+      if (!issues.length) {
+        await phase('comparing');
+        const comparison = readComparison(await withinResumeBudget(deadline, signal => generate(
+          buildComparisonPrompt({ source, facts, latexText: result.text, links: result.links, tailored }),
+          { deadline, signal, comparison: true, onDiagnostic })));
+        if (!comparison.supported || comparison.missingFacts.length || comparison.unsupportedClaims.length) {
+          failureCode = 'factual_validation_failed';
+          issues.push('The independent factual comparison did not confirm the document.',
+            ...comparison.missingFacts.map(fact => `Missing source fact: ${fact}`),
+            ...comparison.unsupportedClaims.map(claim => `Unsupported claim: ${claim}`));
+        }
+      }
+      if (issues.length) diagnose(failureCode, { issueCount: issues.length, pageCount: result.pageCount });
+    } catch (error) {
+      failureCode = safeResumeDiagnostic({ stage, code: error.code || ({ latex: 'latex_invalid', compiling: 'compiler_failed',
+        validating: 'pdf_invalid', comparing: 'comparison_invalid' }[stage]) }).code;
+      diagnose(failureCode, { reason: error.reason });
+      if (error.statusCode === 422 || ['time_limit', 'compiler_dependency_missing', 'compiler_resource_limit', 'model_unavailable'].includes(failureCode)) {
+        throw resumeFailure(failureCode, { statusCode: error.statusCode || 502 });
+      }
+      // Raw compiler diagnostics never leave the compiler. Inspection and
+      // factual feedback stay in the private model request, never public logs.
+      issues.push(error.message);
+    }
+    if (!issues.length && result) {
+      remainingBudget(deadline, RESUME_WORKER_BUDGET_MS);
+      stage = 'completed'; diagnose('passed', { pageCount: result.pageCount });
+      return { latex, pdf: result.pdf, pageCount: result.pageCount, facts,
+        modelVersion: `${RESUME_MODEL.modelId}@${RESUME_MODEL.revision}:${RESUME_MODEL.sha256}`, styleVersion: RESUME_MODEL.styleVersion };
+    }
+    if (attempt === 1) prompt = buildLatexRepairPrompt({ originalPrompt, latex, issues });
+  }
+  throw resumeFailure(failureCode);
 }

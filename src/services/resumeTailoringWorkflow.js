@@ -1,5 +1,4 @@
 import { githubRequest } from '../pipeline/github.js';
-import { monthKey, reserveUsage } from './resumeUsage.js';
 import { tailoringError } from './resumeTailoringContent.js';
 
 export const TAILORED_RESUME_WORKFLOW = 'tailored-resumes.yml';
@@ -15,7 +14,7 @@ export function requireTailoredResumeActions() {
   if (!tailoredResumeActionsConfigured()) throw tailoringError('Resume generation is not available yet. Please try again later.', 503);
 }
 
-async function dispatch(repo, request, now) {
+async function dispatch(repo, request) {
   try {
     const data = await request(repo, `/actions/workflows/${TAILORED_RESUME_WORKFLOW}/runs?event=workflow_dispatch&per_page=100`);
     if (!Array.isArray(data?.workflow_runs)) throw tailoringError('GitHub returned an invalid resume workflow status.', 502);
@@ -24,13 +23,6 @@ async function dispatch(repo, request, now) {
     if (data.workflow_runs.some(run => waitingStatuses.has(run.status))) return { reused: true };
     const repository = await request(repo, '');
     if (typeof repository?.default_branch !== 'string' || !repository.default_branch) throw tailoringError('The resume workflow default branch is unavailable.', 502);
-    const configured = Number(process.env.TAILORED_RESUME_ACTIONS_MONTHLY_RUN_LIMIT ?? 10);
-    const cap = Number.isInteger(configured) ? Math.max(0, Math.min(100, configured)) : 0;
-    try { await reserveUsage(`actions:tailored-resumes:${monthKey(now)}`, cap, { now }); }
-    catch (error) {
-      if (error.statusCode === 429) throw tailoringError('The shared resume-generation allowance is exhausted. Please try again after it resets.', 429);
-      throw error;
-    }
     // Candidate data, account IDs and job IDs never enter the GitHub event.
     await request(repo, `/actions/workflows/${TAILORED_RESUME_WORKFLOW}/dispatches`, { method: 'POST', body: { ref: repository.default_branch } });
     return { reused: false };
@@ -40,12 +32,12 @@ async function dispatch(repo, request, now) {
   }
 }
 
-export async function dispatchTailoredResumes({ request = githubRequest, now = new Date() } = {}) {
+export async function dispatchTailoredResumes({ request = githubRequest } = {}) {
   requireTailoredResumeActions();
   const repo = process.env.GITHUB_REPO;
   // Coalesce clicks while GitHub has not made the accepted run visible yet.
   if (dispatches.has(repo)) return dispatches.get(repo);
-  const pending = dispatch(repo, request, now);
+  const pending = dispatch(repo, request);
   dispatches.set(repo, pending);
   try { return await pending; }
   finally { if (dispatches.get(repo) === pending) dispatches.delete(repo); }

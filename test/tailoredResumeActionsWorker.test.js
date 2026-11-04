@@ -7,7 +7,7 @@ import { runTailoredResumeWorker } from '../resume-tailoring/tailoredResumeWorke
 const tailored = { kind: 'tailored', row: { _id: 'owner:job', user: 'owner', revision: 2, status: 'queued' } };
 const base = { kind: 'base', row: { _id: 'owner', user: 'owner', preparation: { revision: 3, status: 'queued' } } };
 
-test('the default worker deadline is bounded to one minute', async () => {
+test('the default worker deadline allows AI inference and compiler setup within 28 minutes', async () => {
   const before = Date.now();
   let actualDeadline;
   await runTailoredResumeWorker({ nextTask: async () => base,
@@ -17,7 +17,7 @@ test('the default worker deadline is bounded to one minute', async () => {
     },
     drain: async () => ({ attempted: 1, completed: 1, failed: 0 }),
   });
-  assert.ok(actualDeadline >= before + 60000 && actualDeadline <= Date.now() + 60000);
+  assert.ok(actualDeadline >= before + 28 * 60000 && actualDeadline <= Date.now() + 28 * 60000);
 });
 
 test('an empty document queue never downloads or starts a model', async () => {

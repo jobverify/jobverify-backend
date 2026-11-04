@@ -1,9 +1,9 @@
-/** Refresh only flagged, unresolved records with an exactly identified employer source. */
+/** Recover flagged source content and Tudip title captions from exactly identified role pages. */
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import mongoose from 'mongoose'
 import Job from '../src/models/Job.js'
-import { getAuthoritativeClassification } from '../src/services/jobClassificationPolicy.js'
+import { getAuthoritativeClassification, isTitleOnlyClassificationSource } from '../src/services/jobClassificationPolicy.js'
 import { postScrapeInput, postScrapePersistencePatch, sourceGuardedClassification, sourceSnapshotFilter } from '../src/services/postScrapeClassification.js'
 import { buildDescriptionSourceUpdate } from '../src/services/jobDescriptionPolicy.js'
 import { getSourceDescription } from '../src/utils/jobSourceContent.js'
@@ -18,16 +18,20 @@ const reasons = ['multiple_recruitment_notices_without_role_description', 'confl
 export function buildClassificationReviewSourceRepair(job, response, { now = new Date() } = {}) {
   const saved = job.classification
   const cache = job.postClassification
-  if (job.status !== 'active' || !getAuthoritativeClassification(job) || saved.mode !== 'policy'
-    || saved.complete !== true || saved.resolved.jobType !== 'Unspecified'
-    || !saved.reviewReasons?.length || !saved.reviewReasons.every(reason => reasons.includes(reason))
-    || cache?.status !== 'completed' || cache.mode !== 'policy' || cache.inputHash !== saved.inputHash
-    || !Number.isInteger(saved.referenceYear) || saved.referenceYear < 1990 || saved.referenceYear > 9999
+  const caption = job.source === 'tudiptechnologies' && isTitleOnlyClassificationSource(job)
+  if (job.status !== 'active' || cache?.status === 'processing' || job.descriptionRewrite?.status === 'processing'
     || !visiblePostingProfile(job) || !(response?.status >= 200 && response.status < 300)) return null
-  const identity = Object.fromEntries(['modelRevision', 'runtimeVersion', 'runtimeHash', 'policyHash', 'calibrationHash']
-    .map(key => [key, saved[key]]))
-  if (Object.values(identity).some(value => typeof value !== 'string' || !value)) return null
-  if (postScrapeInput(job, { now: new Date(`${saved.referenceYear}-07-01T00:00:00Z`), identity }).inputHash !== saved.inputHash) return null
+  if (!caption) {
+    if (!getAuthoritativeClassification(job) || saved.mode !== 'policy'
+      || saved.complete !== true || saved.resolved.jobType !== 'Unspecified'
+      || !saved.reviewReasons?.length || !saved.reviewReasons.every(reason => reasons.includes(reason))
+      || cache?.status !== 'completed' || cache.mode !== 'policy' || cache.inputHash !== saved.inputHash
+      || !Number.isInteger(saved.referenceYear) || saved.referenceYear < 1990 || saved.referenceYear > 9999) return null
+    const identity = Object.fromEntries(['modelRevision', 'runtimeVersion', 'runtimeHash', 'policyHash', 'calibrationHash']
+      .map(key => [key, saved[key]]))
+    if (Object.values(identity).some(value => typeof value !== 'string' || !value)) return null
+    if (postScrapeInput(job, { now: new Date(`${saved.referenceYear}-07-01T00:00:00Z`), identity }).inputHash !== saved.inputHash) return null
+  }
   const posting = publicPostingDescription(job, response.html, response.url)
   if (!posting || (getSourceDescription(job) === posting.description && !job.sourceExperienceRequired)) return null
   // Capture current requirements from the bounded role content. An old whole-page
@@ -35,16 +39,22 @@ export function buildClassificationReviewSourceRepair(job, response, { now = new
   const incoming = { ...job, sourceDescription: posting.description, sourceExperienceRequired: null,
     experienceRequired: null, experienceRequiredProvenance: null, descriptionRewrite: null }
   const proposed = sourceGuardedClassification(incoming, { now, mode: 'policy' })
-  if (proposed.sourceQualityIssues.length || proposed.resolved.jobType === 'Unspecified') return null
+  // Caption recovery supplies genuinely missing role content even when source
+  // rules need a fresh model prediction. Never reuse the title-only prediction.
+  if (!caption && (proposed.sourceQualityIssues.length || proposed.resolved.jobType === 'Unspecified')) return null
   const description = buildDescriptionSourceUpdate(incoming, job, { mode: 'publish', now })
   const classification = postScrapePersistencePatch({ ...incoming, ...description }, job, { now, mode: 'policy' })
   return {
     evidence: posting.evidence, proposedJobType: proposed.resolved.jobType,
-    filter: { ...sourceSnapshotFilter(job), 'classification.inputHash': saved.inputHash,
+    filter: { ...sourceSnapshotFilter(job), ...(caption ? {
+      'classification.inputHash': saved?.inputHash ?? { $exists: false },
+      'postClassification.status': cache?.status ?? { $exists: false },
+      'postClassification.inputHash': cache?.inputHash ?? { $exists: false },
+    } : { 'classification.inputHash': saved.inputHash,
       'classification.reviewReasons': saved.reviewReasons, 'classification.resolved.jobType': 'Unspecified',
       'classification.authoritative': true, 'classification.mode': 'policy', 'classification.complete': true,
       'postClassification.status': 'completed', 'postClassification.mode': 'policy',
-      'postClassification.inputHash': cache.inputHash },
+      'postClassification.inputHash': cache.inputHash }) },
     update: { $set: { ...description, ...classification.set, sourceExperienceRequired: null,
       experienceRequired: null, jobType: 'Unspecified' },
       $unset: { ...classification.unset, experienceRequiredProvenance: '' } },
@@ -62,8 +72,9 @@ export async function repairClassificationReviewSources({ model = Job, apply = f
   const summary = { mode: apply ? 'applied' : 'preview', scanned: 0, eligible: 0, updated: 0,
     stale: 0, skipped: 0, fetchFailed: 0, changes: [] }
   const cursor = model.find({ status: 'active', source: source ? { $in: sources.filter(value => value === source) } : { $in: sources },
-    'classification.authoritative': true, 'classification.mode': 'policy', 'classification.complete': true,
-    'classification.resolved.jobType': 'Unspecified', 'classification.reviewReasons': { $in: reasons } })
+    $or: [{ 'classification.authoritative': true, 'classification.mode': 'policy', 'classification.complete': true,
+      'classification.resolved.jobType': 'Unspecified', 'classification.reviewReasons': { $in: reasons } },
+    { source: 'tudiptechnologies' }] })
     .sort({ _id: 1 }).lean().cursor({ batchSize: 100 })
   const pages = new Map()
   try {
@@ -96,7 +107,7 @@ export async function repairClassificationReviewSources({ model = Job, apply = f
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (process.argv.includes('--help')) {
-    console.log('Preview: node scripts/repairClassificationReviewSources.js [--source=source-id]\nApply: add --apply. Validated source replacements are queued for rewriting and classification; old predictions are invalidated.')
+    console.log('Preview: node scripts/repairClassificationReviewSources.js [--source=source-id]\nApply: add --apply. Covers source review flags and Tudip title-only captions. Validated source replacements are queued for rewriting and classification; old predictions are invalidated.')
   } else {
     try {
       const options = parseRepairArguments(process.argv.slice(2))

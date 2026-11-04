@@ -17,10 +17,8 @@ test('getScraperCatalog includes the Worley Eightfold apiPortal provider with of
   assert.equal(worley.companyDomain, 'worley.com')
   assert.match(worley.config.discovery.listingApiUrl, /jobs\.worley\.com\/api\/pcsx\/search/i)
   assert.equal(worley.config.request.query.domain, 'worley.com')
-  assert.deepEqual(worley.config.mapping.location, [
-    'standardizedLocations.0',
-    'locations.0',
-  ])
+  assert.deepEqual(worley.config.mapping.location, {strategy:'eightfold-location'})
+  assert.deepEqual(worley.config.mapping.country, {strategy:'eightfold-country'})
 })
 
 test('buildScrapers exposes a runnable Worley apiPortal scraper without changing the runner contract', () => {

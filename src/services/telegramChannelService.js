@@ -8,11 +8,14 @@ import { getTelegramProvider, isTelegramDeliveryEnabled } from './telegramProvid
 import { getActiveBroadcastSettings, jobMatchesBroadcastFilters } from './telegramBroadcastSettingsService.js';
 import { renderBroadcastTemplate } from './telegramBroadcastTemplate.js';
 import { isAggregateHiringSignalJob } from '../utils/jobListingEvidence.js';
+import { isBroadcastWindowOpen, nextBroadcastWindowAt } from './telegramBroadcastWindow.js';
 
 const LEASE_MS = 5 * 60_000;
-export const nextChannelPostAt = (now = new Date(), choose = randomInt,
-  { minIntervalMinutes = 20, maxIntervalMinutes = 30 } = {}) =>
-  new Date(now.getTime() + choose(minIntervalMinutes * 60_000, maxIntervalMinutes * 60_000 + 1));
+export const nextChannelPostAt = (now = new Date(), choose = randomInt, settings = {}) => {
+  const { minIntervalMinutes = 20, maxIntervalMinutes = 30 } = settings;
+  return nextBroadcastWindowAt(new Date(now.getTime()
+    + choose(minIntervalMinutes * 60_000, maxIntervalMinutes * 60_000 + 1)), settings);
+};
 
 async function destinations(session) {
   const unique = new Map();
@@ -72,7 +75,7 @@ async function recoverDestination(cfg, provider) {
   const owned = { _id: cfg.chatId, claimToken: token };
   const release = async (nextPostAt, changes = {}, session) => {
     const result = await TelegramChannelSchedule.updateOne(owned,
-      { $set: { nextPostAt, claimToken: null, claimExpiresAt: null, ...changes } }, { session });
+      { $set: { nextPostAt: nextBroadcastWindowAt(nextPostAt, cfg), claimToken: null, claimExpiresAt: null, ...changes } }, { session });
     if (!result.matchedCount) throw new Error('Channel posting lease was lost.');
   };
   // Telegram has no sendMessage idempotency key. A crashed/ambiguous send must
@@ -83,6 +86,7 @@ async function recoverDestination(cfg, provider) {
   const interrupted = await TelegramChannelDelivery.updateMany({ channel: cfg.chatId, status: 'sending' },
     { $set: { status: 'uncertain', reason: 'interrupted_send' } });
   if (interrupted.modifiedCount) { await release(nextChannelPostAt(new Date(), randomInt, cfg)); return; }
+  if (!isBroadcastWindowOpen(new Date(), cfg)) { await release(new Date()); return; }
   for (let checked = 0; checked < 20; checked++) {
     const delivery = await TelegramChannelDelivery.findOne({ channel: cfg.chatId, status: 'queued',
       $or: [{ retryAt: null }, { retryAt: { $lte: new Date() } }] }).sort({ createdAt: 1, _id: 1 }).lean();
@@ -109,12 +113,23 @@ async function recoverDestination(cfg, provider) {
       const active = await TelegramBroadcastSettings.updateOne(currentSettings(cfg),
         { $inc: { dispatchRevision: 1 } }, { session });
       if (!active.matchedCount) return false;
+      if (!isBroadcastWindowOpen(new Date(), cfg)) return false;
       const result = await TelegramChannelDelivery.updateOne({ _id: delivery._id, status: 'queued' },
         { $set: { status: 'sending', lastAttemptAt: new Date(), reason: null,
           destination: cfg.id, configRevision: cfg.revision } }, { session });
       return result.modifiedCount > 0;
     });
     if (!started) { await release(new Date(Date.now() + 60_000)); return; }
+    // A transaction can finish after the window closes. No provider call has
+    // happened yet, so it is safe to return this receipt to the queue.
+    if (!isBroadcastWindowOpen(new Date(), cfg)) {
+      await mongoose.connection.transaction(async session => {
+        await TelegramChannelDelivery.updateOne({ _id: delivery._id, status: 'sending' },
+          { $set: { status: 'queued', retryAt: null } }, { session });
+        await release(new Date(), {}, session);
+      });
+      return;
+    }
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
     timeout.unref?.();
@@ -126,7 +141,7 @@ async function recoverDestination(cfg, provider) {
       // Retry only known rejection responses; do not risk publishing twice.
       const rejected = [400, 401, 403, 404, 429].includes(error?.statusCode);
       const next = nextChannelPostAt(new Date(), randomInt, cfg);
-      const retryAt = new Date(Math.max(next.getTime(), Date.now() + (error?.retryAfterSeconds || 0) * 1000));
+      const retryAt = nextBroadcastWindowAt(new Date(Math.max(next.getTime(), Date.now() + (error?.retryAfterSeconds || 0) * 1000)), cfg);
       await mongoose.connection.transaction(async session => {
         await TelegramChannelDelivery.updateOne({ _id: delivery._id, status: 'sending' }, { $set: {
           status: rejected ? 'queued' : 'uncertain', retryAt,

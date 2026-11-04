@@ -32,6 +32,72 @@ const receipt = job => ({ status: 200, url: job.sourceUrl, html: `<h1>${job.titl
   <h4>Required Skills:</h4><p>Basic spreadsheet skills and willingness to learn the sales process.</p>
   <form><label>Minimum 10 years of experience required.</label><input></form>` })
 
+const captionJob = () => ({ _id: new mongoose.Types.ObjectId(), fingerprint: 'tudip-caption-' + new mongoose.Types.ObjectId(),
+  title: 'AI Engineer', company: 'Tudip Technologies', source: 'tudiptechnologies', status: 'active',
+  sourceUrl: 'https://tudip.com/jobs/india/ai-engineer/', sourceDescription: 'AI Engineer', jobType: 'Full-time Experienced',
+  descriptionRewrite: { status: 'baseline' },
+  postClassification: { mode: 'policy', status: 'completed', inputHash: 'previous-caption-runtime', result: { prediction } } })
+const captionReceipt = job => ({ status: 200, url: job.sourceUrl, html: `<h1>${job.title}</h1>
+  <h3>Position Summary</h3><p>Build and maintain artificial intelligence software to support customer applications.</p>
+  <h3>Job Requirements/Qualifications</h3><p>Knowledge of Python and statistics and a degree in computer science.</p>` })
+
+test('unflagged Tudip captions recover real descriptions even when source policy still needs model classification', () => {
+  const job = captionJob()
+  const operation = buildClassificationReviewSourceRepair(job, captionReceipt(job), { now })
+  assert.ok(operation)
+  assert.equal(operation.proposedJobType, 'Unspecified')
+  assert.match(operation.update.$set.sourceDescription, /Build and maintain artificial intelligence software/)
+  assert.equal(operation.update.$set.jobType, 'Unspecified')
+  assert.equal(operation.update.$set.postClassification.status, 'pending')
+  assert.equal(operation.update.$set.postClassification.result, undefined)
+  assert.equal(operation.update.$set.descriptionRewrite.status, 'pending')
+})
+
+test('caption repair accepts skipped captions but preserves substantive sources and in-flight processing', () => {
+  const skipped = captionJob()
+  skipped.postClassification = { status: 'skipped', mode: 'policy', reason: 'missing_description' }
+  assert.ok(buildClassificationReviewSourceRepair(skipped, captionReceipt(skipped), { now }))
+  for (const change of [job => { job.sourceDescription = 'The employer requires practical Python software development skills.' },
+    job => { job.postClassification.status = 'processing' },
+    job => { job.descriptionRewrite.status = 'processing' },
+    job => { job.status = 'expired' },
+    job => { job.source = 'another-source' }]) {
+    const job = captionJob()
+    change(job)
+    assert.equal(buildClassificationReviewSourceRepair(job, captionReceipt(job), { now }), null)
+  }
+})
+
+test('caption recovery previews without writes and rejects concurrent source edits in Mongo', async t => {
+  const mongo = await MongoMemoryServer.create({ binary: { version: '8.2.6',
+    downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } })
+  t.after(async () => { await mongoose.disconnect(); await mongo.stop() })
+  await mongoose.connect(mongo.getUri())
+  const first = captionJob(), concurrent = captionJob()
+  await Job.collection.insertMany([first, concurrent])
+  const options = { source: 'tudiptechnologies', now: () => now, readPage: async () => captionReceipt(first),
+    refreshSummary: async () => {} }
+  const preview = await repairClassificationReviewSources(options)
+  assert.equal(preview.eligible, 2)
+  assert.equal(preview.updated, 0)
+  assert.equal((await Job.findById(first._id).lean()).sourceDescription, 'AI Engineer')
+  const originalUpdate = Job.updateOne.bind(Job)
+  t.mock.method(Job, 'updateOne', async (filter, update) => {
+    if (String(filter._id) === String(concurrent._id)) {
+      await originalUpdate({ _id: concurrent._id }, { $set: { sourceDescription: 'A concurrent employer source update.' } })
+    }
+    return originalUpdate(filter, update)
+  })
+  const applied = await repairClassificationReviewSources({ ...options, apply: true })
+  assert.equal(applied.updated, 1)
+  assert.equal(applied.stale, 1)
+  const changed = await Job.findById(first._id).lean()
+  assert.equal(changed.postClassification.status, 'pending')
+  assert.equal(changed.jobType, 'Unspecified')
+  assert.match(changed.sourceDescription, /Knowledge of Python/)
+  assert.equal((await repairClassificationReviewSources({ ...options, apply: true })).eligible, 0)
+})
+
 test('source repairs invalidate old rewrite and model caches and retain a pending public category', () => {
   const job = sourceJob()
   const before = JSON.stringify(job)

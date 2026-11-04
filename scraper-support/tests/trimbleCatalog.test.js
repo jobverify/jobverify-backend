@@ -28,7 +28,8 @@ test('getScraperCatalog includes the Trimble Eightfold apiPortal provider with o
   assert.equal(provider.config.request.query.domain, 'trimble.com')
   assert.equal(provider.config.request.query.location, 'India')
   assert.equal(provider.config.mapping.title, 'name')
-  assert.equal(provider.config.mapping.location, 'locations.0')
+  assert.deepEqual(provider.config.mapping.location, {strategy:'eightfold-location'})
+  assert.deepEqual(provider.config.mapping.country, {strategy:'eightfold-country'})
   assert.equal(
     provider.config.detail.urlTemplate,
     'https://trimblecareers.trimble.com/api/pcsx/position_details?position_id={{jobId}}&domain=trimble.com&hl=en',

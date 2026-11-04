@@ -70,7 +70,7 @@ test('Tudip Technologies extracts India jobs from the verified first-party jobs 
     requiredSkills: [],
     postingDate: null,
     closingDate: null,
-    jobDescription: 'Korean Language Expert',
+    jobDescription: null,
   })
 })
 

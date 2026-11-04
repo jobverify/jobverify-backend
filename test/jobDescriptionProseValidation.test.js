@@ -114,3 +114,40 @@ test('bold and bulleted trailing headings cannot escape the fragment scope guard
     assert.equal(validateProsePart('Build Python services.', 'Develop Python services.\n' + title), 'required_scope_changed');
   }
 });
+
+test('joining an unrecognized source heading does not turn a paragraph full stop into a missing detail', () => {
+  const source = 'Skills Descriptors:\nDecision Making and Critical Thinking: Analyze situations and reach productive decisions\n\nSupport customer teams.';
+  const output = 'Skills Descriptors: Decision Making and Critical Thinking: Analyze situations and reach productive decisions.\nSupport customer teams.';
+  assert.equal(validateProsePart(source, output), null);
+  assert.notEqual(validateProsePart(source, output.replace('productive decisions', 'hiring decisions')), null);
+});
+
+test('a full stop at an existing paragraph boundary does not change a Java version', () => {
+  const source = 'Backend & Java Ecosystem\nJava Proficiency: Strong expertise in Java including JDK 8+ and its ecosystem\n\nBuild reliable services.';
+  const output = 'Backend & Java Ecosystem: Java Proficiency: Strong expertise in Java including JDK 8+ and its ecosystem.\nBuild reliable services.';
+  assert.equal(validateProsePart(source, output), null);
+  assert.equal(validateProsePart(source, output.replace('8+', '17+')), 'numeric_relationship_changed');
+});
+
+test('punctuation added inside an existing statement cannot move the numeric subject', () => {
+  const source = 'Python experience 3 years and Java experience 5 years\nSupport customer teams.';
+  assert.notEqual(validateProsePart(source, 'Python experience. 3 years and Java experience 5 years.\nSupport customer teams.'), null);
+  assert.notEqual(validateProsePart(source, 'Python experience 5 years and Java experience 3 years.\nSupport customer teams.'), null);
+});
+
+test('a wrapped actor phrase cannot become a separate duty when an unfamiliar heading joins it', () => {
+  const source = 'Team overview:\nSupport engineers and managers\nbuild services.';
+  const output = 'Team overview: Support engineers and managers. Build services.';
+  assert.notEqual(validateProsePart(source, output), null);
+});
+
+test('a wrapped condition cannot be detached with a full stop after an unfamiliar heading', () => {
+  const source = 'Role notes:\nTravel is allowed only\nwhen the client requests it.';
+  const output = 'Role notes: Travel is allowed only. When the client requests it.';
+  assert.notEqual(validateProsePart(source, output), null);
+});
+
+test('a source full stop cannot disappear when paragraph merging changes the actors', () => {
+  assert.notEqual(validateProsePart('Support engineers.\n\nManagers build services.',
+    'Support engineers managers build services.'), null);
+});

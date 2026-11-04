@@ -16,6 +16,7 @@ const clean = value => String(value || '').replace(/\r\n?/g, '\n').trim();
 const supportedScripts = /^[\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}\p{Script=Common}\p{Script=Inherited}]*$/u;
 const tokens = value => clean(value).normalize('NFKD').toLowerCase().match(/[\p{L}\p{N}][\p{L}\p{N}.+#-]*/gu) || [];
 const ignoredTerms = new Set(['a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'in', 'is', 'it', 'of', 'on', 'or', 'our', 'the', 'to', 'we', 'with', 'you', 'your', 'job', 'role', 'team', 'work', 'experience', 'required']);
+const graphemes = new Intl.Segmenter('und', { granularity: 'grapheme' });
 const escapeTex = value => value.replace(/[\\{}$&#%_^~]/g, character => ({
   '\\': '\\textbackslash{}', '{': '\\{', '}': '\\}', '$': '\\$', '&': '\\&', '#': '\\#', '%': '\\%',
   '_': '\\_', '^': '\\textasciicircum{}', '~': '\\textasciitilde{}',
@@ -148,18 +149,22 @@ async function loadFonts() {
 
 function fontSegments(row, fonts) {
   const weight = row.kind === 'body' ? 400 : 700;
-  const choices = fonts.filter(font => font.weight === weight);
+  // Prefer the requested face, then any bundled face that covers the glyph.
+  // Contact icons and some styled letters have no matching bold face.
+  const choices = [...fonts.filter(font => font.weight === weight), ...fonts.filter(font => font.weight !== weight)];
   const result = [];
-  let offset = 0;
-  for (const character of row.text) {
-    const codePoint = character.codePointAt(0);
+  // Keep combining marks, variation selectors and joined emoji in the same
+  // font run so shaping and the PDF's selectable text preserve the cluster.
+  for (const { segment, index: offset } of graphemes.segment(row.text)) {
+    const codePoints = [...segment].map(character => character.codePointAt(0));
     const previous = result.at(-1);
-    const font = (previous && previous.font.font.hasGlyphForCodePoint(codePoint) ? previous.font : choices.find(choice => choice.font.hasGlyphForCodePoint(codePoint)));
+    // Return to the preferred face after a fallback symbol, including for
+    // spaces and digits that the symbol font may also cover.
+    const font = choices.find(choice => codePoints.every(codePoint => choice.font.hasGlyphForCodePoint(codePoint)));
     if (!font) throw resumeFailure('source_invalid', { statusCode: 422 });
     const href = row.links.find(range => offset >= range.start && offset < range.end)?.href || null;
-    if (previous && previous.font === font && previous.href === href) previous.text += character;
-    else result.push({ text: character, font, href });
-    offset += character.length;
+    if (previous && previous.font === font && previous.href === href) previous.text += segment;
+    else result.push({ text: segment, font, href });
   }
   return result;
 }

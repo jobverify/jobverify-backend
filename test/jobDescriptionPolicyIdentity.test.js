@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 test('native evaluation identity changes when either prose implementation changes', async () => {
   const { rewritePolicyIdentity } = await import('../rewriting/policyIdentity.js');
   const original = await rewritePolicyIdentity();
-  for (const file of ['prose.js', 'proseValidation.js']) {
+  for (const file of ['prose.js', 'proseValidation.js', 'proseLayout.js']) {
     const changed = await rewritePolicyIdentity({ readFile: async url => {
       const text = await fs.readFile(url);
       return url.pathname.endsWith('/' + file) ? Buffer.concat([text, Buffer.from('\n// policy changed')]) : text;

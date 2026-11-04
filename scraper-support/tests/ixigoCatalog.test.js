@@ -44,7 +44,7 @@ test('ixigo local catalog captures the verified public openings API without alia
   assert.equal(provider.paginationStrategy, 'first-party-openings-api-with-numFound-completeness-check')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers+openings-api+company-and-country-validation',
+    'verified-first-party-careers+openings-api+company-and-country-validation+native-detail-identity+full-description',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

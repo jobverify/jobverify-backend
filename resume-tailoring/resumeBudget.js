@@ -1,8 +1,11 @@
 import { resumeFailure } from './resumeDiagnostics.js';
 
+// Leave time in the 30-minute Actions job for cache saving and cleanup.
+export const RESUME_WORKER_BUDGET_MS = 28 * 60000;
+
 export function resumeWorkerDeadline(startedAt, now = Date.now()) {
   const started = Date.parse(startedAt || '');
-  return Math.min(Number.isFinite(started) ? started : now, now) + 60000;
+  return Math.min(Number.isFinite(started) ? started : now, now) + RESUME_WORKER_BUDGET_MS;
 }
 
 export function remainingBudget(deadline, maximum) {

@@ -88,6 +88,51 @@ test('mandatory professional experience conflicting with a fresher title remains
   }
 })
 
+test('welcoming both freshers and experienced applicants does not impose prior experience', () => {
+  for (const [title, eligibility] of [
+    ['Online For Telesales Executive Jobs (Freshers)', 'Eligibility: Freshers and experienced candidates are welcome.'],
+    ['Customer Support Executive', 'Freshers or experienced applicants can apply.'],
+  ]) {
+    const result = classify({ title, sourceDescription: `${eligibility}\nGraduate or Undergraduate. Good communication skills in Hindi and English.` })
+    assert.equal(result.resolved.jobType, 'Full-time Fresher', eligibility)
+    assert.equal(result.resolved.employerExperienceProfile.minimumYears, null)
+    assert.deepEqual(result.reviewReasons, [])
+  }
+})
+
+test('mixed welcome wording cannot waive numeric, nonnumeric or conditional mandatory experience', () => {
+  for (const sourceDescription of [
+    'Freshers and experienced candidates are welcome. Minimum 3 years of professional experience required.',
+    'Freshers and experienced candidates are welcome. You must have prior professional experience in recruitment.',
+    'Freshers and experienced candidates are welcome but you must have prior professional experience in recruitment.',
+    'Freshers and experienced candidates are eligible provided you have at least 2 years of experience.',
+  ]) {
+    const result = classify({ title: 'Telesales Executive (Freshers)', sourceDescription })
+    assert.equal(result.resolved.jobType, 'Unspecified', sourceDescription)
+    assert.ok(result.reviewReasons.includes('conflicting_role_eligibility'), sourceDescription)
+  }
+})
+
+for (const [heading, requirement] of [
+  ['Required Qualifications:\n', 'you must demonstrate prior professional experience in sales'],
+  ['Required Qualifications:\n', 'prior professional experience in sales is essential'],
+  ['', 'you must demonstrate prior professional experience in sales'],
+  ['', 'prior professional experience in sales is essential'],
+]) test(`mixed welcome wording preserves ${heading ? 'qualification-section' : 'explicit'} requirements: ${requirement}`, () => {
+  const result = classify({ title: 'Telesales Executive (Freshers)',
+    sourceDescription: `${heading}Freshers and experienced candidates are welcome, but ${requirement}.` })
+  assert.equal(result.resolved.jobType, 'Unspecified')
+  assert.ok(result.reviewReasons.includes('conflicting_role_eligibility'))
+})
+
+test('a WNS-style fresher title with a six-year accounting requirement remains a source conflict', () => {
+  const result = classify({ title: 'REF111473P-Assistant Manager - Record to Report- CA Fresher- US/UK Shift (5:30pm to 2:30am)- Pune',
+    sourceDescription: 'Qualifications:\nBachelor degree in Accounting. Minimum 6 years of accounting experience in a performance-driven environment.' })
+  assert.equal(result.resolved.jobType, 'Unspecified')
+  assert.ok(result.reviewReasons.includes('conflicting_role_eligibility'))
+  assert.equal(result.resolved.employerExperienceProfile.minimumYears, 6)
+})
+
 test('training and recruiting freshers, or excluding them, does not establish applicant fresher eligibility', () => {
   for (const title of ['Trainer for Freshers', 'Fresher Recruitment Manager', 'Software Engineer - No Freshers',
     'Software Engineer - Freshers Not Eligible', 'Software Engineer - Freshers cannot apply', 'Software Engineer - Non Fresher',

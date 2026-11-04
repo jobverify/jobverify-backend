@@ -3,13 +3,13 @@ import { fileURLToPath } from 'node:url'
 
 import {createFirstPartyHTMLScraper} from '../../scraper-support/shared/firstPartyHtmlJobs.js'
 import {nativePostingJobs} from '../../scraper-support/shared/nativeJobPosting.js'
-import {createSourceConfig,OFFICIAL} from './parser.js'
+import {createSourceConfig,CAREERS_ROOT} from './parser.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "abbvie"
 export const COMPANY = "AbbVie"
-export const CAREERS_URL = OFFICIAL
+export const CAREERS_URL = CAREERS_ROOT
 
 export const run = options => {
  const config=createSourceConfig(options)

@@ -9,6 +9,9 @@ import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.
 import { readOracleRecruitment } from './recruitmentOracle.js'
 import { recruitmentMicrodataPostings } from './recruitmentMicrodata.js'
 import { readKekaRecruitment, readDeclaredKekaWebflowFeed } from './recruitmentKeka.js'
+import { literalRecruitmentPageData, phenomRecruitmentLinks, phenomRecruitmentRole, phenomRecruitmentSearch } from './recruitmentPageData.js'
+import { recruitmentSuccessFactorsPostings } from './recruitmentSuccessFactors.js'
+import { successFactorsUnifiedSearch, readSuccessFactorsUnifiedSearch, successFactorsUnifiedPostings } from './recruitmentSuccessFactorsUnified.js'
 
 export const RECRUITMENT_OBSERVATIONS = Symbol.for('jobverify.verified-recruitment-observations')
 const sha = value => createHash('sha256').update(value).digest('hex')
@@ -97,7 +100,7 @@ export function recruitmentBoard(value) {
     && !['api', 'j'].includes(parts[0].toLowerCase())) {
     return { kind: 'workable', token: parts[0], url: `${url.origin}/${parts[0]}/` }
   }
-  if (/^[a-z\d-]+\.fa\.[a-z\d-]+\.oraclecloud\.com$/i.test(url.hostname)) {
+  if (/^\/hcmUI\/CandidateExperience\//i.test(url.pathname)) {
     const match = url.pathname.match(/^\/hcmUI\/CandidateExperience\/([a-z-]{2,12})\/sites\/([a-z\d_-]{1,120})(?:\/|$)/i)
     if (match) return { kind: 'oracle', siteAlias: match[2], url: `${url.origin}/hcmUI/CandidateExperience/${match[1]}/sites/${match[2]}` }
   }
@@ -144,6 +147,29 @@ const sourceDescription = value => {
   return description && description.length >= 100 ? value : null
 }
 
+// A reviewed employer declaration in this role's own native description can
+// supply an organization name when the native structured name is blank.
+// Quoted, sample, hidden and inert text never supplies that declaration.
+const roleEmployerStatement = (description, contract) => {
+  const name = text(contract?.name), prefix = text(contract?.prefix).replace(/\s+/g, ' ')
+  if (!name || !prefix.toLowerCase().startsWith(name.toLowerCase() + ' ')) return null
+  let document
+  try { document = readNativeDocument(normalizeNativeAttributeBoundaries(description)) } catch { return null }
+  const blocked = new Set(['blockquote', 'q', 'pre', 'code', 'script', 'style', 'template', 'aside', 'object', 'iframe', 'noscript'])
+  const ownText = node => node.inert || blocked.has(node.tag) ? '' : node.children.map(child => typeof child === 'string' ? child : ownText(child)).join(' ')
+  let matched = null
+  const visit = node => {
+    if (node.inert || blocked.has(node.tag)) return
+    if (['p', 'div', 'li'].includes(node.tag) || node.tag === 'root' && node.children.every(child => typeof child === 'string')) {
+      const content = decodeNativeEntities(ownText(node)).replace(/\s+/g, ' ').trim()
+      if (content.toLowerCase().startsWith(prefix.toLowerCase())) matched = { name: content.slice(0, name.length), statement: content.slice(0, prefix.length) }
+    }
+    for (const child of node.children) if (typeof child !== 'string') visit(child)
+  }
+  visit(document.nodes(node => node.tag === 'root')[0])
+  return matched
+}
+
 function project(config, native, observedAt) {
   const location = native.location || 'India'
   const city = getValidIndiaCityForJob({ country: 'India', location, city: native.city || null })
@@ -154,6 +180,7 @@ function project(config, native, observedAt) {
     postingDate: native.posted || null, postedAt: native.posted || null,
     closingDate: native.closing || null, employmentType: native.employmentType || null,
     nativeHiringOrganization: native.employer || null, nativeSourceRecord: native.record,
+    ...(native.employerRecord ? {nativeHiringOrganizationRecord:native.employerRecord} : {}),
     ...(native.employerBinding ? { nativeEmployerBinding: native.employerBinding } : {}),
     nativePostingDate: native.posted || null, scrapedAt: observedAt,
     sourceDetailComplete: true, sourceScopeComplete: false, sourceListingComplete: false,
@@ -179,6 +206,8 @@ export function createVerifiedRecruitmentScraper(config) {
     const official = url => hosts.some(host => url.hostname === host || url.hostname.endsWith('.' + host))
     const grants = [], receipts = [], failures = [], jobs = [], seenJobs = new Set(), boards = new Map(), queue = []
     const identifiedCompanyHosts = new Set()
+    const phenomSearches = new Map()
+    const unifiedSearchOrigins = new Set(), nativeSearchCandidates = new Map()
     const declaredCompanyRolePages = new Set()
     const observed = { source: config.source, observedAt: now, requestCount: 0, nativeRecords: 0, returnedIndiaJobs: 0,
       unresolved: [], exclusions: [], nativeInventoryReads: [], sourceScopeComplete: false, lifecycleCleanupAllowed: false, receipts, failures }
@@ -268,6 +297,11 @@ export function createVerifiedRecruitmentScraper(config) {
         requireValue(format === 'json' ? /(?:application|text)\/(?:[a-z.+-]*\+)?json\b/i.test(response.contentType)
           : format === 'renderer' ? /(?:text\/(?:html|js)\b|application\/xhtml\+xml|(?:application|text)\/(?:java|ecma)script)/i.test(response.contentType)
             : /(?:text\/html|application\/xhtml\+xml)/i.test(response.contentType), 'Unexpected recruitment response type')
+        if (format !== 'json' && /<title\b[^>]*>\s*Forbidden Access\s*<\/title>/i.test(body)) {
+          const denied = readNativeDocument(normalizeNativeAttributeBoundaries(body))
+          requireValue(!denied.nodes(node => (node.attrs.class || '').split(/\s+/).includes('status-code')
+            && /^FORBIDDEN ACCESS$/i.test(denied.text(node))).length, 'Recruitment access denied by the public publisher')
+        }
         return format === 'json' ? JSON.parse(body) : { url: final.href, status: 200, html: body }
       })()
       if (method === 'GET') cache.set(key, task)
@@ -276,6 +310,18 @@ export function createVerifiedRecruitmentScraper(config) {
     const readJson = (url, init) => read(url, init, 'json')
     const problem = (stage, error) => { signal.throwIfAborted(); failures.push({ stage, message: String(error.message || error).slice(0, 400) }) }
     const addJob = native => {
+      if (native.heldStatuses?.length) {
+        observed.exclusions.push({reason:'native-role-on-hold',url:native.url,nativeStatuses:native.heldStatuses}); return
+      }
+      const blankEmployer = native.employer == null || typeof native.employer === 'object' && !Array.isArray(native.employer)
+        && Object.keys(native.employer).every(key => ['name', 'url'].includes(key))
+        && [native.employer.name, native.employer.url].every(value => value == null || typeof value === 'string' && !value.trim())
+      if (blankEmployer && matchingEmployer(config.nativeEmployerStatement?.name) && sourceDescription(native.description)) {
+        const statement = roleEmployerStatement(native.description, config.nativeEmployerStatement)
+        if (statement) native = { ...native, employer: { name: statement.name },
+          employerBinding: { method: 'explicit-native-role-employer-statement', field: 'description',
+            statement: statement.statement, surface: native.url, legalEmployer: null } }
+      }
       if (!matchingEmployer(native.employer?.name) && !(native.employerBinding && !config.requireNativeEmployerName)) { observed.unresolved.push('native-employer-mismatch'); return }
       if (!sourceDescription(native.description)) { observed.unresolved.push('native-full-description-unavailable'); return }
       if (closed(native.closing, now)) return
@@ -285,12 +331,12 @@ export function createVerifiedRecruitmentScraper(config) {
       if (seenJobs.has(identity)) return
       seenJobs.add(identity); jobs.push(project(config, native, now))
     }
-    const bind = (value, officialURL, declaredExternal = false) => {
+    const bind = (value, officialURL, declaredExternal = false, bindingMethod = 'runtime-current-careers-link') => {
       const url = https(value); if (!url) return
       const board = recruitmentBoard(url.href)
       const key = board ? board.kind + ':' + (board.token || board.url) : url.origin + ':' + pathKey(url)
       if (board && !boards.has(key)) boards.set(key, { ...board, bindingEvidence: {
-        verified: true, checkedAt: now, officialURL, matchedLinks: [url.href], bindingMethod: 'runtime-current-careers-link',
+        verified: true, checkedAt: now, officialURL, matchedLinks: [url.href], bindingMethod,
       } })
       if (board?.kind === 'oracle' && /\/sites\/[^/]+\/jobs?\/[^/]+/i.test(url.pathname)) { permit(url); queue.push(url.href) }
       if (!board && (vendor.test(url.hostname) || config.allowDeclaredExternalCareersPages && declaredExternal)) { permit(url); queue.push(url.href) }
@@ -321,6 +367,39 @@ export function createVerifiedRecruitmentScraper(config) {
         }
       }
       const canDelegate = companyIdentified && (corporatePage || delegatedPublisherPage)
+      const nativeCandidateBoard = recruitmentBoard(page.url)
+      if (canDelegate && nativeCandidateBoard?.kind === 'oracle'
+        && doc.nodes(node => node.tag === 'base' && node.attrs['data-sitenumber'] && node.attrs['data-apibaseurl']).length) {
+        bind(nativeCandidateBoard.url, page.url, true, 'runtime-current-native-candidate-site')
+      }
+      const declaredPageDataLinks = []
+      let nativeRoleOnHold = false
+      if (canDelegate && config.discoverLiteralRecruitmentData === true) {
+        try {
+          const phenom = phenomRecruitmentLinks(doc, page.url)
+          if (phenom) {
+            const search = phenomRecruitmentSearch(doc, page.url)
+            if (search) phenomSearches.set(search.url + ':' + search.refNum, search)
+            for (const target of phenom.links) if (allowed(new URL(target)) && !seenPages.has(target)) declaredPageDataLinks.push(target)
+            if (phenom.reportedTotal !== null) {
+              observed.nativeInventoryReads.push({ kind: 'phenom', surface: page.url, refNum: phenom.refNum, reportedTotal: phenom.reportedTotal })
+              observed.nativeRecords += phenom.observedRecords
+              observed.unresolved.push('native-phenom-listing-scope-unverified')
+            }
+            for (const role of phenom.nativeRoles) {
+              const target = new URL(role)
+              if (recruitmentBoard(role)) bind(role, page.url, true)
+              else if (official(target) && !seenPages.has(role)) queue.unshift(role)
+            }
+            for (const target of phenom.roleLinks) if (allowed(new URL(target)) && !seenPages.has(target)) declaredPageDataLinks.push(target)
+            const role = phenomRecruitmentRole(doc, page.url, {postings:recruitmentJobPostings(doc)})
+            if (role) {
+              observed.nativeRecords++; nativeRoleOnHold = Boolean(role.heldStatuses.length)
+              if (role.country === 'India') addJob(role)
+            }
+          }
+        } catch (error) { problem('native-phenom-page-data', error) }
+      }
       if (corporatePage && !companyIdentified) observed.unresolved.push('current-corporate-publisher-identity-unqualified')
       if (canDelegate && config.nativeJsonFeed && career.test(pageURL.pathname)) {
         try { await readDeclaredKekaWebflowFeed(config, doc, page, { permit, readJson, matchingEmployer, addJob,
@@ -328,8 +407,26 @@ export function createVerifiedRecruitmentScraper(config) {
           unresolved: value => observed.unresolved.push(value) }) }
         catch (error) { problem('native-first-party-json-feed', error) }
       }
+      const declaredNativeSearchLinks = []
+      if (canDelegate && config.prioritizeRecruitmentSearch && !unifiedSearchOrigins.has(pageURL.origin)) {
+        try {
+          const search = successFactorsUnifiedSearch(doc, page.url)
+          if (search) {
+            unifiedSearchOrigins.add(pageURL.origin)
+            const candidates = await readSuccessFactorsUnifiedSearch(search, { readRenderer: value => read(value, {}, 'renderer'), readJson, permit,
+              inventoryRead: value => observed.nativeInventoryReads.push(value) })
+            for (const candidate of candidates) {
+              nativeSearchCandidates.set(candidate.url, candidate)
+              if (!seenPages.has(candidate.url)) declaredNativeSearchLinks.push(candidate.url)
+            }
+          }
+        } catch (error) { problem('native-successfactors-unified-search', error) }
+      }
+      const nativeCandidate = nativeSearchCandidates.get(value) || nativeSearchCandidates.get(page.url)
       const microdata = new Set(recruitmentMicrodataPostings(doc, page.url))
-      const schemas = [...recruitmentJobPostings(doc), ...microdata]
+      const visibleRoles = new Set(config.prioritizeRecruitmentSearch
+        ? [...recruitmentSuccessFactorsPostings(doc, page.url), ...successFactorsUnifiedPostings(doc, page.url,{listing:nativeCandidate?.record})] : [])
+      const schemas = [...recruitmentJobPostings(doc), ...microdata, ...visibleRoles]
       for (const posting of schemas) {
         if (corporatePage && !companyIdentified && !declaredCompanyRolePages.has(value) && !declaredCompanyRolePages.has(page.url)) continue
         const nativeURL = https(posting.url || posting['@id'] || page.url)
@@ -341,9 +438,14 @@ export function createVerifiedRecruitmentScraper(config) {
           }
           continue
         }
+        if (nativeRoleOnHold) continue
+        if (nativeCandidate && (String(posting.identifier?.value) !== nativeCandidate.id
+          || companyKey(posting.title) !== companyKey(nativeCandidate.title))) {
+          observed.unresolved.push('native-listing-detail-identity-mismatch'); continue
+        }
         const identity = nativeURL.href + ':' + (posting.identifier?.value || posting.title)
         if (schemaSeen.has(identity)) continue; schemaSeen.add(identity); observed.nativeRecords++
-        if (microdata.has(posting) && posting.nativeMicrodataIssues.length) {
+        if ((microdata.has(posting) || visibleRoles.has(posting)) && posting.nativeMicrodataIssues.length) {
           observed.unresolved.push(...posting.nativeMicrodataIssues); continue
         }
         const title = text(posting.title), primaryHeadings = doc.nodes(node => node.tag === 'h1')
@@ -353,7 +455,7 @@ export function createVerifiedRecruitmentScraper(config) {
         const description = sourceDescription(posting.description)
         const visibleText = doc.nodes(node => node.tag === 'root').map(node => doc.text(node)).join(' ')
         const visibleTitle = headings.some(value => companyKey(value) === companyKey(title))
-          || microdata.has(posting) && posting.nativeVisibleTitleConfirmed
+          || (microdata.has(posting) || visibleRoles.has(posting)) && posting.nativeVisibleTitleConfirmed
         if (!title || !visibleTitle || !description
           || !companyKey(visibleText).includes(companyKey(extractActiveDescription(description).slice(0, 160)))) {
           observed.unresolved.push('native-visible-role-content-mismatch'); continue
@@ -366,7 +468,10 @@ export function createVerifiedRecruitmentScraper(config) {
         const address = india[0]
         addJob({ id: posting.identifier?.value || posting['@id'] || nativeURL.href, title, url: nativeURL.href,
           description, employer: posting.hiringOrganization, location: [address.addressLocality, address.addressRegion, 'India'].filter(Boolean).join(', '),
-          posted: posting.datePosted, closing: posting.validThrough, employmentType: posting.employmentType, record: posting })
+          posted: posting.datePosted, closing: posting.validThrough, employmentType: posting.employmentType,
+          record: nativeCandidate ? {...posting,nativeListingRecord:nativeCandidate.record} : posting,
+          ...(visibleRoles.has(posting) && !posting.hiringOrganization && canDelegate && !config.requireNativeEmployerName
+            ? { employerBinding: { method: 'current-native-visible-role-publisher', surface: page.url, legalEmployer: null } } : {}) })
       }
       const next = []
       const links = doc.nodes(node => node.tag === 'a' && node.attrs.href).map(node => ({ href: node.attrs.href, label: doc.text(node) }))
@@ -392,12 +497,14 @@ export function createVerifiedRecruitmentScraper(config) {
       }
       for (const form of config.prioritizeRecruitmentSearch ? doc.nodes(node => node.tag === 'form' && (!node.attrs.method || /^get$/i.test(node.attrs.method))) : []) {
         let action; try { action = https(new URL(form.attrs.action || pageURL.href, pageURL).href) } catch { continue }
-        if (!action || !allowed(action) || !career.test(pageURL.pathname + ' ' + (form.attrs.id || '') + ' ' + (form.attrs.class || ''))) continue
+        const nativeCareerSearch = config.prioritizeRecruitmentRoleDetails === true && action && canDelegate && career.test(pageURL.hostname)
+          && action.origin === pageURL.origin && /^\/search\/?$/i.test(action.pathname)
+        if (!action || !allowed(action) || !nativeCareerSearch && !career.test(pageURL.pathname + ' ' + (form.attrs.id || '') + ' ' + (form.attrs.class || ''))) continue
         const descendants = node => [node, ...node.children.filter(child => typeof child !== 'string').flatMap(descendants)]
         const inputs = descendants(form).filter(node => node.tag === 'input' && node.attrs.name)
         const fields = inputs.filter(node => /^(?:q|keyword|keywords|searchText|locationsearch)$/i.test(node.attrs.name))
         if (!fields.length) continue
-        if (!fields.some(node => /^locationsearch$/i.test(node.attrs.name)) && !/job|career|vacanc/i.test(action.pathname + ' ' + (form.attrs.id || '') + ' ' + (form.attrs.class || ''))) continue
+        if (!fields.some(node => /^locationsearch$/i.test(node.attrs.name)) && !nativeCareerSearch && !/job|career|vacanc/i.test(action.pathname + ' ' + (form.attrs.id || '') + ' ' + (form.attrs.class || ''))) continue
         for (const input of inputs.filter(node => node.attrs.type === 'hidden' && !/token|auth|csrf|session/i.test(node.attrs.name))) {
           action.searchParams.set(input.attrs.name, input.attrs.value || '')
         }
@@ -406,9 +513,20 @@ export function createVerifiedRecruitmentScraper(config) {
       }
       const priority = value => {
         const url = new URL(value)
+        // After reaching an India candidate listing, inspect its role links
+        // before additional search, sort or paging views consume discovery.
+        // The candidate selector supplies no country evidence for the role.
+        const indiaListing = config.prioritizeRecruitmentRoleDetails === true
+          && /\bindia\b/i.test(pageURL.pathname + pageURL.search)
+        const parameters = target => JSON.stringify([...target.searchParams].filter(([name]) => name !== 'locale')
+          .sort((a,b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1])))
+        const translatedCurrentPage = companyIdentified && url.origin === pageURL.origin && pathKey(url) === pathKey(pageURL)
+          && url.searchParams.getAll('locale').length === 1 && url.searchParams.get('locale') !== pageURL.searchParams.get('locale')
+          && parameters(url) === parameters(pageURL)
         return (/\bindia\b/i.test(url.pathname + url.search) ? -200 : 0)
+          + (translatedCurrentPage ? 400 : 0)
           + (/\/(?:search|jobs|requisitions)(?:\/|$)/i.test(url.pathname) ? -80 : 0)
-          + (/\/job\/[^/]+/i.test(url.pathname) ? -120 : 0)
+          + (/\/job\/[^/]+/i.test(url.pathname) ? indiaListing ? -400 : -120 : 0)
           + (value === root?.href ? -50 : 0)
           + (/culture|benefits|life-at|faq|privacy|\/images?\//i.test(value) ? 100 : 0)
           + url.pathname.split('/').filter(Boolean).length
@@ -416,11 +534,61 @@ export function createVerifiedRecruitmentScraper(config) {
       if (config.prioritizeRecruitmentSearch) next.sort((a, b) => priority(a) - priority(b))
       else next.sort((a, b) => Number(/culture|benefits|life-at|\/images?\//i.test(a)) - Number(/culture|benefits|life-at|\/images?\//i.test(b))
         || Number(Boolean(new URL(a).search)) - Number(Boolean(new URL(b).search)))
-      queue.unshift(...[...new Set(next)])
+      const navigation = [...new Set(next)].filter(value => !config.prioritizeRecruitmentSearch || !seenPages.has(value))
+      if (nativeSearchCandidates.has(value) || nativeSearchCandidates.has(page.url)) queue.push(...navigation)
+      else queue.unshift(...navigation)
+      queue.unshift(...declaredPageDataLinks)
+      queue.unshift(...declaredNativeSearchLinks)
       if (boards.size && seenPages.size >= 2) break
+    }
+    for (const search of phenomSearches.values()) {
+      try {
+        permit(search.url, ['POST'])
+        const seen = new Map(); let offset = 0, total = null, inspected = 0
+        for (let page = 0; page < maxPages && observed.requestCount < maxRequests; page++) {
+          const reply = await readJson(search.url, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...search.body,from:offset})})
+          const inventory = reply?.refineSearch, rows = inventory?.data?.jobs
+          requireValue(inventory?.status === 200 && Array.isArray(rows) && rows.length <= search.body.size
+            && Number.isSafeInteger(inventory.totalHits) && inventory.totalHits >= 0, 'Phenom native India inventory changed')
+          if (total === null) total = inventory.totalHits
+          requireValue(inventory.totalHits === total && offset + rows.length <= total, 'Phenom native India pagination changed')
+          observed.nativeInventoryReads.push({kind:'phenom-india',surface:search.url,refNum:search.refNum,reportedTotal:total,offset})
+          let repeated = false
+          for (const row of rows) {
+            requireValue(row && typeof row.jobId === 'string' && row.jobId && text(row.title), 'Phenom native candidate identity changed')
+            const identity = JSON.stringify({title:row.title,country:row.country,siteType:row.siteType,visibilityType:row.visibilityType})
+            if (seen.has(row.jobId)) {
+              requireValue(seen.get(row.jobId) === identity, 'Phenom native candidate identity conflict')
+              observed.unresolved.push('native-phenom-pagination-repeated-role'); repeated = true; continue
+            }
+            seen.set(row.jobId,identity); observed.nativeRecords++
+            if (country(row.country) !== 'India') { observed.unresolved.push('native-phenom-filter-country-unverified'); continue }
+            if (row.siteType !== 'external' || row.visibilityType !== 'External') continue
+            if (inspected >= maxDetails || observed.requestCount >= maxRequests) { observed.unresolved.push('native-detail-budget-reached'); break }
+            inspected++
+            try {
+              const url = new URL(search.route.replace(':jobId',encodeURIComponent(row.jobId)).replace(':title',encodeURIComponent(row.title)),search.baseURL.replace(/\/?$/, '/')).href
+              permit(url)
+              const detail = await read(url), document = readNativeDocument(normalizeNativeAttributeBoundaries(detail.html))
+              const native = phenomRecruitmentRole(document,detail.url,{postings:recruitmentJobPostings(document)})
+              requireValue(native && native.id === row.jobId && native.title === row.title
+                && native.record.uniqueValue.refNum === search.refNum, 'Phenom listing/detail identity changed')
+              if (native.country !== 'India') { observed.unresolved.push('native-location-conflict'); continue }
+              addJob(native)
+            } catch (error) { problem('native-phenom-role',error) }
+          }
+          offset += rows.length
+          if (repeated || inspected >= maxDetails || offset === total) break
+          requireValue(rows.length > 0, 'Phenom native India pagination made no progress')
+        }
+        observed.unresolved.push('native-phenom-listing-scope-unverified')
+      } catch (error) { problem('native-phenom-india-search',error) }
     }
 
     for (const board of boards.values()) {
+      if (config.stopAfterNativeIndiaLimit === true && jobs.length >= maxDetails) {
+        observed.unresolved.push('native-detail-budget-reached'); break
+      }
       signal.throwIfAborted()
       if (observed.requestCount >= maxRequests) break
       try {
@@ -544,13 +712,26 @@ export function createVerifiedRecruitmentScraper(config) {
               record: { ...detail, nativeAccount: { id: account.id, uid: account.uid, name: account.name, url: account.url } } })
           }
         } else if (board.kind === 'workday') {
-          const prefix = `${board.origin}/wday/cxs/${encodeURIComponent(board.tenant)}/${encodeURIComponent(board.site)}`
+          let prefix = `${board.origin}/wday/cxs/${encodeURIComponent(board.tenant)}/${encodeURIComponent(board.site)}`
           permit(prefix); permit(prefix + '/jobs', ['POST']); permit(board.url)
           let offset = 0, total = null, inspected = 0; const paths = new Map()
           let appliedFacets = {}, searchText = ''
           const inventory = () => readJson(prefix + '/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ appliedFacets, limit: 20, offset, searchText }) })
-          let firstPage = await inventory()
+          let firstPage
+          try { firstPage = await inventory() }
+          catch (error) {
+            if (!/\bHTTP 422\b/.test(error.message)) throw error
+            const page = await read(board.url)
+            const declared = literalRecruitmentPageData(readNativeDocument(normalizeNativeAttributeBoundaries(page.html)), 'workday')?.config
+            requireValue(declared && /^[a-z\d_-]{1,120}$/i.test(declared.tenant || '') && declared.siteId === board.site
+              && declared.tenant.replace(/[-_]/g, '').toLowerCase() === board.tenant.replace(/[-_]/g, '').toLowerCase()
+              && declared.tenant !== board.tenant, 'Workday declared native account changed')
+            prefix = `${board.origin}/wday/cxs/${encodeURIComponent(declared.tenant)}/${encodeURIComponent(declared.siteId)}`
+            permit(prefix); permit(prefix + '/jobs', ['POST'])
+            observed.nativeAccountConfiguration = { tenant: declared.tenant, site: declared.siteId, surface: page.url }
+            firstPage = await inventory()
+          }
           requireValue(Array.isArray(firstPage.jobPostings) && Number.isSafeInteger(firstPage.total) && firstPage.total >= 0, 'Invalid Workday inventory')
           observed.nativeInventoryReads.push({ kind: board.kind, surface: board.url, reportedTotal: firstPage.total })
           if ((options.preferIndiaInventory ?? config.preferIndiaInventory) === true) {
@@ -621,8 +802,20 @@ export function createVerifiedRecruitmentScraper(config) {
                 }
                 continue
               }
+              let employer = detail.hiringOrganization, employerBinding = null
+              const blankEmployer = employer == null || typeof employer === 'object' && !Array.isArray(employer)
+                && Object.keys(employer).every(key => ['name', 'url'].includes(key))
+                && [employer.name, employer.url].every(value => value == null || typeof value === 'string' && !value.trim())
+              if (blankEmployer && matchingEmployer(config.nativeEmployerStatement?.name) && sourceDescription(info.jobDescription)) {
+                const statement = roleEmployerStatement(info.jobDescription, config.nativeEmployerStatement)
+                if (statement) {
+                  employer = { name: statement.name }
+                  employerBinding = { method: 'explicit-native-role-employer-statement', field: 'jobPostingInfo.jobDescription',
+                    statement: statement.statement, surface: prefix + row.externalPath, legalEmployer: null }
+                }
+              }
               addJob({ id: info.jobReqId, title: info.title, url: actual.href, description: info.jobDescription,
-                employer: detail.hiringOrganization, location: [info.location, 'India'].filter(Boolean).join(', '),
+                employer, employerBinding, location: [info.location, 'India'].filter(Boolean).join(', '),
                 posted: info.startDate, closing: info.endDate, record: detail })
             }
             if (payload.jobPostings.length && !newPaths) { observed.unresolved.push('native-pagination-no-progress'); break }

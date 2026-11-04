@@ -9,7 +9,7 @@ import { dispatchTailoredResumes, tailoredResumeActionsConfigured, requireTailor
 import { dayKey, reserveUsage } from './resumeUsage.js';
 import { tailoringError } from './resumeTailoringContent.js';
 import { artifactBytes, readResumeArtifact } from './resumeArtifactService.js';
-import { activeResumeOwner, activeResumeStatuses, requirePreparedResume, drainResumePreparations, recoverResumePreparations, evidenceMatches } from './resumePreparationService.js';
+import { activeResumeOwner, activeResumeStatuses, requirePreparedResume, drainResumePreparations, recoverResumePreparations, evidenceMatches, isRetiredTemplateVersion } from './resumePreparationService.js';
 import { getCandidateEvidenceSnapshot } from './candidateEvidenceService.js';
 import { publishGeneratedCv } from './cvRevisionService.js';
 import { remainingBudget } from '../../resume-tailoring/resumeBudget.js';
@@ -39,7 +39,8 @@ function publicRecord(row, source) {
   const hasArtifact = Boolean(row.generationId);
   const legacy = Boolean(!hasArtifact && row.output);
   return { id: row._id, jobId: String(row.job), status: row.status, phase: row.phase || '', error: row.error || '',
-    stale: Boolean((hasArtifact || legacy) && (row.outputResumeSha !== source.resume?.sha256 || row.outputJobHash !== source.hash
+    stale: Boolean((hasArtifact || legacy) && (isRetiredTemplateVersion(row.modelVersion)
+      || row.outputResumeSha !== source.resume?.sha256 || row.outputJobHash !== source.hash
       || (hasArtifact && row.outputBaseGenerationId !== source.resume?.preparation?.generationId)
       || (source.evidence && !evidenceMatches(row.outputEvidenceVersion, row.outputEvidenceHash, source.evidence)))),
     hasPdf: hasArtifact, hasLatex: hasArtifact, pageCount: hasArtifact ? row.pageCount || null : null,

@@ -169,6 +169,14 @@ test('extractSearchResults maps ACS recruiter cards into shared scraper fields',
   )
 })
 
+test('the observed ACS employer spelling alias retains its verified recruiter cards', async () => {
+  const acs = await loadAcsNetworkTechnologiesModule()
+  const jobs = acs.extractSearchResults(listingPageHtml.replaceAll('ACS Network & Technology Private Limited', 'ACS Network & Technoloiges'))
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].company, 'ACS Network & Technoloiges')
+  assert.equal(jobs[0].jobId, '1265304')
+})
+
 test('extractJobDetails enriches ACS detail pages with recruiter metadata', async () => {
   const acsNetworkTechnologies = await loadAcsNetworkTechnologiesModule()
   assert.ok(acsNetworkTechnologies)

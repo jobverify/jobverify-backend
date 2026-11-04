@@ -31,6 +31,17 @@ jobs:
     outputs:
       pipeline_id: ${{ steps.claim.outputs.pipeline_id }}
     steps:
+      - name: Mask pipeline dispatch identity
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as event_file:
+              token = json.load(event_file).get("inputs", {}).get("dispatch_token", "")
+          if token:
+              token = token.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print("::add-mask::" + token)
+          PY
       - name: ${{ inputs.dispatch_token && format('Job Classification [dispatch:{0}]', inputs.dispatch_token) || 'Job Classification' }}
         run: echo 'Pipeline dispatch identity recorded'
       - uses: actions/checkout@v7

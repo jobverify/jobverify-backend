@@ -97,19 +97,15 @@ test('Ashby preserves native plain content when the HTML variant contains only e
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })
 
-test('Prefect job limits retain fetched counts while preventing complete-inventory cleanup', async () => {
+test('Prefect rejects legacy parsed-only injections before fetching with configured job limits', async () => {
+  // Current captured HTTP cap behavior is covered by prefect/currentScope20261103.test.js:
+  // zero is unlimited, and positive caps retain counts while marking output partial.
   for (const maxJobs of [0, 1]) {
-    // Retain the original bare fixture as an explicit rejected legacy input.
-    await assert.rejects(createPrefectScraper({ maxJobs }).run({ fetchText: async () => prefectPage,
-      fetchJson: async () => ({ apiVersion: '1', jobs: [row('prefect', 'one'), row('prefect', 'two')] }),
-    }), /Parsed\/text-only injection has no original HTTP provenance/)
-    const { jobs, audit, expected } = await replayCurrentDeclaredNative('prefect', { maxJobs })
-    assert.equal(audit.observations.length, expected.length)
-    assert.ok(audit.observations.length > maxJobs)
-    assert.equal(jobs.length, maxJobs)
-    assert.equal(readInventoryEvidence(jobs)?.reportedTotal, null)
-    assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
-    assert.ok(jobs.every(job => job.sourceScopeComplete === false && job.lifecycleCleanupAllowed === false))
+    let calls = 0
+    await assert.rejects(createPrefectScraper({ maxJobs }).run({ fetchText: async () => { calls++; return prefectPage },
+      fetchJson: async () => { calls++; return { apiVersion: '1', jobs: [row('prefect', 'one'), row('prefect', 'two')] } },
+    }), { name: 'TypeError', message: 'Prefect requires original public HTTP response provenance' })
+    assert.equal(calls, 0)
   }
 })
 
@@ -120,7 +116,7 @@ test('Prefect script-only board references cannot establish current employer del
   await assert.rejects(createPrefectScraper().run({
     fetchText: async url => url.endsWith('/company') ? page : careers,
     fetchJson: async () => ({ apiVersion: '1', jobs: [] }),
-  }), /Parsed\/text-only injection has no original HTTP provenance/)
+  }), { name: 'TypeError', message: 'Prefect requires original public HTTP response provenance' })
   const { jobs, audit } = await replayCurrentDeclaredNative('prefect', { scenario: 'foreign-company-delegation' })
   await replayCurrentDeclaredNative('prefect', { scenario: 'script-only-declaration' })
   assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
@@ -148,7 +144,7 @@ test('the effective Sisense provider describes the Ashby endpoint actually used 
 test('Prefect advertised native role identities cannot coexist with authoritative empty inventory', async () => {
   await assert.rejects(createPrefectScraper().run({ fetchText: async () => prefectPage.replace('/prefect"', '/prefect/role-1"'),
     fetchJson: async () => ({ apiVersion: '1', jobs: [] }),
-  }), /Parsed\/text-only injection has no original HTTP provenance/)
+  }), { name: 'TypeError', message: 'Prefect requires original public HTTP response provenance' })
   const { jobs, audit } = await replayCurrentDeclaredNative('prefect', { scenario: 'missing-advertised-identity' })
   assert.equal(audit.opening.nativeListingComplete, false)
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)

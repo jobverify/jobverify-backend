@@ -6,6 +6,7 @@ import { JOB_CLASSIFICATION_POLICY_VERSION } from '../utils/jobClassificationVer
 import { resolveRecruitmentPolicy } from './jobRecruitmentPolicy.js';
 import { normalizePublicJobType, PUBLIC_JOB_TYPES } from '../utils/publicJobTypeLabel.js';
 import { resolveJobPublicationDate } from '../utils/jobPublicationDate.js';
+import { getSourceDescription } from '../utils/jobSourceContent.js';
 
 const normalizedBytes = relative => readFileSync(new URL(`../../${relative}`, import.meta.url)).toString('utf8').replace(/\r\n/g, '\n');
 const policyBytes = normalizedBytes('classification/policy.json');
@@ -49,6 +50,12 @@ export const hashClassificationInput = (input, identity = {}) => {
   return createHash('sha256').update(JSON.stringify({ ...canonical, ...identity })).digest('hex');
 };
 
+export const isTitleOnlyClassificationSource = (job = {}) => {
+  const caption = value => cleanSourceText(value).replace(/\s+/g, ' ').trim().toLowerCase();
+  const source = caption(getSourceDescription(job));
+  return Boolean(source && [job.originalTitle, job.title].some(title => source === caption(title)));
+};
+
 export const buildClassificationInput = (job = {}, { now = new Date(), identity = {} } = {}) => {
   const selectedDescription = selectClassificationDescription(job);
   const referenceYear = Number(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(now));
@@ -56,7 +63,9 @@ export const buildClassificationInput = (job = {}, { now = new Date(), identity 
   const sourceEmploymentType = cleanSourceText(job.sourceEmploymentType || job.atsEmploymentType || job.rawEmploymentType
     || (job.employmentTypeProvenance === 'source' ? job.employmentType : ''));
   const sourceFields = {
-    description: cleanSourceText(selectedDescription.text),
+    // A role caption is not an employer description. An old rewrite cannot
+    // supply missing source evidence; independently stated fields remain usable.
+    description: isTitleOnlyClassificationSource(job) ? '' : cleanSourceText(selectedDescription.text),
     minimumQualification: cleanSourceText(job.minimumQualification), preferredQualification: cleanSourceText(job.preferredQualification),
     qualifications: cleanSourceText(job.qualifications), responsibilities: cleanSourceText(job.responsibilities), requirements: cleanSourceText(job.requirements),
     experienceRequired: cleanSourceText([job.sourceExperienceRequired, job.experienceRequiredProvenance === 'source' ? job.experienceRequired : null]

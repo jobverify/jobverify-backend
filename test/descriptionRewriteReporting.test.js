@@ -114,6 +114,24 @@ test('an unpublished guarded-write result contributes inference cost without pub
   assert.equal(capacity.sourcePreservedBlocks, 0);
 });
 
+test('capacity separates word edits, model formatting and server formatting without inventing historical metrics', () => {
+  const capacity = reporting.summarizeRewriteCapacity([
+    { ok: true, published: true, generationRequests: 1, transportRetries: 1,
+      quality: { modelEditedBlocks: 1, modelWordingEditedBlocks: 0, modelLayoutEditedBlocks: 1, layoutParagraphBreaks: 2 } },
+    { ok: true, published: true, generationRequests: 1, transportRetries: 0,
+      quality: { modelEditedBlocks: 1, modelWordingEditedBlocks: 1, modelLayoutEditedBlocks: 0, layoutParagraphBreaks: 0 } },
+    { ok: true, published: true, quality: { modelEditedBlocks: 1 } },
+    { ok: true, published: false, transportRetries: 2,
+      quality: { modelEditedBlocks: 2, modelWordingEditedBlocks: 2, modelLayoutEditedBlocks: 0, layoutParagraphBreaks: 3 } },
+  ]);
+  assert.equal(capacity.modelEditedBlocks, 3);
+  assert.equal(capacity.modelWordingEditedBlocks, 1);
+  assert.equal(capacity.modelLayoutEditedBlocks, 1);
+  assert.equal(capacity.wordingMetricsRecordedDescriptions, 2);
+  assert.equal(capacity.layoutParagraphBreaks, 2);
+  assert.equal(capacity.transportRetries, 3);
+});
+
 
 test('structurally empty or unfinished worker artifacts cannot report successful handoff', () => {
   const complete = parts()[0];

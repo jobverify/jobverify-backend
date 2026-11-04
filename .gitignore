@@ -2,7 +2,7 @@
 node_modules
 
 # Saved scraper and test fixtures
-**/fixtures/
+**/fixtures/**
 **/test-fixtures/
 
 # Environment

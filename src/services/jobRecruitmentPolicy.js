@@ -3,7 +3,7 @@ const degree = /\b(?:bachelor(?:'s|s)?|master(?:'s|s)?|b\.?tech|m\.?tech|b\.e\.?
 const seniorRole = /\b(?:manager|director|vice president|chief|head of|senior|sr|principal|staff|lead|supervisor|expert)\b/i;
 const excludedStudentSubject = /\b(?:our (?:staff|employees|team)|employees|staff|mentoring|mentor|supervis(?:e|ing)|manage|managing|lead (?:our |the )?(?:graduate|student|intern)|recruitment programme|recruitment program|support (?:recent )?graduates)\b/i;
 const employerExperienceSubject = /\b(?:our|the|this)\s+(?:company|business|organization|organisation)\s+(?:has|have|with|brings?)\b|\bwe\s+(?:have|are\s+a\s+company\s+with)\b/i;
-const applicantExperienceRequirement = /\b(?:(?:applicants?|candidates?|you)\s+(?:(?:must|should)\s+)?|(?:must|should|required to)\s+)(?:have|possess|bring)\s+(?:(?:prior|previous|professional|relevant|work)\s+)*experience\b/i;
+const applicantExperienceRequirement = /\b(?:(?:applicants?|candidates?|you)\s+(?:(?:must|should)\s+)?|(?:must|should|required to)\s+)(?:have|possess|bring|demonstrate)\s+(?:(?:prior|previous|professional|relevant|work)\s+)*experience\b/i;
 const normalize = value => String(value || '').replace(/[\u2018\u2019]/g, "'").replace(/[\u2013\u2014]/g, '-');
 const clauses = text => normalize(text).split(/\n|[.;](?=\s|$)/).map(value => value.trim()).filter(Boolean);
 const negated = text => /\b(?:not|never|no longer|ineligible|cannot|can't|need not)\b/i.test(text);
@@ -29,6 +29,11 @@ export const entryLevelVacancyTitle = value => {
 };
 const applicantContext = text => /\b(?:applicants?|candidates?|you)\s+(?:(?:who|must|should)\s+)?(?:(?:have|has|are|be)\s+)?(?:(?:currently|recently|just)\s+)?(?:pursuing|studying|enrolled|completed|finished|graduated|freshers?|fresh graduates?|recent graduates?|new graduates?)\b|\b(?:can|may|must|should|eligible to|encouraged to)\s+apply\b/i.test(text);
 const startsQualification = text => /^(?:(?:required|minimum|basic)\s+(?:qualifications?|requirements?)\s*:\s*)?(?:(?:currently\s+)?(?:pursuing|studying|enrolled)|recently\s+completed|just\s+completed|freshers?|fresh graduates?|recent graduates?|new graduates?|no (?:prior |previous |professional |work )?experience (?:is )?(?:required|necessary))\b/i.test(text);
+const mixedFresherWelcome = /\b(?:freshers?|(?:fresh|recent|new) graduates?)\s+(?:and|or)\s+experienced\s+(?:candidates?|applicants?)\s+(?:are\s+)?(?:welcome|eligible|(?:may|can)\s+apply)\b/i;
+const mixedFresherEligibility = text => !negated(text) && !excludedStudentSubject.test(text)
+  && !/\b(?:if|unless|provided|subject to|minimum|at least|required|mandatory)\b/i.test(text)
+  && !applicantExperienceRequirement.test(text)
+  && mixedFresherWelcome.test(text);
 const unconditionalFresherEligibility = text => !negated(text) && !excludedStudentSubject.test(text)
   && !/\b(?:if|unless|provided|subject to)\b/i.test(text)
   && (/\b(?:freshers?|(?:fresh|recent|new) graduates?)\s+(?:are\s+)?(?:welcome|eligible|(?:may|can)\s+apply)\b/i.test(text)
@@ -90,7 +95,7 @@ export const collectRecruitmentFacts = input => {
     && /\b(?:pursuing|studying|enrolled|still (?:in|attending) college)\b/i.test(segment));
   const recent = segments.find(segment => !negated(segment) && (!excludedStudentSubject.test(segment)
     || (/^freshers?\s+with\b/i.test(segment) && !/\b(?:our (?:staff|employees|team)|employees|staff)\b/i.test(segment)))
-    && (applicantContext(segment) || startsQualification(segment)
+    && (applicantContext(segment) || startsQualification(segment) || mixedFresherEligibility(segment)
       || /\b(?:welcomes?|open to|suitable for|seeking)\s+(?:freshers?|fresh graduates?|recent graduates?|new graduates?)\b/i.test(segment))
     && (/\b(?:freshers?|fresh graduates?|recent graduates?|new graduates?|no (?:prior |previous |professional |work )?experience (?:is )?(?:required|necessary))\b/i.test(segment)
       || (degree.test(segment) && /\b(?:recently|just)\s+(?:(?:have|has)\s+)?(?:completed|finished|graduated)|\b(?:completed|finished)\b.{0,65}\brecently\b/i.test(segment))))
@@ -98,13 +103,18 @@ export const collectRecruitmentFacts = input => {
   const completed = segments.find(segment => !negated(segment) && !excludedStudentSubject.test(segment) && degree.test(segment)
     && /\b(?:completed|finished|graduated)\b/i.test(segment));
   const experienced = !internshipTitle && !/\btrainee\b/i.test(input.title) && seniorRole.test(input.title) ? input.title
-    : segments.find(segment => !negated(segment) && !excludedStudentSubject.test(segment)
+    : segments.find(original => {
+      // Ignore only the welcome phrase, retaining other requirements in the
+      // same sentence and its original qualification-section context.
+      const segment = mixedFresherEligibility(original) ? original.replace(mixedFresherWelcome, '') : original;
+      return !negated(segment) && !excludedStudentSubject.test(segment)
       && (!employerExperienceSubject.test(segment) || applicantExperienceRequirement.test(segment))
       && !/\b(?:preferred|desirable|desired|optional|a plus|a bonus|an advantage|nice[- ]to[- ]have|good[- ]to[- ]have)\b/i.test(segment)
       && (applicantExperienceRequirement.test(segment)
         || (!/\bintern(?:ship)?\b/i.test(segment) && /\bwe\s+(?:are\s+)?(?:looking\s+for|seeking|hiring)\s+(?:(?:an?|the)\s+)?experienced\b/i.test(segment))
-        || /\b(?:prior|previous|professional|relevant) (?:work )?experience\b.{0,60}\b(?:required|mandatory|must)|\bexperienced (?:professionals?|applicants?|candidates?)\b/i.test(segment)
-        || (qualificationSegments.has(segment) && /\b(?:prior|previous|professional|relevant) (?:work )?experience\b|\bexperience\s+(?:in|with|on|of|as|related|working)\b|\bworked\s+(?:on|in|with|as)\b/i.test(segment))));
+        || /\b(?:prior|previous|professional|relevant) (?:work )?experience\b.{0,60}\b(?:required|mandatory|must|essential)|\bexperienced (?:professionals?|applicants?|candidates?)\b/i.test(segment)
+        || (qualificationSegments.has(original) && /\b(?:prior|previous|professional|relevant) (?:work )?experience\b|\bexperience\s+(?:in|with|on|of|as|related|working)\b|\bworked\s+(?:on|in|with|as)\b/i.test(segment)));
+    });
   const graduationSegments = segments.filter(segment => !negated(segment) && !excludedStudentSubject.test(segment)
     && /\b(?:batch|cohort|graduat(?:e[sd]?|ing|ion)|pass[- ]?outs?)\b/i.test(segment));
   const cohorts = [...new Set([...(input.eligibleBatchesProvenance === 'source' ? input.eligibleBatches : []), ...graduationSegments.flatMap(segment => {

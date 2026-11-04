@@ -417,7 +417,8 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       if (!(error instanceof RewriteGenerationError) && !expectedAbort) throw error;
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
       if (Number.isInteger(error.generationRequests) || error.rawText) response = { generationRequests: error.generationRequests,
-        rawText: error.rawText, usage: error.usage, timings: error.timings, generations: error.generations };
+        rawText: error.rawText, usage: error.usage, timings: error.timings, generations: error.generations,
+        transportRetries: error.transportRetries };
       response = { ...response, errorDiagnostic: error.errorDiagnostic || captureRewriteError(error, { phase: 'generate', sourceTexts: [input.sourceDescription] }) };
       result = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout'
         : error.reason === 'model_context_budget' ? 'model_context_budget' : 'generation_error' };
@@ -447,7 +448,7 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       ...(response?.errorDiagnostic && { errorDiagnostic: response.errorDiagnostic }),
       generationRequests: response?.generationRequests ?? (assessment.ok && !response?.cachedModelPlan ? 1 : 0), renderedWithoutInference: response?.renderedWithoutInference,
       retrySkipped: response?.retrySkipped, quality: result.quality, usage: response?.usage, timings: response?.timings,
-      generations: response?.generations, reusedChunks: response?.reusedChunks,
+      generations: response?.generations, reusedChunks: response?.reusedChunks, transportRetries: response?.transportRetries,
       cacheSource: response?.cacheSource, sharedGeneration: response?.sharedGeneration });
   };
   const pending = new Set();

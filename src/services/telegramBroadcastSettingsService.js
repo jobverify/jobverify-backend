@@ -8,10 +8,13 @@ import { hasSavedFilters, jobMatchesSavedFilters } from './jobFilterMatcher.js';
 import { normalizeProfilePreferenceFilters } from '../utils/profilePreferenceFilters.js';
 import { ROLE_DOMAIN_OPTIONS, WORK_ARRANGEMENT_OPTIONS } from '../constants/jobFilterTaxonomy.js';
 import { DEFAULT_BROADCAST_TEMPLATE, validateBroadcastTemplate } from './telegramBroadcastTemplate.js';
+import { nextBroadcastWindowAt, validateBroadcastWindow, validatePostingWindows } from './telegramBroadcastWindow.js';
 
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 export const BROADCAST_DESTINATIONS = ['channel', 'group'];
 const asConfig = doc => ({ id: doc._id, enabled: doc.enabled, chatId: doc.chatId,
+  startTime: doc.startTime ?? '', endTime: doc.endTime ?? '',
+  postingWindows: doc.postingWindows,
   minIntervalMinutes: doc.minIntervalMinutes, maxIntervalMinutes: doc.maxIntervalMinutes, matchAll: doc.matchAll,
   filters: normalizeProfilePreferenceFilters(doc.filters), template: doc.template, revision: doc.revision });
 const defaults = id => asConfig({ _id: id, enabled: false, chatId: id === 'channel' ? '@jobverifychannel' : '@jobverifygroup',
@@ -37,7 +40,9 @@ async function withStats(config) {
   ]);
   const counts = Object.fromEntries(groups.map(group => [group._id, group.count]));
   return { ...config, stats: { queued: counts.queued || 0, sending: counts.sending || 0, sent: counts.sent || 0,
-    skipped: counts.skipped || 0, uncertain: counts.uncertain || 0, nextPostAt: config.enabled ? schedule?.nextPostAt ?? null : null,
+    skipped: counts.skipped || 0, uncertain: counts.uncertain || 0,
+    nextPostAt: config.enabled && schedule?.nextPostAt
+      ? nextBroadcastWindowAt(new Date(Math.max(Date.now(), new Date(schedule.nextPostAt).getTime())), config) : null,
     lastSentAt: schedule?.lastSentAt ?? null } };
 }
 
@@ -64,7 +69,7 @@ function validateFilters(input) {
 export function validateBroadcastSettings(id, body) {
   if (!BROADCAST_DESTINATIONS.includes(id)) fail('Choose channel or group.');
   if (!body || typeof body !== 'object' || Array.isArray(body)) fail('Provide destination settings.');
-  const keys = ['enabled', 'chatId', 'minIntervalMinutes', 'maxIntervalMinutes', 'matchAll', 'filters', 'template', 'revision'];
+  const keys = ['enabled', 'chatId', 'minIntervalMinutes', 'maxIntervalMinutes', 'startTime', 'endTime', 'postingWindows', 'matchAll', 'filters', 'template', 'revision'];
   if (Object.keys(body).some(key => !keys.includes(key))) fail('Unsupported destination setting.');
   if (typeof body.enabled !== 'boolean' || typeof body.matchAll !== 'boolean') fail('Enabled and matchAll must be true or false.');
   if (!Number.isInteger(body.revision) || body.revision < 0) fail('Provide the settings revision.');
@@ -75,9 +80,11 @@ export function validateBroadcastSettings(id, body) {
   const validChat = id === 'group' ? /^(@[a-z0-9_]{5,32}|-[1-9]\d*)$/ : /^(@[a-z0-9_]{5,32}|-100\d+)$/;
   if ((chatId || body.enabled) && !validChat.test(chatId)) fail('Provide a valid Telegram chat ID or @username.');
   const filters = validateFilters(body.filters);
+  const window = validateBroadcastWindow(body);
+  const postingWindows = validatePostingWindows(body);
   if (body.enabled && !body.matchAll && !hasSavedFilters(filters)) fail('Choose at least one job filter or explicitly select all jobs.');
   return { enabled: body.enabled, chatId, minIntervalMinutes: body.minIntervalMinutes, maxIntervalMinutes: body.maxIntervalMinutes,
-    matchAll: body.matchAll, filters, template: validateBroadcastTemplate(body.template), revision: body.revision };
+    ...window, postingWindows, matchAll: body.matchAll, filters, template: validateBroadcastTemplate(body.template), revision: body.revision };
 }
 
 export async function saveBroadcastSettings(id, body, adminId) {
@@ -92,9 +99,12 @@ export async function saveBroadcastSettings(id, body, adminId) {
         const schedule = await TelegramChannelSchedule.findById(chat).session(session).lean();
         if (schedule?.claimToken && schedule.claimExpiresAt > new Date()) fail('A Telegram post is in progress. Retry saving shortly.', 409);
         const changed = !current || !current.enabled || current.chatId !== next.chatId
+          || (current.startTime ?? '') !== next.startTime || (current.endTime ?? '') !== next.endTime
+          || JSON.stringify(current?.postingWindows) !== JSON.stringify(next.postingWindows)
           || current.minIntervalMinutes !== next.minIntervalMinutes || current.maxIntervalMinutes !== next.maxIntervalMinutes;
-        const nextPostAt = changed || !schedule?.nextPostAt
+        const candidate = changed || !schedule?.nextPostAt
           ? new Date(Date.now() + randomInt(next.minIntervalMinutes * 60000, next.maxIntervalMinutes * 60000 + 1)) : schedule.nextPostAt;
+        const nextPostAt = nextBroadcastWindowAt(new Date(Math.max(Date.now(), new Date(candidate).getTime())), next);
         await TelegramChannelSchedule.updateOne({ _id: chat }, { $set: { nextPostAt } }, { upsert: true, session });
       }
       if (current?.chatId && current.chatId !== next.chatId) {

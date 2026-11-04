@@ -131,7 +131,14 @@ test('reviewed employer aliases remain source-specific and retain their native r
     assert.match(proof.nativeResponseSHA256, /^[a-f0-9]{64}$/)
     assert.ok(proof.currentCorporateBindingURLs.length)
   }
-  for (const [source, name] of [['nasdaq', 'ADIN Adenza India Private Ltd.'], ['prysmiangroup', 'IN1786 Associated Cables Pvt. Ltd.'],
+  const group = remainingRecruitmentBatchProvider('prysmiangroup')
+  const member = group.nativeEmployerNameEvidence.find(row => row.nativeName === 'IN1786 Associated Cables Pvt. Ltd.')
+  assert.ok(group.nativeEmployerNames.includes(member.nativeName))
+  assert.equal(member.scopeRule, 'current-consolidated-entity-within-registered-group')
+  assert.match(member.entityReviewURL, /^https:\/\/www\.prysmian\.com\//)
+  assert.match(member.nativeResponseSHA256, /^[a-f0-9]{64}$/)
+  assert.ok(member.currentCorporateBindingURLs.length)
+  for (const [source, name] of [['nasdaq', 'ADIN Adenza India Private Ltd.'],
     ['magnainternational', 'Vehma Engineering Solutions (India) Private Limited'], ['unilever', '1609 HINDUSTAN UNILEVER LIMITED'],
     ['riotinto', ''], ['ssandctechnologies', 'GlobeOp India - GIFT City']]) {
     assert.ok(!remainingRecruitmentBatchProvider(source).nativeEmployerNames?.includes(name))

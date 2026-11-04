@@ -4,7 +4,7 @@ import test from 'node:test'
 // Set before importing the scraper, registration, or fixture helpers.
 globalThis.fetch=()=>{throw Error('OFFLINE_NETWORK_TRIPWIRE')}
 const anthem=await import('../../scraper/anthem/script.js')
-const{frozenPairTransport,scenario}=await import('./peopleStrongNativePair20261027.fixtures.js')
+const{scenario}=await import('./peopleStrongNativePair20261027.fixtures.js')
 const{readInventoryEvidence}=await import('../utils/inventoryEvidence.js')
 const{getScraperCatalog}=await import('../providers/index.js')
 
@@ -23,7 +23,7 @@ test('Anthem public metadata and search builder expose the current verified 45-r
 })
 
 test('Anthem factory injection reads a synthetic full native role rather than publishing its listing preview',async()=>{
- // Explicitly synthetic future role; the actual frozen Anthem board has zero.
+ // Explicitly synthetic future role, not a claim about the current public board.
  const s=scenario('anthem');let report
  const jobs=await anthem.createAnthemScraper({fetchPage:s.fetchPage,now:'2026-10-27T06:00:00Z'}).run({onReport:r=>{report=r}})
  assert.equal(jobs.length,1);assert.match(jobs[0].jobDescription,/Full native responsibilities & safety/)
@@ -37,9 +37,12 @@ test('Anthem factory injection reads a synthetic full native role rather than pu
  assert.equal(s.calls.some(c=>c.method==='GET'&&c.url.endsWith('organizationDetails?jobCode=P-9001')),true)
 })
 
-test('actual frozen Anthem corporate five/native zero stays partial and legacy listing-only injection fails closed',async()=>{
+test('synthetic Anthem corporate five/native zero stays partial and legacy listing-only injection fails closed',async()=>{
+ // Historical HTTP captures are unavailable. Exercise the count mismatch using
+ // the self-contained protocol scenario without claiming it is a live replay.
+ const s=scenario('anthem',{corporateCount:5,empty:true})
  let report
- const jobs=await anthem.createAnthemScraper().run({fetchPage:frozenPairTransport(),now:'2026-10-27T06:00:00Z',onReport:r=>{report=r}})
+ const jobs=await anthem.createAnthemScraper().run({fetchPage:s.fetchPage,now:'2026-10-27T06:00:00Z',onReport:r=>{report=r}})
  assert.deepEqual(jobs,[]);assert.equal(report.delegation.advertisedCount,5);assert.equal(report.reportedNativeTotal,0)
  assert.equal(report.advertisedCountMismatch,true);assert.equal(report.sourceScopeComplete,false)
  assert.equal(report.rawJobs,null);assert.equal(report.verifiedZeroInventory,false);assert.equal(readInventoryEvidence(jobs).status,'discovery-only')

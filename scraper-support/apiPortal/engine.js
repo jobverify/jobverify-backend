@@ -429,6 +429,11 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
       } catch (error) {
         recordRetryFailure()
         requestSignal?.throwIfAborted()
+        if (publicAccessRecovery && denialStatus(error)) {
+          error.abortRetries = true
+          deniedOrigins.set(origin, error)
+          throw error
+        }
         if (!rateLimit || !(/HTTP 429\b/i.test(String(error?.message)) || error?.status === 429)) {
           if (publicAccessRecovery && denialStatus(error)) deniedOrigins.set(origin, error)
           throw error

@@ -2,7 +2,7 @@ import 'dotenv/config';
 import mongoose from 'mongoose';
 import { runTailoredResumeWorker } from '../resume-tailoring/tailoredResumeWorker.js';
 import { reportResumeDiagnostic } from '../resume-tailoring/resumeDiagnostics.js';
-import { remainingBudget, resumeWorkerDeadline } from '../resume-tailoring/resumeBudget.js';
+import { remainingBudget, resumeWorkerDeadline, RESUME_WORKER_BUDGET_MS } from '../resume-tailoring/resumeBudget.js';
 
 try {
   if (!process.env.MONGO_URI) throw new Error('Missing worker configuration.');
@@ -13,7 +13,7 @@ try {
   // Only allowlisted stage codes and aggregate counts; no candidate content.
   console.log(JSON.stringify(counts));
   reportResumeDiagnostic({ stage: 'worker', code: counts.failed ? 'processing_failed' : 'passed',
-    seconds: (Date.now() - (Number.isFinite(start) ? start : deadline - 60000)) / 1000 });
+    seconds: (Date.now() - (Number.isFinite(start) ? start : deadline - RESUME_WORKER_BUDGET_MS)) / 1000 });
   if (counts.failed) process.exitCode = 1;
 } catch (error) {
   reportResumeDiagnostic({ stage: 'worker', code: error.code });

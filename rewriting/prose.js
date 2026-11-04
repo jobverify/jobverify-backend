@@ -1,16 +1,23 @@
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
 import { checkProseStatements, proseSectionRole } from './proseValidation.js';
 import { buildProseBlocks, proseHeadings } from './proseBlocks.js';
+import { formatProseLayout } from './proseLayout.js';
 import { createGenerationPool } from './sharedGeneration.js';
 import { RewriteWorkerError } from './worker.js';
 import { captureRewriteError } from './failureDiagnostics.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 
 // Match known HTML elements rather than arbitrary angle-bracket text such as
 // C++ vector<T>. The display renderer still escapes all returned text.
 const htmlTag = /<\/?(?:a|abbr|address|article|aside|b|bdi|bdo|blockquote|br|button|caption|cite|code|col|colgroup|dd|del|details|dfn|div|dl|dt|em|embed|figcaption|figure|font|footer|form|h[1-6]|header|hr|i|iframe|img|input|ins|label|li|main|mark|nav|object|ol|option|p|pre|q|rp|rt|ruby|s|samp|script|section|select|small|span|strike|strong|style|sub|summary|sup|table|tbody|td|textarea|tfoot|th|thead|time|tr|tt|u|ul|var|wbr)\b[^>]*>/i;
+// Reporting only, never an acceptance check. Capitalization, punctuation and
+// Markdown changes are distinguished from changes to the ordered source words.
+const wording = text => JSON.stringify(text.toLowerCase()
+  .replace(/\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b/g, value => value.replaceAll(',', ''))
+  .match(/[\p{L}\p{N}]+/gu) || []);
 
 const decode = value => value.replace(/&#(x[0-9a-f]+|\d+);/gi, (whole, code) => {
   const number = code[0].toLowerCase() === 'x' ? parseInt(code.slice(1), 16) : Number(code);
@@ -90,8 +97,9 @@ export const validateProseRewrite = (value, input, finishReason) => {
     offset += part.source.length;
   }
   // Spans may end inside a word or contain layout only. Keep source boundaries.
-  const description = value.parts.map(part => part.text === part.source ? part.source
+  const assembled = value.parts.map(part => part.text === part.source ? part.source
     : (part.source.match(/^\s*/)?.[0] || '') + part.text.trim() + (part.source.match(/\s*$/)?.[0] || '')).join('');
+  const layout = formatProseLayout(assembled), description = layout.text;
   const combinedReason = validateProsePart(proseSource(input), description);
   if (combinedReason) {
     const mismatch = checkProseStatements(source, description).diagnostic;
@@ -99,15 +107,19 @@ export const validateProseRewrite = (value, input, finishReason) => {
       ...mismatch, text: mismatch?.text || description.slice(0, 1200), code: combinedReason, phase: 'assembly',
     } };
   }
-  const modelEditedChunks = value.parts.filter(part => part.text.trim() !== part.source.trim()).length;
+  const editedParts = value.parts.filter(part => part.text.trim() !== part.source.trim());
+  const modelEditedChunks = editedParts.length;
+  const modelWordingEditedBlocks = editedParts.filter(part => wording(part.text) !== wording(part.source)).length;
   const sourceFallbackBlocks = value.parts.filter(part => part.fallbackReason).length;
   const outcome = modelEditedChunks ? 'model_edited' : sourceFallbackBlocks ? 'source_fallback'
     : value.parts.every(part => part.protected) ? 'metadata_only' : 'source_preserved';
   return { ok: true, description, wordCount: description.split(/\s+/).filter(Boolean).length,
     quality: { method: 'source_preserving_prose', outcome, sourceChunks: value.parts.length,
-      modelEditedBlocks: modelEditedChunks, sourcePreservedBlocks: value.parts.length - modelEditedChunks,
+      modelEditedBlocks: modelEditedChunks, modelWordingEditedBlocks,
+      modelLayoutEditedBlocks: modelEditedChunks - modelWordingEditedBlocks,
+      sourcePreservedBlocks: value.parts.length - modelEditedChunks,
       protectedSourceBlocks: value.parts.filter(part => part.protected).length,
-      sourceFallbackBlocks, fullSourceCoverage: true } };
+      sourceFallbackBlocks, layoutParagraphBreaks: layout.paragraphBreaks, fullSourceCoverage: true } };
 };
 
 const schema = { type: 'object', additionalProperties: false, required: ['text'], properties: { text: { type: 'string' } } };
@@ -142,11 +154,11 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
     const cacheKey = createHash('sha256').update(JSON.stringify(['prose-source-cache-v3', REWRITE_MODEL, sourceHash, allowSourceFallback])).digest('hex');
     const cacheFile = planCacheDir && path.join(path.resolve(planCacheDir), cacheKey + '.json');
     const partialFile = cacheFile && cacheFile + '.partial';
-    let generationRequests = 0, rawText, diagnostic;
+    let generationRequests = 0, transportRetries = 0, rawText, diagnostic;
     let currentGeneration, activeFragment, activeOffset, requestContext;
     let reusedChunks = 0;
-    const generations = [], usage = {}, timings = {};
-    const telemetry = () => ({ generations, usage, timings, reusedChunks });
+    const generations = [], usage = {}, timings = {}, sourceTokenCounts = new Map();
+    const telemetry = () => ({ generations, usage, timings, reusedChunks, transportRetries });
     const saveCache = async (file, value) => {
       if (!file) return;
       const temporary = file + '.' + randomUUID() + '.tmp';
@@ -164,6 +176,22 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       requestContext.httpStatus = response.status;
       if (!response.ok) throw new GenerationError('Local generator HTTP ' + response.status);
       return response;
+    };
+    // Template rendering and tokenization are read-only. A stale keep-alive
+    // socket must not discard a description's completed inference. Read the
+    // body inside this retry boundary too; headers alone are not a response.
+    // Generation is deliberately excluded because the server may have started it.
+    const postJson = async (route, body, phase) => {
+      for (let attempt = 0; ; attempt++) {
+        try { return await (await post(route, body, phase)).json(); }
+        catch (error) {
+          combined.throwIfAborted(); assertAlive();
+          if (attempt >= 2 || !['UND_ERR_SOCKET', 'ECONNRESET', 'EPIPE'].includes(error.cause?.code)) throw error;
+          transportRetries++;
+          onProgress?.({ generationRequests, transportRetries, rawText });
+          await delay(50 * (attempt + 1), undefined, { signal: combined });
+        }
+      }
     };
     const contextAt = offset => headings.findLast(heading => heading.start < offset)?.title || null;
     const acceptPart = async part => {
@@ -183,10 +211,10 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       activeOffset = offset;
       const sectionContext = contextAt(offset);
       const promptMessages = messages(fragment, sectionContext, validationFeedback);
-      const rendered = await (await post('/apply-template', { messages: promptMessages, add_generation_prompt: true,
-        chat_template_kwargs: { enable_thinking: false } }, 'apply_template')).json();
+      const rendered = await postJson('/apply-template', { messages: promptMessages, add_generation_prompt: true,
+        chat_template_kwargs: { enable_thinking: false } }, 'apply_template');
       if (typeof rendered.prompt !== 'string' || !rendered.prompt) throw new GenerationError('Missing generator prompt template');
-      const counted = await (await post('/tokenize', { content: rendered.prompt, add_special: true, parse_special: true }, 'tokenize_prompt')).json();
+      const counted = await postJson('/tokenize', { content: rendered.prompt, add_special: true, parse_special: true }, 'tokenize_prompt');
       if (!Array.isArray(counted.tokens) || !counted.tokens.length || counted.tokens.some(token => !Number.isInteger(token))) throw new GenerationError('Malformed generator token count');
       const headroom = REWRITE_MODEL.contextTokens - counted.tokens.length - 64;
       const split = async reason => {
@@ -200,16 +228,21 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       if (headroom < 256 || counted.tokens.length > REWRITE_MODEL.contextTokens / 4) return split('model_context_budget');
       // Count the complete source-shaped response, including JSON escaping.
       // Formatting room scales with this source, never with unused context.
-      const sourceCounted = await (await post('/tokenize', { content: JSON.stringify({ text: fragment }),
-        add_special: false, parse_special: false }, 'tokenize_source')).json();
-      if (!Array.isArray(sourceCounted.tokens) || !sourceCounted.tokens.length
-        || sourceCounted.tokens.some(token => !Number.isInteger(token))) throw new GenerationError('Malformed generator token count');
-      const outputAllowance = Math.min(headroom, Math.max(128, Math.ceil(sourceCounted.tokens.length * 1.5) + 64));
+      let sourceTokens = sourceTokenCounts.get(fragment);
+      if (sourceTokens === undefined) {
+        const sourceCounted = await postJson('/tokenize', { content: JSON.stringify({ text: fragment }),
+          add_special: false, parse_special: false }, 'tokenize_source');
+        if (!Array.isArray(sourceCounted.tokens) || !sourceCounted.tokens.length
+          || sourceCounted.tokens.some(token => !Number.isInteger(token))) throw new GenerationError('Malformed generator token count');
+        sourceTokens = sourceCounted.tokens.length;
+        sourceTokenCounts.set(fragment, sourceTokens);
+      }
+      const outputAllowance = Math.min(headroom, Math.max(128, Math.ceil(sourceTokens * 1.5) + 64));
       generationRequests++;
-      onProgress?.({ generationRequests });
+      onProgress?.({ generationRequests, transportRetries });
       const started = Date.now();
       currentGeneration = { started, detail: { sourceOffset: offset, sourceCharacters: fragment.length,
-        promptTokens: counted.tokens.length, sourceTokens: sourceCounted.tokens.length, outputAllowance, durationMs: 0,
+        promptTokens: counted.tokens.length, sourceTokens, outputAllowance, durationMs: 0,
         ...(validationFeedback && { corrective: true }) } };
       if (generations.length < 32) generations.push(currentGeneration.detail);
       const response = await post('/v1/chat/completions', { model, messages: promptMessages,
@@ -218,11 +251,11 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
         response_format: { type: 'json_schema', json_schema: { name: 'job_description_prose', strict: true, schema } } }, 'generate');
       requestContext.phase = 'read_completion';
       const result = response.headers.get('content-type')?.includes('text/event-stream')
-        ? await readCompletion(response, fragment, preview => onProgress?.({ rawText: preview, generationRequests })) : await response.json();
+        ? await readCompletion(response, fragment, preview => onProgress?.({ rawText: preview, generationRequests, transportRetries })) : await response.json();
       combined.throwIfAborted(); assertAlive();
       const choice = result?.choices?.[0];
       rawText = typeof choice?.message?.content === 'string' ? choice.message.content.slice(0, 2400) : undefined;
-      onProgress?.({ rawText, generationRequests });
+      onProgress?.({ rawText, generationRequests, transportRetries });
       for (const key of ['prompt_tokens', 'completion_tokens', 'total_tokens']) {
         if (Number.isFinite(result.usage?.[key])) usage[key] = (usage[key] || 0) + result.usage[key];
       }
@@ -354,6 +387,7 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       if (joined && !result.cachedModelPlan) copy.sharedGeneration = true;
       if (!ownsCost) {
         copy.generationRequests = 0;
+        copy.transportRetries = 0;
         copy.usage = undefined; copy.timings = undefined; copy.generations = [];
         if (copy.value) { copy.cachedModelPlan = true; copy.cacheSource = result.cachedModelPlan ? result.cacheSource : 'inflight'; }
       }

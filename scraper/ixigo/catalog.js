@@ -17,7 +17,7 @@ export const IXIGO_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'first-party-openings-api-with-numFound-completeness-check',
   extractionStrategy:
-    'verified-first-party-careers+openings-api+company-and-country-validation',
+    'verified-first-party-careers+openings-api+company-and-country-validation+native-detail-identity+full-description',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'ixigo.com',

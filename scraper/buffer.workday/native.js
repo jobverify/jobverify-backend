@@ -56,8 +56,18 @@ const clientInventory=html=>{
  need(imports.length===1,'ambiguous native role inventory module binding')
  let imported
  try{imported=JSON.parse(imports[0].slice(moduleId.length+2))}catch{throw failure('unsupported native role module binding')}
- need(Array.isArray(imported)&&imported[2]==='default'&&Array.isArray(imported[1])&&imported[1].some(chunk=>typeof chunk==='string'&&/^static\/chunks\/app\/%5Blocale%5D\/journey\/page-[\da-f]+\.js$/i.test(chunk)),'native role inventory employer route contradiction')
- return {qualified:true,count:0,pageClass:props.pageClass,moduleReference:roleNode[1],moduleChunks:imported[1]}
+ need(Array.isArray(imported)&&imported[2]==='default'&&Array.isArray(imported[1]),'unsupported native role module chunks')
+ const chunks=imported[1].map(chunk=>{
+  if(typeof chunk!=='string'||!/^\$[\da-f]+$/i.test(chunk))return chunk
+  const id=chunk.slice(1),records=lines.filter(line=>line.startsWith(id+':'))
+  need(records.length===1,'missing or ambiguous native module chunk reference')
+  let value
+  try{value=JSON.parse(records[0].slice(id.length+1))}catch{throw failure('nonliteral native module chunk reference')}
+  need(typeof value==='string'&&/^static\/chunks\/[\w/%.-]+\.js$/.test(value),'unsupported native module chunk reference')
+  return value
+ })
+ need(chunks.some(chunk=>typeof chunk==='string'&&/^static\/chunks\/app\/%5Blocale%5D\/journey\/page-[\da-f]+\.js$/i.test(chunk)),'native role inventory employer route contradiction')
+ return {qualified:true,count:0,pageClass:props.pageClass,moduleReference:roleNode[1],moduleChunks:chunks}
 }
 
 export const inspectEmptyPage=html=>{

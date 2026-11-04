@@ -5,6 +5,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { remainingBudget, withinResumeBudget } from './resumeBudget.js';
 import { resumeFailure } from './resumeDiagnostics.js';
+import { resumePdfText } from '../src/services/resumePdfText.js';
 
 const context = fileURLToPath(new URL('./compiler/', import.meta.url));
 const cache = fileURLToPath(new URL('../.cache/resume-compiler/', import.meta.url));
@@ -16,9 +17,10 @@ export function compilerFailure({ stderr = '', code, aborted = false } = {}) {
   return resumeFailure('compiler_failed');
 }
 const dockerEnv = () => Object.fromEntries(['PATH', 'SystemRoot', 'SYSTEMROOT', 'TEMP', 'TMP', 'DOCKER_HOST', 'DOCKER_CONTEXT', 'DOCKER_CONFIG', 'HOME', 'USERPROFILE'].filter(key => process.env[key]).map(key => [key, process.env[key]]));
-async function docker(args, { deadline, input, limit = 8 * 1024 * 1024 } = {}) {
+async function docker(args, { deadline, input, signal: parentSignal, limit = 8 * 1024 * 1024 } = {}) {
   return new Promise((resolve, reject) => {
-    const signal = AbortSignal.timeout(remainingBudget(deadline ?? Date.now() + 90000, 600000));
+    const timeout = AbortSignal.timeout(remainingBudget(deadline ?? Date.now() + 90000, 600000));
+    const signal = parentSignal ? AbortSignal.any([parentSignal, timeout]) : timeout;
     const child = spawn('docker', args, { windowsHide: true, env: dockerEnv(), stdio: ['pipe', 'pipe', 'pipe'], signal });
     let size = 0; const chunks = [];
     let stderr = '';
@@ -110,16 +112,14 @@ async function inspectPdfWithinBudget(pdf, { deadline, signal }) {
           }
         }
       }
-      const strings = [];
       for (const item of content.items) {
         if (typeof item.str !== 'string' || !item.str.trim()) continue;
-        strings.push(item.str + (item.hasEOL ? '\n' : ' '));
         const [a, b, c, d, x, y] = item.transform;
         const size = Math.hypot(c, d) || Math.hypot(a, b);
         if (size < 9.9) issues.push(`Page ${number} contains text smaller than 10 pt.`);
         if (x < -1 || y < -1 || x + item.width > viewport.width + 2 || y > viewport.height + 2) issues.push(`Page ${number} contains text outside the page boundary.`);
       }
-      const text = strings.join('');
+      const text = resumePdfText(content.items);
       if (text.trim().length < 10) issues.push(`Page ${number} has insufficient readable text.`);
       // Text extraction alone can accept white text or text hidden by a clipping
       // path. Render every page before publication to check actual visibility.
@@ -178,13 +178,16 @@ async function inspectPdfWithinBudget(pdf, { deadline, signal }) {
     throw error;
   } finally { signal.removeEventListener('abort', cancel); await task.destroy().catch(() => {}); }
 }
-export async function compileResumeLatex(latex, { deadline = Date.now() + 90000, image = preparedImage } = {}) {
+export async function compileResumeLatex(latex, { deadline = Date.now() + 90000, signal, image = preparedImage } = {}) {
   if (!image) throw new Error('The isolated PDF compiler has not been prepared.');
   const name = `resume-${randomUUID()}`;
   try {
-    const pdf = await docker(compilerArguments({ name, image }), { input: latex, deadline: Math.min(deadline, Date.now() + 90000), limit: 5 * 1024 * 1024 });
-    try { return await inspectResumePdf(pdf); }
-    catch (error) { throw Object.assign(error, { code: 'pdf_invalid' }); }
+    const pdf = await docker(compilerArguments({ name, image }), { input: latex, signal, deadline: Math.min(deadline, Date.now() + 90000), limit: 5 * 1024 * 1024 });
+    try { return await inspectResumePdf(pdf, { deadline, signal }); }
+    catch (error) { if (error.code === 'time_limit') throw error; throw Object.assign(error, { code: 'pdf_invalid' }); }
+  } catch (error) {
+    if (signal?.aborted || Date.now() >= deadline) throw resumeFailure('time_limit', { statusCode: 504 });
+    throw error;
   } finally {
     // Aborting the CLI alone can leave a running container. Remove it explicitly.
     await docker(['rm', '--force', name], { deadline: Date.now() + 10000 }).catch(() => {});
