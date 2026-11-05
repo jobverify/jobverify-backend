@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { collectOracleRequisitionJobs } from '../../scraper-support/utils/oracleRequisitionInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -200,8 +201,9 @@ export const extractJobDetail = (payload, listing = {}) => {
   }
 }
 
-const defaultFetchJson = async (url) => {
+const defaultFetchJson = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'application/json,text/plain,*/*',
@@ -213,50 +215,18 @@ const defaultFetchJson = async (url) => {
 }
 
 export const createHoneywellScraper = ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : 1,
+  maxPages = Infinity,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   fetchJson = defaultFetchJson,
+  signal,
 } = {}) => ({
-  async run() {
-    const jobs = []
-
-    for (let page = 0; page < maxPages; page += 1) {
-      const payload = await fetchJson(buildSearchUrl({ page }))
-      const pageJobs = extractSearchResults(payload)
-
-      for (const listing of pageJobs) {
-        let detail = listing
-
-        try {
-          const detailPayload = await fetchJson(buildJobDetailApiUrl(listing.jobId))
-          detail = extractJobDetail(detailPayload, listing)
-        } catch {
-          detail = listing
-        }
-
-        jobs.push({
-          ...detail,
-          source: 'honeywell',
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-
-      const result = payload?.items?.[0] || {}
-      const limit = Number(result.Limit) || DEFAULT_LIMIT
-      const totalCount = Number(result.TotalJobsCount)
-      if (pageJobs.length < limit || (Number.isFinite(totalCount) && (page + 1) * limit >= totalCount)) break
-    }
-
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
-  },
+  run: () => collectOracleRequisitionJobs({
+    source: 'honeywell', siteNumber: SITE_NUMBER, buildSearchUrl, buildJobDetailApiUrl,
+    extractSearchResults, extractJobDetail, maxPages, maxJobs, signal, fetchJson,
+  }),
 })
 
-export const run = async () => createHoneywellScraper().run()
+export const run = async options => createHoneywellScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

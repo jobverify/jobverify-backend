@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { QUBOLE_INDIA_CATALOG as PROVIDER_METADATA } from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -69,19 +71,107 @@ const normalizeUrlForComparison = (value) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal, maxResponseBytes, throwIfAborted }) => {
+  throwIfAborted()
   const response = await fetch(url, {
+    method: 'GET',
+    signal,
+    credentials: 'omit',
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    redirect: 'follow',
+    redirect: 'manual',
   })
+  throwIfAborted()
+  const discardBody = () => {
+    try { Promise.resolve(response.body?.cancel()).catch(() => {}) } catch {}
+  }
+  if (response.status !== 200) {
+    discardBody()
+    return { status: response.status, url: response.url, html: '' }
+  }
+  if (!/text\/html|application\/xhtml\+xml/i.test(response.headers.get('content-type') || '')) {
+    discardBody()
+    throw new Error('Qubole India public careers read expected HTML')
+  }
+
+  const reader = response.body?.getReader()
+  const chunks = []
+  let bytes = 0
+  let complete = false
+  const cancel = () => { if (reader) Promise.resolve(reader.cancel()).catch(() => {}) }
+  signal.addEventListener('abort', cancel, { once: true })
+  try {
+    while (reader) {
+      throwIfAborted()
+      const { done, value } = await reader.read()
+      throwIfAborted()
+      if (done) break
+      bytes += value.byteLength
+      if (bytes > maxResponseBytes) throw new Error('Qubole India public careers body byte limit exceeded')
+      chunks.push(value)
+    }
+    complete = true
+  } finally {
+    signal.removeEventListener('abort', cancel)
+    if (!complete) cancel()
+    reader?.releaseLock()
+  }
 
   return {
     status: response.status,
     url: response.url,
-    html: await response.text(),
+    html: Buffer.concat(chunks).toString('utf8'),
+    fetchedAt: new Date().toISOString(),
+  }
+}
+
+const boundedLimit = (value, fallback, maximum, name) => {
+  const limit = value ?? fallback
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > maximum) {
+    throw new Error(`Qubole India invalid ${name} limit`)
+  }
+  return limit
+}
+
+// A single first-party sentinel read has no pagination, job details or retries.
+// Race the whole read so an injected transport or stalled body cannot ignore it.
+const readWithDeadline = async (options, operation) => {
+  const callerSignal = options.signal
+  if (callerSignal?.aborted) throw callerSignal.reason
+  const requestTimeoutMs = boundedLimit(options.requestTimeoutMs ?? options.timeoutMs, 10000, 20000, 'request deadline')
+  const sourceTimeoutMs = boundedLimit(options.sourceTimeoutMs, 20000, 60000, 'source deadline')
+  const maxResponseBytes = boundedLimit(options.maxResponseBytes, 2000000, 2000000, 'body byte')
+  boundedLimit(options.maxRequests, 1, Number.MAX_SAFE_INTEGER, 'request')
+  boundedLimit(options.maxPages, 1, Number.MAX_SAFE_INTEGER, 'page')
+
+  const duration = Math.min(requestTimeoutMs, sourceTimeoutMs)
+  const deadline = performance.now() + duration
+  const controller = new AbortController()
+  const signal = callerSignal ? AbortSignal.any([callerSignal, controller.signal]) : controller.signal
+  const timeoutError = new Error(`Qubole India ${sourceTimeoutMs < requestTimeoutMs ? 'source' : 'request'} deadline exceeded`)
+  const throwIfAborted = () => {
+    if (callerSignal?.aborted) throw callerSignal.reason
+    if (performance.now() >= deadline && !controller.signal.aborted) controller.abort(timeoutError)
+    signal.throwIfAborted()
+  }
+  const timer = setTimeout(() => controller.abort(timeoutError), duration)
+  let onAbort
+  try {
+    const aborted = new Promise((_, reject) => {
+      onAbort = () => reject(callerSignal?.aborted ? callerSignal.reason : signal.reason)
+      signal.addEventListener('abort', onAbort, { once: true })
+      if (signal.aborted) onAbort()
+    })
+    const pending = Promise.resolve().then(() => {
+      throwIfAborted()
+      return operation({ ...options, signal, maxResponseBytes, requestTimeoutMs, sourceTimeoutMs, throwIfAborted })
+    }).then(result => { throwIfAborted(); return result })
+    return await Promise.race([pending, aborted])
+  } finally {
+    clearTimeout(timer)
+    if (onAbort) signal.removeEventListener('abort', onAbort)
   }
 }
 
@@ -95,6 +185,12 @@ export const extractOpenPositionsUrl = (html = '') => {
 
 export const pageExposesPublicJobListings = (html = '') => {
   const page = String(html ?? '')
+  const doc = readNativeDocument(page)
+  if (doc.nodes(node => ['a', 'area'].includes(node.tag) && node.attrs.href).some(node => (
+    normalizeUrlForComparison(node.attrs.href) !== normalizeUrlForComparison(CAREERS_URL)
+    && PUBLIC_JOB_SIGNAL_PATTERNS.some(pattern => pattern.test(`${node.attrs.href} ${doc.text(node)}`))
+  ))) return true
+
   if (PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(page))) {
     const openPositionsUrl = extractOpenPositionsUrl(page)
     if (!openPositionsUrl) return true
@@ -121,25 +217,42 @@ export const hasOfficialCareersPageSignal = (html = '') => {
 }
 
 export const createQuboleIndiaScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
+  async run(options = {}) {
+    const { fetchPage = defaultFetchPage } = options
+    return readWithDeadline(options, async readOptions => {
+      const careersPage = await fetchPage(CAREERS_URL, readOptions)
+      readOptions.throwIfAborted()
+      if (Buffer.byteLength(String(careersPage.html ?? ''), 'utf8') > readOptions.maxResponseBytes) {
+        throw new Error('Qubole India public careers body byte limit exceeded')
+      }
 
-    if (
-      careersPage.status !== 200
-      || normalizeUrlForComparison(careersPage.url) !== normalizeUrlForComparison(CAREERS_URL)
-    ) {
-      throw new Error('Qubole India verified official careers page no longer matches the known public surface')
-    }
+      if (
+        careersPage.status !== 200
+        || normalizeUrlForComparison(careersPage.url) !== normalizeUrlForComparison(CAREERS_URL)
+      ) {
+        throw new Error('Qubole India verified official careers page no longer matches the known public surface')
+      }
 
-    if (pageExposesPublicJobListings(careersPage.html)) {
-      throw new Error('Qubole India careers page now appears to expose public jobs')
-    }
+      if (pageExposesPublicJobListings(careersPage.html)) {
+        throw new Error('Qubole India careers page now appears to expose public jobs')
+      }
 
-    if (!hasOfficialCareersPageSignal(careersPage.html)) {
-      throw new Error('Qubole India verified official careers page no longer matches the known public surface')
-    }
+      if (!hasOfficialCareersPageSignal(careersPage.html)) {
+        throw new Error('Qubole India verified official careers page no longer matches the known public surface')
+      }
 
-    return []
+      return attachInventoryEvidence([], {
+        status: 'discovery-only',
+        surface: CAREERS_URL,
+        firstParty: true,
+        listingComplete: false,
+        pagesFetched: 1,
+        reportedTotal: null,
+        indiaFacetCount: null,
+        verifiedAt: careersPage.fetchedAt ?? null,
+        reason: 'Official Qubole careers page self-loops its open positions link; no enumerable public inventory is published and native counts remain unknown.',
+      })
+    })
   },
 })
 

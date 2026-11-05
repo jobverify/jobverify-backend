@@ -39,7 +39,7 @@ const officialCandidateExperienceHtml = `
 
 const listingPayload = {
   items: [{
-    Limit: 5,
+    Limit: 24,
     TotalJobsCount: 2,
     requisitionList: [
       {
@@ -245,6 +245,7 @@ test('run verifies the official careers handoff before calling the public Oracle
   assert.deepEqual(requestedJsonUrls, [
     chaseIndia.buildSearchUrl(),
     chaseIndia.buildJobDetailApiUrl('210730346'),
+    chaseIndia.buildSearchUrl(),
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'chaseindia')

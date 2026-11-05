@@ -56,7 +56,7 @@ const sameCity = (raw, standardized) => {
   const city = value => {
     const name = clean(value).toLowerCase()
     // Demonstrated role-owned campus/city aliases, not arbitrary suffix removal.
-    const alias = { 'bangalore btp': 'bangalore', 'bangalore mg': 'bangalore', melaka: 'malacca' }[name] || name
+    const alias = { 'bangalore btp': 'bangalore', 'bangalore mg': 'bangalore', melaka: 'malacca', 'porto (maia)': 'porto' }[name] || name
     return clean(CANONICAL_CITIES[alias] || alias).toLowerCase()
   }
   const left = city(rawParts[0]), right = city(standardizedParts[0])
@@ -67,12 +67,16 @@ const sameCity = (raw, standardized) => {
 // by its matching role-owned standardized city/country; other roles, employer
 // headquarters and the requested search country cannot supply that evidence.
 export const readEightfoldLocationScope = record => {
-  if (!Array.isArray(record?.locations) || !record.locations.length
+  if (!Array.isArray(record?.locations)
     || record.locations.some(value => !clean(value))) fail('native locations missing or malformed')
   const raw = record.locations.map(clean)
   const standardized = record.standardizedLocations
   if (standardized != null && (!Array.isArray(standardized) || standardized.length !== raw.length
     || standardized.some(value => !clean(value)))) fail('native location arrays disagree')
+  // Eightfold also returns active postings with two empty native arrays. They
+  // supply no work country; retain that uncertainty without losing other roles.
+  if (!raw.length) return { location: null, country: null, indiaLocations: [],
+    nativeLocations: [], standardizedLocations: standardized == null ? null : [], unresolved: true }
   const scopes = raw.map((location, index) => {
     const explicit = explicitCountry(location)
     if (standardized == null) return { country: explicit, location, unresolved: explicit == null }

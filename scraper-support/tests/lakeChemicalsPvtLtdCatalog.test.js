@@ -12,12 +12,12 @@ test('Lake Chemicals is registered as a verified first-party scraper without ali
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Lake Chemicals Pvt. Ltd')
   assert.equal(provider.companyCareerPage, 'https://lakechemicals.com/job-search')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'official-company-native-card-worksites')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'complete-first-party-cards-opening-closing')
+  assert.equal(provider.paginationStrategy, 'paired-current-company-and-role-pages;company-scope-unqualified')
   assert.equal(
     provider.extractionStrategy,
-    'native-role-cards+full-criteria+explicit-assigned-worksite-country+closing-reconciliation',
+    'whole-native-card-models+explicit-assigned-worksite-country+paired-original-evidence',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

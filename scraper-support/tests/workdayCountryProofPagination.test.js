@@ -69,6 +69,29 @@ for (const [name, change] of [
   ['changed closing role', pages => { pages[3].jobPostings = [{ ...pages[3].jobPostings[0], title: 'Changed role' }] }],
 ]) {
   test(`complete-board zero-sentinel pagination rejects ${name}`, async t => {
-    await assert.rejects(replay(t, change), { name: 'WorkdayIncompleteListingError' })
+    await assert.rejects(replay(t, pages => {
+      change(pages)
+      // Opening drift now receives one clean restart. Keep the bad opening
+      // on both attempts; closing-only failures still reject in their phase.
+      if (name.includes('initial')) pages.splice(2, 0, structuredClone(pages[0]), structuredClone(pages[1]))
+    }), { name: 'WorkdayIncompleteListingError' })
   })
 }
+
+test('complete-board pagination restarts once after overlapping offset pages and still reconciles closing IDs', async t => {
+  const jobs = await replay(t, pages => {
+    pages.unshift(structuredClone(pages[0]), { total: 21, jobPostings: [structuredClone(pages[0].jobPostings[0])] })
+  })
+  assert.equal(jobs.length, 0)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 21)
+  assert.equal(readInventoryEvidence(jobs).pagesFetched, 6)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+})
+
+test('persistent overlapping Workday pages remain an upstream inventory failure after two bounded passes', async t => {
+  await assert.rejects(replay(t, pages => {
+    pages[1] = { total: 21, jobPostings: [structuredClone(pages[0].jobPostings[0])] }
+    pages.splice(2, 0, structuredClone(pages[0]), structuredClone(pages[1]))
+  }), error => error.name === 'WorkdayIncompleteListingError' && error.softFailure === true
+    && error.failureKind === 'upstream_inventory_changed')
+})

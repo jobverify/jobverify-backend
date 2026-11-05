@@ -277,7 +277,7 @@ export const extractJobDetail = (html, { sourceUrl, fallbackListing } = {}) => {
   // actual visible role criteria before the application form instead.
   const document = readNativeDocument(page)
   const main = document.nodes(node => node.tag === 'main')[0]
-  const visibleDescription = main && requiredSkills.length
+  const visibleDescription = main && (requiredSkills.length || requirements.length)
     ? document.text(main).split('Submit your Application')[0].trim() : null
   const description = normalizeWhitespace(visibleDescription || jobPosting?.description || extractMetaDescription(page))
   if (jobPosting?.hiringOrganization?.name && jobPosting.hiringOrganization.name !== COMPANY) {

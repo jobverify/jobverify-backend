@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { createDarwinboxScraper } from '../darwinbox/script.js'
+import { selectReviewedCandidateClient } from '../darwinbox/reviewedCandidateClient.js'
 import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { readNativeDocument, decodeNativeEntities, extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
 import { readVisibleNativeDocument } from '../../scraper-support/utils/visibleNativeHtml.js'
@@ -82,9 +83,10 @@ export async function runReviewedThirdWaveDarwinboxInventory(spec, options = {})
     const base = new URL(bases[0].attrs.href, spec.handoff)
     fail(base.href === origin + '/ms/candidatev2/', 'candidate base identity changed')
     const scripts = doc.nodes(n => n.tag === 'script' && n.attrs.src).map(n => new URL(n.attrs.src, base).href)
-    fail(scripts.includes(spec.review.clientUrl), 'active candidate client changed')
+    const release = selectReviewedCandidateClient(spec, scripts)
+    fail(release, 'active candidate client changed')
     const shellSignature = hash(body)
-    if (shellSignature !== spec.review.rendererSha256) reasons.add('unreviewed-native-candidate-shell')
+    if (shellSignature !== release.rendererSha256) reasons.add('unreviewed-native-candidate-shell')
     const visible = readVisibleNativeDocument(body), root = visible.nodes(n => n.tag === 'root')[0]
     const scope = {
       // The complete byte pin includes all active text, attributes, inline and
@@ -95,8 +97,8 @@ export async function runReviewedThirdWaveDarwinboxInventory(spec, options = {})
       frames: doc.nodes(n => n.tag === 'iframe').map(n => n.attrs),
       links: visible.nodes(n => n.tag === 'a' && n.attrs.href).map(n => ({ href: n.attrs.href, text: visible.text(n) })),
     }
-    const script = await request(spec.review.clientUrl, { headers: { 'User-Agent': CHROME, Referer: spec.handoff } })
-    fail(script.response.status === 200 && hash(script.body) === spec.review.clientSha256, 'reviewed public API client changed')
+    const script = await request(release.clientUrl, { headers: { 'User-Agent': CHROME, Referer: spec.handoff } })
+    fail(script.response.status === 200 && hash(script.body) === release.clientSha256, 'reviewed public API client changed')
     return scope
   }
   async function json(path) {

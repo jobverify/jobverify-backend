@@ -24,6 +24,8 @@ export const googleIdentity = {
       name: String(payload.name ?? "").trim(),
       picture: payload.picture ? String(payload.picture) : null,
       sub: String(payload.sub ?? ""),
+      issuedAt: payload.iat,
+      hostedDomain: typeof payload.hd === 'string' ? payload.hd : '',
     };
   },
 };

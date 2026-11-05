@@ -207,7 +207,7 @@ export const createFinacusSolutionsScraper = (defaults = {}) => ({
     const combined = {...defaults,...options}
     if (!options.fetchText && !options.fetchDetailText) return runNativeFinacus(combined)
     const jobs = await createLegacyFinacusSolutionsScraper(defaults).run(options)
-    return attachInventoryEvidence(jobs.map(job=>({...job,sourceListingComplete:false,sourceDetailComplete:false,sourceDetailStatus:'legacy-native-contract-unqualified'})),{status:'discovery-only',surface:CAREERS_PAGE_URL,firstParty:true,listingComplete:false,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason:'legacy-unreconciled-native-contract'})
+    return attachInventoryEvidence(jobs.map(job=>({...job,nativeLocation:job.nativeLocation||job.location,country:null,city:null,location:null,locations:[],sourceScopeComplete:false,lifecycleCleanupAllowed:false,sourceListingComplete:false,sourceDetailComplete:false,sourceDetailFailureKind:'native-country-unqualified-legacy',sourceDetailStatus:'legacy-native-contract-unqualified'})),{status:'discovery-only',surface:CAREERS_PAGE_URL,firstParty:true,listingComplete:false,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason:'legacy-unreconciled-native-contract'})
   },
 })
 

@@ -272,7 +272,9 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "americanelectricpower",
@@ -652,7 +654,9 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "bapcoenergies",
@@ -772,7 +776,9 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "beekeeper",
@@ -931,7 +937,9 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "boozallen",
@@ -2149,7 +2157,9 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "coopercompanies",
@@ -2203,7 +2213,11 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "nativeEmployerNames": [
+      "CooperSurgical"
+    ],
+    "oracleCompanyEmployerFlexField": "Company"
   },
   {
     "source": "cyera",
@@ -3044,7 +3058,9 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "exlservice",
@@ -3474,7 +3490,14 @@
       "sourceScopeComplete": false,
       "lifecycleCleanupAllowed": false
     },
-    "verificationDisposition": "runtime-native-inventory-read-no-proven-india"
+    "verificationDisposition": "runtime-native-inventory-read-no-proven-india",
+    "preferIndiaInventory": true,
+    "searchIndiaWithoutFacet": true,
+    "prioritizeRecruitmentSearch": true,
+    "nativeEmployerStatement": {
+      "name": "Four Seasons",
+      "prefix": "Four Seasons is powered by our people."
+    }
   },
   {
     "source": "freseniusmedicalcare",
@@ -3839,7 +3862,9 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "guardianmediagroup",
@@ -4758,7 +4783,12 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true,
+    "nativeEmployerNames": [
+      "Intercontinental Exchange Holdings, Inc."
+    ]
   },
   {
     "source": "internationalpaper",
@@ -6438,7 +6468,35 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "nativePhenomBrandEmployerBindings": [
+      {
+        "refNum": "AIRAGLOBAL",
+        "brand": "MOVE",
+        "employer": "AirAsia Technology Center India Private Limited"
+      }
+    ],
+    "nativePhenomBrandEmployerBindingEvidence": {
+      "nativeRoleId": "JR0034139",
+      "fields": [
+        "jobDetail.data.job.companyBrand",
+        "jobDetail.data.job.companyName",
+        "jobDetail.data.job.uniqueValue.refNum"
+      ],
+      "nativeResponseURL": "https://mycareer.airasia.com/gb/en/job/JR0034139/Executive%2C%20Desktop%20Support%20(India)",
+      "nativeResponseSHA256": "f03c81180ed90b6347cb2084191588cced8d88d921e57bb872cbe5c25f096a5d",
+      "entityReview": [
+        {
+          "url": "https://newsroom.airasia.com/news/en-move-announcement",
+          "status": 200,
+          "bodySHA256": "64ab4b59ed34960c6e2f665b1a208719d6a27e37f4079c1c0e48f0e501ba7212",
+          "observedAt": "2026-11-04T20:58:44.058Z"
+        }
+      ],
+      "scopeRule": "own-full-Phenom-role-must-declare-exact-MOVE-brand-employer-and-account;group-Workday-employers-are-not-aliases",
+      "sourceScopeComplete": false,
+      "lifecycleCleanupAllowed": false
+    }
   },
   {
     "source": "airfranceklm",
@@ -10839,7 +10897,8 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "deduplicatePhenomNativeIds": true
   },
   {
     "source": "bouygues",
@@ -16645,7 +16704,9 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "dapulse",
@@ -26079,7 +26140,9 @@
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
     "lifecycleCleanupAllowed": false,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "indianhotelscompany",

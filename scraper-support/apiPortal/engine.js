@@ -324,8 +324,13 @@ const validateInventory = (payload, records, rules) => {
   }
 }
 
-export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJson, signal }) => {
+export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJson, signal, fetchImpl, now, maxJobs }) => {
   signal?.throwIfAborted()
+  if (provider.nativeCurrentCareerSurface !== undefined) {
+    const {runCurrentSlbCareers,SLB_CURRENT_SURFACE}=await import('./slbCurrentCareers.js')
+    if(provider.nativeCurrentCareerSurface!==SLB_CURRENT_SURFACE)throw Error('Unsupported current native company careers surface')
+    return runCurrentSlbCareers({provider,fetchImpl,signal,now,maxJobs})
+  }
   const config = normalizeApiPortalConfig(provider.config || {})
   const traversalMode = config.pagination.traversalMode
   if (traversalMode != null && !['interleaved', 'staged-snapshot'].includes(traversalMode)) {
@@ -497,6 +502,10 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         // Reconcile the full feed above, but only hydrate explicitly selected
         // public records. Draft/private records are not missing job details.
         if (config.recordFilter && !passesResultFilter(record, config.recordFilter)) return null
+        if (config.mapping.location?.strategy === 'eightfold-location' && !record.locations.length) {
+          markIncomplete('native-location-scope-unresolved')
+          return null
+        }
         let detailPayload = {}
         let detailObservation = 'not-requested'
 

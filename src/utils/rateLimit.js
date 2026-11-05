@@ -14,7 +14,9 @@ const EXPENSIVE_JOB_READ_PATHS = new Set([
 const normalizeEnvValue = (value) => String(value ?? "").trim().toLowerCase();
 const normalizeMethod = (value) => String(value ?? "").trim().toUpperCase();
 
-export const getRequestPath = (req = {}) => String(req.originalUrl ?? req.url ?? "").split("?")[0];
+// Match Express's default case-insensitive, non-strict routing policy.
+export const getRequestPath = (req = {}) => String(req.originalUrl ?? req.url ?? "")
+  .split("?")[0].toLowerCase().replace(/\/+$/, '') || '/';
 
 export const isReadOnlyRequest = (req = {}) => READ_ONLY_METHODS.has(normalizeMethod(req.method));
 

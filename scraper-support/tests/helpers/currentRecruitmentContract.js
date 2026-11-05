@@ -57,10 +57,20 @@ export function registerCurrentRecruitmentContract(source, label = 'current') {
       assert.notEqual(readInventoryEvidence(jobs).status, 'verified-empty')
     }
   })
-  test(`${source} ${label}: blocked and failed current pages are explicit coverage failures`, async t => {
+  test(`${source} ${label}: blocked and failed current pages retain their external failure classification`, async t => {
     guard(t)
     for (const status of [403, 503]) await assert.rejects(run({ fetchPage: async url => ({ status, url, html: '' }) }),
-      error => error.failureKind === 'coverage_gap' && error.recruitmentObservations.receipts.some(row => row.status === status))
+      error => {
+        assert.equal(error.failureKind, status === 403 ? 'blocked_or_access_denied' : 'network_or_timeout')
+        assert.equal(error.status, status)
+        assert.equal(error.upstreamOutage, true)
+        assert.equal(error.abortRetries, true)
+        assert.equal(error.recruitmentObservations.sourceScopeComplete, false)
+        assert.equal(error.recruitmentObservations.lifecycleCleanupAllowed, false)
+        assert.ok(error.recruitmentObservations.receipts.some(row => row.status === status))
+        assert.match(error.message, new RegExp('HTTP ' + status))
+        return true
+      })
   })
   test(`${source} ${label}: an unrelated redirect cannot authorize a role or guessed API`, async t => {
     guard(t)

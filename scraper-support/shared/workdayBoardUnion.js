@@ -180,6 +180,15 @@ export async function runVerifiedWorkdayBoardUnion({source,company,boards,employ
       const provenance={site:board.site,tenant:board.tenant,nativePostingUid:info.id,requisitionId:info.jobReqId,canonicalUrl:info.externalUrl,nativeEmployer:employer.trim()||null}
       const mapped={...job,jobId:info.jobReqId,country:'India',sourceUrl:info.externalUrl,applyUrl:info.externalUrl,link:info.externalUrl,postedAt,closingDate,sourceClosingDateIsExact:false,
         sourceDescription:info.jobDescription,jobDescription:toPlainText(info.jobDescription),nativeEmployer:employer.trim()||null,nativeBoardProvenance:[provenance]}
+      // Opt-in audit records retain the full authoritative public native model
+      // and its date precision, after the same closing identity/content checks.
+      if(options.retainNativeProof===true)Object.assign(mapped,{
+        nativeSourceRecord:structuredClone(payload),nativeHiringOrganization:structuredClone(payload.hiringOrganization),
+        postingDate:info.startDate,postedAt:info.startDate,postingDatePrecision:'calendar-date',
+        sourcePostedDateRaw:info.startDate,firstEverPostedAt:null,
+        closingDate:info.endDate??null,closingDatePrecision:info.endDate?'calendar-date':null,
+        applicationVisited:false,
+      })
       const signature=JSON.stringify([mapped.title,mapped.sourceDescription,mapped.locations,postedAt,closingDate])
       const key=board.tenant+'|'+info.jobReqId+'|'+(employer.trim()||'')
       const existing=requisitions.get(info.jobReqId)

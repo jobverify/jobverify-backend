@@ -271,7 +271,16 @@ test('Apexon run validates the first-party careers flow and returns normalized I
     jobs.map((job) => job.title),
     ['Architect - Data Engineering', 'SRE (Python)'],
   )
-  assert.deepEqual(jobs[0], {
+  const legacyFields = ({
+    nativeSourceRecord, nativeEmployerBinding, nativeHiringOrganization, nativeBoardListingComplete,
+    nativeCollectionFailures, sourceDescription, sourceDetailComplete, sourceDetailUrl,
+    sourceScopeComplete, sourceListingComplete, lifecycleCleanupAllowed, applicationVisited, ...job
+  }) => job
+  assert.ok(jobs.every(job => job.sourceDetailComplete === true && job.sourceScopeComplete === false
+    && job.lifecycleCleanupAllowed === false && job.applicationVisited === false
+    && job.nativeSourceRecord.detail.requisitionId === job.requisitionId
+    && job.sourceDescription === job.jobDescription))
+  assert.deepEqual(legacyFields(jobs[0]), {
     title: 'Architect - Data Engineering',
     company: 'Apexon',
     department: null,
@@ -316,7 +325,7 @@ test('Apexon run validates the first-party careers flow and returns normalized I
     link: 'https://apexon.talentrecruit.com/career-page/apply/U2FsdGVkX1%252BajGKtji6uOZ%252F1Esz%252BQCCxuH4N8J2QhoU%253D',
     scrapedAt: '2026-07-15T08:30:00.000Z',
   })
-  assert.deepEqual(jobs[1], {
+  assert.deepEqual(legacyFields(jobs[1]), {
     title: 'SRE (Python)',
     company: 'Apexon',
     department: null,

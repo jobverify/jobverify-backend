@@ -38,7 +38,11 @@ test('AgNext retains the blocked HTTP source stage before a response body is acc
     assert.ok(error.recruitmentObservations.failures.some(row => /HTTP 403/.test(row.message)))
     assert.equal(error.recruitmentObservations.nativeRecords, 0)
     assert.equal(error.softFailure, true)
-    assert.equal(error.failureKind, 'coverage_gap')
+    assert.equal(error.failureKind, 'blocked_or_access_denied')
+    assert.equal(error.status, 403)
+    assert.equal(error.upstreamOutage, true)
+    assert.equal(error.recruitmentObservations.sourceScopeComplete, false)
+    assert.equal(error.recruitmentObservations.lifecycleCleanupAllowed, false)
     assert.equal(error.abortRetries, true)
     return true
   })

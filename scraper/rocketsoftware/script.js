@@ -1,9 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
+import { runRocketNativeRecruitment } from './nativeRun.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { ROCKET_SOFTWARE_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -38,18 +37,6 @@ const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   signal,
 })
 
-const hasKnownCloudflareGateSignal = (html = '') => {
-  const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
-
-  return /<title>\s*Just a moment/i.test(page)
-    || /Cloudflare/i.test(text)
-    || /Checking your browser/i.test(text)
-}
-
-const isKnownCloudflareGateError = (error) =>
-  /HTTP 403\b/i.test(String(error?.message ?? error ?? ''))
-
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
@@ -63,27 +50,16 @@ export const hasOfficialCareersSignal = (html = '') => {
 export const createRocketSoftwareScraper = () => ({
   async run({
     fetchText = defaultFetchText,
-    runWorkday = runWorkdayScraper,
+    runWorkday = runRocketNativeRecruitment,
     signal,
   } = {}) {
     signal?.throwIfAborted()
-    let careersHtml = null
-
-    try {
-      careersHtml = await (signal === undefined ? fetchText(CAREERS_URL) : fetchText(CAREERS_URL, { signal }))
-    } catch (error) {
-      signal?.throwIfAborted()
-      if (!isKnownCloudflareGateError(error)) {
-        throw error
-      }
-    }
+    const careersHtml = await (signal === undefined ? fetchText(CAREERS_URL) : fetchText(CAREERS_URL, { signal }))
     signal?.throwIfAborted()
 
     const officialHandoffVerified = Boolean(careersHtml && hasOfficialCareersSignal(careersHtml))
-    if (careersHtml && !officialHandoffVerified) {
-      if (!hasKnownCloudflareGateSignal(careersHtml)) {
-        throw new Error('Rocket Software verified careers page changed materially')
-      }
+    if (!officialHandoffVerified) {
+      throw new Error('Rocket Software current corporate recruitment handoff is unavailable; refusing the stored ATS account')
     }
 
     const jobs = await runWorkday({
@@ -103,21 +79,11 @@ export const createRocketSoftwareScraper = () => ({
       sourceUrl: job.sourceUrl || job.link || null,
       applyUrl: job.applyUrl || job.link || null,
     }))
-    const nativeEvidence = readInventoryEvidence(jobs)
-    const authoritativeEmpty = Symbol.for('jobverify.workday.authoritative-empty')
-    const scopeUnverified = !officialHandoffVerified
-      && (nativeEvidence?.listingComplete === true || jobs[authoritativeEmpty] === true)
     // Native inventory/country receipts are non-enumerable array symbols.
     // Keep them when decorating the independently returned native jobs.
     for (const symbol of Object.getOwnPropertySymbols(jobs)) {
-      if (scopeUnverified && symbol === authoritativeEmpty) continue
       Object.defineProperty(mapped, symbol, Object.getOwnPropertyDescriptor(jobs, symbol))
     }
-    if (scopeUnverified) attachInventoryEvidence(mapped, {
-      ...nativeEvidence, surface: nativeEvidence?.surface || WORKDAY_BOARD_URL,
-      status: 'coverage-gap', listingComplete: false, indiaFacetCount: null,
-      reason: 'current-rocket-official-handoff-unverified;native-query-only',
-    })
     return mapped
   },
 })

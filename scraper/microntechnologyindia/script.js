@@ -313,6 +313,14 @@ export const buildMicronTechnologyIndiaApiProvider = () => ({
       method: 'GET',
       query: API_QUERY,
     },
+    // Share paced starts and native 429 cooldowns across listing/detail workers.
+    // Keep requests concurrent in flight and reuse the portal's bounded retries.
+    rateLimit: {
+      minimumIntervalMs: 250,
+      maxRetries: 2,
+      baseDelayMs: 1000,
+      maxDelayMs: 5000,
+    },
     pagination: {
       strategy: 'offset-limit',
       pageSize: SEARCH_PAGE_SIZE,
@@ -381,6 +389,10 @@ export const createMicronTechnologyIndiaScraper = ({
     }
 
     let browserFetcher = null
+    const traversalController = new AbortController()
+    const traversalSignal = signal
+      ? AbortSignal.any([signal, traversalController.signal])
+      : traversalController.signal
 
     try {
       const liveFetchJson = fetchJson || await (async () => {
@@ -400,8 +412,8 @@ export const createMicronTechnologyIndiaScraper = ({
 
       const jobs = await runApiPortalScraper({
         provider: buildMicronTechnologyIndiaApiProvider(),
-        signal,
-        fetchJson: async (url, options = {}) => withMicronSignal(options.signal || signal, async () => {
+        signal: traversalSignal,
+        fetchJson: async (url, options = {}) => withMicronSignal(options.signal || traversalSignal, async () => {
           const detailId = DETAIL_API_PATTERN.test(url) ? readMicronDetailRequestId(url) : null
           const payload = await liveFetchJson(url, options)
           if (detailId) assertMicronDetailPublicUrl(detailId, payload)
@@ -410,6 +422,11 @@ export const createMicronTechnologyIndiaScraper = ({
       })
 
       return mapJobsWithInventoryEvidence(jobs, decorateMicronJob)
+    } catch (error) {
+      // A terminal native identity failure must also stop paced peer requests
+      // before this source releases its owned browser session.
+      traversalController.abort(error)
+      throw error
     } finally {
       try {
         if (browserFetcher) {

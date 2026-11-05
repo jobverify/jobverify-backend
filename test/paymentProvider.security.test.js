@@ -4,6 +4,25 @@ import test from "node:test";
 
 const modulePath = new URL("../src/services/paymentProvider.js", import.meta.url);
 
+test('Razorpay capture lookup uses an authenticated bounded request and sanitizes provider failures', async () => {
+  await withRazorpayCredentials(async () => {
+    const { createRazorpayProvider } = await importPaymentProviderModule();
+    const payment = { id: 'pay_fixture', order_id: 'order_fixture', status: 'captured', amount: 9900, currency: 'INR' };
+    let fetched;
+    const provider = createRazorpayProvider({ fetchImpl: async (url, options) => {
+      fetched = url;
+      assert.equal(options.headers.Authorization, `Basic ${Buffer.from('rzp_test_key:test_secret').toString('base64')}`);
+      assert.equal(options.redirect, 'error');
+      assert.ok(options.signal instanceof AbortSignal);
+      return { ok: true, json: async () => payment };
+    } });
+    assert.deepEqual(await provider.fetchPayment({ providerPaymentId: payment.id }), payment);
+    assert.equal(fetched, `https://api.razorpay.com/v1/payments/${payment.id}`);
+    const failing = createRazorpayProvider({ fetchImpl: async () => { throw new Error('private-provider-payload'); } });
+    await assert.rejects(failing.fetchPayment({ providerPaymentId: payment.id }), error => error.message === 'Unable to verify payment status.' && !JSON.stringify(error).includes('private-provider-payload'));
+  });
+});
+
 const importPaymentProviderModule = async (envOverrides = {}) => {
   const originalEnv = {
     PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER,

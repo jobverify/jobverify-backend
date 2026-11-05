@@ -83,8 +83,9 @@ test('new formats cannot donate country, accept arbitrary campuses or hide contr
 })
 
 test('all access-recovery Eightfold providers map native country and filter on proven India rather than search scope',()=>{
- const providers=getScraperCatalog().filter(p=>p.publicAccessPolicy==='preserve-verified-stop-denied-origin')
- assert.equal(providers.length,14)
+ const providers=getScraperCatalog().filter(p=>p.atsPlatform==='eightfold'&&p.publicAccessPolicy==='preserve-verified-stop-denied-origin')
+ assert.equal(providers.length,13)
+ assert.equal(getScraperCatalog().find(p=>p.source==='slb').nativeCurrentCareerSurface,'slb-current-public-coveo')
  for(const provider of providers){
   assert.equal(provider.config.mapping.location?.strategy,'eightfold-location',provider.source)
   assert.equal(provider.config.mapping.country?.strategy,'eightfold-country',provider.source)

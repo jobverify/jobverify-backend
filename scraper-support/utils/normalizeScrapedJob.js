@@ -1224,6 +1224,7 @@ const inferCountry = (job = {}, provider = {}) => {
   // An adapter's explicit null/blank is unknown source data. The provider's
   // target filter must not manufacture a country for that individual vacancy.
   if (Object.hasOwn(job, 'country')) return normalizeString(job.country)
+  if (job.sourceCountryScopeUnresolved === true) return null
   const explicitCountry = normalizeString(provider.countryFilter)
   if (explicitCountry) return explicitCountry
 

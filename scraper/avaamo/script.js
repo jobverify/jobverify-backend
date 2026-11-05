@@ -1,305 +1,126 @@
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
+import { createAvaamoReader } from './boundedRead.js'
+import { AVAAMO_CAREERS_URL, AVAAMO_COLLECTION_EVIDENCE, parseAvaamoListing, parseAvaamoDetail, explicitAvaamoCountry } from './currentNative.js'
+import { PROVIDER_METADATA } from './catalog.js'
 
+export { AVAAMO_COLLECTION_EVIDENCE, parseAvaamoListing, parseAvaamoDetail, explicitAvaamoCountry, PROVIDER_METADATA }
 export const SOURCE = 'avaamo'
 export const COMPANY = 'Avaamo'
-export const VERIFIED_ON = '2026-07-25'
-export const CAREERS_URL = 'https://avaamo.ai/careers/'
-export const DISPOSITION = 'verified-first-party-careers-page-plus-public-same-origin-job-pages'
-export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://avaamo.ai/careers/ was the live first-party Avaamo careers page, that it exposed public same-origin Learn more job pages for active openings, and that trustworthy India listings were publicly available for Applied AI Engineer, Senior Software Engineer – Full-Stack, Senior QA Engineer, Conversational AI Lead or Architect, Conversation Designer, Product Manager, and Solution Delivery Manager. The reviewed Forward Deployed Engineer (FDE) card on the official careers page pointed to the full-stack detail page instead of an FDE detail page, so this scraper validates listing-to-detail title agreement and returns only India jobs whose first-party detail page matches the listing.'
+export const VERIFIED_ON = '2026-11-05'
+export const CAREERS_URL = AVAAMO_CAREERS_URL
+export const DISPOSITION = 'current-first-party-framer-role-observations'
+export const VERIFIED_SURFACE_SUMMARY = 'Current first-party Framer careers cards and canonical role pages are read as bounded public GETs. City-only countries and absent role criteria stay unresolved; company and India totals are not inferred.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+export const extractListingCards = (html, finalUrl = CAREERS_URL) => parseAvaamoListing(html, finalUrl).roles
+export const hasOfficialCareersPageSignal = html => { try { return extractListingCards(html).length > 0 } catch { return false } }
+export const hasOfficialDetailPageSignal = (html, listing) => { try { return parseAvaamoDetail(html, listing).sourceDetailComplete } catch { return false } }
 
-const CAREERS_PAGE_PATTERNS = [
-  /<title[^>]*>\s*Careers at Avaamo\s*<\/title>/i,
-  /\bWE DEVELOP FUNDAMENTAL AI TECHNOLOGY\b/i,
-  /\bWork with us\b/i,
-  /\bActive Positions\b/i,
-  /\bCompensation\b/i,
-  /\bGenerous PTO\b/i,
-]
+const sameInventory = (left, right) => JSON.stringify([...left].sort((a, b) => a.detailUrl.localeCompare(b.detailUrl)))
+  === JSON.stringify([...right].sort((a, b) => a.detailUrl.localeCompare(b.detailUrl)))
+const fail = message => Object.assign(new Error('Avaamo current native contract: ' + message), { abortRetries: true })
 
-const DETAIL_PAGE_PATTERNS = [
-  /\bCareers at Avaamo\b/i,
-  /\bApply now\b/i,
-  /\bJob description\b/i,
-  /\bAbout Avaamo\b/i,
-]
-
-const INDIA_LOCATION_PATTERN = /\b(?:india|bengaluru|bangalore|pune|mumbai|koramangala)\b/i
-const EMPLOYMENT_TYPE_PATTERN = /\b(full[\s-]*time|part[\s-]*time|contract|intern(?:ship)?)\b/i
-
-const decodeEntities = (value = '') =>
-  String(value)
-    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
-    .replace(/&nbsp;|&#160;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
-    .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
-    .replace(/&#8211;|&ndash;/gi, '-')
-    .replace(/&#8212;|&mdash;/gi, '-')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-
-const normalizeWhitespace = (value) => {
-  if (value == null) return null
-
-  const normalized = decodeEntities(String(value))
-    .replace(/\u00a0/g, ' ')
-    .replace(/[\u2013\u2014]/g, '-')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-  return normalized || null
-}
-
-const stripTags = (value = '') =>
-  normalizeWhitespace(
-    decodeEntities(String(value))
-      .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol)\b[^>]*>/gi, '\n')
-      .replace(/<li\b[^>]*>/gi, '\n')
-      .replace(/<p\b[^>]*>/gi, '\n')
-      .replace(/<[^>]+>/g, ' '),
-  )
-
-const normalizePageText = (value = '') =>
-  stripTags(
-    String(value)
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' '),
-  ) || ''
-
-const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
-  try {
-    return new URL(String(value ?? ''), baseUrl).toString()
-  } catch {
-    return null
-  }
-}
-
-const buildJobId = (url) => {
-  try {
-    return new URL(url).pathname.split('/').filter(Boolean).at(-1) || null
-  } catch {
-    return null
-  }
-}
-
-const normalizeTitleKey = (value) =>
-  normalizeWhitespace(value)
-    ?.replace(/\([^)]*\)/g, ' ')
-    .replace(/[^a-z0-9]+/gi, ' ')
-    .replace(/\b(?:u\s*s|us)\b/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase() || ''
-
-const titlesMatch = (left, right) => {
-  const leftKey = normalizeTitleKey(left)
-  const rightKey = normalizeTitleKey(right)
-
-  if (!leftKey || !rightKey) return false
-  return leftKey === rightKey
-}
-
-const normalizeEmploymentType = (value) => {
-  const normalized = normalizeWhitespace(value)?.toLowerCase()
-  if (!normalized) return null
-  if (normalized.includes('full')) return 'Full-time'
-  if (normalized.includes('part')) return 'Part-time'
-  if (normalized.includes('contract')) return 'Contract'
-  if (normalized.includes('intern')) return 'Internship'
-  return normalizeWhitespace(value)
-}
-
-const isLikelyDepartment = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return false
-  if (normalized.startsWith('Location:')) return false
-  if (INDIA_LOCATION_PATTERN.test(normalized)) return false
-  return !EMPLOYMENT_TYPE_PATTERN.test(normalized)
-}
-
-const splitMetaParts = (meta) =>
-  normalizeWhitespace(meta)
-    ?.split('|')
-    .map((part) => normalizeWhitespace(part))
-    .filter(Boolean) || []
-
-const extractDepartment = (meta) => {
-  const parts = splitMetaParts(meta)
-  if (parts.length >= 3 && isLikelyDepartment(parts[0])) return parts[0]
-  return null
-}
-
-const extractEmploymentType = (meta) => {
-  const parts = splitMetaParts(meta)
-  const candidate = parts.at(-1)
-  return EMPLOYMENT_TYPE_PATTERN.test(candidate || '')
-    ? normalizeEmploymentType(candidate)
-    : null
-}
-
-const extractLocation = (meta) => {
-  const normalized = normalizeWhitespace(meta)
-  if (!normalized) return null
-
-  const parts = splitMetaParts(normalized)
-
-  if (parts.length >= 3 && isLikelyDepartment(parts[0])) {
-    return normalizeWhitespace(parts.slice(1, -1).join(' | '))
-  }
-
-  if (parts.length >= 2 && EMPLOYMENT_TYPE_PATTERN.test(parts.at(-1) || '')) {
-    return normalizeWhitespace(parts.slice(0, -1).join(' | '))
-  }
-
-  return normalizeWhitespace(normalized.replace(/^Location:\s*/i, ''))
-}
-
-const extractCity = (location) => {
-  const normalized = normalizeWhitespace(location)
-  if (!normalized) return null
-  if (/\bbengaluru\b/i.test(normalized)) return 'Bengaluru'
-  if (/\bbangalore\b/i.test(normalized)) return 'Bangalore'
-  if (/\bpune\b/i.test(normalized)) return 'Pune'
-  if (/\bmumbai\b/i.test(normalized)) return 'Mumbai'
-  if (/\bkoramangala\b/i.test(normalized)) return 'Koramangala'
-  return null
-}
-
-const isIndiaListing = (meta) => INDIA_LOCATION_PATTERN.test(normalizeWhitespace(meta) || '')
-
-export const hasOfficialCareersPageSignal = (html = '') =>
-  CAREERS_PAGE_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
-
-export const hasOfficialDetailPageSignal = (html = '') =>
-  DETAIL_PAGE_PATTERNS.every((pattern) => pattern.test(normalizePageText(html)))
-
-export const extractListingCards = (html = '', baseUrl = CAREERS_URL) => {
-  const matches = String(html).matchAll(
-    /<h2>([^<]+)<\/h2>[\s\S]*?<span class="category-eyebrow__date">([\s\S]*?)<\/span>[\s\S]*?<a\s+itemprop="url"\s+href="([^"]+)"[\s\S]*?>Learn more<\/a>/gi,
-  )
-
-  return [...matches]
-    .map((match) => {
-      const title = normalizeWhitespace(match[1])
-      const meta = normalizeWhitespace(match[2])
-      const detailUrl = toAbsoluteUrl(match[3], baseUrl)
-
-      if (!title || !meta || !detailUrl) return null
-
-      return {
-        title,
-        meta,
-        detailUrl,
+export const createAvaamoScraper = (factoryOptions = {}) => ({
+  async run(options = {}) {
+    const settings = { ...factoryOptions, ...options }
+    const reader = createAvaamoReader(settings)
+    try {
+      reader.check()
+      const first = await reader.read(CAREERS_URL)
+      const opening = parseAvaamoListing(first.html, first.url, { check: reader.check })
+      reader.check()
+      if (opening.roles.length > reader.limits.maxJobs) throw fail('job count budget exceeded')
+      const jobs = [], exclusions = [], failures = []
+      for (const listing of opening.roles) {
+        reader.check()
+        const page = await reader.read(listing.detailUrl)
+        const detail = parseAvaamoDetail(page.html, listing, { check: reader.check })
+        reader.check()
+        const country = explicitAvaamoCountry(listing.location)
+        if (detail.closedNotice) {
+          exclusions.push({ id: listing.detailUrl.split('/').at(-1), reason: 'native-role-closed', notice: detail.closedNotice })
+          continue
+        }
+        // Incomplete India details must not pass the shared publishing policy,
+        // which permits enrichment of missing descriptions. Unknown/foreign
+        // observations remain inspectable and are independently ineligible.
+        if (country === 'India' && !detail.sourceDetailComplete) {
+          exclusions.push({ id: listing.detailUrl.split('/').at(-1), reason: 'missing-role-criteria' })
+          continue
+        }
+        if (!detail.sourceDetailComplete) failures.push({ stage: 'native-content', url: listing.detailUrl, failureKind: detail.sourceDetailFailureKind })
+        const requirements = detail.sourceSections.filter(section => /qualifications|requirements|skills/i.test(section.heading || ''))
+        const job = {
+          source: SOURCE, company: COMPANY, nativeLegalEmployer: detail.organization.legalName,
+          title: listing.title, originalTitle: listing.title,
+          jobId: listing.detailUrl.split('/').at(-1), requisitionId: null,
+          sourceUrl: listing.detailUrl, applyUrl: listing.detailUrl, link: listing.detailUrl,
+          companyCareerPage: CAREERS_URL, companyDomain: 'avaamo.ai',
+          department: listing.department, location: listing.location, city: null, country,
+          sourceCountryScopeUnresolved: country === null, sourceNativeLocation: listing.location,
+          sourceCountryEvidence: country ? { kind: 'explicit-native-location-country', label: listing.location, country } : null,
+          employmentType: listing.employmentType, remoteStatus: /\bremote\b/i.test(listing.location) ? 'Remote' : null,
+          experienceRequired: null, minimumQualification: null, preferredQualification: null, requiredSkills: [],
+          requirements: requirements.map(section => section.text), postingDate: null, closingDate: null,
+          jobDescription: detail.sourceDescription, sourceDescription: detail.sourceDescription,
+          sourceDescriptionHtml: detail.sourceDescriptionHtml, sourceSections: detail.sourceSections,
+          sourceDetailComplete: detail.sourceDetailComplete, sourceDetailStatus: detail.sourceDetailComplete ? 'complete' : 'partial',
+          sourceDetailFailureKind: detail.sourceDetailFailureKind,
+          sourceScopeComplete: false, sourceListingComplete: true, lifecycleCleanupAllowed: false,
+          sourceApplicationHandoff: detail.sourceApplicationHandoff, applicationVisited: false,
+          sourceNativePayload: {
+            listing: { ...listing }, organization: detail.organization,
+            detail: { url: page.url, rawHtml: page.html, rawContentHtml: detail.rawContentHtml,
+              contentSourceOffsets: detail.contentSourceOffsets, documentSHA256: detail.documentSHA256,
+              fullRoleCriteriaPresent: detail.sourceDetailComplete },
+          },
+        }
+        reader.check()
+        jobs.push(job)
       }
-    })
-    .filter(Boolean)
-}
-
-export const extractDetailTitle = (html = '') =>
-  stripTags(String(html).match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '')
-
-export const extractJobDescription = (html = '') => {
-  const section = String(html).match(
-    /<h2[^>]*>\s*Job description\s*<\/h2>([\s\S]*?)(?:<h2[^>]*>\s*About Avaamo\s*<\/h2>|\bAbout Avaamo\b)/i,
-  )?.[1]
-
-  return stripTags(section || '') || null
-}
-
-const mapListingToJob = (listing, detailHtml) => {
-  const location = extractLocation(listing.meta)
-  const sourceUrl = listing.detailUrl
-  const jobId = buildJobId(sourceUrl)
-
-  if (!location || !sourceUrl || !jobId) return null
-
-  return {
-    title: listing.title,
-    company: COMPANY,
-    department: extractDepartment(listing.meta),
-    location,
-    city: extractCity(location),
-    country: 'India',
-    jobId,
-    requisitionId: jobId,
-    sourceUrl,
-    applyUrl: sourceUrl,
-    employmentType: extractEmploymentType(listing.meta),
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: extractJobDescription(detailHtml),
-    remoteStatus: /\bremote working\b/i.test(location) ? 'Remote' : null,
-  }
-}
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: `${SOURCE}-html`,
-  timeoutMs: 15000,
-})
-
-export const createAvaamoScraper = ({ maxJobs = null } = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('Avaamo verified official careers page changed materially')
-    }
-
-    const listings = extractListingCards(careersHtml, CAREERS_URL)
-    if (listings.length === 0) {
-      throw new Error('Avaamo careers page no longer exposes the verified public listing structure')
-    }
-
-    const detailCache = new Map()
-    const jobs = []
-    const seenJobIds = new Set()
-    const scrapedAt = now()
-
-    for (const listing of listings) {
-      if (!isIndiaListing(listing.meta)) continue
-
-      let detailHtml = detailCache.get(listing.detailUrl)
-      if (!detailHtml) {
-        detailHtml = await fetchText(listing.detailUrl)
-        detailCache.set(listing.detailUrl, detailHtml)
+      const last = await reader.read(CAREERS_URL)
+      const closing = parseAvaamoListing(last.html, last.url, { check: reader.check })
+      reader.check()
+      if (!sameInventory(opening.roles, closing.roles)) throw fail('opening and closing native inventory changed')
+      const clock = (settings.now || (() => new Date().toISOString()))()
+      reader.check()
+      if (typeof clock !== 'string' || !Number.isFinite(Date.parse(clock))) throw fail('invalid source observation clock')
+      const unknown = opening.roles.filter(role => explicitAvaamoCountry(role.location) === null)
+      const summary = {
+        source: SOURCE, sourceObservedAt: clock, sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null,
+        observedListingCount: opening.roles.length, observedVacancyCount: opening.roles.length,
+        responsiveCardCount: opening.responsiveCardCount, openingClosingMatch: true, closingInventoryMatches: true,
+        openingNativeRecords: opening.roles, closingNativeRecords: closing.roles,
+        openingBodySHA256: first.sha256, closingBodySHA256: last.sha256,
+        unknownCountryCount: unknown.length, unknownCountryRoles: unknown.map(role => ({ title: role.title, url: role.detailUrl, location: role.location })),
+        fullRoleCriteriaCount: jobs.filter(job => job.sourceDetailComplete).length,
+        candidateDetails: opening.roles.length, extractedDetailJobs: jobs.length,
+        excludedDetailJobs: exclusions.length, exclusions, failures, listingPaginationComplete: true,
+        retainedResponses: reader.receipts.map(receipt => ({ ...receipt })),
+        sourceListingComplete: false, lifecycleCleanupAllowed: false, ...reader.stats(),
       }
-
-      if (!hasOfficialDetailPageSignal(detailHtml)) continue
-
-      const detailTitle = extractDetailTitle(detailHtml)
-      if (!titlesMatch(detailTitle, listing.title)) continue
-
-      const job = mapListingToJob(listing, detailHtml)
-      if (!job || seenJobIds.has(job.jobId)) continue
-
-      seenJobIds.add(job.jobId)
-      jobs.push({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt,
+      for (const job of jobs) job.scrapedAt = clock
+      if (jobs.length) jobs[0].nativeCollectionEvidence = summary
+      Object.defineProperty(jobs, AVAAMO_COLLECTION_EVIDENCE, { value: summary, configurable: true })
+      attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows',
+        observedRecordCount: opening.roles.length, observedVacancyCount: opening.roles.length,
+        sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null })
+      attachInventoryEvidence(jobs, {
+        status: 'discovery-only', surface: CAREERS_URL, firstParty: true, listingComplete: false,
+        pagesFetched: reader.stats().pages, reportedTotal: null, indiaFacetCount: null, verifiedAt: clock,
+        reason: `Observed ${opening.roles.length} native role cards with stable opening/closing records; ${unknown.length} countries unresolved; ${failures.length} authored-criteria gaps; company hiring scope unverified`,
       })
-
-      if (Number.isInteger(maxJobs) && jobs.length >= maxJobs) break
-    }
-
-    return jobs
+      reader.check()
+      // Cover final projection/serialization work with the same source deadline.
+      const size = Buffer.byteLength(JSON.stringify(jobs))
+      reader.check()
+      if (size > reader.limits.maxOutputBytes) throw fail('output byte budget exceeded')
+      return jobs
+    } catch (caught) {
+      if (settings.signal?.aborted) throw settings.signal.reason
+      throw caught
+    } finally { reader.close() }
   },
 })
 
-export const run = async (options = {}) => createAvaamoScraper().run(options)
+export const run = options => createAvaamoScraper().run(options)

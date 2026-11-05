@@ -2,86 +2,29 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import fs from 'node:fs'
 import {gunzipSync} from 'node:zlib'
-
-const loadCdotModule = async () => {
-  try {
-    return await import('../../scraper/cdot/script.js')
-  } catch {
-    return null
-  }
-}
-
-const openingsHtml = `
-  <html>
-    <head>
-      <meta name="author" content="Centre for Development of Telematics" />
-      <title>Current Openings</title>
-    </head>
-    <body>
-      <h2>Current Openings</h2>
-      <table id="openings" class="table">
-        <thead><tr><th>S_No</th><th>Post</th><th>Opening Date</th><th>Closing Date</th><th>Advertisement</th><th>Application Format</th></tr></thead>
-        <tbody>
-          <tr>
-            <th>1</th>
-            <td>Scientist B/C</td>
-            <td>04-07-2026 09:00:00</td>
-            <td>17-08-2026 17:00:00</td>
-            <td><a href="../../scraper/assets/docs/curr_openings/adv/Notification-Scientist.pdf">Advertisement</a></td>
-            <td><a href="https://cdotrecruitment.cdot.in/cdotrecruitmentportal/college_home.jsp?adv_id=42">Apply Now</a></td>
-          </tr>
-        </tbody>
-      </table>
-    </body>
-  </html>
-`
-
-test('extractOpenings maps C-DOT official current-opening rows into shared job fields', async () => {
-  const cdot = await loadCdotModule()
-  assert.ok(cdot)
-
-  assert.equal(cdot.hasCurrentOpeningsSignal(openingsHtml), true)
-  assert.deepEqual(cdot.extractOpenings(openingsHtml), [{
-    title: 'Scientist B/C',
-    company: 'Centre for Development of Telematics (C-DOT)',
-    department: null,
-    location: 'India',
-    city: null,
-    state: null,
-    country: 'India',
-    jobId: 'cdot-42',
-    requisitionId: 'cdot-42',
-    sourceUrl: 'https://cdot.in/scraper/assets/docs/curr_openings/adv/Notification-Scientist.pdf',
-    applyUrl: 'https://cdotrecruitment.cdot.in/cdotrecruitmentportal/college_home.jsp?adv_id=42',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: '2026-07-04T00:00:00.000Z',
-    closingDate: '2026-08-17T00:00:00.000Z',
-    jobDescription: null,
-  }])
+import * as cdot from '../../scraper/cdot/script.js'
+const {packets}=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../test/test-data/recruitmentGoal20261104/cdot-native-quality.json.gz',import.meta.url))))
+test('extractOpenings preserves C-DOT application dates and local identities without invented country or requisitions',()=>{
+ const html=packets[0].bodyText
+ assert.equal(cdot.hasCurrentOpeningsSignal(html),true)
+ assert.equal(cdot.hasCurrentOpeningsSignal('<template>'+html+'</template>'),false)
+ const [job]=cdot.extractOpenings(html)
+ assert.equal(job.title,'Young Professionals - Product Engineering & Sustenance.');assert.equal(job.jobId,'cdot-28')
+ for(const key of ['requisitionId','country','city','location','postingDate','jobDescription','nativeCanonicalRoleURL'])assert.equal(job[key],null,key)
+ assert.equal(job.nativeApplicationAdvertisementID,'28');assert.equal(job.sourceApplicationOpeningLabel,'07-10-2026 09:00:00')
+ assert.equal(job.applicationOpeningDate,'2026-10-07');assert.equal(job.closingDate,'2026-11-08');assert.equal(job.applicationDateTimezone,null)
+ assert.equal(job.applyUrl,'https://cdotrecruitment.cdot.in/cdotrecruitmentportal/college_home.jsp?adv_id=28')
+ assert.equal(job.sourceUrl,packets[1].requestedURL);assert.equal(job.applicationUrlIsGeneric,true)
 })
-
-test('run fetches the official C-DOT current-openings page and decorates the jobs', async () => {
-  const cdot = await loadCdotModule()
-  assert.ok(cdot)
-
-  const requestedUrls = []
-  const {packets}=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/cdot/test-data/native-20261102.json.gz',import.meta.url))))
-  const jobs = await cdot.createCdotScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      assert.equal(url,cdot.CURRENT_OPENINGS_URL)
-      return Buffer.from(packets[0].bodyBase64,'base64').toString('utf8')
-    },
-    fetchBinary:async url=>{requestedUrls.push(url);assert.equal(url,packets[1].url);return Buffer.from(packets[1].bodyBase64,'base64')},
-  })
-
-  assert.deepEqual(requestedUrls, [cdot.CURRENT_OPENINGS_URL,packets[1].url,cdot.CURRENT_OPENINGS_URL])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'cdot')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
+test('C-DOT run decorates paired whole native records without granting complete scope or cleanup',async()=>{
+ const requested=[]
+ const jobs=await cdot.createCdotScraper({minIntervalMs:0,now:()=> '2026-11-05T12:30:00.000Z',fetchImpl:async url=>{
+  const q=packets.find(p=>p.requestedURL===url);assert.ok(q,'Unexpected C-DOT URL');requested.push(url)
+  const response=new Response(q.bodyBase64?Buffer.from(q.bodyBase64,'base64'):q.bodyText,{status:q.status,headers:q.headers})
+  Object.defineProperty(response,'url',{value:q.finalURL});return response
+ }}).run()
+ assert.deepEqual(requested,[packets[0].requestedURL,packets[1].requestedURL,packets[0].requestedURL,packets[1].requestedURL])
+ assert.equal(jobs.length,1);assert.equal(jobs[0].source,'cdot');assert.equal(jobs[0].link,jobs[0].applyUrl)
+ assert.equal(jobs[0].scrapedAt,'2026-11-05T12:30:00.000Z');assert.equal(jobs[0].nativeRoleClosingReconciled,true)
+ assert.equal(jobs[0].country,'India');assert.equal(jobs[0].sourceDetailComplete,true);assert.equal(jobs[0].sourceScopeComplete,false);assert.equal(jobs[0].lifecycleCleanupAllowed,false)
 })

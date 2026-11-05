@@ -10,16 +10,16 @@ export const TALENTICA_SOFTWARE_CATALOG = {
   adapter: 'script',
   homepageUrl: 'https://www.talentica.com/careers/',
   companyCareerPage: 'https://www.talentica.com/job-openings/',
-  atsPlatform: 'official-first-party-job-card-grid',
+  atsPlatform: 'official-company-native-role-pages',
   countryFilter: 'India',
-  paginationStrategy: 'single-page-job-card-grid',
-  extractionStrategy: 'verified-first-party-job-card-grid+direct-detail-links+public-experience-labels',
+  paginationStrategy: 'paired-current-index-and-declared-role-pages;company-scope-unqualified',
+  extractionStrategy: 'active-own-role-criteria+application-position-fields;native-country-unproven',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'talentica.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-11-05',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.talentica.com/job-openings/ is the live first-party Talentica openings page and that it publicly lists current openings in a job-card grid, including Senior Data Engineer, QA LLM Engineer, and Software Developer- Golang with direct first-party detail links and public experience labels.',
+    'Current active Talentica cards bind their declared own role pages, whole published criteria containers and native application-position fields. Exact original opening/closing models and HTML are retained. Work-country, undisclosed requisitions and dates remain unknown; company scope, application activation and cleanup are unqualified. A failed public read stops the source without retries or verified-empty credit.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

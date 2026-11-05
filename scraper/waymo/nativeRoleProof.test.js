@@ -1,11 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import fs from 'node:fs'
-import {gunzipSync} from 'node:zlib'
+import {accessibleNativePackets as packets} from './test-data/accessibleNativePackets.js'
 import {run,buildIndiaSearchUrl,extractJobsFromSearchHtml} from './script.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
-const packets=JSON.parse(gunzipSync(fs.readFileSync(new URL('./test-data/2026-10-31-native-packets.json.gz',import.meta.url))))
 const primary=packets.find(r=>r.url.includes('/jobs/program-manager-mapping-operations'))
 const replay=(edit=()=>{},calls=[])=>async(url,init)=>{
  const saved=packets.find(r=>r.url===url);assert.ok(saved,'Uncaptured '+url)
@@ -18,26 +16,26 @@ const editPosting=(row,edit)=>{const re=/(<script\b[^>]*type="application\/ld\+j
 const isPrimary=row=>row.url===primary.url
 test('Waymo listing observations retain unknown country, application, requisition and full description until native proof',()=>{
  const observations=extractJobsFromSearchHtml(packets.find(p=>p.url===buildIndiaSearchUrl()).body,{scrapedAt:now()})
- assert.equal(observations.length,4)
+ assert.equal(observations.length,2)
  assert.ok(observations.every(j=>j.country===null&&j.applyUrl===null&&j.requisitionId===null&&j.jobDescription===null&&!j.sourceDetailComplete))
  assert.ok(observations.every(j=>j.nativeListingSummary?.length>100))
 })
 
-test('current Waymo roles retain full native descriptions, dates, employer, explicit countries and unavailable application proof',async()=>{
+test('two accessible Waymo native models reconcile full descriptions, dates, employer and explicit countries',async()=>{
  const calls=[],jobs=await run({fetchText:replay(undefined,calls),now})
- assert.equal(jobs.length,4)
+ assert.equal(jobs.length,2)
  assert.ok(jobs.every(j=>j.sourceDetailComplete&&j.country==='India'&&j.jobDescription.length>1500))
  assert.ok(jobs.every(j=>j.nativeJobPosting?.hiringOrganization?.name==='Waymo'&&j.nativeCountryAddresses.length===1))
  const first=jobs.find(j=>j.sourceUrl===primary.url)
  assert.equal(first.requisitionId,'5535');assert.equal(first.postingDate,'2026-10-06T15:10:46.000Z')
  assert.equal(first.closingDate,'2027-01-28T17:09:06.000Z')
  assert.equal(first.activeApplyVerified,true)
- assert.equal(jobs.filter(j=>j.applicationAccessValidated===false).length,2)
+ assert.equal(jobs.filter(j=>j.applicationAccessValidated===false).length,0)
  const evidence=readInventoryEvidence(jobs)
  assert.equal(evidence.status,'coverage-gap');assert.equal(evidence.listingComplete,false);assert.equal(evidence.reportedTotal,null)
- assert.equal(jobs.nativeCollectionEvidence.targetCountry,'IN');assert.equal(jobs.nativeCollectionEvidence.openingIndiaCount,4)
- assert.equal(jobs.nativeCollectionEvidence.closingIndiaCount,4)
- for(const packet of packets.filter(p=>p.status===202))assert.equal(calls.filter(c=>c.url===packet.url).length,1)
+ assert.equal(jobs.nativeCollectionEvidence.targetCountry,'IN');assert.equal(jobs.nativeCollectionEvidence.openingIndiaCount,2)
+ assert.equal(jobs.nativeCollectionEvidence.closingIndiaCount,2)
+ for(const packet of packets.filter(p=>p.status===202))assert.equal(calls.filter(c=>c.url===packet.url).length,0)
  assert.equal(calls.filter(c=>c.url===buildIndiaSearchUrl()).length,2)
 })
 test('another role in the same current format uses its own native identity and original date',async()=>{
@@ -70,7 +68,7 @@ test('the filtered search cannot authorize an unrelated role host',async()=>{
  await assert.rejects(run({fetchText:replay(r=>{if(r.url===buildIndiaSearchUrl())r.body=r.body.replaceAll(primary.url,'https://unrelated.example/jobs/one')}),now}))
 })
 test('a smaller closing inventory cannot certify the opening roles',async()=>{
- await assert.rejects(run({fetchText:replay((r,calls)=>{if(r.url===buildIndiaSearchUrl()&&calls.some(c=>c.url===r.url))r.body=r.body.replace('all&nbsp;4','all&nbsp;3')}),now}))
+ await assert.rejects(run({fetchText:replay((r,calls)=>{if(r.url===buildIndiaSearchUrl()&&calls.some(c=>c.url===r.url))r.body=r.body.replace('all&nbsp;2','all&nbsp;1')}),now}))
 })
 test('a closing native description change cannot be hidden by unchanged listing cards',async()=>{
  await assert.rejects(run({fetchText:replay((r,calls)=>{if(isPrimary(r)&&calls.some(c=>c.url===r.url))editPosting(r,p=>p.description+='<p>Changed criteria.</p>')}),now}))
@@ -82,7 +80,7 @@ for(const [name,edit]of[
  ['hidden listing card',r=>{r.body=r.body.replace('<article','<article hidden')}],
  ['inert listing card',r=>{r.body=r.body.replace('<article','<article inert')}],
  ['conflicting selected country',r=>{r.body=r.body.replace(/<input\b[^>]*\bname="country_codes\[\]"[^>]*\bvalue="US"[^>]*>/,tag=>tag.replace('<input','<input checked'))}],
- ['duplicate native listing role',r=>{r.body=r.body.replace('all&nbsp;4','all&nbsp;5').replace('</body>',r.body.match(/<article\b[\s\S]*?<\/article>/)[0]+'</body>')}],
+ ['duplicate native listing role',r=>{r.body=r.body.replace('all&nbsp;2','all&nbsp;3').replace('</body>',r.body.match(/<article\b[\s\S]*?<\/article>/)[0]+'</body>')}],
 ])test('Waymo rejects '+name+' before native scope can qualify',async()=>{
  await assert.rejects(run({fetchText:replay(r=>{if(r.url===buildIndiaSearchUrl())edit(r)}),now}))
 })

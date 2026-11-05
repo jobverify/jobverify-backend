@@ -164,9 +164,17 @@ export function inspectRoleObservations(html) {
     const applications = descendants(card, node => node.tag === 'a' && hasClass(node, 'jobs-apply-button'))
     need(applications.length === 1 && applications[0].attrs.href === APPLICATION_URL
       && nativeText(document, applications[0]) === 'Apply now', 'native email application changed')
-    const blocks = card.children.filter(node => typeof node !== 'string' && !node.inert
-      && (node.tag === 'p' && (hasClass(node, 'jobs-job-description') || hasClass(node, 'jobs-job-requirements'))
-        || node.tag === 'ul' && hasClass(node, 'jobs-job-list')))
+    // The current first-party redesign keeps the role/apply classes but moves
+    // authored criteria into one direct v2 body. Restrict extraction to that
+    // body so headings, application actions and surrounding company copy do
+    // not become role criteria. Retain the separately captured legacy layout.
+    const bodies = card.children.filter(node => typeof node !== 'string' && !node.inert
+      && node.tag === 'div' && hasClass(node, 'v2-job__body'))
+    need(bodies.length <= 1, 'native role criteria body is ambiguous')
+    const blocks = (bodies[0] || card).children.filter(node => typeof node !== 'string' && !node.inert
+      && (bodies.length ? ['p', 'ul'].includes(node.tag)
+        : node.tag === 'p' && (hasClass(node, 'jobs-job-description') || hasClass(node, 'jobs-job-requirements'))
+          || node.tag === 'ul' && hasClass(node, 'jobs-job-list')))
       .map(node => ({ tag: node.tag, text: nativeText(document, node) }))
     const descriptionText = blocks.map(block => block.text).join('\n')
     need(blocks.length >= 2 && blocks.every(block => block.text) && descriptionText.length >= 100,

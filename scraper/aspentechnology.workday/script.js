@@ -1,18 +1,18 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import {runAspenNativeRecruitment} from './nativeRun.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "aspentechnology"
 export const COMPANY = "Aspen Technology"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-01"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 09 exact-name sentinel for Aspen Technology added on Saturday, August 1, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://www.aspentech.com/en/careers'
+export const DISPOSITION = 'current-company-published-native-India-offices-partial-company-scope'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Current corporate handoff, published native India office facets, full original role and employer models, calendar publication and closing publisher/listing/role reconciliation. Whole-company recruitment scope remains unqualified.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runAspenNativeRecruitment(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -1,130 +1,30 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
-const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
-
-const jobOpeningsHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Job Openings | Talentica.com</title>
-  </head>
-  <body>
-    <h1>Current Openings</h1>
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3 uicard job-card all-skills software-development">
-      <div class="height-100 is-md-flex flex-column justify-content-between is-relative">
-        <div class="mar-b-4">
-          <h6 class="font-size-large font-semibold gray-darker no-margin title">Senior Data Engineer </h6>
-        </div>
-        <p><b>Experience:</b> 6 to 8 years</p>
-        <p class="no-margin-bottom mar-t-4 grad-text">
-          <span class="font-size-smaller text-uppercase"> Apply </span>
-        </p>
-        <a href="https://www.talentica.com/jobdescription/senior-data-engineer/" class="anchor-absolute" aria-label="View Details"></a>
-      </div>
-    </div>
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3 uicard job-card all-skills quality-assurance">
-      <div class="height-100 is-md-flex flex-column justify-content-between is-relative">
-        <div class="mar-b-4">
-          <h6 class="font-size-large font-semibold gray-darker no-margin title">QA LLM Engineer </h6>
-        </div>
-        <p><b>Experience:</b> 3.5 to 5.5 years</p>
-        <p class="no-margin-bottom mar-t-4 grad-text">
-          <span class="font-size-smaller text-uppercase"> Apply </span>
-        </p>
-        <a href="https://www.talentica.com/jobdescription/qa-llm-engineer/" class="anchor-absolute" aria-label="View Details"></a>
-      </div>
-    </div>
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3 uicard job-card all-skills software-development">
-      <div class="height-100 is-md-flex flex-column justify-content-between is-relative">
-        <div class="mar-b-4">
-          <h6 class="font-size-large font-semibold gray-darker no-margin title">Software Developer- Golang </h6>
-        </div>
-        <p><b>Experience:</b> 4-8 years</p>
-        <p class="no-margin-bottom mar-t-4 grad-text">
-          <span class="font-size-smaller text-uppercase"> Apply </span>
-        </p>
-        <a href="https://www.talentica.com/jobdescription/software-developer-golang/" class="anchor-absolute" aria-label="View Details"></a>
-      </div>
-    </div>
-  </body>
-</html>
-`
-
-const loadModule = async () => {
-  try {
-    return await import('../../scraper/talenticasoftware/script.js')
-  } catch {
-    assert.fail('Expected Talentica Software scraper module at ../../scraper/talenticasoftware/script.js')
-  }
-}
-
-test('Talentica Software helpers stay pinned to the verified first-party job grid', async () => {
-  const talentica = await loadModule()
-
-  assert.equal(talentica.SOURCE, 'talenticasoftware')
-  assert.equal(talentica.COMPANY, 'Talentica Software')
-  assert.equal(talentica.CAREERS_URL, 'https://www.talentica.com/job-openings/')
-  assert.equal(talentica.hasOfficialCareersSignal(jobOpeningsHtml), true)
-  assert.equal(talentica.hasOfficialCareersSignal('<html><body><h1>Talentica</h1></body></html>'), false)
-  assert.deepEqual(talentica.extractJobCards(jobOpeningsHtml), [
-    {
-      title: 'Senior Data Engineer',
-      experience: '6 to 8 years',
-      location: null,
-      sourceUrl: 'https://www.talentica.com/jobdescription/senior-data-engineer/',
-      applyUrl: 'https://www.talentica.com/jobdescription/senior-data-engineer/',
-    },
-    {
-      title: 'QA LLM Engineer',
-      experience: '3.5 to 5.5 years',
-      location: null,
-      sourceUrl: 'https://www.talentica.com/jobdescription/qa-llm-engineer/',
-      applyUrl: 'https://www.talentica.com/jobdescription/qa-llm-engineer/',
-    },
-    {
-      title: 'Software Developer- Golang',
-      experience: '4-8 years',
-      location: null,
-      sourceUrl: 'https://www.talentica.com/jobdescription/software-developer-golang/',
-      applyUrl: 'https://www.talentica.com/jobdescription/software-developer-golang/',
-    },
-  ])
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import * as source from '../../scraper/talenticasoftware/script.js'
+const fixture=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../test/test-data/recruitmentGoal20261104/talentica-native-quality.json.gz',import.meta.url))))
+test('Talentica helpers bind the current active first-party grid and original native identities',()=>{
+ assert.equal(source.SOURCE,'talenticasoftware');assert.equal(source.COMPANY,'Talentica Software')
+ assert.equal(source.CAREERS_URL,'https://www.talentica.com/job-openings/')
+ assert.equal(source.hasOfficialCareersSignal(fixture.packets[0].bodyText),true)
+ assert.equal(source.hasOfficialCareersSignal('<title>Talentica</title>'),false)
+ const cards=source.extractJobCards(fixture.packets[0].bodyText)
+ assert.equal(cards.length,13);assert.equal(cards[0].sourceUrl,fixture.packets[1].requestedURL)
+ assert.equal(cards[0].experience,'1+ year');assert.equal(cards[0].location,null)
 })
-
-test('Talentica Software run extracts the verified first-party openings', async () => {
-  const talentica = await loadModule()
-
-  const jobs = await talentica.run({
-    fetchText: async (url) => {
-      assert.equal(url, talentica.CAREERS_URL)
-      return jobOpeningsHtml
-    },
-    now: () => FIXED_SCRAPED_AT,
-  })
-
-  assert.equal(jobs.length, 3)
-  assert.deepEqual(jobs[0], {
-    title: 'Senior Data Engineer',
-    experience: '6 to 8 years',
-    location: null,
-    sourceUrl: 'https://www.talentica.com/jobdescription/senior-data-engineer/',
-    applyUrl: 'https://www.talentica.com/jobdescription/senior-data-engineer/',
-    company: 'Talentica Software',
-    country: 'India',
-    link: 'https://www.talentica.com/jobdescription/senior-data-engineer/',
-    source: 'talenticasoftware',
-    scrapedAt: FIXED_SCRAPED_AT,
-  })
+test('Talentica legacy body injection reads paired own criteria while leaving HTTP metadata unverified',async()=>{
+ const calls=[],jobs=await source.run({minIntervalMs:0,fetchText:async url=>{calls.push(url);const q=fixture.packets.find(q=>q.requestedURL===url);assert.ok(q);return q.bodyText}})
+ assert.equal(calls.length,28);assert.equal(jobs.length,13);assert.ok(jobs.every(j=>j.country===null&&j.jobDescription.length>1000))
+ assert.ok(jobs[0].sourceNativeCollectionAudit.responses.every(q=>q.httpMetadataVerified===false))
 })
-
-test('Talentica Software run fails closed when the verified first-party page drifts', async () => {
-  const talentica = await loadModule()
-
-  await assert.rejects(
-    talentica.run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-    }),
-    /Talentica verified first-party job openings page changed materially/i,
-  )
+test('Talentica changed first-party page stops without detail probes or empty success',async()=>{
+ let calls=0
+ await assert.rejects(source.run({fetchText:async()=>{calls++;return '<html><body><h1>Unexpected</h1></body></html>'},minIntervalMs:0}),/Talentica native/)
+ assert.equal(calls,1)
+})
+test('Talentica injected deadline failure propagates after one read',async()=>{
+ let calls=0;const reason=Error('Talentica timeout')
+ await assert.rejects(source.run({fetchText:async()=>{calls++;throw reason},minIntervalMs:0}),error=>error===reason)
+ assert.equal(calls,1)
 })

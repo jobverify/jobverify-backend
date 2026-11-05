@@ -39,7 +39,7 @@ const candidateExperienceHtml = `
 
 const listingPayload = {
   items: [{
-    Limit: 5,
+    Limit: 24,
     TotalJobsCount: 1,
     requisitionList: [
       {
@@ -187,6 +187,7 @@ test('JPMorgan Chase run validates the careers page and decorates jobs from the 
   assert.deepEqual(requestedJsonUrls, [
     jpmorganChase.buildSearchUrl(),
     jpmorganChase.buildJobDetailApiUrl('210730346'),
+    jpmorganChase.buildSearchUrl(),
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'jpmorganchase')
@@ -212,4 +213,68 @@ test('JPMorgan Chase fails closed when the verified careers page drifts material
     }),
     /verified JPMorgan Chase careers page/i,
   )
+})
+
+const wrapperTransport = (total = 1, { onText = () => {}, onDetail = () => {} } = {}) => {
+  const rows = Array.from({ length: total }, (_, i) => ({ ...listingPayload.items[0].requisitionList[0], Id: String(210730346 + i), Title: `Applied AI/ML Lead ${i}` }))
+  return {
+    fetchText: async (url, options) => {
+      onText(url, options)
+      if (url === 'https://www.jpmorganchase.com/careers') return corporateCareersHtml
+      return candidateExperienceHtml
+    },
+    fetchJson: async (url, options) => {
+      const offset = /,offset=(\d+),/.exec(url)
+      if (offset) return { items: [{ SiteNumber: 'CX_1001', Limit: 24, Offset: Number(offset[1]), TotalJobsCount: total, requisitionList: rows.slice(Number(offset[1]), Number(offset[1]) + 24) }] }
+      const id = /Id=%22(\d+)%22/.exec(url)?.[1], row = rows.find(row => row.Id === id)
+      assert.ok(row, `Unexpected detail URL: ${url}`)
+      onDetail(url, options)
+      return { items: [{ ...detailPayload.items[0], ...row }] }
+    },
+  }
+}
+
+test('JPMorgan Chase wrapper retains the child complete inventory after company decoration', async () => {
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const wrapper = await loadJPMorganChaseModule(), jobs = await wrapper.createJPMorganChaseScraper().run(wrapperTransport())
+  assert.equal(jobs.length, 1)
+  assert.equal(readInventoryEvidence(jobs)?.listingComplete, true)
+  assert.equal(readInventoryEvidence(jobs)?.indiaFacetCount, 1)
+  assert.equal(readInventoryEvidence(jobs)?.pagesFetched, 2)
+  assert.equal(jobs[0].source, 'jpmorganchase')
+  assert.equal(jobs[0].company, 'JPMorgan Chase')
+})
+
+for (const [name, options, total, count] of [
+  ['page limit', { maxPages: 1 }, 25, 24], ['job limit', { maxJobs: 1 }, 2, 1],
+]) test('JPMorgan Chase wrapper retains incomplete child inventory for explicit ' + name, async () => {
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const wrapper = await loadJPMorganChaseModule(), jobs = await wrapper.createJPMorganChaseScraper(options).run(wrapperTransport(total))
+  assert.equal(jobs.length, count)
+  assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs)?.indiaFacetCount, null)
+  assert.ok(jobs.every(job => job.sourceScopeComplete === false && job.lifecycleCleanupAllowed === false))
+})
+
+test('JPMorgan Chase wrapper honors opaque preabort on its factory and run interfaces', async () => {
+  const wrapper = await loadJPMorganChaseModule(), controller = new AbortController(), reason = Object.freeze({ caller: 'wrapper' })
+  controller.abort(reason)
+  const transport = { fetchText: async () => assert.fail('preabort must not request a corporate page') }
+  await assert.rejects(wrapper.createJPMorganChaseScraper({ signal: controller.signal }).run(transport), e => e === reason)
+  await assert.rejects(wrapper.createJPMorganChaseScraper().run({ ...transport, signal: controller.signal }), e => e === reason)
+})
+
+test('JPMorgan Chase wrapper forwards caller cancellation through the corporate and child detail requests', async () => {
+  const wrapper = await loadJPMorganChaseModule()
+  for (const phase of ['corporate', 'detail']) {
+    const controller = new AbortController(), reason = Object.freeze({ phase })
+    const transport = wrapperTransport(1, {
+      onText(url, options) {
+        assert.equal(options?.signal, controller.signal)
+        if (phase === 'corporate') controller.abort(reason)
+      },
+      onDetail(_url, options) { assert.equal(options?.signal, controller.signal); controller.abort(reason) },
+    })
+    await assert.rejects(wrapper.run({ ...transport, signal: controller.signal }), e => e === reason)
+  }
 })

@@ -61,7 +61,7 @@ jobs:
           JOB_DESCRIPTION_REWRITE_REQUIRE_NATIVE_TESTS: '1'
         run: |
           bash -n scripts/portableRewriteRuntime.sh
-          node --test test/descriptionRewriteWorkflow.test.js test/jobDescriptionPortableRuntime.test.js test/jobDescriptionNativeDiagnostics.test.js test/jobDescriptionWorkerHealth.test.js
+          node --test test/descriptionRewriteWorkflow.test.js test/jobDescriptionReport20261105.test.js test/jobDescriptionPortableRuntime.test.js test/jobDescriptionNativeDiagnostics.test.js test/jobDescriptionWorkerHealth.test.js
       - name: Claim pipeline stage
         run: node scripts/pipelineGithub.js register
         env:
@@ -187,9 +187,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .cache/description-rewrites
-          key: description-lfm12b-rewrites-${{ runner.os }}-v26-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-rewrites-${{ runner.os }}-v27-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            description-lfm12b-rewrites-${{ runner.os }}-v26-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-
+            description-lfm12b-rewrites-${{ runner.os }}-v27-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-
       - name: Prepare native crash diagnostics
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
         run: |
@@ -209,7 +209,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: .cache/description-rewrites
-          key: description-lfm12b-rewrites-${{ runner.os }}-v26-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-rewrites-${{ runner.os }}-v27-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload generation quality and capacity diagnostics
         if: always()
         uses: actions/upload-artifact@v7

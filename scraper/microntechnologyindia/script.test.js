@@ -164,7 +164,7 @@ test('Micron Technology India paginates through 10-job Eightfold result pages', 
   )
 })
 
-test('Micron Technology India bounds detail hydration while preserving pagination and honestly missing descriptions', async () => {
+test('Micron Technology India bounds detail hydration while preserving pagination and honestly missing descriptions', { timeout: 8000 }, async () => {
   const scraper = createMicronTechnologyIndiaScraper()
   const seenApiUrls = []
   let activeDetails = 0, maximumActiveDetails = 0
@@ -192,7 +192,9 @@ test('Micron Technology India bounds detail hydration while preserving paginatio
         assert.ok(index >= 1 && index <= 12)
         maximumActiveDetails = Math.max(maximumActiveDetails, ++activeDetails)
         try {
-          await new Promise(resolve => setImmediate(resolve))
+          // Modeled I/O spans a paced start slot so the test still measures
+          // concurrent requests in flight instead of an instantaneous response.
+          await new Promise(resolve => setTimeout(resolve, 400))
           return buildDetailPayload(makePosition(index), { jobDescription: null })
         } finally { activeDetails-- }
       }

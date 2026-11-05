@@ -16,6 +16,8 @@ export async function runNativeMonocept(options={}){
  check(maxJobs===Infinity||Number.isSafeInteger(maxJobs)&&maxJobs>=0,'invalid caller cap')
  check(Number.isSafeInteger(interval)&&interval>=0&&(interval>=1000||options.fetchImpl||options.fetchPage),'invalid per-host pacing')
  check(Number.isSafeInteger(timeout)&&timeout>0&&timeout<=300000,'invalid bounded deadline')
+ options.signal?.throwIfAborted()
+ if(maxJobs===0)return attachInventoryEvidence([],{status:'coverage-gap',surface:CAREER_PAGE_URL,firstParty:true,listingComplete:false,pagesFetched:0,verifiedAt:now,reason:'caller-cap-zero-no-public-reads'})
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(Error('Monocept bounded source deadline exceeded')),timeout),signal=options.signal?AbortSignal.any([options.signal,controller.signal]):controller.signal
  const previous=new Map(),retainedResponses=[]
  let token=null
@@ -41,7 +43,7 @@ export async function runNativeMonocept(options={}){
   const html=await get(CAREER_PAGE_URL),styles=[],advertised=corporateContract(html).styles.stylesheets
   for(const url of advertised){const hash=reviewed.cssSHA256[url];check(hash,'unreviewed current corporate CSS URL');const css=await get(url);check(sha256(css)===hash,'unreviewed current corporate CSS bytes');styles.push(css)}
   const corporate=corporateContract(html,styles.join('\n')),shells=[]
-  for(const url of [BOARD_URL,DASHBOARD_URL]){const shell=nativeShellContract(await get(url));shells.push({url,hiringLinks:shell.hiringLinks,frames:shell.frames,publicClientURLs:shell.publicClientURLs})}
+  for(const url of [BOARD_URL,DASHBOARD_URL]){const shell=nativeShellContract(await get(url));shells.push({url,hiringLinks:shell.hiringLinks,frames:shell.frames,publicClientURLs:shell.publicClientURLs});if(shell.companyScopeUnqualified)corporate.reasons.push('current-native-client-company-inventory-unqualified')}
   const clientURLs=shells[0].publicClientURLs
   check(shells.every(shell=>canonical(shell.publicClientURLs)===canonical(clientURLs)),'native public shells client version disagreement')
   const clients={};for(const url of clientURLs)clients[url]=clientContract(url,await get(url))
@@ -87,12 +89,13 @@ export async function runNativeMonocept(options={}){
   if(canonical(ids(opening))!==canonical(ids(closing)))reasons.push('native-global-identities-changed')
   if(canonical(opening.corporate)!==canonical(closing.corporate)||canonical(opening.clients)!==canonical(closing.clients)||canonical(opening.organization)!==canonical(closing.organization)||canonical(opening.shells)!==canonical(closing.shells))reasons.push('corporate-or-native-employer-scope-changed')
   const healthy=[]
-  for(const row of opening.listing.records){const left=openingDetails.results.get(row.JobId),right=closingDetails.results.get(row.JobId);if(!left||!right)continue;if(canonical(left.semantic)!==canonical(right.semantic)){reasons.push('role-changed-during-closing:'+row.JobId);continue}if(left.country==='India')healthy.push(left.job)}
+  for(const row of opening.listing.records){const left=openingDetails.results.get(row.JobId),right=closingDetails.results.get(row.JobId);if(!left||!right)continue;if(canonical(left.semantic)!==canonical(right.semantic)){reasons.push('role-changed-during-closing:'+row.JobId);continue}if(left.country==='India')healthy.push({...left.job,nativeRoleClosingReconciled:true,nativeSourceRecord:{...left.job.nativeSourceRecord,nativeClosingListing:right.job.nativeSourceRecord.nativeListing,nativeClosingDetail:right.job.nativeSourceRecord.nativeDetail,nativeClosingJobPosting:right.job.nativeSourceRecord.nativeJobPosting,nativePublisher:{corporateURL:CAREER_PAGE_URL,boardURL:BOARD_URL,orgId:ORG_ID,organization:opening.organization,clients:opening.clients}}})}
   if(maxJobs<healthy.length)reasons.push('caller-cap-after-full-native-reconciliation')
   const contexts=phase=>({corporate:{hiringLinks:phase.corporate.hiringLinks,frames:phase.corporate.frames},native:phase.shells})
   const complete=reasons.length===0,evidence={source:'monocept',surface:CAREER_PAGE_URL,nativeSurface:DASHBOARD_URL,advertisedNativeSurface:BOARD_URL,observedGlobalRecords:opening.listing.records.length,reportedTotal:opening.listing.total,confirmedIndiaRecords:healthy.length,confirmedForeignRecords:[...openingDetails.results.values()].filter(r=>r.country!=='India').length,unresolvedRecords:opening.listing.records.length-openingDetails.results.size,closingReconciled:true,sourceScopeComplete:complete,lifecycleCleanupAllowed:complete,reasons:[...new Set(reasons)],surfaceContexts:{opening:contexts(opening),closing:contexts(closing)},retainedResponses,verifiedAt:now,anonymousSessionCredentialsRetained:false,publicRolePageFetched:true,applicationPublicContextValidated:true,applicationSubmitted:false,candidateActionsTaken:false}
   const jobs=healthy.slice(0,maxJobs).map(job=>({...job,sourceListingComplete:complete,sourceScopeComplete:complete,lifecycleCleanupAllowed:complete,sourceObservedGlobalJobCount:opening.listing.records.length,sourceObservedIndiaJobCount:healthy.length,nativeCollectionEvidence:evidence}))
   Object.defineProperty(jobs,'nativeInventoryEvidence',{value:evidence,enumerable:false});signal.throwIfAborted()
+  Object.defineProperty(jobs,Symbol.for('jobverify.verified-recruitment-observations'),{value:{...evidence,nativeRecords:evidence.observedGlobalRecords,unresolved:evidence.reasons}})
   return attachInventoryEvidence(jobs,{status:complete?'complete-inventory':'coverage-gap',surface:CAREER_PAGE_URL,firstParty:true,listingComplete:complete,pagesFetched:retainedResponses.length,reportedTotal:opening.listing.total,indiaFacetCount:healthy.length,verifiedAt:now,reason:complete?'complete-native-global-opening-and-closing-snapshots-reconciled':evidence.reasons.join(';')})
  }catch(error){if(/timed? out|timeout|fetch failed|connect|socket|econn|enotfound|eai_again|tls|deadline/i.test(String(error?.message)))Object.assign(error,{softFailure:true,upstreamOutage:true,abortRetries:true,failureKind:'network_or_timeout'});throw error}finally{token=null;clearTimeout(timer)}
 }

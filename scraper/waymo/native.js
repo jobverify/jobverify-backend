@@ -15,6 +15,7 @@ const visible=html=>readVisibleNativeDocument(html,{strict:true})
 const plain=html=>{const d=visible(html);return d.text(one(d.nodes(n=>n.tag==='root'),'description root'))}
 const key=value=>norm(value).replace(/\s/g,'')
 const json=value=>JSON.stringify(value,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v)
+const sourceInterruption=error=>[202,401,403,429,451].includes(error.status)
 const roleURL=value=>{
  let u;try{u=new URL(value,ORIGIN)}catch{check(false,'invalid role URL')}
  check(u.origin===ORIGIN&&/^\/jobs\/[a-z0-9-]+$/.test(u.pathname)&&u.pathname!=='/jobs/search'&&!u.search&&!u.hash&&!u.username&&!u.password,'unbound role URL')
@@ -108,7 +109,7 @@ const application=(html,row,proof)=>{
  return{action:action.href,method:form.attrs.method,fields,text:norm(text(form)),rawBody:html}
 }
 
-const jobsFromFacts=(facts,clock,{partial=false}={})=>facts.map(({row,proof,application:app,applicationFailure})=>({source:'waymo',company:'Waymo',jobId:new URL(row.url).pathname.split('/').at(-1),nativeJobId:row.nativeId,
+const jobsFromFacts=(facts,clock,{partial=false}={})=>facts.map(({row,proof,application:app,applicationFailure,roleClosingReconciled})=>({source:'waymo',company:'Waymo',jobId:new URL(row.url).pathname.split('/').at(-1),nativeJobId:row.nativeId,
  title:row.title,sourceUrl:row.url,applyUrl:row.url,link:row.url,requisitionId:proof.requisitionId,
  country:'India',city:normalizeCity(proof.address.addressLocality)||proof.address.addressLocality,location:[proof.address.addressLocality,proof.address.addressRegion,'India'].join(', '),
  department:row.department,employmentType:row.employmentType,experienceRequired:row.experienceRequired,
@@ -116,7 +117,10 @@ const jobsFromFacts=(facts,clock,{partial=false}={})=>facts.map(({row,proof,appl
  postingDate:proof.posted.iso,postedAt:proof.posted.iso,closingDate:proof.closing.iso,sourcePostedDateRaw:proof.posted.raw,sourceClosingDateRaw:proof.closing.raw,
  sourceDatePrecision:proof.posted.precision,sourceClosingDatePrecision:proof.closing.precision,originalPublicationDateQualified:true,
  nativeJobPosting:proof.posting,nativeCountryAddresses:[proof.address],nativeVisibleLocation:row.location,nativeWorkplace:proof.workplace,
+ nativeSourceRecord:{nativeListing:row,nativeJobPosting:proof.posting},nativeHiringOrganization:proof.posting.hiringOrganization,
+ nativeRoleClosingReconciled:roleClosingReconciled===true,
  activeApplyVerified:!partial&&Boolean(app),applicationAccessValidated:Boolean(app),applicationCriteriaQualified:false,nativeApplicationEvidence:app,nativeApplicationFailure:applicationFailure,
+ applicationVisited:true,applicationReadOnly:true,firstEverPublication:null,
  sourceListingComplete:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false,scrapedAt:clock}))
 
 export const runWaymoNative=async({read,searchUrl,now,signal})=>{
@@ -124,19 +128,36 @@ export const runWaymoNative=async({read,searchUrl,now,signal})=>{
  let opening=null,closing=null
  const clock=new Date(typeof now==='function'?now():now).toISOString()
  const get=async(url,init={})=>{signal?.throwIfAborted();surface=url;const body=await read(url,{...init,signal});signal?.throwIfAborted();check(typeof body==='string'&&Buffer.byteLength(body)<=4000000,'missing/oversized native document');retained.push({url,body});return body}
+ const failed=error=>{
+  error.failureKind='incomplete_listing';error.source='waymo';error.retainedNativeResponses=retained
+  error.inventoryEvidence=normalizeInventoryEvidence({status:'coverage-gap',surface,firstParty:true,listingComplete:false,pagesFetched:retained.length,
+   reportedTotal:null,indiaFacetCount:null,verifiedAt:clock,reason:error.message})
+  return error
+ }
+ const reconcileRole=async fact=>{
+  const end=detail(await get(fact.row.url),fact.row,clock)
+  check(json(fact.proof)===json(end),'opening/closing native role criteria changed')
+  fact.roleClosingReconciled=true
+  if(fact.application)try{
+   const current=application(await get(end.application.url,{headers:{'Turbo-Frame':end.application.frameId}}),fact.row,end.application)
+   const comparable=({rawBody,...proof})=>proof
+   check(json(comparable(fact.application))===json(comparable(current)),'opening/closing native application criteria changed')
+  }catch(error){
+   if(sourceInterruption(error)){
+    fact.applicationFailure={status:error.status,requestUrl:end.application.url,reason:error.message};fact.application=null
+   }
+   throw error
+  }
+ }
  try{
   opening=listing(await get(searchUrl));employer(await get(EMPLOYER_URL))
   for(const row of opening.rows){const proof=detail(await get(row.url),row,clock);facts.push({row,proof,application:null,applicationFailure:null})
    try{const html=await get(proof.application.url,{headers:{'Turbo-Frame':proof.application.frameId}});facts.at(-1).application=application(html,row,proof.application)}
-   catch(error){if([202,401,403,429].includes(error.status))facts.at(-1).applicationFailure={status:error.status,requestUrl:error.requestUrl||proof.application.url,reason:error.message};else throw error}
+   catch(error){if(sourceInterruption(error))facts.at(-1).applicationFailure={status:error.status,requestUrl:error.requestUrl||proof.application.url,reason:error.message};throw error}
   }
   closing=listing(await get(searchUrl));check(json(opening)===json(closing),'opening/closing native inventory changed')
   employer(await get(EMPLOYER_URL))
-  for(const fact of facts){const end=detail(await get(fact.row.url),fact.row,clock);check(json(fact.proof)===json(end),'opening/closing native role criteria changed')
-   if(fact.application)try{const current=application(await get(end.application.url,{headers:{'Turbo-Frame':end.application.frameId}}),fact.row,end.application)
-    const comparable=({rawBody,...proof})=>proof;check(json(comparable(fact.application))===json(comparable(current)),'opening/closing native application criteria changed')
-   }catch(error){if([202,401,403,429].includes(error.status)){fact.applicationFailure={status:error.status,requestUrl:end.application.url,reason:error.message};fact.application=null}else throw error}
-  }
+  for(const fact of facts)await reconcileRole(fact)
   const jobs=jobsFromFacts(facts,clock)
   Object.defineProperty(jobs,'nativeCollectionEvidence',{value:{targetCountry:'IN',openingIndiaCount:opening.count,closingIndiaCount:closing.count,
    openingRows:opening.rows,closingRows:closing.rows,retainedResponses:retained,worldwideInventoryComplete:false,applicationCriteriaQualified:false}})
@@ -144,17 +165,25 @@ export const runWaymoNative=async({read,searchUrl,now,signal})=>{
    reportedTotal:null,indiaFacetCount:opening.count,verifiedAt:clock,
    reason:'Official employer handoff, selected India filter, opening/closing cards and full native role criteria reconciled. Worldwide inventory and full application criteria remain unqualified; '+jobs.filter(j=>!j.applicationAccessValidated).length+' application frames unavailable.'})
  }catch(error){signal?.throwIfAborted();
-  if(error.status===202&&error.code!=='WAYMO_NATIVE_PROOF'&&facts.length
+  if(sourceInterruption(error)&&error.code!=='WAYMO_NATIVE_PROOF'&&facts.length
    &&(error.requestUrl==null||error.requestUrl===surface)&&(error.finalUrl==null||error.finalUrl===surface)){
-   const jobs=jobsFromFacts(facts,clock,{partial:true})
-   Object.defineProperty(jobs,'nativeCollectionEvidence',{value:{targetCountry:'IN',openingIndiaCount:opening.count,closingIndiaCount:closing?.count??null,
+   const interruptedSurface=surface
+   // An access interruption stops the whole source. Retain facts collected
+   // before it without making recovery, closing or other-role requests.
+   const complete=facts.filter(fact=>fact.roleClosingReconciled),qualified=complete.length>0
+   const jobs=jobsFromFacts(qualified?complete:facts,clock,{partial:!qualified})
+   const accepted=new Set(complete.map(fact=>fact.row.nativeId))
+   const audit={targetCountry:'IN',openingIndiaCount:opening.count,closingIndiaCount:closing?.count??null,
     openingRows:opening.rows,closingRows:closing?.rows??null,retainedResponses:retained,worldwideInventoryComplete:false,applicationCriteriaQualified:false,
-    openingClosingReconciled:false,incompleteCollectionFailure:{status:error.status,requestUrl:error.requestUrl||surface,reason:error.message}}})
+    openingClosingReconciled:Boolean(closing&&json(opening)===json(closing)),individuallyReconciledRoles:complete.length,
+    heldNativeRows:opening.rows.filter(row=>!accepted.has(row.nativeId)),
+    incompleteCollectionFailure:{status:error.status,requestUrl:error.requestUrl||interruptedSurface,reason:error.message}}
+   Object.defineProperty(jobs,'nativeCollectionEvidence',{value:audit})
+   if(jobs.length)jobs[0].sourceNativeCollectionAudit={...audit,retainedResponses:undefined}
    return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:searchUrl,firstParty:true,listingComplete:false,pagesFetched:retained.length,
     reportedTotal:null,indiaFacetCount:null,verifiedAt:clock,
-    reason:'HTTP 202 interrupted native reconciliation. Earlier role facts retained as partial; active application and complete inventory remain unqualified.'})
+    reason:'HTTP '+error.status+' interrupted a later native read; individually reconciled earlier roles='+complete.length
+     +'; unavailable/unreconciled advertised roles='+audit.heldNativeRows.length+'; company inventory and application criteria remain unqualified.'})
   }
-  error.failureKind='incomplete_listing';error.source='waymo';error.retainedNativeResponses=retained;
-  error.inventoryEvidence=normalizeInventoryEvidence({status:'coverage-gap',surface,firstParty:true,listingComplete:false,pagesFetched:retained.length,
-   reportedTotal:null,indiaFacetCount:null,verifiedAt:clock,reason:error.message});throw error}
+  throw failed(error)}
 }

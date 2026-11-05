@@ -2,7 +2,8 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { collectAscendionNative, inspectNativeWorkplaces } from './nativeInventory.js'
+import { extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -73,15 +74,6 @@ const formatEmploymentType = (value) => {
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(' ')
 }
-
-const extractCities = (position, detail) => unique(
-  (Array.isArray(detail?.locations) ? detail.locations : Array.isArray(position?.locations) ? position.locations : [])
-    .map((location) => normalizeWhitespace(location))
-    .filter((location) => /india/i.test(location))
-    .map((location) => normalizeWhitespace(location.split(',')[0]))
-    .filter((city) => city && !/^india$/i.test(city))
-    .filter(Boolean),
-)
 
 const extractHighlights = (detail = {}) => Array.isArray(detail?.jdHighlight)
   ? detail.jdHighlight.map((highlight) => normalizeWhitespace(highlight)).filter(Boolean)
@@ -186,7 +178,12 @@ const buildJobUrl = (positionId) => `https://jobs.ascendion.com/careers/job/${po
 
 const mapPositionToJob = (position, detail = {}) => {
   const detailPayload = extractDetailPayload(detail)
-  const cities = extractCities(position, detailPayload)
+  const geography = inspectNativeWorkplaces(position, detailPayload)
+  const cities = unique(geography.india.map(workplace => {
+    const label = workplace.location || workplace.standardizedLocation
+    const city = normalizeWhitespace(label?.split(',')[0])
+    return city && !/^(?:india|in|remote(?: within india)?|anywhere(?: in)? india)$/i.test(city) ? city : null
+  }))
   const positionId = normalizeWhitespace(position?.id)
   const displayJobId = normalizeWhitespace(detailPayload?.displayJobId || position?.displayJobId)
   const sourceUrl = buildJobUrl(positionId)
@@ -196,9 +193,9 @@ const mapPositionToJob = (position, detail = {}) => {
     title: normalizeWhitespace(detailPayload?.name || position?.name),
     company: 'Ascendion',
     department: normalizeWhitespace(detailPayload?.department || position?.department),
-    location: cities.length > 0 ? `${cities.join(', ')}, India` : 'India',
+    location: geography.india.length ? cities.length > 0 ? `${cities.join(', ')}, India` : 'India' : null,
     city: cities[0] || null,
-    country: 'India',
+    country: geography.india.length ? 'India' : null,
     jobId: positionId,
     requisitionId: displayJobId,
     sourceUrl,
@@ -210,7 +207,7 @@ const mapPositionToJob = (position, detail = {}) => {
     requiredSkills: [],
     postingDate: toIsoDate(position?.postedTs),
     closingDate: null,
-    jobDescription: descriptionHtml ? stripTags(descriptionHtml) : null,
+    jobDescription: descriptionHtml ? extractActiveDescription(descriptionHtml) : null,
   }
 }
 
@@ -219,75 +216,17 @@ export const extractSearchResults = (payload, { detailPayloadById = {} } = {}) =
 
   return positions
     .map((position) => mapPositionToJob(position, detailPayloadById[position.id] || {}))
-    .filter((job) => /india/i.test(job.location))
+    .filter((job) => job.country === 'India')
 }
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json, text/plain, */*',
-  },
-  label: 'ascendion',
+export const createAscendionScraper = (settings = {}) => ({
+  run: (options = {}) => collectAscendionNative({
+    mapPositionToJob, buildSearchUrl, buildDetailUrl,
+    defaults: { maxJobs: Number.isInteger(config.maxJobs) ? config.maxJobs : null, userAgent: USER_AGENT, ...settings },
+  }, options),
 })
 
-const fetchAllPositions = async ({
-  fetchJson,
-  pageSize,
-}) => {
-  const positions = []
-  let totalCount = null
-  let start = 0
-
-  while (totalCount == null || positions.length < totalCount) {
-    const payload = await fetchJson(buildSearchUrl({ start }))
-    const pagePositions = Array.isArray(payload?.data?.positions) ? payload.data.positions : []
-
-    totalCount = Number(payload?.data?.count || 0)
-    positions.push(...pagePositions)
-
-    if (pagePositions.length === 0) break
-    start += pageSize
-  }
-
-  return positions
-}
-
-export const createAscendionScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  pageSize = 10,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchJson = options.fetchJson || defaultFetchJson
-    const positions = await fetchAllPositions({
-      fetchJson,
-      pageSize,
-    })
-
-    const detailPayloadById = {}
-    await Promise.all(positions.map(async (position) => {
-      if (!position?.id) return
-
-      detailPayloadById[position.id] = await fetchJson(buildDetailUrl(position.id))
-    }))
-
-    const jobs = extractSearchResults({
-      data: {
-        positions,
-      },
-    }, { detailPayloadById })
-
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: 'ascendion',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-  },
-})
-
-export const run = async () => createAscendionScraper().run()
+export const run = async (options = {}) => createAscendionScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

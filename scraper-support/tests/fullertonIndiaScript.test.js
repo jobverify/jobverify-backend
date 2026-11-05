@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {withNativeDescription,worklinePDF,worklineDetailPage} from '../../test/helpers/worklineGoalFixture.js'
 
 const homepageHtml = `
 <!doctype html>
@@ -92,6 +93,7 @@ const listingRecords = [
   },
 ]
 
+for(let index=0;index<listingRecords.length;index++)listingRecords[index]=withNativeDescription(listingRecords[index])
 const jobsApiPayload = {
   d: {
     obj1: JSON.stringify(listingRecords),
@@ -233,6 +235,8 @@ test('Fullerton India run validates the redirect, first-party careers handoff, W
         }
       }
 
+      const record=listingRecords.find(row=>fullertonIndia.buildDetailUrl(row)===url)
+      if(record)return worklineDetailPage(record,url)
       throw new Error(`Unexpected Fullerton India URL: ${url}`)
     },
     fetchJson: async (url, options = {}) => {
@@ -248,12 +252,14 @@ test('Fullerton India run validates the redirect, first-party careers handoff, W
 
       throw new Error(`Unexpected Fullerton India JSON URL: ${url}`)
     },
+    fetchPDF:async()=>worklinePDF,
   })
 
   assert.deepEqual(pageRequests, [
     fullertonIndia.REDIRECTED_HOMEPAGE_URL,
     fullertonIndia.CAREERS_URL,
     fullertonIndia.JOBS_BOARD_ENTRY_URL,
+    ...listingRecords.map(row=>fullertonIndia.buildDetailUrl(row)),
   ])
   assert.deepEqual(jsonRequests, [
     {

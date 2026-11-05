@@ -2,9 +2,10 @@ import { createHash } from 'node:crypto';
 import { MAX_RESUME_TEXT_BYTES, tailoringError } from './resumeTailoringContent.js';
 import { normalizeResumeLinks } from './resumeSource.js';
 import { RESUME_LATEX_PACKAGES, RESUME_LATEX_REASONS } from '../utils/resumeLatexValidation.js';
+import { RESUME_LATEX_FORMAT_INSTRUCTION } from '../utils/resumeLatexFormat.js';
 
 export const MAX_LATEX_BYTES = 256 * 1024;
-export const RESUME_STYLE_VERSION = 'latex-ats-v1';
+export const RESUME_STYLE_VERSION = 'latex-ats-v2';
 
 const unique = values => [...new Set(values.filter(Boolean))];
 const clean = value => String(value || '').replace(/\r\n?/g, '\n').trim();
@@ -23,11 +24,11 @@ const headingType = line => {
   if (/^(?:(?:professional|work|relevant|employment) )?(?:experience|history)|^(?:employment|internships?)$/.test(heading) && heading.length < 45) return 'employment';
   if (/^(?:education|academic(?: background| qualifications)?|qualifications)(?: and qualifications)?$/.test(heading)) return 'education';
   if (/^(?:(?:technical|key|core|professional) )?(?:skills|technologies|competencies)$/.test(heading)) return 'skills';
-  if (/^(?:projects|personal projects|selected projects|summary|professional summary|profile|objective|certifications?|achievements?|awards|publications?|interests|languages|volunteering|references|links|contact|contact information)$/.test(heading)) return 'other';
+  if (/^(?:projects|personal projects|selected projects|summary|professional summary|profile|objective|certifications?|achievements?|awards|publications?|interests|languages|volunteering|references|links|contact|contact information|additional information)$/.test(heading)) return 'other';
   return null;
 };
 const titleWords = /\b(?:engineer|developer|intern|analyst|manager|consultant|designer|architect|scientist|specialist|associate|administrator|researcher|officer|lead|director|technician|executive)\b/i;
-const actionStart = /^(?:[-*•▪●]|built\b|developed\b|designed\b|implemented\b|created\b|led\b|managed\b|worked\b|responsible\b|delivered\b|improved\b|reduced\b|increased\b|maintained\b|collaborated\b|supported\b|achieved\b|optimized\b|automated\b|conducted\b|deployed\b|contributed\b)/i;
+const actionStart = /^(?:[-*•▪●]|built\b|developed\b|designed\b|implemented\b|created\b|led\b|managed\b|worked\b|responsible\b|delivered\b|improved\b|reduced\b|increased\b|maintained\b|updated\b|collaborated\b|supported\b|achieved\b|optimized\b|automated\b|conducted\b|deployed\b|contributed\b)/i;
 const institutionWords = /\b(?:university|college|institute|school|academy|iit|nit|iim)\b/i;
 const degreeWords = /\b(?:b\.?\s?sc|m\.?\s?sc|b\.?\s?tech|m\.?\s?tech|bachelor|master|ph\.?d|mba|bca|mca|b\.?e\.?|m\.?e\.?|diploma|degree|certificate)\b/i;
 
@@ -132,6 +133,7 @@ const generationRules = [
   'Use a professional ATS-readable single-column resume, selectable opaque dark text on white paper, clear section headings, balanced whitespace and compact bullet lists. Use article with 10pt, 11pt or 12pt text; no text smaller than 10pt. Prefer 11pt and restrained spacing. Avoid tables for the main reading flow, icons, photographs and decorative graphics.',
   'Always set \\pagestyle{empty}. Omit page numbers, running headers and footers. Put each employer or institution before its actual title or degree and dates in the same entry header, keeping their factual associations clear.',
   `Use article and only these cached packages when needed: ${RESUME_LATEX_PACKAGES.join(', ')}. Use portable LaTeX that works in Tectonic/XeTeX; avoid pdfTeX-only commands. Escape LaTeX special characters. Do not load files, images, fonts or URLs, use shell commands, change TeX primitives, or perform network or filesystem access. HTTP links in hyperref are permitted as destinations only.`,
+  RESUME_LATEX_FORMAT_INSTRUCTION,
   'The supplied source combines the original resume with candidate-confirmed evidence when present. These are the only authorities for candidate facts. Preserve the exact candidate name, visible contacts, mailto/tel destinations, employers, actual job titles, employment dates, institutions, degrees and education dates. Preserve distinct employment and education entries once each, merging duplicate descriptions of the same experience. Never invent or inflate skills, seniority, years of experience, projects, qualifications, employers, certifications, achievements, dates, links or numbers. Never substitute the job title for an actual candidate title.',
   'Preserve existing portfolio/profile links and make source-supported email and phone details clickable with correct mailto: and tel: destinations. Do not invent contact details or links. Every number or quantified claim must already be supported by the original.',
   'Omit purely decorative contact icons and emoji, keeping their visible contact values and original link destinations. Use plain readable text for labels and supported LaTeX accents for names instead of icon fonts or private-use glyphs.',

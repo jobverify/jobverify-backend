@@ -14,7 +14,7 @@ import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
 export const source=sourceModule,vanity=vanityModule
 export const SOURCE='cocacola',COMPANY='Coca-Cola'
 export const URLS=Object.freeze({primary:'https://www.coca-colacompany.com/careers',vanity:'https://careers.coca-colacompany.com/',board:'https://coke.wd1.myworkdayjobs.com/coca-cola-careers',api:'https://coke.wd1.myworkdayjobs.com/wday/cxs/coke/coca-cola-careers/jobs'})
-export const PROFILE=Object.freeze({listingStrategy:'jobs-api',inventoryScope:'complete-board-country-proof',officialCareersUrl:URLS.primary,officialVanityCareersUrl:URLS.vanity,officialVanityRedirectStatus:301,jobsApiUrl:URLS.api,detailUrlBase:URLS.board,locationCountry:null,searchText:''})
+export const PROFILE=Object.freeze({listingStrategy:'jobs-api',inventoryScope:'complete-board-country-proof',retainProvenIndiaOnUnresolvedLocations:true,officialCareersUrl:URLS.primary,officialVanityCareersUrl:URLS.vanity,officialVanityRedirectStatus:301,jobsApiUrl:URLS.api,detailUrlBase:URLS.board,locationCountry:null,searchText:''})
 export const configPath=fileURLToPath(new URL('../../scraper/cocacola.workday/config.json',import.meta.url))
 export const sha=value=>createHash('sha256').update(value).digest('hex')
 export const fixture=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/cocacola.workday/native-captures/2026-11-02-native-chain.json.gz',import.meta.url))))

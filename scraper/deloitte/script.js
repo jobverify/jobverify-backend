@@ -1,10 +1,10 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { loadNativePaginationDefaults, nativePaginationLimits, createNativePagination, readNativeWithSignal } from '../../scraper-support/utils/nativePagination.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
+const nativeDefaults = loadNativePaginationDefaults(currentDir)
 
 const BASE_URL = 'https://usijobs.deloitte.com'
 const INDIA_SEARCH_URL = `${BASE_URL}/en_US/careersUSI`
@@ -221,8 +221,9 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const fetchText = async (url, referer = INDIA_SEARCH_URL) => {
+const fetchText = async (url, referer = INDIA_SEARCH_URL, { signal } = {}) => {
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -237,57 +238,64 @@ const fetchText = async (url, referer = INDIA_SEARCH_URL) => {
   return response.text()
 }
 
-export const run = async () => {
+export const run = async (options = {}) => {
+  const signal = options.signal
+  signal?.throwIfAborted()
+  const limits = nativePaginationLimits(options, nativeDefaults)
+  const pagination = createNativePagination({ surface: INDIA_SEARCH_URL, limits, signal, collectionBudgetMs: options.collectionBudgetMs })
+  const fetchTextImpl = options.fetchText || fetchText
   const jobs = []
-  const seenJobIds = new Set()
-  const maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY
-  const maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null
+  return pagination.run(jobs, async () => {
+    const seenJobIds = new Set()
 
-  for (let page = 1; page <= maxPages; page += 1) {
-    const listingUrl = buildSearchUrl({ page })
-    const listingHtml = await fetchText(listingUrl, INDIA_SEARCH_URL)
-    const listings = extractSearchResults(listingHtml)
-    const summary = extractPaginationSummary(listingHtml)
+    for (let page = 1; page <= limits.maxPages; page += 1) {
+      const listingUrl = buildSearchUrl({ page })
+      const listingHtml = await readNativeWithSignal(() => fetchTextImpl(listingUrl, INDIA_SEARCH_URL, { signal: pagination.signal }), pagination.signal)
+      const listings = extractSearchResults(listingHtml)
+      const summary = extractPaginationSummary(listingHtml)
+      const progress = pagination.page(listings.map(job => job.jobId))
+      if (!progress) return pagination.finish(jobs, { exhausted: !summary.hasNext })
 
-    for (const listing of listings) {
-      if (seenJobIds.has(listing.jobId)) continue
-      seenJobIds.add(listing.jobId)
+      for (const listing of listings) {
+        if (seenJobIds.has(listing.jobId)) continue
+        seenJobIds.add(listing.jobId)
 
-      const detailHtml = await fetchText(listing.sourceUrl, listingUrl)
-      const detail = extractJobDetail(detailHtml, listing)
+        const detailHtml = await readNativeWithSignal(() => fetchTextImpl(listing.sourceUrl, listingUrl, { signal: pagination.signal }), pagination.signal)
+        const detail = extractJobDetail(detailHtml, listing)
 
-      jobs.push({
-        jobId: detail.jobId || listing.jobId,
-        requisitionId: detail.requisitionId || listing.requisitionId,
-        title: detail.title || listing.title,
-        company: 'Deloitte',
-        department: detail.department || listing.department || null,
-        location: detail.location || listing.location || null,
-        city: detail.city || listing.city || null,
-        link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-        applyUrl: detail.applyUrl || null,
-        sourceUrl: detail.sourceUrl || listing.sourceUrl,
-        source: 'deloitte',
-        employmentType: detail.employmentType,
-        experienceRequired: detail.experienceRequired,
-        jobDescription: detail.jobDescription,
-        minimumQualification: detail.minimumQualification,
-        preferredQualification: detail.preferredQualification,
-        requiredSkills: detail.requiredSkills,
-        postingDate: detail.postingDate || null,
-        closingDate: detail.closingDate,
-        scrapedAt: new Date().toISOString(),
-      })
+        jobs.push({
+          jobId: detail.jobId || listing.jobId,
+          requisitionId: detail.requisitionId || listing.requisitionId,
+          title: detail.title || listing.title,
+          company: 'Deloitte',
+          department: detail.department || listing.department || null,
+          location: detail.location || listing.location || null,
+          city: detail.city || listing.city || null,
+          link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
+          applyUrl: detail.applyUrl || null,
+          sourceUrl: detail.sourceUrl || listing.sourceUrl,
+          source: 'deloitte',
+          employmentType: detail.employmentType,
+          experienceRequired: detail.experienceRequired,
+          jobDescription: detail.jobDescription,
+          minimumQualification: detail.minimumQualification,
+          preferredQualification: detail.preferredQualification,
+          requiredSkills: detail.requiredSkills,
+          postingDate: detail.postingDate || null,
+          closingDate: detail.closingDate,
+          scrapedAt: new Date().toISOString(),
+        })
 
-      if (maxJobs && jobs.length >= maxJobs) {
-        return jobs
+        if (jobs.length >= limits.maxJobs) {
+          return pagination.finish(jobs)
+        }
       }
+
+      if (!summary.hasNext) return pagination.finish(jobs, { exhausted: true })
     }
 
-    if (!summary.hasNext) break
-  }
-
-  return jobs
+    return pagination.finish(jobs)
+  })
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

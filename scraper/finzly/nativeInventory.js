@@ -250,7 +250,9 @@ export const createFinzlyNativeInventory = (defaults = {}) => ({
         && heading === 'Production Support Analyst \u2013 Payments'
       requireIdentity(Number.isSafeInteger(raw?.id) && raw.id > 0 && !pageIds.has(raw.id) && raw.parent === PARENT_PAGE_ID && raw.type === 'page'
         && raw.link === row.url && raw.slug === new URL(row.url).pathname.split('/').at(-2)
-        && raw.yoast_head_json?.og_site_name === 'Finzly, Inc.' && raw.yoast_head_json.canonical === row.url
+        // Yoast REST metadata is optional. The current HTML has already bound
+        // its canonical URL and employer; supplied REST metadata must agree.
+        && (raw.yoast_head_json == null || raw.yoast_head_json.og_site_name === 'Finzly, Inc.' && raw.yoast_head_json.canonical === row.url)
         && doc.nodes(n => n.tag === 'body' && cls(n, 'page-id-' + raw.id) && cls(n, 'parent-pageid-' + PARENT_PAGE_ID)).length === 1
         && folded(nativeTitle) === folded(heading) && (folded(row.title) === folded(heading) || alias), 'role, page, parent, title or employer identity conflicts')
       pageIds.add(raw.id)
@@ -302,7 +304,8 @@ export const createFinzlyNativeInventory = (defaults = {}) => ({
         sourceNativePageDates: { created: raw.date ?? null, createdGMT: raw.date_gmt ?? null, modified: raw.modified ?? null, modifiedGMT: raw.modified_gmt ?? null,
           meaning: 'WordPress document creation/modification; not job publication' },
         sourceNativeCountryEvidence: { method: 'matching-native-role-location-labels', listing: row.location, visibleDetail: location, nativeDetail: nativeLocation },
-        sourceNativeEmployerEvidence: { brand: 'Finzly', siteName: raw.yoast_head_json.og_site_name, nativePageId: raw.id, parentPageId: raw.parent, legalEmployer: null },
+        sourceNativeEmployerEvidence: { brand: 'Finzly', siteName: one(doc.nodes(n => n.tag === 'meta' && n.attrs.property === 'og:site_name'), 'native site brand').attrs.content,
+          nativePageId: raw.id, parentPageId: raw.parent, legalEmployer: null },
         sourceNativeStatusEvidence: { pageStatus: raw.status, currentlyAdvertised: true, vacancyStatus: null },
         sourceAdvertisedRoleCount: initial.roles.size, requiredSkills: [], minimumQualification: null, preferredQualification: null,
         sourcePublishedCareerPageCount: initialPages?.total ?? null,

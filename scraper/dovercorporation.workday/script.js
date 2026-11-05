@@ -10,7 +10,7 @@ export const COMPANY = "Dover Corporation"
 export const CAREERS_URL = 'https://www.dovercorporation.com/about-us/careers/'
 export const DISPOSITION = 'official-native-India-office-subset-company-scope-partial'
 export const VERIFIED_ON = null
-export const VERIFIED_SURFACE_SUMMARY = 'Checks the exact Dover Workday board, its advertised public client, four typed India office facets, every selected page and full role, and final listing/detail reconciliation. Whole-company global and India totals remain unknown; original corporate discovery clock is retained.'
+export const VERIFIED_SURFACE_SUMMARY = 'Checks the current corporate Workday handoff, advertised public client, current typed India office facets, every selected page and full role, and final publisher/listing/detail reconciliation. Whole-company recruitment scope remains unknown.'
 
 export const run = async (options={}) => {
   if(options.maxJobs!=null)throw Error('Dover cannot certify truncated selected office inventory')
@@ -19,7 +19,7 @@ export const run = async (options={}) => {
   const now=typeof options.now==='function'?options.now:()=>new Date(options.now??Date.now()).toISOString()
   if(!Number.isFinite(Date.parse(now())))throw Error('Invalid Dover check time')
   const deadline=AbortSignal.timeout(timeoutMs),signal=options.signal?AbortSignal.any([options.signal,deadline]):deadline
-  return runNative({signal,now})
+  return runNative({signal,now,fetchImpl:options.fetchImpl,requestIntervalMs:options.requestIntervalMs})
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

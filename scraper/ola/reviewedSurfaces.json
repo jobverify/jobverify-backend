@@ -199,6 +199,56 @@
       "url": "https://cdn.olaelectric.com/ev-discovery-static-assets/static/frontend/Ola/Electric/en_US/css/templates/common_admin_css_file_v4.min.css",
       "sha256": "9e3ee8bfe29087fd4c0a9efbc13d357fa92b2674c7b18cc0adbb87c14b164e50",
       "kind": "css"
+    },
+    {
+      "url": "https://olacareers.turbohire.co/runtime-main.1f1316b384bd2bc2fa19.js",
+      "sha256": "fa5ba92286ad64755446e92260e89a0e572bac1b9e3b6db65d43dbfcc21a0006",
+      "kind": "js"
+    },
+    {
+      "url": "https://olacareers.turbohire.co/18.2893381b2be19e018202.chunk.js",
+      "sha256": "1fd079b04688e02344b6e04f41305fee71ec9d930962ce669da4c531058538ab",
+      "kind": "js"
+    },
+    {
+      "url": "https://olacareers.turbohire.co/main.b0d6157f22b18da4e1b4.chunk.js",
+      "sha256": "31de8df68e5fb40dfe8a509e42a2b672a2b48adb7b46cac891e7d45fbfc0c754",
+      "kind": "js"
+    },
+    {
+      "url": "https://olacareers.turbohire.co/17.97c60a1ea795d275c3d7.chunk.js",
+      "sha256": "21d1422d281fb1c90e0f6f0a0ec32aac51ddae8abde132dd738257770e22bf95",
+      "kind": "js"
+    },
+    {
+      "url": "https://olacareers.turbohire.co/14.93f6687f97962b8289ec.chunk.js",
+      "sha256": "fbd5d5604f6ad918133f9847967adb83f01a0508eb52290b8d411bb7b1f3a7c9",
+      "kind": "js"
+    },
+    {
+      "url": "https://olacareers.turbohire.co/25.bcf51dcc75bf1c3f4dc0.chunk.js",
+      "sha256": "be01113269f238a8d5de3e6ee36e5acb035afa4e7d465d0b6b4dde54b2046b7e",
+      "kind": "js"
+    },
+    {
+      "url": "https://olacareers.turbohire.co/38.fd875f34fad3e1170ec0.chunk.js",
+      "sha256": "9ab14f0253d7fb1ba89f42c9b7047ac76a0cad43b90c7b48f5ec527e3fcae729",
+      "kind": "js"
+    },
+    {
+      "url": "https://olacareers.turbohire.co/64.b3a35e72c0970daa52b0.chunk.js",
+      "sha256": "3246beffec8c0ee133151714f0a5ad767356d51602f6b261b7fd29fd4f58d2c8",
+      "kind": "js"
+    },
+    {
+      "url": "https://olacareers.turbohire.co/40.af6f3fea93b66903cffa.chunk.js",
+      "sha256": "1af370bc110964da619732727ac269bfac916af5bf85d4d1386ff462e17c25b9",
+      "kind": "js"
+    },
+    {
+      "url": "https://www.olaelectric.com/static/_cache/merged/ba425f4b503867d814bcd6848d8bb896.min.css",
+      "sha256": "3ff8e1a232b4e055c2b09ec3465a71032c3da41eb3b3c45db9fdaeabdbd8f99f",
+      "kind": "css"
     }
   ],
   "surfaces": {
@@ -456,5 +506,76 @@
       ],
       "inlineStyleSHA256": []
     }
+  },
+  "nativeClientVersions": [
+    {
+      "scriptURLs": [
+        "https://olacareers.turbohire.co/runtime-main.1f1316b384bd2bc2fa19.js",
+        "https://olacareers.turbohire.co/18.2893381b2be19e018202.chunk.js",
+        "https://olacareers.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://olacareers.turbohire.co/main.b0d6157f22b18da4e1b4.chunk.js"
+      ],
+      "externalScripts": [
+        "https://www.googletagmanager.com/gtag/js?id=G-36T6S0LNJM",
+        "https://maps.googleapis.com/maps/api/js?key=AIzaSyD0GLpVDoqqx3pi5RykIYDswEwxV-dNGFc&libraries=places",
+        "https://code.jquery.com/jquery-3.7.0.slim.min.js",
+        "https://checkout.razorpay.com/v1/checkout.js",
+        "https://vjs.zencdn.net/7.3.0/video.min.js",
+        "https://www.webrtc-experiment.com/EBML.js",
+        "https://apis.google.com/js/platform.js",
+        "https://fast.wistia.com/assets/external/E-v1.js",
+        "https://fast.wistia.com/embed/medias/iwl55pmvfx.jsonp",
+        "https://fast.wistia.com/embed/medias/fc0tvbwr6k.jsonp",
+        "https://fast.wistia.com/embed/medias/vtxfkj6k9g.jsonp",
+        "https://fast.wistia.com/embed/medias/v1zlv77sxf.jsonp",
+        "https://turbohire.statuspage.io/embed/script.js",
+        "https://olacareers.turbohire.co/runtime-main.1f1316b384bd2bc2fa19.js",
+        "https://olacareers.turbohire.co/18.2893381b2be19e018202.chunk.js",
+        "https://olacareers.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://olacareers.turbohire.co/main.b0d6157f22b18da4e1b4.chunk.js"
+      ],
+      "assetURLs": [
+        "https://olacareers.turbohire.co/runtime-main.1f1316b384bd2bc2fa19.js",
+        "https://olacareers.turbohire.co/18.2893381b2be19e018202.chunk.js",
+        "https://olacareers.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://olacareers.turbohire.co/main.b0d6157f22b18da4e1b4.chunk.js",
+        "https://olacareers.turbohire.co/17.97c60a1ea795d275c3d7.chunk.js",
+        "https://olacareers.turbohire.co/14.93f6687f97962b8289ec.chunk.js",
+        "https://olacareers.turbohire.co/25.bcf51dcc75bf1c3f4dc0.chunk.js",
+        "https://olacareers.turbohire.co/38.fd875f34fad3e1170ec0.chunk.js",
+        "https://olacareers.turbohire.co/64.b3a35e72c0970daa52b0.chunk.js",
+        "https://olacareers.turbohire.co/40.af6f3fea93b66903cffa.chunk.js"
+      ],
+      "companyScopeUnqualified": true
+    }
+  ],
+  "corporateStyleVersions": {
+    "olaelectric": [
+      {
+        "stylesheets": [
+          {
+            "url": "https://www.olaelectric.com/static/_cache/merged/ba425f4b503867d814bcd6848d8bb896.min.css",
+            "media": "all"
+          },
+          {
+            "url": "https://cdn.olaelectric.com/ev-discovery-static-assets/static/frontend/Ola/Electric/en_US/css/templates/support_faq_v1.min.css",
+            "media": "all"
+          },
+          {
+            "url": "https://cdn.olaelectric.com/ev-discovery-static-assets/static/frontend/Ola/Electric/en_US/css/templates/common_admin_css_file_v4.min.css",
+            "media": "all"
+          }
+        ],
+        "inlineStyleSHA256": [
+          "2e450ddcb53a2d676ee72e9279fbf3c8e7e3baf8349242643b857279f9061b19",
+          "e06074d2f0b85bdaaac5f7c16cd872f90abd67c58b7503a0f509b2e2bf207b14",
+          "9a5b1e36749952f00354461d60c437fda812b79065313f8cd0b1e64d28ac2499",
+          "7f5af4ea4a4ebcf7466bfa42431a04503a7b38c0e6d2be6b3519b80d9e2dab70",
+          "8a59f0fa2ffb0b6d9868fb363ef5e113dbf857af60f83ef4ea5189982e5024bb",
+          "e9c8fc652f2b62abb49743628fc420db7b94aef3b075ab348a8dc6fff2de4a37",
+          "56a412ebdf34e6b92604577fb3927a3d7a45bde83fa756b0d1e1a9d58c9cadb9"
+        ]
+      }
+    ]
   }
 }

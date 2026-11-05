@@ -1,16 +1,18 @@
 import { isMongoOperationalError } from '../../src/utils/mongoOperationalError.js'
 
-const getErrorText = (error = {}) => [
-  error?.message,
-  error?.cause?.message,
-  error?.cause?.code,
-  error?.code,
-]
-  .filter((value) => value != null && value !== '')
-  .join(' ')
+const getErrorText = (error = {}) => {
+  const parts = [], seen = new Set()
+  for (let current = error; current && typeof current === 'object' && !seen.has(current) && seen.size < 8; current = current.cause) {
+    seen.add(current)
+    parts.push(current.message, current.code)
+    const status = current.status ?? current.statusCode ?? current.response?.status
+    if (/^[1-5]\d\d$/.test(String(status))) parts.push(`HTTP ${status}`)
+  }
+  return parts.filter(value => value != null && value !== '').join(' ')
+}
 
 const BLOCKED_OR_ACCESS_DENIED_PATTERN =
-  /http[\s_:-]*(?:401|403|406|429)\b|http[\s_:-]*405\b.*icims\.com|\b403\b|forbidden|blocked html|blocked response|captcha|challenge|human verification|please enable cookies|verify (?:you are )?human|unauthorized|access denied|too many requests|authorizationtoken/i
+  /http[\s_:-]*(?:401|402|403|406|407|429|451)\b|http[\s_:-]*405\b.*icims\.com|\b403\b|forbidden|blocked html|blocked response|captcha|challenge|human verification|please enable cookies|verify (?:you are )?human|unauthorized|access denied|too many requests|authorizationtoken/i
 
 const NETWORK_OR_TIMEOUT_PATTERN =
   /workday is currently unavailable|http[\s_:-]*5\d\d\b|timeout|timed out|etimedout|(?:this|the) operation was aborted|targetclose|target closed|execution context was destroyed|socket|econn|enotfound|eai_again|fetch failed|net::err_[a-z_]+|\bnetwork\b|tls|ssl\/tls|unable to verify .*certificate|certificate (?:has expired|verification|chain|mismatch|altname|alt-name)|self-signed certificate|certificate's altnames|err_tls_cert|depth_zero_self_signed_cert|unable_to_verify_leaf_signature|und_err_connect_timeout/i

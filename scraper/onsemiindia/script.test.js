@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
 
 import {
   buildJobDetailApiUrl,
@@ -10,7 +12,7 @@ import {
   extractSearchResults,
 } from './script.js'
 
-test('onsemi India targets the verified first-party Oracle board', () => {
+test('onsemi India builds the first-party Oracle public and API URLs', () => {
   assert.match(buildSearchUrl(), /hctz\.fa\.us2\.oraclecloud\.com\/hcmRestApi\/resources\/latest\/recruitingCEJobRequisitions/)
   assert.match(buildSearchUrl(), /siteNumber=CX_1001/)
   assert.equal(buildJobDetailUrl('2505563'), 'https://hctz.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/2505563')
@@ -70,39 +72,48 @@ test('onsemi India extracts detail descriptions and qualification-based experien
 
 test('onsemi India paginates the official finder until its reported total', async () => {
   const calls = []
+  const publicBodies = JSON.parse(gunzipSync(readFileSync(new URL('./native-captures/2026-11-05-public.json.gz', import.meta.url))))
   const jobs = await createOnsemiIndiaScraper({
+    fetchText: async url => publicBodies.find(packet => packet.requestedUrl === url).body,
     fetchJson: async (url) => {
       calls.push(url)
       if (url.includes('recruitingCEJobRequisitionDetails')) {
+        const id = /Id=%22(\d+)%22/.exec(url)[1]
         return {
           items: [{
-            Id: String(calls.length - 1),
-            Title: `India Engineer ${calls.length - 1}`,
+            Id: id,
+            Title: `India Engineer ${id}`,
             PrimaryLocation: 'Bengaluru, Karnataka, India',
             PrimaryLocationCountry: 'IN',
+            secondaryLocations: [],
             ExternalDescriptionStr: '<p>Detailed role summary</p>',
+            ExternalResponsibilitiesStr: null,
             ExternalQualificationsStr: '<ul><li>Minimum 3 years of verification experience</li></ul>',
           }],
         }
       }
-
+      const offset = Number(/,offset=(\d+)/.exec(url)[1])
       return {
         items: [{
-          Limit: 1,
-          TotalJobsCount: 2,
-          requisitionList: [{
-            Id: String(calls.length),
-            Title: `India Engineer ${calls.length}`,
+          ...JSON.parse(publicBodies.find(packet => packet.ordinal === 7).body).items[0],
+          SiteNumber: 'CX_1001',
+          Offset: offset,
+          Limit: 24,
+          TotalJobsCount: 25,
+          requisitionList: Array.from({ length: Math.min(24, 25 - offset) }, (_, index) => ({
+            Id: String(offset + index + 1),
+            Title: `India Engineer ${offset + index + 1}`,
             PrimaryLocation: 'Bengaluru, Karnataka, India',
             PrimaryLocationCountry: 'IN',
-          }],
+            secondaryLocations: [],
+          })),
         }],
       }
     },
   }).run()
 
-  assert.equal(calls.length, 4)
-  assert.equal(jobs.length, 2)
+  assert.equal(calls.length, 29)
+  assert.equal(jobs.length, 25)
   assert.equal(jobs[0].experienceRequired, 'Minimum 3 years of verification experience')
   assert.match(jobs[0].jobDescription, /Detailed role summary/)
 })

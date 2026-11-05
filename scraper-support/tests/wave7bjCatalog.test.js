@@ -49,16 +49,19 @@ test('AVIZVA local catalog captures the verified first-party careers inventory a
   assert.equal(provider.companyCareerPage, 'https://www.avizva.com/career')
   assert.equal(provider.careersVendorHost, 'avizva.keka.com')
   assert.equal(provider.companyDomain, 'avizva.com')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-plus-keka-apply-handoff')
+  assert.equal(provider.atsPlatform, 'keka')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
+  assert.equal(provider.sourceScope, 'configured-public-board')
+  assert.equal(provider.companyGlobalTotal, null)
+  assert.equal(provider.companyIndiaTotal, null)
+  assert.equal(provider.paginationStrategy, 'current-native-complete-active-array-plus-opening-and-closing-full-details')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+job-boxes-and-legacy-role-cards+keka-apply-links',
+    'current-active-corporate-handoffs+literal-native-tenant+reviewed-read-only-client+typed-countries+full-native-criteria+closing-reconciliation',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.equal(provider.verifiedOn, '2026-11-05')
   assert.match(provider.verifiedSurfaceSummary, /Senior Python Engineer/i)
   assert.match(provider.verifiedSurfaceSummary, /Python Engineer/i)
   assert.match(provider.verifiedSurfaceSummary, /Senior Engineer/i)

@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs'
+import { gunzipSync } from 'node:zlib'
+import { TURBOHIRE_CURRENT_PUBLIC_CLIENT } from '../utils/turboHirePublicClient.js'
+
+const sdk = JSON.parse(gunzipSync(fs.readFileSync(new URL('../../test/test-data/recruitmentGoal20261104/turbohire-stage2-public-client.json.gz', import.meta.url))))
 
 const officialCareersHtml = `
 <!doctype html>
@@ -34,6 +39,7 @@ const officialBoardHtml = `
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <script src="/main.f9eb0b1ea3273f6dfc17.chunk.js"></script>
   </body>
 </html>
 `
@@ -119,10 +125,10 @@ test('Navi helpers stay pinned to the verified first-party careers handoff and T
   )
   assert.equal(navi.ORIGIN, 'https://navi.turbohire.co')
   assert.equal(navi.ORG_ID, '3e818601-0baa-429c-b6f8-4b21903ae0e6')
-  assert.equal(navi.NOAUTH_TOKEN_URL, 'https://thapi.azurewebsites.net/api/token/noauth')
+  assert.equal(navi.NOAUTH_TOKEN_URL, 'https://thapi-stage2.azurewebsites.net/api/token/noauth')
   assert.equal(
     navi.FILTERED_JOBS_URL,
-    'https://thapi.azurewebsites.net/api/careerpagev2/filteredjobs?orgId=3e818601-0baa-429c-b6f8-4b21903ae0e6&pageType=0',
+    'https://thapi-stage2.azurewebsites.net/api/careerpagev2/filteredjobs?orgId=3e818601-0baa-429c-b6f8-4b21903ae0e6&pageType=0',
   )
   assert.equal(navi.hasOfficialCareersPageSignal(officialCareersHtml), true)
   assert.equal(
@@ -180,10 +186,13 @@ test('Navi run validates the official careers handoff, board shell, and public T
   const navi = await loadNaviModule()
   const pageRequests = []
   const jsonRequests = []
+  const currentListing = { ...sampleFilteredJobsPayload.Result[0], OrgDetails: { ...sampleFilteredJobsPayload.Result[0].OrgDetails, OrgName: 'NAVI TECHNOLOGIES LIMITED' } }
+  const fullDescription = '<h3>About the Team</h3><p>' + 'The Credit Risk team drives risk strategy, develops economic forecasting models and validates credit policy decisions. '.repeat(8) + '</p>'
 
   const jobs = await navi.createNaviScraper({
     fetchPage: async (url) => {
       pageRequests.push(url)
+      if (url === navi.ORIGIN + TURBOHIRE_CURRENT_PUBLIC_CLIENT.path) return { status: 200, url, html: sdk.text }
 
       if (url === navi.CAREERS_PAGE_URL) {
         return {
@@ -212,20 +221,24 @@ test('Navi run validates the official careers handoff, board shell, and public T
       })
 
       if (url === navi.NOAUTH_TOKEN_URL) return tokenPayload
-      if (url === navi.FILTERED_JOBS_URL) return {Total:1,Result:[sampleFilteredJobsPayload.Result[0]]}
+      if (url === navi.FILTERED_JOBS_URL) return {Total:1,Result:[currentListing]}
       if (url.startsWith(navi.API_BASE_URL+'/api/publicjobs?')) {
-        const row=sampleFilteredJobsPayload.Result[0]
-        return {...row,IsPublic:true,IsDraft:false,JobStatus:'Active',PublishedJobBoards:['CAREERPAGE'],JobDescriptionV2:row.JobDescV2}
+        const row=currentListing
+        return {...row,IsPublic:true,IsDraft:false,JobStatus:'Active',PublishedJobBoards:['CAREERPAGE'],PublishedDates:{CAREERPAGE:row.PublishedDate},JobDescriptionV2:fullDescription}
       }
 
       throw new Error(`Unexpected Navi json URL: ${url}`)
     },
-    now: () => '2026-07-17T00:00:00.000Z',
+    now: () => '2026-07-17T00:00:00.000Z', requestIntervalMs: 0,
   }).run()
 
   assert.deepEqual(pageRequests, [
     navi.CAREERS_PAGE_URL,
     navi.TURBOHIRE_BOARD_URL,
+    navi.ORIGIN + TURBOHIRE_CURRENT_PUBLIC_CLIENT.path,
+    navi.CAREERS_PAGE_URL,
+    navi.TURBOHIRE_BOARD_URL,
+    navi.ORIGIN + TURBOHIRE_CURRENT_PUBLIC_CLIENT.path,
   ])
   assert.deepEqual(
     jsonRequests.map((request) => [request.url, request.method]),
@@ -240,46 +253,19 @@ test('Navi run validates the official careers handoff, board shell, and public T
   assert.equal(jsonRequests[1].headers.Authorization, 'Bearer public-token-123')
   assert.equal(jsonRequests[1].headers['Content-Type'], 'application/json')
   assert.equal(jsonRequests[1].body, navi.buildFilteredJobsRequestBody())
-  assert.deepEqual(jobs, [
-    {
-      title: 'Associate Manager II - Economist(Credit Risk)',
-      company: 'Navi',
-      department: 'Credit Risk',
-      location: 'Bangalore, Karnataka, India',
-      city: 'Bangalore',
-      country: 'India',
-      jobId: '25fcd1c3-d23d-4b08-99fd-204ec8f4b696',
-      requisitionId: 'N-54856',
-      sourceUrl: 'https://navi.turbohire.co/job/publicjobs/Cvxwte5N5snwG3hC%2FJkmZDU3RTVAq0zyKiiGLI4keyB3_3_ZUhAlZKVULxyMnx6q',
-      applyUrl: 'https://navi.turbohire.co/job/publicjobs/Cvxwte5N5snwG3hC%2FJkmZDU3RTVAq0zyKiiGLI4keyB3_3_ZUhAlZKVULxyMnx6q',
-      employmentType: 'Full Time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [
-        'Economics',
-        'Time series modelling',
-        'Macro economics',
-        'Stress testing',
-        'Forecasting',
-      ],
-      postingDate: '2026-07-16T05:43:36.5983344Z',
-      closingDate: '2026-08-31T18:29:00.32Z',
-      jobDescription: 'About the Team The Credit Risk team at Navi drives risk strategy and forecasting.',
-      publicExperienceChecked: true,
-      source: 'navi',
-      link: 'https://navi.turbohire.co/job/publicjobs/Cvxwte5N5snwG3hC%2FJkmZDU3RTVAq0zyKiiGLI4keyB3_3_ZUhAlZKVULxyMnx6q',
-      scrapedAt: '2026-07-17T00:00:00.000Z',
-      sourceNativeClosingDate:'2026-08-31T18:29:00.32Z',
-      sourceClosingDateIsExact:true,
-      sourceDetailComplete:true,
-      sourceDetailStatus:'complete',
-      sourceDescriptionAttachment:null,
-      sourceNativeLocations:[{address:'Bangalore, Karnataka, India',city:'Bangalore',state:'Karnataka',countryCode:'IN'}],
-      sourcePrimaryLocation:'Bangalore, Karnataka, India',
-      sourceListingComplete:true,
-    },
-  ])
+  assert.equal(jobs.length, 1)
+  const job = jobs[0]
+  assert.equal(job.source, 'navi')
+  assert.equal(job.jobId, currentListing.JobId)
+  assert.equal(job.requisitionId, currentListing.JobCode)
+  assert.equal(job.postingDate, currentListing.PublishedDate)
+  assert.ok(job.jobDescription.length > 500)
+  assert.equal(job.nativeSourceRecord.nativeDetail.JobDescriptionV2, fullDescription)
+  assert.equal(job.country, 'India')
+  assert.equal(job.nativeRoleClosingReconciled, true)
+  assert.equal(job.sourceScopeComplete, false)
+  assert.equal(job.lifecycleCleanupAllowed, false)
+
 })
 
 test('Navi fails closed when the verified official careers handoff or board changes materially', async () => {

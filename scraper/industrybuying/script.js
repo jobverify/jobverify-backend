@@ -61,17 +61,6 @@ const htmlToText = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' ')
 )
 
-const toIndiaLocation = (value) => {
-  const location = normalizeWhitespace(value)
-  if (!location) return { location: 'India', city: null, country: 'India' }
-
-  return {
-    location: /india/i.test(location) ? location : `${location}, India`,
-    city: location.split(/\s*,\s*/)[0] || location,
-    country: 'India',
-  }
-}
-
 export const extractCareersLink = (html) => {
   const matches = [...String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
   for (const [, href, label] of matches) {
@@ -131,6 +120,7 @@ export const extractJobSummaries = (payload, { orgId = EXPECTED_ORG_ID } = {}) =
         jobType: normalizeWhitespace(job?.jobType),
         openings: Number.isFinite(Number(job?.openings)) ? Number(job.openings) : null,
         createdAt: normalizePostingDate(job?.createdAt),
+        nativeListingRecord: structuredClone(job),
       }
     })
 }
@@ -153,7 +143,12 @@ export const mapJob = ({ summary, detail }) => {
   const requisitionId = normalizeWhitespace(detail?.requisitionId || detail?.reqId || summary?.requisitionId)
   const employmentType = normalizeWhitespace(detail?.jobType || summary?.jobType)
   const description = htmlToText(detail?.jobDescription)
-  const locationInfo = toIndiaLocation(detail?.location || summary?.location)
+
+  if (summary?.orgId !== EXPECTED_ORG_ID || detail?.orgId !== summary.orgId
+    || !summary.requisitionId || detail.requisitionId !== summary.requisitionId
+    || detail.id !== summary.requisitionId) {
+    throw new Error('IndustryBuying native employer or requisition identity mismatch')
+  }
 
   if (!jobId || !title || !requisitionId || !description) {
     throw new Error('IndustryBuying careers detail payload no longer exposes the verified job fields')
@@ -163,9 +158,18 @@ export const mapJob = ({ summary, detail }) => {
     title,
     company: COMPANY,
     department: normalizeWhitespace(detail?.department || summary?.department),
-    location: locationInfo.location,
-    city: locationInfo.city,
-    country: locationInfo.country,
+    // The current API supplies untyped office labels, such as "Delhi HO".
+    // Preserve them with the complete original models until a native work
+    // country is supplied; neither the employer's market nor a city proves it.
+    location: null,
+    city: null,
+    country: null,
+    rawWorkplace: {listing: summary.location ?? null, detail: detail.location ?? null},
+    sourceCountryScopeUnresolved: true,
+    sourceListingComplete: false,
+    sourceScopeComplete: false,
+    lifecycleCleanupAllowed: false,
+    nativeSourceRecord: {listing: structuredClone(summary.nativeListingRecord ?? summary), detail: structuredClone(detail)},
     jobId,
     requisitionId,
     sourceUrl: buildJobDetailUrl(jobId),

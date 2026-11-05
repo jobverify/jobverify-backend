@@ -16,7 +16,7 @@ import { extractWorkdayDetailLocations } from './locationDetails.js'
 import { parseWorkdayNativeLifecycleDate } from './nativeLifecycleDates.js'
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 import {
-  currentWorkdayBoardReceipt, explicitWorkdayCountryScope, hasRecognizedWorkdayCountry, hashWorkdayProof,
+  currentWorkdayBoardReceipt, explicitWorkdayCountryScope, explicitWorkdayAdditionalCountryScope, hasRecognizedWorkdayCountry, hashWorkdayProof,
   workdayInventoryIdentity, WORKDAY_COUNTRY_INVENTORY_PROOF,
 } from './countryInventoryProof.js'
 import {
@@ -1525,6 +1525,12 @@ const buildWorkdayIncompleteListingError = (source, reason, classification = {})
   return error
 }
 
+const buildWorkdayInventoryChangedError = (source, reason) => Object.assign(
+  buildWorkdayIncompleteListingError(source, reason, {
+    softFailure: true, upstreamOutage: false, failureKind: 'upstream_inventory_changed',
+  }), { code: 'WORKDAY_INVENTORY_CHANGED' },
+)
+
 const resolveSelectedWorkdayCountryFacetTotal = (payload, appliedFacets, searchText) => {
   if (String(searchText || '').trim()) return null
   const selectedFacets = Object.entries(appliedFacets || {})
@@ -1895,13 +1901,13 @@ const resolveWorkdayScopeLocations = (candidate, countryEvidence, source, countr
         return false
       }))) throw new Error('CXS typed country conflicts with current source worksite country: ' + location)
       if (countryProof && known?.conflict) throw new Error('CXS location has conflicting current primary-country evidence: ' + location)
-      if (countryProof && index === 0 && primaryScope && explicitWorkdayCountryScope(location)
-        && primaryScope !== explicitWorkdayCountryScope(location)) throw new Error('CXS location and country fields conflict: ' + location)
+      if (countryProof && index === 0 && primaryScope && explicitWorkdayAdditionalCountryScope(location)
+        && primaryScope !== explicitWorkdayAdditionalCountryScope(location)) throw new Error('CXS location and country fields conflict: ' + location)
       if (index === 0 && primaryScope) return primaryScope
       if (known?.conflict) throw new Error('CXS location has conflicting current primary-country evidence: ' + location)
       if (known) return known.scope
       if (countryProof) {
-        const explicit = explicitWorkdayCountryScope(location)
+        const explicit = explicitWorkdayAdditionalCountryScope(location)
         if (explicit) return explicit
         if (worksite) {
           candidate.additionalWorksiteCountryBindings ||= []
@@ -2076,205 +2082,221 @@ const runWorkdayJobsApiScraper = async ({
       requestScheduler,
     })
 
-    for (let pageNum = 1; pageNum <= maxPages; pageNum += 1) {
-      throwIfAborted(signal)
-      let payload
-      try {
-        payload = await fetchWorkdayJobsApiPage({
-          jobsApiUrl,
-          bootstrapUrl: searchUrl,
-          appliedFacets: effectiveAppliedFacets,
-          offset,
-          searchText: effectiveSearchText,
-          source,
-          session,
-          signal,
-          requestTimeoutMs,
-          retryBaseDelayMs,
-          circuitBreaker,
-          requestScheduler,
-          requireProofResponse: countryProof,
-        })
-      } catch (error) {
+    const enumerateListing = async () => {
+      for (let pageNum = 1; pageNum <= maxPages; pageNum += 1) {
         throwIfAborted(signal)
-        if (shouldRetryWithoutWorkdayCountryFacet({
-          error,
-          retryAttempted: retriedWithoutCountryFacet,
-          locationCountry,
-          appliedFacets: effectiveAppliedFacets,
-        })) {
-          retriedWithoutCountryFacet = true
-          effectiveAppliedFacets = removeWorkdayCountryFacets(
-            buildWorkdayAppliedFacets(baseUrl, null, countryFacetParameter),
-          )
-          effectiveSearchText = config.searchText || 'India'
-          console.log(`  [${source}] Workday jobs API rejected the generic country facet; retrying with India search text.`)
-
-          try {
-            payload = await fetchWorkdayJobsApiPage({
-              jobsApiUrl,
-              bootstrapUrl: searchUrl,
-              appliedFacets: effectiveAppliedFacets,
-              offset,
-              searchText: effectiveSearchText,
-              source,
-              session,
-              signal,
-              requestTimeoutMs,
-              retryBaseDelayMs,
-              circuitBreaker,
-              requestScheduler,
-            })
-          } catch (retryError) {
-            error = retryError
-          }
-        }
-
-        if (!payload && shouldRetryWithoutWorkdayLocationFacets({
-          error,
-          retryAttempted: retriedWithoutLocationFacets,
-          appliedFacets: effectiveAppliedFacets,
-        })) {
-          retriedWithoutLocationFacets = true
-          effectiveAppliedFacets = removeWorkdayLocationFacets(
-            buildWorkdayAppliedFacets(baseUrl, null, countryFacetParameter),
-          )
-          effectiveSearchText = config.searchText || 'India'
-          console.log(`  [${source}] Workday jobs API rejected the remaining location facets; retrying with India search text only.`)
-
-          try {
-            payload = await fetchWorkdayJobsApiPage({
-              jobsApiUrl,
-              bootstrapUrl: searchUrl,
-              appliedFacets: effectiveAppliedFacets,
-              offset,
-              searchText: effectiveSearchText,
-              source,
-              session,
-              signal,
-              requestTimeoutMs,
-              retryBaseDelayMs,
-              circuitBreaker,
-              requestScheduler,
-            })
-          } catch (retryError) {
-            error = retryError
-          }
-        }
-
-        if (payload) {
-          // Continue with the recovered page payload instead of falling back to DOM.
-        } else if (
-          !(error instanceof WorkdayUpstreamOutageError)
-          && error?.upstreamOutage !== true
-          && !isTransientWorkdayError(error)
-        ) {
-          const outageDetected = await probeWorkdaySearchPageForOutage(searchUrl, {
+        let payload
+        try {
+          payload = await fetchWorkdayJobsApiPage({
+            jobsApiUrl,
+            bootstrapUrl: searchUrl,
+            appliedFacets: effectiveAppliedFacets,
+            offset,
+            searchText: effectiveSearchText,
+            source,
+            session,
             signal,
             requestTimeoutMs,
-            source,
+            retryBaseDelayMs,
+            circuitBreaker,
             requestScheduler,
+            requireProofResponse: countryProof,
           })
-          if (outageDetected) {
-            throw buildWorkdayOutageError(source, searchUrl, error)
+        } catch (error) {
+          throwIfAborted(signal)
+          if (shouldRetryWithoutWorkdayCountryFacet({
+            error,
+            retryAttempted: retriedWithoutCountryFacet,
+            locationCountry,
+            appliedFacets: effectiveAppliedFacets,
+          })) {
+            retriedWithoutCountryFacet = true
+            effectiveAppliedFacets = removeWorkdayCountryFacets(
+              buildWorkdayAppliedFacets(baseUrl, null, countryFacetParameter),
+            )
+            effectiveSearchText = config.searchText || 'India'
+            console.log(`  [${source}] Workday jobs API rejected the generic country facet; retrying with India search text.`)
+
+            try {
+              payload = await fetchWorkdayJobsApiPage({
+                jobsApiUrl,
+                bootstrapUrl: searchUrl,
+                appliedFacets: effectiveAppliedFacets,
+                offset,
+                searchText: effectiveSearchText,
+                source,
+                session,
+                signal,
+                requestTimeoutMs,
+                retryBaseDelayMs,
+                circuitBreaker,
+                requestScheduler,
+              })
+            } catch (retryError) {
+              error = retryError
+            }
+          }
+
+          if (!payload && shouldRetryWithoutWorkdayLocationFacets({
+            error,
+            retryAttempted: retriedWithoutLocationFacets,
+            appliedFacets: effectiveAppliedFacets,
+          })) {
+            retriedWithoutLocationFacets = true
+            effectiveAppliedFacets = removeWorkdayLocationFacets(
+              buildWorkdayAppliedFacets(baseUrl, null, countryFacetParameter),
+            )
+            effectiveSearchText = config.searchText || 'India'
+            console.log(`  [${source}] Workday jobs API rejected the remaining location facets; retrying with India search text only.`)
+
+            try {
+              payload = await fetchWorkdayJobsApiPage({
+                jobsApiUrl,
+                bootstrapUrl: searchUrl,
+                appliedFacets: effectiveAppliedFacets,
+                offset,
+                searchText: effectiveSearchText,
+                source,
+                session,
+                signal,
+                requestTimeoutMs,
+                retryBaseDelayMs,
+                circuitBreaker,
+                requestScheduler,
+              })
+            } catch (retryError) {
+              error = retryError
+            }
+          }
+
+          if (payload) {
+            // Continue with the recovered page payload instead of falling back to DOM.
+          } else if (
+            !(error instanceof WorkdayUpstreamOutageError)
+            && error?.upstreamOutage !== true
+            && !isTransientWorkdayError(error)
+          ) {
+            const outageDetected = await probeWorkdaySearchPageForOutage(searchUrl, {
+              signal,
+              requestTimeoutMs,
+              source,
+              requestScheduler,
+            })
+            if (outageDetected) {
+              throw buildWorkdayOutageError(source, searchUrl, error)
+            }
+          }
+
+          if (payload) {
+            // no-op
+          } else {
+            throw error
           }
         }
-
-        if (payload) {
-          // no-op
-        } else {
-          throw error
+        pagesFetched += 1
+        const jobs = payload.jobPostings
+        // CXS can return total: 0 on later nonempty pages (e.g. Temenos).
+        // Keep the first-page count; exact row counts and the closing snapshot
+        // still have to reconcile before a complete-board proof is issued.
+        if (countryProof && pageNum > 1 && payload.total !== 0 && payload.total !== reportedTotal) {
+          throw buildWorkdayInventoryChangedError(source, 'complete-board total changed during enumeration')
         }
-      }
-      pagesFetched += 1
-      const jobs = payload.jobPostings
-      // CXS can return total: 0 on later nonempty pages (e.g. Temenos).
-      // Keep the first-page count; exact row counts and the closing snapshot
-      // still have to reconcile before a complete-board proof is issued.
-      if (countryProof && pagesFetched > 1 && payload.total !== 0 && payload.total !== reportedTotal) {
-        throw buildWorkdayIncompleteListingError(source, 'complete-board total changed during enumeration')
-      }
-      reportedTotal = Math.max(reportedTotal, Number(payload.total) || 0)
-      const selectedCountryFacetTotal = resolveSelectedWorkdayCountryFacetTotal(
-        payload,
-        effectiveAppliedFacets,
-        effectiveSearchText,
-      )
-      if (selectedCountryFacetTotal > reportedTotal) {
-        throw buildWorkdayIncompleteListingError(
-          source,
-          'selected country facet reports ' + selectedCountryFacetTotal
-            + ' jobs but the API total is ' + reportedTotal,
-          {
-            softFailure: true,
-            upstreamOutage: false,
-            failureKind: 'upstream_inventory_unavailable',
-          },
+        reportedTotal = Math.max(reportedTotal, Number(payload.total) || 0)
+        const selectedCountryFacetTotal = resolveSelectedWorkdayCountryFacetTotal(
+          payload,
+          effectiveAppliedFacets,
+          effectiveSearchText,
         )
-      }
-      const uniqueBeforePage = seenApiRecords.size
+        if (selectedCountryFacetTotal > reportedTotal) {
+          throw buildWorkdayIncompleteListingError(
+            source,
+            'selected country facet reports ' + selectedCountryFacetTotal
+              + ' jobs but the API total is ' + reportedTotal,
+            {
+              softFailure: true,
+              upstreamOutage: false,
+              failureKind: 'upstream_inventory_unavailable',
+            },
+          )
+        }
+        const uniqueBeforePage = seenApiRecords.size
 
-      if (!countryProof && pageNum === 1 && jobs.length === 0) {
-        console.log(`  [${source}] 0 jobs found from Workday jobs API.`)
-        return createWorkdayEmptyResult({
-          boardIdentityVerified,
-          hasIndiaCountryFacet: hasWorkdayCountryFacetValues(effectiveAppliedFacets),
-          pagesFetched,
-          reportedTotal,
-          surface: jobsApiUrl,
-        })
-      }
+        if (!countryProof && pageNum === 1 && jobs.length === 0) {
+          console.log(`  [${source}] 0 jobs found from Workday jobs API.`)
+          return createWorkdayEmptyResult({
+            boardIdentityVerified,
+            hasIndiaCountryFacet: hasWorkdayCountryFacetValues(effectiveAppliedFacets),
+            pagesFetched,
+            reportedTotal,
+            surface: jobsApiUrl,
+          })
+        }
 
-      console.log(`  [${source}] Scraping page ${pageNum} - ${jobsApiUrl} (offset ${offset})`)
-      console.log(`  [${source}] Page ${pageNum}: ${jobs.length} job records`)
+        console.log(`  [${source}] Scraping page ${pageNum} - ${jobsApiUrl} (offset ${offset})`)
+        console.log(`  [${source}] Page ${pageNum}: ${jobs.length} job records`)
 
-      for (const job of jobs) {
-        const canonicalLink = buildWorkdayJobDetailUrl(job.externalPath, detailUrlBase, baseUrl)
-        if (countryProof) {
-          const apiBoard = new URL(jobsApiUrl).pathname.match(/^\/wday\/cxs\/([^/]+)\/([^/]+)\/jobs$/)
-          const expectedRolePath = '/' + apiBoard?.[2] + job.externalPath
-          const actualRolePath = canonicalLink && new URL(canonicalLink).pathname.replace(/^\/[a-z]{2}-[a-z]{2}(?=\/)/i, '')
-          if (!apiBoard || typeof job.title !== 'string' || !job.title.trim()
-            || typeof job.externalPath !== 'string' || !/^\/job\/.*_[^/]+$/.test(job.externalPath)
-            || !canonicalLink || actualRolePath !== expectedRolePath || initialInventory.has(canonicalLink)) {
-            throw buildWorkdayIncompleteListingError(source, 'complete-board role identity is missing, duplicate, or outside this board')
+        for (const job of jobs) {
+          const canonicalLink = buildWorkdayJobDetailUrl(job.externalPath, detailUrlBase, baseUrl)
+          if (countryProof) {
+            const apiBoard = new URL(jobsApiUrl).pathname.match(/^\/wday\/cxs\/([^/]+)\/([^/]+)\/jobs$/)
+            const expectedRolePath = '/' + apiBoard?.[2] + job.externalPath
+            const actualRolePath = canonicalLink && new URL(canonicalLink).pathname.replace(/^\/[a-z]{2}-[a-z]{2}(?=\/)/i, '')
+            if (!apiBoard || typeof job.title !== 'string' || !job.title.trim()
+              || typeof job.externalPath !== 'string' || !/^\/job\/.*_[^/]+$/.test(job.externalPath)
+              || !canonicalLink || actualRolePath !== expectedRolePath) {
+              throw buildWorkdayIncompleteListingError(source, 'complete-board role identity is missing, duplicate, or outside this board')
+            }
+            if (initialInventory.has(canonicalLink)) throw buildWorkdayInventoryChangedError(source, 'complete-board role identity repeated during pagination')
+            initialInventory.set(canonicalLink, workdayInventoryIdentity(job))
           }
-          initialInventory.set(canonicalLink, workdayInventoryIdentity(job))
-        }
-        seenApiRecords.add(canonicalLink || JSON.stringify(job))
-        if (!canonicalLink || seenLinks.has(canonicalLink)) continue
+          seenApiRecords.add(canonicalLink || JSON.stringify(job))
+          if (!canonicalLink || seenLinks.has(canonicalLink)) continue
 
-        const location = resolveWorkdaySummaryLocation(job)
-        if (countryProof ? explicitWorkdayCountryScope(location) === 'foreign'
-          : !shouldFetchWorkdayJobDetail({ location }, config.locationPattern)) {
-          continue
+          const location = resolveWorkdaySummaryLocation(job)
+          if (countryProof ? explicitWorkdayCountryScope(location) === 'foreign'
+            : !shouldFetchWorkdayJobDetail({ location }, config.locationPattern)) {
+            continue
+          }
+
+          seenLinks.add(canonicalLink)
+          allCandidates.push({ job, canonicalLink, location,
+            receiptKey: nativeDetailReceiptKey('workday', source, jobsApiUrl, canonicalLink, job.title, location, job.postedOn, job.bulletFields),
+          })
         }
 
-        seenLinks.add(canonicalLink)
-        allCandidates.push({ job, canonicalLink, location,
-          receiptKey: nativeDetailReceiptKey('workday', source, jobsApiUrl, canonicalLink, job.title, location, job.postedOn, job.bulletFields),
+        if (jobs.length > 0 && seenApiRecords.size === uniqueBeforePage) {
+          throw buildWorkdayInventoryChangedError(source, 'API page ' + pageNum + ' repeated previously seen jobs')
+        }
+        offset += jobs.length
+        const hasMore = offset < reportedTotal || shouldContinueWorkdayJobsApiPagination({
+          jobsCount: jobs.length,
+          offsetAfterPage: offset,
+          payloadTotal: reportedTotal,
         })
-      }
-
-      if (jobs.length > 0 && seenApiRecords.size === uniqueBeforePage) {
-        throw buildWorkdayIncompleteListingError(source, 'API page ' + pageNum + ' repeated previously seen jobs')
-      }
-      offset += jobs.length
-      const hasMore = offset < reportedTotal || shouldContinueWorkdayJobsApiPagination({
-        jobsCount: jobs.length,
-        offsetAfterPage: offset,
-        payloadTotal: reportedTotal,
-      })
-      if (jobs.length === 0 || !hasMore) {
-        if (seenApiRecords.size < reportedTotal) {
-          throw buildWorkdayIncompleteListingError(source, 'received ' + seenApiRecords.size + ' unique jobs of ' + reportedTotal + ' reported jobs')
+        if (jobs.length === 0 || !hasMore) {
+          if (seenApiRecords.size < reportedTotal) {
+            throw buildWorkdayInventoryChangedError(source, 'received ' + seenApiRecords.size + ' unique jobs of ' + reportedTotal + ' reported jobs')
+          }
+          break
         }
-        break
-      }
-      if (pageNum === maxPages) {
-        throw buildWorkdayIncompleteListingError(source, 'reached the ' + maxPages + '-page API limit')
+        if (pageNum === maxPages) {
+          throw buildWorkdayIncompleteListingError(source, 'reached the ' + maxPages + '-page API limit')
+        }
       }
     }
+    // Live boards can add/remove postings between offset requests. Discard
+    // that pass and make one fresh enumeration before any role hydration.
+    // A second unstable pass remains a failure and cannot authorize cleanup.
+    let emptyListing
+    try { emptyListing = await enumerateListing() } catch (error) {
+      throwIfAborted(signal)
+      if (error.code !== 'WORKDAY_INVENTORY_CHANGED') throw error
+      seenLinks.clear(); seenApiRecords.clear(); initialInventory.clear()
+      allCandidates.length = 0; reportedTotal = 0; offset = 0
+      console.log(`  [${source}] Workday inventory changed during pagination; restarting the listing once.`)
+      emptyListing = await enumerateListing()
+    }
+    if (emptyListing !== undefined) return emptyListing
 
     // Required geography checks use the source deadline. Resolve these before
     // optional HTML enrichment starts its separate, shorter budget.
@@ -2627,13 +2649,13 @@ const runWorkdayJobsApiScraper = async ({
         if (closingTotal == null) closingTotal = payload.total
         const pageTotal = pageNum > 1 && payload.total === 0 ? closingTotal : payload.total
         if (pageTotal !== reportedTotal || pageTotal !== closingTotal) {
-          throw buildWorkdayIncompleteListingError(source, 'closing complete-board count changed')
+          throw buildWorkdayInventoryChangedError(source, 'closing complete-board count changed')
         }
         for (const job of payload.jobPostings) {
           const link = buildWorkdayJobDetailUrl(job.externalPath, detailUrlBase, baseUrl)
           const identity = workdayInventoryIdentity(job)
           if (!link || closingInventory.has(link) || initialInventory.get(link) !== identity) {
-            throw buildWorkdayIncompleteListingError(source, 'closing complete-board role identity changed or repeated')
+            throw buildWorkdayInventoryChangedError(source, 'closing complete-board role identity changed or repeated')
           }
           closingInventory.set(link, identity)
         }

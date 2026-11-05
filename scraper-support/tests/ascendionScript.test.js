@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readCaptureBody } from '../../scraper/ascendion/native-captures/readFixture.js'
+const official = async url => {
+  const label = url.includes('/who-we-are/careers/') ? 'corporate' : url.includes('/gen/js/') ? 'protocol' : 'careers'
+  return readCaptureBody('2026-11-05', `${label}.body.gz`).toString()
+}
 
 import {
   CAREER_PAGE_URL,
@@ -119,12 +124,13 @@ test('run fetches Ascendion openings from the public pcsx search API and decorat
   })
 
   const jobs = await scraper.run({
+    fetchText: official,
     fetchJson: async (url) => {
       requests.push(url)
       if (url === buildSearchUrl({ start: 0 })) {
         return sampleSearchPayload
       }
-      if (url === buildSearchUrl({ start: 10 })) {
+      if (url === buildSearchUrl({ start: 2 })) {
         return {
           status: 200,
           error: { message: '', body: '' },
@@ -137,7 +143,9 @@ test('run fetches Ascendion openings from the public pcsx search API and decorat
 
       const detailMatch = url.match(/position_id=(\d+)/)
       if (detailMatch) {
-        return detailPayloadById[Number(detailMatch[1])]
+        const detail = detailPayloadById[Number(detailMatch[1])]
+        return { status: 200, data: { ...detail, standardizedLocations: sampleSearchPayload.data.positions.find(p => p.id === detail.id).standardizedLocations,
+          positionUrl: `/careers/job/${detail.id}`, publicUrl: `https://jobs.ascendion.com/careers/job/${detail.id}` } }
       }
 
       throw new Error(`Unexpected URL: ${url}`)
@@ -149,8 +157,11 @@ test('run fetches Ascendion openings from the public pcsx search API and decorat
   assert.equal(buildDetailUrl(1970324837276925), 'https://jobs.ascendion.com/api/pcsx/position_details?position_id=1970324837276925&domain=ascendion.com&hl=en')
   assert.deepEqual(requests, [
     buildSearchUrl({ start: 0 }),
+    buildSearchUrl({ start: 2 }),
     buildDetailUrl(1970324837276925),
     buildDetailUrl(1970324837435960),
+    buildSearchUrl({ start: 0 }),
+    buildSearchUrl({ start: 2 }),
   ])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'ascendion')

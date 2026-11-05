@@ -20,7 +20,14 @@ export const ZEBRA_TECHNOLOGIES_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'verified-first-party-careers-handoff-plus-workday-india-filter',
   extractionStrategy:
-    'verified-first-party-careers-page+verified-workday-handoff+shared-workday-runner',
+    'current-first-party-careers-handoff+full-native-workday-role+reviewed-employer+explicit-own-country+incomplete-source-scope',
+  nativeEmployerNames: ['Symbol Technologies India Private Limited','Zebra Technologies Corporation','Zebra Technologies India Private Limited'],
+  nativeEmployerNameEvidence: {
+    field: 'hiringOrganization.name',
+    entityReviewURL: 'https://www.sec.gov/Archives/edgar/data/877212/000162828026007668/exhibit21-subsidiariesofth.htm',
+    entityReviewSHA256: 'f78153d36c1a1216cd65562d6ccbaa2a0ac64516576a5c632a09d348f68f6e74',
+    scopeRule: 'exact-observed-native-entity-labels-in-Zebra-bound-account;no-blanket-group-employer-alias',
+  },
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   verifiedOn: '2026-08-01',

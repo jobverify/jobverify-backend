@@ -260,31 +260,40 @@ const trinamixCareersHtml = `
 </html>
 `
 
-test('AVIZVA run returns normalized jobs from the verified first-party careers page', async () => {
+test('AVIZVA run reconciles genuine current native descriptions, countries and closing inventory', async () => {
   const avizva = await loadModule('../../scraper/avizva/script.js')
-
   assert.equal(avizva.hasOfficialCareersSignal(avizvaCareersHtml), true)
-
-  const jobs = await avizva.createAvizvaScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      assert.equal(url, avizva.CAREERS_URL)
-      return avizvaCareersHtml
+  const {readFileSync}=await import('node:fs')
+  const {gunzipSync}=await import('node:zlib')
+  const {readInventoryEvidence}=await import('../utils/inventoryEvidence.js')
+  const {createCatalogScraper,getScraperCatalog}=await import('../providers/index.js')
+  const fixture=JSON.parse(gunzipSync(readFileSync(new URL('../../scraper/avizva/test-data/current-native-20261105.json.gz',import.meta.url))))
+  const evidence={},calls=[],seen=new Map()
+  const provider=getScraperCatalog().find(provider=>provider.source==='avizva')
+  const jobs=await createCatalogScraper(provider).run({
+    now:()=>fixture.capturedAt,requestIntervalMs:0,evidence,
+    fetchImpl:async(url,init)=>{
+      calls.push({url,init})
+      const captures=fixture.responses.filter(response=>response.requestedUrl===url),ordinal=seen.get(url)||0
+      const captured=captures[ordinal];seen.set(url,ordinal+1)
+      assert.ok(captured,'Unexpected native replay request '+url)
+      return new Response(captured.body,{status:captured.status,headers:{'content-type':captured.headers['content-type']}})
     },
   })
-
-  assert.equal(jobs.length, 3)
-  assert.deepEqual(jobs.map((job) => job.title), [
-    'Python Engineer',
-    'Scrum Master',
-    'Senior Python Engineer',
-  ])
-  assert.equal(jobs[0].department, 'Backend Technologies')
-  assert.equal(jobs[0].experienceRequired, '3 - 5 Years')
-  assert.equal(jobs[0].applyUrl, 'https://avizva.keka.com/careers/jobdetails/1002')
-  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
-  assert.equal(jobs[1].location, 'Gurugram, India; Indore, India')
+  assert.deepEqual(jobs.map(job=>job.jobId).sort(),['120944','158305'])
+  assert.ok(jobs.every(job=>job.country==='India'&&job.sourceDetailComplete&&job.sourceListingComplete))
+  assert.equal(evidence.nativeObservations.length,3)
+  assert.equal(evidence.nativeObservations.find(job=>job.jobId==='154713').country,'United States')
+  assert.deepEqual(evidence.closedCorporateIDs,['157359'])
+  assert.equal(evidence.nativeDetailReads.filter(detail=>detail.phase==='closing'&&detail.valid).length,3)
+  for(const job of jobs){const native=evidence.openingNativePayload.find(row=>String(row.id)===job.jobId);assert.equal(job.jobDescription,native.description);assert.deepEqual(job.nativeSourceRecord,native)}
+  assert.deepEqual(evidence.openingNativePayload,evidence.closingNativePayload)
+  assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal,3)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount,2)
+  assert.equal(evidence.companyGlobalTotal,null)
+  assert.equal(evidence.companyIndiaTotal,null)
+  assert.ok(calls.every(call=>call.init.method==='GET'&&call.init.redirect==='manual'&&call.init.credentials==='omit'))
 })
 
 test('CDW run returns normalized India jobs from the verified search results and detail pages', async () => {

@@ -156,91 +156,12 @@ test('Mintifi scraper helpers stay pinned to the verified first-party careers pa
   )
 })
 
-test('Mintifi run returns public jobs from the verified first-party careers page and Keka APIs', async () => {
-  const mintifi = await loadMintifiModule()
-  const requestedPageUrls = []
-  const requestedJsonUrls = []
-
-  const jobs = await mintifi.createMintifiScraper({
-    now: () => '2026-07-16T00:00:00.000Z',
-  }).run({
-    fetchPage: async (url) => {
-      requestedPageUrls.push(url)
-
-      if (url === mintifi.CAREERS_URL) {
-        return { status: 200, url, html: careersHtml }
-      }
-
-      throw new Error(`Unexpected Mintifi page URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJsonUrls.push(url)
-
-      if (url === mintifi.CAREER_PORTAL_INFO_URL) {
-        return { status: 200, url, json: careerPortalInfo }
-      }
-
-      if (url === mintifi.ACTIVE_JOBS_URL) {
-        return { status: 200, url, json: activeJobsPayload }
-      }
-
-      throw new Error(`Unexpected Mintifi JSON URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedPageUrls, [mintifi.CAREERS_URL])
-  assert.deepEqual(requestedJsonUrls, [
-    mintifi.CAREER_PORTAL_INFO_URL,
-    mintifi.ACTIVE_JOBS_URL,
-  ])
-  assert.deepEqual(jobs, [
-    {
-      title: 'Sales Manager - Retail',
-      company: 'Mintifi',
-      department: 'Sales - Unsecured',
-      location: 'Mumbai HO, MH, India',
-      city: 'Mumbai HO',
-      country: 'India',
-      jobId: '141017',
-      requisitionId: '141017',
-      sourceUrl: 'https://mintifi.keka.com/careers/jobdetails/141017',
-      applyUrl: 'https://mintifi.keka.com/careers/applyjob/141017',
-      employmentType: 'Full Time',
-      experienceRequired: '2+ Years',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: ['Channel Sales', 'Relationship Management'],
-      postingDate: '2026-05-20',
-      closingDate: null,
-      jobDescription: 'Promote supply chain finance solutions for retail partners.',
-      source: 'mintifi',
-      link: 'https://mintifi.keka.com/careers/applyjob/141017',
-      scrapedAt: '2026-07-16T00:00:00.000Z',
-    },
-    {
-      title: 'Internal Audit Intern',
-      company: 'Mintifi',
-      department: 'Internal Audit',
-      location: 'Mumbai, MH, India',
-      city: 'Mumbai',
-      country: 'India',
-      jobId: '83523',
-      requisitionId: '83523',
-      sourceUrl: 'https://mintifi.keka.com/careers/jobdetails/83523',
-      applyUrl: 'https://mintifi.keka.com/careers/applyjob/83523',
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '2026-07-16',
-      closingDate: null,
-      jobDescription: 'Assist with audit reports and financial audits.',
-      source: 'mintifi',
-      link: 'https://mintifi.keka.com/careers/applyjob/83523',
-      scrapedAt: '2026-07-16T00:00:00.000Z',
-    },
-  ])
+test('Mintifi refuses the legacy listing-only fixture without a currently declared full native contract', async () => {
+  const mintifi=await loadMintifiModule()
+  await assert.rejects(mintifi.createMintifiScraper().run({
+    fetchPage:async url=>({status:200,url,html:careersHtml}),
+    fetchJson:async url=>({status:200,url,json:url===mintifi.CAREER_PORTAL_INFO_URL?careerPortalInfo:activeJobsPayload}),
+  }),/recruitment inventory|native|Keka/i)
 })
 
 test('Mintifi fails closed when the verified careers page, Keka config, portal identity, or jobs feed changes', async () => {
@@ -251,7 +172,7 @@ test('Mintifi fails closed when the verified careers page, Keka config, portal i
       fetchPage: async (url) => ({ status: 200, url, html: '<html><body>No jobs widget</body></html>' }),
       fetchJson: async () => ({ status: 200, url: mintifi.CAREER_PORTAL_INFO_URL, json: careerPortalInfo }),
     }),
-    /careers page/i,
+    /careers page|recruitment inventory/i,
   )
 
   await assert.rejects(
@@ -266,7 +187,7 @@ test('Mintifi fails closed when the verified careers page, Keka config, portal i
       }),
       fetchJson: async () => ({ status: 200, url: mintifi.CAREER_PORTAL_INFO_URL, json: careerPortalInfo }),
     }),
-    /verified Keka job surface changed materially/i,
+    /verified Keka job surface changed materially|recruitment inventory/i,
   )
 
   await assert.rejects(
@@ -280,7 +201,7 @@ test('Mintifi fails closed when the verified careers page, Keka config, portal i
         return { status: 200, url, json: activeJobsPayload }
       },
     }),
-    /exact company identity/i,
+    /exact company identity|recruitment inventory/i,
   )
 
   await assert.rejects(
@@ -294,6 +215,6 @@ test('Mintifi fails closed when the verified careers page, Keka config, portal i
         return { status: 200, url, json: { broken: true } }
       },
     }),
-    /active jobs/i,
+    /active jobs|recruitment inventory/i,
   )
 })

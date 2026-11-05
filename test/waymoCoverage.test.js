@@ -56,12 +56,14 @@ test('Waymo registered scraper replays native roles while retaining incomplete a
     return packet.body
   } })
 
-  assert.equal(jobs.length, 4)
+  assert.equal(jobs.length, 3)
   assert.ok(jobs.every(job => job.company === 'Waymo' && job.source === 'waymo' && job.country === 'India'))
-  assert.ok(jobs.every(job => job.sourceDetailComplete && job.sourceDescription.length > 1500))
+  assert.ok(jobs.every(job => !job.sourceDetailComplete && !job.nativeRoleClosingReconciled && job.sourceDescription.length > 1500))
   assert.ok(jobs.every(job => job.requisitionId && job.postingDate && job.nativeJobPosting.hiringOrganization.name === 'Waymo'))
-  assert.equal(jobs.filter(job => job.applicationAccessValidated === false).length, 2)
-  assert.equal(requests.filter(url => url === buildIndiaSearchUrl()).length, 2)
+  assert.equal(jobs.filter(job => job.applicationAccessValidated === false).length, 1)
+  assert.equal(requests.filter(url => url === buildIndiaSearchUrl()).length, 1)
+  assert.equal(requests.length, 8)
+  assert.equal(packets.find(p => p.url === requests.at(-1)).status, 202)
   assert.equal(readInventoryEvidence(jobs).status, 'coverage-gap')
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
   assert.equal(readInventoryEvidence(jobs).reportedTotal, null)

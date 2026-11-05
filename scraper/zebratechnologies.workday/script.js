@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
+import { runZebraNativeRecruitment } from './nativeRun.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { ZEBRA_TECHNOLOGIES_CATALOG } from './catalog.js'
 
@@ -82,14 +82,16 @@ const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
 
 export const createZebraTechnologiesScraper = ({
   fetchText = defaultFetchText,
-  workdayRunner = runWorkdayScraper,
+  workdayRunner = runZebraNativeRecruitment,
 } = {}) => ({
   async run({ signal } = {}) {
+    signal?.throwIfAborted()
     const careersHtml = await (
       signal === undefined
         ? fetchText(CAREERS_URL)
         : fetchText(CAREERS_URL, { signal })
     )
+    signal?.throwIfAborted()
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Zebra Technologies verified first-party careers page no longer matches the trusted surface')
@@ -100,16 +102,18 @@ export const createZebraTechnologiesScraper = ({
       throw new Error('Zebra Technologies verified Workday handoff changed; refusing to guess the public jobs source')
     }
 
-    return workdayRunner({
+    const jobs = await workdayRunner({
       ...buildScraperOptions(),
       ...(signal === undefined ? {} : { signal }),
     })
+    signal?.throwIfAborted()
+    return jobs
   },
 })
 
 export const run = async ({
   fetchText = defaultFetchText,
-  workdayRunner = runWorkdayScraper,
+  workdayRunner = runZebraNativeRecruitment,
   signal,
 } = {}) => createZebraTechnologiesScraper({ fetchText, workdayRunner }).run({ signal })
 

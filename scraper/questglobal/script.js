@@ -16,6 +16,7 @@ const scraper = createPhenomScraper({
   nativeLocalitySuffixFormatting: true,
   nativeBoundUSStateCodeFormatting: true,
   nativeReviewedIndiaCityAliases: true,
+  nativeCityDashCountryFormatting: true,
 })
 
 export const {

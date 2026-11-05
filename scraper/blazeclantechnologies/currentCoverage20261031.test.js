@@ -13,7 +13,12 @@ test('the current real TLS failure cannot establish a freshly verified first-par
   let calls = 0
   await assert.rejects(run({ maxPages: 1, now: () => '2026-10-31T07:19:33.000Z', fetchPage: async url => { calls++; assert.equal(url, CAREERS_URL); throw tlsError() } }), error => {
     const evidence = error.recruitmentObservations
-    assert.equal(error.failureKind, 'coverage_gap')
+    assert.equal(error.failureKind, 'network_or_timeout')
+    assert.equal(error.softFailure, true)
+    assert.equal(error.upstreamOutage, true)
+    assert.equal(error.abortRetries, true)
+    assert.equal(error.code, capturedTls.code)
+    assert.equal(error.cause.cause.code, capturedTls.code)
     assert.equal(evidence.nativeRecords, 0)
     assert.equal(evidence.receipts.length, 0)
     assert.equal(evidence.sourceScopeComplete, false)

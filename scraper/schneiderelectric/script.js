@@ -2,10 +2,12 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { loadNativePaginationDefaults, nativePaginationLimits, createNativePagination, readNativeWithSignal } from '../../scraper-support/utils/nativePagination.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
+const nativeDefaults = loadNativePaginationDefaults(currentDir)
 const NAVIGATION_TIMEOUT_MS = Math.max(config.jobListingTimeoutMs || 0, 60000)
 
 export const COMPANY_NAME = 'Schneider Electric'
@@ -127,8 +129,9 @@ export const normalizeJobListing = (item = {}) => {
   }
 }
 
-const defaultFetchJson = async (url) => {
+const defaultFetchJson = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal,
     headers: { Accept: 'application/json,text/plain,*/*' },
   })
   if (!response.ok) throw new Error(`Schneider Electric jobs API returned HTTP ${response.status}`)
@@ -142,41 +145,50 @@ export const createSchneiderElectricScraper = ({
   extractJobsPayload,
   normalizeJobListing,
   run: async ({
-    maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
-    maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : Number.POSITIVE_INFINITY,
+    maxPages,
+    maxJobs,
     fetchJson,
+    signal,
+    collectionBudgetMs,
   } = {}) => {
     {
       fetchJson ||= defaultFetchJson
+      signal?.throwIfAborted()
+      const limits = nativePaginationLimits({ maxPages, maxJobs }, nativeDefaults)
+      const pagination = createNativePagination({ surface: buildIndiaJobsApiUrl(), limits, signal, collectionBudgetMs, identityScope: 'native-raw' })
 
       const jobs = []
-      const seenJobIds = new Set()
+      return pagination.run(jobs, async () => {
+        const seenJobIds = new Set()
 
-      for (let page = 1; page <= maxPages; page += 1) {
-        const payload = extractJobsPayload(await fetchJson(buildIndiaJobsApiUrl({ page })))
-        if (!payload.jobs.length) break
+        for (let page = 1; page <= limits.maxPages; page += 1) {
+          const payload = extractJobsPayload(await readNativeWithSignal(() => fetchJson(buildIndiaJobsApiUrl({ page }), { signal: pagination.signal }), pagination.signal))
+          const progress = pagination.page(payload.jobs.map(item => normalizeWhitespace(item?.data?.req_id || item?.data?.slug)), payload.totalCount || null)
+          if (!progress) return pagination.finish(jobs, { exhausted: !payload.jobs.length && !payload.totalCount })
 
-        for (const item of payload.jobs) {
-          const normalized = normalizeJobListing(item)
-          if (!normalized?.jobId || seenJobIds.has(normalized.jobId)) continue
-          seenJobIds.add(normalized.jobId)
+          for (const item of payload.jobs) {
+            const normalized = normalizeJobListing(item)
+            if (!normalized?.jobId || seenJobIds.has(normalized.jobId)) continue
+            seenJobIds.add(normalized.jobId)
 
-          jobs.push({
-            ...normalized,
-            company: COMPANY_NAME,
-            source: SOURCE,
-            link: normalized.applyUrl || normalized.sourceUrl,
-            scrapedAt: now(),
-          })
+            jobs.push({
+              ...normalized,
+              company: COMPANY_NAME,
+              source: SOURCE,
+              link: normalized.applyUrl || normalized.sourceUrl,
+              scrapedAt: now(),
+            })
 
-          if (jobs.length >= maxJobs) return jobs
+            if (jobs.length >= limits.maxJobs) return pagination.finish(jobs)
+          }
+
+          if (payload.totalCount ? page * DEFAULT_PAGE_SIZE >= payload.totalCount : payload.jobs.length < DEFAULT_PAGE_SIZE) {
+            return pagination.finish(jobs, { exhausted: true })
+          }
         }
 
-        if (payload.jobs.length < DEFAULT_PAGE_SIZE) break
-        if (payload.totalCount && page * DEFAULT_PAGE_SIZE >= payload.totalCount) break
-      }
-
-      return jobs
+        return pagination.finish(jobs)
+      })
     }
   },
 })

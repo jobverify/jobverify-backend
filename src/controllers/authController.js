@@ -41,7 +41,6 @@ import { resolveFrontendOrigin } from "../utils/runtimeConfig.js";
 const GENERIC_REGISTRATION_MESSAGE = "If this email can be registered, a verification email will be sent.";
 const GENERIC_RESEND_MESSAGE = "If a pending registration exists for this email, a verification email will be sent when eligible.";
 const GENERIC_PASSWORD_RESET_MESSAGE = "If an account exists for this email, a password reset link will be sent.";
-const PENDING_PASSWORD_MISSING_MESSAGE = "Your registration is missing a password. Please register again.";
 const PASSWORD_RESET_SUCCESS_MESSAGE = "Password reset successfully. You can now sign in.";
 
 const buildSessionUserPayload = (user) => ({
@@ -59,7 +58,6 @@ const GOOGLE_EMAIL_VERIFICATION_MESSAGE = "Use a Google account with a verified 
 const GOOGLE_ACCOUNT_LINK_CONFLICT_MESSAGE = "This account is already linked to a different Google sign-in.";
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const RESEND_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
-const RESEND_LIMIT_REACHED_MESSAGE = "You have used both verification resends. Please try again tomorrow.";
 
 // No account uses this hash. Keep failed unknown/passwordless-account requests
 // on the same bcrypt work path as ordinary failed password authentication.
@@ -160,7 +158,7 @@ export const register = async (req, res) => {
     return sendValidationError(res, errors);
   }
 
-  const { name, email, password } = req.body;
+  const { name, email } = req.body;
   const normalizedEmail = normalizeEmailAddress(email);
 
   try {
@@ -187,11 +185,10 @@ export const register = async (req, res) => {
     }
 
     const verificationToken = createVerificationTokenPair();
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     const pending = new PendingUser({
       email: normalizedEmail,
-      password: hashedPassword,
+      password: null,
       profile: { name },
       verificationTokenHash: verificationToken.tokenHash,
       verificationTokenExpiresAt: verificationToken.expiresAt,
@@ -236,14 +233,14 @@ export const redirectVerifyEmail = async (req, res) => {
   return res.redirect(buildVerificationLink(token));
 };
 
-// Completes email verification with the password captured during registration.
+// Only the mailbox owner holding the link may establish the account password.
 export const verifyEmail = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return sendValidationError(res, errors);
   }
 
-  const { token } = req.body;
+  const { token, password } = req.body;
 
   try {
     const tokenHash = hashVerificationToken(token);
@@ -279,26 +276,35 @@ export const verifyEmail = async (req, res) => {
       });
     }
 
-    if (!pendingUser.password) {
+    const passwordHash = await bcrypt.hash(password, 10);
+    // Consume the exact live token and create its account in one commit. A
+    // storage failure rolls back consumption so the owner can retry the link.
+    const created = await User.db.transaction(async session => {
+      const consumed = await PendingUser.findOneAndDelete({
+        _id: pendingUser._id,
+        verificationTokenExpiresAt: { $gt: new Date() },
+        $or: [{ verificationTokenHash: tokenHash }, { verificationToken: token }],
+      }, { session });
+      if (!consumed) return null;
+      const user = new User({
+        email: consumed.email,
+        telegramAlertsAllowed: false,
+        password: passwordHash,
+        profile: consumed.profile ? { name: consumed.profile.name } : {},
+        isVerified: true,
+        lastLoginAt: new Date(),
+      });
+      await user.save({ session });
+      return user;
+    });
+    if (!created) {
       return res.status(400).json({
         code: 400,
         success: false,
-        message: PENDING_PASSWORD_MISSING_MESSAGE,
+        message: 'Verification link is invalid or has expired.',
       });
     }
 
-    const user = new User({
-      email: pendingUser.email,
-      telegramAlertsAllowed: false,
-      password: pendingUser.password,
-      profile: pendingUser.profile ? { name: pendingUser.profile.name } : {},
-      isVerified: true,
-      lastLoginAt: new Date(),
-    });
-
-    await user.save();
-
-    await PendingUser.deleteOne({ email: pendingUser.email });
     clearPendingRegistrationCookie(res);
 
     return res.status(200).json({
@@ -308,7 +314,7 @@ export const verifyEmail = async (req, res) => {
       redirectTo: buildFrontendVerifySuccessUrl(),
     });
   } catch (err) {
-    console.error("Verification failed:", err.message);
+    console.error('Email verification could not complete.');
     if (err?.code === 11000) {
       return res.status(409).json({
         code: 409,
@@ -316,10 +322,10 @@ export const verifyEmail = async (req, res) => {
         message: "An account for this email already exists. Please sign in.",
       });
     }
-    return res.status(400).json({
-      code: 400,
+    return res.status(503).json({
+      code: 503,
       success: false,
-      message: "Verification link is invalid or has expired.",
+      message: 'Unable to complete verification. Please try the same link again.',
     });
   }
 };
@@ -362,10 +368,10 @@ export const resendVerification = async (req, res) => {
 
     // Exhaustion check (Max 2 resends per rolling 24-hour window)
     if (pendingUser.resendCount >= 2) {
-      return res.status(429).json({
-        code: 429,
-        success: false,
-        message: RESEND_LIMIT_REACHED_MESSAGE,
+      return res.status(200).json({
+        code: 200,
+        success: true,
+        message: GENERIC_RESEND_MESSAGE,
       });
     }
 
@@ -416,10 +422,10 @@ export const requestPasswordReset = async (req, res) => {
     return sendValidationError(res, errors);
   }
 
-  const normalizedEmail = normalizeEmailAddress(req.body.email);
+  const normalizedEmail = normalizeEmailAddress(req.user?.email ?? req.body.email);
 
   try {
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = req.user ?? await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(200).json({
         code: 200,
@@ -429,19 +435,49 @@ export const requestPasswordReset = async (req, res) => {
     }
 
     const resetToken = createVerificationTokenPair();
-    user.resetPasswordTokenHash = resetToken.tokenHash;
-    user.resetPasswordExpiresAt = resetToken.expiresAt;
-    await user.save();
-
     const resetLink = buildPasswordResetLink(resetToken.token);
-    sendPasswordResetEmail(normalizedEmail, resetLink).catch((err) => {
-      console.error(`[Email Delivery Error] Failed to send password reset email to ${normalizedEmail}:`, err.message);
+    // Public recovery may issue a link, but must not revoke a still-valid link
+    // already held by the mailbox owner. The CAS also coalesces concurrent calls.
+    const version = user.sessionVersion ?? 0;
+    const reserved = await User.findOneAndUpdate({
+      _id: user._id, email: normalizedEmail, accountDeletingAt: null,
+      sessionVersion: version === 0 ? { $in: [0, null] } : version,
+      $or: [{ resetPasswordTokenHash: null }, { resetPasswordExpiresAt: null },
+        { resetPasswordExpiresAt: { $lte: new Date() } }],
+    }, { $set: { resetPasswordTokenHash: resetToken.tokenHash, resetPasswordExpiresAt: resetToken.expiresAt } }, { new: true });
+    if (!reserved) {
+      return res.status(200).json({ code: 200, success: true, message: req.user
+        ? 'If a reset link is already active, use the email you received. Check your inbox and spam folder.'
+        : GENERIC_PASSWORD_RESET_MESSAGE });
+    }
+    const delivery = sendPasswordResetEmail(normalizedEmail, resetLink).catch(async () => {
+      console.error('Password reset email delivery failed.');
+      // A late SMTP failure must never erase a different, newer token.
+      await User.updateOne({ _id: user._id, resetPasswordTokenHash: resetToken.tokenHash },
+        { $set: { resetPasswordTokenHash: null, resetPasswordExpiresAt: null } })
+        .catch(() => console.error('Password reset reservation cleanup failed.'));
+      if (req.user) throw new Error('Password reset delivery failed.');
     });
+    // Only the authenticated profile flow can expose delivery status. Keep
+    // public recovery responses and their timing independent of SMTP delivery.
+    if (req.user) {
+      try {
+        await delivery;
+      } catch {
+        return res.status(503).json({
+          code: 503,
+          success: false,
+          message: 'Unable to send the reset email. Please try again.',
+        });
+      }
+    }
 
     return res.status(200).json({
       code: 200,
       success: true,
-      message: GENERIC_PASSWORD_RESET_MESSAGE,
+      message: req.user
+        ? 'Password reset email sent. Check your inbox and spam folder.'
+        : GENERIC_PASSWORD_RESET_MESSAGE,
     });
   } catch (err) {
     console.error("Forgot password failed:", err.message);
@@ -669,6 +705,16 @@ export const authenticateWithGoogle = async (req, res) => {
     }
     const existingUser = await User.findOne({ email: normalizedEmail });
 
+    // Google is authoritative for Gmail and signed Workspace identities. A
+    // third-party education email can outlive its mailbox ownership; only an
+    // already-bound Google subject may authenticate without a mailbox challenge.
+    const authoritativeEmail = normalizedEmail.endsWith('@gmail.com')
+      || (typeof identity.hostedDomain === 'string' && Boolean(identity.hostedDomain.trim()));
+    if (!authoritativeEmail && existingUser?.google?.sub !== identity.sub) {
+      return res.status(409).json({ code: 409, success: false,
+        message: 'Google sign-in cannot verify current ownership of this email. Use email registration or sign in with your password.' });
+    }
+
     if (existingUser) {
       if (existingUser.deactivated) {
         return res.status(403).json({
@@ -691,6 +737,7 @@ export const authenticateWithGoogle = async (req, res) => {
         existingUser.profile ??= {};
         existingUser.profile.name = identity.name;
       }
+      existingUser.$where = { ...existingUser.$where, 'google.sub': existingUser.google?.sub ?? null };
       existingUser.google = buildGoogleMetadata(identity, existingUser.google);
       existingUser.isVerified = true;
       return issueAuthenticatedSession(existingUser, res, "Logged in successfully");

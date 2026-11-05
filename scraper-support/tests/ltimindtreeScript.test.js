@@ -49,7 +49,7 @@ test('LTIMindtree paginates the complete India count and fetches each descriptio
   assert.match(jobs[0].jobDescription, /Build and maintain/)
   assert.equal(jobs[0].link, buildApplyUrl('1'))
   assert.equal(jobs[0].sourceUrl, buildDetailUrl('1'))
-  assert.equal(calls.filter(call => call.url.endsWith('/candidatejobsearch')).length, 2)
+  assert.equal(calls.filter(call => call.url.endsWith('/candidatejobsearch')).length, 4)
 })
 
 test('LTIMindtree rejects a truncated or duplicated India listing page', async () => {
@@ -73,7 +73,7 @@ test('LTIMindtree rejects a missing job description', async () => {
   )
 })
 
-test('LTIMindtree retains a role with unspecified city on the India board after company verification', async () => {
+test('LTIMindtree retains an unspecified role separately without inventing its country', async () => {
   const unspecified = '<jobVoList><jobSeq>1</jobSeq><jobTitle>Specialist</jobTitle><jobLocation/><locations>Select Location</locations><jobId>1</jobId></jobVoList>'
   const jobs = await createLtimindtreeScraper().run({
     pageSize: 2,
@@ -81,8 +81,11 @@ test('LTIMindtree retains a role with unspecified city on the India board after 
       ? page(0, 1, [unspecified])
       : detail('1').replace('<locations>Bengaluru</locations>', '<locations>Select Location</locations>'),
   })
-  assert.equal(jobs[0].location, 'India')
-  assert.equal(jobs[0].city, null)
+  assert.equal(jobs.length, 0)
+  assert.equal(jobs.nativeInventory.nativeRoles[0].country, null)
+  assert.equal(jobs.nativeInventory.nativeRoles[0].location, null)
+  assert.equal(jobs.nativeInventory.nativeRoles[0].city, null)
+  assert.deepEqual(jobs.nativeInventory.unresolvedIds, ['1'])
 })
 
 test('LTIMindtree preserves text in encoded descriptions with a stray angle bracket', async () => {

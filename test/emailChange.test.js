@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { fileURLToPath } from 'node:url';
 import nodemailer from 'nodemailer';
+import bcrypt from 'bcryptjs';
 import User from '../src/models/User.js';
 import * as controller from '../src/controllers/emailChangeController.js';
 import { hashVerificationToken } from '../src/utils/authSecurity.js';
@@ -16,7 +17,7 @@ const response = () => ({ statusCode: 200, body: null,
 test('email changes require a delivered, unexpired, single-use verification link', { timeout: 90000 }, async t => {
   const mongo = await MongoMemoryServer.create({ binary: { version: '8.2.6',
     downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)),
-  } });
+  }, instance: { launchTimeout: 60000 } });
   t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
   await mongoose.connect(mongo.getUri());
   await User.init();
@@ -24,10 +25,12 @@ test('email changes require a delivered, unexpired, single-use verification link
   Object.assign(process.env, { SMTP_HOST: '127.0.0.1', SMTP_PORT: '1025', SMTP_USER: 'test', SMTP_PASS: 'test', SMTP_FROM: 'test@gmail.com' });
   let delivery;
   t.mock.method(nodemailer, 'createTransport', () => ({ sendMail: async mail => { delivery = mail; return { messageId: 'test' }; } }));
-  const user = await User.create({ email: 'original@gmail.com', password: 'existing-password-hash', isVerified: true, sessionVersion: 2 });
+  const password = 'ExistingPassword123!';
+  const passwordHash = await bcrypt.hash(password, 4);
+  const user = await User.create({ email: 'original@gmail.com', password: passwordHash, isVerified: true, sessionVersion: 2 });
   const request = async email => {
     const res = response();
-    await controller.requestEmailChange({ user: await User.findById(user._id), body: { email } }, res);
+    await controller.requestEmailChange({ user: await User.findById(user._id), body: { email, currentPassword: password } }, res);
     return res;
   };
   const verify = async token => {
@@ -57,7 +60,7 @@ test('email changes require a delivered, unexpired, single-use verification link
     assert.equal(stored.sessionVersion, 3);
     assert.equal(stored.resetPasswordTokenHash, null);
     assert.equal(stored.pendingEmailChange, undefined);
-    assert.equal(stored.password, 'existing-password-hash');
+    assert.equal(stored.password, passwordHash);
     assert.equal((await verify(token)).statusCode, 400);
   });
   await t.test('rejects expired links and addresses claimed before verification', async () => {
@@ -65,14 +68,14 @@ test('email changes require a delivered, unexpired, single-use verification link
     assert.equal((await verify('expired')).statusCode, 400);
     await User.create({ email: 'taken@gmail.com' });
     await User.updateOne({ _id: user._id }, { $set: { 'pendingEmailChange.expiresAt': new Date(Date.now() + 60000) } });
-    assert.equal((await verify('expired')).statusCode, 409);
+    assert.equal((await verify('expired')).statusCode, 400);
     assert.equal((await User.findById(user._id)).email, 'new.address@gmail.com');
   });
-  await t.test('rejects invalid, unchanged and occupied addresses', async () => {
+  await t.test('rejects invalid and unchanged addresses without exposing occupied addresses', async () => {
     const currentUser = await User.findById(user._id);
-    for (const [email, expected] of [['bad', 400], ['new.address@gmail.com', 400], ['taken@gmail.com', 409]]) {
+    for (const [email, expected] of [['bad', 400], ['new.address@gmail.com', 400], ['taken@gmail.com', 200]]) {
       const res = response();
-      await controller.requestEmailChange({ user: currentUser, body: { email } }, res);
+      await controller.requestEmailChange({ user: currentUser, body: { email, currentPassword: password } }, res);
       assert.equal(res.statusCode, expected);
     }
   });

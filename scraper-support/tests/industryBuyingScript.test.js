@@ -96,7 +96,7 @@ test('IndustryBuying resolves the verified first-party handoff, jobs site, and c
   assert.equal(industryBuying.CAREER_JOBS_API_URL, 'https://careers.industrybuying.com/api/career/jobs')
   assert.equal(industryBuying.EXPECTED_ORG_ID, 'org_1782819232623')
   assert.equal(industryBuying.EXPECTED_ORG_SLUG, 'industrybuying')
-  assert.equal(industryBuying.VERIFIED_ON, '2026-08-07')
+  assert.equal(industryBuying.VERIFIED_ON, '2026-11-05')
   assert.equal(industryBuying.extractCareersLink(homepageHtml), 'https://jobs.industrybuying.com/')
   assert.equal(industryBuying.hasOfficialJobsSiteSignal(jobsSiteHtml), true)
   assert.deepEqual(industryBuying.extractExpectedOrg(orgsPayload), {
@@ -119,9 +119,15 @@ test('IndustryBuying maps the verified first-party jobs summary and detail paylo
     title: 'Category Group Head',
     company: 'IndustryBuying',
     department: 'Category',
-    location: 'New Delhi, India',
-    city: 'New Delhi',
-    country: 'India',
+    location: null,
+    city: null,
+    country: null,
+    rawWorkplace: {listing: 'New Delhi', detail: 'New Delhi'},
+    sourceCountryScopeUnresolved: true,
+    sourceListingComplete: false,
+    sourceScopeComplete: false,
+    lifecycleCleanupAllowed: false,
+    nativeSourceRecord: {listing: jobsPayload.data[0], detail: jobDetailPayload.data},
     jobId: 'job_1783396889733',
     requisitionId: 'req_1783395887484',
     sourceUrl: 'https://jobs.industrybuying.com/jobs/detail?id=job_1783396889733',

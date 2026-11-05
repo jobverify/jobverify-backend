@@ -2,12 +2,14 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { loadNativePaginationDefaults, nativePaginationLimits, createNativePagination, readNativeWithSignal } from '../../scraper-support/utils/nativePagination.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
+const nativeDefaults = loadNativePaginationDefaults(currentDir)
 
 const BASE_URL = 'https://careers.ey.com'
 const SEARCH_PATH = '/ey/search/?createNewAlert=false&q=&locationsearch=India&optionsFacetsDD_country=&optionsFacetsDD_customfield1=&locale=en_US'
@@ -218,8 +220,9 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) =>
+const defaultFetchText = (url, { signal } = {}) =>
   fetchTextWithRetry(url, {
+    signal,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -232,75 +235,88 @@ const defaultFetchText = (url) =>
 
 export const createEyScraper = () => {
   const run = async ({
-    maxPages = config.maxPages,
-    maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+    maxPages,
+    maxJobs,
     detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
     fetchText = defaultFetchText,
+    signal,
+    collectionBudgetMs,
   } = {}) => {
+    signal?.throwIfAborted()
+    const limits = nativePaginationLimits({ maxPages, maxJobs }, nativeDefaults)
+    const pagination = createNativePagination({ surface: buildIndiaSearchUrl(), limits, signal, collectionBudgetMs })
     const jobs = []
-    const seenJobIds = new Set()
-    let startRow = 0
-    let pageNumber = 1
+    const completedPageJobs = []
+    return pagination.run(jobs, async () => {
+      const seenJobIds = new Set()
+      let startRow = 0
+      let pageNumber = 1
 
-    while (pageNumber <= maxPages) {
-      const listingHtml = await fetchText(buildIndiaSearchUrl(startRow || null))
-      const listings = extractSearchResults(listingHtml)
-      const summary = extractResultsSummary(listingHtml)
+      while (pageNumber <= limits.maxPages) {
+        const listingHtml = await readNativeWithSignal(() => fetchText(buildIndiaSearchUrl(startRow || null), { signal: pagination.signal }), pagination.signal)
+        const listings = extractSearchResults(listingHtml)
+        const summary = extractResultsSummary(listingHtml)
 
-      if (listings.length === 0) break
+        const progress = pagination.page(listings.map(job => job.jobId), summary.totalResults)
+        if (!progress) return pagination.finish(jobs, { exhausted: Boolean(summary.totalPages && pageNumber >= summary.totalPages) })
 
-      const freshListings = []
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-        freshListings.push(listing)
+        const freshListings = []
+        for (const listing of listings) {
+          if (seenJobIds.has(listing.jobId)) continue
+          seenJobIds.add(listing.jobId)
+          freshListings.push(listing)
+        }
+
+        const remainingSlots = Math.max(limits.maxJobs - jobs.length, 0)
+        const selectedListings = freshListings.slice(0, remainingSlots)
+        const enrichedJobs = await mapWithConcurrency(
+          selectedListings,
+          detailConcurrency,
+          async (listing, index) => {
+            const detailHtml = await readNativeWithSignal(() => fetchText(listing.sourceUrl, { signal: pagination.signal }), pagination.signal)
+            const detail = extractJobDetail(detailHtml, listing)
+
+            const completed = {
+              jobId: detail.jobId || listing.jobId,
+              requisitionId: detail.requisitionId || listing.requisitionId,
+              title: detail.title || listing.title,
+              company: 'EY',
+              department: null,
+              location: detail.location || listing.location,
+              city: detail.city || listing.city,
+              link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
+              applyUrl: detail.applyUrl || listing.sourceUrl,
+              sourceUrl: detail.sourceUrl || listing.sourceUrl,
+              source: 'ey',
+              employmentType: detail.employmentType,
+              experienceRequired: detail.experienceRequired,
+              jobDescription: detail.jobDescription,
+              minimumQualification: detail.minimumQualification,
+              preferredQualification: detail.preferredQualification,
+              requiredSkills: detail.requiredSkills,
+              postingDate: detail.postingDate || listing.postingDate,
+              closingDate: detail.closingDate || null,
+              scrapedAt: new Date().toISOString(),
+            }
+            pagination.throwIfAborted()
+            completedPageJobs[index] = completed
+            return completed
+          },
+        )
+
+        jobs.push(...enrichedJobs)
+        completedPageJobs.length = 0
+        if (jobs.length >= limits.maxJobs) {
+          return pagination.finish(jobs)
+        }
+
+        if (!summary.totalPages || pageNumber >= summary.totalPages) return pagination.finish(jobs, { exhausted: Boolean(summary.totalPages) })
+        startRow += summary.pageSize || listings.length
+        pageNumber += 1
       }
 
-      const remainingSlots = maxJobs ? Math.max(maxJobs - jobs.length, 0) : freshListings.length
-      const selectedListings = maxJobs ? freshListings.slice(0, remainingSlots) : freshListings
-      const enrichedJobs = await mapWithConcurrency(
-        selectedListings,
-        detailConcurrency,
-        async (listing) => {
-          const detailHtml = await fetchText(listing.sourceUrl)
-          const detail = extractJobDetail(detailHtml, listing)
-
-          return {
-            jobId: detail.jobId || listing.jobId,
-            requisitionId: detail.requisitionId || listing.requisitionId,
-            title: detail.title || listing.title,
-            company: 'EY',
-            department: null,
-            location: detail.location || listing.location,
-            city: detail.city || listing.city,
-            link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-            applyUrl: detail.applyUrl || listing.sourceUrl,
-            sourceUrl: detail.sourceUrl || listing.sourceUrl,
-            source: 'ey',
-            employmentType: detail.employmentType,
-            experienceRequired: detail.experienceRequired,
-            jobDescription: detail.jobDescription,
-            minimumQualification: detail.minimumQualification,
-            preferredQualification: detail.preferredQualification,
-            requiredSkills: detail.requiredSkills,
-            postingDate: detail.postingDate || listing.postingDate,
-            closingDate: detail.closingDate || null,
-            scrapedAt: new Date().toISOString(),
-          }
-        },
-      )
-
-      jobs.push(...enrichedJobs)
-      if (maxJobs && jobs.length >= maxJobs) {
-        return jobs
-      }
-
-      if (!summary.totalPages || pageNumber >= summary.totalPages) break
-      startRow += summary.pageSize || listings.length
-      pageNumber += 1
-    }
-
-    return jobs
+      return pagination.finish(jobs)
+    }, { flushCompleted: () => jobs.push(...completedPageJobs.filter(Boolean)) })
   }
 
   return {

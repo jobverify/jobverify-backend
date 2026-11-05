@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { TELSTRA_CATALOG } from './catalog.js'
+import {runTelstraNativeRecruitment} from './nativeRun.js'
 
 export const SCRAPER_DIR = path.dirname(fileURLToPath(import.meta.url))
 
@@ -79,7 +80,7 @@ const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   signal,
 })
 
-export const createTelstraScraper = ({
+const createLegacyTelstraScraper = ({
   fetchText = defaultFetchText,
   workdayRunner = runWorkdayScraper,
 } = {}) => ({
@@ -106,11 +107,10 @@ export const createTelstraScraper = ({
   },
 })
 
-export const run = async ({
-  fetchText = defaultFetchText,
-  workdayRunner = runWorkdayScraper,
-  signal,
-} = {}) => createTelstraScraper({ fetchText, workdayRunner }).run({ signal })
+export const createTelstraScraper = (options={}) => options.fetchText||options.workdayRunner
+  ?createLegacyTelstraScraper(options)
+  :{run:(passed={})=>runTelstraNativeRecruitment({...options,...passed})}
+export const run = (options={}) => createTelstraScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

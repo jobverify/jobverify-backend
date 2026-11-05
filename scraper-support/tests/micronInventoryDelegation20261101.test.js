@@ -7,6 +7,7 @@ import {INVENTORY_EVIDENCE,readInventoryEvidence} from '../utils/inventoryEviden
 import {buildMicronTechnologyIndiaApiProvider,createMicronTechnologyIndiaScraper,OFFICIAL_CAREERS_URL,buildListingApiUrl,buildDetailApiUrl} from '../../scraper/microntechnologyindia/script.js'
 
 const NOW='2026-08-04T00:00:00.000Z'
+const requestClockNow=Date.now
 const tree=parse(readFileSync(new URL('./micronTechnologyIndiaScript.test.js',import.meta.url),'utf8'),{sourceType:'module',ecmaVersion:'latest'})
 const read=node=>node.type==='Literal'?node.value:node.type==='ArrayExpression'?node.elements.map(read):node.type==='ObjectExpression'?Object.fromEntries(node.properties.map(p=>[p.key.name??p.key.value,read(p.value)])):node.type==='TemplateLiteral'&&!node.expressions.length?node.quasis[0].value.cooked:(()=>{throw Error('Unsupported original static fixture')})()
 const fixture=name=>read(tree.body.filter(n=>n.type==='VariableDeclaration').flatMap(n=>n.declarations).find(n=>n.id.name===name).init)
@@ -41,11 +42,14 @@ const checkPartial=jobs=>{
 }
 test('Micron original native-format input produces partial nonenumerable evidence before source decoration',async t=>{
  t.mock.timers.enable({apis:['Date'],now:new Date(NOW).getTime()})
+ // Freeze observation timestamps while request pacing retains an advancing clock.
+ t.mock.method(Date,'now',requestClockNow)
  const input=transport(),snapshot=structuredClone(original),jobs=await runApiPortalScraper({provider:buildMicronTechnologyIndiaApiProvider(),fetchJson:input.fetchJson})
  checkPartial(jobs);assert.equal(input.requests.length,3);input.assertUnchanged();assert.deepEqual(original,snapshot)
 })
 test('Micron source decoration preserves the full partial envelope and existing native role facts',async t=>{
  t.mock.timers.enable({apis:['Date'],now:new Date(NOW).getTime()})
+ t.mock.method(Date,'now',requestClockNow)
  const reference=transport(),upstream=await runApiPortalScraper({provider:buildMicronTechnologyIndiaApiProvider(),fetchJson:reference.fetchJson})
  const input=transport(),jobs=await createMicronTechnologyIndiaScraper().run(input)
  const evidence=checkPartial(jobs)

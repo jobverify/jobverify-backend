@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 import { nativeCountryName, nativeLocationCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 import { projectAuthorVisibility, projectedIframeContexts, executableDocument } from './nativeVisibility.js'
+import { turboHireRecruitmentRecord } from '../../scraper-support/utils/turboHireNativeFacts.js'
 
 export const CAREER_PAGE_URL = 'https://www.monocept.com/careers'
 export const BOARD_URL = 'https://monocept.turbohire.co/careerpage/0e8227c1-c352-4202-8e40-c0aa16b6ca69'
@@ -114,7 +115,9 @@ export function nativeShellContract(html) {
   check(version, 'native public client version/execution drift')
   check(scripts.filter(n => new URL(n.attrs.src, NATIVE_ORIGIN).origin !== NATIVE_ORIGIN).every(n => executable(n) && NATIVE_EXTERNALS.has(pathOnly(n.attrs.src, NATIVE_ORIGIN))), 'unreviewed external native client')
   check(doc.nodes(n => n.tag === 'div' && n.attrs.id === 'root').length === 1, 'missing active public application root')
-  return {doc,execution,clientURLs:version.scriptURLs,publicClientURLs:version.clientURLs,hiringLinks:hiringLinks(doc,NATIVE_ORIGIN),frames:frameContexts(doc,NATIVE_ORIGIN)}
+  return {doc,execution,clientURLs:version.scriptURLs,publicClientURLs:version.clientURLs,
+    companyScopeUnqualified:version.companyScopeUnqualified===true,
+    hiringLinks:hiringLinks(doc,NATIVE_ORIGIN),frames:frameContexts(doc,NATIVE_ORIGIN)}
 }
 export function nativePageContract(html, expected) {
   const {doc,hiringLinks:roleLinks,frames,clientURLs}=nativeShellContract(html)
@@ -331,6 +334,9 @@ export function roleContract(row, dto, native, now) {
   const semantic = {jobId:dto.JobId,title:dto.JobTitle,jobCode:dto.JobCode,requisitionId,department:dto.Department,location:dto.Location,type:dto.Type,jobType:dto.JobTypeV2,experience:dto.Experience,skills:dto.Skills,numberOfVacancy:dto.NumberOfVacancy,custom,description,responsibilities,eligibility,rawDescriptionSections,publishedDates:dto.PublishedDates,general:general.raw,expiryDates:dto.ExpiryDates,boards:dto.PublishedJobBoards,jobStatus:dto.JobStatus,isPublic:dto.IsPublic,isDraft:dto.IsDraft,applicationEnquiryTemplateId:dto.ApplicationEnquiryTemplateId,applicationRoleId:dto.JobIdObfuscated,employer,posting:native.posting,nativeListingState,nativeRoleLinks:native.roleLinks}
   return {semantic, country:country.countries.includes('India') ? 'India' : country.countries.join(' / '),
     roleLinks:native.roleLinks,job:{id:dto.JobId,jobId:dto.JobId,sourceJobId:dto.JobId,requisitionId,jobCode:dto.JobCode,source:'monocept',company:'Monocept',legalEmployer:LEGAL_EMPLOYER,nativeApplicationTemplateId:dto.ApplicationEnquiryTemplateId || null,
+      nativeHiringOrganization:structuredClone(native.posting.hiringOrganization),
+      nativeSourceRecord:{nativeListing:turboHireRecruitmentRecord(row),nativeDetail:{...turboHireRecruitmentRecord(dto),RequisitionId:dto.RequisitionId??null},nativeJobPosting:structuredClone(native.posting)},
+      firstEverPostedAt:null,sourcePostedDateRaw:posted.raw,sourceDateProvenance:'native-TurboHire-PublishedDates.CAREERPAGE',
       title:dto.JobTitle,sourceUrl:jobURL(dto.JobId),applyUrl:jobURL(dto.JobId),link:jobURL(dto.JobId),applicationLinkSource:'official-current-first-party-handoff+native-public-client',publicRolePageFetched:true,applicationPublicContextValidated:true,applicationSubmitted:false,candidateActionsTaken:false,
       country:country.countries.includes('India') ? 'India' : country.countries.join(' / '),location:country.location,city:null,remoteStatus:country.remote ? 'Remote' : null,
       department:dto.Department || null,employmentType:dto.JobTypeV2 || null,nativeJobType:dto.Type,nativeExperience:experience,experienceRequired,sourceExperienceRequired:experienceRequired,experienceRequiredProvenance:experienceRequired?'source':null,requiredSkills:dto.Skills,

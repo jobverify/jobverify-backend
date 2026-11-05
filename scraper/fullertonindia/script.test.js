@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {worklineFixture,worklinePDF} from '../../test/helpers/worklineGoalFixture.js'
 
 import {
   CAREERS_URL,
@@ -58,15 +59,7 @@ const jobsBoardHtml = `
 const payload = {
   d: {
     obj1: JSON.stringify([
-      {
-        Position_Name: 'Relationship Manager',
-        Req_No: 'REQ-1',
-        LOCATIONNAME: 'Delhi',
-        Country_Name: 'India',
-        TrackToken: 'TRACK-1',
-        SearchKeyWord: 'Relationship Manager',
-        PublishDate: '15-Jul-2026',
-      },
+      worklineFixture.record,
     ]),
     obj2: '[]',
   },
@@ -84,14 +77,17 @@ test('Fullerton India accepts the current direct SMFG homepage and ampersand-enc
       if (url === JOBS_BOARD_ENTRY_URL) {
         return { status: 200, url: 'https://app52.workline.hr/Cportal/GeneralOpening.aspx', html: jobsBoardHtml }
       }
+      if(url===worklineFixture.page.url)return worklineFixture.page
       throw new Error(`Unexpected URL: ${url}`)
     },
     fetchJson: async (url) => {
       if (url === JOBS_API_URL) return payload
       throw new Error(`Unexpected URL: ${url}`)
     },
+    fetchPDF:async()=>worklinePDF,
   })
 
   assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Relationship Manager')
+  assert.equal(jobs[0].title, worklineFixture.record.Position_Name)
+  assert.ok(jobs[0].jobDescription.length>7000)
 })

@@ -1,12 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {createVerifiedRecruitmentScraper} from '../../scraper-support/utils/verifiedRecruitment.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const JOBS_PAGE_URL = 'https://careers.eagleview.com/jobs'
 export const INDIA_LOCATION_QUERY = 'India'
-
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   const normalized = String(value ?? '')
@@ -125,49 +124,17 @@ export const extractJobListings = (html) => getRows(String(html ?? ''))
 export const hasNextPage = (html) => /<a[^>]+(?:rel=["']next["']|href=["'][^"']*[?&]page=\d+[^"']*)[^>]*>\s*next\s*<\/a>/i
   .test(String(html ?? ''))
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
-}
-
 export const createEagleviewScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, maxPages = Number.POSITIVE_INFINITY } = {}) {
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (let page = 1; page <= maxPages; page += 1) {
-      const html = await fetchText(buildSearchUrl({ page }))
-      if (!hasOfficialJobsPageSignal(html)) {
-        throw new Error('Eagleview jobs page no longer matches the verified official public careers surface')
-      }
-
-      const listings = extractJobListings(html)
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-        jobs.push({
-          ...listing,
-          source: 'eagleview',
-          link: listing.applyUrl,
-          scrapedAt: now(),
-        })
-      }
-
-      if (!hasNextPage(html)) break
-    }
-
-    return jobs
+  async run({fetchText,...options} = {}) {
+    return createVerifiedRecruitmentScraper({source:'eagleview',companyName:'Eagleview',companyDomain:'eagleview.com',
+      companyCareerPage:JOBS_PAGE_URL,officialHomepageUrl:'https://www.eagleview.com/',requireCorporateIdentityMatch:true,
+      requireNativeEmployerName:true,discoverJibeRecruitmentData:true,prioritizeRecruitmentSearch:true,
+      stopAfterNativeIndiaLimit:true}).run({now,...options,...(fetchText&&!options.fetchPage?{
+        fetchPage:async url=>({url,status:200,html:await fetchText(url)})}: {})})
   },
 })
 
-export const run = async () => createEagleviewScraper().run()
+export const run = options => createEagleviewScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

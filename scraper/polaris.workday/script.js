@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 
 import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
 import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+import { activeHead, readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
+import { hasDeclaredPolarisAccount } from './nativeAccount.js'
 
 import POLARIS_CATALOG from './catalog.js'
 
@@ -48,11 +50,10 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
-
-  return /<title>\s*Polaris Careers - Powersports Jobs & Internships\s*<\/title>/i.test(page)
-    && text.includes('Find your Next Job at Polaris')
+  const head = activeHead(html), document = readNativeDocument(html)
+  const text = document.text(document.nodes(node => node.tag === 'root')[0])
+  return head.titles.length === 1 && /^Polaris Careers - Powersports Jobs & Internships$/i.test(head.titles[0])
+    && document.nodes(node => node.tag === 'h1' && document.text(node) === 'Find your Next Job at Polaris').length > 0
     && text.includes('Job Categories')
     && text.includes('Locations')
     && text.includes('Search Jobs Now')
@@ -66,7 +67,7 @@ export const hasCloudflareBlockSignal = (html = '') => {
   }
 
 export const hasAcceptedCareersShellSignal = (html = '') =>
-  hasOfficialCareersSignal(html) || hasCloudflareBlockSignal(html)
+  hasOfficialCareersSignal(html) && !hasCloudflareBlockSignal(html)
 
 export const isExpectedFirstPartyBlockError = (error) => {
   const message = String(error?.message ?? '')
@@ -74,12 +75,12 @@ export const isExpectedFirstPartyBlockError = (error) => {
 }
 
 export const hasOfficialWorkdayBoardSignal = (html = '') => {
-  const page = String(html ?? '')
-
-  return /rel=["']canonical["'][^>]*href=["']https:\/\/polaris\.wd5\.myworkdayjobs\.com\/PolarisJobs["']/i.test(page)
-    && /property=["']og:title["'][^>]*content=["']Polaris Jobs["']/i.test(page)
-    && /tenant:\s*"polaris"/i.test(page)
-    && /siteId:\s*"PolarisJobs"/i.test(page)
+  const document = readNativeDocument(html)
+  const links = document.nodes(node => node.tag === 'link' && node.attrs.rel?.toLowerCase() === 'canonical')
+  const titles = activeHead(html).metas.filter(attrs => attrs.property?.toLowerCase() === 'og:title')
+  return links.length === 1 && links[0].attrs.href === WORKDAY_BOARD_URL
+    && titles.length === 1 && titles[0].content === 'Polaris Jobs'
+    && hasDeclaredPolarisAccount(document)
   }
 
 export const buildScraperOptions = () => ({
@@ -93,20 +94,28 @@ export const buildScraperOptions = () => ({
 const defaultFetchText = async (url, { signal } = {}) => {
   const requestSignal = composeAbortSignals(signal, createTimeoutSignal(15000))
   const response = await fetch(url, {
+    method: 'GET',
+    credentials: 'omit',
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    redirect: 'follow',
+    redirect: 'manual',
     signal: requestSignal,
   })
 
-  const html = await response.text()
-  if (!response.ok && !hasCloudflareBlockSignal(html)) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  if (response.status !== 200 || response.url !== url) {
+    try { Promise.resolve(response.body?.cancel()).catch(() => {}) } catch {}
+    if (response.status !== 200) {
+      throw Object.assign(new Error(`HTTP ${response.status} for ${url}`), {
+        status: response.status, requestUrl: url, abortRetries: true,
+      })
+    }
+    throw Object.assign(new Error(`Polaris public response identity changed for ${url}`), {
+      requestUrl: url, abortRetries: true,
+    })
   }
-
-  return html
+  return response.text()
 }
 
 export const createPolarisScraper = ({
@@ -117,23 +126,14 @@ export const createPolarisScraper = ({
     workdayRunner = runWorkdayScraper,
     signal,
   } = {}) {
-    const fetchVerifiedText = (url) => (
-      signal === undefined ? fetchText(url) : fetchText(url, { signal })
-    )
-    let careersHtml = null
-    try {
-      careersHtml = await fetchVerifiedText(CAREERS_URL)
-    } catch (error) {
-      if (!isExpectedFirstPartyBlockError(error)) {
-        throw error
-      }
+    signal?.throwIfAborted()
+    const fetchVerifiedText = async (url) => {
+      signal?.throwIfAborted()
+      const html = await (signal === undefined ? fetchText(url) : fetchText(url, { signal }))
+      signal?.throwIfAborted()
+      return html
     }
-
-    if (!hasAcceptedCareersShellSignal(careersHtml)) {
-      if (careersHtml == null) {
-        careersHtml = '<title>Attention Required! | Cloudflare</title><h1>Sorry, you have been blocked</h1><h2>You are unable to access polaris.com</h2>'
-      }
-    }
+    const careersHtml = await fetchVerifiedText(CAREERS_URL)
 
     if (!hasAcceptedCareersShellSignal(careersHtml)) {
       throw new Error('Polaris verified first-party careers shell changed materially')
@@ -149,6 +149,7 @@ export const createPolarisScraper = ({
       ...buildScraperOptions(),
       ...(signal === undefined ? {} : { signal }),
     })
+    signal?.throwIfAborted()
     const normalizedJobs = Array.isArray(jobs)
       ? jobs.map((job) => (job?.scrapedAt ? job : { ...job, scrapedAt: now() }))
       : []

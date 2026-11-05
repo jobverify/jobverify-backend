@@ -2,10 +2,12 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { loadNativePaginationDefaults, nativePaginationLimits, createNativePagination, readNativeWithSignal } from '../../scraper-support/utils/nativePagination.js'
 import { DEFAULT_JOB_RETENTION_DAYS } from '../../src/utils/jobLifecycle.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
+const nativeDefaults = loadNativePaginationDefaults(currentDir)
 
 export const BASE_URL = 'https://www.amazon.jobs'
 export const SEARCH_COUNTRY_CODE = 'IND'
@@ -308,8 +310,9 @@ export const extractSearchResults = (payload) => (Array.isArray(payload?.jobs) ?
   })
   .filter(Boolean)
 
-const fetchJson = async (url) => {
+const fetchJson = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'application/json,text/plain,*/*',
@@ -323,8 +326,9 @@ const fetchJson = async (url) => {
   return response.json()
 }
 
-const fetchText = async (url) => {
+const fetchText = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -340,10 +344,14 @@ const fetchText = async (url) => {
 
 export const createAmazonScraper = ({
   pageSize = Number.isInteger(config.pageSize) ? config.pageSize : DEFAULT_PAGE_SIZE,
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
+  maxJobs = nativeDefaults.maxJobs,
+  maxPages = nativeDefaults.maxPages,
 } = {}) => ({
   async run(options = {}) {
+    const signal = options.signal
+    signal?.throwIfAborted()
+    const limits = nativePaginationLimits(options, { maxPages, maxJobs })
+    const pagination = createNativePagination({ surface: buildSearchApiUrl(), limits, signal, collectionBudgetMs: options.collectionBudgetMs, identityScope: 'native-raw' })
     const fetchJsonImpl = options.fetchJson || fetchJson
     const fetchTextImpl = options.fetchText || fetchText
     const now = options.now ? new Date(options.now) : new Date()
@@ -351,54 +359,61 @@ export const createAmazonScraper = ({
       ? options.detailFetchRetentionDays
       : Number.parseInt(process.env.SCRAPER_JOB_POSTED_WITHIN_DAYS || '', 30) || DEFAULT_DETAIL_FETCH_RETENTION_DAYS
     const jobs = []
-    const seenJobIds = new Set()
+    return pagination.run(jobs, async () => {
+      const seenJobIds = new Set()
 
-    for (let page = 0; page < maxPages; page += 1) {
-      const offset = page * pageSize
-      const payload = await fetchJsonImpl(buildSearchApiUrl({ offset, resultLimit: pageSize }))
-      const listings = extractSearchResults(payload)
-      const summary = extractPaginationSummary(payload, { offset, resultLimit: pageSize })
+      for (let page = 0; page < limits.maxPages; page += 1) {
+        const offset = page * pageSize
+        const payload = await readNativeWithSignal(() => fetchJsonImpl(buildSearchApiUrl({ offset, resultLimit: pageSize }), { signal: pagination.signal }), pagination.signal)
+        const listings = extractSearchResults(payload)
+        const summary = extractPaginationSummary(payload, { offset, resultLimit: pageSize })
+        const rawRows = Array.isArray(payload?.jobs) ? payload.jobs : []
+        const progress = pagination.page(rawRows.map(record => normalizeWhitespace(record?.id_icims)), summary.totalRecords)
+        if (!progress) return pagination.finish(jobs, { exhausted: !summary.hasNext })
 
-      for (const job of listings) {
-        if (seenJobIds.has(job.jobId)) continue
-        seenJobIds.add(job.jobId)
+        for (const job of listings) {
+          if (seenJobIds.has(job.jobId)) continue
+          seenJobIds.add(job.jobId)
 
-        let detail = {}
-        if (shouldFetchDetailForJob(job, { now, detailFetchRetentionDays })) {
-          try {
-            detail = extractJobDetail(await fetchTextImpl(job.sourceUrl), job)
-          } catch {
-            detail = {}
+          let detail = {}
+          if (shouldFetchDetailForJob(job, { now, detailFetchRetentionDays })) {
+            try {
+              detail = extractJobDetail(await readNativeWithSignal(() => fetchTextImpl(job.sourceUrl, { signal: pagination.signal }), pagination.signal), job)
+            } catch {
+              signal?.throwIfAborted()
+              pagination.throwIfAborted()
+              detail = {}
+            }
+          }
+
+          jobs.push({
+            ...job,
+            title: detail.title || job.title,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            source: 'amazon',
+            link: job.applyUrl || job.sourceUrl,
+            scrapedAt: new Date().toISOString(),
+          })
+
+          if (jobs.length >= limits.maxJobs) {
+            return pagination.finish(jobs)
           }
         }
 
-        jobs.push({
-          ...job,
-          title: detail.title || job.title,
-          experienceRequired: detail.experienceRequired || job.experienceRequired,
-          minimumQualification: detail.minimumQualification || job.minimumQualification,
-          preferredQualification: detail.preferredQualification || job.preferredQualification,
-          jobDescription: detail.jobDescription || job.jobDescription,
-          source: 'amazon',
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
+        if (!summary.hasNext) {
+          return pagination.finish(jobs, { exhausted: true })
         }
       }
 
-      if (!summary.hasNext || listings.length === 0) {
-        break
-      }
-    }
-
-    return jobs
+      return pagination.finish(jobs)
+    })
   },
 })
 
-export const run = async () => createAmazonScraper().run()
+export const run = async (options = {}) => createAmazonScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

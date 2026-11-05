@@ -78,13 +78,23 @@ test('all 1033 production modules extract controlled native India content after 
   assert.equal(uncontrolled, 0)
 })
 
-test('all 1033 unavailable sources remain explicit coverage failures', async t => {
+test('all 1033 denied sources retain the primary failure without certifying empty inventory', async t => {
   for (const provider of batch) await t.test(provider.source, async () => {
     await assert.rejects(createCatalogScraper(current.get(provider.source)).run({
       fetchPage: async url => ({ status: 403, url, html: '' }),
       fetchJson: () => assert.fail('Blocked pages cannot authorize a guessed native account'),
-    }), error => error.failureKind === 'coverage_gap' && error.softFailure === true
-      && error.recruitmentObservations.sourceScopeComplete === false)
+    }), error => {
+      assert.equal(error.failureKind, 'blocked_or_access_denied')
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      assert.equal(error.status, 403)
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.recruitmentObservations.sourceScopeComplete, false)
+      assert.equal(error.recruitmentObservations.lifecycleCleanupAllowed, false)
+      assert.ok(error.recruitmentObservations.receipts.length > 0)
+      assert.ok(error.recruitmentObservations.receipts.every(row => row.status === 403))
+      return true
+    })
   })
 })
 

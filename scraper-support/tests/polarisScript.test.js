@@ -79,7 +79,7 @@ test('Polaris helpers pin the accepted first-party shell and public Workday boar
   assert.equal(polaris.hasOfficialCareersSignal(OFFICIAL_CAREERS_HTML), true)
   assert.equal(polaris.hasCloudflareBlockSignal(CLOUDFLARE_BLOCK_HTML), true)
   assert.equal(polaris.hasAcceptedCareersShellSignal(OFFICIAL_CAREERS_HTML), true)
-  assert.equal(polaris.hasAcceptedCareersShellSignal(CLOUDFLARE_BLOCK_HTML), true)
+  assert.equal(polaris.hasAcceptedCareersShellSignal(CLOUDFLARE_BLOCK_HTML), false)
   assert.equal(polaris.hasOfficialWorkdayBoardSignal(WORKDAY_BOARD_HTML), true)
   assert.deepEqual(polaris.buildScraperOptions(), {
     company: 'Polaris',
@@ -110,7 +110,7 @@ test('Polaris validates the accepted careers shell and then delegates to the sha
   }).run({
     fetchText: async (url) => {
       requests.push(url)
-      if (url === polaris.CAREERS_URL) return CLOUDFLARE_BLOCK_HTML
+      if (url === polaris.CAREERS_URL) return OFFICIAL_CAREERS_HTML
       if (url === polaris.WORKDAY_BOARD_URL) return WORKDAY_BOARD_HTML
       throw new Error(`Unexpected Polaris URL: ${url}`)
     },
@@ -146,21 +146,21 @@ test('Polaris also accepts an unblocked first-party careers shell when it is dir
   assert.equal(jobs[authoritativeEmpty], true)
 })
 
-test('Polaris accepts the verified first-party 403 block shape that happens before challenge HTML is returned', async () => {
+test('Polaris stops when the first-party403 happens before challenge HTML is returned', async () => {
   const polaris = await loadPolarisModule()
-
-  const jobs = await polaris.createPolarisScraper().run({
+  const requests = [], reason = new Error(`HTTP 403 for ${polaris.CAREERS_URL}`)
+  await assert.rejects(polaris.createPolarisScraper().run({
     fetchText: async (url) => {
+      requests.push(url)
       if (url === polaris.CAREERS_URL) {
-        throw new Error(`HTTP 403 for ${url}`)
+        throw reason
       }
       if (url === polaris.WORKDAY_BOARD_URL) return WORKDAY_BOARD_HTML
       throw new Error(`Unexpected Polaris URL: ${url}`)
     },
     workdayRunner: async () => [],
-  })
-
-  assert.deepEqual(jobs, [])
+  }), error => error === reason)
+  assert.deepEqual(requests, [polaris.CAREERS_URL])
 })
 
 test('Polaris fails closed when the first-party shell or public Workday board changes materially', async () => {
@@ -181,7 +181,7 @@ test('Polaris fails closed when the first-party shell or public Workday board ch
   await assert.rejects(
     polaris.createPolarisScraper().run({
       fetchText: async (url) => {
-        if (url === polaris.CAREERS_URL) return CLOUDFLARE_BLOCK_HTML
+        if (url === polaris.CAREERS_URL) return OFFICIAL_CAREERS_HTML
         if (url === polaris.WORKDAY_BOARD_URL) {
           return WORKDAY_BOARD_HTML.replace('Polaris Jobs', 'Unexpected Jobs')
         }

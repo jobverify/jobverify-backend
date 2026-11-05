@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { gunzipSync } from 'node:zlib'
 import * as source from './script.js'
 import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const fixture = name => readFile(new URL('./fixtures/' + name, import.meta.url), 'utf8')
-const [home, careers, client] = await Promise.all(['current-home.html', 'current-careers.html', 'persevex-careers-client.js'].map(fixture))
+const [careers, client] = await Promise.all(['current-careers.html', 'persevex-careers-client.js'].map(fixture))
+const home = Buffer.from(JSON.parse(gunzipSync(await readFile(new URL('./fixtures/current-public-20261105.compact.json.gz', import.meta.url)))).receipts.find(row => row.transport === 'chrome-alternate-public-document' && row.url === source.HOMEPAGE_URL).bodyBase64, 'base64').toString('utf8')
 const literal = client.match(/C=(\[\{id:"fe-dev"[\s\S]*?\}\]);function S/)?.[1]
 const original = JSON.parse(literal.replace(/([{,])([a-zA-Z]+):/g, '$1"$2":'))
 const changedClient = roles => client.replace(literal, JSON.stringify(roles))
@@ -23,12 +25,12 @@ const run = (overrides = {}) => {
   return { calls, result: source.run({ fetchPage, fetchText: async url => (await fetchPage(url)).html }) }
 }
 
-test('Current public client supplies five exact India roles, complete published detail and unresolved-role evidence', async () => {
+test('Legacy public client supplies three explicitly India roles, complete published detail and unresolved-role evidence', async () => {
   const { calls, result } = run()
   const jobs = await result
-  assert.deepEqual(calls, [source.HOMEPAGE_URL, source.CAREERS_URL, clientUrl])
-  assert.equal(jobs.length, 5)
-  assert.deepEqual(new Set(jobs.map(j => j.jobId)), new Set(['fe-dev', 'content-lead', 'placement-exec', 'hr-exec', 'bd-exec']))
+  assert.deepEqual(calls, [source.HOMEPAGE_URL, source.CAREERS_URL, clientUrl, source.HOMEPAGE_URL, source.CAREERS_URL, clientUrl])
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(new Set(jobs.map(j => j.jobId)), new Set(['fe-dev', 'content-lead', 'bd-exec']))
   for (const job of jobs) {
     const published = original.find(r => r.id === job.jobId)
     assert.equal(job.requisitionId, published.id)
@@ -46,9 +48,9 @@ test('Current public client supplies five exact India roles, complete published 
   assert.equal(evidence.firstParty, true)
   assert.equal(evidence.listingComplete, false)
   assert.equal(evidence.reportedTotal, 6)
-  assert.equal(evidence.indiaFacetCount, 5)
-  assert.equal(evidence.pagesFetched, 3)
-  assert.match(evidence.reason, /1.*unverified/)
+  assert.equal(evidence.indiaFacetCount, 3)
+  assert.equal(evidence.pagesFetched, 6)
+  assert.match(evidence.reason, /3.*unverified/)
   assert.match(evidence.reason, /social-intern.*Remote/)
 })
 
@@ -137,10 +139,10 @@ test('Contradictory foreign locations matching both cards and client never infer
     const roles = original.map(role => role.id === 'fe-dev' ? { ...role, location } : role)
     const html = careers.replace(/(<h3 class="text-lg font-bold text-foreground">Frontend Developer<\/h3>[\s\S]*?)Remote \(India\)/, (_, prefix) => prefix + location)
     const jobs = source.extractPublicJobs(html, changedClient(roles))
-    assert.equal(jobs.length, 4)
+    assert.equal(jobs.length, 2)
     assert.ok(jobs.every(job => job.jobId !== 'fe-dev' && job.country === 'India' && job.sourceListingComplete === false))
-    assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 4)
-    assert.match(readInventoryEvidence(jobs).reason, /2.*unverified/)
+    assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 2)
+    assert.match(readInventoryEvidence(jobs).reason, /4.*unverified/)
     assert.ok(readInventoryEvidence(jobs).reason.includes(location))
   }
 })

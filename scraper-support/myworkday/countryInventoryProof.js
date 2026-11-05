@@ -76,24 +76,36 @@ const ambiguousStateCodes = new Set(('AN AP AR AS BR CG CH DD DL DN GA GJ HP HR 
 
 // Only an explicit country token proves scope here. City names and punctuation
 // alone never prove a foreign country, nor do broad regional/remote labels.
-export const explicitWorkdayCountryScope = value => {
+const explicitCountryScope = (value, additionalWorksite = false) => {
   const label = String(value || '').trim()
   if (!label || /[;/|+&]|\b(?:or|and|global|worldwide|anywhere|APAC|EMEA|LATAM)\b/i.test(label)) return null
   const prefix = label.match(/^([A-Z]{2,3})\s*[.\-,]\s*/)?.[1]
   const suffix = label.match(/,\s*([^,]+)$/)?.[1]
   const prefixCountry = prefix && countries.get(prefix.toLowerCase())
   const suffixCountry = suffix && countries.get(suffix.toLowerCase())
+  // The additional-location strings in full CXS records can explicitly name
+  // a country before a city. Listing selection retains its existing policy.
+  const writtenPrefix=additionalWorksite&&label.match(/^(.+?)\s+[-\u2013\u2014]\s+/u)?.[1]
+  const writtenCountry=writtenPrefix&&writtenPrefix.length>3
+    ?countries.get(writtenPrefix.toLowerCase())||(writtenPrefix.toLowerCase()==='turkey'?'TR':null):null
+  const unicodePrefix=additionalWorksite&&label.match(/^([A-Z]{2,3})\s*[\u2013\u2014]\s*/u)?.[1]
+  const unicodeCountry=unicodePrefix&&!ambiguousStateCodes.has(unicodePrefix)?countries.get(unicodePrefix.toLowerCase()):null
+  // This extension only proves explicit foreign countries. It cannot promote
+  // an ambiguous code or a city-only native location into India.
+  const additionalForeign=[writtenCountry,unicodeCountry].filter(code=>code&&code!=='IN')
   // Conflicting tokens still require native detail evidence, even when one
   // token could also name a state. Removing ambiguity must not invent certainty.
   if (prefixCountry && suffixCountry && prefixCountry !== suffixCountry) return null
   const explicitCountries = [countries.get(label.toLowerCase()),
     countries.get(label.replace(/\s+(?:[-–—]\s*)?remote$/i, '').toLowerCase()),
-    prefixCountry, suffix && !ambiguousStateCodes.has(suffix.toUpperCase()) && suffixCountry].filter(Boolean)
+    prefixCountry, suffix && !ambiguousStateCodes.has(suffix.toUpperCase()) && suffixCountry,...additionalForeign].filter(Boolean)
   if (new Set(explicitCountries).size !== 1) return null
   const country = explicitCountries[0]
   if (/\bindia\b/i.test(label) && country !== 'IN') return null
   return country ? country === 'IN' ? 'india' : 'foreign' : null
 }
+export const explicitWorkdayCountryScope=value=>explicitCountryScope(value)
+export const explicitWorkdayAdditionalCountryScope=value=>explicitCountryScope(value,true)
 
 export const hasRecognizedWorkdayCountry = country => {
   const values = (typeof country === 'string' ? [country] : [country?.descriptor, country?.alpha2Code])

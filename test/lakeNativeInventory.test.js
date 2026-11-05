@@ -18,7 +18,7 @@ test('Lake context-free location parser never guesses India from a city or missi
 })
 const execute = async (t, { change = () => {}, options = {}, registered = false } = {}) => {
   const calls = [], counts = {}, audits = []
-  t.mock.method(globalThis, 'fetch', async (input, init = {}) => {
+  const fetchImpl = async (input, init = {}) => {
     const url = String(input)
     init.signal?.throwIfAborted()
     assert.equal(init.method || 'GET', 'GET')
@@ -29,8 +29,9 @@ const execute = async (t, { change = () => {}, options = {}, registered = false 
     const response = new Response(row.body, { status: row.status, headers: { 'content-type': 'text/html;charset=utf-8' } })
     Object.defineProperty(response, 'url', { value: row.url })
     return response
-  })
-  const args = { onAudit: value => audits.push(value), ...options }
+  }
+  t.mock.method(globalThis, 'fetch', fetchImpl)
+  const args = { onAudit: value => audits.push(value), fetchImpl, minIntervalMs: 0, ...options }
   const jobs = await (registered ? createCatalogScraper(getScraperCatalog().find(row => row.source === 'lakechemicalspvtltd')).run(args) : run(args))
   return { jobs, evidence: readInventoryEvidence(jobs), calls, audits }
 }
@@ -39,10 +40,11 @@ test('Lake current native cards preserve all six full criteria and role-assigned
   const { jobs, evidence, audits, calls } = await execute(t)
   assert.equal(jobs.length, 6)
   assert.equal(new Set(jobs.map(job => job.jobId)).size, 6)
-  assert.equal(evidence.listingComplete, true)
-  assert.equal(evidence.reportedTotal, 6)
-  assert.equal(evidence.indiaFacetCount, 6)
-  assert.ok(jobs.every(job => job.country === 'India' && job.sourceDetailComplete === true && job.sourceListingComplete === true))
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, null)
+  assert.equal(evidence.indiaFacetCount, null)
+  assert.equal(audits[0].nativeRecords, 6)
+  assert.ok(jobs.every(job => job.country === 'India' && job.sourceDetailComplete === true && job.sourceListingComplete === false))
   assert.ok(jobs.every(job => job.jobDescription === job.sourceDescription && /Qualification\s*:/.test(job.jobDescription)
     && /Experience\s*:/.test(job.jobDescription) && /Skills\s*:/.test(job.jobDescription)))
   assert.ok(jobs.every(job => !job.jobDescription.includes('Apply via the official')))
@@ -53,11 +55,11 @@ test('Lake current native cards preserve all six full criteria and role-assigned
   assert.equal(audits[0].unknownCountryRoles.length, 0)
 })
 
-test('Lake registered scraper retains current complete inventory evidence', async t => {
+test('Lake registered scraper preserves own records while company scope remains incomplete', async t => {
   const { jobs, evidence } = await execute(t, { registered: true })
   assert.equal(jobs.length, 6)
-  assert.equal(evidence.listingComplete, true)
-  assert.ok(jobs.every(job => job.source === 'lakechemicalspvtltd' && job.lifecycleCleanupAllowed === true))
+  assert.equal(evidence.listingComplete, false)
+  assert.ok(jobs.every(job => job.source === 'lakechemicalspvtltd' && job.lifecycleCleanupAllowed === false))
 })
 
 test('Lake a city-only role is not assigned the headquarters country', async t => {
@@ -129,13 +131,16 @@ test('Lake inert embedded text does not introduce an active hiring channel', asy
     if (url === board) row.body += '<template><div data-hiring-url="https://jobs.ashbyhq.com/another"></div></template>'
   } })
   assert.equal(jobs.length, 6)
-  assert.equal(evidence.listingComplete, true)
+  assert.equal(evidence.listingComplete, false)
 })
 
-test('Lake closing role changes prevent inventory certification', async t => {
-  await assert.rejects(execute(t, { change: (row, url, count) => {
+test('Lake closing role changes exclude the contradicted record while preserving other verified roles', async t => {
+  const {jobs,evidence}=await execute(t, { change: (row, url, count) => {
     if (url === board && count > 1) row.body = row.body.replaceAll('Marketing Executive', 'Marketing Director')
-  } }), /native-role-inventory-or-full-criteria-changed/)
+  } })
+  assert.equal(jobs.length,5)
+  assert.ok(!jobs.some(job=>job.title==='Marketing Executive'))
+  assert.equal(evidence.listingComplete,false)
 })
 
 test('Lake stylesheet-hidden worksite country cannot qualify its assigned role', async t => {
@@ -156,9 +161,9 @@ test('Lake unavailable first-party pages cannot become empty inventory', async t
   await assert.rejects(execute(t, { change: row => { row.status = 503 } }), /HTTP|response|unavailable/i)
 })
 
-test('Lake unsupported body-only transports and caps are rejected', async t => {
+test('Lake unsupported body-only transports and page limits are rejected', async t => {
   await assert.rejects(execute(t, { options: { fetchText: async () => '' } }), /metadata|body.only|unsupported/i)
-  await assert.rejects(execute(t, { options: { maxJobs: 1 } }), /caps|limits|unsupported/i)
+  await assert.rejects(execute(t, { options: { maxPages: 1 } }), /page limit|unsupported/i)
 })
 
 test('Lake pre-cancellation stops before public HTTP', async t => {

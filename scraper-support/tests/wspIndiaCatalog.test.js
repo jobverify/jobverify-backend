@@ -19,11 +19,11 @@ test('getScraperCatalog includes WSP India as an official WSP handoff scraper', 
   assert.equal(provider.paginationStrategy, 'official-jobs-page-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'official-india-site-handoff+official-jobs-html+oracle-job-links+required-public-details',
+    'current-first-party-advertised-Oracle-requisitions+typed-native-India-countries+own-employer-statements+all-public-native-criteria+native-publication-dates',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'emit.fa.ca3.oraclecloud.com')
+  assert.equal(provider.companyDomain, 'wsp.com')
   assert.equal(provider.verifiedOn, '2026-10-09')
   assert.equal(provider.verifiedPublicJobCount, 491)
   assert.equal(provider.verifiedIndiaJobCount, 491)

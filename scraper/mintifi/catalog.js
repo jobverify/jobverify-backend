@@ -21,7 +21,7 @@ export const MINTIFI_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'first-party-careers-page-plus-single-keka-active-jobs-endpoint',
   extractionStrategy:
-    'verified-first-party-careers-page+embedded-keka-script+careerportalinfo+active-keka-embed-api+jobdetails+applyjob',
+    'current-first-party-Keka-configuration+declared-renderer+native-account+full-active-records+all-typed-India-placements',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'mintifi.com',

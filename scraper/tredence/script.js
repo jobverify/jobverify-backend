@@ -1,10 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { createRipplehireInventoryScraper } from '../altimetrik/ripplehireInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 const BASE_URL = 'https://tredence.ripplehire.com'
 const TOKEN = 'rzuz0vttMaz0VxxVzDiY'
@@ -231,95 +230,11 @@ export const extractJobDetail = (xml, listing = {}) => {
   }
 }
 
-const defaultFetchText = async (url, options = {}) => {
-  const response = await fetch(url, {
-    method: options.method || 'GET',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'application/xml,text/xml,text/html;q=0.9,*/*;q=0.8',
-      ...(options.headers || {}),
-    },
-    body: options.body,
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
-
-export const createTredenceScraper = ({ fetchText = defaultFetchText } = {}) => ({
-  run: async ({ fetchText: overrideFetchText, maxPages: overrideMaxPages } = {}) => {
-    const fetchImpl = overrideFetchText || fetchText
-    const jobs = []
-    const seenJobIds = new Set()
-    const maxPages = Number.isInteger(overrideMaxPages)
-      ? overrideMaxPages
-      : Number.isInteger(config.maxPages)
-        ? config.maxPages
-        : Number.POSITIVE_INFINITY
-
-    for (let page = 0; page < maxPages; page += 1) {
-      const body = new URLSearchParams({
-        careerSiteUrlParams: JSON.stringify(buildSearchRequestPayload(page)),
-        lang: 'en',
-      })
-      const listingXml = await fetchImpl(`${BASE_URL}${SEARCH_PATH}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        },
-        body,
-      })
-      const listings = extractSearchResults(listingXml)
-      const summary = extractSearchSummary(listingXml)
-
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailParams = new URLSearchParams({
-          token: TOKEN,
-          jobSeq: listing.jobId,
-          source: SOURCE,
-          lang: 'en',
-        })
-        const detailXml = await fetchImpl(`${BASE_URL}${DETAIL_PATH}?${detailParams.toString()}`)
-        const detail = extractJobDetail(detailXml, listing)
-
-        jobs.push({
-          jobId: detail.jobId || listing.jobId,
-          requisitionId: detail.requisitionId || listing.requisitionId,
-          title: detail.title || listing.title,
-          company: 'Tredence',
-          department: detail.department || listing.department,
-          location: detail.location || listing.location,
-          city: detail.city || listing.city,
-          link: detail.applyUrl || listing.applyUrl,
-          applyUrl: detail.applyUrl || listing.applyUrl,
-          sourceUrl: detail.sourceUrl || listing.sourceUrl,
-          source: 'tredence',
-          employmentType: detail.employmentType,
-          experienceRequired: detail.experienceRequired,
-          jobDescription: detail.jobDescription,
-          minimumQualification: detail.minimumQualification,
-          preferredQualification: detail.preferredQualification,
-          requiredSkills: detail.requiredSkills,
-          postingDate: detail.postingDate || listing.postingDate,
-          closingDate: detail.closingDate,
-          scrapedAt: new Date().toISOString(),
-        })
-      }
-
-      const totalJobCount = summary.totalJobCount || 0
-      const pageSize = summary.pageSize || DEFAULT_PAGE_SIZE
-      const nextStartIndex = (summary.startJobIndex ?? 0) + pageSize
-      if (nextStartIndex >= totalJobCount || listings.length === 0) break
-    }
-
-    return jobs
-  },
+export const createTredenceScraper = ({ fetchText } = {}) => ({
+  run: (options = {}) => createRipplehireInventoryScraper({
+    source: 'tredence', company: 'Tredence', origin: BASE_URL, token: TOKEN, parentCompanyId: 191,
+    normalizeEmploymentType, extractSkills: extractNumberedSkills,
+  }).run({ ...(fetchText === undefined ? {} : { fetchText }), ...options }),
 })
 
 export const run = async (options = {}) => createTredenceScraper().run(options)

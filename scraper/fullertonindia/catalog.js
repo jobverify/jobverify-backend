@@ -24,7 +24,7 @@ export const FULLERTON_INDIA_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'exact-name-homepage-redirect-plus-first-party-careers-handoff-plus-workline-current-opening-api',
   extractionStrategy:
-    'verified-redirected-homepage+verified-first-party-careers-page+workline-handoff+currentopening-json-api',
+    'verified-first-party-handoff+current-native-India-listing+paired-public-role+published-view-only-full-PDF-description',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   verifiedOn: '2026-08-02',

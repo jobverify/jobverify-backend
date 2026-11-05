@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { nativeCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 import DSPACE_INDIA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -145,13 +147,6 @@ const deriveCity = (location) => {
   return normalizeWhitespace(normalizedLocation.split(',')[0])
 }
 
-const normalizeCountry = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return 'India'
-  if (/^IN$/i.test(normalized)) return 'India'
-  return normalized
-}
-
 const buildIndiaLocation = (location) => {
   const normalizedLocation = normalizeWhitespace(location)
   if (!normalizedLocation) return 'India'
@@ -292,13 +287,13 @@ export const extractIndiaJobsFromListingHtml = (
 }
 
 export const extractJobPostingJsonLd = (html) => {
-  const matches = String(html ?? '').matchAll(
-    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
-  )
+  const scripts = readNativeDocument(html).nodes(node => node.tag === 'script'
+    && node.attrs.type?.toLowerCase() === 'application/ld+json')
+  const postings = []
 
-  for (const match of matches) {
+  for (const script of scripts) {
     const rawJson = normalizeWhitespace(
-      decodeRepeatedHtmlEntities(String(match[1] ?? ''))
+      decodeRepeatedHtmlEntities(String(script.raw ?? ''))
         .replace(/[\u0000-\u001F\u007F]/g, ' ')
         .trim(),
     )
@@ -307,13 +302,13 @@ export const extractJobPostingJsonLd = (html) => {
     try {
       const parsed = JSON.parse(rawJson)
       const candidates = Array.isArray(parsed) ? parsed : [parsed]
-      const jobPosting = candidates.find((item) => normalizeWhitespace(item?.['@type']) === 'JobPosting')
-
-      if (jobPosting) return jobPosting
+      postings.push(...candidates.filter((item) => normalizeWhitespace(item?.['@type']) === 'JobPosting'))
     } catch {
       continue
     }
   }
+
+  if (postings.length === 1) return postings[0]
 
   throw new Error('dSpace India detail page no longer exposes the expected JobPosting JSON-LD')
 }
@@ -334,6 +329,15 @@ export const extractJobDetail = (
   const locality = detailLocality || deriveCity(baseJob?.location)
   const location = buildIndiaLocation(locality || baseJob?.location)
   const description = stripTags(decodeRepeatedHtmlEntities(jobPosting?.description))
+  const places = Array.isArray(jobPosting?.jobLocation) ? jobPosting.jobLocation : [jobPosting?.jobLocation]
+  const addresses = places.map(place => place?.address).filter(Boolean)
+  const countries = addresses.map(address => nativeCountryName(
+    typeof address.addressCountry === 'object' ? address.addressCountry?.name : address.addressCountry,
+  ))
+  const countryComplete = countries.length > 0 && addresses.length === places.length
+    && countries.every(country => country === 'India')
+  const countryFailure = countries.some(country => country && country !== 'India')
+    ? 'native-country-conflict' : 'missing-native-country'
   const verifiedApplicationEmailMatch = new RegExp(escapeRegex(APPLICATION_EMAIL), 'i').exec(decodedHtml)
   const applicationEmailMatch = /(?:mailto:)?([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i.exec(
     decodedHtml,
@@ -362,10 +366,14 @@ export const extractJobDetail = (
   return {
     ...baseJob,
     title,
-    location,
-    city: deriveCity(location),
+    city: countryComplete ? deriveCity(location) : null,
     state: null,
-    country: 'India',
+    country: countryComplete ? 'India' : null,
+    // The listing's India filter cannot override a contradictory own JobPosting.
+    location: countryComplete ? location : null,
+    nativeLocation: detailLocality || deriveCity(baseJob?.location),
+    sourceCountryScopeUnresolved: !countryComplete,
+    sourceNativeCountryConflict: countryFailure === 'native-country-conflict',
     sourceUrl: baseJob.sourceUrl,
     applyUrl: baseJob.sourceUrl,
     link: baseJob.sourceUrl,
@@ -378,6 +386,15 @@ export const extractJobDetail = (
     experienceRequired: extractExperienceRequired(description),
     postingDate: normalizeWhitespace(jobPosting?.datePosted),
     jobDescription: description,
+    sourceDescription: description,
+    nativeSourceRecord: jobPosting,
+    nativeLocationEvidence: { listingCountry: baseJob.country, addresses },
+    sourceDetailContentComplete: Boolean(description && description.length >= 100),
+    sourceDetailComplete: countryComplete && Boolean(description && description.length >= 100),
+    sourceScopeComplete: false,
+    sourceListingComplete: false,
+    lifecycleCleanupAllowed: false,
+    ...(!countryComplete ? { sourceDetailFailureKind: countryFailure } : {}),
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],

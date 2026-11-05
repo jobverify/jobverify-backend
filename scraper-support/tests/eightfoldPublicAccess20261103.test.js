@@ -30,8 +30,8 @@ const replay=async(source,{provider=configured(source),laterError=denial(403),lo
  return{jobs,calls}
 }
 
-test('fourteen previously denied Eightfold providers pace public reads and require exact native detail identity',()=>{
- const sources=['eaton','eightfoldai','ericsson','fluke','hsbctechnologyindia','infineon','johndeereindia','lamresearch','qualcomm','slb','stmicroelectronics','tektronix','trimble','worley']
+test('thirteen current Eightfold providers pace public reads and require exact native detail identity; SLB uses its current company index',()=>{
+ const sources=['eaton','eightfoldai','ericsson','fluke','hsbctechnologyindia','infineon','johndeereindia','lamresearch','qualcomm','stmicroelectronics','tektronix','trimble','worley']
  for(const source of sources){
   const provider=catalog.find(row=>row.source===source)
   assert.equal(provider.publicAccessPolicy,'preserve-verified-stop-denied-origin')
@@ -39,6 +39,10 @@ test('fourteen previously denied Eightfold providers pace public reads and requi
   assert.ok(provider.config.rateLimit.minimumIntervalMs>=1000)
  }
  assert.equal(catalog.find(row=>row.source==='qualcomm').config.pagination.traversalMode,'staged-snapshot')
+ const slb=catalog.find(row=>row.source==='slb')
+ assert.equal(slb.nativeCurrentCareerSurface,'slb-current-public-coveo')
+ assert.equal(slb.publicAccessPolicy,'preserve-verified-stop-denied-origin')
+ assert.ok(slb.config.rateLimit.minimumIntervalMs>=1000)
 })
 
 for(const capture of captures){

@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { collectOracleRequisitionJobs } from '../../scraper-support/utils/oracleRequisitionInventory.js'
+import { readNativeWithSignal } from '../../scraper-support/utils/nativePagination.js'
+import { nativeCountryName, nativeLocationCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 import { EMERSON_INDIA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -126,19 +129,14 @@ const getEmploymentType = (record = {}) =>
       || record.ContractType,
   )
 
-const isIndiaJob = (record = {}) => {
-  const country = normalizeWhitespace(record.PrimaryLocationCountry)?.toUpperCase()
-  const primaryLocation = normalizeWhitespace(record.PrimaryLocation)
-  const secondaryLocations = Array.isArray(record?.secondaryLocations)
-    ? record.secondaryLocations
-      .map((location) => normalizeWhitespace(location?.Name))
-      .filter(Boolean)
-    : []
-
-  return country === 'IN'
-    || /(?:^|,)\s*india\s*$/i.test(primaryLocation || '')
-    || secondaryLocations.some((location) => /(?:^|,)\s*india\s*$/i.test(location))
+const getIndiaLocation = (record = {}) => {
+  const locations = [{ CountryCode: record.PrimaryLocationCountry, Name: record.PrimaryLocation },
+    ...(Array.isArray(record.secondaryLocations) ? record.secondaryLocations : [])]
+  const location = locations.find(item => (nativeCountryName(item?.CountryCode)
+    || nativeLocationCountryName(item?.Name || item?.LocationName)) === 'India')
+  return location ? normalizeWhitespace(location.Name || location.LocationName) || COUNTRY_FILTER : null
 }
+const isIndiaJob = record => Boolean(getIndiaLocation(record))
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
@@ -182,10 +180,7 @@ export const buildJobDetailApiUrl = (jobId) =>
 
 const toListing = (record = {}) => {
   const jobId = normalizeWhitespace(record.Id)
-  const location = normalizeLocation(
-    record.PrimaryLocation
-      || record?.secondaryLocations?.[0]?.Name,
-  )
+  const location = normalizeLocation(getIndiaLocation(record))
 
   return {
     title: normalizeWhitespace(record.Title),
@@ -232,7 +227,7 @@ export const extractPaginationSummary = (payload, { page = 0 } = {}) => {
 
 export const extractJobDetail = (payload, listing = {}) => {
   const detail = getRequisitionDetail(payload)
-  const location = normalizeLocation(detail.PrimaryLocation) || listing.location || null
+  const location = normalizeLocation(getIndiaLocation(detail)) || listing.location || null
   const jobId = normalizeWhitespace(detail.Id) || listing.jobId || null
   const title = normalizeWhitespace(detail.Title) || listing.title || null
   const minimumQualification = normalizeWhitespace(detail.ExternalQualificationsStr || detail.StudyLevel)
@@ -282,7 +277,8 @@ export const extractJobDetail = (payload, listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -291,7 +287,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -301,53 +298,37 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 })
 
 export const createEmersonIndiaScraper = ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
+  maxPages = Infinity,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   fetchText = defaultFetchText,
   fetchJson = defaultFetchJson,
   now = () => new Date().toISOString(),
+  signal,
 } = {}) => ({
   async run() {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const readHandoff = async url => {
+      try {
+        return await readNativeWithSignal(() => fetchText(url, { signal }), signal)
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
+    const careersHtml = await readHandoff(CAREERS_URL)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Emerson India verified Emerson careers page no longer matches the known first-party handoff')
     }
 
-    const candidateExperienceHtml = await fetchText(CANDIDATE_EXPERIENCE_URL)
+    const candidateExperienceHtml = await readHandoff(CANDIDATE_EXPERIENCE_URL)
     if (!hasOfficialCandidateExperienceSignal(candidateExperienceHtml)) {
       throw new Error('Emerson India verified Oracle candidate experience page no longer matches the known public shell')
     }
 
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (let page = 0; page < maxPages; page += 1) {
-      const payload = await fetchJson(buildSearchUrl({ page }))
-      const pageJobs = extractSearchResults(payload)
-      const summary = extractPaginationSummary(payload, { page })
-
-      for (const listing of pageJobs) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailPayload = await fetchJson(buildJobDetailApiUrl(listing.jobId))
-        const detail = extractJobDetail(detailPayload, listing)
-
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-
-      if (!summary.hasNext) break
-    }
-
+    const jobs = await collectOracleRequisitionJobs({
+      source: SOURCE, siteNumber: SITE_NUMBER, buildSearchUrl, buildJobDetailApiUrl,
+      extractSearchResults, extractJobDetail, fetchJson, maxPages, maxJobs, signal,
+    })
+    for (const job of jobs) job.scrapedAt = now()
     return jobs
   },
 })

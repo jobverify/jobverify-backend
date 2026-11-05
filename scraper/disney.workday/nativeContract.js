@@ -48,15 +48,33 @@ export function listingUrl(scope,page){
  const p=new URLSearchParams({ActiveFacetID:'1269750',CurrentPage:String(page),RecordsPerPage:'10',TotalContentResults:content,Distance:'50',RadiusUnitType:'0',Keywords:'',Location:'',ShowRadius:'False',IsPagination:'False',CustomFacetName:'',FacetTerm:'',FacetType:'0','FacetFilters[0].ID':'1269750','FacetFilters[0].FacetType':'2','FacetFilters[0].Count':String(scope.count),'FacetFilters[0].Display':'India','FacetFilters[0].IsApplied':'true','FacetFilters[0].FieldName':'',SearchResultsModuleName:'Search Results',SearchFiltersModuleName:'Search Filters',SortCriteria:'0',SortDirection:'1',SearchType:'5',PostalCode:'',ResultsType:page===1?'0':'1',fc:'',fl:'',fcf:'',afc:'',afl:'',afcf:'',TotalContentPages:page<=2?String(Math.ceil(scope.content/10)):'NaN'})
  return ORIGIN+'/en/search-jobs/results?'+p
 }
-export function parsePage(body,{scope,page,now}){
+function listingDocument(body){
  let payload;try{payload=JSON.parse(body)}catch{throw Error('Disney native contract: Invalid listing JSON')}
  check(payload&&typeof payload==='object'&&!Array.isArray(payload),'Invalid listing envelope')
  check(Object.keys(payload).sort().join(',')==='filters,hasContent,hasJobs,results','Changed or error listing envelope')
  check(typeof payload.filters==='string'&&typeof payload.results==='string'&&typeof payload.hasJobs==='boolean'&&typeof payload.hasContent==='boolean','Invalid listing fields')
  const d=readNativeDocument(payload.results),a=resultSection(d),total=integer(a['data-total-job-results'],'job total'),pages=integer(a['data-total-pages'],'page total')
- check(total===scope.count&&pages===Math.max(1,Math.ceil(total/10))&&integer(a['data-current-page'],'current page')===page,'Native count/page drift')
+ return{payload,d,a,total,pages}
+}
+function appliedIndia(d,a){
  check(a['data-active-facet-id']==='1269750','Country scope drift')
  check(d.nodes(n=>n.tag==='button'&&n.attrs['data-id']==='1269750'&&n.attrs['data-facet-type']==='2'&&n.attrs['data-facet-display']==='Country:  India').length===1,'Applied India filter unavailable')
+}
+// The discovery country-facet counter is a separate native surface. The first
+// applied-country result supplies its own count; subsequent pages and closing
+// reads must reconcile against that exact filtered inventory.
+export function inspectFilteredScope(body){
+ const{d,a,total,pages}=listingDocument(body)
+ check(pages===Math.max(1,Math.ceil(total/10))&&integer(a['data-current-page'],'current page')===1,'Native count/page drift')
+ appliedIndia(d,a)
+ const list=one(d.nodes(n=>n.tag==='ul'&&n.attrs.id==='search-results-jobs'),'native job list')
+ check(integer(list.attrs['data-results-count'],'list total')===total,'List count mismatch')
+ return{count:total}
+}
+export function parsePage(body,{scope,page,now}){
+ const{payload,d,a,total,pages}=listingDocument(body)
+ check(total===scope.count&&pages===Math.max(1,Math.ceil(total/10))&&integer(a['data-current-page'],'current page')===page,'Native count/page drift')
+ appliedIndia(d,a)
  const list=one(d.nodes(n=>n.tag==='ul'&&n.attrs.id==='search-results-jobs'),'native job list');check(integer(list.attrs['data-results-count'],'list total')===total,'List count mismatch')
  const links=subtree(d,list,n=>n.tag==='a')
  const rows=links.map(n=>{const id=n.attrs['data-job-id'],req=n.attrs['data-job-secondary-id']||null,href=n.attrs.href

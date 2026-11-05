@@ -1,5 +1,6 @@
-import { decodeNativeEntities, extractActiveDescription } from './activeNativeHtml.js'
+import { ActiveNativeContentError, decodeNativeEntities, extractActiveDescription } from './activeNativeHtml.js'
 import { attachInventoryEvidence } from './inventoryEvidence.js'
+import { turboHireWorkplaces, turboHireDate, turboHireRecruitmentRecord } from './turboHireNativeFacts.js'
 
 const clean = value => decodeNativeEntities(value).replace(/\s+/g, ' ').trim()
 
@@ -7,6 +8,17 @@ const requireNative = (source, condition, message) => {
   if (!condition) throw Object.assign(new Error(`[${source}] TurboHire native details: ${message}`), {
     abortRetries: true, incompleteScope: true,
   })
+}
+
+const publicModel = (source, payload) => {
+  requireNative(source, payload && typeof payload === 'object' && !Array.isArray(payload), 'malformed public native model')
+  for (const key of ['Error','Errors','error','errors','Exception','exception','ErrorMessage','errorMessage'])
+    requireNative(source, payload[key] == null || payload[key] === '' || Array.isArray(payload[key]) && payload[key].length === 0,
+      'public native response contains an error envelope')
+  for (const key of ['Success','success']) if (payload[key] != null)
+    requireNative(source, payload[key] === true, 'public native response reports failure')
+  for (const key of ['StatusCode','statusCode']) if (payload[key] != null)
+    requireNative(source, payload[key] === 200, 'public native response reports a failure status')
 }
 
 const locations = (source, record) => {
@@ -19,6 +31,7 @@ const locations = (source, record) => {
 }
 
 const snapshot = (payload, { source, orgId, employer }) => {
+  publicModel(source, payload)
   requireNative(source, Array.isArray(payload?.Result) && Number.isSafeInteger(payload.Total)
     && payload.Total >= 0 && payload.Total === payload.Result.length,
   'listing total is missing or truncated')
@@ -48,20 +61,36 @@ const snapshot = (payload, { source, orgId, employer }) => {
 export const hydrateTurboHireJobs = async ({
   source, orgId, employer, origin, apiBaseUrl, boardUrl, payload, jobs,
   fetchJson, headers, listingUrl, listingRequest, maxJobs, signal, now = () => new Date().toISOString(),
+  retainNativeProof = false, publisherProof = null, verifyPublisher, publicJobInfoUrl, verifyNativeDetail, mapNativeFields,
 }) => {
   signal?.throwIfAborted()
   const context = { source, orgId, employer }
   const opening = snapshot(payload, context)
-  const selected = maxJobs ? jobs.slice(0, maxJobs) : jobs
+  requireNative(source, maxJobs == null || Number.isSafeInteger(maxJobs) && maxJobs >= 0, 'invalid caller cap')
+  const selected = maxJobs == null ? jobs : jobs.slice(0, maxJobs)
   const hydrated = []
   const failures = []
+  let stopped = false
   for (const job of selected) {
     signal?.throwIfAborted()
     const listing = payload.Result.find(record => record.JobId === job.jobId)
     requireNative(source, listing && job.sourceUrl === `${origin}/job/publicjobs/${listing.JobIdObfuscated}`
       && job.title === clean(listing.JobTitle), 'selected role is outside the current native listing')
-    const url = `${apiBaseUrl}/api/publicjobs/${encodeURIComponent(job.jobId)}?fieldVisibility=CareerPage`
-    const detail = await fetchJson(url, { method: 'GET', headers, signal })
+    const url = publicJobInfoUrl ? publicJobInfoUrl(listing)
+      : `${apiBaseUrl}/api/publicjobs/${encodeURIComponent(job.jobId)}?fieldVisibility=CareerPage`
+    let detail
+    try { detail = await fetchJson(url, { method: 'GET', headers, signal }) }
+    catch (error) {
+      signal?.throwIfAborted()
+      if (!retainNativeProof || !error.publicReadFailure) throw error
+      failures.push({ stage: 'native-detail', nativeJobId: job.jobId, sourceUrl: job.sourceUrl,
+        failureKind: 'native-public-read-failed', status: error.status ?? null })
+      stopped = true
+      break
+    }
+    signal?.throwIfAborted()
+    publicModel(source, detail)
+    const qualified = verifyNativeDetail ? await verifyNativeDetail(detail, listing) : null
     signal?.throwIfAborted()
     requireNative(source, detail?.JobId === listing.JobId && clean(detail.JobTitle) === job.title
       && detail.OrgDetails?.OrgID === orgId && clean(detail.OrgDetails?.OrgName) === employer
@@ -80,22 +109,106 @@ export const hydrateTurboHireJobs = async ({
         failureKind: 'native-public-vacancy-status-unqualified', nativeStatus: detail.JobStatus ?? null })
       continue
     }
-    const description = extractActiveDescription(detail.JobDescriptionV2 || detail.JobDescription)
+    if (qualified?.sourceDetailComplete === false) {
+      failures.push({ stage: 'native-detail', nativeJobId: job.jobId, sourceUrl: job.sourceUrl, failureKind: 'missing-content' })
+      continue
+    }
+    let sections
+    try {
+      const description = extractActiveDescription(detail.JobDescriptionV2 || detail.JobDescription)
+      sections = [description, ...[detail.RolesAndResponsibilitiesV2, detail.EligibilityV2]
+        .map(extractActiveDescription).filter(Boolean)]
+    } catch (error) {
+      if (!retainNativeProof || !(error instanceof ActiveNativeContentError)) throw error
+      failures.push({ stage: 'native-detail', nativeJobId: job.jobId, sourceUrl: job.sourceUrl,
+        failureKind: 'malformed-native-full-description' })
+      continue
+    }
+    const description = sections[0]
     if (!description || description.length < 150) {
       failures.push({ stage: 'native-detail', nativeJobId: job.jobId, sourceUrl: job.sourceUrl,
         failureKind: 'missing-content' })
       continue
     }
-    const sections = [description, ...[detail.RolesAndResponsibilitiesV2, detail.EligibilityV2]
-      .map(extractActiveDescription).filter(Boolean)]
-    hydrated.push({ ...job, jobDescription: sections.join('\n\n'), sourceDescription: sections.join('\n\n'),
+    let nativeFacts = {}
+    if (retainNativeProof) {
+      const workplaces = turboHireWorkplaces(detail.Location), india = workplaces.find(place => place.countryCode === 'IN')
+      const ordered = value => value.sort((a, b) => a.address.localeCompare(b.address))
+      requireNative(source, JSON.stringify(ordered([...workplaces])) === JSON.stringify(ordered(turboHireWorkplaces(listing.Location))),
+        'typed native detail workplaces contradict the listing')
+      requireNative(source, india, 'selected role lacks a native India workplace')
+      const postingDate = turboHireDate(detail.PublishedDates?.CAREERPAGE, { now: now(), publication: true })
+      const closingDate = turboHireDate(detail.ExpiryDates?.CAREERPAGE, { now: now() })
+      requireNative(source, detail.IsDraft === false, 'native role draft status unavailable or unqualified')
+      const expired = closingDate && (closingDate.length === 10
+        ? closingDate < now().slice(0, 10) : Date.parse(closingDate) < Date.parse(now()))
+      if (expired) {
+        failures.push({ stage: 'native-detail', nativeJobId: job.jobId, sourceUrl: job.sourceUrl, failureKind: 'native-vacancy-expired' })
+        continue
+      }
+      nativeFacts = { country: 'India', city: india.city, location: india.address, locations: workplaces,
+        postingDate, closingDate, sourcePostedDateRaw: detail.PublishedDates?.CAREERPAGE ?? null,
+        sourceDateProvenance: 'native-TurboHire-PublishedDates.CAREERPAGE', firstEverPostedAt: null,
+        sourceNativeClosingDate: detail.ExpiryDates?.CAREERPAGE ?? null, sourceClosingDateIsExact: Boolean(closingDate?.endsWith('Z')),
+        sourceDetailStatus: 'complete', sourcePrimaryLocation: workplaces[0].address,
+        sourceDescriptionAttachment: detail.JobDescriptionBlobUrl || null, publicExperienceChecked: true, applicationVisited: false,
+        nativeEmployerBinding: { method: 'current-corporate-handoff-and-native-organization', publisher: employer,
+          nativeOrganizationId: orgId, legalEmployer: null },
+        nativeSourceRecord: { nativeListing: turboHireRecruitmentRecord(listing),
+          nativeDetail: turboHireRecruitmentRecord(detail), nativePublisher: publisherProof } }
+    }
+    const fullDescription = sections.join('\n\n')
+    const fullFields = mapNativeFields ? mapNativeFields(detail, fullDescription) : {}
+    hydrated.push({ ...job, ...fullFields, ...nativeFacts, jobDescription: fullDescription, sourceDescription: fullDescription,
       sourceDetailComplete: true, sourceDescriptionApiUrl: url,
       sourceNativeGeneralPublishedDate: detail.PublishedDate ?? null,
-      sourceNativeLocations: locations(source, detail) })
+      sourceNativeLocations: retainNativeProof ? nativeFacts.locations : locations(source, detail) })
   }
-  const closing = snapshot(await fetchJson(listingUrl, listingRequest), context)
+  let closingPayload, closing = null
+  if (!stopped) {
+    try { closingPayload = await fetchJson(listingUrl, listingRequest); closing = snapshot(closingPayload, context) }
+    catch (error) {
+      signal?.throwIfAborted()
+      if (!retainNativeProof || !error.publicReadFailure) throw error
+      failures.push({ stage: 'closing-inventory', failureKind: 'native-public-read-failed', status: error.status ?? null })
+      stopped = true
+    }
+  }
   signal?.throwIfAborted()
-  requireNative(source, opening.signature === closing.signature, 'closing native inventory changed')
+  if (closing) requireNative(source, opening.signature === closing.signature, 'closing native inventory changed')
+  if (retainNativeProof) {
+    if (closingPayload) for (const job of hydrated) {
+      const original = turboHireWorkplaces(job.nativeSourceRecord.nativeListing.Location)
+      const current = turboHireWorkplaces(closingPayload.Result.find(record => record.JobId === job.jobId).Location)
+      const ordered = values => values.sort((a, b) => a.address.localeCompare(b.address))
+      requireNative(source, JSON.stringify(ordered(original)) === JSON.stringify(ordered(current)), 'typed closing workplaces changed')
+    }
+    let publisherReconciled = false
+    if (!stopped && verifyPublisher) {
+      try { await verifyPublisher(); publisherReconciled = true }
+      catch (error) {
+        signal?.throwIfAborted()
+        if (!error.publicReadFailure) throw error
+        failures.push({ stage: 'closing-publisher', failureKind: 'native-public-read-failed', status: error.status ?? null })
+      }
+    }
+    const result = hydrated.map(job => ({ ...job, sourceScopeComplete: false, sourceListingComplete: false,
+      lifecycleCleanupAllowed: false, nativeRoleClosingReconciled: Boolean(closing && publisherReconciled),
+      sourceInventoryScope: `declared-first-party-${source}-TurboHire-careers-board`,
+      nativeSourceRecord: { ...job.nativeSourceRecord, nativeClosingListing: closingPayload
+        ? turboHireRecruitmentRecord(closingPayload.Result.find(record => record.JobId === job.jobId)) : null } }))
+    const observed = { source, candidateDetails: selected.length, extractedDetailJobs: result.length,
+      jobs: result.map(job => ({ id: job.jobId })), exclusions: [], failures,
+      listingPaginationComplete: true, closingInventoryMatches: Boolean(closing),
+      publisherClosingMatches: publisherReconciled, sourceScopeComplete: false }
+    if (result.length) result[0].nativeCollectionEvidence = observed
+    Object.defineProperty(result, Symbol.for('jobverify.verified-recruitment-observations'), { value: observed })
+    return attachInventoryEvidence(result, { status: 'coverage-gap', surface: boardUrl, firstParty: true,
+      listingComplete: false, pagesFetched: 1 + selected.length + Number(Boolean(closing)),
+      reportedTotal: payload.Total, indiaFacetCount: null, verifiedAt: now(),
+      reason: 'individually-verified-native-TurboHire-details;company-inventory-not-certified'
+        + (failures.length ? ';unqualified-native-details:' + failures.map(failure => failure.failureKind).join(',') : '') })
+  }
   // A board with unresolved/foreign workplace labels or a caller limit is not
   // certified as a complete India inventory merely because selected roles work.
   const complete = hydrated.length === payload.Total

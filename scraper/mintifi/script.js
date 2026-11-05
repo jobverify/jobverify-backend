@@ -2,7 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { MINTIFI_CATALOG } from './catalog.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {createVerifiedRecruitmentScraper,RECRUITMENT_OBSERVATIONS} from '../../scraper-support/utils/verifiedRecruitment.js'
+import {mapJobsWithInventoryEvidence,attachInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {nativeCountryName} from '../../scraper-support/shared/nativeJobPosting.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -18,8 +20,6 @@ export const ACTIVE_JOBS_URL = PROVIDER_METADATA.kekaActiveJobsUrl
 export const EXPECTED_IDENTIFIER = PROVIDER_METADATA.expectedKekaIdentifier
 export const EXPECTED_KEKA_DOMAIN = PROVIDER_METADATA.expectedKekaDomain
 export const EXPECTED_PORTAL_NAME = PROVIDER_METADATA.expectedPortalName
-
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -170,82 +170,56 @@ export const extractSearchResults = (payload, { domain } = {}) =>
     .map((job) => mapJob(job, { domain }))
     .filter(Boolean)
 
-const defaultFetchPage = async (url) => ({
-  status: 200,
-  url,
-  html: await fetchTextWithRetry(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    label: 'mintifi-html',
-    timeoutMs: 15000,
-  }),
-})
-
-const defaultFetchJson = async (url) => ({
-  status: 200,
-  url,
-  json: await fetchJsonWithRetry(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'application/json,text/plain,*/*',
-    },
-    label: 'mintifi-json',
-    timeoutMs: 15000,
-  }),
-})
-
 export const createMintifiScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({
-    fetchPage = defaultFetchPage,
-    fetchJson = defaultFetchJson,
-  } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (!hasVerifiedCareersPageSignal(careersPage?.html)) {
-      throw new Error('Mintifi first-party careers page no longer exposes the verified Keka jobs embed')
-    }
-
-    const careerConfig = extractCareerConfig(careersPage?.html)
-    if (!careerConfig) {
-      throw new Error('Mintifi careers page no longer exposes the verified Keka configuration')
-    }
-
-    if (
-      careerConfig.identifier !== EXPECTED_IDENTIFIER
-      || careerConfig.domain !== EXPECTED_KEKA_DOMAIN
-      || careerConfig.portalName !== 'default'
-    ) {
-      throw new Error('Mintifi verified Keka job surface changed materially')
-    }
-
-    const careerPortalInfo = await fetchJson(CAREER_PORTAL_INFO_URL)
-    if (!hasExpectedPortalIdentity(careerPortalInfo?.json)) {
-      throw new Error('Mintifi exact company identity no longer matches the verified public Keka portal')
-    }
-
-    const activeJobsUrl = buildActiveJobsUrl(careerConfig)
-    const activeJobs = await fetchJson(activeJobsUrl)
-    if (!Array.isArray(activeJobs?.json)) {
-      throw new Error('Mintifi active jobs payload no longer matches the verified Keka feed')
-    }
-
-    const jobs = extractSearchResults(activeJobs.json, careerConfig)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
+  async run({fetchPage,fetchJson,...options} = {}) {
+    if(maxJobs!=null&&(!Number.isSafeInteger(maxJobs)||maxJobs<0))throw Error('Mintifi invalid result limit')
+    const jobs=await createVerifiedRecruitmentScraper({source:SOURCE,companyName:COMPANY,
+      companyDomain:'mintifi.com',companyCareerPage:CAREERS_URL,officialHomepageUrl:'https://mintifi.com/',
+      requireCorporateIdentityMatch:true,requireNativeEmployerName:true,discoverRecruitmentLinks:true,
+      allowDeclaredExternalCareersPages:true}).run({now,...options,...(fetchPage?{fetchPage}:{}),
+        ...(fetchJson?{fetchJson:async(url,init)=>{
+          const result=await fetchJson(url,init)
+          if(result?.status!==200||result.url!==url)throw Error('Mintifi native JSON response identity changed')
+          return result.json
+        }}:{})})
+    const selected=maxJobs==null?jobs:jobs.slice(0,maxJobs)
+    const projected=mapJobsWithInventoryEvidence(jobs,job=>{
+      const row=job.nativeSourceRecord,account=row?.nativeAccount
+      if(!account||account.name!=='Mintifi'||account.careersPortalDomain!=='mintifi.keka.com'
+        ||String(row.id)!==job.jobId||row.title.trim()!==job.title)throw Error('Mintifi native account or role changed')
+      if(!Array.isArray(row.jobLocations)||!row.jobLocations.length||row.jobLocations.some(place=>{
+        const code=nativeCountryName(place.countryCode),name=nativeCountryName(place.countryName)
+        return !code||!name||code!==name
+      }))throw Error('Mintifi native countries are missing or conflicting')
+      const places=row.jobLocations.filter(place=>nativeCountryName(place.countryCode)==='India')
+      const labels=places.map(place=>[normalizeWhitespace(place.name)||normalizeWhitespace(place.city),
+        normalizeWhitespace(place.state),'India'].filter(Boolean).join(', '))
+      if(!labels.length)throw Error('Mintifi own native India placement missing')
+      const rawPosted=typeof row.publishedOn==='string'?row.publishedOn:null
+      const validPosted=rawPosted&&/^(?:19|20)\d{2}-\d{2}-\d{2}T/.test(rawPosted)&&Number.isFinite(Date.parse(rawPosted))
+      if(validPosted&&Date.parse(rawPosted)>Date.parse(job.scrapedAt))throw Error('Mintifi native publication is in the future')
+      return{...job,location:[...new Set(labels)].join(' / '),locations:[...new Set(labels)],
+        city:places.length===1?normalizeWhitespace(places[0].city):null,
+        postingDate:validPosted?rawPosted:null,postedAt:validPosted?rawPosted:null,
+        sourcePostedDateRaw:rawPosted,sourcePostingDateUnresolved:!validPosted,
+        requisitionId:typeof row.jobNumber==='string'?row.jobNumber.trim()||null:null,
+        department:normalizeWhitespace(row.departmentName),experienceRequired:normalizeWhitespace(row.experience),
+        requiredSkills:Array.isArray(row.skillNames)?[...row.skillNames]:[],
+        nativeCountryLocations:structuredClone(row.jobLocations),sourceNativeJobType:row.jobType??null,
+        firstEverPublication:null,legalEmployer:null}
+    })
+    const result=selected.length===jobs.length?projected:attachInventoryEvidence(projected.slice(0,selected.length),{...readInventoryEvidence(projected),
+      status:'coverage-gap',listingComplete:false,reason:'Mintifi configured result limit; native source scope remains incomplete'})
+    const observations=Object.getOwnPropertyDescriptor(jobs,RECRUITMENT_OBSERVATIONS)
+    if(observations)Object.defineProperty(result,RECRUITMENT_OBSERVATIONS,observations)
+    return result
   },
 })
 
-export const run = async () => createMintifiScraper().run()
+export const run = async (options = {}) => createMintifiScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

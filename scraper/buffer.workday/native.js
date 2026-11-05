@@ -30,7 +30,8 @@ const iso=value=>{
 const sameURL=value=>{try{return new URL(value).href===CAREERS_URL}catch{return false}}
 
 // Read only the demonstrated literal Flight carrier. No website JavaScript is
-// executed, and a future nonempty list needs its own native role parser.
+// executed. Nonempty summary rows are observations until role details and
+// country scope can be qualified independently.
 const clientInventory=html=>{
  const scripts=activeScripts(html).filter(script=>script.includes('jobPostingList'))
  if(!scripts.length)return {qualified:false,count:null,reason:'missing-native-role-list-proof'}
@@ -44,22 +45,41 @@ const clientInventory=html=>{
  const data=argument.elements[1].value
  need([...data.matchAll(/"jobPostingList"\s*:/g)].length===1,'ambiguous native jobPostingList')
  const lines=data.split('\n'),records=lines.filter(line=>line.includes('"jobPostingList"'))
+ // Flight may declare shared chunk strings in an earlier literal push. Read
+ // the same bounded stream without evaluating any website program.
+ const referenceLines=activeScripts(html).flatMap(script=>{
+  if(script===scripts[0])return lines
+  let program
+  try{program=parse(script,{ecmaVersion:'latest'})}catch{return []}
+  const call=program.body[0]?.expression,member=call?.callee,object=member?.object,arg=call?.arguments?.[0]
+  if(program.body.length!==1||call?.type!=='CallExpression'||member?.type!=='MemberExpression'||member.computed
+   ||member.property?.name!=='push'||object?.type!=='MemberExpression'||object.computed
+   ||object.property?.name!=='__next_f'||object.object?.name!=='self'||call.arguments.length!==1
+   ||arg?.type!=='ArrayExpression'||arg.elements.length!==2||arg.elements[0]?.value!==1
+   ||arg.elements[1]?.type!=='Literal'||typeof arg.elements[1].value!=='string')return []
+  return arg.elements[1].value.split('\n')
+ })
  need(records.length===1,'ambiguous native role inventory records')
  need([...records[0].matchAll(/"pageClass"\s*:/g)].length===1,'ambiguous native page identity fields')
  let record
  try{record=JSON.parse(records[0].replace(/^[\da-f]+:/i,''))}catch{throw failure('unsupported native role inventory record')}
  const props=record?.[3],roleNode=props?.children,roleProps=roleNode?.[3],roles=roleProps?.jobPostingList
  need(Array.isArray(roles),'unsupported native jobPostingList shape')
- need(roles.length===0,'nonempty native role inventory requires a supported native role parser')
+ need(roles.length<=250&&roles.every(role=>role&&typeof role==='object'&&!Array.isArray(role)
+  &&Object.keys(role).length===3&&['id','title','departmentName'].every(key=>Object.hasOwn(role,key))
+  &&typeof role.id==='string'&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(role.id)
+  &&typeof role.title==='string'&&role.title.trim()&&role.title===norm(role.title)
+  &&typeof role.departmentName==='string'&&role.departmentName.trim())
+  &&new Set(roles.map(role=>role.id)).size===roles.length,'malformed or duplicate native role summaries')
  need(Array.isArray(record)&&record.length===4&&record[0]==='$'&&props?.pageClass==='/journey'&&props.locale==='en'&&Array.isArray(roleNode)&&roleNode.length===4&&roleNode[0]==='$'&&typeof roleNode[1]==='string'&&/^\$L[\da-f]+$/i.test(roleNode[1]),'native role inventory page binding contradiction')
- const moduleId=roleNode[1].slice(2),imports=lines.filter(line=>line.startsWith(moduleId+':I'))
+ const moduleId=roleNode[1].slice(2),imports=referenceLines.filter(line=>line.startsWith(moduleId+':I'))
  need(imports.length===1,'ambiguous native role inventory module binding')
  let imported
  try{imported=JSON.parse(imports[0].slice(moduleId.length+2))}catch{throw failure('unsupported native role module binding')}
  need(Array.isArray(imported)&&imported[2]==='default'&&Array.isArray(imported[1]),'unsupported native role module chunks')
  const chunks=imported[1].map(chunk=>{
   if(typeof chunk!=='string'||!/^\$[\da-f]+$/i.test(chunk))return chunk
-  const id=chunk.slice(1),records=lines.filter(line=>line.startsWith(id+':'))
+  const id=chunk.slice(1),records=referenceLines.filter(line=>line.startsWith(id+':'))
   need(records.length===1,'missing or ambiguous native module chunk reference')
   let value
   try{value=JSON.parse(records[0].slice(id.length+1))}catch{throw failure('nonliteral native module chunk reference')}
@@ -67,7 +87,28 @@ const clientInventory=html=>{
   return value
  })
  need(chunks.some(chunk=>typeof chunk==='string'&&/^static\/chunks\/app\/%5Blocale%5D\/journey\/page-[\da-f]+\.js$/i.test(chunk)),'native role inventory employer route contradiction')
- return {qualified:true,count:0,pageClass:props.pageClass,moduleReference:roleNode[1],moduleChunks:chunks}
+ return {qualified:true,count:roles.length,roles,pageClass:props.pageClass,moduleReference:roleNode[1],moduleChunks:chunks}
+}
+
+export const inspectCurrentRoleSummaries=html=>{
+ need(typeof html==='string'&&Buffer.byteLength(html)<=MAX_BYTES,'missing or oversized native body')
+ const inventory=clientInventory(html)
+ if(!inventory.qualified||inventory.count===0)return null
+ const raw=readNativeDocument(html),doc=readVisibleNativeDocument(html,{strict:true})
+ need(norm(one(raw.nodes(node=>node.tag==='title'),'native employer title').raw)===TITLE,'native employer title identity contradiction')
+ need(sameURL(one(raw.nodes(node=>node.tag==='link'&&(node.attrs.rel||'').split(/\s+/).includes('canonical')),'native canonical').attrs.href),'native canonical identity contradiction')
+ need(doc.text(one(doc.nodes(node=>node.tag==='h1'),'native employer heading'))==='Join the Buffer Journey','visible employer identity contradiction')
+ const main=one(doc.nodes(node=>node.tag==='main'),'visible main')
+ const section=one(within(main,node=>node.tag==='section'&&node.attrs.id==='open-roles'),'visible open-roles section')
+ need(doc.text(one(within(section,node=>node.tag==='h2'),'open-roles heading'))==='Open roles','open-roles heading identity contradiction')
+ const links=within(section,node=>node.tag==='a'&&node.attrs.href)
+ need(links.length===inventory.count,'native role summaries and visible links disagree')
+ const observations=inventory.roles.map(role=>{
+  const href='/journey/'+role.id
+  need(links.filter(node=>node.attrs.href===href&&doc.text(node)===role.title).length===1,'native role summary identity disagrees with visible title/link')
+  return {...role,sourceUrl:'https://buffer.com'+href,country:null,sourceDetailComplete:false}
+ })
+ return {nativeRoles:inventory,observations}
 }
 
 export const inspectEmptyPage=html=>{
@@ -181,8 +222,18 @@ export const collect=async({fetchPage,signal,now=()=>new Date(),requestTimeoutMs
  signal?.throwIfAborted()
  const read=fetchPage||((url,options)=>fetchNativePage(url,{...options,requestTimeoutMs}))
  const opening=packet(await read(CAREERS_URL,{signal}));signal?.throwIfAborted()
- const proof=inspectEmptyPage(opening.body),reference=new Date(now())
+ const reference=new Date(now())
  need(!Number.isNaN(+reference),'invalid inventory reference clock')
+ const currentRoles=inspectCurrentRoleSummaries(opening.body)
+ if(currentRoles){
+  const jobs=[]
+  attachSourceObservationEvidence(jobs,{source:SOURCE,recordKind:'vacancy-rows',observedRecordCount:currentRoles.observations.length,
+   observedVacancyCount:currentRoles.observations.length,sourceScopeComplete:false})
+  Object.defineProperty(jobs,'nativeRoleObservations',{value:currentRoles.observations})
+  return attachInventoryEvidence(jobs,{...gap(),pagesFetched:1,verifiedAt:opening.capturedAt,
+   reason:'current-visible-native-open-roles;role-details-and-India-country-scope-unqualified;observed-vacancies='+currentRoles.observations.length})
+ }
+ const proof=inspectEmptyPage(opening.body)
  if(!proof.scopeQualified)return result(opening,proof,{reason:'explicit-visible-empty-observed-with-unqualified-whole-company-scope'})
  if(!proof.nativeRoles.qualified)return result(opening,proof,{reason:proof.nativeRoles.reason})
  if(!fresh(opening,reference))return result(opening,proof,{reason:'native-opening-capture-time-missing-stale-or-future'})

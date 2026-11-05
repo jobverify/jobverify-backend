@@ -22,7 +22,10 @@ test('reconciles the full current Apexon table and all eighteen India descriptio
   assert.ok(jobs.every(job => job.country === 'India' && job.jobDescription.length > 500))
   assert.equal(readInventoryEvidence(jobs)?.reportedTotal, 35)
   assert.equal(readInventoryEvidence(jobs)?.indiaFacetCount, 18)
-  assert.equal(readInventoryEvidence(jobs)?.listingComplete, true)
+  assert.ok(jobs.every(job => job.nativeBoardListingComplete === true && job.sourceScopeComplete === false
+    && job.lifecycleCleanupAllowed === false && job.sourceDetailComplete === true))
+  assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs)?.status, 'coverage-gap')
   assert.equal(listingReads, 2)
 })
 
@@ -43,7 +46,7 @@ test('does not certify Apexon if a location country mapping becomes unknown', as
   assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
 })
 
-test('rejects a mismatched native Apexon detail requisition', async () => {
+test('rejects a mismatched first native Apexon detail requisition', async () => {
   await assert.rejects(createApexonScraper().run({ fetchText: async url => {
     const html = await fetchText(url)
     return url.endsWith('jobid=7473') ? html.replace('Job Reference No#: </strong>7473', 'Job Reference No#: </strong>999999') : html
@@ -60,7 +63,7 @@ test('retains a gap if the native Apexon inventory changes during detail hydrati
   assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
 })
 
-test('does not fetch a native Apexon role redirected into another employer', async () => {
+test('rejects the first native Apexon role redirected into another employer', async () => {
   await assert.rejects(createApexonScraper().run({ fetchText: async url => ({ html: await fetchText(url), status: 200,
     url: url.includes('jobid=7473') ? 'https://unrelated.example/role' : url,
   }) }), /first-party response identity/)

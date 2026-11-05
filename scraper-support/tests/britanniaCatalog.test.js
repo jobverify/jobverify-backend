@@ -19,7 +19,7 @@ test('getScraperCatalog includes Britannia as an official TurboHire careers sour
   assert.equal(provider.paginationStrategy, 'official-careers-page-handoff-plus-public-turbohire-api')
   assert.equal(
     provider.extractionStrategy,
-    'official-careers-page+turbohire-board+noauth-token+filteredjobs-api',
+    'official-careers-page+turbohire-board+noauth-token+filteredjobs-api'+"+full-native-public-role+CareerPage-publication+closing-reconciliation",
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

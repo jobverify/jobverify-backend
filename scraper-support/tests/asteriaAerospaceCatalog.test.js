@@ -7,19 +7,19 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Asteria Aerospace as a verified email-only careers sentinel', () => {
+test('getScraperCatalog describes the current Asteria native Keka reader', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'asteriaaerospace')
 
   assert.ok(provider, 'Expected Asteria Aerospace provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Asteria Aerospace')
   assert.equal(provider.companyCareerPage, 'https://asteria.co.in/careers')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'keka')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
+  assert.equal(provider.paginationStrategy, 'declared-native-active-array-with-closing-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-email-only-careers-page-return-empty',
+    'current-first-party-Keka-iframe+account-identity+full-native-active-records+explicit-country+closing-model-reconciliation',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

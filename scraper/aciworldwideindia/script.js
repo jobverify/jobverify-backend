@@ -1,11 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { collectAciInventory, classifyAciLocations, indiaAciLocation } from './nativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const SOURCE = 'aciworldwideindia'
 export const COMPANY_NAME = 'ACI Worldwide India'
@@ -32,9 +30,6 @@ export const SITE_NUMBER = 'CX'
 export const DEFAULT_LOCATION = 'India'
 export const DEFAULT_LIMIT = 24
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -60,6 +55,7 @@ const normalizeWhitespace = (value) => {
 
 const stripTags = (value) => normalizeWhitespace(
   String(value ?? '')
+    .replace(/<!--[\s\S]*?-->|<(?:script|style)\b[^>]*>[\s\S]*?<\/(?:script|style)\s*>/gi, '')
     .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|hr)\b[^>]*>/gi, '\n')
     .replace(/<li\b[^>]*>/gi, ' ')
     .replace(/<p\b[^>]*>/gi, '\n')
@@ -128,27 +124,9 @@ const getEmploymentType = (record = {}) =>
       || record.ContractType,
   )
 
-const getEffectiveLocation = (record = {}) => normalizeLocation(
-  record.PrimaryLocation
-    || record?.secondaryLocations?.[0]?.Name,
-)
+const getEffectiveLocation = (record = {}) => normalizeLocation(indiaAciLocation(record))
 
-const isIndiaJob = (record = {}) => {
-  const country = normalizeWhitespace(record.PrimaryLocationCountry)?.toUpperCase()
-  const primaryLocation = normalizeWhitespace(record.PrimaryLocation)
-  const secondaryLocations = Array.isArray(record?.secondaryLocations)
-    ? record.secondaryLocations
-      .map((location) => normalizeWhitespace(location?.Name))
-      .filter(Boolean)
-    : []
-
-  return (
-    country === 'IN'
-    || /(?:^|,)\s*india\s*$/i.test(primaryLocation || '')
-    || secondaryLocations.some((location) => /(?:^|,)\s*india\s*$/i.test(location))
-    || false
-  )
-}
+const isIndiaJob = (record = {}) => classifyAciLocations(record).india
 
 const toListing = (record = {}) => {
   const jobId = normalizeWhitespace(record.Id)
@@ -240,6 +218,8 @@ export const extractJobDetail = (payload, listing = {}) => {
   const location = getEffectiveLocation(detail) || listing.location || null
   const jobId = normalizeWhitespace(detail.Id) || listing.jobId || null
   const sourceUrl = listing.sourceUrl || buildJobDetailUrl(jobId)
+  const sourceDescription = joinDescriptionParts(detail.ExternalDescriptionStr,
+    detail.ExternalResponsibilitiesStr, detail.ExternalQualificationsStr)
 
   return {
     title: normalizeWhitespace(detail.Title) || listing.title || null,
@@ -256,7 +236,7 @@ export const extractJobDetail = (payload, listing = {}) => {
     applyUrl: sourceUrl,
     employmentType: getEmploymentType(detail) || listing.employmentType || null,
     experienceRequired: null,
-    minimumQualification: normalizeWhitespace(detail.ExternalQualificationsStr || detail.StudyLevel)
+    minimumQualification: stripTags(detail.ExternalQualificationsStr || detail.StudyLevel)
       || listing.minimumQualification
       || null,
     preferredQualification: null,
@@ -267,83 +247,22 @@ export const extractJobDetail = (payload, listing = {}) => {
       : listing.requiredSkills || [],
     postingDate: normalizeDate(detail.ExternalPostedStartDate || detail.PostedDate) || listing.postingDate || null,
     closingDate: normalizeDate(detail.ExternalPostedEndDate || detail.PostingEndDate) || listing.closingDate || null,
-    jobDescription: joinDescriptionParts(
-      detail.ExternalDescriptionStr,
-      detail.ExternalResponsibilitiesStr,
-      detail.ShortDescriptionStr,
-    ) || listing.jobDescription || null,
+    jobDescription: sourceDescription,
+    sourceDescription,
     remoteStatus: null,
     siteNumber: SITE_NUMBER,
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 20000,
-})
-
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json,text/plain,*/*',
-  },
-  label: SOURCE,
-  timeoutMs: 30000,
-})
-
-export const createAciWorldwideIndiaScraper = ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  fetchText = defaultFetchText,
-  fetchJson = defaultFetchJson,
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run() {
-    const corporateCareersHtml = await fetchText(CORPORATE_CAREERS_URL)
-    if (!hasOfficialCorporateCareersSignal(corporateCareersHtml)) {
-      throw new Error('ACI Worldwide India verified official ACI Worldwide careers page no longer matches the known first-party handoff')
-    }
-
-    const candidateExperienceHtml = await fetchText(CANDIDATE_EXPERIENCE_URL)
-    if (!hasOfficialCandidateExperienceSignal(candidateExperienceHtml)) {
-      throw new Error('ACI Worldwide India verified Oracle candidate experience page no longer matches the known first-party shell')
-    }
-
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (let page = 0; page < maxPages; page += 1) {
-      const payload = await fetchJson(buildSearchUrl({ page }))
-      const pageJobs = extractSearchResults(payload)
-      const summary = extractPaginationSummary(payload, { page })
-
-      for (const listing of pageJobs) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailPayload = await fetchJson(buildJobDetailApiUrl(listing.jobId))
-        const detail = extractJobDetail(detailPayload, listing)
-
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-
-      if (!summary.hasNext) break
-    }
-
-    return jobs
+export const createAciWorldwideIndiaScraper = (options = {}) => ({
+  async run(runOptions = {}) {
+    return collectAciInventory({ ...options, ...runOptions }, {
+      corporate: CORPORATE_CAREERS_URL, candidate: CANDIDATE_EXPERIENCE_URL,
+      listing: LISTING_API_BASE_URL, detail: DETAIL_API_BASE_URL,
+      isCorporate: hasOfficialCorporateCareersSignal, isCandidate: hasOfficialCandidateExperienceSignal,
+      search: buildSearchUrl, detailURL: buildJobDetailApiUrl,
+      extractListings: extractSearchResults, extractDetail: extractJobDetail,
+    })
   },
 })
 

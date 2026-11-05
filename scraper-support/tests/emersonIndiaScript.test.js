@@ -239,7 +239,9 @@ test('run verifies the first-party careers handoff before calling the public Ora
     },
     fetchJson: async (url) => {
       requestedJsonUrls.push(url)
-      if (url === emerson.buildSearchUrl()) return listingPayload
+      if (url === emerson.buildSearchUrl()) return {
+        items: [{ ...listingPayload.items[0], Limit: 24, Offset: 0, SiteNumber: 'CX_1' }],
+      }
       if (url === emerson.buildJobDetailApiUrl('26002023')) return detailPayload
       throw new Error(`Unexpected JSON URL: ${url}`)
     },
@@ -262,6 +264,8 @@ test('run verifies the first-party careers handoff before calling the public Ora
   )
   assert.equal(jobs[0].scrapedAt, '2026-07-15T00:00:00.000Z')
   assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.equal(jobs[0].sourceListingComplete, false)
+  assert.equal(jobs[0].lifecycleCleanupAllowed, false)
 })
 
 test('run fails closed when the verified Emerson careers page or Oracle shell drifts materially', async () => {

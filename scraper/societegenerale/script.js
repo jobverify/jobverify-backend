@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { collectSocieteGenerale } from './nativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -87,7 +88,8 @@ const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   return match ? transform(match) : null
 }
 
-const extractLocationCity = (location) => normalizeWhitespace(location)?.split(',')[0] || null
+const extractLocationCity = (location) => /^India$/i.test(normalizeWhitespace(location) || '')
+  ? null : normalizeWhitespace(location)?.split(',')[0] || null
 
 const resolvePositiveInteger = (value, fallback) => {
   const parsed = Number(value)
@@ -165,7 +167,7 @@ const parseListingMeta = (value) => {
   if (!normalized) return null
 
   const match = normalized.match(
-    new RegExp(`^(.*?,\\s*India)\\s+(${contractPattern})\\s+(.+)$`, 'i'),
+    new RegExp(`^((?:.*?,\\s*)?India)\\s+(${contractPattern})\\s+(.+)$`, 'i'),
   )
 
   if (!match) return null
@@ -280,6 +282,9 @@ const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   label: SOURCE,
   signal,
   timeoutMs: 15000,
+  includeResponseMetadata: true,
+  attempts: 1,
+  redirect: 'error',
 })
 
 export const createSocieteGeneraleScraper = ({
@@ -289,26 +294,9 @@ export const createSocieteGeneraleScraper = ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
     const limit = Number.isInteger(options.maxJobs) ? options.maxJobs : maxJobs
-    const signal = options.signal
-    const listings = extractSearchResults(await fetchText(CAREER_PAGE_URL, { signal }))
-    const selected = limit ? listings.slice(0, limit) : listings
-
-    return mapWithConcurrency(
-      selected,
-      resolvePositiveInteger(detailConcurrency, DEFAULT_DETAIL_CONCURRENCY),
-      async (listing) => {
-        throwIfAborted(signal)
-        const detailHtml = await fetchText(listing.sourceUrl, { signal })
-        const detail = extractJobDetail(detailHtml, listing)
-        return {
-          ...listing,
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        }
-      },
-    )
+    return collectSocieteGenerale({ fetchText, signal:options.signal, maxJobs:limit,
+      maxRequests:options.maxRequests, detailConcurrency,
+      legacyListings:extractSearchResults, legacyDetail:extractJobDetail })
   },
 })
 

@@ -105,19 +105,21 @@ test('current board zero is observed, reconciled and kept separate from partial 
   assert.ok(!JSON.stringify(packets).includes('synthetic-public-fixture-credential'))
   assert.equal(packets.find(p=>p.anonymousSession).bodyRetained,false)
 })
-test('all public role details and closing snapshots precede the caller cap and employer selection',async()=>{
-  const a=syntheticRole(),b=syntheticRole('olaelectric'),requests=[]
+test('all public role details and closing snapshots precede a positive caller cap and employer selection',async()=>{
+  const a=syntheticRole(),b=syntheticRole('olaelectric'),c=syntheticRole(),requests=[]
+  c.row.JobId=c.row.JobIdObfuscated=c.dto.JobId=c.dto.JobIdObfuscated='44444444-4444-4444-8444-444444444444'
+  c.row.JobCode=c.dto.JobCode='SYNTHETIC-101'
   const options=nativeOptions({requests,mutate:({url,response})=>{
-    if(url===FILTERED_JOBS_URL)return{body:JSON.stringify({Total:2,Result:[a.row,b.row]}),contentType:'application/json'}
-    for(const s of [a,b]){if(url===jobURL(s.row.JobId))return{body:s.render(),contentType:'text/html'};if(url===publicJobURL(s.row.JobId))return{body:JSON.stringify(s.dto),contentType:'application/json'}}
+    if(url===FILTERED_JOBS_URL)return{body:JSON.stringify({Total:3,Result:[a.row,b.row,c.row]}),contentType:'application/json'}
+    for(const s of [a,b,c]){if(url===jobURL(s.row.JobId))return{body:s.render(),contentType:'text/html'};if(url===publicJobURL(s.row.JobId))return{body:JSON.stringify(s.dto),contentType:'application/json'}}
     return response
   }})
-  const jobs=await createOlaScraper().run({...options,maxJobs:0})
-  assert.equal(jobs.length,0);assert.equal(jobs.nativeInventoryEvidence.healthySourceIndiaRecords,1)
+  const jobs=await createOlaScraper().run({...options,maxJobs:1})
+  assert.equal(jobs.length,1);assert.equal(jobs.nativeInventoryEvidence.healthySourceIndiaRecords,2)
   assert.equal(jobs.nativeInventoryEvidence.otherEmployerRecords,1)
-  assert.equal(jobs.nativeInventoryEvidence.healthyGlobalRecords,2)
+  assert.equal(jobs.nativeInventoryEvidence.healthyGlobalRecords,3)
   assert.match(jobs.nativeInventoryEvidence.reasons.join(';'),/caller-cap/)
-  for(const s of [a,b]){assert.equal(requests.filter(r=>r.url===jobURL(s.row.JobId)).length,2);assert.equal(requests.filter(r=>r.url===publicJobURL(s.row.JobId)).length,2)}
+  for(const s of [a,b,c]){assert.equal(requests.filter(r=>r.url===jobURL(s.row.JobId)).length,2);assert.equal(requests.filter(r=>r.url===publicJobURL(s.row.JobId)).length,2)}
 })
 test('a closing full-role change excludes that role and preserves partial coverage',async()=>{
   const s=syntheticRole(),options=nativeOptions({source:'olaelectric',mutate:({url,ordinal,response})=>{

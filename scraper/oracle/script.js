@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { collectOracleRequisitionJobs } from '../../scraper-support/utils/oracleRequisitionInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -95,23 +96,31 @@ const getRequisitionDetail = (payload) => {
   return payload || {}
 }
 
-const isIndiaJob = (record = {}) => {
+const isIndiaPrimaryLocation = (record = {}) => {
   const country = normalizeWhitespace(record.PrimaryLocationCountry)?.toUpperCase()
   const location = normalizeWhitespace(record.PrimaryLocation)?.toLowerCase()
 
   return country === 'IN' || location?.endsWith('india') || false
 }
 
+const getIndiaSecondaryLocation = (record = {}) => Array.isArray(record.secondaryLocations)
+  ? record.secondaryLocations.find(location => normalizeWhitespace(location?.CountryCode)?.toUpperCase() === 'IN'
+    || normalizeWhitespace(location?.Name)?.toLowerCase().endsWith(', india'))?.Name || null : null
+
+const isIndiaJob = (record = {}) => isIndiaPrimaryLocation(record) || Boolean(getIndiaSecondaryLocation(record))
+const getIndiaLocation = (record = {}) => isIndiaPrimaryLocation(record) ? record.PrimaryLocation : getIndiaSecondaryLocation(record)
+
 const toJob = (record = {}) => {
   const jobId = normalizeWhitespace(record.Id)
   const detailUrl = jobId ? buildJobDetailUrl(jobId) : null
+  const location = getIndiaLocation(record)
 
   return {
     title: normalizeWhitespace(record.Title),
     company: 'Oracle',
     department: normalizeWhitespace(record.Department || record.JobFunction || record.JobFamily),
-    location: normalizeLocation(record.PrimaryLocation),
-    city: extractCity(record.PrimaryLocation),
+    location: normalizeLocation(location),
+    city: extractCity(location),
     jobId,
     requisitionId: jobId,
     sourceUrl: detailUrl,
@@ -164,6 +173,7 @@ const extractExperienceRequired = ({
 export const extractJobDetail = (payload, listing = {}) => {
   const detail = getRequisitionDetail(payload)
   const jobId = normalizeWhitespace(detail.Id) || listing.jobId || null
+  const location = getIndiaLocation(detail)
   const minimumQualification =
     stripTags(detail.StudyLevel || detail.ExternalQualificationsStr)
     || listing.minimumQualification
@@ -180,8 +190,8 @@ export const extractJobDetail = (payload, listing = {}) => {
     title: normalizeWhitespace(detail.Title) || listing.title || null,
     company: 'Oracle',
     department: normalizeWhitespace(detail.Department || detail.JobFunction || detail.JobFamily || detail.Category) || listing.department || null,
-    location: normalizeLocation(detail.PrimaryLocation) || listing.location || null,
-    city: extractCity(detail.PrimaryLocation) || listing.city || null,
+    location: normalizeLocation(location) || listing.location || null,
+    city: extractCity(location) || listing.city || null,
     jobId,
     requisitionId: jobId || listing.requisitionId || null,
     sourceUrl: detailUrl,
@@ -203,8 +213,9 @@ export const extractJobDetail = (payload, listing = {}) => {
   }
 }
 
-const fetchJson = async (url, fetchImpl = fetch) => {
+const fetchJson = async (url, fetchImpl = fetch, { signal } = {}) => {
   const response = await fetchImpl(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'application/json,text/plain,*/*',
@@ -219,55 +230,15 @@ const fetchJson = async (url, fetchImpl = fetch) => {
 }
 
 export const run = async ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : 1,
+  maxPages = Infinity,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   fetchImpl = fetch,
-} = {}) => {
-  const jobs = []
-
-  for (let page = 0; page < maxPages; page += 1) {
-    const payload = await fetchJson(buildSearchUrl({ page }), fetchImpl)
-    const pageJobs = extractSearchResults(payload)
-
-    for (const listing of pageJobs) {
-      let detail = listing
-
-      try {
-        const detailPayload = await fetchJson(buildJobDetailApiUrl(listing.jobId), fetchImpl)
-        detail = extractJobDetail(detailPayload, listing)
-      } catch {
-        detail = listing
-      }
-
-      jobs.push(detail)
-
-      if (maxJobs && jobs.length >= maxJobs) {
-        break
-      }
-    }
-
-    const totalCount = Number(payload?.items?.[0]?.TotalJobsCount)
-    const limit = Number(payload?.items?.[0]?.Limit) || DEFAULT_LIMIT
-    const nextOffset = (page + 1) * limit
-
-    if (pageJobs.length < limit || (Number.isFinite(totalCount) && nextOffset >= totalCount)) {
-      break
-    }
-
-    if (maxJobs && jobs.length >= maxJobs) {
-      break
-    }
-  }
-
-  const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-  return selectedJobs.map((job) => ({
-    ...job,
-    source: 'oracle',
-    link: job.applyUrl || job.sourceUrl,
-    scrapedAt: new Date().toISOString(),
-  }))
-}
+  signal,
+} = {}) => collectOracleRequisitionJobs({
+  source: 'oracle', siteNumber: SITE_NUMBER, buildSearchUrl, buildJobDetailApiUrl,
+  extractSearchResults, extractJobDetail, maxPages, maxJobs, signal,
+  fetchJson: (url, options) => fetchJson(url, fetchImpl, options),
+})
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

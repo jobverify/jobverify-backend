@@ -53,7 +53,7 @@ test('Mintifi local catalog captures the verified first-party careers page and e
   assert.equal(provider.paginationStrategy, 'first-party-careers-page-plus-single-keka-active-jobs-endpoint')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+embedded-keka-script+careerportalinfo+active-keka-embed-api+jobdetails+applyjob',
+    'current-first-party-Keka-configuration+declared-renderer+native-account+full-active-records+all-typed-India-placements',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

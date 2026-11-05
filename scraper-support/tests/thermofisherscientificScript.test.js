@@ -87,7 +87,7 @@ test('Thermo Fisher Scientific uses the official Phenom route and bounded India-
   assert.equal(jobs[0].location, 'Remote, India')
 })
 
-test('Thermo Fisher Scientific stops at its default maximum of 100 jobs', async () => {
+test('Thermo Fisher Scientific honors an explicit maximum of 100 jobs', async () => {
   const thermoFisherScientific = await loadThermoFisherScientificModule()
   const detailRequests = []
   const indiaListings = Array.from({ length: 101 }, (_, index) => ({
@@ -109,6 +109,7 @@ test('Thermo Fisher Scientific stops at its default maximum of 100 jobs', async 
   })}</script>`
 
   const jobs = await thermoFisherScientific.run({
+    maxJobs: 100,
     fetchText: async (url) => {
       if (url === thermoFisherScientific.buildSearchResultsPageUrl()) {
         return boundedSearchResultsHtml

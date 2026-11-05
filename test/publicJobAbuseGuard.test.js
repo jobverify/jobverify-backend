@@ -61,6 +61,25 @@ const runGuard = (guard, requestOptions) => {
   return { req, res, nextCalled };
 };
 
+test('search URL variants and HEAD requests share pagination abuse limits', () => {
+  for (const url of ['/api/jobs/search/', '/API/JOBS/SEARCH', '/search/']) {
+    for (const method of ['GET', 'HEAD']) {
+      const guard = createPublicJobAbuseGuard({ pageWalkLimit: 1 });
+      assert.equal(runGuard(guard, { url, method, query: { page: '1' } }).nextCalled, true);
+      assert.equal(runGuard(guard, { url, method, query: { page: '2' } }).res.statusCode, 429, `${method} ${url}`);
+    }
+  }
+});
+
+test('an active block applies even when the request has no pagination signal', () => {
+  const guard = createPublicJobAbuseGuard({ pageWalkLimit: 1, violationLimit: 1 });
+  runGuard(guard, { query: { page: '1' } });
+  assert.equal(runGuard(guard, { query: { page: '2' } }).res.statusCode, 403);
+  for (const url of ['/api/jobs/search/', '/api/jobs/meta', '/search', '/stats']) {
+    assert.equal(runGuard(guard, { url }).res.statusCode, 403, url);
+  }
+});
+
 test("getPublicJobAbuseConfig reads the explicit env knobs and falls back to plan defaults", () => {
   const config = getPublicJobAbuseConfig({
     PUBLIC_JOB_ABUSE_PAGE_WALK_WINDOW_MS: "61000",

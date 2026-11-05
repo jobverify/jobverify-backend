@@ -3,7 +3,7 @@ import test from 'node:test'
 
 const listingPayload = {
   items: [{
-    Limit: 10,
+    Limit: 24,
     TotalJobsCount: 2,
     requisitionList: [
       {
@@ -129,6 +129,7 @@ test('JP Morgan scraper normalizes Oracle Cloud India requisitions and enriches 
   assert.deepEqual(requestedUrls, [
     jpmorgan.buildSearchUrl({ page: 0 }),
     `${jpmorgan.DETAIL_API_BASE_URL}?expand=all&onlyData=true&finder=ById;Id=%22${listings[0].jobId}%22,siteNumber=CX_1001`,
+    jpmorgan.buildSearchUrl({ page: 0 }),
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'jpmorgan')

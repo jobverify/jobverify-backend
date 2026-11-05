@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { gunzipSync } from 'node:zlib'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -13,6 +14,11 @@ const fixturesDir = path.join(
 )
 
 const readJsonFixture = (name) => JSON.parse(readFileSync(path.join(fixturesDir, name), 'utf8'))
+const currentReceipts = JSON.parse(gunzipSync(readFileSync(path.join(fixturesDir, 'current-surfaces-20261105.json.gz'))))
+const corporateResponse = url => url === kpmgScript.CAREERS_URL
+  ? { ok: true, status: 200, url, text: async () => currentReceipts.find(packet => packet.url === url).body }
+  : url === kpmgScript.INDIA_PRACTICE_URL
+    ? { ok: false, status: 403, url, text: async () => currentReceipts.find(packet => packet.url === url).body } : null
 
 test('buildSearchUrl keeps KPMG searches on the public Oracle Cloud careers finder with board-specific India scoping', () => {
   assert.equal(typeof kpmgScript.buildSearchUrl, 'function')
@@ -152,7 +158,7 @@ test('extractJobDetail marks verified KPMG detail records as checked when experi
   assert.match(detail.jobDescription, /Functional Skills/i)
 })
 
-test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', async () => {
+test('createKpmgScraper aggregates current declared Oracle boards while retaining the denied India-practice gap', async () => {
   assert.equal(typeof kpmgScript.createKpmgScraper, 'function')
 
   const cx1Payload = {
@@ -254,6 +260,8 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
   const calls = []
   const fetchImpl = async (url) => {
     calls.push(url)
+    const official = corporateResponse(url)
+    if (official) return official
     const payload = responsesByUrl.get(url) || detailPayloadByUrl.get(url)
     assert.ok(payload, `unexpected fetch for ${url}`)
 
@@ -271,14 +279,16 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
   }).run()
 
   assert.deepEqual(calls, [
-    kpmgScript.buildSearchUrl({ siteNumber: 'CX_1', page: 0 }),
-    kpmgScript.buildJobDetailApiUrl({ siteNumber: 'CX_1', jobId: 'INTG10043364' }),
+    kpmgScript.CAREERS_URL,
+    kpmgScript.INDIA_PRACTICE_URL,
     kpmgScript.buildSearchUrl({ siteNumber: 'CX_3', page: 0 }),
     kpmgScript.buildJobDetailApiUrl({ siteNumber: 'CX_3', jobId: 'INTG10043365' }),
+    kpmgScript.buildSearchUrl({ siteNumber: 'CX_3', page: 0 }),
     kpmgScript.buildSearchUrl({ siteNumber: 'CX_3001', page: 0 }),
     kpmgScript.buildJobDetailApiUrl({ siteNumber: 'CX_3001', jobId: 'INTG10043366' }),
+    kpmgScript.buildSearchUrl({ siteNumber: 'CX_3001', page: 0 }),
   ])
-  assert.equal(jobs.length, 3)
+  assert.equal(jobs.length, 2)
   assert.deepEqual(
     jobs.map((job) => ({
       title: job.title,
@@ -289,14 +299,6 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
       experienceRequired: job.experienceRequired,
     })),
     [
-      {
-        title: 'Associate Consultant -Market Risk',
-        city: 'Mumbai',
-        source: 'kpmg',
-        company: 'KPMG',
-        link: 'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/INTG10043364',
-        experienceRequired: '2-4 years',
-      },
       {
         title: 'Senior- Oracle Security',
         city: 'Bangalore',
@@ -316,6 +318,7 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
     ],
   )
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
+  assert.ok(jobs.every(job => job.sourceListingComplete === false && job.lifecycleCleanupAllowed === false))
 })
 
 test('createKpmgScraper bounds concurrent Oracle detail requests and forwards cancellation', async () => {
@@ -331,6 +334,8 @@ test('createKpmgScraper bounds concurrent Oracle detail requests and forwards ca
   const detailSignals = []
 
   const fetchImpl = async (url, options = {}) => {
+    const official = corporateResponse(url)
+    if (official) return official
     if (url.includes('recruitingCEJobRequisitions?')) {
       return {
         ok: true,
@@ -367,13 +372,17 @@ test('createKpmgScraper bounds concurrent Oracle detail requests and forwards ca
 
   const jobs = await kpmgScript.createKpmgScraper({
     maxPages: 1,
-    siteNumbers: ['CX_1'],
+    siteNumbers: ['CX_3'],
     detailConcurrency: 3,
     fetchImpl,
   }).run({ signal: controller.signal })
 
   assert.equal(jobs.length, listingRecords.length)
   assert.equal(maximumActiveDetails, 3)
-  assert.ok(detailSignals.every((signal) => signal === controller.signal))
+  const reason = Object.freeze({ sourceCancellation: 'kpmg-control' })
+  controller.abort(reason)
+  assert.ok(detailSignals.every((signal) => signal.aborted && signal.reason === reason))
+  assert.ok(jobs.every(job => job.sourceDetailComplete === false && job.lifecycleCleanupAllowed === false),
+    'This concurrency model supplies no authored native descriptions')
   assert.deepEqual(jobs.map((job) => job.jobId), listingRecords.map((record) => record.Id))
 })

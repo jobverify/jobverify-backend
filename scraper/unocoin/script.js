@@ -62,7 +62,7 @@ export const createUnocoinScraper = (defaults = {}) => ({
         controller.signal.throwIfAborted()
         if(typeof body !== 'string' || Buffer.byteLength(body)>3000000) throw gap('Native body absent or oversized')
         retainedResponses.push({url,finalUrl:response.url,status:response.status,body,capturedAt:now(),bodySHA256:createHash('sha256').update(body).digest('hex')})
-        if(response.status!==200 || !body.trim()) throw gap('Native HTTP failure or empty body')
+        if(response.status!==200 || !body.trim()) throw Object.assign(gap('Native HTTP failure or empty body'), {status:response.status})
         const doc = document(body)
         const prune = (node, inherited = false) => {
           node.inactive ||= inherited || /(?:^|;)\s*content-visibility\s*:\s*hidden\s*(?:!important\s*)?(?:;|$)/i.test(node.attrs?.style || '')

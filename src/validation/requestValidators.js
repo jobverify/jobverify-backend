@@ -280,7 +280,8 @@ const telegramAlertFiltersValidationRules = () =>
 export const registerValidation = [
   boundedStringRule(body("name"), "Name"),
   allowedAccountEmailRule(body("email")),
-  body("password").custom((value) => {
+  // Older clients may submit a password; it is validated but never persisted.
+  body("password").optional().custom((value) => {
     if (typeof value !== "string" || value.length === 0) {
       throw new Error("Password is required.");
     }
@@ -330,9 +331,6 @@ export const verifyEmailValidation = [
     .isLength({ min: 1, max: 500 })
     .withMessage("Verification token is required."),
   body("password").custom((value) => {
-    if (value === undefined) {
-      return true;
-    }
     if (typeof value !== "string" || value.length === 0) {
       throw new Error("Password is required.");
     }

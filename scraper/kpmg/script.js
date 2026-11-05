@@ -2,8 +2,13 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { buildHttpError, composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+import { readNativeWithSignal } from '../../scraper-support/utils/nativePagination.js'
+import { collectOracleRequisitionJobs } from '../../scraper-support/utils/oracleRequisitionInventory.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { nativeCountryName, nativeLocationCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -16,6 +21,10 @@ const DEFAULT_LIMIT = 24
 const DEFAULT_DETAIL_CONCURRENCY = 6
 
 export const SITE_NUMBERS = ['CX_1', 'CX_3', 'CX_3001']
+export const CURRENT_ORACLE_SITE_NUMBERS = Object.freeze(['CX_3', 'CX_3001'])
+export const CAREERS_URL = 'https://kpmg.com/in/en/careers.html'
+export const INDIA_PRACTICE_URL = 'https://kpmgindia.talentrecruit.com/career-page'
+export const KPMG_SURFACE_EVIDENCE = Symbol.for('jobverify.kpmg-current-hiring-surfaces')
 
 const REQUEST_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
@@ -102,12 +111,14 @@ const getRequisitionDetail = (payload) => {
   return payload || {}
 }
 
-const isIndiaJob = (record = {}) => {
-  const country = normalizeWhitespace(record.PrimaryLocationCountry)?.toUpperCase()
-  const location = normalizeWhitespace(record.PrimaryLocation)?.toLowerCase()
-
-  return country === 'IN' || location?.endsWith('india') || false
+const getIndiaLocation = (record = {}) => {
+  const locations = [{ CountryCode: record.PrimaryLocationCountry, Name: record.PrimaryLocation },
+    ...(Array.isArray(record.secondaryLocations) ? record.secondaryLocations : [])]
+  const location = locations.find(item => (nativeCountryName(item?.CountryCode)
+    || nativeLocationCountryName(item?.Name || item?.LocationName)) === 'India')
+  return location ? normalizeWhitespace(location.Name || location.LocationName) || 'India' : null
 }
+const isIndiaJob = record => Boolean(getIndiaLocation(record))
 
 export const buildSearchUrl = ({
   siteNumber = SITE_NUMBERS[0],
@@ -147,13 +158,14 @@ const toJob = (record = {}, { siteNumber = SITE_NUMBERS[0] } = {}) => {
     record.ShortDescriptionStr,
     record.ExternalResponsibilitiesStr,
   )
+  const location = getIndiaLocation(record)
 
   return {
     title,
     company: 'KPMG',
     department: normalizeWhitespace(record.Department || record.JobFunction || record.JobFamily),
-    location: normalizeLocation(record.PrimaryLocation),
-    city: extractCity(record.PrimaryLocation),
+    location: normalizeLocation(location),
+    city: extractCity(location),
     jobId,
     requisitionId: jobId,
     sourceUrl: detailUrl,
@@ -188,7 +200,7 @@ export const extractJobDetail = (payload, listing = {}, { siteNumber = SITE_NUMB
     detail.ExternalQualificationsStr,
   ) || listing.jobDescription || null
   const jobId = normalizeWhitespace(detail.Id) || listing.jobId || null
-  const location = normalizeLocation(detail.PrimaryLocation) || listing.location || null
+  const location = normalizeLocation(getIndiaLocation(detail)) || listing.location || null
   const detailUrl = jobId ? buildJobDetailUrl({ siteNumber, jobId }) : listing.sourceUrl || listing.applyUrl || null
 
   return {
@@ -231,92 +243,112 @@ export const extractPaginationSummary = (payload, { page = 0 } = {}) => {
   }
 }
 
-const fetchJson = async (url, fetchImpl = fetch, { signal } = {}) => {
-  signal?.throwIfAborted()
-  const response = await fetchImpl(url, { headers: REQUEST_HEADERS, signal })
-  signal?.throwIfAborted()
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+const incomplete = message => Object.assign(new Error(`[kpmg] ${message}`), {
+  softFailure: true, upstreamOutage: false, failureKind: 'upstream_contract_changed', abortRetries: true,
+})
+
+const readResponse = async (url, fetchImpl, { signal } = {}, asPage = false) => {
+  const requestSignal = composeAbortSignals(signal, AbortSignal.timeout(20000))
+  try {
+    return await readNativeWithSignal(async () => {
+      const response = await fetchImpl(url, { headers: asPage
+        ? { ...REQUEST_HEADERS, Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' } : REQUEST_HEADERS,
+        signal: requestSignal, redirect: 'follow' })
+      if (asPage) return { status: response.status ?? (response.ok ? 200 : null), url: response.url || url, body: await response.text() }
+      if (!response.ok) throw buildHttpError(response, url)
+      let sameOrigin = false
+      try { sameOrigin = new URL(response.url || url).origin === new URL(url).origin } catch { /* A response without a native origin cannot qualify. */ }
+      if (!sameOrigin) throw incomplete('Native API redirected away from its verified Oracle origin')
+      return response.json()
+    }, requestSignal)
+  } catch (error) {
+    signal?.throwIfAborted()
+    throw error
   }
-  const payload = await response.json()
-  signal?.throwIfAborted()
-  return payload
+}
+
+const verifyCorporateHandoffs = page => {
+  if (page.status !== 200) throw buildHttpError({ status: page.status }, CAREERS_URL)
+  let sameOrigin = false
+  try { sameOrigin = new URL(page.url).origin === new URL(CAREERS_URL).origin } catch { /* Invalid response identity. */ }
+  if (!sameOrigin || typeof page.body !== 'string') throw incomplete('Official corporate careers handoff is unavailable')
+  const document = readNativeDocument(page.body)
+  for (const [label, expected] of [
+    ['Search and Apply - KI', INDIA_PRACTICE_URL],
+    ['Search and Apply - KGS', `${PUBLIC_CAREERS_BASE_URL}/CX_3`],
+    ['Search and Apply - KDN India', `${PUBLIC_CAREERS_BASE_URL}/CX_3001`],
+  ]) {
+    const targets = document.nodes(node => node.tag === 'a' && typeof node.attrs.href === 'string')
+      .filter(anchor => normalizeWhitespace(document.text(anchor)) === label)
+      .map(anchor => new URL(anchor.attrs.href, CAREERS_URL).href)
+    if (!targets.length || targets.some(url => url !== expected)) throw incomplete(`Official corporate hiring surface changed: ${label}`)
+  }
 }
 
 export const createKpmgScraper = ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : 10,
+  maxPages = Infinity,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   fetchImpl = fetch,
-  siteNumbers = SITE_NUMBERS,
+  siteNumbers = CURRENT_ORACLE_SITE_NUMBERS,
   detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
 } = {}) => ({
   async run({ signal } = {}) {
-    const jobs = []
-    const seenUrls = new Set()
+    signal?.throwIfAborted()
+    if (!Array.isArray(siteNumbers) || !siteNumbers.length || new Set(siteNumbers).size !== siteNumbers.length
+      || siteNumbers.some(site => !CURRENT_ORACLE_SITE_NUMBERS.includes(site))) throw incomplete('Only currently declared Oracle hiring surfaces can be collected')
+    if (!(maxPages === Infinity || Number.isSafeInteger(maxPages) && maxPages > 0)
+      || maxJobs != null && !(Number.isSafeInteger(maxJobs) && maxJobs > 0)
+      || !Number.isSafeInteger(detailConcurrency) || detailConcurrency < 1 || detailConcurrency > 10) throw new RangeError('Invalid KPMG native collection limits')
 
-    for (const siteNumber of siteNumbers) {
-      for (let page = 0; page < maxPages; page += 1) {
-        signal?.throwIfAborted()
-        const payload = await fetchJson(buildSearchUrl({ siteNumber, page }), fetchImpl, { signal })
-        const pageJobs = extractSearchResults(payload, { siteNumber })
-        const freshJobs = []
-
-        for (const job of pageJobs) {
-          const key = job.sourceUrl || `${siteNumber}:${job.jobId}`
-          if (seenUrls.has(key)) continue
-          seenUrls.add(key)
-          freshJobs.push(job)
-
-          if (maxJobs && jobs.length + freshJobs.length >= maxJobs) break
-        }
-
-        const detailedJobs = await mapWithConcurrency(
-          freshJobs,
-          detailConcurrency,
-          async (job) => {
-            signal?.throwIfAborted()
-            let detail = job
-
-            try {
-              const detailPayload = await fetchJson(buildJobDetailApiUrl({
-                siteNumber,
-                jobId: job.jobId,
-              }), fetchImpl, { signal })
-              detail = extractJobDetail(detailPayload, job, { siteNumber })
-            } catch {
-              signal?.throwIfAborted()
-              detail = job
-            }
-
-            signal?.throwIfAborted()
-            return {
-              ...detail,
-              source: 'kpmg',
-              link: detail.applyUrl || detail.sourceUrl,
-              scrapedAt: new Date().toISOString(),
-            }
-          },
-        )
-
-        jobs.push(...detailedJobs)
-        signal?.throwIfAborted()
-
-        if (maxJobs && jobs.length >= maxJobs) return jobs
-
-        const summary = extractPaginationSummary(payload, { page })
-
-        if (!summary.hasNext) {
-          break
-        }
-      }
+    verifyCorporateHandoffs(await readResponse(CAREERS_URL, fetchImpl, { signal }, true))
+    let practice
+    try {
+      const page = await readResponse(INDIA_PRACTICE_URL, fetchImpl, { signal }, true)
+      practice = { surface: INDIA_PRACTICE_URL, status: page.status, finalUrl: page.url, listingComplete: false,
+        reason: page.status === 200 ? 'unqualified-current-talentrecruit-native-inventory' : `talentrecruit-http-${page.status}` }
+    } catch (error) {
+      signal?.throwIfAborted()
+      practice = { surface: INDIA_PRACTICE_URL, listingComplete: false, reason: 'talentrecruit-public-read-unavailable',
+        error: String(error?.message || 'Public read failed').slice(0, 300) }
     }
 
+    const jobs = []
+    const seenIds = new Set(), surfaces = [practice]
+    for (const siteNumber of siteNumbers) {
+      if (maxJobs != null && jobs.length >= maxJobs) break
+      const child = await collectOracleRequisitionJobs({ source: 'kpmg', siteNumber, maxPages,
+        maxJobs: maxJobs == null ? null : maxJobs - jobs.length, detailConcurrency, signal,
+        buildSearchUrl: options => buildSearchUrl({ ...options, siteNumber }),
+        buildJobDetailApiUrl: jobId => buildJobDetailApiUrl({ siteNumber, jobId }),
+        extractSearchResults: payload => extractSearchResults(payload, { siteNumber }),
+        extractJobDetail: (payload, listing) => extractJobDetail(payload, listing, { siteNumber }),
+        fetchJson: (url, options) => readResponse(url, fetchImpl, options),
+        isNativeRoleId: id => /^(?:\d{1,32}|INTG\d{1,24})$/.test(String(id ?? '')),
+      })
+      surfaces.push({ siteNumber, ...readInventoryEvidence(child), returnedRecords: child.length })
+      for (const job of child) {
+        if (seenIds.has(job.jobId)) throw incomplete('Native Oracle identities overlap across declared hiring boards')
+        seenIds.add(job.jobId)
+        jobs.push({ ...job, sourceListingComplete: false, sourceScopeComplete: false, lifecycleCleanupAllowed: false })
+      }
+    }
     signal?.throwIfAborted()
-    return jobs
+    const evidence = { status: 'coverage-gap', surface: CAREERS_URL, firstParty: true, listingComplete: false,
+      pagesFetched: surfaces.reduce((sum, surface) => sum + (surface.pagesFetched || 0), 0),
+      reportedTotal: null, indiaFacetCount: null, verifiedAt: new Date().toISOString(),
+      reason: `kpmg-current-hiring-surfaces-incomplete;${practice.reason}` }
+    if (!jobs.length) throw Object.assign(incomplete('No verified India roles on the current hiring surfaces'), {
+      failureKind: 'coverage_gap', inventoryEvidence: evidence,
+    })
+    const surfaceEvidence = Object.freeze({ source: 'kpmg', surfaces,
+      omittedRetiredOracleSites: ['CX_1'], allDeclaredSurfacesQualified: false })
+    jobs[0].nativeCollectionEvidence = surfaceEvidence
+    Object.defineProperty(jobs, KPMG_SURFACE_EVIDENCE, { value: surfaceEvidence, configurable: true })
+    return attachInventoryEvidence(jobs, evidence)
   },
 })
 
-export const run = async (options = {}) => createKpmgScraper().run(options)
+export const run = async (options = {}) => createKpmgScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

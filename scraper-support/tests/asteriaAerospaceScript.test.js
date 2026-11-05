@@ -94,3 +94,11 @@ test('Asteria Aerospace can recover with a browser-backed careers page when dire
   assert.deepEqual(browserUrls, [asteria.CAREERS_URL])
   assert.deepEqual(jobs, [])
 })
+
+for(const status of [401,403,429,451])test('Asteria retains HTTP '+status+' as an access failure without a browser retry',async()=>{
+  const asteria=await loadAsteriaModule()
+  let browserReads=0
+  await assert.rejects(asteria.run({fetchText:async()=>{throw Error('HTTP '+status+' for public careers')},
+    fetchBrowserText:async()=>{browserReads++;return careersHtml}}),new RegExp('HTTP '+status))
+  assert.equal(browserReads,0)
+})

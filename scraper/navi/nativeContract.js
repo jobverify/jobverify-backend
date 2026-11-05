@@ -76,7 +76,8 @@ export function validateNativeDetail(detail,listing,{now=new Date().toISOString(
  for(const key of ['JobId','JobIdObfuscated','JobCode','JobTitle'])requireProof(detail[key]===listing[key],'Native detail '+key+' conflicts')
  requireProof(JSON.stringify(scope)===JSON.stringify(nativeLocationScope(listing.Location)),'Native detail location conflicts')
  requireProof(detail.IsPublic===true&&detail.IsDraft===false&&detail.JobStatus==='Active'&&Array.isArray(detail.PublishedJobBoards)&&detail.PublishedJobBoards.includes('CAREERPAGE'),'Native detail is not an active public career role')
- const postingDate=validateNativeDate(detail.PublishedDate,{now,publication:true}),closingDate=validateNativeDate(detail.ExpiryDates?.CAREERPAGE,{now})
+ requireProof((detail.PublishedDates?.CAREERPAGE??null)===(listing.PublishedDate??null),'Native CareerPage publication conflicts')
+ const postingDate=validateNativeDate(detail.PublishedDates?.CAREERPAGE,{now,publication:true}),closingDate=validateNativeDate(detail.ExpiryDates?.CAREERPAGE,{now})
  requireProof(typeof detail.JobDescriptionV2==='string','Native full description field unavailable')
  const sections=[detail.JobDescriptionV2]
  for(const key of ['RolesAndResponsibilitiesV2','EligibilityV2'])if(detail[key]!=null){requireProof(typeof detail[key]==='string','Native description section malformed');sections.push(detail[key])}

@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { FULLERTON_INDIA_CATALOG } from './catalog.js'
+import {declaredRoleDescription,readDescriptionPDF,fetchDescriptionPDF} from './nativeDetails.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -77,23 +79,35 @@ const toAbsoluteUrl = (value, baseUrl = JOBS_BOARD_URL) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
+const readBoundedBody = async (response,signal) => {
+  const reader=response.body?.getReader()
+  if(!reader)throw Error('Missing Workline public response body')
+  const chunks=[];let bytes=0
+  try{for(;;){signal?.throwIfAborted();const item=await reader.read();if(item.done)break;bytes+=item.value.byteLength
+    if(bytes>4e6)throw Error('Workline public response body limit');chunks.push(Buffer.from(item.value))}}
+  finally{await reader.cancel().catch(()=>{});reader.releaseLock()}
+  return Buffer.concat(chunks).toString('utf8')
+}
+const defaultFetchPage = async (url,{signal}={}) => {
+  const requestSignal=AbortSignal.any([signal,AbortSignal.timeout(20000)].filter(Boolean))
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    credentials:'omit',signal:requestSignal,
   })
 
   return {
     status: response.status,
     url: response.url,
-    html: await response.text(),
+    html: await readBoundedBody(response,requestSignal),
   }
 }
 
 const defaultFetchJson = async (url, options = {}) => {
+  const requestSignal=AbortSignal.any([options.signal,AbortSignal.timeout(20000)].filter(Boolean))
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -101,14 +115,15 @@ const defaultFetchJson = async (url, options = {}) => {
       Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
       ...(options.headers || {}),
     },
-    redirect: 'follow',
+    redirect: 'error',credentials:'omit',signal:requestSignal,
   })
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return response.json()
+  if(response.url!==url)throw Error('Workline native search response identity changed')
+  return JSON.parse(await readBoundedBody(response,requestSignal))
 }
 
 const normalizeDate = (value) => {
@@ -192,7 +207,7 @@ const getSearchKeyword = (record) => normalizeField(record?.SearchKeyWord)
 
 const isIndiaListingRecord = (record) => {
   const country = normalizeField(record?.Country_Name)
-  return !country || /\bindia\b/i.test(country)
+  return typeof country==='string'&&/^India$/i.test(country)
 }
 
 export const hasOfficialHomepageSignal = (html = '') => {
@@ -314,8 +329,10 @@ export const mapListingRecordToJob = (record, { scrapedAt = new Date().toISOStri
 export const createFullertonIndiaScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchPage = defaultFetchPage, fetchJson = defaultFetchJson } = {}) {
-    const homepage = await fetchPage(REDIRECTED_HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, fetchJson = defaultFetchJson, fetchPDF=fetchDescriptionPDF, signal, maxDetails=20 } = {}) {
+    signal?.throwIfAborted()
+    if(!Number.isSafeInteger(maxDetails)||maxDetails<1||maxDetails>100)throw Error('Invalid Workline public detail bound')
+    const homepage = await fetchPage(REDIRECTED_HOMEPAGE_URL,{signal})
     if (
       homepage.status !== 200
       || homepage.url !== REDIRECTED_HOMEPAGE_URL
@@ -324,7 +341,7 @@ export const createFullertonIndiaScraper = ({
       throw new Error('Fullerton India verified official homepage no longer matches the known public surface')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
+    const careersPage = await fetchPage(CAREERS_URL,{signal})
     const jobsBoardEntryUrl = extractJobsBoardEntryUrl(careersPage.html)
     if (
       careersPage.status !== 200
@@ -334,7 +351,7 @@ export const createFullertonIndiaScraper = ({
       throw new Error('Fullerton India verified careers page no longer matches the known first-party handoff')
     }
 
-    const jobsBoard = await fetchPage(JOBS_BOARD_ENTRY_URL)
+    const jobsBoard = await fetchPage(JOBS_BOARD_ENTRY_URL,{signal})
     if (
       jobsBoard.status !== 200
       || jobsBoard.url !== JOBS_BOARD_URL
@@ -352,6 +369,7 @@ export const createFullertonIndiaScraper = ({
         Referer: JOBS_BOARD_URL,
       },
       body: JSON.stringify(JOBS_API_BODY),
+      signal,
     })
 
     if (!hasVerifiedJobsPayloadContract(payload)) {
@@ -360,10 +378,33 @@ export const createFullertonIndiaScraper = ({
 
     const scrapedAt = now()
 
-    return extractListingRecords(payload)
-      .filter(isIndiaListingRecord)
-      .map((record) => mapListingRecordToJob(record, { scrapedAt }))
-      .filter(Boolean)
+    const jobs=[],failures=[],seen=new Set(),pdfs=new Map(),records=extractListingRecords(payload)
+    for(const record of records.filter(isIndiaListingRecord)){
+      signal?.throwIfAborted()
+      const job=mapListingRecordToJob(record,{scrapedAt})
+      if(!job)continue
+      if(seen.has(job.jobId)){failures.push('duplicate-native-requisition');continue}
+      seen.add(job.jobId)
+      if(seen.size>Math.min(100,Math.max(1,maxDetails))){failures.push('native-detail-budget-reached');break}
+      try{
+        if(!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(record.TrackToken||'')
+          ||!Number.isSafeInteger(record.PRFCode)||record.PRFCode<1||!record.JobSpecificationFile)throw Error('Native public role identity or description unavailable')
+        const page=await fetchPage(job.sourceUrl,{signal})
+        if(page.status!==200||page.url!==job.sourceUrl)throw Error('Native role HTTP '+page.status+' or response identity changed')
+        const declared=declaredRoleDescription(page,record)
+        if(!pdfs.has(declared.url))pdfs.set(declared.url,fetchPDF(declared.url,{signal}).then(bytes=>readDescriptionPDF(bytes,{signal})))
+        const pdf=await pdfs.get(declared.url)
+        jobs.push({...job,country:'India',jobDescription:pdf.text,sourceDescription:pdf.text,sourceScopeComplete:false,sourceListingComplete:false,
+          lifecycleCleanupAllowed:false,applicationVisited:false,nativeSourceRecord:{listing:record,detail:declared,pdf},
+          nativeEmployerBinding:{method:'current-corporate-handoff-and-role-brand',brand:'SMFG India Credit',legalEmployer:null}})
+      }catch(error){
+        signal?.throwIfAborted();failures.push(String(error.message||error).slice(0,250))
+        if(/HTTP (?:401|403|429|451)\b/.test(String(error.message||error)))break
+      }
+    }
+    if(!jobs.length&&failures.length)throw Object.assign(Error('Fullerton India current native role descriptions unavailable'),{failureKind:'coverage_gap',nativeFailures:failures,sourceScopeComplete:false,lifecycleCleanupAllowed:false})
+    return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:JOBS_BOARD_URL,firstParty:true,listingComplete:false,pagesFetched:3+seen.size,
+      reportedTotal:null,indiaFacetCount:null,verifiedAt:scrapedAt,reason:'current-native-India-roles-and-linked-full-PDF-descriptions;company-scope-incomplete;failures='+failures.length})
   },
 })
 

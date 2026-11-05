@@ -5,6 +5,7 @@ import { parse } from 'acorn'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { nativeCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 
 import { COGNUS_TECHNOLOGY_CATALOG } from './catalog.js'
 
@@ -141,13 +142,6 @@ const parseInteger = (value) => {
   return match ? Number.parseInt(match[0], 10) : null
 }
 
-const normalizePostingDate = (value) => {
-  const text = normalizeText(value)
-  if (!text) return null
-  const match = text.match(/\d{4}-\d{2}-\d{2}/)
-  return match ? match[0] : null
-}
-
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
@@ -195,7 +189,7 @@ export const extractJobsFromOfficialBoard = (html = '') => {
 
       const cityValue = normalizeText(getFirstPresent(record, ['City', 'city']))
       const stateValue = normalizeText(getFirstPresent(record, ['State', 'state']))
-      const countryValue = normalizeText(getFirstPresent(record, ['Country', 'country']))
+      const countryValue = nativeCountryName(getFirstPresent(record, ['Country', 'country']))
       const location = buildLocation({
         city: cityValue,
         state: stateValue,
@@ -210,11 +204,11 @@ export const extractJobsFromOfficialBoard = (html = '') => {
         requisitionId: recordId || slug,
         sourceUrl: toAbsoluteUrl(getFirstPresent(record, ['applyUrl', 'sourceUrl']) || CAREERS_URL),
         applyUrl: toAbsoluteUrl(getFirstPresent(record, ['applyUrl', 'sourceUrl']) || CAREERS_URL),
-        location,
-        city: cityValue ? normalizeCity(cityValue) || cityValue : null,
-        state: stateValue,
+        location: countryValue ? location : null,
+        city: countryValue && cityValue ? normalizeCity(cityValue) || cityValue : null,
+        state: countryValue ? stateValue : null,
         country: countryValue,
-        postalCode: normalizeText(getFirstPresent(record, ['Zip_Code', 'postalCode'])),
+        postalCode: countryValue ? normalizeText(getFirstPresent(record, ['Zip_Code', 'postalCode'])) : null,
         employmentType: normalizeText(getFirstPresent(record, ['Job_Type', 'jobType', 'type'])),
         workplaceType: null,
         experienceRequired: normalizeText(getFirstPresent(record, ['Work_Experience', 'experience'])),
@@ -222,10 +216,15 @@ export const extractJobsFromOfficialBoard = (html = '') => {
         preferredQualification: null,
         requiredSkills: [],
         compensation: null,
-        postingDate: normalizePostingDate(getFirstPresent(record, ['Date_Opened', 'publishDate'])),
+        postingDate: null,
         closingDate: null,
         openingsCount: parseInteger(getFirstPresent(record, ['Openings', 'Vacancies', 'no_of_openings'])),
         jobDescription: stripTags(getFirstPresent(record, ['Job_Description', 'jobDescription'])),
+        nativeLocationEvidence: { City: record.City ?? null, State: record.State ?? null,
+          Country: record.Country ?? null, Zip_Code: record.Zip_Code ?? null },
+        nativeLocation: buildLocation({ city: cityValue, state: stateValue,
+          country: getFirstPresent(record, ['Country', 'country']) }),
+        sourceCountryScopeUnresolved: !countryValue,
         companyCareerPage: CAREERS_URL,
       }
     })
@@ -326,18 +325,23 @@ export const extractVerifiedNativeDetail = (html, job, listingMeta, listingModul
   const nativeDate = typeof record.Date_Opened === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(record.Date_Opened)
     && Number.isFinite(Date.parse(record.Date_Opened)) && new Date(record.Date_Opened).toISOString().slice(0, 10) === record.Date_Opened
     ? record.Date_Opened : null
-  const country = normalizeText(record.Country), city = normalizeText(record.City), state = normalizeText(record.State)
-  const countryUncertain = !country || /^(?:Cognus|Gradding)$/i.test(country)
+  const country = nativeCountryName(record.Country), city = normalizeText(record.City), state = normalizeText(record.State)
+  const countryUncertain = !country
   const contentComplete = Boolean(description && description.length >= 80)
   return {
     sourceUrl: expectedUrl, applyUrl: expectedUrl, sourceDetailUrl: expectedUrl,
     sourceDescription: contentComplete ? description : null,
     jobDescription: contentComplete ? description : null,
     ...(contentComplete ? { nativeDescriptionSHA256: createHash('sha256').update(record.Job_Description).digest('hex') } : {}),
-    ...(nativeDate ? { postingDate: nativeDate, nativeDateOpened: nativeDate,
-      sourceDateEvidence: 'cognus-verified-native-inline-job-v1' } : {}),
-    country, city: city ? normalizeCity(city) || city : null, state,
-    postalCode: normalizeText(record.Zip_Code), location: buildLocation({ city, state, country }),
+    // Date_Opened is a requisition opening date, not a declared publication date.
+    postingDate: null,
+    ...(nativeDate ? { nativeDateOpened: nativeDate,
+      sourceDateEvidence: 'native-requisition-date-opened;publication-date-unknown' } : {}),
+    country, city: country && city ? normalizeCity(city) || city : null, state: country ? state : null,
+    postalCode: country ? normalizeText(record.Zip_Code) : null,
+    location: country ? buildLocation({ city, state, country }) : null,
+    nativeLocation: buildLocation({ city, state, country: record.Country }),
+    sourceCountryScopeUnresolved: countryUncertain,
     nativeLocationEvidence: { City: record.City ?? null, State: record.State ?? null,
       Country: record.Country ?? null, Zip_Code: record.Zip_Code ?? null },
     sourceDetailContentComplete: contentComplete,
@@ -405,6 +409,9 @@ export const createCognusTechnologyScraper = ({ now = () => new Date().toISOStri
         source: SOURCE,
         companyDomain: COGNUS_TECHNOLOGY_CATALOG.companyDomain,
         atsPlatform: COGNUS_TECHNOLOGY_CATALOG.atsPlatform,
+        sourceScopeComplete: false,
+        sourceListingComplete: false,
+        lifecycleCleanupAllowed: false,
         link: job.applyUrl || job.sourceUrl,
         scrapedAt: (overrideNow || now)(),
       }))

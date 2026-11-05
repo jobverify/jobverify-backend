@@ -79,12 +79,24 @@ export async function runNativeEntegris(options = {}) {
     boards: [{ tenant: 'entegris', site: 'EntegrisCareers', baseUrl: BASE, scraperDir: currentDir }],
     employerPattern: /\bentegris\b/i, requireEmployer: true, completeSourceScope: false,
     scopeReason: 'current-official-redirect-bound-native-India-facet;other-company-recruitment-channels-unverified',
-  }, { ...options, signal, nativeDetailRecovery: false })
+  }, { ...options, signal, nativeDetailRecovery: false, retainNativeProof: true })
   signal.throwIfAborted()
   const proof = jobs[WORKDAY_COUNTRY_INVENTORY_PROOF]
   requireNative(proof?.boards?.length === 1 && proof.boards[0].reportedTotal === scope.total, 'native India scope changed during collection')
   proof.currentOfficialBinding = { careersURL: CAREERS, handoffURL: HANDOFF, currentRedirectTarget: BASE, nativeIndiaScope: scope }
-  for (const job of jobs) Object.assign(job, { postingDate: job.postedAt,
+  const finalCorporate=await read(CAREERS)
+  requireNative(finalCorporate.status===200&&finalCorporate.headers['content-type']?.split(';')[0].trim()==='text/html'
+    && readVisibleNativeDocument(normalizeNativeAttributeBoundaries(new TextDecoder('utf-8',{fatal:true}).decode(finalCorporate.body)))
+      .nodes(node=>node.tag==='a'&&typeof node.attrs.href==='string'&&new URL(node.attrs.href,CAREERS).href===HANDOFF).length>0,
+    'closing current corporate handoff unavailable')
+  const finalHandoff=await read(HANDOFF)
+  requireNative([301,302,303,307,308].includes(finalHandoff.status)
+    &&new URL(finalHandoff.headers.location,HANDOFF).href===BASE,'closing corporate redirect changed')
+  for (const job of jobs) Object.assign(job, {
+    sourceOfficialBinding:{careersURL:CAREERS,handoffURL:HANDOFF,boardURL:BASE,
+      openingBodySHA256:createHash('sha256').update(corporate.body).digest('hex'),
+      closingBodySHA256:createHash('sha256').update(finalCorporate.body).digest('hex'),
+      nativeIndiaScope:scope,currentHandoffRechecked:true,checkedAt:new Date().toISOString(),companyScopeComplete:false},
     sourceScopeComplete: false, sourceListingComplete: false, lifecycleCleanupAllowed: false })
   return jobs
 }

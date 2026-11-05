@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs'
+import { gunzipSync } from 'node:zlib'
+import { TURBOHIRE_CURRENT_PUBLIC_CLIENT } from '../utils/turboHirePublicClient.js'
+
+const sdk = JSON.parse(gunzipSync(fs.readFileSync(new URL('../../test/test-data/recruitmentGoal20261104/turbohire-stage2-public-client.json.gz', import.meta.url))))
 
 const loadBritanniaModule = async () => {
   try {
@@ -32,6 +37,7 @@ const boardHtml = `
     </head>
     <body>
       <div id="root"></div>
+      <script src="/main.f9eb0b1ea3273f6dfc17.chunk.js"></script>
     </body>
   </html>
 `
@@ -101,11 +107,11 @@ test('Britannia scraper pins the verified official careers page, TurboHire board
   )
   assert.equal(britannia.ORIGIN, 'https://britannia.turbohire.co')
   assert.equal(britannia.ORG_ID, 'c143932d-0df7-4856-9dc5-0a9f1ca26dc5')
-  assert.equal(britannia.API_BASE_URL, 'https://thapi.azurewebsites.net')
-  assert.equal(britannia.NOAUTH_TOKEN_URL, 'https://thapi.azurewebsites.net/api/token/noauth')
+  assert.equal(britannia.API_BASE_URL, 'https://thapi-stage2.azurewebsites.net')
+  assert.equal(britannia.NOAUTH_TOKEN_URL, 'https://thapi-stage2.azurewebsites.net/api/token/noauth')
   assert.equal(
     britannia.FILTERED_JOBS_URL,
-    'https://thapi.azurewebsites.net/api/careerpagev2/filteredjobs?orgId=c143932d-0df7-4856-9dc5-0a9f1ca26dc5&pageType=0',
+    'https://thapi-stage2.azurewebsites.net/api/careerpagev2/filteredjobs?orgId=c143932d-0df7-4856-9dc5-0a9f1ca26dc5&pageType=0',
   )
   assert.equal(britannia.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(britannia.extractTurboHireHandoffUrl(careersHtml), britannia.BOARD_URL)
@@ -151,6 +157,7 @@ test('run validates the official handoff and TurboHire board before reading the 
       requested.push({ type: 'text', url })
       if (url === britannia.OFFICIAL_CAREERS_URL) return careersHtml
       if (url === britannia.BOARD_URL) return boardHtml
+      if (url === britannia.ORIGIN + TURBOHIRE_CURRENT_PUBLIC_CLIENT.path) return sdk.text
       throw new Error(`Unexpected text URL: ${url}`)
     },
     fetchJson: async (url, options = {}) => {
@@ -164,16 +171,27 @@ test('run validates the official handoff and TurboHire board before reading the 
         return sampleTurboHirePayload
       }
 
+      if (url.includes('/api/publicjobs/')) return {
+        ...sampleTurboHirePayload.Result[0], IsPublic: true, IsDraft: false, JobStatus: 'Active',
+        PublishedJobBoards: ['CAREERPAGE'], PublishedDates: { CAREERPAGE: sampleTurboHirePayload.Result[0].PublishedDate },
+        JobDescriptionV2: '<p>' + 'Lead food production batches, maintain quality systems and supervise safe manufacturing operations. '.repeat(8) + '</p>',
+      }
       throw new Error(`Unexpected json URL: ${url}`)
     },
-    now: () => '2026-07-14T00:00:00.000Z',
+    now: () => '2026-07-14T00:00:00.000Z', requestIntervalMs: 0,
   })
 
   assert.deepEqual(requested, [
     { type: 'text', url: britannia.OFFICIAL_CAREERS_URL },
     { type: 'text', url: britannia.BOARD_URL },
+    { type: 'text', url: britannia.ORIGIN + TURBOHIRE_CURRENT_PUBLIC_CLIENT.path },
     { type: 'json', url: britannia.NOAUTH_TOKEN_URL, method: 'GET' },
     { type: 'json', url: britannia.FILTERED_JOBS_URL, method: 'POST' },
+    { type: 'json', url: britannia.API_BASE_URL + '/api/publicjobs/' + sampleTurboHirePayload.Result[0].JobId + '?fieldVisibility=CareerPage', method: 'GET' },
+    { type: 'json', url: britannia.FILTERED_JOBS_URL, method: 'POST' },
+    { type: 'text', url: britannia.OFFICIAL_CAREERS_URL },
+    { type: 'text', url: britannia.BOARD_URL },
+    { type: 'text', url: britannia.ORIGIN + TURBOHIRE_CURRENT_PUBLIC_CLIENT.path },
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'britannia')
