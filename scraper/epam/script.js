@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { awaitEpamRead, runNativeEpam } from './nativeInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -146,13 +148,28 @@ export const createEpamScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
+    if (!options.fetchJson || options.transport || options.fetchImpl) {
+      return runNativeEpam({ options, maxJobs, headers: DEFAULT_HEADERS,
+        project: record => extractSearchResults({ data: { jobs: [record] } })[0] })
+    }
+    // Parsed-JSON injection is retained for older callers, but lacks the native
+    // response, current employer handoff and closing proof needed for cleanup.
+    options.signal?.throwIfAborted()
     const fetchJson = options.fetchJson || defaultFetchJson
     const listings = []
     let offset = 0
     let totalResults = Number.POSITIVE_INFINITY
+    let pagesFetched = 0
+    const selectedMax = options.maxJobs ?? maxJobs
+    const maxPages = Number.isSafeInteger(options.maxPages) && options.maxPages > 0 ? Math.min(options.maxPages, 48) : 48
+    const signal = AbortSignal.any([...(options.signal ? [options.signal] : []), AbortSignal.timeout(90000)])
 
-    while (offset < totalResults && (!maxJobs || listings.length < maxJobs)) {
-      const payload = await fetchJson(buildSearchUrl(offset))
+    while (offset < totalResults && pagesFetched < maxPages && (selectedMax == null || listings.length < selectedMax)) {
+      const payload = await awaitEpamRead(() => fetchJson(buildSearchUrl(offset), { signal }), signal, options.signal)
+      options.signal?.throwIfAborted()
+      signal.throwIfAborted()
+      pagesFetched++
+      const rawJobs = Array.isArray(payload?.data?.jobs) ? payload.data.jobs : []
       const pageJobs = extractSearchResults(payload)
       const pageTotal = extractTotalResults(payload)
 
@@ -160,26 +177,32 @@ export const createEpamScraper = ({
         totalResults = pageTotal
       }
 
-      if (pageJobs.length === 0) {
+      if (rawJobs.length === 0) {
         break
       }
 
       listings.push(...pageJobs)
-      offset += PAGE_SIZE
+      offset += rawJobs.length
     }
 
-    const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
+    const selectedJobs = selectedMax == null ? listings : listings.slice(0, selectedMax)
 
-    return selectedJobs.map((job) => ({
+    options.signal?.throwIfAborted()
+    return attachInventoryEvidence(selectedJobs.map((job) => ({
       ...job,
       source: 'epam',
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: new Date().toISOString(),
-    }))
+      sourceListingComplete: false,
+      sourceScopeComplete: false,
+      lifecycleCleanupAllowed: false,
+    })), { status: 'coverage-gap', surface: buildSearchUrl(0), firstParty: false,
+      listingComplete: false, pagesFetched, reportedTotal: Number.isFinite(totalResults) ? totalResults : null,
+      indiaFacetCount: null, verifiedAt: null, reason: 'parsed-json-injection-without-current-native-handoff-and-closing-proof;cleanup-forbidden' })
   },
 })
 
-export const run = async () => createEpamScraper().run()
+export const run = async (options = {}) => createEpamScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

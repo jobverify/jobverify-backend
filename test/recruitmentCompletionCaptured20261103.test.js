@@ -32,13 +32,68 @@ for (const fixture of manifest.sources) test(`${fixture.source}: repaired produc
     } })
   assert.deepEqual(unexpected, [])
   assert.deepEqual(calls, fixture.requests.map(row => key(row.requestedURL, { method: row.method, body: row.requestBody })))
-  assert.equal(jobs.length, fixture.indiaJobs)
+  const expectedJobs = structuredClone(fixture.expectedJobs)
+  if (fixture.source === 'samsungelectronics') {
+    // Keep the historical HTTP bytes. The reviewed institute name now admits
+    // its own typed India records that the old employer mapping excluded.
+    for (const receipt of fixture.requests.filter(row => row.status === 200 && /\/wday\/cxs\/.+\/job\//.test(row.requestedURL))) {
+      const bytes = gunzipSync(readFileSync(new URL(receipt.filename, directory)))
+      assert.equal(sha(bytes), receipt.bodySHA256)
+      const native = JSON.parse(bytes), info = native.jobPostingInfo
+      if (native.hiringOrganization?.name !== 'Samsung R&D Institute India - Bangalore') continue
+      if (!info.country && !info.jobRequisitionLocation?.country) continue
+      assert.equal(info.country.descriptor, 'India')
+      assert.equal(info.jobRequisitionLocation.country.alpha2Code, 'IN')
+      assert.ok(info.jobDescription.length >= 100)
+      expectedJobs.push({ jobId: info.jobReqId, title: info.title,
+        applyUrl: receipt.requestedURL.replace('/wday/cxs/sec/', '/'),
+        nativeHiringOrganization: native.hiringOrganization, nativeEmployerBinding: null,
+        postingDate: info.startDate || null, descriptionSHA256: sha(info.jobDescription) })
+    }
+    assert.equal(expectedJobs.length, 31)
+  }
+  assert.equal(jobs.length, fixture.source === 'samsungelectronics' ? expectedJobs.length : fixture.indiaJobs)
   assert.equal(jobs[RECRUITMENT_OBSERVATIONS].nativeRecords, fixture.nativeRecords)
-  assert.deepEqual(jobs[RECRUITMENT_OBSERVATIONS].unresolved, fixture.unresolved)
-  assert.deepEqual(jobs[RECRUITMENT_OBSERVATIONS].failures, fixture.failures)
-  assert.deepEqual(jobs.map(job => ({ jobId: String(job.jobId), title: job.title, applyUrl: job.applyUrl,
+  assert.deepEqual(jobs[RECRUITMENT_OBSERVATIONS].unresolved, fixture.source === 'samsungelectronics'
+    ? fixture.unresolved.filter(reason => reason !== 'native-employer-mismatch') : fixture.unresolved)
+  const failures = jobs[RECRUITMENT_OBSERVATIONS].failures
+  assert.deepEqual(failures.map(({ stage, message }) => ({ stage, message })), fixture.failures)
+  for (const failure of failures) {
+    assert.equal(failure.name, 'Error')
+    if (failure.stage === 'official-page') assert.equal(typeof failure.requestUrl, 'string')
+    if (failure.requestUrl) {
+      const url = new URL(failure.requestUrl)
+      assert.equal(url.protocol, 'https:')
+      assert.equal(url.username + url.password + url.search + url.hash, '')
+      assert.ok(fixture.requests.some(receipt => {
+        const requested = new URL(receipt.requestedURL)
+        return requested.origin + requested.pathname === failure.requestUrl
+      }), 'Diagnostic requests must bind to the original retained request')
+    }
+    if (failure.message === 'Recruitment HTTP 403') {
+      assert.equal(failure.status, 403)
+      assert.equal(failure.code, 'RECRUITMENT_HTTP_ERROR')
+      assert.ok(fixture.requests.some(receipt => receipt.status === 403 && receipt.requestedURL === failure.requestUrl))
+    }
+  }
+  if (fixture.source === 'veriskanalytics') {
+    // The original response already contains this explicit legal employer.
+    // Preserve the original HTTP fixture and require its newly extracted field.
+    for (const job of jobs) assert.equal(job.nativeSourceRecord.detail.requisitionFlexFields
+      .find(field => field.Prompt === 'Legal Employer')?.Value, 'Verisk Analytics India Private Limited')
+    for (const expected of expectedJobs) {
+      expected.nativeHiringOrganization = {name:'Verisk Analytics India Private Limited'}
+      expected.nativeEmployerBinding = null
+    }
+  }
+  const actualJobs = jobs.map(job => ({ jobId: String(job.jobId), title: job.title, applyUrl: job.applyUrl,
     nativeHiringOrganization: job.nativeHiringOrganization ?? null, nativeEmployerBinding: job.nativeEmployerBinding || null,
-    postingDate: job.postingDate ?? null, descriptionSHA256: sha(job.sourceDescription || job.jobDescription) })), fixture.expectedJobs)
+    postingDate: job.postingDate ?? null, descriptionSHA256: sha(job.sourceDescription || job.jobDescription) }))
+  if (fixture.source === 'samsungelectronics') {
+    actualJobs.sort((a,b) => a.jobId.localeCompare(b.jobId))
+    expectedJobs.sort((a,b) => a.jobId.localeCompare(b.jobId))
+  }
+  assert.deepEqual(actualJobs, expectedJobs)
   assert.equal(readInventoryEvidence(jobs).listingComplete, false)
   assert.notEqual(readInventoryEvidence(jobs).status, 'verified-empty')
   for (const job of jobs) {

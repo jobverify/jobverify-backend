@@ -52,21 +52,21 @@ test('IndustryBuying local catalog captures the verified first-party careers API
   assert.equal(INDUSTRY_BUYING_CATALOG.parser, 'custom-script')
   assert.equal(INDUSTRY_BUYING_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INDUSTRY_BUYING_CATALOG.companyDomain, 'industrybuying.com')
-  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedOn, '2026-08-07')
-  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedPublicJobCount, 3)
-  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedIndiaJobCount, 3)
-  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedSampleJobTitle, 'Category Group Head')
+  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedOn, '2026-11-05')
+  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedPublicJobCount, 5)
+  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedIndiaJobCount, null)
+  assert.equal(INDUSTRY_BUYING_CATALOG.verifiedSampleJobTitle, 'Senior Manager HR')
   assert.equal(
     INDUSTRY_BUYING_CATALOG.verifiedSampleJobUrl,
-    'https://jobs.industrybuying.com/jobs/detail?id=job_1783396889733',
+    'https://jobs.industrybuying.com/jobs/detail?id=job_1790074749288',
   )
   assert.match(INDUSTRY_BUYING_CATALOG.dryRunFile, /industrybuying[\\/]jobs\.json$/i)
-  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /November 5, 2026/i)
   assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /https:\/\/jobs\.industrybuying\.com\//i)
   assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /https:\/\/careers\.industrybuying\.com\/api\/career\/jobs/i)
-  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Category Group Head/i)
+  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Senior Manager HR/i)
   assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Online Sales Executive/i)
-  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /Category Owner/i)
+  assert.match(INDUSTRY_BUYING_CATALOG.verifiedSurfaceSummary, /countries remain unknown/i)
   assert.equal(INDUSTRY_BUYING_CATALOG.modulePath, industryBuyingModulePath)
 
   assert.equal(industryBuying.PROVIDER_METADATA.source, INDUSTRY_BUYING_CATALOG.source)

@@ -92,10 +92,15 @@ test('AVIZVA extracts the current Keka-backed job boxes', () => {
   assert.deepEqual(jobs[0].locations, ['Gurugram, India', 'Indore, India'])
 })
 
-test('AVIZVA scraper returns jobs from the verified first-party careers page', async () => {
+test('AVIZVA historical extractor excludes inert and hidden card trees',()=>{
+ for(const wrapper of [body=>'<template>'+body+'</template>',body=>'<div hidden>'+body+'</div>',body=>'<div aria-hidden="true">'+body+'</div>',body=>'<div style="display:none">'+body+'</div>'])
+  assert.deepEqual(extractJobs(wrapper(currentCareersHtml)),[])
+})
+
+test('AVIZVA historical cards remain insufficient for current native publication', async () => {
   const requestedUrls = []
 
-  const jobs = await createAvizvaScraper({
+  await assert.rejects(createAvizvaScraper({
     now: () => '2026-08-04T00:00:00.000Z',
   }).run({
     fetchText: async (url) => {
@@ -103,13 +108,7 @@ test('AVIZVA scraper returns jobs from the verified first-party careers page', a
       if (url === CAREERS_URL) return currentCareersHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), /native inventory/)
 
-  assert.deepEqual(requestedUrls, [CAREERS_URL])
-  assert.equal(jobs.length, 4)
-  assert.equal(jobs[0].company, 'AVIZVA')
-  assert.equal(jobs[0].country, 'India')
-  const seniorEngineerJob = jobs.find((job) => job.title === 'Senior Engineer')
-  assert.ok(seniorEngineerJob)
-  assert.equal(seniorEngineerJob.applyUrl, 'https://avizva.keka.com/careers/jobdetails/154027')
+  assert.deepEqual(requestedUrls, [])
 })

@@ -54,6 +54,15 @@ test('Finzly rejects a changed current filtering client instead of guessing inve
   await assert.rejects(execute(packet => { if (packet.url.includes('/assets/js/app.js')) packet.body += '\n// changed client' }), /Finzly.*client/i)
 })
 
+test('Finzly retains independently bound native roles when the optional Yoast REST plugin metadata disappears', async () => {
+  const { jobs } = await execute(packet => {
+    if (/\/wp-json\/wp\/v2\/pages\/\d+$/.test(packet.url)) jsonBody(packet, value => { delete value.yoast_head_json })
+  })
+  assert.equal(jobs.length, 12)
+  assert.ok(jobs.every(job => job.sourceDetailComplete === true && job.country === 'India'))
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+})
+
 for (const [label, change] of [
   ['native page ID', value => { value.id = 999999 }],
   ['native role URL', value => { value.link = 'https://other.example/role/' }],

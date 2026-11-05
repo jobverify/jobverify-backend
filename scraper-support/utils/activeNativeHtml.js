@@ -13,10 +13,13 @@ export const decodeNativeEntities = decode
 // retain their existing policies. Never search past a byte to invent a name.
 const nativeSpace = char => char !== undefined && /[\t\n\f\r ]/.test(char)
 const nativeLower = value => value.replace(/[A-Z]/g, char => char.toLowerCase())
+const namespaces = new WeakMap()
 const nativeAttributes = (input, start, inTag) => {
   const attributes = []
   let cursor = start
   while (cursor < input.length) {
+    if (inTag && input[cursor] === '/' && input[cursor + 1] === '>')
+      return { attributes, end: cursor + 2, selfClosing: true }
     if (nativeSpace(input[cursor]) || input[cursor] === '/') { cursor++; continue }
     if (input[cursor] === '>') {
       requireContent(inTag, 'Unexpected native attribute delimiter')
@@ -80,7 +83,7 @@ const nextNativeTag = (html, from) => {
     // unqualified subtree, never a shortened known tag or a whole-page error.
     const qualifiedTag = /^[a-z][a-z0-9:_-]*$/.test(tag)
     const parsed = nativeAttributes(html, end, true)
-    return { index, end: parsed.end, tag, closing, qualifiedTag, attributes: parsed.attributes }
+    return { index, end: parsed.end, tag, closing, qualifiedTag, attributes: parsed.attributes, selfClosing: parsed.selfClosing === true }
   }
   return null
 }
@@ -104,6 +107,9 @@ const dom = (input, {excludeObjectFallback = true} = {}) => {
       if (at > 0 && at >= templateBoundary) stack.length = at
       continue
     }
+    const inherited = namespaces.get(parent) || 'html'
+    const integration = inherited === 'svg' && ['foreignobject','desc','title'].includes(parent.tag)
+    const namespace = tag === 'svg' ? 'svg' : integration ? 'html' : inherited
     // Keep visibility attributes while ignoring irrelevant Word presentation
     // attributes. HTML keeps the first duplicate attribute; meta identity stays
     // stricter because duplicate identity fields are ambiguous evidence.
@@ -115,8 +121,14 @@ const dom = (input, {excludeObjectFallback = true} = {}) => {
     const style=(attrs.style||'').replace(/\/\*[\s\S]*?\*\//g,'')
     const hidden=Object.hasOwn(attrs,'hidden')||Object.hasOwn(attrs,'inert')||attrs['aria-hidden']?.toLowerCase()==='true'||/(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|content-visibility\s*:\s*hidden)\s*(?:!important\s*)?(?:;|$)/i.test(style)
     const node = {tag,attrs,children:[],activeFrame:tag==='iframe'&&!parent.inert&&!hidden,inert:parent.inert || hidden || !token.qualifiedTag || tag === 'template' || (excludeObjectFallback && tag === 'object') || (raw.has(tag) && !['script','title'].includes(tag)),...(token.qualifiedTag ? {} : {nativeTagUnqualified:true})}
+    namespaces.set(node, namespace)
     parent.children.push(node)
-    if (raw.has(tag)) {
+    // SVG commonly publishes <title/> in icons. Its self-closing flag ends
+    // that foreign element; treating it as an HTML raw-text title swallows
+    // the rest of the careers page. HTML non-void self-closing tags retain
+    // their existing behavior, including hidden/template boundaries.
+    if (namespace === 'svg' && token.selfClosing) continue
+    if (raw.has(tag) && !(namespace === 'svg' && tag === 'title')) {
       const end = tag === 'plaintext' ? null : new RegExp(`</${tag}[\\t\\n\\f\\r ]*>`, 'ig')
       if (end) end.lastIndex = cursor
       const closing = end?.exec(html)
@@ -139,7 +151,7 @@ export const extractActiveDescription = value => {
  return content && /[\p{L}\p{N}]/u.test(content) && !/^(?:(?:jd|tbd|n\/a|na|none|null|attached|see\s+(?:the\s+)?(?:attachment|attached)|(?:jd|job\s+description)\s+attached|(?:full\s+)?job\s+description|description|sample|placeholder|apply\s+now|coming\s+soon|read\s+more)[\s.!:\-]*)+$/i.test(content)?content:null
 }
 
-export const activeHead = html => {const tree=dom(html);return {titles:all(tree,n=>n.tag==='title').map(n=>norm(n.raw)),metas:all(tree,n=>n.tag==='meta').map(n=>n.attrs)}}
+export const activeHead = html => {const tree=dom(html);return {titles:all(tree,n=>n.tag==='title'&&namespaces.get(n)!=='svg').map(n=>norm(n.raw)),metas:all(tree,n=>n.tag==='meta').map(n=>n.attrs)}}
 export const activeScripts = (html, options) => all(dom(html, options),n=>n.tag==='script'&&!n.attrs.src).map(n=>n.raw||'')
 
 // An active iframe can delegate navigation, while its raw fallback body cannot
@@ -149,4 +161,4 @@ export const activeIframeSources = (html, options) => {
  return frames(dom(html, options)).filter(value=>typeof value==='string'&&value.trim())
 }
 
-export const readNativeDocument=(html,options)=>{const root=dom(html,options);return{nodes:predicate=>all(root,predicate),text,hasClass:cls}}
+export const readNativeDocument=(html,options)=>{const root=dom(html,options);return{nodes:(predicate,subtree=root)=>all(subtree,predicate),text,hasClass:cls}}

@@ -7,24 +7,19 @@ import {
 } from '../providers/index.js'
 import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
 
-test('getScraperCatalog includes SLB as an Eightfold apiPortal provider with Cameron and Schlumberger alias metadata', () => {
+test('getScraperCatalog includes SLB as its current company-careers apiPortal provider with Cameron and Schlumberger alias metadata', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'slb')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'apiPortal')
-  assert.equal(provider.atsPlatform, 'eightfold')
+  assert.equal(provider.atsPlatform, 'slb-current-company-careers')
   assert.equal(provider.companyName, 'SLB')
   assert.equal(provider.companyCareerPage, 'https://careers.slb.com/job-listing')
   assert.equal(provider.companyDomain, 'slb.com')
-  assert.match(provider.config.discovery.listingApiUrl, /apply\.slb\.com\/api\/pcsx\/search/i)
-  assert.equal(provider.config.request.query.domain, 'slb.com')
-  assert.equal(provider.config.request.query.location, 'India')
-  assert.deepEqual(provider.config.mapping.location, {strategy:'eightfold-location'})
-  assert.deepEqual(provider.config.mapping.country, {strategy:'eightfold-country'})
-  assert.equal(provider.config.mapping.sourceUrl.template, 'https://apply.slb.com/careers/job/{{jobId}}')
-  assert.equal(provider.config.mapping.sourceUrl.values.jobId, 'id')
-  assert.equal(provider.config.mapping.applyUrl.template, 'https://apply.slb.com/careers/apply?pid={{jobId}}&domain=slb.com')
-  assert.equal(provider.config.mapping.applyUrl.values.jobId, 'id')
+  assert.equal(provider.nativeCurrentCareerSurface, 'slb-current-public-coveo')
+  assert.equal(provider.template, null)
+  assert.equal(provider.config.rateLimit.minimumIntervalMs, 1000)
+  assert.match(provider.extractionStrategy, /current-published-search-client/)
   assert.equal(companyAliases.Cameron, 'slb')
   assert.equal(companyAliases.Schlumberger, 'slb')
 })
@@ -36,5 +31,5 @@ test('buildScrapers exposes a runnable SLB apiPortal scraper without changing th
   assert.equal(typeof scraper.run, 'function')
   assert.match(scraper.dryRunFile, /slb[\\/]jobs\.json$/)
   assert.equal(scraper.provider.source, 'slb')
-  assert.equal(scraper.provider.atsPlatform, 'eightfold')
+  assert.equal(scraper.provider.atsPlatform, 'slb-current-company-careers')
 })

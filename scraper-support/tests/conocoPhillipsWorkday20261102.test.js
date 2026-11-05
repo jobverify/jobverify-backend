@@ -7,7 +7,7 @@ import {acquireWorkdaySourceAdmission} from '../shared/workdaySourceAdmission.js
 import {runScraperWithTimeout} from '../runner.js'
 import {
   SOURCE,PROFILE,source,configPath,sha,fixture,packet,nativeListing,nativeDetail,selected,provider,
-  exercise,assertNativeIncomplete,assertNoAuthority,
+  exercise,assertNativeIncomplete,assertNativeHeld,assertNoAuthority,
 } from './conocoPhillipsWorkday20261102.helpers.mjs'
 const test=(name,run)=>nodeTest(name,{concurrency:false,timeout:5000},run)
 
@@ -52,11 +52,11 @@ test('ConocoPhillips: original August1 verification declaration remains historic
   assert.equal(source.VERIFIED_ON,'2026-08-01')
 })
 
-test('ConocoPhillips: synthetic one-role model reaches native guards and keeps secondary-country scope unavailable',async t=>{
+test('ConocoPhillips: synthetic one-role model reconciles while secondary-country scope stays unresolved',async t=>{
   assertNativeIncomplete(await exercise(t))
 })
 
-test('ConocoPhillips: actual registered source keeps the same native incomplete result and null catalog totals',async t=>{
+test('ConocoPhillips: registered source keeps unresolved-country coverage gaps and null catalog totals',async t=>{
   assertNativeIncomplete(await exercise(t,{registered:true}))
   const p=provider()
   assert.equal(p.source,SOURCE)
@@ -225,18 +225,13 @@ test('ConocoPhillips: conflicting native requisition,title,site or canonical URL
 
 for(const field of ['posted','canApply'])test('ConocoPhillips: explicit native '+field+'false cannot fall through to an India or empty fallback',async t=>{
   const r=await exercise(t,{change:s=>{s.detail.jobPostingInfo[field]=false}})
-  assert.equal(r.rejected,true)
-  assert.equal(r.error?.code,'WORKDAY_NATIVE_ROLE_UNAVAILABLE')
-  assert.equal(r.error?.nativeStatus[field],false)
-  assertNoAuthority(r)
-  assert.equal(r.calls.filter(c=>c.method==='POST').length,1)
+  assertNativeHeld(r)
+  assert.equal(r.state.detail.jobPostingInfo[field],false)
 })
 
 test('ConocoPhillips: missing all native country fields stays unknown and never takes a provider India default',async t=>{
   const r=await exercise(t,{change:s=>{delete s.detail.jobPostingInfo.country;delete s.detail.jobPostingInfo.jobRequisitionLocation.country}})
-  assert.equal(r.rejected,true)
-  assert.equal(r.error?.code,'WORKDAY_NATIVE_COUNTRY_MISMATCH')
-  assertNoAuthority(r)
+  assertNativeHeld(r)
   assert.ok(r.calls.some(c=>c.url===packet('selected-native-detail').nativeMetadata.url))
 })
 

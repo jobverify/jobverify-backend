@@ -3935,10 +3935,10 @@
     "adapter": "script",
     "modulePath": "../asteriaaerospace/script.js",
     "companyCareerPage": "https://asteria.co.in/careers",
-    "atsPlatform": "official-company-careers",
+    "atsPlatform": "keka",
     "countryFilter": "India",
-    "paginationStrategy": "single-first-party-careers-page",
-    "extractionStrategy": "verified-email-only-careers-page-return-empty",
+    "paginationStrategy": "declared-native-active-array-with-closing-reconciliation",
+    "extractionStrategy": "current-first-party-Keka-iframe+account-identity+full-native-active-records+explicit-country+closing-model-reconciliation",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default"
   },
@@ -10363,8 +10363,8 @@
     "companyCareerPage": "https://careers.eagleview.com/jobs",
     "atsPlatform": "icims",
     "countryFilter": "India",
-    "paginationStrategy": "india-query-page-param-on-official-icims-jobs-surface",
-    "extractionStrategy": "official-icims-html-rows-plus-india-filter-and-dedupe",
+    "paginationStrategy": "current-declared-public-jibe-search-pagination",
+    "extractionStrategy": "current-native-account+public-listing-and-matching-detail+own-india-country+full-native-description",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "careers.eagleview.com"
@@ -13542,7 +13542,7 @@
     "atsPlatform": "workline-public-jobs-api",
     "countryFilter": "India",
     "paginationStrategy": "exact-name-homepage-redirect-plus-first-party-careers-handoff-plus-workline-current-opening-api",
-    "extractionStrategy": "verified-redirected-homepage+verified-first-party-careers-page+workline-handoff+currentopening-json-api",
+    "extractionStrategy": "verified-first-party-handoff+current-native-India-listing+paired-public-role+published-view-only-full-PDF-description",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default"
   },
@@ -22090,7 +22090,7 @@
     "atsPlatform": "keka-embed-api",
     "countryFilter": "India",
     "paginationStrategy": "first-party-careers-page-plus-single-keka-active-jobs-endpoint",
-    "extractionStrategy": "verified-first-party-careers-page+embedded-keka-script+careerportalinfo+active-keka-embed-api+jobdetails+applyjob",
+    "extractionStrategy": "current-first-party-Keka-configuration+declared-renderer+native-account+full-active-records+all-typed-India-placements",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "mintifi.com",
@@ -26332,7 +26332,7 @@
     "atsPlatform": "official-company-careers",
     "countryFilter": "India",
     "paginationStrategy": "single-first-party-careers-index-plus-detail-pages",
-    "extractionStrategy": "verified-first-party-careers-index+same-domain-detail-pages+jobposting-jsonld+first-party-apply-links",
+    "extractionStrategy": "active-first-party-cards+own-full-native-JobPosting+explicit-country-and-legal-employer+published-application-anchor+incomplete-source-scope",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "primenumbers.in"
@@ -35719,14 +35719,18 @@
     "atsPlatform": "oracle-cloud",
     "countryFilter": "India",
     "paginationStrategy": "official-jobs-page-pagination",
-    "extractionStrategy": "official-india-site-handoff+official-jobs-html+oracle-job-links+required-public-details",
+    "extractionStrategy": "current-first-party-advertised-Oracle-requisitions+typed-native-India-countries+own-employer-statements+all-public-native-criteria+native-publication-dates",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "emit.fa.ca3.oraclecloud.com",
+    "companyDomain": "wsp.com",
     "verifiedOn": "2026-10-09",
     "verifiedPublicJobCount": 491,
     "verifiedIndiaJobCount": 491,
-    "verifiedSurfaceSummary": "Verified on 2026-10-09 that the official India site links the current Find your next opportunity inventory: 504 published India rows across 26 pages reconcile to 491 distinct Oracle requisition IDs after 13 identical repeated cards. Every distinct public Oracle detail verifies ID, title, and an India location; published role descriptions are preserved, including null where absent. Default collection completes all pages; configured limits are marked incomplete and Cloudflare or required-detail failures remain errors."
+    "verifiedSurfaceSummary": "Verified on 2026-10-09 that the official India site links the current Find your next opportunity inventory: 504 published India rows across 26 pages reconcile to 491 distinct Oracle requisition IDs after 13 identical repeated cards. Every distinct public Oracle detail verifies ID, title, and an India location; published role descriptions are preserved, including null where absent. Default collection completes all pages; configured limits are marked incomplete and Cloudflare or required-detail failures remain errors.",
+    "nativeEmployerNames": [
+      "WSP",
+      "WSP India"
+    ]
   },
   {
     "source": "wttinternationalprivatelimited",
@@ -39781,14 +39785,15 @@
     "atsPlatform": "official-company-careers-page",
     "countryFilter": "India",
     "paginationStrategy": "single-first-party-current-openings-section",
-    "extractionStrategy": "verified-careers-page+inline-opening-cards+same-page-apply-form",
+    "extractionStrategy": "current-public-GET-details+original-native-models+unknown-country-without-own-country-field+incomplete-source-scope",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "verifiedOn": "2026-07-18",
     "verifiedPublicJobCount": 20,
     "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that Finacus Solutions Private Limited published a first-party careers page at https://www.finacus.co.in/careers/ with a Current Openings section, a same-page Apply Now form, and 20 visible role cards including Sales Coordinator, React. JS Developer, Business Analyst, Front Desk Executive, and Solution Architect.",
     "dryRunFile": "finacussolutions/jobs.json",
-    "modulePath": "../finacussolutions/script.js"
+    "modulePath": "../finacussolutions/script.js",
+    "sourceScopeNotes": "The own native detail supplies location labels without country fields. Normalized country/city/location stay unknown; full original criteria, native metadata and raw labels are retained. Observed cards cannot prove company-wide inventory or authorize cleanup."
   },
   {
     "source": "molinformationprocessingservicesindia",
@@ -42060,14 +42065,25 @@
     "atsPlatform": "workday",
     "countryFilter": "India",
     "paginationStrategy": "verified-first-party-careers-handoff-plus-workday-india-filter",
-    "extractionStrategy": "verified-first-party-careers-page+verified-workday-handoff+shared-workday-runner",
+    "extractionStrategy": "current-first-party-careers-handoff+full-native-workday-role+reviewed-employer+explicit-own-country+incomplete-source-scope",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "verifiedOn": "2026-07-18",
     "verifiedIndiaCountryFacetId": "c4f78be1a8f14da0ab49ce1162348a5e",
     "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that https://www.zebra.com/us/en/about-zebra/careers.html is the live first-party Zebra careers page and that its View Openings CTA hands off to the official public Workday board at https://zebra.wd501.myworkdayjobs.com/Zebra_careers. Official Zebra Workday job pages also exposed India openings including Application Engineer, L2 UX Researcher, and Software Engineer, Advanced (Android) in Bengaluru, India, so this local provider delegates to the shared Workday runner with India filtering.",
     "dryRunFile": "zebratechnologies/jobs.json",
-    "modulePath": "../zebratechnologies/script.js"
+    "modulePath": "../zebratechnologies/script.js",
+    "nativeEmployerNames": [
+      "Symbol Technologies India Private Limited",
+      "Zebra Technologies Corporation",
+      "Zebra Technologies India Private Limited"
+    ],
+    "nativeEmployerNameEvidence": {
+      "field": "hiringOrganization.name",
+      "entityReviewURL": "https://www.sec.gov/Archives/edgar/data/877212/000162828026007668/exhibit21-subsidiariesofth.htm",
+      "entityReviewSHA256": "f78153d36c1a1216cd65562d6ccbaa2a0ac64516576a5c632a09d348f68f6e74",
+      "scopeRule": "exact-observed-native-entity-labels-in-Zebra-bound-account;no-blanket-group-employer-alias"
+    }
   },
   {
     "source": "avanthatechnologies",

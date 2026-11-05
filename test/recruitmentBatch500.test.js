@@ -74,11 +74,22 @@ test('every registered source extracts controlled current India content through 
   assert.equal(unmocked, 0)
 })
 
-test('every registered source retains an explicit coverage failure when current pages are unavailable', async t => {
+test('every registered source retains the primary denial without certifying empty inventory', async t => {
   for (const spec of batch) await t.test(spec.source, async () => {
     await assert.rejects(createCatalogScraper(bySource.get(spec.source)).run({
       fetchPage: async url => ({ status: 403, url, html: '' }),
       fetchJson: async () => assert.fail('Blocked pages cannot authorize an API read'),
-    }), error => error.failureKind === 'coverage_gap' && error.softFailure === true)
+    }), error => {
+      assert.equal(error.failureKind, 'blocked_or_access_denied')
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      assert.equal(error.status, 403)
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.recruitmentObservations.sourceScopeComplete, false)
+      assert.equal(error.recruitmentObservations.lifecycleCleanupAllowed, false)
+      assert.ok(error.recruitmentObservations.receipts.length > 0)
+      assert.ok(error.recruitmentObservations.receipts.every(row => row.status === 403))
+      return true
+    })
   })
 })

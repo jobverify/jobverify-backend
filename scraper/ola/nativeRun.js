@@ -1,7 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { buildPublishableJobPostedAtCutoff } from '../../src/utils/jobLifecycle.js'
-import { ORIGIN,CAREER_PAGE_URL,DASHBOARD_URL,API_BASE_URL,NOAUTH_TOKEN_URL,ORGANIZATION_URL,FILTERED_JOBS_URL,SOURCES,UUID,LIVE_FILTER_BODY,reviewed,check,sha256,canonical,assetContract,surfaceAssets,corporateContract,nativeSurfaceContract,organizationContract,listingContract,jobURL,publicJobURL,roleContract } from './nativeContract.js'
+import { ORIGIN,CAREER_PAGE_URL,DASHBOARD_URL,API_BASE_URL,NOAUTH_TOKEN_URL,ORGANIZATION_URL,FILTERED_JOBS_URL,SOURCES,UUID,LIVE_FILTER_BODY,reviewed,check,sha256,canonical,assetContract,surfaceAssets,corporateStylesheets,corporateContract,nativeSurfaceContract,organizationContract,listingContract,jobURL,publicJobURL,roleContract } from './nativeContract.js'
 
 const bounded=(operation,signal)=>new Promise((resolve,reject)=>{
   const cleanup=()=>signal.removeEventListener('abort',abort),abort=()=>{cleanup();reject(signal.reason||Error('Ola source aborted'))}
@@ -18,6 +18,8 @@ export async function runNativeOla({source,...options}={}) {
   check(maxJobs===Infinity||Number.isSafeInteger(maxJobs)&&maxJobs>=0,'invalid caller cap')
   check(Number.isSafeInteger(interval)&&interval>=0&&(interval>=1000||options.fetchImpl),'invalid public per-origin pacing')
   check(Number.isSafeInteger(timeout)&&timeout>0&&timeout<=300000,'invalid bounded deadline')
+  options.signal?.throwIfAborted()
+  if(maxJobs===0)return attachInventoryEvidence([],{status:'coverage-gap',surface:config.corporateURL,firstParty:true,listingComplete:false,pagesFetched:0,verifiedAt:now,reason:'caller-cap-zero-no-public-reads'})
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(Error('Ola bounded source deadline exceeded')),timeout),signal=options.signal?AbortSignal.any([options.signal,controller.signal]):controller.signal
   let token=null
   const prior=new Map(),responses=[],jsCache=new Map(),allowedAssets=new Map(surfaceAssets(source).map(a=>[a.url,a]))
@@ -50,16 +52,16 @@ export async function runNativeOla({source,...options}={}) {
     const corporateHTML=await get(config.corporateURL),nativeHTML=await get(DASHBOARD_URL),sourceHTML=source==='ola'?await get(CAREER_PAGE_URL):null,css=[]
     // Exact reviewed entry and lazy route clients establish the public read
     // endpoints. CSS is fetched again and applied to each closing element tree.
-    for(const asset of allowedAssets.values()){
+    for(const asset of surfaceAssets(source,nativeHTML,corporateHTML)){
       let content=asset.kind==='js'?jsCache.get(asset.url):null
       if(content==null){content=await get(asset.url);assetContract(asset.url,content);if(asset.kind==='js')jsCache.set(asset.url,content)}
       if(asset.kind==='css')css.push({url:asset.url,body:content})
     }
-    const corporateStyles=reviewed.surfaces[source].stylesheets.filter(s=>s.media!=='print').map(s=>css.find(c=>c.url===s.url)?.body||'').join('\n'),nativeStyles=css.filter(c=>c.url.startsWith(ORIGIN+'/')).map(c=>c.body).join('\n')
+    const corporateStyles=corporateStylesheets(corporateHTML,source).filter(s=>s.media!=='print').map(s=>css.find(c=>c.url===s.url)?.body||'').join('\n'),nativeStyles=css.filter(c=>c.url.startsWith(ORIGIN+'/')).map(c=>c.body).join('\n')
     const corporate=corporateContract(corporateHTML,source,corporateStyles)
-    nativeSurfaceContract(nativeHTML,nativeStyles)
-    if(sourceHTML)nativeSurfaceContract(sourceHTML,nativeStyles)
-    return {corporate,nativeStyles,nativeClientsValidated:true}
+    const native=nativeSurfaceContract(nativeHTML,nativeStyles)
+    if(sourceHTML)check(canonical(nativeSurfaceContract(sourceHTML,nativeStyles).nativeClientURLs)===canonical(native.nativeClientURLs),'native public shell client versions disagree')
+    return {corporate,nativeStyles,nativeClientsValidated:true,nativeClientURLs:native.nativeClientURLs}
   }
   const nativeList=async()=>{
     const organization=organizationContract(await get(ORGANIZATION_URL,{json:true})),listing=listingContract(await get(FILTERED_JOBS_URL,{method:'POST',body:JSON.stringify(LIVE_FILTER_BODY),json:true}))
@@ -69,7 +71,7 @@ export async function runNativeOla({source,...options}={}) {
     const roles=new Map(),reasons=[]
     for(const row of phase.listing.records){
       const html=await get(jobURL(row.JobId)),dto=await get(publicJobURL(row.JobId),{json:true})
-      try{const page=nativeSurfaceContract(html,phase.nativeStyles,{role:true}),role=roleContract(row,dto,page,source,now);roles.set(row.JobId,role)}
+      try{const page=nativeSurfaceContract(html,phase.nativeStyles,{role:true});check(canonical(page.nativeClientURLs)===canonical(phase.nativeClientURLs),'public role client differs from current board');const role=roleContract(row,dto,page,source,now);roles.set(row.JobId,role)}
       catch(error){if(error.code!=='OLA_NATIVE_CONTRACT'&&!(error instanceof SyntaxError)&&error.name!=='ActiveNativeContentError')throw error;reasons.push('unresolved-public-role:'+row.JobId+':'+error.message)}
     }
     return {roles,reasons}
@@ -83,6 +85,7 @@ export async function runNativeOla({source,...options}={}) {
     const ids=p=>p.listing.records.map(r=>r.JobId).sort()
     if(canonical(ids(opening))!==canonical(ids(closing))||opening.listing.total!==closing.listing.total)boardReasons.push('native-global-total-or-identities-changed')
     if(canonical(opening.organization)!==canonical(closing.organization))boardReasons.push('native-organization-context-changed')
+    if(canonical(opening.nativeClientURLs)!==canonical(closing.nativeClientURLs))boardReasons.push('native-client-changed-during-closing')
     const reasons=[...opening.corporate.reasons,...closing.corporate.reasons,...boardReasons,...first.reasons,...last.reasons],healthy=[],qualified=[]
     if(canonical(opening.corporate)!==canonical(closing.corporate))reasons.push('corporate-hiring-context-changed')
     let matchedIndia=0,matchedForeign=0,otherEmployer=0
@@ -94,6 +97,7 @@ export async function runNativeOla({source,...options}={}) {
     await options.onEvidence?.(evidence)
     const jobs=qualified.slice(0,maxJobs).map(job=>({...job,sourceListingComplete:complete,sourceScopeComplete:complete,lifecycleCleanupAllowed:complete,sourceObservedGlobalJobCount:counts.observedGlobalRecords,sourceObservedIndiaJobCount:matchedIndia,nativeCollectionEvidence:evidence}))
     Object.defineProperty(jobs,'nativeInventoryEvidence',{value:evidence,enumerable:false})
+    Object.defineProperty(jobs,Symbol.for('jobverify.verified-recruitment-observations'),{value:{...evidence,nativeRecords:evidence.observedGlobalRecords,unresolved:evidence.reasons}})
     signal.throwIfAborted()
     return attachInventoryEvidence(jobs,{status:complete?(jobs.length?'complete-inventory':'verified-empty'):'coverage-gap',surface:config.corporateURL,firstParty:true,listingComplete:complete,pagesFetched:responses.length,reportedTotal:opening.listing.total,indiaFacetCount:matchedIndia,verifiedAt:now,reason:evidence.reasons.join(';')||'complete-native-global-and-employer-snapshots-reconciled'})
   }catch(error){if(/timed? out|timeout|fetch failed|connect|socket|econn|enotfound|eai_again|tls|deadline/i.test(String(error?.message)))Object.assign(error,{softFailure:true,upstreamOutage:true,abortRetries:true,failureKind:'network_or_timeout'});throw error}

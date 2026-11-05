@@ -1,9 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createHash } from 'node:crypto'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
-import { readNativeTable, readNativeDetailIdentity } from './nativeInventory.js'
+import { readNativeTable, readNativeRole } from './nativeInventory.js'
 
 import { APEXON_CATALOG } from './catalog.js'
 
@@ -62,29 +63,6 @@ const toAbsoluteUrl = (value) => {
 }
 
 const getCityFromLocation = (location) => normalizeText(location?.split(',')[0])
-
-const extractDescriptionHtml = (html) =>
-  extractMatch(
-    html,
-    /<div class="jobcontent">([\s\S]*?)<div class="footercontactform customcareerform">/i,
-  )
-
-const extractListItems = (html) =>
-  [...String(html ?? '').matchAll(/<li>([\s\S]*?)<\/li>/gi)]
-    .map((match) => stripTags(match[1]))
-    .filter(Boolean)
-
-const extractDescriptionLines = (html) =>
-  decodeHtmlEntities(String(html ?? ''))
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<li\b[^>]*>/gi, '\n- ')
-    .replace(/<\/(p|div|li|ul|ol|h[1-6])>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .split('\n')
-    .map((line) => normalizeText(line))
-    .filter(Boolean)
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -163,27 +141,14 @@ const extractDetailPageData = (html, listing) => {
     throw new Error('Apexon detail page no longer matches the verified first-party surface')
   }
 
-  const title = normalizeText(
-    extractMatch(html, /<h1 class="jobtitle dtitle text-left">([\s\S]*?)<\/h1>/i) || listing.title,
-  )
-  const identity = readNativeDetailIdentity(html)
+  const identity = readNativeRole(html)
+  const title = identity.title
   if (identity.requisitionId !== listing.requisitionId || title !== listing.title
     || identity.location !== listing.location || !/\bIndia\b/i.test(identity.location || '')) {
     throw new Error('Apexon native detail requisition, title or country identity changed')
   }
-  const applyUrl = toAbsoluteUrl(
-    extractMatch(
-      html,
-      /<a class="btn btn-primary print" href="([^"]*apexon\.talentrecruit\.com\/career-page\/apply\/[^"]+)"[^>]*>\s*Apply\s*<\/a>/i,
-    ),
-  )
-  const descriptionHtml = extractDescriptionHtml(html)?.replace(/<!--[\s\S]*?-->/g, '')
-  const descriptionLines = extractDescriptionLines(descriptionHtml)
-  const requiredSkills = extractListItems(descriptionHtml)
-
-  if (!title || !applyUrl || !descriptionHtml || descriptionLines.length === 0) {
-    throw new Error('Apexon detail page no longer matches the verified first-party surface')
-  }
+  const applyUrl = identity.applyUrl
+  const requiredSkills = identity.requiredSkills
 
   return {
     title,
@@ -205,7 +170,19 @@ const extractDetailPageData = (html, listing) => {
     compensation: null,
     postingDate: null,
     closingDate: null,
-    jobDescription: descriptionLines.join('\n'),
+    jobDescription: identity.description,
+    sourceDescription: identity.description,
+    sourceDetailComplete: true,
+    sourceDetailUrl: listing.sourceUrl,
+    nativeSourceRecord: { listing, detail: identity,
+      documentSHA256: createHash('sha256').update(html).digest('hex') },
+    nativeHiringOrganization: { name: 'Apexon' },
+    nativeEmployerBinding: { method: 'explicit-first-party-role-employer-statement',
+      statement: identity.employerStatement, legalEmployer: null },
+    sourceScopeComplete: false,
+    sourceListingComplete: false,
+    lifecycleCleanupAllowed: false,
+    applicationVisited: false,
     companyCareerPage: CAREERS_URL,
   }
 }
@@ -213,6 +190,8 @@ const extractDetailPageData = (html, listing) => {
 const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
+  attempts: 1,
+  redirect: 'manual',
   signal: options.signal,
   includeResponseMetadata: options.includeResponseMetadata === true,
 })
@@ -255,13 +234,25 @@ export const createApexonScraper = ({
       throw new Error('Apexon explore-jobs page no longer exposes verified first-party listing rows')
     }
 
-    const jobs = []
+    const jobs = [], detailFailures = []
+    let detailError
     for (const listing of listings) {
-      const detailHtml = await get(listing.sourceUrl)
-      jobs.push(extractDetailPageData(detailHtml, listing))
+      try {
+        const detailHtml = await get(listing.sourceUrl)
+        jobs.push(extractDetailPageData(detailHtml, listing))
+      } catch (error) {
+        signal?.throwIfAborted()
+        detailError = error
+        detailFailures.push({ requisitionId: listing.requisitionId, url: listing.sourceUrl, reason: error.message })
+        inventory.reasons.add('native-detail-collection-incomplete')
+        // A later unavailable or changed role cannot discard earlier own,
+        // fully validated roles. Stop reading after that failure.
+        break
+      }
     }
+    if (!jobs.length && detailError) throw detailError
     let pagesFetched = 1
-    if (inventory.complete) {
+    if (inventory.complete && !detailFailures.length) {
       const closingHtml = await get(EXPLORE_JOBS_URL)
       pagesFetched++
       if (!hasOfficialExploreJobsSignal(closingHtml)) throw new Error('Apexon closing jobs page identity changed')
@@ -272,15 +263,17 @@ export const createApexonScraper = ({
     const complete = inventory.reasons.size === 0
     return attachInventoryEvidence(jobs.map((job) => ({
       ...job,
+      nativeBoardListingComplete: complete,
+      nativeCollectionFailures: detailFailures,
       source: SOURCE,
       companyDomain: PROVIDER_METADATA.companyDomain,
       atsPlatform: PROVIDER_METADATA.atsPlatform,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: (overrideNow || now)(),
-    })), { status: complete ? 'complete-inventory' : 'coverage-gap', surface: EXPLORE_JOBS_URL,
-      firstParty: true, listingComplete: complete, reportedTotal: inventory.total,
+    })), { status: 'coverage-gap', surface: EXPLORE_JOBS_URL,
+      firstParty: true, listingComplete: false, reportedTotal: inventory.total,
       indiaFacetCount: listings.length, pagesFetched, verifiedAt: (overrideNow || now)(),
-      reason: complete ? 'complete-native-static-table-country-labels-role-bound-full-details-and-closing-inventory' : [...inventory.reasons].join(';') })
+      reason: complete ? 'native-table-reconciled;company-wide-scope-unverified' : [...inventory.reasons].join(';') })
   },
 })
 

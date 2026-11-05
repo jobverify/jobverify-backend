@@ -208,6 +208,31 @@
         "https://byteridge.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
         "https://byteridge.turbohire.co/main.83be12cc773959e07faa.chunk.js"
       ]
+    },
+    {
+      "scriptURLs": [
+        "https://byteridge.turbohire.co/runtime-main.2aa688f3291c2c0748bb.js",
+        "https://byteridge.turbohire.co/18.686c2629fe7c78598547.chunk.js",
+        "https://byteridge.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://byteridge.turbohire.co/main.b92aa5cb7a0a7499e689.chunk.js"
+      ],
+      "clientURLs": [
+        "https://byteridge.turbohire.co/runtime-main.2aa688f3291c2c0748bb.js",
+        "https://byteridge.turbohire.co/18.686c2629fe7c78598547.chunk.js",
+        "https://byteridge.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://byteridge.turbohire.co/main.b92aa5cb7a0a7499e689.chunk.js",
+        "https://byteridge.turbohire.co/24.52ad9596a317e0433e77.chunk.js",
+        "https://byteridge.turbohire.co/40.b1d2ab512b5de0fe4ca6.chunk.js"
+      ],
+      "companyScopeUnqualified": true
     }
-  ]
+  ],
+  "clientSHA256": {
+    "https://byteridge.turbohire.co/runtime-main.2aa688f3291c2c0748bb.js": "e26b68ad533d6a72bfbfb0cd364dd538d0ad1d20aa10dbf4996c58fc624e4525",
+    "https://byteridge.turbohire.co/18.686c2629fe7c78598547.chunk.js": "f55534162eaa5bead6075e1fd43daee27afa923b4190f20617357849655f4c22",
+    "https://byteridge.turbohire.co/30.812b9abed47cf2099f54.chunk.js": "562f337b1298c5f56db392bd54e8c2a9e0e32d79275a627d9f90a4ed05c8352a",
+    "https://byteridge.turbohire.co/main.b92aa5cb7a0a7499e689.chunk.js": "e29cb0673262b14c959241384c5f2e03b94a3417f9f82303f5807344279d4d66",
+    "https://byteridge.turbohire.co/24.52ad9596a317e0433e77.chunk.js": "947f1d46af7076821bd671d0049574fa109d04a97ca093b59bba0adc2e1ad926",
+    "https://byteridge.turbohire.co/40.b1d2ab512b5de0fe4ca6.chunk.js": "9cd324b8b66a659f683b8b503350d4be321a57acbfdfe146ecb8e3ff33381090"
+  }
 }

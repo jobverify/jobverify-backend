@@ -157,6 +157,10 @@ const isRemoteCity = (value = "") => /^remote$/i.test(String(value || "").trim()
 
 export const getValidIndiaCityForJob = (job = {}) => {
   const country = typeof job.country === "string" ? job.country.trim() : "";
+  // A collector's explicit unresolved-country result is stronger than the
+  // legacy inference from a city or Remote label. Keep an independently
+  // confirmed India worksite when only additional country scope is unresolved.
+  if (job.sourceCountryScopeUnresolved === true && !matchesCountryValue(country)) return null;
   const city = typeof job.city === "string" ? job.city.trim() : "";
   const location = typeof job.location === "string" ? job.location.trim() : "";
   const locations = Array.isArray(job.locations)

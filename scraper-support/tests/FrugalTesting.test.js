@@ -126,72 +126,16 @@ test('Frugal Testing local catalog captures the verified first-party careers and
   assert.equal(report.unmatchedCount, 0)
 })
 
-test('Frugal Testing scraper parses first-party detail pages linked from the careers listing', async () => {
+test('Frugal Testing cannot promote an introductory blurb without the full current native criteria', async () => {
   const frugal = await loadScriptModule()
-
-  assert.equal(frugal.SOURCE, 'frugaltesting')
-  assert.equal(frugal.COMPANY, 'Frugal Testing')
-  assert.equal(frugal.CAREERS_URL, 'https://www.frugaltesting.com/careers')
-  assert.equal(frugal.APPLICATION_FORM_URL, 'https://www.frugaltesting.com/apply-to-frugal-testing')
-  assert.equal(frugal.hasOfficialCareersSignal(careersHtml), true)
-  assert.deepEqual(frugal.extractJobDetailUrls(careersHtml), [
-    'https://www.frugaltesting.com/job-openings/sales-executive',
-    'https://www.frugaltesting.com/job-openings/senior-qa-engineer',
-    'https://www.frugaltesting.com/job-openings/junior-graphic-designer',
-  ])
-
-  const parsedJob = frugal.parseJobDetailPage(
-    'https://www.frugaltesting.com/job-openings/senior-qa-engineer',
-    seniorQaEngineerHtml,
-  )
-  assert.equal(parsedJob.title, 'Senior QA Engineer')
-  assert.equal(parsedJob.department, 'Software & QA')
-  assert.equal(parsedJob.location, 'Hyderabad')
-  assert.equal(parsedJob.employmentType, 'Full Time')
-  assert.equal(parsedJob.experienceRequired, '2 - 5 years')
-
-  const jobs = await frugal.createFrugalTestingScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      if (url === frugal.CAREERS_URL) return careersHtml
-      if (url === 'https://www.frugaltesting.com/job-openings/sales-executive') return salesExecutiveHtml
-      if (url === 'https://www.frugaltesting.com/job-openings/senior-qa-engineer') return seniorQaEngineerHtml
-      if (url === 'https://www.frugaltesting.com/job-openings/junior-graphic-designer') return juniorGraphicDesignerHtml
-      throw new Error(`Unexpected Frugal Testing URL: ${url}`)
-    },
-  })
-
-  assert.equal(jobs.length, 3)
-  assert.deepEqual(
-    jobs.map((job) => [job.title, job.department, job.location, job.applyUrl]),
-    [
-      ['Sales Executive', 'Sales & Business Development', 'Hyderabad', frugal.APPLICATION_FORM_URL],
-      ['Senior QA Engineer', 'Software & QA', 'Hyderabad', frugal.APPLICATION_FORM_URL],
-      ['Junior Graphic Designer', 'Graphic Designer + Operations', 'Hyderabad', frugal.APPLICATION_FORM_URL],
-    ],
-  )
-  assert.equal(jobs[0].source, 'frugaltesting')
-  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.throws(() => frugal.parseJobDetailPage('https://www.frugaltesting.com/job-openings/sales-executive', salesExecutiveHtml), /native canonical/i)
 })
 
-test('Frugal Testing fails closed when the verified careers listing or detail pages drift', async () => {
+test('Frugal Testing retains a coverage gap when the current first-party careers page is unavailable', async () => {
   const frugal = await loadScriptModule()
-
-  await assert.rejects(
-    frugal.createFrugalTestingScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-    }),
-    /verified frugal testing careers page/i,
-  )
-
-  await assert.rejects(
-    frugal.createFrugalTestingScraper().run({
-      fetchText: async (url) => {
-        if (url === frugal.CAREERS_URL) return careersHtml
-        return '<html><body><h2>Broken</h2></body></html>'
-      },
-    }),
-    /verified frugal testing detail page/i,
-  )
+  const jobs = await frugal.run({requestIntervalMs:0, fetchText:async () => '<html><body><h1>Unexpected</h1></body></html>'})
+  assert.equal(jobs.length,0)
+  const evidence = jobs[Symbol.for('jobverify.verified-recruitment-observations')]
+  assert.equal(evidence.sourceScopeComplete,false)
+  assert.ok(evidence.failures.length)
 })

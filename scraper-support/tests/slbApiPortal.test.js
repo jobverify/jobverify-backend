@@ -1,12 +1,12 @@
 import { withEightfoldFixtureIdentity } from './fixtures/eightfoldIdentityMappingFixture.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import {readFileSync} from 'node:fs'
 
 import { runApiPortalScraper } from '../apiPortal/engine.js'
-import { getScraperCatalog } from '../providers/index.js'
 
-test('runApiPortalScraper maps SLB Eightfold jobs with source and apply URL overrides while keeping India roles', async () => {
-  const provider = getScraperCatalog().find((item) => item.source === 'slb')
+test('the archived SLB Eightfold profile retains generic field mapping after current SLB careers moved to its company index', async () => {
+  const provider = JSON.parse(readFileSync(new URL('../../test/test-data/recruitmentGoal20261104/slb-legacy-eightfold-profile.json',import.meta.url)))
   assert.ok(provider)
 
   const jobs = await runApiPortalScraper({

@@ -108,7 +108,8 @@ export async function readKekaRecruitment(board, io) {
   const ids = new Set()
   for (const row of rows) {
     need(row && /^[1-9]\d{0,15}$/.test(String(row.id)) && text(row.title) && !ids.has(String(row.id)), 'invalid or duplicate native role identity')
-    ids.add(String(row.id)); io.recordRead()
+    ids.add(String(row.id)); io.recordRead(row, { origin: advertised.origin, identifier, portalName,
+      rolePrefix: root + (portalName === 'default' ? '' : portalName + '/') + 'jobdetails/' })
     const locations = Array.isArray(row.jobLocations) ? row.jobLocations : []
     for (const location of locations) {
       const code = nativeCountryName(location.countryCode), name = nativeCountryName(location.countryName)
@@ -142,7 +143,7 @@ export async function readDeclaredKekaWebflowFeed(config, document, page, io) {
   const ids = new Set()
   for (const row of rows) {
     need(row && uuid.test(row.id) && !ids.has(row.id) && text(row.name), 'invalid or duplicate first-party role identity')
-    ids.add(row.id); io.recordRead()
+    ids.add(row.id); io.recordRead(row)
     const url = new URL(row.url)
     need(url.origin === prefix.origin && url.pathname.startsWith(prefix.pathname) && /^[1-9]\d*$/.test(url.pathname.slice(prefix.pathname.length))
       && !url.username && !url.password && !url.port && !url.search && !url.hash, 'first-party native role URL changed account')

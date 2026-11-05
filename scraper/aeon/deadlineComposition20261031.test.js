@@ -15,15 +15,36 @@ for (const [name, run, expectedMs] of [
     const caller = new AbortController(), deadline = new AbortController()
     const reason = Object.freeze(new DOMException('controlled existing request deadline', 'TimeoutError'))
     const observed = []
-    let bodies = 0
-    t.mock.method(AbortSignal, 'timeout', ms => { observed.push(ms); return deadline.signal })
+    let bodies = 0, requestSignal, expire = () => deadline.abort(reason), cleared = false
+    if (name === 'lake') {
+      // Lake owns an explicit request timer alongside its longer source timer.
+      const set = globalThis.setTimeout, clear = globalThis.clearTimeout, timer = {}
+      t.mock.method(globalThis, 'setTimeout', (callback, ms, ...args) => {
+        if (ms !== expectedMs) return set(callback, ms, ...args)
+        observed.push(ms); expire = callback; return timer
+      })
+      t.mock.method(globalThis, 'clearTimeout', value => {
+        if (value === timer) { cleared = true; return }
+        return clear(value)
+      })
+    } else t.mock.method(AbortSignal, 'timeout', ms => { observed.push(ms); return deadline.signal })
     t.mock.method(globalThis, 'fetch', async (url, options) => {
-      deadline.abort(reason)
+      requestSignal = options.signal
+      assert.equal(requestSignal.aborted, false)
+      expire()
       assert.equal(options.signal.aborted, true)
+      if (name === 'lake') {
+        const response = new Response(new ReadableStream({ pull(stream) {
+          bodies++; stream.enqueue(new TextEncoder().encode('late invalid native body')); stream.close()
+        } }, { highWaterMark: 0 }), { headers: { 'content-type': 'text/html' } })
+        Object.defineProperty(response, 'url', { value: String(url) })
+        return response
+      }
       return { status: 200, url, text: async () => { bodies++; return 'late invalid native body' } }
     })
-    await assert.rejects(run({ signal: caller.signal }), error => error === reason)
+    await assert.rejects(run({ signal: caller.signal }), error => error === (name === 'lake' ? requestSignal.reason : reason))
     assert.deepEqual(observed, [expectedMs])
+    if (name === 'lake') assert.equal(cleared, true)
     assert.equal(caller.signal.aborted, false)
     assert.equal(bodies, 0)
   })

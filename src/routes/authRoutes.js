@@ -113,8 +113,9 @@ router.post(
 router.post("/logout", protectLogout, logout);
 router.get('/email-change', protect, getEmailChange);
 router.post('/change-email', protect, emailChangeLimiter, resendValidation, validateRequest, requestEmailChange);
-router.post('/verify-email-change', emailChangeVerificationLimiter, verifyEmailValidation, validateRequest, verifyEmailChange);
+router.post('/verify-email-change', emailChangeVerificationLimiter, verifyEmailChange);
 router.post('/change-password', protect, loginLimiter, changePasswordValidation, validateRequest, changePassword);
+router.post('/send-reset-email', protect, forgotPasswordLimiter, requestPasswordReset);
 router.get("/verify-email", redirectVerifyEmail);
 router.post("/verify-email", verifyEmailValidation, validateRequest, verifyEmail);
 router.post(

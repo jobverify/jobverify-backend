@@ -7,7 +7,7 @@ import test from 'node:test'
 import { getScraperCatalog, createCatalogScraper } from '../scraper-support/providers/index.js'
 import { readInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 
-const expected = { aspentechnology: ['workday', 'aspentech'], assembled: ['publicAts', 'assembledhq'], assemblyai: ['script', 'assemblyai'] }
+const expected = { aspentechnology: ['script', 'aspentech'], assembled: ['publicAts', 'assembledhq'], assemblyai: ['script', 'assemblyai'] }
 const providerFor = source => getScraperCatalog().find(row => row.source === source)
 
 test('batch 002 replaces only three exact source sentinels without duplicate boards', () => {
@@ -16,7 +16,9 @@ test('batch 002 replaces only three exact source sentinels without duplicate boa
     const rows = catalog.filter(row => row.source === source)
     assert.equal(rows.length, 1)
     assert.equal(rows[0].adapter, adapter, source)
-    if (adapter === 'workday') {
+    if (source === 'aspentechnology') {
+      assert.equal(rows[0].modulePath,fileURLToPath(new URL('../scraper/aspentechnology.workday/script.js',import.meta.url)))
+      assert.ok(rows[0].nativeEmployerNames.includes('OSI Energy Automation India Private Limited'))
       assert.equal(rows[0].baseUrl, 'https://aspentech.wd5.myworkdayjobs.com/en-US/aspentech')
       assert.equal(catalog.filter(row => row.adapter === adapter && row.baseUrl?.includes('aspentech.wd5.myworkdayjobs.com/')).length, 1)
     } else {
@@ -85,7 +87,7 @@ test('assemblyai current registered native runtime rejects parsed-only injection
   }), /body-only or legacy transport unsupported; observed HTTP fetchImpl required/)
   assert.equal(reads, 0)
 })
-test('AspenTech enumerates its native board without inventing an absent country facet', async t => {
+test('the legacy Workday adapter enumerates without inventing an absent country facet', async t => {
   let calls = 0
   t.mock.method(globalThis, 'fetch', async (url, options = {}) => {
     if (options.method !== 'POST') return new Response('<html>Careers</html>')
@@ -94,7 +96,7 @@ test('AspenTech enumerates its native board without inventing an absent country 
     assert.deepEqual(JSON.parse(options.body).appliedFacets, {})
     return new Response(JSON.stringify({ total: 0, jobPostings: [], facets: [] }), { headers: { 'content-type': 'application/json' } })
   })
-  const jobs = await createCatalogScraper(providerFor('aspentechnology')).run()
+  const jobs = await createCatalogScraper({...providerFor('aspentechnology'),adapter:'workday'}).run()
   assert.equal(jobs.length, 0)
   assert.ok(calls)
   // An empty response without native country evidence cannot certify India zero.

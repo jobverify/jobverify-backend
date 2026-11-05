@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {runFrugalNative,frugalRole} from './native.js'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
@@ -75,102 +76,10 @@ export const extractJobDetailUrls = (html = '') => [...new Set(
     .filter(Boolean),
 )]
 
-export const parseJobDetailPage = (detailUrl, html = '') => {
-  const title = normalizeWhitespace(String(html ?? '').match(/<h2[^>]*>([\s\S]*?)<\/h2>/i)?.[1])
-  const applyUrl = toAbsoluteUrl(
-    String(html ?? '').match(/href=["']([^"']*apply-to-frugal-testing[^"']*)["']/i)?.[1],
-  )
-  const liveDepartment = normalizeWhitespace(
-    String(html ?? '').match(/<div[^>]*class=["'][^"']*text-block-92[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1],
-  )
-  const liveDescription = normalizeWhitespace(
-    String(html ?? '').match(/<div[^>]*class=["'][^"']*uui-text-size-large-10[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1],
-  )
-  const liveDetailValues = [...String(html ?? '').matchAll(
-    /<div[^>]*class=["'][^"']*uui-career05_detail-wrapper[^"']*["'][^>]*>[\s\S]*?<div[^>]*class=["'][^"']*(?:text-block-90|text-block-91|text-block-91-copy)[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
-  )]
-    .map((match) => normalizeWhitespace(match[1]))
-    .filter(Boolean)
+export const parseJobDetailPage = (url, html) => frugalRole(url, html)
 
-  if (title && liveDepartment && liveDescription && applyUrl && liveDetailValues.length >= 3) {
-    return {
-      title,
-      company: COMPANY,
-      department: liveDepartment,
-      location: liveDetailValues[0],
-      city: normalizeWhitespace(liveDetailValues[0]?.split(',')[0]) || liveDetailValues[0],
-      country: 'India',
-      jobId: detailUrl.split('/').pop(),
-      requisitionId: detailUrl.split('/').pop(),
-      sourceUrl: detailUrl,
-      applyUrl,
-      employmentType: normalizeEmploymentType(liveDetailValues[1]),
-      experienceRequired: liveDetailValues[2],
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: liveDescription,
-    }
-  }
-
-  const paragraphs = [...String(html ?? '').matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
-    .map((match) => normalizeWhitespace(match[1]))
-    .filter(Boolean)
-
-  if (!title || paragraphs.length < 5 || !applyUrl) {
-    throw new Error('The verified Frugal Testing detail page no longer matches the trusted first-party job-opening surface')
-  }
-
-  return {
-    title,
-    company: COMPANY,
-    department: paragraphs[0],
-    location: paragraphs[2],
-    city: normalizeWhitespace(paragraphs[2]?.split(',')[0]) || paragraphs[2],
-    country: 'India',
-    jobId: detailUrl.split('/').pop(),
-    requisitionId: detailUrl.split('/').pop(),
-    sourceUrl: detailUrl,
-    applyUrl,
-    employmentType: normalizeEmploymentType(paragraphs[3]),
-    experienceRequired: paragraphs[4],
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: paragraphs[1],
-  }
-}
-
-export const createFrugalTestingScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('The verified Frugal Testing careers page no longer matches the trusted first-party listing surface')
-    }
-
-    const detailUrls = extractJobDetailUrls(careersHtml)
-    if (detailUrls.length === 0) {
-      throw new Error('The verified Frugal Testing careers page no longer exposes the trusted first-party job-opening links')
-    }
-
-    const jobs = await Promise.all(
-      detailUrls.map(async (detailUrl) => parseJobDetailPage(detailUrl, await fetchText(detailUrl))),
-    )
-
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: now(),
-    }))
-  },
+export const createFrugalTestingScraper = (configuration = {}) => ({
+  run: (options = {}) => runFrugalNative({...configuration, ...options}),
 })
 
 export const run = async (options = {}) => createFrugalTestingScraper(options).run(options)

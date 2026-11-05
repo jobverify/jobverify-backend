@@ -23,7 +23,12 @@ test('AgNext resolves approved case variants to its exact-name official provider
 
 test('AgNext rejects a failed official response instead of certifying an empty inventory', async () => {
   await assert.rejects(run({ fetchPage: async url => ({ status: 503, url, html: 'Unavailable' }) }), error => {
-    assert.equal(error.failureKind, 'coverage_gap')
+    assert.equal(error.failureKind, 'network_or_timeout')
+    assert.equal(error.status, 503)
+    assert.equal(error.upstreamOutage, true)
+    assert.equal(error.abortRetries, true)
+    assert.equal(error.recruitmentObservations.sourceScopeComplete, false)
+    assert.equal(error.recruitmentObservations.lifecycleCleanupAllowed, false)
     assert.ok(error.recruitmentObservations.receipts.every(row => row.status === 503))
     assert.ok(error.recruitmentObservations.failures.every(row => /HTTP 503/.test(row.message)))
     return true

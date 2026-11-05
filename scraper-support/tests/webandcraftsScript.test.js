@@ -134,7 +134,7 @@ test('Webandcrafts accepts Monday, August 17, 2026 department payloads when tota
           slug: 'sales-development-representative-outbound',
           requisition_id: 'WAC-BD-SDR-0501',
           number_of_openings: 2,
-          location: 'Koratty',
+          location: null,
           job_type: 'On-site',
           formatted_experience_range: '2 - 4 years',
           requirements: '<p>Prospecting experience.</p>',
@@ -153,7 +153,7 @@ test('Webandcrafts accepts Monday, August 17, 2026 department payloads when tota
           slug: 'sales-development-representative-inbound-outbound',
           requisition_id: 'WAC-BD-SDR-0502',
           number_of_openings: 3,
-          location: 'Koratty',
+          location: null,
           job_type: 'On-site',
           formatted_experience_range: '2 - 5 years',
           requirements: '<p>Pipeline hygiene.</p>',
@@ -172,7 +172,7 @@ test('Webandcrafts accepts Monday, August 17, 2026 department payloads when tota
           slug: 'senior-account-executive-outbound',
           requisition_id: 'WAC-BD-AE-0503',
           number_of_openings: 2,
-          location: 'Koratty',
+          location: null,
           job_type: 'On-site',
           formatted_experience_range: '5 - 8 years',
           requirements: '<p>Enterprise closing experience.</p>',
@@ -194,9 +194,9 @@ test('Webandcrafts accepts Monday, August 17, 2026 department payloads when tota
   assert.deepEqual(
     jobs.map((job) => [job.title, job.department, job.location, job.country]),
     [
-      ['Sales Development Representative (Outbound)', 'Business Development', 'Koratty, India', 'India'],
-      ['Sales Development Representative (Inbound+Outbound)', 'Business Development', 'Koratty, India', 'India'],
-      ['Senior Account Executive (Outbound)', 'Business Development', 'Koratty, India', 'India'],
+      ['Sales Development Representative (Outbound)', 'Business Development', null, null],
+      ['Sales Development Representative (Inbound+Outbound)', 'Business Development', null, null],
+      ['Senior Account Executive (Outbound)', 'Business Development', null, null],
     ],
   )
 })
@@ -251,9 +251,9 @@ test('Webandcrafts maps the first-party department API payloads into distinct pu
     {
       title: 'Social Media Analyst',
       department: 'Digital Marketing',
-      location: 'Koratty, India',
-      city: 'Koratty',
-      country: 'India',
+      location: null,
+      city: null,
+      country: null,
       jobId: 'WAC-DM-SOC-2424',
       requisitionId: 'WAC-DM-SOC-2424',
       sourceUrl: 'https://webandcrafts.com/careers/job-openings/social-media-analyst?job_id=42&dept=6',
@@ -265,8 +265,8 @@ test('Webandcrafts maps the first-party department API payloads into distinct pu
   )
 
   assert.equal(reactEngineer.department, 'Software Engineering')
-  assert.equal(reactEngineer.location, 'Koratty, India')
-  assert.equal(reactEngineer.city, 'Koratty')
+  assert.equal(reactEngineer.location, null)
+  assert.equal(reactEngineer.city, null)
   assert.equal(reactEngineer.requisitionId, 'WAC-RACT-SOF-0645')
   assert.equal(
     reactEngineer.sourceUrl,
@@ -295,178 +295,19 @@ test('Webandcrafts normalizes a first-party API opening into the shared scraper 
   })
 
   assert.equal(normalized.company, 'Webandcrafts')
-  assert.equal(normalized.country, 'India')
+  assert.equal(normalized.country, null)
   assert.equal(normalized.remoteStatus, 'On-site')
   assert.equal(normalized.jobType, 'Full-time Experienced')
 })
 
-test('Webandcrafts run verifies the trusted surfaces and returns the first-party job postings', async () => {
-  const webandcrafts = await loadWebandcraftsModule()
-  const requestedTextUrls = []
-  const requestedDepartmentIds = []
-
-  const jobs = await webandcrafts.createWebandcraftsScraper().run({
-    fetchText: async (url) => {
-      requestedTextUrls.push(url)
-
-      if (url === webandcrafts.HOMEPAGE_URL) return homepageHtml
-      if (url === webandcrafts.CAREERS_URL) return careersHtml
-      if (url === webandcrafts.JOBS_INDEX_URL) return jobsIndexHtml
-
-      throw new Error(`Unexpected text URL: ${url}`)
-    },
-    fetchJson: async (url, options = {}) => {
-      assert.equal(url, webandcrafts.JOBS_API_URL)
-
-      const body = JSON.parse(options.body)
-      requestedDepartmentIds.push(body.wac_pro_job_dept)
-
-      if (body.wac_pro_job_dept === 6) return digitalMarketingPayload
-      if (body.wac_pro_job_dept === 11) return softwareEngineeringPayload
-
-      throw new Error(`Unexpected department request: ${body.wac_pro_job_dept}`)
-    },
+test('Webandcrafts cannot promote an index-only fixture or fall back to the legacy forms API', async () => {
+  const scraper = await loadWebandcraftsModule()
+  let apiReads = 0
+  const jobs = await scraper.run({requestIntervalMs:0,
+    fetchText: async url => url === scraper.HOMEPAGE_URL ? homepageHtml : url === scraper.CAREERS_URL ? careersHtml : embeddedJobsIndexHtml,
+    fetchJson: async () => { apiReads++; throw Error('Legacy API must not be read') },
   })
-
-  assert.deepEqual(requestedTextUrls, [
-    webandcrafts.HOMEPAGE_URL,
-    webandcrafts.CAREERS_URL,
-    webandcrafts.JOBS_INDEX_URL,
-  ])
-  assert.deepEqual(requestedDepartmentIds, [6, 11])
-  assert.equal(jobs.length, 4)
-  assert.equal(jobs[0].company, 'Webandcrafts')
-  assert.equal(jobs[0].source, 'webandcrafts')
-  assert.equal(jobs[0].companyCareerPage, 'https://webandcrafts.com/careers/job-openings')
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
-})
-
-test('Webandcrafts falls back to the embedded first-party job_post payload when the legacy forms API now returns 404', async () => {
-  const webandcrafts = await loadWebandcraftsModule()
-  const legacyApi404 = new Error('HTTP 404 for https://forms.webandcrafts.com/api/careers/career-job-listing')
-  legacyApi404.status = 404
-  legacyApi404.abortRetries = true
-
-  const jobs = await webandcrafts.createWebandcraftsScraper().run({
-    fetchText: async (url) => {
-      if (url === webandcrafts.HOMEPAGE_URL) return homepageHtml
-      if (url === webandcrafts.CAREERS_URL) return careersHtml
-      if (url === webandcrafts.JOBS_INDEX_URL) return embeddedJobsIndexHtml
-
-      throw new Error(`Unexpected text URL: ${url}`)
-    },
-    fetchJson: async () => {
-      throw legacyApi404
-    },
-  })
-
-  assert.deepEqual(
-    jobs.map((job) => ({
-      title: job.title,
-      department: job.department,
-      country: job.country,
-      location: job.location,
-      jobId: job.jobId,
-      requisitionId: job.requisitionId,
-      sourceUrl: job.sourceUrl,
-      applyUrl: job.applyUrl,
-      experienceRequired: job.experienceRequired,
-      jobDescription: job.jobDescription,
-      companyCareerPage: job.companyCareerPage,
-      atsPlatform: job.atsPlatform,
-    })),
-    [
-      {
-        title: 'Senior Account Executive (Outbound)',
-        department: 'Business Development',
-        country: 'India',
-        location: null,
-        jobId: '78',
-        requisitionId: '78',
-        sourceUrl: 'https://webandcrafts.com/careers/job-openings/senior-account-executive-outbound?job_id=78&dept=10',
-        applyUrl: 'https://webandcrafts.com/careers/job-openings/senior-account-executive-outbound?job_id=78&dept=10',
-        experienceRequired: '5 - 8 years',
-        jobDescription: 'Official Webandcrafts opening listed on the first-party public jobs index.\n\nDepartment: Business Development.\n\nThe current first-party jobs index exposes the title and experience range, while the legacy department API now returns 404.',
-        companyCareerPage: 'https://webandcrafts.com/careers/job-openings',
-        atsPlatform: 'webandcrafts-first-party-careers-api',
-      },
-      {
-        title: 'Software Engineer - React',
-        department: 'Software Engineering',
-        country: 'India',
-        location: null,
-        jobId: '64',
-        requisitionId: '64',
-        sourceUrl: 'https://webandcrafts.com/careers/job-openings/software-engineer-react?job_id=64&dept=11',
-        applyUrl: 'https://webandcrafts.com/careers/job-openings/software-engineer-react?job_id=64&dept=11',
-        experienceRequired: '4+ years',
-        jobDescription: 'Official Webandcrafts opening listed on the first-party public jobs index.\n\nDepartment: Software Engineering.\n\nThe current first-party jobs index exposes the title and experience range, while the legacy department API now returns 404.',
-        companyCareerPage: 'https://webandcrafts.com/careers/job-openings',
-        atsPlatform: 'webandcrafts-first-party-careers-api',
-      },
-    ],
-  )
-})
-
-test('Webandcrafts fails closed when the verified homepage, jobs index, or department API contract changes', async () => {
-  const webandcrafts = await loadWebandcraftsModule()
-
-  await assert.rejects(
-    webandcrafts.createWebandcraftsScraper().run({
-      fetchText: async (url) => {
-        if (url === webandcrafts.HOMEPAGE_URL) {
-          return homepageHtml.replace('href="/careers"', 'href="/about-us"')
-        }
-        if (url === webandcrafts.CAREERS_URL) return careersHtml
-        if (url === webandcrafts.JOBS_INDEX_URL) return jobsIndexHtml
-        throw new Error(`Unexpected text URL: ${url}`)
-      },
-      fetchJson: async () => digitalMarketingPayload,
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    webandcrafts.createWebandcraftsScraper().run({
-      fetchText: async (url) => {
-        if (url === webandcrafts.HOMEPAGE_URL) return homepageHtml
-        if (url === webandcrafts.CAREERS_URL) return careersHtml
-        if (url === webandcrafts.JOBS_INDEX_URL) return '<html><body><h1>Job Openings</h1></body></html>'
-        throw new Error(`Unexpected text URL: ${url}`)
-      },
-      fetchJson: async () => digitalMarketingPayload,
-    }),
-    /verified public jobs index/i,
-  )
-
-  await assert.rejects(
-    webandcrafts.createWebandcraftsScraper().run({
-      fetchText: async (url) => {
-        if (url === webandcrafts.HOMEPAGE_URL) return homepageHtml
-        if (url === webandcrafts.CAREERS_URL) return careersHtml
-        if (url === webandcrafts.JOBS_INDEX_URL) return jobsIndexHtml
-        throw new Error(`Unexpected text URL: ${url}`)
-      },
-      fetchJson: async (url, options = {}) => {
-        const body = JSON.parse(options.body)
-
-        if (body.wac_pro_job_dept === 6) {
-          return {
-            ...digitalMarketingPayload,
-            results: {
-              ...digitalMarketingPayload.results,
-              data: digitalMarketingPayload.results.data.map((job, index) => (
-                index === 0
-                  ? { ...job, number_of_openings: 1 }
-                  : job
-              )),
-            },
-          }
-        }
-
-        return softwareEngineeringPayload
-      },
-    }),
-    /verified public department openings/i,
-  )
+  assert.equal(jobs.length,0)
+  assert.equal(apiReads,0)
+  assert.equal(jobs[Symbol.for('jobverify.verified-recruitment-observations')].sourceScopeComplete,false)
 })

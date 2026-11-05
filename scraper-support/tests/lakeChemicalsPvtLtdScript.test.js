@@ -58,7 +58,7 @@ test('Lake Chemicals scraper recognizes the verified homepage and first-party jo
     ],
   )
   assert.deepEqual(
-    jobs.map((job) => job.location),
+    jobs.map((job) => job.nativeLocation),
     [
       'Attibele (Factory)',
       'Attibele (Factory)',
@@ -84,8 +84,10 @@ test('Lake Chemicals scraper recognizes the verified homepage and first-party jo
   assert.equal(jobs[3].experienceRequired, 'Fresher / 1-2 years of experience in API Marketing')
   assert.ok(
     jobs.every((job) =>
-      job.country === null
-      && job.sourceUrl.startsWith('https://lakechemicals.com/job-search#lakechemicalspvtltd-')
+      job.country === null && job.location === null
+      && job.sourceUrl === 'https://lakechemicals.com/job-search'
+      && job.requisitionId === null && job.nativeCanonicalRoleURL === null
+      && job.applicationUrlIsGeneric === true
       && job.applyUrl === 'https://lakechemicals.com/job-search'
       && job.jobDescription.includes('Qualification') && !job.jobDescription.includes('Apply via the official')),
   )

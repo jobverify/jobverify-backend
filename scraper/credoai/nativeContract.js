@@ -41,7 +41,7 @@ export function validateInventory(payload,board,now){
   check(Array.isArray(r.secondaryLocations)&&r.secondaryLocations.length===0&&Array.isArray(b.secondaryLocations)&&b.secondaryLocations.length===0,'Changed secondary scope requires qualification')
   const country=r.address?.postalAddress?.addressCountry
   if(r.location==='India Remote'){check(country==='India'&&Object.keys(r.address.postalAddress).every(k=>k==='addressCountry'),'Conflicting or new India address scope');check(!/future\s+(?:hiring|opportunities)|talent\s+(?:community|network|pool)|general\s+application|speculative|submit\s+your\s+resume/i.test(r.title),'Talent pool is not a current vacancy');india.push(r)}
-  else if(r.location==='USA Remote (East Coast Time Zone Preferred)')check(country==='United States','Contradictory foreign scope')
+  else if(['USA Remote (East Coast Time Zone Preferred)','USA Remote (Pacific Time Zone Preferred)'].includes(r.location))check(country==='United States','Contradictory foreign scope')
   else check(r.location==='Remote'&&r.address===null&&r.title==='Submit your Resume for Future Hiring','New unresolved scope requires qualification')
  }
  return india

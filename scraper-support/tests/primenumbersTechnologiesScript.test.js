@@ -135,7 +135,7 @@ test('Primenumbers run walks the first-party index and detail pages and decorate
   ])
 
   assert.equal(jobs.length, 3)
-  assert.deepEqual(jobs[0], {
+  const expectedLegacyJob = {
     title: 'Account Executive - Renewals & Customer Success',
     company: 'Primenumbers Technologies Private Limited',
     department: 'Sales',
@@ -164,7 +164,14 @@ test('Primenumbers run walks the first-party index and detail pages and decorate
     jobDescription:
       'We are seeking two Account Executives to manage our government contract bidding clients across India. The Account Executive will be the primary point of contact for a portfolio of accounts and will be responsible for renewals, issue resolution, client communication, and identifying cross-sell opportunities. Responsibilities: Own renewals for an assigned portfolio of government contract bidding clients across India. Act as the primary contact for client communication over calls, email, WhatsApp, and meetings. Requirements: Graduation is mandatory. MBA is mandatory. Minimum 2+ years of experience in a technology company is mandatory. Perks: Portfolio ownership with direct exposure to clients across India.',
     scrapedAt: '2026-07-11T11:00:00.000Z',
-  })
+  }
+  assert.deepEqual(Object.fromEntries(Object.keys(expectedLegacyJob).map(key=>[key,jobs[0][key]])),expectedLegacyJob)
+  assert.equal(jobs[0].nativeHiringOrganization.legalName,primenumbers.COMPANY)
+  assert.equal(jobs[0].sourceDescription,jobs[0].nativeSourceRecord.description)
+  assert.equal(jobs[0].sourceDetailComplete,true)
+  assert.equal(jobs[0].sourceScopeComplete,false)
+  assert.equal(jobs[0].lifecycleCleanupAllowed,false)
+
   assert.equal(jobs[1].title, 'Data Engineering Intern')
   assert.equal(jobs[1].department, 'Technology & Engineering')
   assert.equal(jobs[1].employmentType, 'Full Time')

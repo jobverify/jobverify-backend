@@ -16324,6 +16324,14 @@
       "returnedIndiaJobs": 0,
       "sourceScopeComplete": false,
       "lifecycleCleanupAllowed": false
+    },
+    "nativeEmployerNames": [
+      "461s Siemens Healthcare Private Limited"
+    ],
+    "nativeEmployerNameEvidence": {
+      "url": "https://www.siemens-healthineers.com/en-in/healthcare-company-profile/gstidentificationnumbers",
+      "basis": "Current own Healthineers India publisher identifies Siemens Healthcare Private Limited; exact native CXS label retains its tenant prefix. Varian labels remain excluded.",
+      "reviewedAt": "2026-11-04T19:22:28.935Z"
     }
   },
   {
@@ -17716,7 +17724,9 @@
     "preferIndiaInventory": true,
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "lambweston",
@@ -19564,7 +19574,9 @@
     "preferIndiaInventory": true,
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "unity",
@@ -20404,7 +20416,7 @@
     "source": "fidelityinvestments",
     "companyName": "Fidelity Investments",
     "companyDomain": "fidelity.com",
-    "companyCareerPage": "https://jobs.fidelity.com/en/",
+    "companyCareerPage": "https://jobs.fidelity.com/in/",
     "officialHomepageUrl": "https://www.fidelity.com/",
     "countryFilter": "India",
     "sourceScopeComplete": false,
@@ -20469,7 +20481,11 @@
     "preferIndiaInventory": true,
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "nativeEmployerNames": [
+      "Fidelity Business Services India Private Limited",
+      "Fidelity Business Services India Pvt Ltd"
+    ]
   },
   {
     "source": "invitationhomes",
@@ -24848,7 +24864,9 @@
     "preferIndiaInventory": true,
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "sonos",
@@ -30267,7 +30285,9 @@
     "preferIndiaInventory": true,
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "plugpower",
@@ -34880,7 +34900,8 @@
       "Samsung"
     ],
     "nativeEmployerNames": [
-      "SAMSUNG INDIA ELECTRONICS PVT.LTD."
+      "SAMSUNG INDIA ELECTRONICS PVT.LTD.",
+      "Samsung R&D Institute India - Bangalore"
     ],
     "nativeEmployerNameEvidence": [
       {
@@ -34896,6 +34917,31 @@
         "nativeRoleId": "R121755",
         "nativeCountry": "India",
         "scopeRule": "reviewed-current-native-organization-label",
+        "sourceScopeComplete": false,
+        "lifecycleCleanupAllowed": false
+      },
+      {
+        "nativeName": "Samsung R&D Institute India - Bangalore",
+        "field": "hiringOrganization.name",
+        "nativeResponseSHA256": "994cda1f5beb0f933986e31b016991ccd11a3171b4fea5fcfc5185857da999b5",
+        "nativeResponseURL": "https://sec.wd3.myworkdayjobs.com/wday/cxs/sec/Samsung_Careers/job/Phoenix-Building-Bangalore-India/Careers---SRI-B_R114583",
+        "nativeRoleId": "R114583",
+        "nativeCountry": "India",
+        "entityReview": [
+          {
+            "url": "https://research.samsung.com/sri-b",
+            "status": 200,
+            "bodySHA256": "297ae021d6e86993c31ab11323f0ef88ffa4616b3ab44b1c9f73b4d3d8edec59",
+            "observedAt": "2026-11-04T20:58:42.242Z"
+          },
+          {
+            "url": "https://research.samsung.com/whoweare",
+            "status": 200,
+            "bodySHA256": "12da045ec33657e08cd17a59c2d8c261edd3bec8640395ed2c1dc6797fd78809",
+            "observedAt": "2026-11-04T20:58:42.960Z"
+          }
+        ],
+        "scopeRule": "exact-native-R&D-institute-name-with-current-Samsung-Research-account-handoff",
         "sourceScopeComplete": false,
         "lifecycleCleanupAllowed": false
       }
@@ -35596,7 +35642,11 @@
     "preferIndiaInventory": true,
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "nativeEmployerNames": [
+      "8383-KENVUE SOLUTIONS INDIA PRIVATE LIMITED Legal Entity",
+      "8382-JNTL Consumer Health (India) Private Limited Legal Entity"
+    ]
   },
   {
     "source": "mondi",
@@ -53965,7 +54015,12 @@
     "preferIndiaInventory": true,
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true,
+    "nativeEmployerNames": [
+      "Publicis Groupe Holdings B.V"
+    ]
   },
   {
     "source": "qinetiq",
@@ -56867,7 +56922,15 @@
     "prioritizeRecruitmentSearch": true,
     "preferIndiaInventory": true,
     "searchIndiaWithoutFacet": true,
-    "allowVerifiedCorporateRedirects": true
+    "allowVerifiedCorporateRedirects": true,
+    "nativeEmployerNames": [
+      "TD Global Finance Unlimited Company"
+    ],
+    "nativeEmployerNameEvidence": {
+      "url": "https://www.tdsecurities.com/tds/document/Financials-for-TDGF-Accounts",
+      "basis": "Published TDGF financial statements identify The Toronto-Dominion Bank as ultimate parent. Only this exact native employer label is accepted; the separate US TD Bank registration is unchanged.",
+      "reviewedAt": "2026-11-04T19:22:28.936Z"
+    }
   },
   {
     "source": "wasteconnections",
@@ -61692,7 +61755,9 @@
     "preferIndiaInventory": true,
     "searchIndiaWithoutFacet": true,
     "allowVerifiedCorporateRedirects": true,
-    "discoverLiteralRecruitmentData": true
+    "discoverLiteralRecruitmentData": true,
+    "discoverJibeRecruitmentData": true,
+    "stopAfterNativeIndiaLimit": true
   },
   {
     "source": "muratamanufacturing",

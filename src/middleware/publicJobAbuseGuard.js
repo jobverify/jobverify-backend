@@ -38,9 +38,10 @@ const parsePositiveInt = (value, fallback) => {
 const normalizeMethod = (value) => String(value ?? "").trim().toUpperCase();
 
 const coercePath = (req = {}) => {
-  const rawPath = String(req.path ?? req.originalUrl ?? req.url ?? "").split("?")[0];
+  const rawPath = String(req.path ?? req.originalUrl ?? req.url ?? "").split("?")[0]
+    .toLowerCase().replace(/\/+$/, '') || '/';
 
-  if (!rawPath.startsWith("/api/jobs")) {
+  if (rawPath !== '/api/jobs' && !rawPath.startsWith("/api/jobs/")) {
     return rawPath || "/";
   }
 
@@ -167,7 +168,8 @@ const getWindowRetryAfter = (entries, now) => {
 };
 
 const classifyRequest = (req = {}) => {
-  const method = normalizeMethod(req.method);
+  const requestMethod = normalizeMethod(req.method);
+  const method = requestMethod === 'HEAD' ? 'GET' : requestMethod;
   const path = coercePath(req);
 
   if (path.endsWith("/click")) return { type: "ignore" };
@@ -318,18 +320,18 @@ export const createPublicJobAbuseGuard = (options = {}) => {
     const currentTime = now();
     store.sweepExpired(currentTime - longestStateWindowMs);
 
-    const classification = classifyRequest(req);
-    if (classification.type === "ignore") {
-      next();
-      return;
-    }
-
     const clientKey = getClientKey(req);
     const record = pruneRecord(store.get(clientKey), currentTime);
 
     if (record.blockedUntil > currentTime) {
       store.set(clientKey, { ...record, lastSeenAt: currentTime });
       sendBlocked(res, Math.max(1, Math.ceil((record.blockedUntil - currentTime) / 1000)));
+      return;
+    }
+
+    const classification = classifyRequest(req);
+    if (classification.type === "ignore") {
+      next();
       return;
     }
 

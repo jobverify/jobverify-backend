@@ -60,7 +60,14 @@ for (const source of names) {
     let requests = 0, bodies = 0
     t.mock.method(globalThis, 'fetch', async url => {
       requests += 1
-      return nativeResponse(url, async () => { bodies += 1; controller.abort(reason); return 'invalid native content returned after caller cancellation' })
+      const read = () => { bodies += 1; controller.abort(reason); return 'invalid native content returned after caller cancellation' }
+      if (source !== 'lakechemicalspvtltd') return nativeResponse(url, async () => read())
+      // Lake's bounded transport consumes the original byte stream, not .text().
+      const response = new Response(new ReadableStream({ pull(stream) {
+        stream.enqueue(new TextEncoder().encode(read())); stream.close()
+      } }, { highWaterMark: 0 }), { headers: { 'content-type': 'text/html' } })
+      Object.defineProperty(response, 'url', { value: String(url) })
+      return response
     })
     await assert.rejects(scraper.run({ signal: controller.signal }), error => error === reason)
     assert.equal(requests, 1)

@@ -107,10 +107,12 @@ test('Data-Core Systems exact backlog row resolves from the local catalog', asyn
   assert.equal(report.unmatchedCount, 0)
 })
 
-test('Data-Core Systems scraper extracts roles from the official BambooHR JSON list', async () => {
+test('Data-Core Systems list candidates preserve unknown native countries and incomplete descriptions', async () => {
   const dataCore = await loadScriptModule()
   const jobs = await dataCore.run({
+    requestIntervalMs: 0,
     fetchText: async (url) => {
+      if(url === dataCore.CAREERS_URL) return '<html><title>Data-Core Systems careers</title><h1>Careers</h1><a href="'+dataCore.JOBS_BOARD_URL+'">Current openings</a></html>'
       assert.equal(url, dataCore.JOBS_BOARD_URL)
       return bambooBoardHtml
     },
@@ -136,8 +138,8 @@ test('Data-Core Systems scraper extracts roles from the official BambooHR JSON l
         title: 'Customer Relationship Management (CRM) Lead',
         department: 'Consulting',
         employmentType: 'Consultant W2/Contractor',
-        location: 'Harrisburg, Pennsylvania, United States',
-        country: 'United States',
+        location: null,
+        country: null,
         sourceUrl: 'https://datacoresystems.bamboohr.com/careers/676',
         applyUrl: 'https://datacoresystems.bamboohr.com/careers/676',
       },
@@ -145,8 +147,8 @@ test('Data-Core Systems scraper extracts roles from the official BambooHR JSON l
         title: 'Junior MS Dynamics CRM Data Migration Developer',
         department: 'Consulting',
         employmentType: 'Consultant W2/Contractor',
-        location: 'Middletown, Pennsylvania, United States',
-        country: 'United States',
+        location: null,
+        country: null,
         sourceUrl: 'https://datacoresystems.bamboohr.com/careers/677',
         applyUrl: 'https://datacoresystems.bamboohr.com/careers/677',
       },
@@ -160,7 +162,8 @@ test('Data-Core Systems scraper fails closed when the official BambooHR board si
 
   await assert.rejects(
     dataCore.run({
-      fetchText: async () => '<html><head><title>BambooHR</title></head><body>No openings metadata</body></html>',
+      requestIntervalMs: 0,
+      fetchText: async url => url===dataCore.CAREERS_URL?'<html><title>Data-Core careers</title><a href="'+dataCore.JOBS_BOARD_URL+'">Openings</a></html>':'<html><head><title>BambooHR</title></head><body>No openings metadata</body></html>',
       fetchJson: async () => bambooListPayload,
     }),
     /official BambooHR board/i,

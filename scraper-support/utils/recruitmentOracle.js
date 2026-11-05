@@ -6,6 +6,32 @@ const country = value => nativeCountryName(value)
 const text = value => typeof value === 'string' && value.trim() ? value.trim() : null
 const list = value => Array.isArray(value) ? value : []
 
+export function oracleRecruitmentEmployer(detail,{companyFlexField=null}={}){
+  const legal=[]
+  if(detail.LegalEmployer!=null){
+    need(typeof detail.LegalEmployer==='string','invalid native legal employer')
+    if(text(detail.LegalEmployer))legal.push(text(detail.LegalEmployer))
+  }
+  const flex=list(detail.requisitionFlexFields),readField=prompt=>{
+    const rows=flex.filter(field=>typeof field?.Prompt==='string'&&field.Prompt.trim()===prompt)
+    const values=[]
+    for(const row of rows){
+      if(row.Value==null||row.Value==='')continue
+      need(row.ControlType==='SingleChoiceList'&&typeof row.Value==='string'&&text(row.Value),'invalid native employer flex field')
+      values.push(text(row.Value))
+    }
+    need(new Set(values).size<=1,'conflicting native employer flex fields')
+    return values[0]||null
+  }
+  const legalFlex=readField('Legal Employer')
+  if(legalFlex)legal.push(legalFlex)
+  need(new Set(legal).size<=1,'conflicting native legal employers')
+  const company=companyFlexField?readField(companyFlexField):null
+  if(legal.length)return {employer:{name:legal[0]},binding:null}
+  return company?{employer:{name:company},binding:{method:'native-requisition-company-flex-field',field:'requisitionFlexFields',prompt:companyFlexField,legalEmployer:null}}
+    :{employer:null,binding:null}
+}
+
 // This reader only receives a board advertised by the current company page.
 // The native <base> supplies the real site number, including named UI aliases;
 // no tenant, site number, country ID or employer name is guessed.
@@ -54,7 +80,7 @@ export async function readOracleRecruitment(board, io) {
     io.inventoryRead({ kind: 'oracle', surface: publicBase.href, site, publisher, candidateSearch: 'India', reportedTotal: total })
     for (const row of collection.requisitionList) {
       need(row && /^\d{1,32}$/.test(row.Id || '') && text(row.Title) && !seen.has(row.Id), 'invalid or duplicate native role identity')
-      seen.add(row.Id); io.recordRead()
+      seen.add(row.Id); io.recordRead(row, { origin: apiOrigin.origin, site, publicBase: publicBase.href })
       const countries = [country(row.PrimaryLocationCountry), ...list(row.secondaryLocations).map(location => country(location.CountryCode))].filter(Boolean)
       if (!countries.length) io.unresolved('native-location-scope-unresolved')
       if (!countries.includes('India')) continue
@@ -74,14 +100,15 @@ export async function readOracleRecruitment(board, io) {
         ...list(detail.workLocation).map(location => ({ label: [location.TownOrCity, location.Region2].filter(Boolean).join(', '), country: country(location.Country) }))]
       const india = locations.filter(location => location.country === 'India')
       if (!india.length) { io.unresolved('native-location-scope-unresolved'); continue }
-      const employer = text(detail.LegalEmployer) ? { name: detail.LegalEmployer } : null
+      const ownEmployer=oracleRecruitmentEmployer(detail,{companyFlexField:io.companyEmployerFlexField})
+      const employer = ownEmployer.employer
       if (employer && !io.matchingEmployer(employer.name) || !employer && (io.requireNativeEmployerName || !publisher)) {
         io.unresolved('native-employer-mismatch'); continue
       }
       const url = publicBase.href.replace(/\/$/, '') + '/job/' + row.Id
       io.permit(url)
       io.addJob({ id: row.Id, title: detail.Title, url, employer,
-        employerBinding: employer ? null : { method: 'current-corporate-delegation-and-native-site-publisher', publisher,
+        employerBinding: employer ? ownEmployer.binding : { method: 'current-corporate-delegation-and-native-site-publisher', publisher,
           siteNumber: site, publicSiteURL: publicBase.href, corporateBinding: board.bindingEvidence, legalEmployer: null },
         description: [detail.ExternalDescriptionStr, detail.ExternalResponsibilitiesStr, detail.ExternalQualificationsStr].filter(text).join('\n'),
         location: india[0].label || 'India', posted: detail.ExternalPostedStartDate, closing: detail.ExternalPostedEndDate,

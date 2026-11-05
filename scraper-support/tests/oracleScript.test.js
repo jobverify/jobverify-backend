@@ -136,6 +136,7 @@ test('run paginates Oracle Cloud pages, hydrates detail, and decorates shared ru
   assert.deepEqual(requests, [
     buildSearchUrl(),
     buildJobDetailApiUrl('337745'),
+    buildSearchUrl(),
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'oracle')

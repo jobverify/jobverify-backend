@@ -2,9 +2,11 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { loadNativePaginationDefaults, nativePaginationLimits, createNativePagination, readNativeWithSignal } from '../../scraper-support/utils/nativePagination.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
+const nativeDefaults = loadNativePaginationDefaults(currentDir)
 
 export const CAREER_PAGE_URL = 'https://www.capgemini.com/careers/join-capgemini/job-search/'
 export const API_BASE_URL = 'https://cg-jobstream-api.azurewebsites.net'
@@ -140,8 +142,9 @@ export const extractSearchResults = (payload) => (Array.isArray(payload?.data) ?
   })
   .filter(Boolean)
 
-const defaultFetchJson = async (url) => {
+const defaultFetchJson = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'application/json,text/plain,*/*',
@@ -157,44 +160,53 @@ const defaultFetchJson = async (url) => {
 
 export const createCapgeminiScraper = ({
   size = Number.isInteger(config.pageSize) ? config.pageSize : DEFAULT_PAGE_SIZE,
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
+  maxJobs = nativeDefaults.maxJobs,
+  maxPages = nativeDefaults.maxPages,
 } = {}) => ({
   async run(options = {}) {
+    const signal = options.signal
+    signal?.throwIfAborted()
+    const limits = nativePaginationLimits(options, { maxPages, maxJobs })
+    const pagination = createNativePagination({ surface: buildSearchUrl(), limits, signal, collectionBudgetMs: options.collectionBudgetMs, identityScope: 'native-raw' })
     const fetchJson = options.fetchJson || defaultFetchJson
     const jobs = []
-    const seenJobIds = new Set()
+    return pagination.run(jobs, async () => {
+      const seenJobIds = new Set()
 
-    for (let page = 1; page <= maxPages; page += 1) {
-      const payload = await fetchJson(buildSearchUrl({ page, size }))
-      const listings = extractSearchResults(payload)
-      const summary = extractPaginationSummary(payload, { page, size })
+      for (let page = 1; page <= limits.maxPages; page += 1) {
+        const payload = await readNativeWithSignal(() => fetchJson(buildSearchUrl({ page, size }), { signal: pagination.signal }), pagination.signal)
+        const listings = extractSearchResults(payload)
+        const summary = extractPaginationSummary(payload, { page, size })
+        const rawRows = Array.isArray(payload?.data) ? payload.data : []
+        const progress = pagination.page(rawRows.map(record => normalizeWhitespace(record?.id)), summary.totalRecords)
+        if (!progress) return pagination.finish(jobs, { exhausted: !summary.hasNext })
 
-      for (const job of listings) {
-        if (seenJobIds.has(job.jobId)) continue
-        seenJobIds.add(job.jobId)
-        jobs.push({
-          ...job,
-          source: 'capgemini',
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
+        for (const job of listings) {
+          if (seenJobIds.has(job.jobId)) continue
+          seenJobIds.add(job.jobId)
+          jobs.push({
+            ...job,
+            source: 'capgemini',
+            link: job.applyUrl || job.sourceUrl,
+            scrapedAt: new Date().toISOString(),
+          })
 
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
+          if (jobs.length >= limits.maxJobs) {
+            return pagination.finish(jobs)
+          }
+        }
+
+        if (!summary.hasNext) {
+          return pagination.finish(jobs, { exhausted: true })
         }
       }
 
-      if (!summary.hasNext) {
-        break
-      }
-    }
-
-    return jobs
+      return pagination.finish(jobs)
+    })
   },
 })
 
-export const run = async () => createCapgeminiScraper().run()
+export const run = async (options = {}) => createCapgeminiScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

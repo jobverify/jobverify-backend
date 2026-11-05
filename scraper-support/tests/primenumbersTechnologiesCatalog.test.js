@@ -17,7 +17,7 @@ test('Primenumbers Technologies is registered against the verified first-party c
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-index-plus-detail-pages')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-index+same-domain-detail-pages+jobposting-jsonld+first-party-apply-links',
+    'active-first-party-cards+own-full-native-JobPosting+explicit-country-and-legal-employer+published-application-anchor+incomplete-source-scope',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

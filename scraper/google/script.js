@@ -5,9 +5,11 @@ import { extractJobDetail } from '../../scraper-support/detailExtractors/index.j
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
+import { loadNativePaginationDefaults, nativePaginationLimits, createNativePagination, readNativeWithSignal } from '../../scraper-support/utils/nativePagination.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
+const nativeDefaults = loadNativePaginationDefaults(currentDir)
 
 export const COUNTRY_NAME = 'India'
 export const BASE_URL = `https://www.google.com/about/careers/applications/jobs/results?location=${COUNTRY_NAME}`
@@ -233,8 +235,13 @@ export const createGoogleScraper = ({
     now = () => new Date().toISOString(),
     signal,
     detailEnrichmentBudgetMs = 45000,
+    maxPages,
+    maxJobs,
+    collectionBudgetMs,
   } = {}) {
     signal?.throwIfAborted()
+    const limits = nativePaginationLimits({ maxPages, maxJobs }, nativeDefaults)
+    const pagination = createNativePagination({ surface: BASE_URL, limits, signal, collectionBudgetMs })
     const detailBudgetMs = Number.isFinite(Number(detailEnrichmentBudgetMs))
       ? Math.max(0, Math.floor(Number(detailEnrichmentBudgetMs)))
       : 45000
@@ -242,99 +249,111 @@ export const createGoogleScraper = ({
     let detailSignal
     let currentUrl = BASE_URL
 
-    try {
-      const allJobs = []
-      const seenLinks = new Set()
-      let pageNum = 1
+    const allJobs = []
+    const completedPageJobs = []
+    return pagination.run(allJobs, async () => {
+      try {
+        const seenLinks = new Set()
+        let pageNum = 1
 
-      while (currentUrl && pageNum <= config.maxPages) {
-        signal?.throwIfAborted()
-        const html = await fetchListingsText(currentUrl, { signal })
-        signal?.throwIfAborted()
-        console.log(`  [google] Scraping page ${pageNum} - ${currentUrl}`)
+        while (currentUrl && pageNum <= limits.maxPages) {
+          signal?.throwIfAborted()
+          const html = await readNativeWithSignal(() => fetchListingsText(currentUrl, { signal: pagination.signal }), pagination.signal)
+          signal?.throwIfAborted()
+          console.log(`  [google] Scraping page ${pageNum} - ${currentUrl}`)
 
-        const jobs = extractGoogleListingCards(html, currentUrl)
-        if (jobs.length === 0) {
-          throw new Error(`Google job list not found at: ${currentUrl}`)
-        }
+          const jobs = extractGoogleListingCards(html, currentUrl)
+          if (jobs.length === 0) {
+            throw new Error(`Google job list not found at: ${currentUrl}`)
+          }
 
-        console.log(`  [google] Found ${jobs.length} jobs on page ${pageNum}`)
+          console.log(`  [google] Found ${jobs.length} jobs on page ${pageNum}`)
+          if (!pagination.page(jobs.map(job => job.link))) return pagination.finish(allJobs, { reason: 'native-pagination-no-progress' })
 
-        const freshJobs = []
-        for (const job of jobs) {
-          if (seenLinks.has(job.link)) continue
-          seenLinks.add(job.link)
-          freshJobs.push(job)
-        }
+          const freshJobs = []
+          for (const job of jobs) {
+            if (seenLinks.has(job.link)) continue
+            seenLinks.add(job.link)
+            freshJobs.push(job)
+          }
 
-        const pageJobs = await mapWithConcurrency(
-          freshJobs,
-          detailConcurrency,
-          async (job) => {
-            signal?.throwIfAborted()
-            const fallbackDetail = await extractJobDetail({
-              provider: 'google',
-              html: job.cardHtml,
-            })
-
-            const fetchedDetail = await (async () => {
+          const pageJobs = await mapWithConcurrency(
+            freshJobs.slice(0, Math.max(0, limits.maxJobs - allJobs.length)),
+            detailConcurrency,
+            async (job, index) => {
               signal?.throwIfAborted()
-              if (detailBudgetMs === 0 || detailBudgetSignal?.aborted) return null
-              if (!detailBudgetSignal) {
-                detailBudgetSignal = AbortSignal.timeout(detailBudgetMs)
-                detailSignal = signal ? AbortSignal.any([signal, detailBudgetSignal]) : detailBudgetSignal
-              }
-              const detailHtml = await fetchText(job.link, { signal: detailSignal })
-              signal?.throwIfAborted()
-              return extractJobDetail({
+              const fallbackDetail = await extractJobDetail({
                 provider: 'google',
-                html: detailHtml,
+                html: job.cardHtml,
               })
-            })().catch(() => {
-              signal?.throwIfAborted()
-              return null
-            })
 
-            const detail = mergeJobDetail(fetchedDetail || {}, fallbackDetail)
+              const fetchedDetail = await (async () => {
+                signal?.throwIfAborted()
+                if (detailBudgetMs === 0 || detailBudgetSignal?.aborted) return null
+                if (!detailBudgetSignal) {
+                  detailBudgetSignal = AbortSignal.timeout(detailBudgetMs)
+                  detailSignal = AbortSignal.any([pagination.signal, detailBudgetSignal])
+                }
+                const detailHtml = await readNativeWithSignal(() => fetchText(job.link, { signal: detailSignal }), detailSignal)
+                signal?.throwIfAborted()
+                return extractJobDetail({
+                  provider: 'google',
+                  html: detailHtml,
+                })
+              })().catch(() => {
+                signal?.throwIfAborted()
+                pagination.throwIfAborted()
+                return null
+              })
 
-            return {
-              jobId: extractJobId(job.link),
-              title: job.title,
-              company: job.company,
-              department: detail.department,
-              location: job.location,
-              city: extractCity(job.location),
-              country: COUNTRY_NAME,
-              sourceUrl: job.link,
-              applyUrl: job.link,
-              link: job.link,
-              source: 'google',
-              jobDescription: detail.jobDescription,
-              minimumQualification: detail.minimumQualification,
-              preferredQualification: detail.preferredQualification,
-              requiredSkills: detail.requiredSkills,
-              experienceRequired: detail.experienceRequired,
-              publicExperienceChecked: detail.publicExperienceChecked,
-              scrapedAt: now(),
-            }
-          },
-        )
+              const detail = mergeJobDetail(fetchedDetail || {}, fallbackDetail)
 
-        allJobs.push(...pageJobs)
+              const completed = {
+                jobId: extractJobId(job.link),
+                title: job.title,
+                company: job.company,
+                department: detail.department,
+                location: job.location,
+                city: extractCity(job.location),
+                country: COUNTRY_NAME,
+                sourceUrl: job.link,
+                applyUrl: job.link,
+                link: job.link,
+                source: 'google',
+                jobDescription: detail.jobDescription,
+                minimumQualification: detail.minimumQualification,
+                preferredQualification: detail.preferredQualification,
+                requiredSkills: detail.requiredSkills,
+                experienceRequired: detail.experienceRequired,
+                publicExperienceChecked: detail.publicExperienceChecked,
+                scrapedAt: now(),
+              }
+              pagination.throwIfAborted()
+              completedPageJobs[index] = completed
+              return completed
+            },
+          )
 
-        const nextUrl = extractGoogleNextPageUrl(html, currentUrl)
-        if (!nextUrl || nextUrl === currentUrl) break
+          allJobs.push(...pageJobs)
+          completedPageJobs.length = 0
+          if (allJobs.length >= limits.maxJobs) return pagination.finish(allJobs)
 
-        currentUrl = nextUrl
-        pageNum += 1
+          const nextUrl = extractGoogleNextPageUrl(html, currentUrl)
+          if (!nextUrl) return pagination.finish(allJobs, { exhausted: true })
+          if (nextUrl === currentUrl) return pagination.finish(allJobs, { reason: 'native-pagination-repeat-continuation' })
+
+          currentUrl = nextUrl
+          pageNum += 1
+        }
+
+        signal?.throwIfAborted()
+        return pagination.finish(allJobs)
+      } catch (err) {
+        signal?.throwIfAborted()
+        pagination.throwIfAborted()
+        throw new Error(`[google] Scraping failed at ${currentUrl} - ${err.message}`)
       }
-
-      signal?.throwIfAborted()
-      return allJobs
-    } catch (err) {
-      signal?.throwIfAborted()
-      throw new Error(`[google] Scraping failed at ${currentUrl} - ${err.message}`)
-    }
+    }, { flushCompleted: () => allJobs.push(...completedPageJobs.filter(Boolean)) })
   },
 })
 

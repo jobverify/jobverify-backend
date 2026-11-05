@@ -1,5 +1,5 @@
 ﻿import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
-import {SEARCH_URL,inspectSearch,listingUrl,parsePage,parseDetail} from './nativeContract.js'
+import {SEARCH_URL,inspectSearch,inspectFilteredScope,listingUrl,parsePage,parseDetail} from './nativeContract.js'
 export const SOURCE='disney'
 export const COMPANY='Disney'
 export const CAREERS_URL=SEARCH_URL
@@ -18,11 +18,17 @@ export async function run(options={}){
   try{return await Promise.race([(async()=>{const response=await fetcher(url,{method:'GET',signal:controller.signal,headers:{accept:'text/html, application/json'}});aborted();if(response?.status!==200||response.url!==url)throw Error('Disney native HTTP status/redirect unavailable');const body=await response.text();aborted();if(typeof body!=='string'||!body.trim())throw Error('Disney native empty response');return body})(),stopped])}
   finally{clearTimeout(timer);signal?.removeEventListener('abort',onAbort)}
  }
- const scope=inspectSearch(await get(SEARCH_URL));if(scope.count>maxJobs)throw Error('Disney job cap cannot certify inventory')
+ const discovery=inspectSearch(await get(SEARCH_URL)),firstUrl=listingUrl(discovery,1),firstBody=await get(firstUrl)
+ const scope={...discovery,...inspectFilteredScope(firstBody)},discrepancy=scope.count!==discovery.count
+ if(discrepancy&&scope.count===0)throw Object.assign(Error('Disney discovery discrepancy cannot qualify an empty native inventory'),{
+  softFailure:true,upstreamOutage:false,failureKind:'surface_drift_or_fail_closed',abortRetries:true,
+  sourceScopeComplete:false,lifecycleCleanupAllowed:false,inventoryEvidence:null,
+ })
+ if(scope.count>maxJobs)throw Error('Disney job cap cannot certify inventory')
  const pages=Math.max(1,Math.ceil(scope.count/10));if(pages>maxPages||pages>100)throw Error('Disney page limit cannot certify inventory')
  const snapshots=[],rows=[],ids=new Set(),reqs=new Set()
  for(let page=1;page<=pages;page++){
-  const url=listingUrl(scope,page),parsed=parsePage(await get(url),{scope,page,now})
+  const url=listingUrl(discovery,page),parsed=parsePage(page===1?firstBody:await get(url),{scope,page,now})
   for(const row of parsed.rows){if(ids.has(row.id)||(row.req&&reqs.has(row.req)))throw Error('Disney duplicate pagination identity');ids.add(row.id);if(row.req)reqs.add(row.req);rows.push(row)}
   snapshots.push({url,rows:parsed.rows})
  }
@@ -33,6 +39,11 @@ export async function run(options={}){
   const s=snapshots[index],final=parsePage(await get(s.url),{scope,page:index+1,now})
   if(JSON.stringify(final.rows)!==JSON.stringify(s.rows))throw Error('Disney final native listing drift')
  }
+ if(discrepancy){
+  const closingDiscovery=inspectSearch(await get(SEARCH_URL))
+  if(JSON.stringify(closingDiscovery)!==JSON.stringify(discovery))throw Error('Disney discovery scope changed during filtered reconciliation')
+ }
+ for(const job of jobs)job.lifecycleCleanupAllowed=false
  aborted()
- return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:SEARCH_URL,firstParty:true,listingComplete:false,pagesFetched:pages*2,reportedTotal:null,indiaFacetCount:scope.count,verifiedAt:now.toISOString(),reason:'current-Radancy-India-facet-reconciled; whole-employer-and-other-career-surfaces-unproven; original-Radancy-publication-dates-preserved'})
+ return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:SEARCH_URL,firstParty:true,listingComplete:false,pagesFetched:pages*2,reportedTotal:null,indiaFacetCount:scope.count,verifiedAt:now.toISOString(),reason:(discrepancy?'current-Radancy-filtered-India-inventory-reconciled; discovery-India-facet-count-discrepancy:'+discovery.count+'-versus-'+scope.count:'current-Radancy-India-facet-reconciled')+'; whole-employer-and-other-career-surfaces-unproven; original-Radancy-publication-dates-preserved'})
 }

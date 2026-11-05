@@ -11,23 +11,25 @@ import { buildDescriptionSourceUpdate } from '../src/services/jobDescriptionPoli
 const PROOF = Symbol.for('jobverify.official-ats-discovery')
 const sources = {
   careem: { total: 11, requests: 8, first: 8890956002, company: 'Careem', nativeCompany: 'Careem', token: 'careem',
-    careers: 'https://www.careem.com/en-AE/careers/', portal: 'https://jobs.careem.com/',
+    careers: 'https://www.careem.com/en-ae/careers/', portal: 'https://jobs.careem.com/',
     published: '2026-10-22T04:23:30-04:00', updated: '2026-10-22T04:23:30-04:00' },
   auvik: { total: 13, requests: 4, first: 8789330002, company: 'Auvik', nativeCompany: 'Auvik Networks', token: 'auviknetworks',
     careers: 'https://www.auvik.com/careers/', published: '2026-09-09T09:34:20-04:00', updated: '2026-10-26T16:08:17-04:00' },
 }
 for (const [source, config] of Object.entries(sources)) {
   const folder = new URL(`../scraper/${source}/fixtures/current-20261030/`, import.meta.url)
-  const manifest = JSON.parse(fs.readFileSync(new URL('manifest.json', folder), 'utf8'))
-  config.records = manifest.requests.map(row => {
-    const body = gunzipSync(fs.readFileSync(new URL(row.filename, folder)))
+  const current = source === 'careem' ? JSON.parse(gunzipSync(fs.readFileSync(new URL('./test-data/recruitmentGoal20261104/careem-native-quality.json.gz',import.meta.url)))) : null
+  const manifest = current || JSON.parse(fs.readFileSync(new URL('manifest.json', folder), 'utf8'))
+  const unique = manifest.requests.filter((row,index,rows)=>rows.findIndex(other=>other.requestedURL===row.requestedURL)===index)
+  config.records = unique.map(row => {
+    const body = current ? Buffer.from(row.text) : gunzipSync(fs.readFileSync(new URL(row.filename, folder)))
     assert.equal(createHash('sha256').update(body).digest('hex'), row.bodySHA256)
     return { ...row, body }
   })
   config.api = `https://boards-api.greenhouse.io/v1/boards/${config.token}/jobs?content=true`
   config.payload = JSON.parse(config.records.find(row => row.requestedURL === config.api).body)
   config.provider = getScraperCatalog().find(row => row.source === source)
-  config.run = options => createCatalogScraper(config.provider).run(options)
+  config.run = options => createCatalogScraper(config.provider).run({requestIntervalMs:0,fetchImpl:(...args)=>globalThis.fetch(...args),...options})
 }
 const json = (row, change) => {
   const data = JSON.parse(row.body), result = change(data)

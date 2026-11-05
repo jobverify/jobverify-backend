@@ -4,7 +4,7 @@ import { runRemainingRecruitmentBatchSource } from '../../scraper-support/utils/
 
 export const SOURCE = "fidelityinvestments"
 export const COMPANY = "Fidelity Investments"
-export const CAREERS_URL = "https://jobs.fidelity.com/en/"
+export const CAREERS_URL = "https://jobs.fidelity.com/in/"
 export const DISPOSITION = 'runtime-verified-recruitment'
 export const VERIFIED_ON = null
 export const VERIFIED_SURFACE_SUMMARY = 'Current extraction is implemented; complete and empty company inventories remain unverified.'

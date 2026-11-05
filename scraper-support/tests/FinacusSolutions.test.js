@@ -87,7 +87,7 @@ test('Finacus Solutions local catalog captures the verified first-party careers 
   assert.equal(provider.paginationStrategy, 'stable-current-visible-cards-global-total-unavailable')
   assert.equal(
     provider.extractionStrategy,
-    'current-official-careers+advertised-public-GET-detail+native-ID-title-full-JD+native-generic-application-position',
+    'current-public-GET-details+original-native-models+unknown-country-without-own-country-field+incomplete-source-scope',
   )
   assert.equal(provider.verifiedOn, null)
   assert.equal(provider.verifiedPublicJobCount, null)
@@ -221,7 +221,10 @@ test('Finacus Solutions run validates the first-party careers page and maps inli
   assert.equal(jobs[0].source, 'finacussolutions')
   assert.equal(jobs[0].link, 'https://www.finacus.co.in/careers/')
   assert.equal(jobs[0].department, 'Sales')
-  assert.equal(jobs[0].location, 'Mumbai')
+  assert.equal(jobs[0].location, null)
+  assert.equal(jobs[0].nativeLocation, 'Mumbai')
+  assert.equal(jobs[0].country, null)
+  assert.equal(jobs[0].sourceDetailFailureKind, 'native-country-unqualified-legacy')
   assert.equal(jobs[0].experienceRequired, '2+ years')
   assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)

@@ -34,6 +34,25 @@ test('incomplete model output is rejected and verifier uses constrained JSON', a
   assert.ok(completion.response_format.json_schema.schema.required.includes('evidence'));
 });
 
+test('LaTeX inference constrains packages and document structure without constraining the factual audit as LaTeX', async () => {
+  const requests = [];
+  const fetchImpl = async (url, options) => {
+    const body = JSON.parse(options.body);
+    if (url.endsWith('/apply-template')) return { ok: true, json: async () => ({ prompt: 'full' }) };
+    if (url.endsWith('/tokenize')) return { ok: true, json: async () => ({ tokens: [1, 2] }) };
+    requests.push(body);
+    return { ok: true, json: async () => ({ choices: [{ finish_reason: 'stop', message: { content: 'synthetic result' } }] }) };
+  };
+  await generateResumeText('synthetic resume', { fetchImpl });
+  await generateResumeText('synthetic audit', { fetchImpl, comparison: true });
+  assert.equal(typeof requests[0].grammar, 'string', 'generation must enforce its compiler-supported format during decoding');
+  assert.match(requests[0].grammar, /documentclass/);
+  assert.match(requests[0].grammar, /hyperref/);
+  assert.doesNotMatch(requests[0].grammar, /inputenc|fontspec|fontawesome/);
+  assert.equal(requests[1].grammar, undefined);
+  assert.equal(requests[1].response_format.type, 'json_schema');
+});
+
 test('compiler isolation has no host mounts, network, secrets or shell execution', () => {
   const args = compilerArguments({ name: 'resume-test', image: 'sha256:' + 'a'.repeat(64) });
   assert.ok(args.includes('none'));

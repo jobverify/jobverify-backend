@@ -16,7 +16,9 @@ const cases = [
   ['asteriaaerospace', asteria, 'fetchText', 'fetchBrowserText'],
 ]
 const reasonFor = source => Object.freeze(Error('controlled caller timed out: ' + source))
-const upstreamFailure = () => Object.assign(Error('HTTP 429 controlled upstream failure'), { abortRetries: true })
+// Cancellation controls must reach an allowed transport fallback. An HTTP
+// denial is a terminal source response and has separate no-fallback coverage.
+const upstreamFailure = () => Object.assign(Error('fetch failed controlled upstream transport'), { abortRetries: true })
 const htmlAfterAbort = '<title>Explore Career Opportunities | Asteria</title><h1>Careers</h1>'
   + '<p>Make the right move. Join us. Write to us at careers@asteria.co.in</p>'
 const response = (url, text) => ({ ok: true, status: 200, url, headers: new Headers({ 'content-type': 'text/html' }), text })
@@ -74,6 +76,31 @@ for (const [source, module, primary, browser] of cases) {
       assert.equal(bodies, stage === 'body' ? 1 : 0)
     })
   }
+}
+
+for (const status of [401, 403, 429, 451]) {
+  test(`asteriaaerospace injected HTTP ${status} denial never starts a browser fallback`, async () => {
+    const denied = Object.assign(Error(`HTTP ${status} controlled upstream denial`), { status })
+    let reads = 0, browserCalls = 0
+    await assert.rejects(asteria.run({ fetchText: async () => { reads++; throw denied },
+      fetchBrowserText: async () => { browserCalls++; return htmlAfterAbort },
+    }), error => error === denied)
+    assert.equal(reads, 1)
+    assert.equal(browserCalls, 0)
+  })
+
+  test(`asteriaaerospace native HTTP ${status} denial never starts a browser fallback`, async t => {
+    let requests = 0, browserCalls = 0
+    t.mock.method(globalThis, 'fetch', async url => {
+      requests++
+      return { ok: false, status, url, headers: new Headers({ 'content-type': 'text/html' }),
+        text: async () => 'Controlled public source denial' }
+    })
+    await assert.rejects(asteria.run({ fetchBrowserText: async () => { browserCalls++; return htmlAfterAbort } }),
+      error => new RegExp(`HTTP ${status}\\b`).test(error.message))
+    assert.equal(requests, 1)
+    assert.equal(browserCalls, 0)
+  })
 }
 
 test('Payments Bank guarded 403 catch never absorbs a caller reason with the same native status', async () => {

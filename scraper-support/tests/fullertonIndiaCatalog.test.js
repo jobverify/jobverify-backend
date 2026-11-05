@@ -60,7 +60,7 @@ test('Fullerton India local catalog captures the verified redirect plus Workline
   )
   assert.equal(
     FULLERTON_INDIA_CATALOG.extractionStrategy,
-    'verified-redirected-homepage+verified-first-party-careers-page+workline-handoff+currentopening-json-api',
+    'verified-first-party-handoff+current-native-India-listing+paired-public-role+published-view-only-full-PDF-description',
   )
   assert.equal(FULLERTON_INDIA_CATALOG.parser, 'custom-script')
   assert.equal(FULLERTON_INDIA_CATALOG.normalizationProfile, 'engineering-default')

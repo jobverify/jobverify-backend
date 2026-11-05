@@ -6,11 +6,11 @@ One tailored-resumes.yml run processes one preparation or tailoring item, serial
 
 ## Model and compiler
 
-resume-tailoring/resume-model.json pins Qwen3-4B-Instruct-2507 Q4_K_M, repository revision, checksums and llama.cpp runtime. Every complete rendered prompt is token-counted, including source comparison and repair.
+resume-tailoring/resume-model.json pins Qwen3-4B-Instruct-2507 Q4_K_M, repository revision, checksums and llama.cpp runtime. Every complete rendered prompt is token-counted, including source comparison and repair. LaTeX inference uses a grammar with a fixed cached preamble and supported commands; candidate content remains model-generated. The factual comparison uses a separate JSON schema.
 
 resume-tailoring/compiler pins Tectonic 0.17.0 and warms trusted packages against a fingerprinted v33 bundle before processing candidate data. Docker compilation receives TeX via stdin and returns only PDF bytes. There are no host mounts, network, credentials, elevated capabilities, writable root filesystem or shell escape. Runtime, memory, processes and temporary file sizes are bounded. There is no unsandboxed fallback.
 
-Publication requires readable PDF text, minimum 10pt text, page-boundary checks, protected identity/contact/link/employment/education/date/number validation, and a separate LLM source comparison. Base documents preserve complete facts without a page target. Tailored documents must fit two pages. One repair is allowed. Failure preserves the previous successful version and exposes retry.
+Publication requires readable PDF text, minimum 10pt text, page-boundary checks, protected identity/contact/link/employment/education/date/number validation, and a separate LLM source comparison. Base documents preserve complete facts without a page target. Tailored documents must fit two pages. One repair is allowed. Generation and its repair share the worker deadline with up to three minutes reserved for compilation and validation; there is no additional eight-minute model cutoff. Failure preserves the previous successful version and exposes retry.
 
 ## Storage and authenticated document APIs
 

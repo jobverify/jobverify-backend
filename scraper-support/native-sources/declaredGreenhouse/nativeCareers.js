@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { createPublicIO } from '../publicIO.js'
+import { boundedDeclaredPublicGet } from '../boundedDeclaredPublicGet.js'
 import { attachInventoryEvidence } from '../../utils/inventoryEvidence.js'
 import { attachSourceObservationEvidence } from '../../utils/sourceObservationEvidence.js'
 import { text } from '../cisVeeam/publishedData.js'
@@ -63,12 +64,9 @@ export const createNativeGreenhouseScraper = (profile, defaults = {}) => ({ asyn
   const fetchPage = options.fetchPage || (async url => {
     await waitForHost(url, signal)
     requireNative(allowed(new URL(url)), 'native host became unavailable while queued')
-    const response = await fetchOriginal(url, { method: 'GET', redirect: 'manual',
+    return boundedDeclaredPublicGet(url, { fetchImpl: fetchOriginal,
       signal: AbortSignal.any([AbortSignal.timeout(15000), ...(signal ? [signal] : [])]),
-      headers: { Accept: 'text/html,application/json,*/*;q=0.5', 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)' } })
-    const bytes = Buffer.from(await response.arrayBuffer())
-    requireNative(bytes.length <= 16 * 1024 * 1024, 'native entity exceeds input limit')
-    return { status: response.status, url: response.url, headers: Object.fromEntries(response.headers), bodyBase64: bytes.toString('base64') }
+      overflowError: Error('Declared Greenhouse: native entity exceeds input limit') })
   })
   const io = createPublicIO({ ...options, fetchPage, allowed }), observations = new Map(), order = new Map(), history = []
   const load = (url, options = {}) => io.load(url, { fresh: true, ...options })

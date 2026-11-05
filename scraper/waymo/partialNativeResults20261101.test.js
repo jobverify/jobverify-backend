@@ -1,15 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import fs from 'node:fs'
-import {gunzipSync} from 'node:zlib'
+import {accessibleNativePackets as packets} from './test-data/accessibleNativePackets.js'
 import {run, buildIndiaSearchUrl, extractJobsFromSearchHtml} from './script.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
-const packets = JSON.parse(gunzipSync(fs.readFileSync(new URL('./test-data/2026-10-31-native-packets.json.gz', import.meta.url))))
 const searchUrl = buildIndiaSearchUrl()
 const now = () => '2026-10-31T07:30:00.000Z'
 const rows = extractJobsFromSearchHtml(packets.find(packet => packet.url === searchUrl).body, {scrapedAt:now()})
-assert.equal(rows.length, 4)
+assert.equal(rows.length, 2)
 const lastUrl = rows.at(-1).sourceUrl
 
 const replay = (edit = () => {}, calls = []) => async (url, init) => {
@@ -31,7 +29,7 @@ const nativeFields = job => Object.fromEntries([
   'nativeWorkplace','nativeApplicationEvidence','nativeApplicationFailure',
 ].map(key => [key,job[key]]))
 
-const assertIncomplete = (jobs, count, openingCount = 4) => {
+const assertIncomplete = (jobs, count, openingCount = 2) => {
   assert.equal(jobs.length, count)
   for (const job of jobs) {
     assert.equal(job.sourceDetailComplete, false)
@@ -56,18 +54,32 @@ const assertIncomplete = (jobs, count, openingCount = 4) => {
   assert.equal(jobs.nativeCollectionEvidence.incompleteCollectionFailure.status, 202)
 }
 
-test('Waymo preserves earlier full native roles when a later detail returns HTTP 202', async t => {
+const assertIndividuallyReconciled=(jobs,count)=>{
+  assert.equal(jobs.length,count)
+  assert.ok(jobs.every(job=>job.sourceDetailComplete===true&&job.nativeRoleClosingReconciled===true
+    &&job.sourceScopeComplete===false&&job.sourceListingComplete===false&&job.lifecycleCleanupAllowed===false))
+  assert.equal(jobs.nativeCollectionEvidence.individuallyReconciledRoles,count)
+  assert.equal(jobs.nativeCollectionEvidence.worldwideInventoryComplete,false)
+  assert.equal(jobs.nativeCollectionEvidence.heldNativeRows.length,rows.length-count)
+  assert.equal(readInventoryEvidence(jobs).status,'coverage-gap')
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+}
+
+test('Waymo preserves earlier native facts and stops when a later detail returns HTTP 202', async t => {
   t.mock.method(globalThis, 'fetch', async () => assert.fail('Native HTTP is forbidden'))
   const complete = await run({fetchText:replay(),now})
   const calls = []
   const jobs = await run({fetchText:replay(packet => {
     if (packet.url === lastUrl) packet.status = 202
   },calls),now})
-  assertIncomplete(jobs,3)
-  assert.deepEqual(jobs.map(nativeFields), complete.slice(0,3).map(nativeFields))
+  assertIncomplete(jobs,1)
+  assert.deepEqual(jobs.map(nativeFields), complete.slice(0,1).map(nativeFields))
   assert.equal(calls.filter(url => url === lastUrl).length,1)
   assert.equal(calls.filter(url => url === searchUrl).length,1)
   assert.equal(jobs.nativeCollectionEvidence.closingIndiaCount,null)
+  assert.equal(jobs.nativeCollectionEvidence.openingClosingReconciled,false)
+  for(const job of jobs)assert.equal(calls.filter(url=>url===job.sourceUrl).length,1)
+  assert.equal(calls.at(-1),lastUrl)
   assert.equal(jobs.nativeCollectionEvidence.incompleteCollectionFailure.requestUrl,lastUrl)
   assert.ok(jobs.nativeCollectionEvidence.retainedResponses.some(packet => packet.url === rows[0].sourceUrl))
 })
@@ -76,7 +88,7 @@ test('Waymo retains all opening role facts when the closing listing returns HTTP
   const jobs = await run({fetchText:replay((packet,calls) => {
     if (packet.url === searchUrl && calls.includes(searchUrl)) packet.status = 202
   }),now})
-  assertIncomplete(jobs,4)
+  assertIncomplete(jobs,2)
   assert.equal(jobs.nativeCollectionEvidence.closingIndiaCount,null)
 })
 
@@ -84,8 +96,8 @@ test('Waymo retains opening facts without certifying a blocked closing role', as
   const jobs = await run({fetchText:replay((packet,calls) => {
     if (packet.url === lastUrl && calls.includes(lastUrl)) packet.status = 202
   }),now})
-  assertIncomplete(jobs,4)
-  assert.equal(jobs.nativeCollectionEvidence.closingIndiaCount,4)
+  assertIndividuallyReconciled(jobs,1)
+  assert.equal(jobs.nativeCollectionEvidence.closingIndiaCount,2)
 })
 
 test('Waymo still throws when the first detail is unavailable and no native role was proved', async () => {

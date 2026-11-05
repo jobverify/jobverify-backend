@@ -5,6 +5,9 @@ import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {extractOfficialRecruitmentLinks} from '../../scripts/officialRecruitmentLinks.js'
 import {validateNativeInventory,validateNativeDetail} from './nativeContract.js'
+import {hydrateTurboHireJobs} from '../../scraper-support/utils/turboHireDetails.js'
+import {createPublicTurboHireTransport} from '../../scraper-support/utils/turboHirePublicTransport.js'
+import {TURBOHIRE_CURRENT_PUBLIC_CLIENT,verifyTurboHirePublicClient} from '../../scraper-support/utils/turboHirePublicClient.js'
 import {hasNativeBoardIdentity} from './nativeContent.js'
 
 import { NAVI_CATALOG } from './catalog.js'
@@ -19,7 +22,7 @@ export const CAREERS_PAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const TURBOHIRE_BOARD_URL = PROVIDER_METADATA.handoffBoardUrl
 export const ORIGIN = 'https://navi.turbohire.co'
 export const ORG_ID = PROVIDER_METADATA.turboHireOrgId
-export const API_BASE_URL = 'https://thapi.azurewebsites.net'
+export const API_BASE_URL = TURBOHIRE_CURRENT_PUBLIC_CLIENT.apiBaseURL
 export const NOAUTH_TOKEN_URL = `${API_BASE_URL}/api/token/noauth`
 export const FILTERED_JOBS_URL = `${API_BASE_URL}/api/careerpagev2/filteredjobs?orgId=${ORG_ID}&pageType=0`
 
@@ -181,7 +184,7 @@ export const extractPublicJobs = (payload = {}) =>
         city: extractCity(location),
         country: 'India',
         jobId: normalizeWhitespace(record?.JobId),
-        requisitionId: normalizeWhitespace(record?.JobCode) || normalizeWhitespace(record?.JobId),
+        requisitionId: normalizeWhitespace(record?.JobCode),
         sourceUrl,
         applyUrl: sourceUrl,
         employmentType: normalizeWhitespace(record?.JobTypeV2) || null,
@@ -199,104 +202,60 @@ export const extractPublicJobs = (payload = {}) =>
     })
     .filter(Boolean)
 
-const defaultFetchPage = async (url,{signal}={}) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-    signal,
-  })
-
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
-}
-
-const defaultFetchJson = async (url,options={}) => {
- const response=await fetch(url,{method:options.method||'GET',headers:options.headers,body:options.body,signal:options.signal})
- if(response.status!==200||response.url!==url)throw new Error(`Navi native HTTP ${response.status} or unexpected redirect`)
- return response.json()
-}
-
-export const createNaviScraper = ({
-  fetchPage = defaultFetchPage,
-  fetchJson = defaultFetchJson,
-  now = () => new Date().toISOString(),
-  signal, maxJobs = 10000, detailConcurrency = 2, timeoutMs = 90000,
-} = {}) => ({
+export const createNaviScraper = (options = {}) => ({
   async run() {
-    if(!Number.isInteger(maxJobs)||maxJobs<0||maxJobs>10000||!Number.isInteger(detailConcurrency)||detailConcurrency<1||detailConcurrency>3||!Number.isFinite(timeoutMs)||timeoutMs<=0||timeoutMs>180000)throw new Error('Navi invalid configured limits')
-    const controller=new AbortController(),abort=()=>controller.abort(signal?.reason),timer=setTimeout(()=>controller.abort(new Error('Navi source deadline exceeded')),timeoutMs)
-    if(signal?.aborted)abort();else signal?.addEventListener('abort',abort,{once:true})
-    const request=async(fn,url,options={})=>{
-      controller.signal.throwIfAborted();let listener
-      const requestSignal=AbortSignal.any([controller.signal,AbortSignal.timeout(15000)])
-      try{return await Promise.race([Promise.resolve().then(()=>fn(url,{...options,signal:requestSignal})),new Promise((_,reject)=>{listener=()=>reject(requestSignal.reason);requestSignal.addEventListener('abort',listener,{once:true})})])}
-      finally{requestSignal.removeEventListener('abort',listener)}
-    }
-    try {
-    const careersPage = await request(fetchPage,CAREERS_PAGE_URL)
-    if (
-      careersPage.status !== 200
-      || !sameUrl(careersPage.url, CAREERS_PAGE_URL)
-      || !hasOfficialCareersPageSignal(careersPage.html)
-    ) {
-      throw new Error('Navi verified official careers page changed materially')
-    }
-
-    const handoffUrl = extractTurboHireHandoffUrl(careersPage.html)
-    if (!sameUrl(handoffUrl, TURBOHIRE_BOARD_URL)) {
-      throw new Error('Navi verified official careers page no longer links to the verified TurboHire board')
-    }
-
-    const boardPage = await request(fetchPage,TURBOHIRE_BOARD_URL)
-    if (
-      boardPage.status !== 200
-      || !sameUrl(boardPage.url, TURBOHIRE_BOARD_URL)
-      || !hasOfficialBoardSignal(boardPage.html)
-    ) {
-      throw new Error('Navi verified TurboHire board changed materially')
-    }
-
-    const tokenPayload = await request(fetchJson,NOAUTH_TOKEN_URL, {
-      method: 'GET',
-      headers: buildPublicHeaders(),
+    const { fetchPage, now = () => new Date().toISOString(), maxJobs = 10000, detailConcurrency = 2 } = options
+    if (!Number.isSafeInteger(maxJobs) || maxJobs < 0 || maxJobs > 10000
+      || !Number.isInteger(detailConcurrency) || detailConcurrency < 1 || detailConcurrency > 3) throw Error('Navi invalid configured limits')
+    options.signal?.throwIfAborted()
+    if (maxJobs === 0) return attachInventoryEvidence([], { status: 'coverage-gap', surface: TURBOHIRE_BOARD_URL,
+      firstParty: true, listingComplete: false, pagesFetched: 0, verifiedAt: now(), reason: 'caller-cap-zero-no-public-reads' })
+    const transport = createPublicTurboHireTransport({ source: SOURCE, ...options,
+      ...(fetchPage ? { fetchText: async (url, init) => {
+        const page = await fetchPage(url, init)
+        if (page.status !== 200 || !sameUrl(page.url, url)) throw Error('Navi verified public page status or final URL changed')
+        return page.html
+      } } : {}),
+      allowedURL: (url, method, body) => method === 'GET'
+        ? [CAREERS_PAGE_URL, TURBOHIRE_BOARD_URL, NOAUTH_TOKEN_URL, ORIGIN + TURBOHIRE_CURRENT_PUBLIC_CLIENT.path].includes(url)
+          || /^https:\/\/thapi-stage2\.azurewebsites\.net\/api\/publicjobs\?jobId=[A-Za-z0-9_%+-]{30,400}&fieldVisibility=None$/.test(url)
+        : method === 'POST' && url === FILTERED_JOBS_URL && body === buildFilteredJobsRequestBody(),
     })
-
-    if(typeof tokenPayload?.access_token!=='string'||!tokenPayload.access_token)throw new Error('Navi public anonymous token unavailable')
-    const listOptions={
-      method: 'POST',
-      headers: {
-        ...buildPublicHeaders(tokenPayload?.access_token),
-        'Content-Type': 'application/json',
-      },
-      body: buildFilteredJobsRequestBody(),
-    }
-    const listingsPayload = await request(fetchJson,FILTERED_JOBS_URL,listOptions)
-
-    const scrapedAt = now()
-
-    const inventory=validateNativeInventory(listingsPayload,{now:scrapedAt}),selected=inventory.rows.filter(r=>r.scope.indiaLocations.length>0),capped=selected.slice(0,maxJobs),jobs=new Array(capped.length)
-    let cursor=0
-    await Promise.all(Array.from({length:Math.min(detailConcurrency,capped.length)},async()=>{
-     while(cursor<capped.length){controller.signal.throwIfAborted();const index=cursor++,row=capped[index].record,url=`${API_BASE_URL}/api/publicjobs?jobId=${row.JobIdObfuscated}&fieldVisibility=None`
-      const raw=await request(fetchJson,url,{headers:buildPublicHeaders(tokenPayload.access_token)})
-      const detail=validateNativeDetail(raw,row,{now:scrapedAt}),location=detail.scope.indiaLocations[0]
-      const mapped=extractPublicJobs({Result:[{...row,JobDescV2:detail.jobDescription,Location:JSON.stringify([{Address:location.address}]),JobTypeV2:raw.JobTypeV2,Experience:raw.Experience,Skills:raw.Skills}]})[0]
-      if(!mapped)throw new Error('Navi validated native role could not be mapped')
-      jobs[index]={...mapped,location:location.address,city:location.city,jobDescription:detail.jobDescription,postingDate:detail.postingDate,closingDate:detail.closingDate,sourceNativeClosingDate:detail.sourceNativeClosingDate,sourceClosingDateIsExact:detail.sourceClosingDateIsExact,sourceDetailComplete:detail.sourceDetailComplete,sourceDetailStatus:detail.sourceDetailStatus,sourceDescriptionAttachment:detail.sourceDescriptionAttachment,sourceNativeLocations:detail.scope.locations,sourcePrimaryLocation:detail.scope.locations[0].address,source:SOURCE,link:mapped.applyUrl,scrapedAt,publicExperienceChecked:detail.sourceDetailComplete}
-     }
-    }))
-    const final=validateNativeInventory(await request(fetchJson,FILTERED_JOBS_URL,listOptions),{now:scrapedAt})
-    if(final.total!==inventory.total||final.snapshot!==inventory.snapshot)throw new Error('Navi native inventory changed during detail validation')
-    const listingComplete=capped.length===selected.length,healthy=jobs.every(j=>j.sourceDetailComplete)
-    jobs.forEach(j=>{j.sourceListingComplete=listingComplete})
-    return attachInventoryEvidence(jobs,{status:listingComplete?(inventory.total?'complete-inventory':'verified-empty'):'discovery-only',surface:TURBOHIRE_BOARD_URL,firstParty:true,listingComplete,pagesFetched:1,reportedTotal:inventory.total,indiaFacetCount:selected.length,verifiedAt:now(),reason:listingComplete?(healthy?'complete-public-inventory-and-full-native-details':'complete-public-inventory-with-missing-native-details'):'configured-cap-incomplete'})
-    }finally{controller.abort();clearTimeout(timer);signal?.removeEventListener('abort',abort)}
+    const { fetchText, fetchScript, fetchJson, signal } = transport
+    try {
+      let currentClient
+      const verifyPublisher = async () => {
+        const corporate = await fetchText(CAREERS_PAGE_URL)
+        if (!hasOfficialCareersPageSignal(corporate)) throw Error('Navi verified official careers page changed materially')
+        if (!sameUrl(extractTurboHireHandoffUrl(corporate), TURBOHIRE_BOARD_URL)) throw Error('Navi verified official careers page no longer links to the verified TurboHire board')
+        const boardHTML = await fetchText(TURBOHIRE_BOARD_URL)
+        if (!hasOfficialBoardSignal(boardHTML)) throw Error('Navi verified TurboHire board changed materially')
+        const client = await verifyTurboHirePublicClient({ source: SOURCE, origin: ORIGIN, boardHTML, fetchScript })
+        if (currentClient && JSON.stringify(client) !== JSON.stringify(currentClient)) throw Error('Navi current public client changed during closing')
+        currentClient = client
+      }
+      await verifyPublisher()
+      const token = await fetchJson(NOAUTH_TOKEN_URL, { method: 'GET', headers: buildPublicHeaders() })
+      if (typeof token?.access_token !== 'string' || !token.access_token) throw Error('Navi public anonymous token unavailable')
+      const headers = buildPublicHeaders(token.access_token)
+      const listingRequest = { method: 'POST', body: buildFilteredJobsRequestBody(),
+        headers: { ...headers, 'Content-Type': 'application/json' }, signal }
+      const payload = await fetchJson(FILTERED_JOBS_URL, listingRequest)
+      validateNativeInventory(payload, { now: now() })
+      const jobs = extractPublicJobs(payload).map(job => ({ ...job, source: SOURCE,
+        link: job.applyUrl, scrapedAt: now() }))
+      return await hydrateTurboHireJobs({ source: SOURCE, orgId: ORG_ID, employer: 'NAVI TECHNOLOGIES LIMITED',
+        origin: ORIGIN, apiBaseUrl: API_BASE_URL, boardUrl: TURBOHIRE_BOARD_URL, payload, jobs,
+        fetchJson, headers, listingUrl: FILTERED_JOBS_URL, listingRequest, maxJobs, signal, now,
+        publicJobInfoUrl: listing => API_BASE_URL + '/api/publicjobs?jobId=' + listing.JobIdObfuscated + '&fieldVisibility=None',
+        verifyNativeDetail: (detail, listing) => validateNativeDetail(detail, listing, { now: now() }),
+        mapNativeFields: (detail, description) => ({ employmentType: normalizeWhitespace(detail.JobTypeV2),
+          experienceRequired: formatExperience(detail.Experience) || inferExperienceFromDescription(description),
+          requiredSkills: Array.isArray(detail.Skills) ? detail.Skills.filter(value => typeof value === 'string').map(normalizeWhitespace).filter(Boolean) : [] }),
+        retainNativeProof: true, verifyPublisher,
+        publisherProof: { corporateURL: CAREERS_PAGE_URL, boardURL: TURBOHIRE_BOARD_URL, orgId: ORG_ID, client: currentClient },
+      })
+    } finally { transport.close() }
   },
 })
 

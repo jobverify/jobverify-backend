@@ -39,8 +39,8 @@ for (const [name, rules] of Object.entries({ registerValidation, verifyEmailVali
   });
 }
 
-test('token-only verification remains valid and legacy login inputs retain bcrypt compatibility', async () => {
-  assert.deepEqual(await errorsFor(verifyEmailValidation, undefined), []);
+test('verification requires a password while legacy login inputs retain bcrypt compatibility', async () => {
+  assert.ok((await errorsFor(verifyEmailValidation, undefined)).length > 0);
   const legacy = ascii72 + 'existing-long-password';
   assert.deepEqual(await errorsFor(loginValidation, legacy), []);
   const hash = await bcrypt.hash(legacy, 4);

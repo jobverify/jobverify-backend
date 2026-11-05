@@ -92,7 +92,7 @@ const fetchNativeJson = async (url, options = {}) => {
       headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)', ...options.headers } })
     checkRequest()
     if (response.status !== 200 || response.url !== url) {
-      throw new Error(`[${SOURCE}] Workable native HTTP status or redirect identity changed: ${url}`)
+      throw Object.assign(new Error(`[${SOURCE}] Workable native HTTP status or redirect identity changed: ${url}`), { status: response.status })
     }
     const payload = await response.json()
     checkRequest()

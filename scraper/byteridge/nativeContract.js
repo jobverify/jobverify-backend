@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 import { nativeCountryName, nativeLocationCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 import { projectAuthorVisibility, projectedIframeSources, projectedFrameContexts, executableDocument } from './nativeVisibility.js'
+import { turboHireRecruitmentRecord } from '../../scraper-support/utils/turboHireNativeFacts.js'
 
 export const CAREER_PAGE_URL = 'https://byteridge.com/careers/'
 export const FRAME_URL = 'https://byteridge.com/wp-content/career/index.html'
@@ -16,6 +17,7 @@ export const LIST_URL = API_ORIGIN + '/api/careerpagev2/filteredjobs?orgId=' + O
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export const sha256 = value => createHash('sha256').update(value).digest('hex')
 const reviewedSurfaces = JSON.parse(readFileSync(new URL('./reviewedSurfaces.json',import.meta.url),'utf8'))
+export const reviewedNativeClients = reviewedSurfaces.clientSHA256 || {}
 export const check = (condition, message) => { if (!condition) throw Object.assign(Error('Byteridge native source: ' + message), { code: 'BYTERIDGE_NATIVE_CONTRACT' }) }
 export const norm = value => String(value ?? '').replace(/\s+/g, ' ').trim()
 export const canonical = value => JSON.stringify(value, function (_key, item) {
@@ -152,7 +154,10 @@ export function nativePageContract(html, expected) {
   })
   const roleLinks=doc.nodes(n=>n.tag==='a'&&n.attrs.href).map(n=>new URL(n.attrs.href,NATIVE_ORIGIN)).filter(u=>/\/job\/publicjobs\/|career|dashboard|jobs|vacanc|hiring/i.test(u.pathname)).map(u=>u.href)
   const visibleText=doc.nodes(n=>n.tag==='body').map(n=>doc.text(n)).join(' ')
-  return { posting, countries: [...new Set(countries)], clientURLs,roleLinks,visibleClosure:explicitClosure(visibleText) }
+  const version = reviewedSurfaces.nativeClientVersions?.find(value => canonical(value.scriptURLs) === canonical(clientURLs))
+  return { posting, countries: [...new Set(countries)], clientURLs,
+    publicClientURLs: version?.clientURLs || [], companyScopeUnqualified: version?.companyScopeUnqualified === true,
+    roleLinks,visibleClosure:explicitClosure(visibleText) }
 }
 export function organizationContract(value) {
   check(value && typeof value === 'object' && !Array.isArray(value) && value.OrgID === ORG_ID, 'public organization identity changed')
@@ -351,6 +356,9 @@ export function roleContract(row, dto, native, proxy, now) {
   const semantic = {jobId:dto.JobId,title:dto.JobTitle,jobCode:dto.JobCode,requisitionId,department:dto.Department,location:dto.Location,type:dto.Type,jobType:dto.JobTypeV2,experience:dto.Experience,skills:dto.Skills,numberOfVacancy:dto.NumberOfVacancy,custom,description,responsibilities,eligibility,publishedDates:dto.PublishedDates,general:general.raw,expiryDates:dto.ExpiryDates,boards:dto.PublishedJobBoards,jobStatus:dto.JobStatus,isPublic:dto.IsPublic,isDraft:dto.IsDraft,applicationEnquiryTemplateId:dto.ApplicationEnquiryTemplateId,applicationRoleId:dto.JobIdObfuscated,employer,posting:native.posting,proxyState,nativeListingState,nativeRoleLinks:native.roleLinks}
   return {semantic, proxyCoherent, country:country.countries.includes('India') ? 'India' : country.countries.join(' / '),
     roleLinks:native.roleLinks,job:{id:dto.JobId,jobId:dto.JobId,sourceJobId:dto.JobId,requisitionId,jobCode:dto.JobCode,source:'byteridge',company:'Byteridge',legalEmployer:LEGAL_EMPLOYER,nativeApplicationTemplateId:dto.ApplicationEnquiryTemplateId || null,
+      nativeHiringOrganization:structuredClone(native.posting.hiringOrganization),
+      nativeSourceRecord:{nativeListing:turboHireRecruitmentRecord(row),nativeDetail:{...turboHireRecruitmentRecord(dto),RequisitionId:dto.RequisitionId??null},nativeJobPosting:structuredClone(native.posting)},
+      firstEverPostedAt:null,sourcePostedDateRaw:posted.raw,sourceDateProvenance:'native-TurboHire-PublishedDates.CAREERPAGE',
       title:dto.JobTitle,sourceUrl:jobURL(dto.JobId),applyUrl:jobURL(dto.JobId),link:jobURL(dto.JobId),applicationLinkSource:'official-current-careers-proxy+native-public-client',publicRolePageFetched:true,applicationPublicContextValidated:true,applicationSubmitted:false,candidateActionsTaken:false,
       country:country.countries.includes('India') ? 'India' : country.countries.join(' / '),location:country.location,city:country.remote ? null : country.indiaAddresses.length === 1 && country.indiaAddresses[0].includes(',') ? country.indiaAddresses[0].split(',')[0] : null,remoteStatus:country.remote ? 'Remote' : null,
       department:dto.Department || null,employmentType,nativeJobType:dto.Type,nativeExperience:experience,experienceRequired,sourceExperienceRequired:experienceRequired,experienceRequiredProvenance:experienceRequired?'source':null,requiredSkills:dto.Skills,

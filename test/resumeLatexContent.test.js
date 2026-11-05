@@ -38,6 +38,22 @@ test('protected facts retain the candidate identity, each employer, dates, degre
   assert.equal(fidelity(source.text).valid, true);
 });
 
+test('an unbulleted documentation achievement cannot become the following employer identity', () => {
+  const original = { ...source, text: source.text.replace('Engineer | Maple Labs', 'Updated deployment documentation and reviewed application logs.\nEngineer | Maple Labs') };
+  const facts = buildSourceFacts(original);
+  assert.deepEqual(facts.employment.map(entry => entry.employer), ['Cedar Systems', 'Maple Labs']);
+  const generated = original.text.replace('Updated deployment documentation and reviewed application logs.', 'Maintained deployment documentation and reviewed application logs.');
+  assert.equal(validateResumeFidelity({ facts, text: generated, links: source.links }).valid, true);
+});
+
+test('additional information is prose rather than a new candidate skill after the skills section', () => {
+  const original = { ...source, text: source.text + '\nADDITIONAL INFORMATION\nWrites technical documentation and works with support teams.' };
+  const facts = buildSourceFacts(original);
+  assert.deepEqual(facts.skills, ['React', 'JavaScript', 'Python']);
+  const generated = original.text.replace('Writes technical documentation and works with support teams.', 'Documents technical systems and collaborates with support teams.');
+  assert.equal(validateResumeFidelity({ facts, text: generated, links: source.links }).valid, true);
+});
+
 test('missing employers, changed email, missing dates and substituted job titles cannot pass fidelity', () => {
   for (const changed of [source.text.replace('asha@example.test', 'ashar@example.test'), source.text.replace('Cedar Systems', 'Cedar'), source.text.replace('Jan 2022 - Present', ''), source.text.replace('Software Engineer', 'Senior Agentic AI Engineer')]) {
     const result = fidelity(changed);

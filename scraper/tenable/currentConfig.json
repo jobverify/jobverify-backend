@@ -3583,8 +3583,8 @@
     }
   },
   "reviewedWholeDomSurfaces": {
-    "https://www.tenable.com/careers": "1e0adb06ea208cd0af697423b7d09dbb78cb9e43ab0f3021df8013703bd56771",
-    "https://www.tenable.com/careers/search": "f9e3c7e31b02be69fd7e6fd816fc4f1b847f7805f52edb76b4a3ec1ddfe45466"
+    "https://www.tenable.com/careers": "6b643f31460ef65e3a8bc75bd7fa5798d9751106b99d55c927cc7af61d0f81db",
+    "https://www.tenable.com/careers/search": "0a9e8e1be52fa83a3d13921368680b8d0a531450a1a6156c7eebe058fc5ecc57"
   },
   "declaredStylesheets": [
     {
@@ -3667,7 +3667,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-000",
-            "geometrySha256": "df729fd1e259fd0f129c957b54b95be4ee5374277e70c2e53937dcdba101a0a5"
+            "geometrySha256": "1f89c46c1ac814d0bedd43b405846c53db47c485ebd794ff75cf7a60772b2894"
           },
           {
             "kind": "closed-local-reference",
@@ -3717,7 +3717,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-001",
-            "geometrySha256": "0a20af7e8a6cc882e58e25abd2b323eeb95920f8a2381f62be4e3acf1ddb8b37"
+            "geometrySha256": "99ea1de7a757863b3a7826a475932739d3a1cafa5f5efc8abdbed436ff174e6c"
           },
           {
             "kind": "closed-local-reference",
@@ -3767,7 +3767,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-002",
-            "geometrySha256": "a34d0203ed31962c33c9008e289aea010e48f23309dbf66d9c90ebc65bdd25b0"
+            "geometrySha256": "cd5f8c592d481a09f2d4c4a04c9872a24a30883f4614c202d7911f8e714e53b9"
           },
           {
             "kind": "closed-local-reference",
@@ -3817,7 +3817,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-003",
-            "geometrySha256": "1b168077ea75aec10f2c038cfaf03fd8423cb0c2d476ca25b38579abeb6f279a"
+            "geometrySha256": "1b64f9052a57fc85c263ae1bb6bf097856d19f0bbc321fd35e6aff6ea978fa37"
           },
           {
             "kind": "closed-local-reference",
@@ -3867,7 +3867,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-004",
-            "geometrySha256": "917a604c78eb0cf952a0a16e81c000fcdd3cb75a0686dd37d90a0764bdb6726a"
+            "geometrySha256": "868b9e0e299d1406b5bacb241a54d6fd8de1bf7cceedb223f3de7c2150eea581"
           },
           {
             "kind": "closed-local-reference",
@@ -3920,7 +3920,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-005",
-            "geometrySha256": "ff02bc6aabecfdacd4161b52fdb61ce06b3a2db3186a98c7b8fe1e37d8fa0d18"
+            "geometrySha256": "04957c307739163bd92e3ecff5567e61dd84a761119080086e77f2a2be4a22b5"
           },
           {
             "kind": "closed-local-reference",
@@ -3973,7 +3973,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-006",
-            "geometrySha256": "2b819367d3e56c33c099ff0181a01229494c0375da5c1b6ff6a7361afb2993d4"
+            "geometrySha256": "c207f28b45a36ea0951d561f4386dd4faac5afa66dc6c701ee3a0e2b86b7fe5c"
           },
           {
             "kind": "closed-local-reference",
@@ -4026,7 +4026,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-007",
-            "geometrySha256": "1de4ac2468bd5e4757b9e0e1f7a4811b3e2de3d8b34aa0c19847bc72c5aeef2a"
+            "geometrySha256": "78e4823f53cf342adda99d460f1273fe206386320fd1d3720144716471973ed2"
           },
           {
             "kind": "closed-local-reference",
@@ -4079,7 +4079,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-008",
-            "geometrySha256": "3b78e2c1bde3d807685f978af3c91c2a8f1114f053ebf32b590f8deb87ba3aaa"
+            "geometrySha256": "1fedefc4688919b9f102e5dbd4602008aea77e257694a628516c1507033603ce"
           },
           {
             "kind": "closed-local-reference",
@@ -4132,7 +4132,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-009",
-            "geometrySha256": "414eeb686db6b999b6250eb36bee59d68725c24c878b6e48814d5a2a6264d057"
+            "geometrySha256": "2265f526903d3a11bf0ed07e311224ea001e84865438f3bf036e672d7f75482a"
           },
           {
             "kind": "closed-local-reference",
@@ -4185,7 +4185,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-010",
-            "geometrySha256": "a93e6df5d5103d696a5bdd0bcaff0a8de4f515c31fcec50ee306b7c7a83aeeb9"
+            "geometrySha256": "7a309d0335422a940ae7aff57d9165c3e3cea1aa3bacd869f6ab758fd5567233"
           },
           {
             "kind": "closed-local-reference",
@@ -4238,7 +4238,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-011",
-            "geometrySha256": "19c35d0076fb19d717e3e826ffabcc0998f1cb0ae4b6d9fd837162d7393f6fc7"
+            "geometrySha256": "c54967325bddd7a535db0cfaf29565ba489d0010000590bc07ae9e1ccd8e06d8"
           },
           {
             "kind": "closed-local-reference",
@@ -4294,7 +4294,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-012",
-            "geometrySha256": "f96a357086c525b02311e2cb5f6e21a0787d3d6ee91d56000e547e75a7250ce6"
+            "geometrySha256": "503d78e856dccba51c0bd0033c9578ab216fcd0c0c41f262be37c4abb6636cbd"
           },
           {
             "kind": "closed-local-reference",
@@ -4350,7 +4350,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-013",
-            "geometrySha256": "06e1f7d413a849b2bd4ada0f04aadfa7ca3840bd85ce00199486ea32e10af8c2"
+            "geometrySha256": "c551aa606ac10640846da92a12eafdc17044c094ae43a1f56e6cac77fc324b0b"
           },
           {
             "kind": "unused-definition",
@@ -4389,7 +4389,7 @@
               0
             ],
             "canonicalId": "tenable-reviewed-svg-clip-014",
-            "geometrySha256": "0b9931f6bdda4ce02dc42ed20462eaec675ff27957e98043d2428fe2744ef409"
+            "geometrySha256": "e771a2aee14fc72ba0469fed2e8d5d5d6827237ef772c99d9cd5303525999197"
           },
           {
             "kind": "invalid-external-graphic",
@@ -4445,7 +4445,7 @@
               0
             ],
             "canonicalId": "tenable-reviewed-svg-clip-015",
-            "geometrySha256": "34db91c97ea915733c0440c20de00eeebb772f7baeed41687e44d5e7b83c3d70"
+            "geometrySha256": "8397f823ab403ef1fe1c6792227e4a4cabefa7ddcc01a5c395fb952691b66acb"
           }
         ],
         "allDefinitionPaths": [
@@ -5054,7 +5054,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-000",
-            "geometrySha256": "df729fd1e259fd0f129c957b54b95be4ee5374277e70c2e53937dcdba101a0a5"
+            "geometrySha256": "1f89c46c1ac814d0bedd43b405846c53db47c485ebd794ff75cf7a60772b2894"
           },
           {
             "kind": "closed-local-reference",
@@ -5104,7 +5104,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-001",
-            "geometrySha256": "0a20af7e8a6cc882e58e25abd2b323eeb95920f8a2381f62be4e3acf1ddb8b37"
+            "geometrySha256": "99ea1de7a757863b3a7826a475932739d3a1cafa5f5efc8abdbed436ff174e6c"
           },
           {
             "kind": "closed-local-reference",
@@ -5154,7 +5154,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-002",
-            "geometrySha256": "a34d0203ed31962c33c9008e289aea010e48f23309dbf66d9c90ebc65bdd25b0"
+            "geometrySha256": "cd5f8c592d481a09f2d4c4a04c9872a24a30883f4614c202d7911f8e714e53b9"
           },
           {
             "kind": "closed-local-reference",
@@ -5204,7 +5204,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-003",
-            "geometrySha256": "1b168077ea75aec10f2c038cfaf03fd8423cb0c2d476ca25b38579abeb6f279a"
+            "geometrySha256": "1b64f9052a57fc85c263ae1bb6bf097856d19f0bbc321fd35e6aff6ea978fa37"
           },
           {
             "kind": "closed-local-reference",
@@ -5254,7 +5254,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-004",
-            "geometrySha256": "917a604c78eb0cf952a0a16e81c000fcdd3cb75a0686dd37d90a0764bdb6726a"
+            "geometrySha256": "868b9e0e299d1406b5bacb241a54d6fd8de1bf7cceedb223f3de7c2150eea581"
           },
           {
             "kind": "closed-local-reference",
@@ -5307,7 +5307,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-005",
-            "geometrySha256": "ff02bc6aabecfdacd4161b52fdb61ce06b3a2db3186a98c7b8fe1e37d8fa0d18"
+            "geometrySha256": "04957c307739163bd92e3ecff5567e61dd84a761119080086e77f2a2be4a22b5"
           },
           {
             "kind": "closed-local-reference",
@@ -5360,7 +5360,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-006",
-            "geometrySha256": "2b819367d3e56c33c099ff0181a01229494c0375da5c1b6ff6a7361afb2993d4"
+            "geometrySha256": "c207f28b45a36ea0951d561f4386dd4faac5afa66dc6c701ee3a0e2b86b7fe5c"
           },
           {
             "kind": "closed-local-reference",
@@ -5413,7 +5413,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-007",
-            "geometrySha256": "1de4ac2468bd5e4757b9e0e1f7a4811b3e2de3d8b34aa0c19847bc72c5aeef2a"
+            "geometrySha256": "78e4823f53cf342adda99d460f1273fe206386320fd1d3720144716471973ed2"
           },
           {
             "kind": "closed-local-reference",
@@ -5466,7 +5466,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-008",
-            "geometrySha256": "3b78e2c1bde3d807685f978af3c91c2a8f1114f053ebf32b590f8deb87ba3aaa"
+            "geometrySha256": "1fedefc4688919b9f102e5dbd4602008aea77e257694a628516c1507033603ce"
           },
           {
             "kind": "closed-local-reference",
@@ -5519,7 +5519,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-009",
-            "geometrySha256": "414eeb686db6b999b6250eb36bee59d68725c24c878b6e48814d5a2a6264d057"
+            "geometrySha256": "2265f526903d3a11bf0ed07e311224ea001e84865438f3bf036e672d7f75482a"
           },
           {
             "kind": "closed-local-reference",
@@ -5572,7 +5572,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-010",
-            "geometrySha256": "a93e6df5d5103d696a5bdd0bcaff0a8de4f515c31fcec50ee306b7c7a83aeeb9"
+            "geometrySha256": "7a309d0335422a940ae7aff57d9165c3e3cea1aa3bacd869f6ab758fd5567233"
           },
           {
             "kind": "closed-local-reference",
@@ -5625,7 +5625,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-011",
-            "geometrySha256": "19c35d0076fb19d717e3e826ffabcc0998f1cb0ae4b6d9fd837162d7393f6fc7"
+            "geometrySha256": "c54967325bddd7a535db0cfaf29565ba489d0010000590bc07ae9e1ccd8e06d8"
           },
           {
             "kind": "closed-local-reference",
@@ -5681,7 +5681,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-012",
-            "geometrySha256": "f96a357086c525b02311e2cb5f6e21a0787d3d6ee91d56000e547e75a7250ce6"
+            "geometrySha256": "503d78e856dccba51c0bd0033c9578ab216fcd0c0c41f262be37c4abb6636cbd"
           },
           {
             "kind": "closed-local-reference",
@@ -5737,7 +5737,7 @@
               1
             ],
             "canonicalId": "tenable-reviewed-svg-clip-013",
-            "geometrySha256": "06e1f7d413a849b2bd4ada0f04aadfa7ca3840bd85ce00199486ea32e10af8c2"
+            "geometrySha256": "c551aa606ac10640846da92a12eafdc17044c094ae43a1f56e6cac77fc324b0b"
           }
         ],
         "allDefinitionPaths": [

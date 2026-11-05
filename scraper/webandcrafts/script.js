@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {runWebandcraftsNative} from './native.js'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
@@ -13,9 +14,6 @@ export const CAREERS_URL = 'https://webandcrafts.com/careers'
 export const JOBS_INDEX_URL = 'https://webandcrafts.com/careers/job-openings'
 export const JOBS_API_URL = 'https://forms.webandcrafts.com/api/careers/career-job-listing'
 export const ATS_PLATFORM = 'webandcrafts-first-party-careers-api'
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
@@ -80,7 +78,7 @@ const normalizeLocationCase = (value) => {
 const normalizeLocation = (value) => {
   const normalized = normalizeLocationCase(value)
   if (!normalized) return null
-  return /,\s*india$/i.test(normalized) ? normalized : `${normalized}, India`
+  return normalized
 }
 
 const extractCity = (location) => {
@@ -192,14 +190,6 @@ const parseOpeningsCount = (value) => {
   return Number.isInteger(count) && count > 0 ? count : null
 }
 
-const buildIndexOnlyJobDescription = (categoryName) => [
-  'Official Webandcrafts opening listed on the first-party public jobs index.',
-  categoryName ? `Department: ${categoryName}.` : null,
-  'The current first-party jobs index exposes the title and experience range, while the legacy department API now returns 404.',
-]
-  .filter(Boolean)
-  .join('\n\n')
-
 const parseJobOpeningsPayload = (html) => {
   const payloadChunk = extractFlightChunks(html).find((chunk) => chunk.includes('"jobOpenings":['))
   if (!payloadChunk) {
@@ -216,31 +206,6 @@ const parseJobOpeningsPayload = (html) => {
   } catch {
     throw new Error('Webandcrafts verified public jobs index category payload is no longer valid JSON')
   }
-}
-
-const isLegacyDepartmentApiMissingError = (error) => {
-  const queue = [error]
-  const visited = new Set()
-
-  while (queue.length > 0) {
-    const current = queue.shift()
-    if (!current || visited.has(current)) continue
-    visited.add(current)
-
-    const status = Number(current?.status)
-    const message = String(current?.message || '')
-    if (
-      status === 404
-      && (message.includes(JOBS_API_URL) || message.includes('career-job-listing'))
-    ) {
-      return true
-    }
-
-    if (current?.cause) queue.push(current.cause)
-    if (Array.isArray(current?.errors)) queue.push(...current.errors)
-  }
-
-  return false
 }
 
 export const hasOfficialHomepageSignal = (html) => {
@@ -305,67 +270,6 @@ export const extractJobCategories = (html) => {
   return categories
 }
 
-const extractEmbeddedJobsIndexPostings = (html) => {
-  const categories = parseJobOpeningsPayload(html)
-    .map((item) => ({
-      id: Number(item?.id),
-      categoryName: normalizeWhitespace(item?.category_name),
-      isActive: item?.is_active === true,
-      jobPosts: Array.isArray(item?.job_post) ? item.job_post : [],
-    }))
-    .filter((item) => item.isActive && Number.isFinite(item.id) && item.categoryName)
-
-  const jobs = categories.flatMap((category) => category.jobPosts
-    .map((job) => {
-      const jobId = Number(job?.id)
-      const title = normalizeWhitespace(job?.title)
-      const slug = normalizeWhitespace(job?.slug)
-
-      if (job?.is_active !== true || !Number.isFinite(jobId) || !title || !slug) {
-        return null
-      }
-
-      const requisitionId = String(jobId)
-      const sourceUrl = buildJobUrl({
-        id: jobId,
-        slug,
-        wac_pro_job_dept: { id: category.id },
-      })
-
-      return {
-        title,
-        company: COMPANY,
-        department: category.categoryName,
-        location: null,
-        city: null,
-        state: null,
-        country: 'India',
-        jobId: requisitionId,
-        requisitionId,
-        sourceUrl,
-        applyUrl: sourceUrl,
-        employmentType: null,
-        experienceRequired: normalizeWhitespace(job?.formatted_experience_range),
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: [],
-        postingDate: null,
-        closingDate: null,
-        jobDescription: buildIndexOnlyJobDescription(category.categoryName),
-        remoteStatus: null,
-      }
-    })
-    .filter(Boolean))
-
-  if (jobs.length === 0) {
-    throw new Error(
-      'Webandcrafts verified public jobs index no longer exposes embedded public job cards while the legacy department API remains unavailable',
-    )
-  }
-
-  return jobs
-}
-
 const validateDepartmentPayload = (payload, category) => {
   const data = payload?.results?.data
 
@@ -424,7 +328,9 @@ export const extractDepartmentJobs = (payload, category) => {
   const records = validateDepartmentPayload(payload, category)
 
   return records.map((job) => {
-    const location = normalizeLocation(job.location)
+    const rawLocation = normalizeLocation(job.location)
+    const country = /(?:^|,)\s*India\s*$/i.test(rawLocation || '') ? 'India' : null
+    const location = country ? rawLocation : null
     const remoteStatus = normalizeRemoteStatus(job.job_type)
     const requisitionId = normalizeWhitespace(job.requisition_id) || `${SOURCE}-${job.id}`
     const sourceUrl = buildJobUrl(job)
@@ -434,9 +340,11 @@ export const extractDepartmentJobs = (payload, category) => {
       company: COMPANY,
       department: category.categoryName,
       location,
-      city: extractCity(location),
+      city: null,
       state: null,
-      country: 'India',
+      country,
+      nativeWorkplace: job.location,
+      sourceCountryScopeUnresolved: !country,
       jobId: requisitionId,
       requisitionId,
       sourceUrl,
@@ -448,7 +356,8 @@ export const extractDepartmentJobs = (payload, category) => {
       requiredSkills: Array.isArray(job.technology)
         ? job.technology.map((item) => normalizeWhitespace(item)).filter(Boolean)
         : [],
-      postingDate: normalizeWhitespace(job.created_at),
+      postingDate: null,
+      sourceRawDates: {created_at: job.created_at},
       closingDate: null,
       jobDescription: buildJobDescription(job, category.categoryName),
       remoteStatus,
@@ -456,88 +365,8 @@ export const extractDepartmentJobs = (payload, category) => {
   })
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
-  method: options.method || 'GET',
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json, text/plain, */*',
-    ...(options.headers || {}),
-  },
-  body: options.body,
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-export const createWebandcraftsScraper = ({
-  fetchText = defaultFetchText,
-  fetchJson = defaultFetchJson,
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  run: async ({
-    fetchText: overrideFetchText,
-    fetchJson: overrideFetchJson,
-    now: overrideNow,
-  } = {}) => {
-    const fetchTextImpl = overrideFetchText || fetchText
-    const fetchJsonImpl = overrideFetchJson || fetchJson
-
-    const homepageHtml = await fetchTextImpl(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Webandcrafts verified official homepage no longer matches the known first-party surface')
-    }
-
-    const careersHtml = await fetchTextImpl(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Webandcrafts verified public careers page no longer matches the known first-party surface')
-    }
-
-    const jobsIndexHtml = await fetchTextImpl(JOBS_INDEX_URL)
-    const categories = extractJobCategories(jobsIndexHtml)
-    let jobs
-
-    try {
-      jobs = []
-
-      for (const category of categories) {
-        const payload = await fetchJsonImpl(JOBS_API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ wac_pro_job_dept: category.id }),
-        })
-
-        jobs.push(...extractDepartmentJobs(payload, category))
-      }
-    } catch (error) {
-      if (!isLegacyDepartmentApiMissingError(error)) {
-        throw error
-      }
-
-      jobs = extractEmbeddedJobsIndexPostings(jobsIndexHtml)
-    }
-
-    const scrapedAt = (overrideNow || now)()
-
-    return [...new Map(jobs.map((job) => [job.requisitionId || job.jobId, job])).values()].map((job) => ({
-      ...job,
-      source: SOURCE,
-      companyCareerPage: JOBS_INDEX_URL,
-      companyDomain: COMPANY_DOMAIN,
-      atsPlatform: ATS_PLATFORM,
-      link: job.applyUrl,
-      scrapedAt,
-    }))
-  },
+export const createWebandcraftsScraper = (configuration = {}) => ({
+  run: (options = {}) => runWebandcraftsNative({...configuration, ...options}),
 })
 
 export const run = async (options = {}) => createWebandcraftsScraper().run(options)

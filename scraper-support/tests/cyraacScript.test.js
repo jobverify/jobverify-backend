@@ -20,33 +20,35 @@ const careersHtml = `
   </section>
 `
 
-test('extractJobCards maps CyRAACS official careers cards to India job records', async () => {
+test('extractJobCards maps native CyRAACS cards without inventing geography or requisitions', async () => {
   const cyraac = await loadCyraacModule()
 
-  assert.deepEqual(cyraac.extractJobCards(careersHtml), [
+  const cards=cyraac.extractJobCards(careersHtml)
+  assert.equal(cards[1].sourceNativeListingRecord.locationLabel,'Bengaluru')
+  assert.deepEqual(cards.map(({sourceNativeListingRecord,...card})=>card), [
     {
       title: 'Full Stack Developer',
       department: 'Product and Technology',
       jobDescription: 'As a Full Stack Developer at CyRAACS, you will build our GRC platform.',
       experienceRequired: null,
-      location: 'Bengaluru, India',
-      city: 'Bengaluru',
+      location: null,
+      city: null,
       sourceUrl: 'https://cyraacs.com/full-stack-developer/',
-      applyUrl: 'https://forms.jumpp.tech/',
+      applyUrl: null,
       jobId: 'full-stack-developer',
-      requisitionId: 'full-stack-developer',
+      requisitionId: null,
     },
     {
       title: 'Sr. VAPT Consultant',
       department: 'Consultants',
       jobDescription: null,
       experienceRequired: '2-5 years',
-      location: 'Bengaluru, India',
-      city: 'Bengaluru',
+      location: null,
+      city: null,
       sourceUrl: 'https://cyraacs.com/job-description/sr-vapt-consultant/',
-      applyUrl: 'https://forms.jumpp.tech/',
+      applyUrl: null,
       jobId: 'sr-vapt-consultant',
-      requisitionId: 'sr-vapt-consultant',
+      requisitionId: null,
     },
   ])
 })
@@ -133,16 +135,23 @@ test('run decorates CyRAACS jobs using official detail pages', async () => {
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === cyraac.CAREERS_PAGE_URL) return careersHtml
-      return '<h1>Full Stack Developer</h1><p>Role Overview: Build resilient GRC software.</p>'
+      const title=url.includes('/sr-vapt-consultant/')?'Sr. VAPT Consultant':'Full Stack Developer'
+      return '<h1>'+title+'</h1><p>Role Overview: Build resilient GRC software.</p>'
     },
   })
 
   assert.deepEqual(requestedUrls, [
     cyraac.CAREERS_PAGE_URL,
     'https://cyraacs.com/full-stack-developer/',
+    'https://cyraacs.com/job-description/sr-vapt-consultant/',
+    'https://cyraacs.com/full-stack-developer/',
+    'https://cyraacs.com/job-description/sr-vapt-consultant/',
+    cyraac.CAREERS_PAGE_URL,
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].company, 'CYRAAC Services Private Limited')
   assert.equal(jobs[0].source, 'cyraac')
+  assert.equal(jobs[0].country,null)
+  assert.equal(jobs[0].sourceDetailComplete,false)
   assert.match(jobs[0].jobDescription, /Build resilient GRC software/i)
 })

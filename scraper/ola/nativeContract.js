@@ -34,14 +34,33 @@ export const plain=html=>{const d=document(html);return d.nodes(n=>n.tag==='root
 const compact=html=>plain(html).replace(/\s/g,'')
 const closure=text=>/\b(?:this|the)\s+(?:job|role|position|vacancy)\s+(?:(?:is|has been|has)\s+)?(?:closed|filled|expired|removed|cancelled|canceled|withdrawn|no longer (?:available|open|active|accepting applications)|not available)\b|\b(?:applications (?:are |have been )?closed|no longer accepting applications)\b/i.test(text)
 export const assetContract=(url,body)=>{const asset=reviewed.assets.find(a=>a.url===url);check(asset&&sha256(body)===asset.sha256,'advertised public asset bytes changed: '+url);return asset}
-export const surfaceAssets=source=>reviewed.assets.filter(a=>a.url.startsWith(ORIGIN+'/')||reviewed.surfaces[source].stylesheets.some(s=>s.url===a.url))
+const nativeClientVersion=html=>{
+  const scripts=scriptURLs(html,ORIGIN),baseline=reviewed.surfaces.native
+  const versions=[{scriptURLs:baseline.externalScripts.filter(url=>url.startsWith(ORIGIN+'/')),
+    externalScripts:baseline.externalScripts,assetURLs:reviewed.assets.filter(a=>a.kind==='js'&&a.url.startsWith(ORIGIN+'/')
+      &&(baseline.externalScripts.includes(a.url)||!(reviewed.nativeClientVersions||[]).some(v=>v.assetURLs.includes(a.url)))).map(a=>a.url)},...(reviewed.nativeClientVersions||[])]
+  const version=versions.find(v=>scripts.every(s=>s.active)&&canonical(scripts.map(s=>s.url))===canonical(v.externalScripts))
+  check(version,'native executable client changed or inert')
+  return version
+}
+export const corporateStylesheets=(html,source)=>stylesheets(html,SOURCES[source].corporateURL)
+const corporateStyleVersion=(html,source)=>[reviewed.surfaces[source],...(reviewed.corporateStyleVersions?.[source]||[])]
+  .find(v=>canonical(corporateStylesheets(html,source))===canonical(v.stylesheets)
+    &&canonical(inlineStyles(html))===canonical(v.inlineStyleSHA256))
+export const surfaceAssets=(source,html=null,corporateHTML=null)=>{
+  const selected=html?new Set(nativeClientVersion(html).assetURLs):null
+  const corporateVersions=[reviewed.surfaces[source],...(reviewed.corporateStyleVersions?.[source]||[])]
+  const styles=corporateHTML?[corporateStyleVersion(corporateHTML,source)||reviewed.surfaces[source]]:corporateVersions
+  return reviewed.assets.filter(a=>(a.url.startsWith(ORIGIN+'/')||styles.some(v=>v.stylesheets.some(s=>s.url===a.url)))
+    &&(!selected||a.kind!=='js'||!a.url.startsWith(ORIGIN+'/')||selected.has(a.url)))
+}
 export function corporateContract(html,source,css='') {
   const cfg=SOURCES[source],baseline=reviewed.surfaces[source],doc=document(html,css),reasons=[]
   check(doc.nodes(n=>n.tag==='base').length===0,'unreviewed corporate base URL')
   const anchors=doc.nodes(n=>n.tag==='a'&&n.attrs.href).map(n=>({url:new URL(n.attrs.href,cfg.corporateURL).href,text:doc.text(n)}))
   const delegated=anchors.filter(a=>a.url===cfg.delegation&&/openings|opportunities/i.test(a.text))
   if(!delegated.length)reasons.push('corporate-delegation-hidden-inert-or-missing')
-  if(canonical(stylesheets(html,cfg.corporateURL))!==canonical(baseline.stylesheets)||canonical(inlineStyles(html))!==canonical(baseline.inlineStyleSHA256))reasons.push('unreviewed-corporate-stylesheet-visibility')
+  if(!corporateStyleVersion(html,source))reasons.push('unreviewed-corporate-stylesheet-visibility')
   const scripts=scriptURLs(html,cfg.corporateURL)
   if(scripts.some(s=>!s.active)||canonical(scripts.map(s=>s.url))!==canonical(baseline.externalScripts)||canonical(inlineHashes(html))!==canonical(baseline.inlineExecutableSHA256))reasons.push('changed-corporate-executable-client')
   // Magento modules, dynamic scripts and the corporate legal notices do not
@@ -56,14 +75,16 @@ export function corporateContract(html,source,css='') {
 export function nativeSurfaceContract(html,css='',{role=false}={}) {
   const baseline=reviewed.surfaces.native,doc=document(html,css),scripts=scriptURLs(html,ORIGIN)
   check(canonical(stylesheets(html,ORIGIN))===canonical(baseline.stylesheets)&&canonical(inlineStyles(html))===canonical(baseline.inlineStyleSHA256),'unreviewed native stylesheet visibility')
-  check(scripts.every(s=>s.active)&&canonical(scripts.map(s=>s.url))===canonical(baseline.externalScripts)&&canonical(inlineHashes(html))===canonical(baseline.inlineExecutableSHA256),'native executable client changed or inert')
+  const version=nativeClientVersion(html)
+  check(canonical(inlineHashes(html))===canonical(baseline.inlineExecutableSHA256),'native executable client changed or inert')
   check(doc.nodes(n=>n.tag==='base').length===0&&projectedIframeSources(doc).length===0&&executableDocument(html).nodes(n=>['iframe','object','embed'].includes(n.tag)).length===0,'unreviewed native base/frame')
   check(doc.nodes(n=>n.tag==='div'&&n.attrs.id==='root').length===1,'native public application root hidden or missing')
   const data=executableDocument(html).nodes(n=>n.tag==='script'&&!n.attrs.src&&!executable(n))
   check(data.length===1&&data[0].attrs.type==='application/ld+json'&&(role||data[0].raw==='$GOOGLE_LD'),'unreviewed native inline configuration')
   const links=doc.nodes(n=>n.tag==='a'&&n.attrs.href).map(n=>new URL(n.attrs.href,ORIGIN).href)
   if(!role)check(links.length===0,'unreviewed native board hiring link')
-  return {doc,links,authorCSS:css,visibleClosure:closure(doc.nodes(n=>n.tag==='body').map(n=>doc.text(n)).join(' '))}
+  return {doc,links,authorCSS:css,nativeClientURLs:version.scriptURLs,
+    visibleClosure:closure(doc.nodes(n=>n.tag==='body').map(n=>doc.text(n)).join(' '))}
 }
 export function organizationContract(value) {
   check(value&&typeof value==='object'&&!Array.isArray(value)&&value.OrgID===CAREER_PAGE_ID,'public tenant identity changed')

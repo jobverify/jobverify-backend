@@ -28,7 +28,7 @@ const literal = (node, depth = 0) => {
 // This reads data declarations, not programs. Deferred code, quoted examples,
 // hidden/template nodes and arbitrary expressions cannot grant any request.
 export function literalRecruitmentPageData(document, name) {
-  need(['phApp', 'workday', 'resultStyles'].includes(name), 'unsupported configuration')
+  need(['phApp', 'workday', 'resultStyles', '_jibe', 'searchConfig', 'khConfig'].includes(name), 'unsupported configuration')
   const configurations = [], data = []
   for (const script of document.nodes(node => node.tag === 'script' && !node.attrs.src
     && /^(?:|(?:application|text)\/(?:java|ecma)script)$/i.test(node.attrs.type || ''))) {
@@ -94,7 +94,7 @@ export function phenomRecruitmentLinks(document, pageURL) {
       need(row && typeof row.jobId === 'string' && row.jobId && typeof row.title === 'string' && row.title, 'Phenom role identity changed')
       if (ids.has(row.jobId)) need(ids.get(row.jobId) === row.title, 'Phenom role identity conflict')
       ids.set(row.jobId, row.title)
-      if (row.siteType !== 'external' || row.visibilityType !== 'External') continue
+      if (!phenomPublicRole(row)) continue
       let role
       try { const url = new URL(row.applyUrl); if (url.protocol === 'https:' && !url.username && !url.password && !url.port) role = url } catch { /* No native handoff. */ }
       if (role) nativeRoles.push(role.href)
@@ -108,7 +108,16 @@ export function phenomRecruitmentLinks(document, pageURL) {
     reportedTotal: inventory?.totalHits ?? null, observedRecords: inventory?.data?.jobs.length || 0, countryProof: false }
 }
 
-export function phenomRecruitmentRole(document, pageURL, {postings = []} = {}) {
+export function phenomPublicRole(record) {
+  if (record?.siteType !== 'external') return false
+  const declarations = []
+  if (record.visibilityType != null) declarations.push(record.visibilityType === 'External')
+  if (record.jobVisibility != null) declarations.push(Array.isArray(record.jobVisibility) && record.jobVisibility.length > 0
+    && record.jobVisibility.every(value => typeof value === 'string') && record.jobVisibility.includes('external'))
+  return declarations.length > 0 && declarations.every(Boolean)
+}
+
+export function phenomRecruitmentRole(document, pageURL, {postings = [], brandEmployerBindings = []} = {}) {
   const data = phenomData(document, pageURL)
   if (!data || data.config.pageName !== 'job') return null
   const payload = data.ddo.jobDetail, job = payload?.data?.job
@@ -117,11 +126,24 @@ export function phenomRecruitmentRole(document, pageURL, {postings = []} = {}) {
   const expected = new URL(data.base), route = data.page.pathname.slice(expected.pathname.replace(/\/?$/, '/').length).split('/')
   need(route[0] === 'job' && [job.jobId, job.jobSeqNo].filter(Boolean).includes(decodeURIComponent(route[1] || ''))
     && job.uniqueValue?.refNum === data.config.refNum && job.uniqueValue.jobId === job.jobId
-    && job.uniqueValue.siteType === 'external' && job.siteType === 'external' && job.visibilityType === 'External', 'Phenom public account or role identity changed')
+    && job.uniqueValue.siteType === 'external' && phenomPublicRole(job), 'Phenom public account or role identity changed')
   const country = phenomCountry(job.country)
   need(country && (!job.standardisedCountry || phenomCountry(job.standardisedCountry) === country), 'Phenom native role country unavailable or conflicting')
   const company = [job.companyName,job.company].find(value => typeof value === 'string' && value.trim())
   let employer = company ? {name:company.trim()} : null, employerRecord = null
+  // A shared group account may publish several brands under one legal employer.
+  // Only an exact, reviewed brand AND employer on this full role can bind it.
+  const brandBinding = company && typeof job.companyBrand === 'string' && Array.isArray(brandEmployerBindings)
+    && [job.companyName,job.company].filter(value => value != null).every(value => typeof value === 'string' && value.trim() === employer.name)
+    && brandEmployerBindings.find(value => value && typeof value.brand === 'string' && value.brand
+      && typeof value.employer === 'string' && value.employer && typeof value.refNum === 'string' && value.refNum
+      && value.brand === job.companyBrand && value.employer === employer.name && value.refNum === data.config.refNum)
+  const employerBinding = brandBinding ? {method:'explicit-native-role-company-brand',field:'companyBrand',value:job.companyBrand,
+    refNum:data.config.refNum,nativeEmployerField:company === job.companyName ? 'companyName' : 'company',
+    nativeEmployerName:employer.name,surface:data.page.href,legalEmployer:null} : null
+  if (employerBinding && job.multi_location != null) need(Array.isArray(job.multi_location) && job.multi_location.length > 0
+    && job.multi_location.every(place => place && phenomCountry(place.country) === country),
+  'Phenom branded role worksite countries unavailable or conflicting')
   if (!employer) {
     const ownsURL = value => {
       try {
@@ -146,7 +168,7 @@ export function phenomRecruitmentRole(document, pageURL, {postings = []} = {}) {
     && /^on hold$/i.test(job[field].trim().replace(/\s+/g,' '))).map(field => ({field,value:job[field]}))
   return { id: job.jobId, title: job.title, url: data.page.href, country, heldStatuses,
     description: typeof job.description === 'string' ? job.description : null,
-    employer, employerRecord,
+    employer, employerRecord, ...(employerBinding ? {employerBinding} : {}),
     location: [job.city, job.state, country].filter(Boolean).join(', '), posted: job.postedDate || null,
     closing: job.expiryDate || null, employmentType: job.type || null, record: job }
 }

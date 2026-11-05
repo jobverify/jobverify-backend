@@ -313,7 +313,7 @@ export const verifyAndActivatePurchase = async ({
   providerSignature,
   userId,
   now = new Date(),
-}) => {
+}, { getProvider = getPaymentProvider } = {}) => {
   const purchase = await PlanPurchase.findOne(
     purchaseId ? { _id: purchaseId } : { providerOrderId },
   );
@@ -343,14 +343,21 @@ export const verifyAndActivatePurchase = async ({
     });
   }
 
-  const provider = getPaymentProvider(purchase.provider);
-  const verification = provider.verifyPayment({
+  const provider = getProvider(purchase.provider);
+  const verification = await provider.verifyPayment({
     providerOrderId: purchase.providerOrderId,
     providerPaymentId,
     providerSignature,
   });
   if (!verification.verified) {
     throw new BillingRequestError("Payment verification failed.");
+  }
+
+  if (purchase.provider === 'razorpay') {
+    const payment = await provider.fetchPayment({ providerPaymentId });
+    if (payment?.id !== providerPaymentId) throw new BillingRequestError('Payment identifier does not match this purchase.');
+    validateWebhookPayment(purchase, payment);
+    if (payment.status !== 'captured') throw new BillingRequestError('Payment has not been captured. Please wait for processing to complete.');
   }
 
   return finalizeVerifiedPurchase({

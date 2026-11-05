@@ -27,12 +27,14 @@ for (const flow of ['email', 'google', 'google-pending']) {
     t.mock.method(User, 'findOne', async () => null);
     t.mock.method(PendingUser, 'findOne', async () => flow === 'google' ? null : pending);
     t.mock.method(PendingUser, 'deleteOne', async () => ({}));
+    t.mock.method(PendingUser, 'findOneAndDelete', async () => pending);
+    t.mock.method(User.db, 'transaction', async callback => callback({}));
     t.mock.method(User.prototype, 'save', async function () { saved.push(this.toObject()); return this; });
     t.mock.method(googleIdentity, 'verifyCredential', async () => ({
       email: pending.email, emailVerified: true, sub: 'google-subject', name: 'New Member',
     }));
     const res = response();
-    if (flow === 'email') await verifyEmail({ body: { token: 'verification-token' } }, res);
+    if (flow === 'email') await verifyEmail({ body: { token: 'verification-token', password: 'MailboxOwnerPassword123!' } }, res);
     else await authenticateWithGoogle({ body: { credential: 'google-credential' } }, res);
     assert.equal(res.statusCode, 200);
     assert.ok(saved.length > 0);

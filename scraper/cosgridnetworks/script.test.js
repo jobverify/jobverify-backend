@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import {
   CAREERS_URL,
@@ -107,7 +108,7 @@ test('extractSearchResults reads the current COSGrid openings cards and preserve
   ])
 })
 
-test('extractJobDetail prefers JobPosting JSON-LD when COSGrid exposes it', () => {
+test('extractJobDetail retains complete visible criteria while preserving JobPosting metadata', () => {
   const detail = extractJobDetail(backendDetailHtml, {
     sourceUrl: 'https://www.cosgrid.com/company/careers/openings/backend-developer',
     fallbackListing: {
@@ -126,7 +127,7 @@ test('extractJobDetail prefers JobPosting JSON-LD when COSGrid exposes it', () =
     country: 'India',
     postingDate: '2026-05-01',
     closingDate: null,
-    jobDescription: 'Backend engineering role focused on scalable APIs, distributed systems, Linux infrastructure, and cybersecurity platforms.',
+    jobDescription: 'Backend Developer | Engineering Chennai, India Full-Time About the company COSGrid Networks is a leading networking and cybersecurity products company. Required Skills 1 - 3 years of experience building web applications and RESTful APIs in Python and Django Hands-on experience with PostgreSQL, Redis, Linux, and distributed systems',
     experienceRequired: '1 - 3 years',
     minimumQualification: null,
     preferredQualification: null,
@@ -138,7 +139,7 @@ test('extractJobDetail prefers JobPosting JSON-LD when COSGrid exposes it', () =
   })
 })
 
-test('extractJobDetail falls back to the rendered first-party role body when JSON-LD is absent', () => {
+test('extractJobDetail retains visible Responsibilities and Requirements when Required Skills and JSON-LD are absent', () => {
   const detail = extractJobDetail(businessDevelopmentDetailHtml, {
     sourceUrl: 'https://www.cosgrid.com/company/careers/openings/BusinessDevelpoment_Lead_gen',
     fallbackListing: {
@@ -157,7 +158,7 @@ test('extractJobDetail falls back to the rendered first-party role body when JSO
     country: 'India',
     postingDate: null,
     closingDate: null,
-    jobDescription: 'Join our Chennai sales team to generate new enterprise leads across cybersecurity, SASE, and networking solutions.',
+    jobDescription: 'Business Development - Lead Generation | Sales Chennai Full-Time About the company COSGrid Networks is a leading networking and cybersecurity products company. Responsibilities Generate new leads using cold calling, email marketing, social media, and other relevant marketing channels Requirements Bachelors / Masters degree in Marketing, sales, Communications, Business, or a related field Experience in B2B sales, preferably for at least 1-2 years',
     experienceRequired: '1-2 years',
     minimumQualification: 'Bachelors / Masters degree in Marketing, sales, Communications, Business, or a related field Experience in B2B sales, preferably for at least 1-2 years',
     preferredQualification: null,
@@ -180,7 +181,7 @@ test('extractJobDetail rejects COSGrid detail routes that resolve to a non-job s
   )
 })
 
-test('run validates the COSGrid homepage/careers surfaces, enriches valid detail pages, and skips the broken sales-SDR route', async () => {
+test('run retains complete COSGrid roles and records incomplete listed details without claiming a complete inventory', async () => {
   const requestedUrls = []
   const fixturesByUrl = new Map([
     [HOMEPAGE_URL, homepageHtml],
@@ -221,14 +222,13 @@ test('run validates the COSGrid homepage/careers surfaces, enriches valid detail
     'https://www.cosgrid.com/company/careers/openings/product_Marketing',
     'https://www.cosgrid.com/company/careers/openings/Digital_marketing_content',
   ])
-  assert.equal(jobs.length, 7)
+  assert.equal(jobs.length, 6)
   assert.deepEqual(
     jobs.map((job) => [job.title, job.department, job.employmentType, job.location, job.jobId]),
     [
       ['Backend Developer (Go / Python)', 'Engineering', 'Full-time', 'Chennai, India', 'backend-developer'],
       ['Frontend Developer (React / TypeScript)', 'Engineering', 'Full-time', 'Chennai, India', 'frontend-developer'],
       ['Embedded Software Developer (Linux / C)', 'Engineering', 'Full-time', 'Chennai, India', 'embedded-sw-developer'],
-      ['Sales Executive (Enterprise BFSI / Mid-Market)', 'Sales', 'Full-time', 'Chennai, India', 'sales-executive'],
       ['Business Development - Lead Generation', 'Sales', 'Full-time', 'Chennai, India', 'BusinessDevelpoment_Lead_gen'],
       ['Product Growth Marketing- Intern', 'Marketing', 'Internship', 'Chennai, India', 'product_Marketing'],
       ['Digital Marketing Specialist', 'Marketing', 'Full-time', 'Chennai, India', 'Digital_marketing_content'],
@@ -238,10 +238,21 @@ test('run validates the COSGrid homepage/careers surfaces, enriches valid detail
   assert.equal(jobs[0].company, 'COSGrid Networks')
   assert.equal(jobs[0].applyUrl, 'https://www.cosgrid.com/company/careers/openings/backend-developer')
   assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
-  assert.equal(jobs.at(-1).jobDescription, 'Join our Chennai digital marketing team to grow enterprise cybersecurity demand generation and brand visibility.')
+  assert.ok(jobs.every(job => job.jobDescription.length >= 150 && (job.requiredSkills.length > 0 || job.minimumQualification)))
+  for (const job of jobs.filter(job => !job.requiredSkills.length)) {
+    assert.ok(job.minimumQualification)
+    assert.ok(job.jobDescription.includes(job.minimumQualification))
+    assert.match(job.jobDescription, /Responsibilities/)
+  }
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'coverage-gap')
+  assert.equal(evidence.reportedTotal, 8)
+  assert.equal(evidence.listingComplete, false)
+  assert.match(evidence.reason, /unavailable-native-roles:sales-executive,sales-SDR$/)
+  assert.ok(jobs.every(job => job.lifecycleCleanupAllowed === false))
 })
 
-test('run returns [] when the verified COSGrid first-party surfaces are temporarily unreachable from this runtime', async () => {
+test('run propagates transport failure instead of claiming empty COSGrid inventory', async () => {
   assert.equal(import.meta != null, true)
   const scraper = createCosgridNetworksScraper({
     now: () => '2026-08-15T00:00:00.000Z',
@@ -252,11 +263,10 @@ test('run returns [] when the verified COSGrid first-party surfaces are temporar
   const module = await import('./script.js')
   assert.equal(module.isVerifiedCosgridUnavailableError(createUnavailableError()), true)
 
-  const jobs = await scraper.run({
+  const unavailable = createUnavailableError()
+  await assert.rejects(scraper.run({
     fetchText: async () => {
-      throw createUnavailableError()
+      throw unavailable
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), error => error === unavailable)
 })

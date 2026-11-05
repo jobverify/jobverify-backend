@@ -10,7 +10,7 @@ import { resolveZeroJobOutcome } from '../scraper-support/runner.js'
 const cases = [
   { source: 'dataminr', directory: 'dataminr', total: 24, unresolved: 1 },
   { source: 'darktrace', directory: 'darktrace', total: 73, unresolved: 11 },
-  { source: 'gileadsciences', directory: 'gileadsciences.workday', total: 416, unresolved: 35 },
+  { source: 'gileadsciences', directory: 'gileadsciences.workday', total: 416, unresolved: 0, countryScopeComplete: true },
 ]
 
 for (const spec of cases) {
@@ -63,7 +63,7 @@ for (const spec of cases) {
     assert.equal(board.scope, 'global-unfiltered')
     assert.deepEqual(board.appliedFacets, {})
     assert.equal(board.observedIndia, 0)
-    assert.equal(board.countryScopeComplete, false)
+    assert.equal(board.countryScopeComplete, spec.countryScopeComplete ?? false)
     assert.equal(board.unresolvedCountryRoles.length, spec.unresolved)
     assert.equal(board.reconciliation.initial.count, spec.total)
     assert.equal(board.reconciliation.initial.sha256, board.reconciliation.closing.sha256)
@@ -74,9 +74,50 @@ for (const spec of cases) {
     assert.equal(evidence.listingComplete, false)
     assert.equal(evidence.status, 'coverage-gap')
     assert.equal(evidence.reportedTotal, null)
+    assert.equal(evidence.indiaFacetCount, null)
     assert.notEqual(resolveZeroJobOutcome({ provider: {} }, jobs, []), 'fetched-zero')
     assert.ok(reads.some(row => row.url === manifest.officialCareersUrl))
+    if (spec.source === 'gileadsciences') {
+      const native = receipts.find(row => row.url.includes('/wday/cxs/') && row.url.includes('/job/')
+        && JSON.parse(row.body).jobPostingInfo?.jobReqId === 'R0056267')
+      const info = JSON.parse(native.body).jobPostingInfo
+      assert.equal(info.country.descriptor, 'United States of America')
+      assert.deepEqual(info.additionalLocations, ['United States - Texas - Austin'])
+      assert.ok(reads.some(row => row.url === native.url))
+      const requestKey = row => JSON.stringify([row.method, row.url, row.requestBody])
+      assert.deepEqual(reads.map(requestKey).sort(), receipts.map(requestKey).sort(),
+        'The entire retained listing/detail/closing receipt set must still be consumed')
+    }
     assert.equal(getScraperCatalog().find(row => row.source === spec.source).backfillMode, 'live-parser')
+  })
+
+  if (spec.source === 'gileadsciences') test('gileadsciences retains unknown additional country scope without borrowing its foreign primary', async t => {
+    const unresolvedLocation = 'Unresolved secondary campus'
+    replay(t, row => {
+      if (!row.url.includes('/wday/cxs/') || !row.url.includes('/job/')) return row
+      const payload = JSON.parse(row.body)
+      if (payload.jobPostingInfo.jobReqId !== 'R0056267') return row
+      payload.jobPostingInfo.additionalLocations = [unresolvedLocation]
+      return { ...row, body: Buffer.from(JSON.stringify(payload)) }
+    })
+    const jobs = await run()
+    assert.deepEqual(jobs, [])
+    const audit = jobs[Symbol.for('jobverify.workday.country-inventory-proof')]
+    assert.equal(audit.completeSourceScope, false)
+    const board = audit.boards[0]
+    assert.equal(board.countryScopeComplete, false)
+    assert.equal(board.unresolvedCountryRoles.length, 1)
+    assert.equal(board.unresolvedCountryRoles[0].requisitionId, 'R0056267')
+    assert.ok(board.unresolvedCountryRoles[0].locations.includes(unresolvedLocation))
+    assert.equal(board.reconciliation.initial.count, spec.total)
+    assert.equal(board.reconciliation.closing.count, spec.total)
+    assert.equal(board.reconciliation.initial.sha256, board.reconciliation.closing.sha256)
+    const evidence = readInventoryEvidence(jobs)
+    assert.equal(evidence.status, 'coverage-gap')
+    assert.equal(evidence.listingComplete, false)
+    assert.equal(evidence.reportedTotal, null)
+    assert.equal(evidence.indiaFacetCount, null)
+    assert.notEqual(resolveZeroJobOutcome({ provider: {} }, jobs, []), 'fetched-zero')
   })
 
   test(`${spec.source} rejects a removed current corporate handoff`, async t => {

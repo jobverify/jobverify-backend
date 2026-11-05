@@ -3,6 +3,7 @@ import { readNativeDocument } from '../../utils/activeNativeHtml.js'
 import { attachInventoryEvidence } from '../../utils/inventoryEvidence.js'
 import { attachSourceObservationEvidence } from '../../utils/sourceObservationEvidence.js'
 import { createPublicIO, sha256 } from '../publicIO.js'
+import { boundedDeclaredPublicGet } from '../boundedDeclaredPublicGet.js'
 import { readJobPosting } from '../jobPostingData.js'
 import { appData, nativeOrganization } from '../declaredAshby/nativeData.js'
 import { createNativeGreenhouseScraper, nativeEnvelopeFailed } from '../declaredGreenhouse/nativeCareers.js'
@@ -63,11 +64,9 @@ export const createDeclaredJobFeedScraper = (profile, defaults = {}) => ({ name:
   const originalFetch = options.fetchImpl || globalThis.fetch
   const fetchPage = options.fetchPage || (async url => {
     await waitForHost(url, signal);requireNative(allowed(new URL(url)), 'public host became unavailable while queued')
-    const response = await originalFetch(url, { method: 'GET', redirect: 'manual',
+    return boundedDeclaredPublicGet(url, { fetchImpl: originalFetch,
       signal: AbortSignal.any([AbortSignal.timeout(15000), ...(signal ? [signal] : [])]),
-      headers: { Accept: 'text/html,application/json,*/*;q=0.5', 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)' } })
-    const bytes = Buffer.from(await response.arrayBuffer());requireNative(bytes.length <= 16 * 1024 * 1024, 'native entity exceeds input limit')
-    return { status: response.status, url: response.url, headers: Object.fromEntries(response.headers), bodyBase64: bytes.toString('base64') }
+      overflowError: Error('Declared public job feed: native entity exceeds input limit') })
   })
   const io = createPublicIO({ ...options, fetchPage, allowed }), observations = new Map(), order = new Map(), history = []
   const load = async url => {

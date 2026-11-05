@@ -5,6 +5,22 @@ import { once } from 'node:events';
 import { Agent, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
 import { generateResumeText } from '../resume-tailoring/resumeRuntime.js';
 
+test('generation can continue past eight minutes while staying inside the caller deadline', async t => {
+  const timeouts = [];
+  t.mock.method(AbortSignal, 'timeout', milliseconds => {
+    timeouts.push(milliseconds);
+    return new AbortController().signal;
+  });
+  const deadline = Date.now() + 20 * 60000;
+  const fetchImpl = async url => ({ ok: true, json: async () => url.endsWith('/apply-template')
+    ? { prompt: 'synthetic prompt' } : url.endsWith('/tokenize') ? { tokens: [1, 2, 3] }
+      : { choices: [{ finish_reason: 'stop', message: { content: 'complete synthetic document' } }] } });
+  assert.equal(await generateResumeText('synthetic source', { fetchImpl, deadline }), 'complete synthetic document');
+  assert.equal(timeouts.length, 3);
+  assert.ok(timeouts.every(milliseconds => milliseconds > 19 * 60000 && milliseconds <= 20 * 60000),
+    'all model requests must use the caller deadline instead of an eight-minute cutoff');
+});
+
 async function startModelServer(t, completionDelay) {
   const server = createServer((request, response) => {
     request.resume();

@@ -169,7 +169,7 @@ test('dSpace India listing parser keeps the pinned India filter contract intact'
   assert.equal(jobs[0].employmentType, 'Full-time')
 })
 
-test('dSpace India scraper returns normalized India jobs from the verified first-party surfaces', async () => {
+test('dSpace India retains a conflict when its India listing disagrees with the own native country', async () => {
   const jobs = await createDSpaceIndiaScraper().run({
     now: () => '2026-08-02T00:00:00.000Z',
     fetchText: async (url) => {
@@ -186,8 +186,13 @@ test('dSpace India scraper returns normalized India jobs from the verified first
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Software Developer (f/m/d)')
   assert.equal(jobs[0].requisitionId, 'INST-SSD-001')
-  assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].city, 'Trivandrum')
+  assert.equal(jobs[0].country, null)
+  assert.equal(jobs[0].location, null)
+  assert.equal(jobs[0].nativeLocation, 'Trivandrum')
+  assert.equal(jobs[0].sourceDetailFailureKind, 'native-country-conflict')
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.equal(jobs[0].nativeLocationEvidence.addresses[0].addressCountry, 'DE')
+  assert.equal(jobs[0].city, null)
   assert.equal(jobs[0].applicationEmail, APPLICATION_EMAIL)
   assert.equal(jobs[0].experienceRequired, '3 years')
   assert.equal(jobs[0].postingDate, '2026-07-15')

@@ -27,10 +27,9 @@ const simpleMatches = (node, selector) => {
   }
   return Boolean(tag||selector.includes('*')||/[.#]/.test(selector)||selector.trim()==='')
 }
-const selectorMatches = (node,selector,parents) => {
-  const parts=selector.trim().replace(/\s*([>+~])\s*/g,'$1').match(/[^\s>+~]+|[>+~]/g)||[]
+const selectorMatches = (node,parts,parents,matches) => {
   const visit=(current,index)=>{
-    if(!current||index<0||!simpleMatches(current,parts[index]))return false
+    if(!current||index<0||!matches(current,parts[index]))return false
     if(index===0)return true
     const previous=parts[index-1]
     if(previous==='>')return visit(parents.get(current),index-2)
@@ -57,7 +56,18 @@ export function projectAuthorVisibility(doc,html) {
   // attrs.style is parsed HTML, so unquoted values and numeric entities have
   // the same visibility semantics as quoted literal values. CSS comments can
   // occur before/after the numeric opacity value and are removed uniformly.
-  for(const node of nodes)if(hiddenDeclaration(node.attrs.style||'')||selectors.some(selector=>selectorMatches(node,selector,parents)))hide(node)
+  // Matching never changes tag names or attributes. Compile each selector once
+  // and memoize only its simple node predicates within this one document.
+  // Hidden-state projection still follows the original ancestor/sibling rules.
+  const compiled=selectors.map(selector=>selector.trim().replace(/\s*([>+~])\s*/g,'$1').match(/[^\s>+~]+|[>+~]/g)||[])
+  const predicates=new WeakMap()
+  const matches=(node,selector)=>{
+    let cache=predicates.get(node)
+    if(!cache){cache=new Map();predicates.set(node,cache)}
+    if(!cache.has(selector))cache.set(selector,simpleMatches(node,selector))
+    return cache.get(selector)
+  }
+  for(const node of nodes)if(hiddenDeclaration(node.attrs.style||'')||compiled.some(parts=>selectorMatches(node,parts,parents,matches)))hide(node)
   return doc
 }
 export function projectedIframeSources(doc) {

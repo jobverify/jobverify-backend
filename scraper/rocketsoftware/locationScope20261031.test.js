@@ -59,30 +59,26 @@ test('Rocket rejects caller cancellation after the native response rather than r
   }), error => error === reason)
 })
 
-test('a blocked current Rocket handoff cannot turn native empty evidence into complete company empty evidence', async () => {
+test('a blocked current Rocket handoff prevents every native empty-inventory request', async () => {
   const jobs = attachInventoryEvidence([], { status: 'verified-empty', surface: WORKDAY_BOARD_URL,
     firstParty: true, listingComplete: true, pagesFetched: 1, verifiedAt: new Date().toISOString(),
     reportedTotal: 0, indiaFacetCount: 0, reason: 'native-facet-empty' })
   const empty = Symbol.for('jobverify.workday.authoritative-empty')
   Object.defineProperty(jobs, empty, { value: true })
-  const result = await run({ fetchText: async () => { throw new Error('HTTP 403 current careers unavailable') },
-    runWorkday: async () => jobs })
-  assert.equal(readInventoryEvidence(result)?.status, 'coverage-gap')
-  assert.equal(readInventoryEvidence(result)?.listingComplete, false)
-  assert.notEqual(result[empty], true)
+  let nativeCalls=0
+  await assert.rejects(run({fetchText:async()=>{throw Error('HTTP 403 current careers unavailable')},
+    runWorkday:async()=>{nativeCalls++;return jobs}}),/HTTP 403/)
+  assert.equal(nativeCalls,0)
 })
 
-test('a blocked Rocket handoff retains available native jobs and counts with incomplete source coverage', async () => {
+test('a blocked Rocket handoff cannot publish jobs from a stored account', async () => {
   const native = { title: 'Engineer', link: WORKDAY_BOARD_URL + '/job/Hyderabad/Engineer_R1',
     sourceDescription: 'Original native engineering responsibilities remain available.' }
   const jobs = attachInventoryEvidence([native], { status: 'complete-inventory', surface: WORKDAY_BOARD_URL,
     firstParty: true, listingComplete: true, pagesFetched: 1, reportedTotal: 1, indiaFacetCount: 1,
     verifiedAt: new Date().toISOString() })
-  const result = await run({ fetchText: async () => { throw new Error('HTTP 403 current careers unavailable') },
-    runWorkday: async () => jobs })
-  assert.equal(result.length, 1)
-  assert.equal(result[0].sourceDescription, native.sourceDescription)
-  assert.equal(readInventoryEvidence(result).reportedTotal, 1)
-  assert.equal(readInventoryEvidence(result).status, 'coverage-gap')
-  assert.equal(readInventoryEvidence(result).listingComplete, false)
+  let nativeCalls=0
+  await assert.rejects(run({fetchText:async()=>{throw Error('HTTP 403 current careers unavailable')},
+    runWorkday:async()=>{nativeCalls++;return jobs}}),/HTTP 403/)
+  assert.equal(nativeCalls,0)
 })

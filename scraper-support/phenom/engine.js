@@ -401,6 +401,8 @@ export const createPhenomScraper = ({
   nativeLocalitySuffixFormatting = false,
   nativeBoundUSStateCodeFormatting = false,
   nativeReviewedIndiaCityAliases = false,
+  nativeCityDashCountryFormatting = false,
+  nativeDeferredCountryScope = false,
   nativeCountryBeforePostalCode = false,
   nativeCityCountryLiteral = false,
   nativeUnspecifiedState = false,
@@ -558,6 +560,15 @@ export const createPhenomScraper = ({
     if (!short.length) return {consistent:true,target:fullCountry===countryCode(targetCountry)}
     const shortCountry = countryCode(short.at(-1))
     if (shortCountry && shortCountry!==fullCountry) return {consistent:false,target:false}
+    // Quest's Dubai display is "Dubai - United Arab Emirates". The display
+    // supplies no geography: the same office's typed city/state/country and
+    // redundant full labels above must already agree exactly.
+    const cityDashCountry = nativeCityDashCountryFormatting && city && state
+      && countryCode(country) === fullCountry && fullPrefix.length === 2
+      && fullPrefix[0] === city.normalize('NFC').toLowerCase()
+      && fullPrefix[1] === state.normalize('NFC').toLowerCase()
+      && normalizeWhitespace(value.location) === city + ' - ' + country
+    if (cityDashCountry) return {consistent:true,target:fullCountry===countryCode(targetCountry)}
     // A postal suffix (including a native N/A marker) supplies no country.
     // Bind the exact label to this office's explicit country and full region.
     const postalCode = typeof value.postalCode === 'string' ? value.postalCode.trim().normalize('NFC').toLowerCase() : null
@@ -910,6 +921,7 @@ export const createPhenomScraper = ({
     const nativeListingSequences = new WeakMap()
     const nativeListingCountries = new WeakMap()
     const nativeListingsWithoutApply = new WeakSet()
+    const nativeDeferredOffices = new WeakMap()
     let offset = Number.isInteger(options.initialFrom) ? Math.max(0, options.initialFrom) : 0
     let totalHits = null
     let targetCountryCount = null
@@ -969,16 +981,35 @@ export const createPhenomScraper = ({
           added += 1
           const scope = resolveListingScope(raw)
           if (scope.unknown) uncertainScope = true
-          if (!scope.target) continue
-          const scopedRaw = { ...raw, country: targetCountry, cityStateCountry: scope.location,
+          // HPE's country-filtered search can return a foreign primary with
+          // postal-only secondary labels. The facet and coordinates cannot
+          // certify India. Keep a bounded, explicitly requested candidate for
+          // the existing detail workers; it is never returned until its own
+          // typed native India office and all identity checks qualify it.
+          const deferredScope = nativeDeferredCountryScope && !scope.target && !scope.unknown
+            && widgetRequest?.body.selected_fields?.country?.length === 1
+            && countryMatchesTarget(widgetRequest.body.selected_fields.country[0])
+            && countryCode(locationParts(raw.cityStateCountry).at(-1)) === countryCode(raw.country)
+            && raw.isMultiLocation === true && Array.isArray(raw.multi_location_array)
+            && raw.multi_location_array.length > 1 && raw.multi_location_array.length <= 50
+            && raw.multi_location_array.every(office => office && typeof office === 'object' && !Array.isArray(office)
+              // This recovery covers the captured postal-label/coordinates
+              // shape only. Never ignore newly supplied geography fields.
+              && Object.keys(office).every(key => key === 'location' || key === 'latlong')
+              && typeof office.location === 'string' && normalizeWhitespace(office.location) && nativeOfficeCoordinates(office))
+            && raw.multi_location_array.some(office => !countryCode(locationParts(office.location).at(-1)))
+          if (!scope.target && !deferredScope) continue
+          const scopedRaw = deferredScope ? raw : { ...raw, country: targetCountry, cityStateCountry: scope.location,
             city: isStateOnlyLocation(raw, scope.location) ? null : scope.location ? extractCity(scope.location) : raw.city }
           if (typeof listingPredicate === 'function' && !listingPredicate(scopedRaw)) continue
           const [listing] = extractSearchResults({ jobs: [scopedRaw] })
           if (!listing) throw incompleteSnapshot('unparsed target-country listing')
-          const verifiedListing = { ...listing, country: targetCountry, ...(scope.locations.length > 1 ? { locations: scope.locations } : {}) }
+          const verifiedListing = { ...listing, country: deferredScope ? normalizeWhitespace(raw.country) : targetCountry,
+            ...(scope.locations.length > 1 ? { locations: scope.locations } : {}) }
           nativeListingSequences.set(verifiedListing, nativeSequence)
           nativeListingCountries.set(verifiedListing,raw.country)
           if (!Object.hasOwn(raw, 'applyUrl')) nativeListingsWithoutApply.add(verifiedListing)
+          if (deferredScope) nativeDeferredOffices.set(verifiedListing, structuredClone(raw.multi_location_array))
           targetListings.push(verifiedListing)
         }
         if (!added) throw incompleteSnapshot('duplicate page before inventory completion')
@@ -1022,6 +1053,22 @@ export const createPhenomScraper = ({
       verifiedAt: new Date().toISOString(), reason: incomplete ? 'phenom-native-listing-incomplete-or-scope-uncertain'
         : 'phenom-native-total-unique-identities-and-target-scope-reconciled-detail-health-separate',
     })
+    const finalizeJobs = () => {
+      const qualified = jobs.filter((job, index) => !nativeDeferredOffices.has(selected[index])
+        || job.sourceDetailComplete === true && job.country === targetCountry)
+      const finalIncomplete = incomplete || qualified.length < jobs.length
+      if (finalIncomplete && !qualified.length) throw incompleteSnapshot('no verified target jobs before listing completion')
+      for (const job of qualified) {
+        if (finalIncomplete) job.sourceListingComplete = false
+        else delete job.sourceListingComplete
+      }
+      return attachInventoryEvidence(qualified, {
+        ...readInventoryEvidence(jobs), listingComplete: !finalIncomplete,
+        status: finalIncomplete ? 'discovery-only' : totalHits === 0 ? 'verified-empty' : 'complete-inventory',
+        reason: finalIncomplete ? 'phenom-native-listing-incomplete-or-scope-uncertain'
+          : 'phenom-native-total-unique-identities-and-target-scope-reconciled-detail-health-separate',
+      })
+    }
     // Every verified listing still needs its full native detail. Allow one
     // second per worker wave beyond the base allowance, bounded independently
     // of inventory size. Explicit source, environment and option budgets keep
@@ -1036,20 +1083,26 @@ export const createPhenomScraper = ({
     const detailBudgetMs = nativeDetailPassBudget(recovery, requestedDetailBudgetMs)
     if (!jobs.length || detailBudgetMs === 0) {
       if (recovery && requestedDetailBudgetMs > 0) recovery.pending += jobs.length
-      return jobs
+      return finalizeJobs()
     }
     const detailController = new AbortController()
     const detailSignal = signal ? AbortSignal.any([signal, detailController.signal]) : detailController.signal
     const detailTimer = setTimeout(() => detailController.abort(new Error('Phenom optional detail budget expired')), detailBudgetMs)
     try {
       let nextDetail = 0
+      // Settle unresolved scope before spending the same finite detail budget
+      // on rows whose India listing evidence is already explicit.
+      const detailIndexes = selected.map((_, index) => index).sort((left, right) =>
+        Number(nativeDeferredOffices.has(selected[right])) - Number(nativeDeferredOffices.has(selected[left])))
       await Promise.all(Array.from({ length: Math.min(detailConcurrency, jobs.length) }, async () => {
         while (!detailSignal.aborted) {
-          const index = nextDetail++
-          if (index >= jobs.length) return
+          const index = detailIndexes[nextDetail++]
+          if (index == null) return
           const listing = selected[index]
+          const deferredOffices = nativeDeferredOffices.get(listing)
           const receiptKey = nativeDetailReceiptKey('phenom', source, baseUrl, listing,
-            nativeListingSequences.get(listing), nativeListingCountries.get(listing))
+            nativeListingSequences.get(listing), nativeListingCountries.get(listing),
+            ...(deferredOffices ? [deferredOffices] : []))
           try {
             const cached = readNativeDetailReceipt(recovery, receiptKey)
             // A continuation must advance past already inspected, unchanged
@@ -1121,6 +1174,31 @@ export const createPhenomScraper = ({
             const targetDetailCountry = !primaryCountryConflict && !postingOfficeCountryConflict && !invalidCountryShape && !invalidLocationShape && corroboratedDerivedConflict && (detailHasTargetLocation || detailCountries.length > 0
               && detailCountries.every(country => countryMatchesTarget(country)
                 || targetCountry === 'India' && /^IN$/i.test(country.trim())))
+            const boundTargetOffices = deferredOffices ? detailLocations.filter(office => {
+              if (!office || typeof office !== 'object' || Array.isArray(office) || !countryMatchesTarget(office.country)
+                || !normalizeWhitespace(office.cityStateCountry) || !resolveDetailLocation(office, standardisedOffices).target) return false
+              const coordinates = nativeOfficeCoordinates(office)
+              return coordinates && deferredOffices.filter(observed => {
+                const observedCoordinates = nativeOfficeCoordinates(observed)
+                return normalizeWhitespace(observed.location) === normalizeWhitespace(office.location) && observedCoordinates
+                  && coordinates.every((coordinate, index) => coordinate === observedCoordinates[index])
+              }).length === 1
+            }) : []
+            // A missing optional model supplies no contradictory geography.
+            // A supplied malformed model cannot be discarded by the array
+            // extraction above while another model establishes India scope.
+            const deferredLocationShape = !deferredOffices || ['multi_location', 'multi_location_array']
+              .every(key => !Object.hasOwn(structured || {}, key) || Array.isArray(structured[key]))
+              && (!Object.hasOwn(posting || {}, 'jobLocation') || postingLocations.length > 0
+                && postingLocations.every(place => place && typeof place === 'object' && !Array.isArray(place)
+                  && place.address && typeof place.address === 'object' && !Array.isArray(place.address)
+                  && place.address.addressCountry != null))
+            const ownedDeferredScope = !deferredOffices || boundTargetOffices.length > 0
+              && matchingNativeSequence && identifiers.length === 2
+              && normalizeWhitespace(structured.jobId) === listing.jobId && normalizeWhitespace(structured.reqId) === listing.requisitionId
+              && normalizeWhitespace(structured.title) === listing.title && canonical === listing.sourceUrl
+              && normalizeWhitespace(posting?.hiringOrganization?.name) === companyName
+              && normalizeWhitespace(posting?.hiringOrganization?.url) === canonical
             // Bind an observed endpoint to raw native identity, separately from the generated role fallback.
             const detailApplyUrl = typeof structured?.applyUrl === 'string' ? normalizeWhitespace(structured.applyUrl) : null
             let ownedObservedApply = false
@@ -1147,7 +1225,7 @@ export const createPhenomScraper = ({
               || listingSequence && structured?.jobSeqNo != null && !matchingNativeSequence
               || canonicalUrl && (canonicalUrl.origin !== new URL(listing.sourceUrl).origin
                 || !expectedIds.includes(canonicalId) && !(matchingNativeSequence && canonicalId === listingSequence))
-              || !targetDetailCountry) {
+              || !targetDetailCountry || !ownedDeferredScope || !deferredLocationShape) {
               jobs[index].sourceDetailFailureKind = 'identity-mismatch'
               rememberNativeDetailReceipt(recovery, receiptKey, { failureKind: 'identity-mismatch' }, verifiedAt)
               continue
@@ -1166,14 +1244,21 @@ export const createPhenomScraper = ({
             enriched.jobId = listing.jobId
             enriched.requisitionId = listing.requisitionId
             enriched.title = listing.title
-            enriched.country = listing.country
+            enriched.country = deferredOffices ? targetCountry : listing.country
+            if (deferredOffices) {
+              enriched.location = normalizeWhitespace(boundTargetOffices[0].cityStateCountry)
+              enriched.city = normalizeWhitespace(boundTargetOffices[0].city)
+              enriched.locations = [...new Set(detailLocations.map(office => normalizeWhitespace(
+                typeof office === 'string' ? office : office.cityStateCountry || office.location)).filter(Boolean))]
+            }
             enriched.sourceUrl = listing.sourceUrl
             const nativeCountryNameMappings = localizedCountryNames.filter(entry => detailCountries.some(country =>
               countryParts(country).some(part => part.toLowerCase() === entry.label.toLowerCase())))
-            if (derivedCountryConflict || nativeCountryNameMappings.length) enriched.sourceNativeCountryEvidence = {
+            if (derivedCountryConflict || nativeCountryNameMappings.length || deferredOffices) enriched.sourceNativeCountryEvidence = {
               country: structured.country, standardisedCountry: structured.standardisedCountry, ml_country: structured.ml_country,
               nativeIndiaOfficeLabels: corroboratedIndiaOffices.map(value => value.cityStateCountry),
               jsonLdCountries: postingCountries, derivedCountryConflict: Boolean(derivedCountryConflict),
+              ...(deferredOffices ? { verifiedSecondaryOffice: true, listingCountry: nativeListingCountries.get(listing) } : {}),
               ...(nativeCountryNameMappings.length ? { nativeCountryNameMappings: nativeCountryNameMappings.map(entry => ({ ...entry })) } : {}),
             }
             enriched.link = enriched.applyUrl
@@ -1187,7 +1272,7 @@ export const createPhenomScraper = ({
                 structured: structured ? Object.fromEntries(['jobId', 'reqId', 'jobSeqNo', 'title', 'applyUrl', 'country',
                   'ml_country', 'standardisedCountry', 'multi_location', 'multi_location_array', 'standardised_multi_location'].filter(key => structured[key] !== undefined)
                   .map(key => [key, structured[key]])) : null,
-                posting: posting ? Object.fromEntries(['identifier', 'title', 'jobLocation'].filter(key => posting[key] !== undefined)
+                posting: posting ? Object.fromEntries(['identifier', 'title', 'jobLocation', 'hiringOrganization'].filter(key => posting[key] !== undefined)
                   .map(key => [key, posting[key]])) : null,
                 canonical, detail,
               }, verifiedAt)
@@ -1213,7 +1298,7 @@ export const createPhenomScraper = ({
         ...readInventoryEvidence(jobs), verifiedAt: new Date(recovery.verifiedAt).toISOString(),
       })
     }
-    return jobs
+    return finalizeJobs()
   }
 
   return {

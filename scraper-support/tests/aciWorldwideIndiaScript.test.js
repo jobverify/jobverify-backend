@@ -49,7 +49,10 @@ const officialCandidateExperienceHtml = `
 
 const listingPayload = {
   items: [{
+    Offset: 0,
     Limit: 24,
+    SiteNumber: 'CX',
+    Location: null,
     TotalJobsCount: 2,
     requisitionList: [
       {
@@ -225,7 +228,7 @@ test('run verifies the official careers handoff before calling the public Oracle
     },
     fetchJson: async (url) => {
       requestedJsonUrls.push(url)
-      if (url === aciWorldwideIndia.buildSearchUrl()) return listingPayload
+      if (url === aciWorldwideIndia.buildSearchUrl({ location: '' })) return listingPayload
       if (url === aciWorldwideIndia.buildJobDetailApiUrl('19081')) return detailPayload
       throw new Error(`Unexpected JSON URL: ${url}`)
     },
@@ -234,10 +237,13 @@ test('run verifies the official careers handoff before calling the public Oracle
   assert.deepEqual(requestedTextUrls, [
     aciWorldwideIndia.CORPORATE_CAREERS_URL,
     aciWorldwideIndia.CANDIDATE_EXPERIENCE_URL,
+    aciWorldwideIndia.CORPORATE_CAREERS_URL,
+    aciWorldwideIndia.CANDIDATE_EXPERIENCE_URL,
   ])
   assert.deepEqual(requestedJsonUrls, [
-    aciWorldwideIndia.buildSearchUrl(),
+    aciWorldwideIndia.buildSearchUrl({ location: '' }),
     aciWorldwideIndia.buildJobDetailApiUrl('19081'),
+    aciWorldwideIndia.buildSearchUrl({ location: '' }),
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'aciworldwideindia')

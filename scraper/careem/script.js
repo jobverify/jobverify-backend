@@ -7,7 +7,8 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "careem"
 export const COMPANY = "Careem"
-export const CAREERS_URL = 'https://www.careem.com/en-AE/careers/'
+// The former /en-AE/ URL now publishes a same-origin 301 to this canonical route.
+export const CAREERS_URL = 'https://www.careem.com/en-ae/careers/'
 export const DISPOSITION = 'current-owned-Next-client-and-public-Greenhouse-inventory'
 export const VERIFIED_ON = null
 export const VERIFIED_SURFACE_SUMMARY = 'Revalidate the current corporate jobs hyperlink, owned Next portal/build, exact reviewed client and all full native postings in two snapshots. Original publication and revision are preserved separately; whole-company coverage, legal employer, eligibility and publication remain unknown.'

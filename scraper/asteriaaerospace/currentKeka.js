@@ -116,12 +116,14 @@ export async function runCurrentAsteriaKeka(options = {}) {
   const audit = { source: 'asteriaaerospace', observedListingCount: opening.length, observedIndiaListingCount: allJobs.length,
     nonIndiaListingCount: exclusions.length, candidateDetails: opening.length, extractedDetailJobs: jobs.length,
     jobs: jobs.map(job => ({ id: job.jobId })), exclusions, failures, channelGaps,
-    listingPaginationComplete: jobs.length === allJobs.length, closingInventoryMatches: stable, sourceScopeComplete: complete,
+    listingPaginationComplete: jobs.length === allJobs.length, closingInventoryMatches: stable, sourceScopeComplete: false,
+    modernBoardListingComplete: complete,
     declaredModernBoardClosingMatches: stable, nativeActiveArrayCount: opening.length }
-  for (const job of jobs) Object.assign(job, { scrapedAt: new Date().toISOString(), sourceListingComplete: complete })
+  for (const job of jobs) Object.assign(job, { scrapedAt: new Date().toISOString(), sourceListingComplete: complete,
+    sourceScopeComplete:false,lifecycleCleanupAllowed:false,applicationVisited:false })
   if (jobs.length) jobs[0].nativeCollectionEvidence = audit
   const reason = `Declared current official Asteria Keka complete active array observed=${opening.length}; full India roles=${jobs.length}; native failures=${failures.length}; closing full native models match=${stable}; additional declared channel gaps=${JSON.stringify(channelGaps)}; no company-wide completeness claim`
-  attachInventoryEvidence(jobs, { firstParty: true, surface: EMBED, status: complete ? (opening.length ? 'complete-inventory' : 'verified-empty') : 'coverage-gap', listingComplete: complete,
+  attachInventoryEvidence(jobs, { firstParty: true, surface: EMBED, status: 'coverage-gap', listingComplete: complete,
     reportedTotal: complete ? opening.length : null, indiaFacetCount: complete ? jobs.length : null, pagesFetched: requests, verifiedAt: new Date().toISOString(), reason })
   if (options.onAudit) await wait(options.onAudit(audit))
   signal.throwIfAborted(); return jobs

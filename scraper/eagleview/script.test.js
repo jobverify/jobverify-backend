@@ -92,42 +92,11 @@ test('extracts only India listings and normalizes Eagleview iCIMS job URLs', () 
   }])
 })
 
-test('paginates the official India search, deduplicates listings, and returns normalized Eagleview jobs', async () => {
-  const requestedUrls = []
-  const scraper = createEagleviewScraper({ now: () => '2026-07-08T00:00:00.000Z' })
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return url.includes('page=1') ? firstPageHtml : secondPageHtml
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [buildSearchUrl({ page: 1 }), buildSearchUrl({ page: 2 })])
-  assert.equal(jobs.length, 2)
-  assert.deepEqual(jobs[1], {
-    title: 'Software Engineer',
-    company: 'Eagleview',
-    department: null,
-    location: 'Hyderabad, India',
-    city: 'Hyderabad',
-    country: 'India',
-    jobId: '2867',
-    requisitionId: '2867',
-    sourceUrl: 'https://careers.eagleview.com/jobs/2867?lang=en-us',
-    applyUrl: 'https://careers.eagleview.com/jobs/2867?lang=en-us',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: null,
-    source: 'eagleview',
-    link: 'https://careers.eagleview.com/jobs/2867?lang=en-us',
-    scrapedAt: '2026-07-08T00:00:00.000Z',
-  })
+test('legacy Eagleview listing cards cannot be published without current native role details', async () => {
+  await assert.rejects(createEagleviewScraper().run({
+    maxPages:2,
+    fetchText:async url=>url===JOBS_PAGE_URL?firstPageHtml:secondPageHtml,
+  }),error=>error.failureKind==='coverage_gap')
 })
 
 test('rejects an unexpected public careers surface', async () => {
@@ -135,6 +104,28 @@ test('rejects an unexpected public careers surface', async () => {
     createEagleviewScraper().run({
       fetchText: async () => '<html><title>Access denied</title><body>Challenge page</body></html>',
     }),
-    /Eagleview jobs page no longer matches the verified official public careers surface/i,
+    error=>error.failureKind==='coverage_gap',
   )
+})
+
+test('Eagleview delegates the current public Jibe client and matches each native India detail',async()=>{
+ const client='https://app.jibecdn.com/prod/search/4.11.225/main.js'
+ const settings={path:'/jobs',locale:'en-US',numRowsPerPage:10,externalSearch:true,isLoggedIn:false,contextSettings:{}}
+ const page=`<title>EagleView Careers</title><script>window._jibe={cid:'eagleview'};window.searchConfig=${JSON.stringify(settings)}</script><script src="${client}"></script>`
+ const description='<p>Design production services, work with engineers on technical designs, investigate incidents and improve the reliability and performance of software used by customers.</p>'
+ const native={req_id:'2931',slug:'2931',title:'Data Scientist II',language:'en-us',country:'India',country_code:'IN',city:'Bengaluru',hiring_organization:'EagleView',description,
+  internal:false,searchable:true,applyable:true,client_code:'eagleview',apply_url:'https://careers-apac-eagleview.icims.com/jobs/2931/login'}
+ const requests=[]
+ const jobs=await createEagleviewScraper().run({
+  fetchPage:async url=>{requests.push(url);assert.ok([JOBS_PAGE_URL,client].includes(url));return {url,status:200,html:url===client?'class Search { search(p){return this.http.get("/api/jobs",{params:p})} detail(s,l){return this.http.get(`api/jobs/${s}/${l}`)} url(j){return `/jobs/${j.slug}?lang=${j.language}`}}':page}},
+  fetchJson:async url=>{requests.push(url);const u=new URL(url);assert.equal(u.origin,'https://careers.eagleview.com');return u.pathname==='/api/jobs'?{jobs:[{data:native}],totalCount:1,count:1}:native},
+ })
+ assert.equal(jobs.length,1)
+ assert.equal(jobs[0].source,'eagleview')
+ assert.equal(jobs[0].country,'India')
+ assert.equal(jobs[0].sourceDescription,description)
+ assert.equal(jobs[0].nativeSourceRecord.detail.req_id,'2931')
+ assert.equal(jobs[0].sourceScopeComplete,false)
+ assert.ok(requests.includes('https://careers.eagleview.com/api/jobs/2931/en-us'))
+ assert.equal(requests.some(url=>url.includes('icims.com')),false)
 })

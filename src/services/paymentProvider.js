@@ -73,6 +73,7 @@ const createProviderConfigurationError = () => new PaymentProviderError(
 
 export const createRazorpayProvider = ({
   createClient = (options) => new Razorpay(options),
+  fetchImpl = globalThis.fetch,
 } = {}) => ({
   name: "razorpay",
   async createCheckoutOrder({ purchase, planConfig, user }) {
@@ -123,6 +124,24 @@ export const createRazorpayProvider = ({
         description: `${planConfig.name} access`,
       },
     };
+  },
+  async fetchPayment({ providerPaymentId }) {
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) throw createProviderConfigurationError();
+    if (typeof providerPaymentId !== 'string' || !/^[a-zA-Z0-9_]{1,128}$/.test(providerPaymentId)) {
+      throw new PaymentProviderError('Unable to verify payment status.');
+    }
+    try {
+      const response = await fetchImpl(`https://api.razorpay.com/v1/payments/${providerPaymentId}`, {
+        headers: { Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString('base64')}`, Accept: 'application/json' },
+        redirect: 'error', signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) throw new Error('Payment lookup failed.');
+      return await response.json();
+    } catch {
+      throw new PaymentProviderError('Unable to verify payment status.');
+    }
   },
   verifyPayment({ providerOrderId, providerPaymentId, providerSignature }) {
     const keySecret = process.env.RAZORPAY_KEY_SECRET;

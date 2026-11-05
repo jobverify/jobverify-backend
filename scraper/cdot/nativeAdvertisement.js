@@ -1,34 +1,39 @@
 import {readPublishedPdf,pdfBoxText} from './pdfDocument.js'
-const check=(ok,message)=>{if(!ok)throw Object.assign(Error('C-DOT native: '+message),{abortRetries:true})}
+import {need,makeListingObservation} from './nativeModels.js'
+import {bindNativeDeploymentCountry} from './nativeCountry.js'
 const normalize=value=>String(value??'').replace(/\s+/g,' ').trim()
 const titleKey=value=>normalize(value).toLowerCase().replace(/professionals?/g,'professional').replace(/[^a-z0-9]/g,'')
-
-export async function readCdotAdvertisement(bytes,listing,{signal}={}){
-  const pdf=await readPublishedPdf(bytes,{signal}),first=pdf.pages[0]
-  check(first.width===792&&first.height===612&&pdf.totalPages>=3,'native role-table layout changed')
-  check(/C-DOT \(Cent(?:er|re) for Development of Telematics\)/.test(pdf.text)&&/Government of India/.test(pdf.text),'native advertisement employer changed')
-  const bounds=page=>({bottom:page.number===3?475:75,top:page.number===1?195:530})
-  const cell=(left,right)=>pdf.pages.slice(0,3).map(page=>pdfBoxText(page,{left,right,...bounds(page)})).filter(Boolean).join(' ')
-  const title=pdfBoxText(first,{left:78,right:178,...bounds(first)}),responsibilities=cell(362,511),criteria=cell(511,674)
-  const mode=cell(178,249),ctc=cell(249,305),age=cell(305,362),count=cell(674,717),workplace=cell(717,766)
-  check(titleKey(title)===titleKey(listing.title),'listed role and native PDF post identity conflict')
-  check(responsibilities.length>500&&/Key Responsibilities/.test(responsibilities)&&/continuous improvement of product architecture/.test(responsibilities),
-    'full native responsibility column is unavailable')
-  check(criteria.length>500&&/Minimum Percentage 70%/.test(criteria)&&/Desired Skills/.test(criteria),'full native eligibility column is unavailable')
-  check(workplace==='Delhi'&&/posted to any Project \/ location throughout the country/.test(normalize(pdf.text)),
-    'native role workplace/country cannot be established')
-  check(count==='5'&&/^Contractual/.test(mode)&&/35/.test(age),'native role metadata changed')
-  const english=[]
-  for(const page of pdf.pages){if(/[\u0900-\u097f]/.test(page.text))break;english.push(page)}
-  check(english.length>=3&&/English version will prevail/.test(normalize(pdf.text)),'complete primary-language document version unavailable')
-  const general=english.filter(page=>page.number>=3).map(page=>page.number===3
-    ?page.items.filter(item=>item.y<475).map(item=>item.text+(item.endOfLine?'\n':' ')).join(' '):page.text).join('\n\n')
-  const jobDescription=[title,'Mode: '+mode,'CTC: '+ctc,'Maximum age: '+age,responsibilities,criteria,
-    'Number of posts: '+count,'Location: '+workplace,general].join('\n\n')
-  return {...listing,title,jobDescription,sourceDescription:jobDescription,location:'Delhi, India',city:'Delhi',country:'India',
-    employmentType:'Contract',sourceEmploymentType:mode,numberOfOpenings:5,experienceRequired:criteria.match(/Experience\s*-\s*(Fresher to 2 Years)/)?.[1]||null,
-    minimumQualification:criteria.match(/Qualification:\s*([\s\S]+?)\s*Desired Skills:/)?.[1]||null,
-    sourceDetailComplete:true,sourceNativePDFSHA256:pdf.sha256,sourceNativePDFPages:pdf.totalPages,
-    sourceDescriptionPages:english.map(page=>page.number),sourceNativePDFText:pdf.text,
-    sourceCountryEvidence:'Native post Location Delhi plus domestic posting clause in the Government of India advertisement'}
+export async function readCdotAdvertisement(bytes,listing,{signal,page,clock}={}){
+ const {rendererFontAliases,...pdf}=await readPublishedPdf(bytes,{signal}),first=pdf.pages[0]
+ need(first.width===792&&first.height===612&&pdf.totalPages>=3,'native role-table layout changed')
+ const employer=normalize(first.text).match(/C-DOT \(Cent(?:er|re) for Development of Telematics\)/)?.[0]
+ need(employer&&/Government of India/.test(first.text),'native advertisement publisher changed')
+ const bounds=p=>({bottom:p.number===3?475:75,top:p.number===1?195:530})
+ const cell=(left,right)=>pdf.pages.slice(0,3).map(p=>pdfBoxText(p,{left,right,...bounds(p)})).filter(Boolean).join(' ')
+ const title=pdfBoxText(first,{left:78,right:178,...bounds(first)}),responsibilities=cell(362,511),criteria=cell(511,674)
+ const mode=cell(178,249),ctc=cell(249,305),maximumAge=cell(305,362),count=cell(674,717),workplace=cell(717,766)
+ need(titleKey(title)===titleKey(listing.title),'listed role and native PDF post identity conflict')
+ need(responsibilities.length>500&&/Key Responsibilities/.test(responsibilities)&&criteria.length>500&&/Qualification:/.test(criteria),'complete current native role columns unavailable')
+ need(workplace&&mode&&/^\d+$/.test(count)&&Number(count)>0&&Number(count)<=10000,'native role metadata unavailable')
+ const boundary=pdf.pages.findIndex(p=>/[\u0900-\u097f]/.test(p.text)),english=boundary===-1?pdf.pages:pdf.pages.slice(0,boundary)
+ need(english.length>=3&&/English version will prevail/.test(normalize(pdf.text)),'complete primary-language version unavailable')
+ need(boundary===-1||pdf.pages.slice(boundary).every(p=>/[\u0900-\u097f]/.test(p.text)),'unreviewed primary-language appendix after translated version')
+ const primaryEnglishText=english.map(p=>p.text).join('\n\n')
+ const role={title,mode,ctc,maximumAge,responsibilities,criteria,numberOfPosts:Number(count),workplace}
+ const country=bindNativeDeploymentCountry({pages:english,role,sha256:pdf.sha256})
+ const observation=makeListingObservation(listing,page,clock)
+ return {...observation,title,jobDescription:primaryEnglishText,sourceDescription:primaryEnglishText,nativeWorkplace:workplace,
+  country:country.country,location:country.country?workplace:null,sourceCountryScopeUnresolved:!country.country,
+  sourceWorksiteCountryProof:country.proof,sourceDetailFailureKind:country.country?'native-closing-unreconciled':'native-country-unproven',
+  nativeHiringOrganization:{name:employer,url:'https://cdot.in/'},sourceEmploymentType:mode,employmentType:/^Contractual\b/.test(mode)?'Contract':null,
+  numberOfOpenings:Number(count),experienceRequired:criteria.match(/Experience\s*-\s*(Fresher to \d+ Years)/)?.[1]??null,
+  minimumQualification:criteria.match(/Qualification:\s*([\s\S]+?)\s*Desired Skills:/)?.[1]??null,
+  nativeSourceRecord:{listing:structuredClone(listing),index:{identity:structuredClone(page.identity),schemas:structuredClone(page.schemas)},role,pdf,primaryEnglishPages:english.map(p=>p.number)},
+  sourceNativePDFSHA256:pdf.sha256,sourceNativePDFPages:pdf.totalPages,sourceNativePDFText:pdf.text,sourceDescriptionPages:english.map(p=>p.number),
+  sourceNativePDFRendererFontAliases:rendererFontAliases,
+  sourceNativeCriteriaContainerRetained:true,sourceStructuredRoleCriteria:structuredClone(role),
+  sourceNativeCountryContext:{nativeWorkplace:workplace,documentEmployerJurisdiction:'Government of India',
+   domesticPostingClause:normalize(pdf.text).match(/If selected, the candidates can be posted to any Project \/ location throughout the country\./)?.[0]??null,
+   country:country.country,contextualBinding:Boolean(country.proof),literalRoleCountry:false,
+   reason:country.reason??country.proof.interpretation}}
 }

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {createNativeTeradataScraper} from './native.js'
 
 import TERADATA_CATALOG from './catalog.js'
 
@@ -46,124 +46,7 @@ export const hasOfficialTeradataCareersSignals = (html = '') => {
     && /https:\/\/careers\.teradata\.com/i.test(page)
 }
 
-export const buildSearchJobsRequestBody = ({ first = 100, start = 0 } = {}) => ({
-  operationName: 'searchJobs',
-  variables: {
-    hasPositionTitle: false,
-    hasEmploymentType: false,
-    hasJobCategory: false,
-    hasClassificationType: false,
-    hasGradeLevel: false,
-    hasRecruiter: false,
-    hasHiringManager: false,
-    hasUserDefined1: false,
-    hasUserDefined2: false,
-    hasUserDefined3: false,
-    hasUserDefined4: false,
-    hasUserDefined5: false,
-    hasUserDefined6: false,
-    hasUserDefined7: false,
-    hasUserDefined8: false,
-    hasUserDefined9: false,
-    hasUserDefined10: false,
-    hasUserDefined11: false,
-    hasUserDefined12: false,
-    hasUserDefined13: false,
-    hasUserDefined14: false,
-    hasUserDefined15: false,
-    hasUserDefined16: false,
-    hasUserDefined17: false,
-    hasUserDefined18: false,
-    hasUserDefined19: false,
-    hasUserDefined20: false,
-    hasUserDefined21: false,
-    hasUserDefined22: false,
-    hasUserDefined23: false,
-    hasUserDefined24: false,
-    hasUserDefined25: false,
-    hasUserDefined26: false,
-    hasUserDefined27: false,
-    hasUserDefined28: false,
-    hasUserDefined29: false,
-    hasUserDefined30: false,
-    hasUserDefined31: false,
-    hasUserDefined32: false,
-    hasUserDefined33: false,
-    hasUserDefined34: false,
-    hasUserDefined35: false,
-    hasUserDefined36: false,
-    hasUserDefined37: false,
-    hasUserDefined38: false,
-    hasUserDefined39: false,
-    hasUserDefined40: false,
-    hasUserDefined41: false,
-    hasUserDefined42: false,
-    hasUserDefined43: false,
-    hasUserDefined44: false,
-    hasUserDefined45: false,
-    hasUserDefinedBit1: false,
-    hasUserDefinedDecimal1: false,
-    hasUserDefinedDecimal2: false,
-    hasUserDefinedDecimal3: false,
-    hasUserDefinedDecimal4: false,
-    hasUserDefinedDecimal5: false,
-    hasUserDefinedDecimal6: false,
-    hasUserDefinedDecimal7: false,
-    hasUserDefinedDecimal8: false,
-    hasUserDefinedDecimal9: false,
-    hasUserDefinedDecimal10: false,
-    hasUserDefinedDecimal11: false,
-    hasUserDefinedDecimal12: false,
-    hasUserDefinedDecimal13: false,
-    hasUserDefinedDecimal14: false,
-    hasUserDefinedDecimal15: false,
-    hasUserDefinedDecimal16: false,
-    hasUserDefinedDecimal17: false,
-    hasUserDefinedDecimal18: false,
-    hasUserDefinedDecimal19: false,
-    hasUserDefinedDecimal20: false,
-    hasUserDefinedDecimal21: false,
-    hasUserDefinedDecimal22: false,
-    hasUserDefinedDecimal23: false,
-    hasUserDefinedDecimal24: false,
-    hasUserDefinedDecimal25: false,
-    hasUserDefinedDecimal50: false,
-    hasUserDefinedDecimal51: false,
-    hasUserDefinedSmallText1: false,
-    hasUserDefinedSmallText2: false,
-    hasUserDefinedSmallText3: false,
-    hasUserDefinedSmallText4: false,
-    hasUserDefinedSmallText5: false,
-    hasUserDefinedMediumText1: false,
-    hasUserDefinedMediumText2: false,
-    hasUserDefinedMediumText3: false,
-    hasUserDefinedMediumText4: false,
-    hasUserDefinedMediumText5: false,
-    hasUserDefinedLargeText1: false,
-    hasUserDefinedLargeText2: false,
-    hasUserDefinedLargeText3: false,
-    hasUserDefinedLargeText4: false,
-    hasUserDefinedLargeText5: false,
-    hasCurrencyCode: false,
-    hasNumPositionsOpen: false,
-    hasSalaryRange: false,
-    hasPrimaryLocation: false,
-    query: '',
-    first,
-    start,
-    filters: {
-      location: [],
-      workplaceType: [],
-      jobCategory: [],
-      positionType: [],
-    },
-  },
-  extensions: {
-    trustedDocument: {
-      id: 'search-jobs',
-    },
-  },
-})
+export {buildSearchJobsRequestBody, isTeradataSearchRequest} from './searchRequest.js'
 
 const isIndiaJob = (node = {}) => {
   const locationText = [
@@ -221,54 +104,7 @@ export const extractJobs = (payload = {}) => {
     .filter((job) => job.title && job.jobId && job.sourceUrl)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: `${SOURCE}-html`,
-  timeoutMs: 15000,
-})
-
-const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
-  method: options.method || 'GET',
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  },
-  body: options.body,
-  label: `${SOURCE}-json`,
-  timeoutMs: 20000,
-})
-
-export const createTeradataScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialTeradataCareersSignals(careersHtml)) {
-      throw new Error('Teradata verified first-party careers page no longer matches the Gr8People handoff')
-    }
-
-    const payload = await fetchJson(JOBS_API_URL, {
-      method: 'POST',
-      body: JSON.stringify(buildSearchJobsRequestBody()),
-    })
-    const jobs = extractJobs(payload)
-
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
-  },
-})
+export const createTeradataScraper = (defaults = {}) => createNativeTeradataScraper(defaults)
 
 export const run = async (options = {}) => createTeradataScraper(options).run(options)
 

@@ -14,10 +14,10 @@ test('Webandcrafts is registered against the verified first-party jobs index wit
   assert.equal(provider.companyCareerPage, 'https://webandcrafts.com/careers/job-openings')
   assert.equal(provider.atsPlatform, 'webandcrafts-first-party-careers-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'jobs-index-plus-first-party-department-post-api')
+  assert.equal(provider.paginationStrategy, 'single-native-flight-index+full-first-party-details+closing-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-careers-page+verified-jobs-index+first-party-department-postings-api',
+    'current-first-party-careers-handoffs+active-literal-flight-listing+full-native-jobData+length-framed-literal-criteria+closing-model-reconciliation',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

@@ -1,12 +1,16 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {TURBOHIRE_CURRENT_PUBLIC_CLIENT} from '../../scraper-support/utils/turboHirePublicClient.js'
 import {validateNativeInventory,validateNativeDetail,nativeLocationScope} from './nativeContract.js'
 import {run,CAREERS_PAGE_URL,NOAUTH_TOKEN_URL,FILTERED_JOBS_URL,hasOfficialBoardSignal,extractTurboHireHandoffUrl} from './script.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 const fixture=JSON.parse(fs.readFileSync(new URL('./fixtures/native-20261020.json',import.meta.url)))
 const now='2026-10-20T23:00:00.000Z'
 const first=fixture.listing.Result[0]
+const sdk=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../test/test-data/recruitmentGoal20261104/turbohire-stage2-public-client.json.gz',import.meta.url))))
+const syntheticCurrentBoard=fixture.boardHtml.replace(/\/main\.[a-f0-9]+\.chunk\.js/g,TURBOHIRE_CURRENT_PUBLIC_CLIENT.path)
 test('actual full inventory reconciles38 identities and explicit India addresses',()=>assert.equal(validateNativeInventory(fixture.listing,{now}).rows.length,38))
 test('native detail supplies full5169-character JD, never500-character listing teaser',()=>{
  const d=validateNativeDetail(fixture.details[first.JobId],first,{now});assert.ok(d.jobDescription.length>4000);assert.equal(d.sourceDetailComplete,true)
@@ -37,12 +41,12 @@ test('inactive markup cannot fill native JD',()=>{
 test('mixed explicit native countries retain India secondary without inventing geography',()=>{
  const s=nativeLocationScope('[{"Address":"London, United Kingdom"},{"Address":"Bengaluru, Karnataka, India"}]');assert.equal(s.indiaLocations.length,1);assert.equal(s.locations.length,2)
 })
-const callbacks=()=>({now:()=>now,fetchPage:async url=>({status:200,url,html:url===CAREERS_PAGE_URL?fixture.officialHtml:fixture.boardHtml}),fetchJson:async url=>{
+const callbacks=()=>({now:()=>now,requestIntervalMs:0,fetchPage:async url=>({status:200,url,html:url.endsWith(TURBOHIRE_CURRENT_PUBLIC_CLIENT.path)?sdk.text:url===CAREERS_PAGE_URL?fixture.officialHtml:syntheticCurrentBoard}),fetchJson:async url=>{
  if(url===NOAUTH_TOKEN_URL)return{access_token:'fixture-public-anonymous-token'}
  if(url===FILTERED_JOBS_URL)return{Total:1,Result:[first]}
  return fixture.details[first.JobId]
 }})
-test('full run verifies detail and final inventory with explicit metadata',async()=>{const jobs=await run(callbacks());assert.equal(jobs.length,1);assert.equal(jobs[0].sourceListingComplete,true);assert.equal(readInventoryEvidence(jobs).reportedTotal,1);assert.ok(jobs[0].jobDescription.length>4000)})
+test('full run verifies detail and final inventory without asserting company completeness',async()=>{const jobs=await run({...callbacks(),requestIntervalMs:0});assert.equal(jobs.length,1);assert.equal(jobs[0].sourceListingComplete,false);assert.equal(jobs[0].sourceScopeComplete,false);assert.equal(jobs[0].nativeRoleClosingReconciled,true);assert.equal(readInventoryEvidence(jobs).reportedTotal,1);assert.ok(jobs[0].jobDescription.length>4000)})
 test('zero cap cannot authorize cleanup',async()=>{const jobs=await run({...callbacks(),maxJobs:0});assert.equal(jobs.length,0);assert.equal(readInventoryEvidence(jobs).listingComplete,false)})
 test('caller abort settles injected hanging transport',async()=>{const c=new AbortController(),p=run({...callbacks(),signal:c.signal,fetchPage:()=>new Promise(()=>{})});c.abort();await assert.rejects(p)})
 test('inactive board branding and corporate handoffs cannot establish identity',()=>{
@@ -54,10 +58,10 @@ test('native calendar-only closing date never becomes an exact invented UTC expi
  const d=structuredClone(fixture.details[first.JobId]);d.ExpiryDates.CAREERPAGE='2026-10-31T00:00:00'
  const job=validateNativeDetail(d,first,{now});assert.equal(job.closingDate,'2026-10-31');assert.equal(job.sourceClosingDateIsExact,false);assert.equal(job.sourceNativeClosingDate,'2026-10-31T00:00:00')
 })
-test('missing full native description retains row and separate unhealthy detail flag',async()=>{
+test('missing full native description remains unresolved with explicit diagnostics',async()=>{
  const c=callbacks(),base=c.fetchJson
  c.fetchJson=async url=>{const value=structuredClone(await base(url));if(url.includes('/api/publicjobs?'))value.JobDescriptionV2='<p>NA</p>';return value}
- const jobs=await run(c);assert.equal(jobs.length,1);assert.equal(jobs[0].sourceDetailComplete,false);assert.equal(jobs[0].jobDescription,null);assert.equal(readInventoryEvidence(jobs).listingComplete,true)
+ const jobs=await run({...c,requestIntervalMs:0});assert.equal(jobs.length,0);assert.equal(readInventoryEvidence(jobs).listingComplete,false);assert.match(readInventoryEvidence(jobs).reason,/missing-content/)
 })
 test('changed final native snapshot cannot certify completion',async()=>{
  const c=callbacks(),base=c.fetchJson;let count=0

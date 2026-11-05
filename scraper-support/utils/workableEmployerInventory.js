@@ -49,7 +49,7 @@ const fetchJson = async (url, options = {}) => {
     } })
     callerSignal?.throwIfAborted()
     signal.throwIfAborted()
-    if (response.status !== 200 || response.url !== url) throw new Error(`Workable native HTTP status or redirect identity changed: ${url}`)
+    if (response.status !== 200 || response.url !== url) throw Object.assign(new Error(`Workable native HTTP status or redirect identity changed: ${url}`), { status: response.status })
     const payload = await response.json()
     callerSignal?.throwIfAborted()
     signal.throwIfAborted()
@@ -71,7 +71,7 @@ const createEmployerBoundWorkableSnapshot = (config, defaults = {}) => ({
   async run(options = {}) {
     const settings = { ...defaults, ...options }, signal = settings.signal
     const loadPage = settings.fetchPage || fetchPage, loadJson = settings.fetchJson || fetchJson
-    const fail = reason => { throw new Error(`[${config.source}] Workable employer inventory: ${reason}`) }
+    const fail = (reason, details = {}) => { throw Object.assign(new Error(`[${config.source}] Workable employer inventory: ${reason}`), details) }
     const maxJobs = settings.maxJobs ?? 0
     if (!Number.isSafeInteger(maxJobs) || maxJobs < 0) fail('invalid output limit')
     signal?.throwIfAborted()
@@ -80,7 +80,7 @@ const createEmployerBoundWorkableSnapshot = (config, defaults = {}) => ({
     const finalUrl = cleanUrl(page?.url)
     const allowedUrls = [config.careersUrl, ...(config.canonicalCareersUrls || [])]
     if (page?.status !== 200 || !finalUrl || !allowedUrls.includes(finalUrl.href)
-      || typeof page.html !== 'string' || !page.html.trim()) fail('current first-party careers page unavailable or redirected')
+      || typeof page.html !== 'string' || !page.html.trim()) fail('current first-party careers page unavailable or redirected', { status: page?.status })
     const document = readNativeDocument(page.html)
     const activeDocument = readActiveNativeDocument(page.html)
     const executable = node => node.tag === 'script' && node.attrs.src

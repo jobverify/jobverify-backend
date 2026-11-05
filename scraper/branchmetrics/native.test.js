@@ -112,5 +112,7 @@ test('catalog selects the source-local Branch Metrics implementation and leaves 
  assert.match(provider.modulePath,/[\\/]scraper[\\/]branchmetrics[\\/]script\.js$/)
  assert.equal(provider.companyName,'Branch Metrics');assert.equal(provider.atsPlatform,'rippling');assert.equal(provider.zeroResultPolicy,'evidence-required')
  assert.equal(provider.companyDomain,'branch.io');assert.equal(provider.companyCareerPage,CORP)
- assert.match(ambiguous.modulePath,/[\\/]scraper[\\/]branch[\\/]script\.js$/);assert.equal(ambiguous.atsPlatform,'workbook-exact-name-sentinel')
+ assert.match(ambiguous.modulePath,/[\\/]scraper[\\/]branch[\\/]script\.js$/);assert.equal(ambiguous.atsPlatform,'runtime-first-party-recruitment')
+ assert.notEqual(ambiguous.source,provider.source)
+ assert.equal(ambiguous.boardIdentityVerified,false);assert.equal(ambiguous.sourceScopeComplete,false);assert.equal(ambiguous.lifecycleCleanupAllowed,false)
 })

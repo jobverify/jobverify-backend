@@ -42,12 +42,24 @@ export function inspectPublisher(html,official){
  for(const line of stream.split('\n')){const match=line.match(/^([0-9a-f]+):(I?)([\[{].*)$/);if(match)try{records.push({id:match[1],value:JSON.parse(match[3])})}catch{/* Full raw stream fingerprint retains non-JSON/T grammar. */}}
  const imported=records.find(r=>r.id==='60'),section=records.find(r=>r.id==='5e'),elements=[]
  walk(section?.value,value=>{if(Array.isArray(value)&&value[0]==='$'&&value[1]==='$L60')elements.push(value)})
- if(imported?.value?.[0]!==71768||imported.value[2]!=='Departments'||elements.length!==1||!Array.isArray(elements[0][3]?.departments))throw Error('actual-flight-departments-route-binding-unavailable')
- const departments=elements[0][3].departments
+ let departments,jobs,format
+ if(imported?.value?.[0]===71768&&imported.value[2]==='Departments'&&elements.length===1&&Array.isArray(elements[0][3]?.departments)){
+  departments=elements[0][3].departments;format='webpack-departments'
+ }else{
+  // The redesigned route supplies literal role rows to module1245. Read its
+  // assigned data as observations only; the historical program/DOM pins below
+  // remain unchanged and cannot certify this new renderer as complete.
+  const client=records.find(r=>r.id==='3e'),section=records.find(r=>r.id==='3c'),props=section?.value?.[3]
+  if(client?.value?.[0]!==1245||client.value[2]!=='default'||section?.value?.[0]!=='$'||section.value[1]!=='$L3e'||props?.heading!=='Open Roles'||!Array.isArray(props.jobs)||props.jobs.length>2000)throw Error('actual-flight-departments-route-binding-unavailable')
+  jobs=props.jobs
+  const fields=['id','title','team','location','url','department','locations']
+  if(new Set(jobs.map(row=>row?.id)).size!==jobs.length||jobs.some(row=>!row||Object.keys(row).some(k=>!fields.includes(k))||fields.some(k=>!Object.hasOwn(row,k))||!['id','title','team','url','department'].every(k=>typeof row[k]==='string')||!['location','locations'].every(k=>Array.isArray(row[k])&&row[k].length>0&&row[k].every(v=>typeof v==='string'))||!/^[-a-z0-9]+$/.test(row.id)||row.url!=='https://jobs.ashbyhq.com/baseten/'+row.id))throw Error('unqualified-current-literal-job-list')
+  format='turbopack-literal-job-list'
+ }
  // Flight also declares styles not represented by a raw DOM link. No imports
  // are executed; the complete stream stays pinned before these are trusted.
  walk(records,value=>{if(typeof value==='object'&&Array.isArray(value)&&value[0]==='$'&&value[1]==='link'&&value[3]?.rel==='stylesheet')declarations.push({kind:'stylesheet',url:new URL(value[3].href,official).href,flight:true,attrs:value[3]})})
- return {tree,scripts,styles,declarations,stream,records,departments,streamSha256:sha(stream),domSha256:sha(stable(tree)),departmentsSha256:sha(stable(departments))}
+ return {tree,scripts,styles,declarations,stream,records,format,...(departments?{departments,departmentsSha256:sha(stable(departments))}:{jobs,departmentsSha256:null}),streamSha256:sha(stream),domSha256:sha(stable(tree))}
 }
 export function moduleProof(program,id){
  const ast=parse(program,{ecmaVersion:'latest'}),modules=[]

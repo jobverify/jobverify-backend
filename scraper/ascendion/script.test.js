@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readCaptureBody } from './native-captures/readFixture.js'
+const official = async url => {
+  const label = url.includes('/who-we-are/careers/') ? 'corporate' : url.includes('/gen/js/') ? 'protocol' : 'careers'
+  return readCaptureBody('2026-11-05', `${label}.body.gz`).toString()
+}
 
 import {
   buildDetailUrl,
@@ -58,16 +63,21 @@ test('ascendion scraper hydrates search results with detail payloads before retu
   const jobs = await createAscendionScraper({
     pageSize: 10,
   }).run({
+    fetchText: official,
     fetchJson: async (url) => {
       calls.push(url)
 
-      if (url.startsWith(buildSearchUrl({ start: 0 }))) {
+      if (url === buildSearchUrl({ start: 1 })) return { status: 200, data: { count: 1, positions: [] } }
+      if (url === buildSearchUrl({ start: 0 })) {
         return {
+          status: 200,
           data: {
             count: 1,
             positions: [{
               id: '1970324837464309',
               name: 'PLM Architect',
+              displayJobId: 'REQ-2002',
+              positionUrl: '/careers/job/1970324837464309',
               locations: ['India'],
               postedTs: 1785501259,
               workLocationOption: 'remote_local',
@@ -78,7 +88,11 @@ test('ascendion scraper hydrates search results with detail payloads before retu
 
       if (url === buildDetailUrl('1970324837464309')) {
         return {
+          status: 200,
           data: {
+            id: '1970324837464309',
+            positionUrl: '/careers/job/1970324837464309',
+            publicUrl: 'https://jobs.ascendion.com/careers/job/1970324837464309',
             displayJobId: 'REQ-2002',
             name: 'PLM Architect',
             locations: ['India'],
@@ -99,7 +113,7 @@ test('ascendion scraper hydrates search results with detail payloads before retu
     },
   })
 
-  assert.equal(calls.length, 2)
+  assert.equal(calls.length, 5)
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].jobId, '1970324837464309')
   assert.equal(jobs[0].requisitionId, 'REQ-2002')

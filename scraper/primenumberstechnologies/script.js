@@ -1,7 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {readNativeDocument,extractActiveDescription} from '../../scraper-support/utils/activeNativeHtml.js'
+import {recruitmentJobPostings} from '../../scraper-support/utils/verifiedRecruitment.js'
+import {nativeCountryName} from '../../scraper-support/shared/nativeJobPosting.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -97,10 +100,15 @@ const deriveCity = (location) => {
 }
 
 const normalizeCountry = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return 'India'
-  if (normalized.toUpperCase() === 'IN') return 'India'
-  return normalized
+  const labels=typeof value==='object'?[value?.name,value?.alpha2Code,value?.identifier]:[value]
+  const countries=[...new Set(labels.map(nativeCountryName).filter(Boolean))]
+  return countries.length===1?countries[0]:null
+}
+
+const validNativeDate = value => {
+  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2}))?$/.test(value)
+    ||!Number.isFinite(Date.parse(value)))return false
+  return new Date(value.slice(0,10)).toISOString().slice(0,10)===value.slice(0,10)
 }
 
 const normalizeDate = (value) => {
@@ -112,27 +120,11 @@ const normalizeDate = (value) => {
   return date.toISOString().slice(0, 10)
 }
 
-const extractJsonLdBlocks = (html) => {
-  const blocks = []
-
-  for (const match of String(html ?? '').matchAll(
-    /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
-  )) {
-    try {
-      blocks.push(JSON.parse(match[1]))
-    } catch {
-      // Ignore malformed blocks so fail-closed checks rely on the valid JobPosting payload.
-    }
-  }
-
-  return blocks
+const extractJobPosting = html => {
+  const postings=recruitmentJobPostings(readNativeDocument(html))
+  if(postings.length>1)throw Error('Ambiguous Primenumbers JobPosting declarations')
+  return postings[0]||null
 }
-
-const extractJobPosting = (html) =>
-  extractJsonLdBlocks(html).find((block) => {
-    const type = Array.isArray(block?.['@type']) ? block['@type'] : [block?.['@type']]
-    return type.some((value) => String(value).toLowerCase() === 'jobposting')
-  }) || null
 
 const extractSectionLists = (descriptionHtml) => {
   const sections = []
@@ -196,15 +188,23 @@ const extractExperienceRequired = (value) => {
   return null
 }
 
-const extractApplyUrl = (html) => toAbsoluteUrl(
-  String(html ?? '').match(/<a[^>]+href=["']([^"']*\/apply\.html[^"']*)["'][^>]*>/i)?.[1],
-  SITE_ORIGIN,
-)
+const extractApplyUrl = html => {
+  const doc=readNativeDocument(html),urls=[]
+  for(const node of doc.nodes(n=>n.tag==='a'&&n.attrs.href)){
+    let url
+    try{url=new URL(node.attrs.href,SITE_ORIGIN)}catch{continue}
+    if(url.origin===SITE_ORIGIN&&url.pathname==='/apply.html'&&!url.username&&!url.password&&!url.hash
+      &&url.searchParams.getAll('t').length===1&&url.searchParams.get('t')&&url.searchParams.getAll('role').length===1
+      &&[...url.searchParams.keys()].every(name=>['t','role'].includes(name)))urls.push(url.href)
+  }
+  return new Set(urls).size===1?urls[0]:null
+}
 
 const isOfficialDetailUrl = (value) => {
   try {
     const url = new URL(value)
-    return url.origin === SITE_ORIGIN && /^\/careers\/[a-z0-9]+\/$/i.test(url.pathname)
+    return url.origin === SITE_ORIGIN && !url.username && !url.password && !url.search && !url.hash
+      && /^\/careers\/[a-z0-9]+\/$/i.test(url.pathname)
   } catch {
     return false
   }
@@ -237,23 +237,16 @@ export const extractRoleListings = (html) => {
   const jobs = []
   const seen = new Set()
 
-  for (const match of String(html ?? '').matchAll(
-    /<a[^>]+class=["'][^"']*\bpn-role--link\b[^"']*["'][^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
-  )) {
-    const sourceUrl = toAbsoluteUrl(match[1], CAREERS_URL)
+  const document=readNativeDocument(html)
+  for (const anchor of document.nodes(node=>node.tag==='a'&&document.hasClass(node,'pn-role--link')&&node.attrs.href)) {
+    const sourceUrl = toAbsoluteUrl(anchor.attrs.href, CAREERS_URL)
     if (!isOfficialDetailUrl(sourceUrl) || seen.has(sourceUrl)) continue
 
-    const block = match[0]
-    const locationWithDepartment = extractText(
-      /<div[^>]+class=["'][^"']*\bpn-role-loc\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-      block,
-    )
-    const title = extractText(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i, block)
-    const teaser = extractText(/<p\b[^>]*>([\s\S]*?)<\/p>/i, block)
-    const chips = [...block.matchAll(
-      /<span[^>]+class=["'][^"']*\bpn-chip\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi,
-    )]
-      .map((chip) => stripTags(chip[1]))
+    const locationWithDepartment = normalizeWhitespace(document.text(document.nodes(node=>document.hasClass(node,'pn-role-loc'),anchor)[0]))
+    const title = normalizeWhitespace(document.text(document.nodes(node=>node.tag==='h2',anchor)[0]))
+    const teaser = normalizeWhitespace(document.text(document.nodes(node=>node.tag==='p',anchor)[0]))
+    const chips = document.nodes(node=>node.tag==='span'&&document.hasClass(node,'pn-chip'),anchor)
+      .map(chip => normalizeWhitespace(document.text(chip)))
       .filter(Boolean)
 
     if (!title || !locationWithDepartment || !teaser) continue
@@ -295,7 +288,8 @@ export const hasOfficialJobDetailSignal = (html, sourceUrl) => {
   )
   const organizationName = normalizeWhitespace(jobPosting?.hiringOrganization?.name)
   const organizationLegalName = normalizeWhitespace(jobPosting?.hiringOrganization?.legalName)
-  const hasTrustedOrganization = organizationName === COMPANY || organizationLegalName === COMPANY
+  const hasTrustedOrganization = organizationLegalName ? organizationLegalName === COMPANY : organizationName === COMPANY
+  if(!hasTrustedOrganization)return false
 
   if (
     canonicalPattern.test(page)
@@ -363,37 +357,88 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url,{signal}={}) => {
+  const response=await fetch(url,{signal:AbortSignal.any([...(signal?[signal]:[]),AbortSignal.timeout(15000)]),
+    redirect:'manual',credentials:'omit',headers:{'User-Agent':USER_AGENT,Accept:'text/html'}})
+  if(response.status!==200||response.url!==url)throw Error('Primenumbers native HTTP '+response.status+' or role URL changed')
+  if(!/text\/html|application\/xhtml\+xml/i.test(response.headers.get('content-type')||''))throw Error('Primenumbers native content type changed')
+  const reader=response.body?.getReader(),chunks=[];let size=0
+  if(!reader)throw Error('Primenumbers native body unavailable')
+  try{for(;;){const next=await reader.read();signal?.throwIfAborted();if(next.done)break
+    size+=next.value.byteLength;if(size>2e6)throw Error('Primenumbers native body bound');chunks.push(Buffer.from(next.value))}
+  }catch(error){await reader.cancel().catch(()=>{});throw error}finally{reader.releaseLock()}
+  return Buffer.concat(chunks).toString('utf8')
+}
 
 export const createPrimenumbersTechnologiesScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({fetchText=defaultFetchText,now=()=>new Date().toISOString(),signal:callerSignal,sourceTimeoutMs=120000,maxJobs=Infinity}={}) {
+    if(!Number.isSafeInteger(sourceTimeoutMs)||sourceTimeoutMs<=0||sourceTimeoutMs>180000
+      ||maxJobs!==Infinity&&(!Number.isSafeInteger(maxJobs)||maxJobs<0))throw Error('Invalid Primenumbers native limits')
+    const signal=AbortSignal.any([...(callerSignal?[callerSignal]:[]),AbortSignal.timeout(sourceTimeoutMs)])
+    signal.throwIfAborted()
+    const observedAt=typeof now==='function'?now():now
+    if(!Number.isFinite(Date.parse(observedAt)))throw Error('Invalid Primenumbers observation time')
+    const read=async url=>{signal.throwIfAborted();const html=await fetchText(url,{signal});signal.throwIfAborted()
+      if(typeof html!=='string'||Buffer.byteLength(html)>2e6)throw Error('Primenumbers native body bound');return html}
+    const careersHtml = await read(CAREERS_URL)
     const listings = extractRoleListings(careersHtml)
-    const jobs = []
+    const jobs = [],failures=[],held=[]
 
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
+    for (const listing of listings.slice(0,maxJobs)) {
+      try{
+      const detailHtml = await read(listing.sourceUrl)
       if (!hasOfficialJobDetailSignal(detailHtml, listing.sourceUrl)) {
         throw new Error('verified Primenumbers job detail no longer matches the trusted first-party application surface')
       }
 
       const detail = extractJobDetail(detailHtml, listing)
+      const native=extractJobPosting(detailHtml),document=readNativeDocument(detailHtml)
+      const identifier=new URL(listing.sourceUrl).pathname.split('/').filter(Boolean).at(-1)
+      const canonical=document.nodes(node=>node.tag==='link'&&(node.attrs.rel||'').split(/\s+/).includes('canonical'))
+      if(native.identifier?.value!==identifier||native.title!==listing.title||native.title!==detail.title
+        ||canonical.length!==1||canonical[0].attrs.href!==listing.sourceUrl
+        ||!document.nodes(node=>node.tag==='h1').some(node=>document.text(node)===native.title)
+        ||new URL(detail.applyUrl).searchParams.get('role')!==native.title)
+        throw Error('Primenumbers native listing/detail identity changed')
+      const activeDescription=extractActiveDescription(native.description)
+      if(!activeDescription||activeDescription.length<100)throw Error('Primenumbers native full description unavailable')
+      const posted=native.datePosted||null,closing=native.validThrough||null
+      if([posted,closing].some(value=>value&&!validNativeDate(value))
+        ||posted&&Date.parse(posted)>Date.parse(observedAt))throw Error('Primenumbers native publication date unavailable or in the future')
+      if(closing&&Date.parse(closing)<=Date.parse(observedAt)){held.push({id:identifier,reason:'native-role-closed',nativeSourceRecord:native});continue}
+      const places=(Array.isArray(native.jobLocation)?native.jobLocation:[native.jobLocation]).map(place=>place?.address)
+      const countries=places.map(place=>normalizeCountry(place?.addressCountry)),unique=new Set(countries)
+      const nativeCountry=countries.length&&countries.every(Boolean)&&unique.size===1?countries[0]:null
+      const missingCountry=!nativeCountry
       jobs.push({
         ...detail,
         source: SOURCE,
         link: detail.applyUrl || detail.sourceUrl,
-        scrapedAt: now(),
+        country:nativeCountry,
+        ...(missingCountry?{city:null,location:null,locations:[]}:{}),
+        nativeSourceRecord:native,nativeHiringOrganization:native.hiringOrganization,nativeCountryLocations:native.jobLocation,
+        sourceDescription:native.description,
+        nativeFullDescriptionText:activeDescription,
+        postingDate:posted,postedAt:posted,closingDate:closing,
+        nativePostingDate:posted,firstEverPostedAt:null,
+        postingDatePrecision:posted?(/^\d{4}-\d{2}-\d{2}$/.test(posted)?'calendar-date':'native-timestamp'):null,
+        sourcePostingDateIsExact:Boolean(posted&&!/^\d{4}-\d{2}-\d{2}$/.test(posted)),
+        sourceDetailComplete:!missingCountry,
+        ...(missingCountry?{sourceDetailFailureKind:unique.size>1?'native-country-conflict':'native-country-unavailable'}:{}),
+        sourceScopeComplete:false,sourceListingComplete:false,lifecycleCleanupAllowed:false,applicationVisited:false,
+        scrapedAt: observedAt,
       })
+      }catch(error){signal.throwIfAborted();if(!jobs.length)throw error
+        failures.push({url:listing.sourceUrl,message:error.message});break}
     }
 
-    return jobs
+    signal.throwIfAborted()
+    const audit={observedNativeCards:listings.length,returnedRecords:jobs.length,failures,heldNativeRoles:held,
+      listingComplete:false,sourceScopeComplete:false,lifecycleCleanupAllowed:false}
+    for(const job of jobs)job.sourceNativeCollectionAudit=audit
+    return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:CAREERS_URL,firstParty:true,listingComplete:false,
+      reportedTotal:null,indiaFacetCount:null,verifiedAt:observedAt,
+      reason:failures.length?'native-detail-failure-retains-earlier-roles':'observed-native-cards-without-complete-company-inventory-proof'})
   },
 })
 

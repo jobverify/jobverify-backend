@@ -307,8 +307,25 @@ test('Cognus Technology helper extraction stays pinned to the live official home
   const extractedJobs = cognus.extractJobsFromOfficialBoard(jobsHtml)
   assert.equal(extractedJobs.length, 1)
   assert.equal(extractedJobs[0].title, 'Senior Manager')
-  assert.equal(extractedJobs[0].city, 'Jaipur')
+  assert.equal(extractedJobs[0].city, null)
+  assert.equal(extractedJobs[0].country, null)
+  assert.equal(extractedJobs[0].location, null)
+  assert.equal(extractedJobs[0].sourceCountryScopeUnresolved, true)
+  assert.equal(extractedJobs[0].nativeLocationEvidence.City, 'Jaipur')
+  assert.equal(extractedJobs[0].nativeLocationEvidence.Country, 'Gradding')
+  assert.equal(extractedJobs[0].nativeLocation, 'Jaipur, Gradding')
   assert.equal(extractedJobs[0].employmentType, 'Full time')
+
+  const indiaJobs = cognus.extractJobsFromOfficialBoard(cognusCareersHtml(
+    cognusCurrentJobsPayload.map(job => ({ ...job, Country: 'India' })),
+  ))
+  assert.equal(indiaJobs.length, 1)
+  assert.equal(indiaJobs[0].title, 'Senior Manager')
+  assert.equal(indiaJobs[0].employmentType, 'Full time')
+  assert.equal(indiaJobs[0].city, 'Jaipur')
+  assert.equal(indiaJobs[0].country, 'India')
+  assert.equal(indiaJobs[0].location, 'Jaipur, India')
+  assert.equal(indiaJobs[0].sourceCountryScopeUnresolved, false)
 
   const requestedUrls = []
   const liveJobs = await cognus.createCognusTechnologyScraper({
@@ -328,6 +345,18 @@ test('Cognus Technology helper extraction stays pinned to the live official home
   assert.equal(liveJobs[0].title, 'Senior Manager')
   assert.equal(liveJobs[0].companyCareerPage, cognus.CAREERS_URL)
   assert.equal(liveJobs[0].scrapedAt, FIXED_SCRAPED_AT)
+  assert.equal(liveJobs[0].nativeLocationEvidence.City, 'Jaipur')
+  assert.equal(liveJobs[0].nativeLocationEvidence.Country, 'Gradding')
+  assert.equal(liveJobs[0].city, null)
+  assert.equal(liveJobs[0].country, null)
+  assert.equal(liveJobs[0].location, null)
+  assert.equal(liveJobs[0].sourceCountryScopeUnresolved, true)
+  assert.equal(liveJobs[0].sourceDetailContentComplete, false)
+  assert.equal(liveJobs[0].sourceDetailComplete, false)
+  assert.equal(liveJobs[0].sourceDetailFailureKind, 'source-detail-access-failed')
+  assert.equal(liveJobs[0].sourceListingComplete, false)
+  assert.equal(liveJobs[0].sourceScopeComplete, false)
+  assert.equal(liveJobs[0].lifecycleCleanupAllowed, false)
 
   const emptyJobs = await cognus.createCognusTechnologyScraper({
     now: () => FIXED_SCRAPED_AT,

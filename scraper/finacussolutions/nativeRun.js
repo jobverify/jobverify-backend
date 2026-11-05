@@ -11,6 +11,6 @@ export async function runNativeFinacus(options={}){
   const home=await get(HOME),surface=parseFinacusSurface(home,await get(CAREERS));validateFinacusClients(await get(surface.ajaxClient),await get(surface.mainClient),await get(surface.loaderClient))
   const jobs=[];for(let i=0;i<surface.cards.length;i+=2)jobs.push(...await Promise.all(surface.cards.slice(i,i+2).map(async card=>validateFinacusDetail(await get(detailUrl(card.jobId)),card,{now}))))
   const final=parseFinacusSurface(home,await get(CAREERS));check(JSON.stringify(final)===JSON.stringify(surface),'Native visible inventory drift');abort()
-  return attachInventoryEvidence(jobs.slice(0,cap),{status:'coverage-gap',surface:CAREERS,firstParty:true,listingComplete:false,pagesFetched:2,reportedTotal:null,indiaFacetCount:null,verifiedAt:now,reason:cap<jobs.length?'caller-cap-with-unproven-global-inventory':jobs.some(j=>!j.sourceDetailComplete)?'native-full-description-missing-and-global-inventory-unproven':'observed-cards-stable-no-native-global-total-or-pagination-proof'})
+  return attachInventoryEvidence(jobs.slice(0,cap),{status:'coverage-gap',surface:CAREERS,firstParty:true,listingComplete:false,pagesFetched:2,reportedTotal:null,indiaFacetCount:null,verifiedAt:now,reason:cap<jobs.length?'caller-cap-with-unproven-global-inventory':jobs.some(j=>!j.sourceDetailComplete)?'native-country-or-full-description-unresolved-and-global-inventory-unproven':'observed-cards-stable-no-native-global-total-or-pagination-proof'})
  }finally{clearTimeout(timer)}
 }

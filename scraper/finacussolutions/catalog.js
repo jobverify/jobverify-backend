@@ -14,7 +14,7 @@ export const FINACUS_SOLUTIONS_CATALOG = {
   atsPlatform: 'official-company-careers-page',
   countryFilter: 'India',
   paginationStrategy: 'stable-current-visible-cards-global-total-unavailable',
-  extractionStrategy: 'current-official-careers+advertised-public-GET-detail+native-ID-title-full-JD+native-generic-application-position',
+  extractionStrategy: 'current-public-GET-details+original-native-models+unknown-country-without-own-country-field+incomplete-source-scope',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   verifiedOn: null,

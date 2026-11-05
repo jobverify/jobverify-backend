@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { readFileSync } from 'node:fs'
 
-import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
+import {runVerifiedWorkdayBoardUnion} from '../../scraper-support/shared/workdayBoardUnion.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -19,6 +20,7 @@ export const VERIFIED_SURFACE_SUMMARY = "Guarded native Workday observations req
 const REQUIRED_PROFILE = Object.freeze({
   "listingStrategy": "jobs-api",
   "inventoryScope": "complete-board-country-proof",
+  "retainProvenIndiaOnUnresolvedLocations": true,
   "officialCareersUrl": "https://careers.conocophillips.com/",
   "jobsApiUrl": "https://conocophillips.wd1.myworkdayjobs.com/wday/cxs/conocophillips/External/jobs",
   "detailUrlBase": "https://conocophillips.wd1.myworkdayjobs.com/External/",
@@ -50,15 +52,15 @@ const assertNativeProfile = signal => {
 }
 
 export const run = async (options = {}) => {
+  options.signal?.throwIfAborted()
+  if(options.maxJobs===0)return attachInventoryEvidence([],{status:'coverage-gap',surface:CAREERS_URL,firstParty:false,
+    listingComplete:false,pagesFetched:0,reason:'caller-cap-zero-no-public-reads'})
   assertNativeProfile(options.signal)
-  return runWorkdayScraper({
-    ...options,
-    company: COMPANY,
-    source: SOURCE,
-    baseUrl: REQUIRED_PROFILE.detailUrlBase,
-    scraperDir: currentDir,
-    locationCountry: null,
-  })
+  return runVerifiedWorkdayBoardUnion({source:SOURCE,company:COMPANY,
+    boards:[{tenant:'conocophillips',site:'External',baseUrl:REQUIRED_PROFILE.detailUrlBase,scraperDir:currentDir}],
+    employerPattern:/\bConocoPhillips\b/i,requireEmployer:true,completeSourceScope:false,allowUnresolvedCountryScope:true,
+    scopeReason:'current-published-board-reconciled;uncertain-worksite-countries-remain-unresolved;company-scope-incomplete',
+  },{...options,nativeDetailRecovery:false,retainNativeProof:true})
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

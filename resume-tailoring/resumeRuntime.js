@@ -9,6 +9,8 @@ import { pipeline } from 'node:stream/promises';
 import { spawn } from 'node:child_process';
 import { Agent } from 'undici';
 import { resumeFailure, safeResumeDiagnostic } from './resumeDiagnostics.js';
+import { RESUME_WORKER_BUDGET_MS } from './resumeBudget.js';
+import { RESUME_LATEX_GRAMMAR } from '../src/utils/resumeLatexFormat.js';
 
 export const RESUME_MODEL = JSON.parse(await fs.readFile(new URL('./resume-model.json', import.meta.url), 'utf8'));
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -85,11 +87,11 @@ function modelRequestFailure(error, signal, fallbackCode) {
   const timedOut = signal.aborted || modelTimeoutCodes.has(error?.code) || modelTimeoutCodes.has(error?.cause?.code);
   return resumeFailure(timedOut ? 'model_timeout' : fallbackCode);
 }
-export async function generateResumeText(prompt, { fetchImpl = fetch, deadline = Date.now() + 480000, signal: parentSignal, comparison = false, onDiagnostic = () => {} } = {}) {
+export async function generateResumeText(prompt, { fetchImpl = fetch, deadline = Date.now() + RESUME_WORKER_BUDGET_MS, signal: parentSignal, comparison = false, onDiagnostic = () => {} } = {}) {
   const messages = [{ role: 'user', content: prompt }];
   const maxTokens = comparison ? RESUME_MODEL.comparisonOutputTokens : RESUME_MODEL.maxOutputTokens;
   const request = async (endpoint, body) => {
-    const timeout = AbortSignal.timeout(remainingBudget(deadline, RESUME_MODEL.requestSeconds * 1000));
+    const timeout = AbortSignal.timeout(remainingBudget(deadline, RESUME_WORKER_BUDGET_MS));
     const signal = parentSignal ? AbortSignal.any([parentSignal, timeout]) : timeout;
     // The abort signal bounds the whole request, including the response body.
     // Undici's separate five-minute timers must not preempt that deadline.
@@ -110,7 +112,8 @@ export async function generateResumeText(prompt, { fetchImpl = fetch, deadline =
   onDiagnostic(safeResumeDiagnostic({ stage: comparison ? 'comparing' : 'generating', code: 'started', inputTokens: tokens.tokens.length }));
   if (tokens.tokens.length + maxTokens + 32 > RESUME_MODEL.contextTokens) throw resumeFailure('input_too_large', { statusCode: 422 });
   const payload = await request('/v1/chat/completions', { messages, temperature: comparison ? 0 : 0.1, max_tokens: maxTokens, stream: false,
-    ...(comparison ? { response_format: { type: 'json_schema', json_schema: { name: 'resume_source_comparison', strict: true, schema: comparisonSchema } } } : {}),
+    ...(comparison ? { response_format: { type: 'json_schema', json_schema: { name: 'resume_source_comparison', strict: true, schema: comparisonSchema } } }
+      : { grammar: RESUME_LATEX_GRAMMAR }),
   });
   const choice = payload.choices?.[0];
   onDiagnostic(safeResumeDiagnostic({ stage: comparison ? 'comparing' : 'generating', code: choice?.finish_reason === 'stop' ? 'passed' : 'model_output_incomplete', outputTokens: payload.usage?.completion_tokens }));

@@ -37,6 +37,9 @@ export async function processResumeDocument(input, { deadline = Date.now() + RES
   let failureCode = 'processing_failed';
   let stage = 'generating';
   const started = Date.now();
+  // Long CPU generations may exceed eight minutes. Keep them inside the worker
+  // deadline while reserving time to compile, inspect and independently audit.
+  const generationDeadline = deadline - Math.min(3 * 60000, Math.floor((deadline - started) / 5));
   const phase = async next => {
     stage = next;
     await withinResumeBudget(deadline, signal => onPhase(stage, { deadline, signal }));
@@ -50,7 +53,7 @@ export async function processResumeDocument(input, { deadline = Date.now() + RES
     try {
       await phase(attempt === 1 ? 'generating' : 'repairing');
       diagnose('started');
-      latex = await withinResumeBudget(deadline, signal => generate(prompt, { deadline, signal, onDiagnostic }));
+      latex = await withinResumeBudget(generationDeadline, signal => generate(prompt, { deadline: generationDeadline, signal, onDiagnostic }));
       await phase('latex');
       latex = validateLatexSource(latex);
       await phase('compiling');

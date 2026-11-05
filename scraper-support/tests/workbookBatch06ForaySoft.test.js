@@ -176,8 +176,13 @@ test('the historical ForaySoft third-party archive cannot certify current India 
 test('ForaySoft transport failure stays unknown instead of becoming an empty inventory', async () => {
   const module = await loadModule()
   await assert.rejects(module.run({ fetchPage: async () => { throw new Error('getaddrinfo ENOTFOUND www.foraysoft.com') } }), error => {
-    assert.equal(error.failureKind, 'coverage_gap')
+    assert.equal(error.failureKind, 'network_or_timeout')
+    assert.equal(error.upstreamOutage, true)
+    assert.equal(error.abortRetries, true)
+    assert.equal(error.recruitmentObservations.sourceScopeComplete, false)
+    assert.equal(error.recruitmentObservations.lifecycleCleanupAllowed, false)
     assert.equal(error.recruitmentObservations.receipts.length, 0)
+    assert.match(error.message, /ENOTFOUND/)
     assert.ok(error.recruitmentObservations.failures.every(row => /ENOTFOUND/.test(row.message)))
     return true
   })

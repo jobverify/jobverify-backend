@@ -4,8 +4,6 @@ import { fileURLToPath } from 'url'
 import { createPhenomScraper } from '../../scraper-support/phenom/engine.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const maxPages = 5
-const maxJobs = 100
 
 const scraper = createPhenomScraper({
   companyName: 'Thermo Fisher Scientific',
@@ -16,10 +14,6 @@ const scraper = createPhenomScraper({
   scraperDir: currentDir,
 })
 
-const boundLimit = (value, limit) => (
-  Number.isInteger(value) ? Math.min(Math.max(value, 0), limit) : limit
-)
-
 export const {
   buildSearchResultsPageUrl,
   buildJobDetailUrl,
@@ -28,11 +22,7 @@ export const {
   extractJobDetail,
 } = scraper
 
-export const run = (options = {}) => scraper.run({
-  ...options,
-  maxPages: boundLimit(options.maxPages, maxPages),
-  maxJobs: boundLimit(options.maxJobs, maxJobs),
-})
+export const run = (options = {}) => scraper.run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

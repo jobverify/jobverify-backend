@@ -47,6 +47,10 @@ test('Asteria recovers all five full typed India roles and ignores the commented
   assert.equal(readInventoryEvidence(jobs).listingComplete, true)
   assert.equal(readInventoryEvidence(jobs).reportedTotal, 5)
   assert.equal(jobs[0].nativeCollectionEvidence.channelGaps.length, 0)
+  assert.equal(jobs[0].nativeCollectionEvidence.modernBoardListingComplete,true)
+  assert.equal(jobs[0].nativeCollectionEvidence.sourceScopeComplete,false)
+  assert.equal(readInventoryEvidence(jobs).status,'coverage-gap')
+  assert.ok(jobs.every(job=>job.sourceScopeComplete===false&&job.lifecycleCleanupAllowed===false&&job.applicationVisited===false))
   for (const row of jobs) assert.doesNotThrow(() => buildDescriptionSourceUpdate(normalizeScrapedJob(row, { source: 'asteriaaerospace', companyName: row.company }), null))
 })
 

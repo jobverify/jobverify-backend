@@ -12,6 +12,15 @@ const now=packets[0].startedAt
 async function replay(mutate=()=>{},options={}){const p=structuredClone(packets);mutate(p);let i=0;const jobs=await run({now,...options,fetch:async(url,init)=>{const r=p[i++];assert.ok(r);assert.equal(url,r.url);assert.equal(init.method,'GET');return{status:r.status,url:r.finalURL,text:async()=>r.body}}});assert.equal(i,8);return jobs}
 const apiMutation=(p,fn)=>{for(const i of[3,6]){const d=JSON.parse(p[i].body);fn(d);p[i].body=JSON.stringify(d)}}
 test('actual eight responses preserve current India role and unknown generic Remote scope',async()=>{const j=await replay();assert.equal(j.length,1);assert.equal(j[0].jobId,'73f15a77-9b84-46de-bd9e-bf76f70b6d84');assert.equal(j[0].country,'India');assert.equal(j[0].city,null);assert.equal(j[0].postingDate,'2026-09-26T02:01:08.473+00:00');assert.equal(j[0].sourceDetailComplete,true);assert.equal(j[0].sourceListingComplete,false);assert.equal(analyzePublishableJobs(j,{now}).eligibleJobs.length,1);assert.equal(readInventoryEvidence(j).reportedTotal,null)})
+
+test('an explicitly United States Pacific remote role cannot abort the independent native India role', async () => {
+ const jobs=await replay(p=>{
+  const id=JSON.parse(p[3].body).jobs[1].id,location='USA Remote (Pacific Time Zone Preferred)'
+  apiMutation(p,d=>{d.jobs.find(row=>row.id===id).location=location})
+  for(const index of[2,7])mutatePreload(p,index,d=>{d.jobBoard.jobPostings.find(row=>row.id===id).locationName=location})
+ })
+ assert.equal(jobs.length,1);assert.equal(jobs[0].country,'India')
+})
 for(const[name,mutate]of[
  ['HTTP202',p=>p[3].status=202],['wrong final URL',p=>p[4].finalURL='https://example.com/'],
  ['wrong native organization',p=>p[2].body=p[2].body.replace('"organizationId":"79a3b1bb-4ea1-4fa0-8f3c-bffc3aac9be9"','"organizationId":"00000000-0000-4000-8000-000000000000"')],

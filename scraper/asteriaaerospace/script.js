@@ -64,9 +64,11 @@ const defaultFetchText = async (url, { signal } = {}) => {
   return response.text()
 }
 
-const isBrowserFallbackError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
-    .test(String(error?.message ?? error ?? ''))
+const isBrowserFallbackError = (error) => {
+  const message=String(error?.message??error??'')
+  if(/HTTP (?:401|403|429|451)\b/.test(message))return false
+  return /fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i.test(message)
+}
 
 export const extractApplicationEmail = (html) => {
   const match = String(html ?? '').match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i)

@@ -9,6 +9,5 @@
   "contextTokens": 16384,
   "maxOutputTokens": 6144,
   "comparisonOutputTokens": 1536,
-  "requestSeconds": 480,
-  "styleVersion": "latex-ats-v1"
+  "styleVersion": "latex-ats-v2"
 }

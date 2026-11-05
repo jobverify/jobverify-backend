@@ -3,19 +3,13 @@ import {readNativeDocument} from '../../scraper-support/utils/activeNativeHtml.j
 export const BOARD='https://dover.wd103.myworkdayjobs.com/Dover'
 export const API='https://dover.wd103.myworkdayjobs.com/wday/cxs/dover/Dover'
 export const CLIENT='https://prod-wd103.myworkdaycdn.com/wday/asset/candidate-experience-jobs/cx-jobs.min.js'
-export const OFFICES=Object.freeze([
- ['fd26dd94fa9b10011f47b0ef19600000','Karoli, Rajasthan, India'],
- ['fd26dd94fa9b10011f511de99c700000','Bangalore, Karnataka, India'],
- ['fd26dd94fa9b10011f536a1fce010000','Navi Mumbai, Maharashtra, India'],
- ['fd26dd94fa9b10011f54c6ccf4c50000','Bangalore, Karnataka, India'],
-])
-export const OFFICIAL_BINDING=Object.freeze({
- officialURL:'https://www.dovercorporation.com/',careersURL:'https://www.dovercorporation.com/about-us/careers/',boardURL:BOARD,
- observedAt:'2026-10-21T15:53:06.882Z',proof:'artifacts/full-catalog/official-discovery/batch-026.json',
- proofSha256:'040e365dad562bee90dd21779fca70343a54a12ef17619b1b737790905ba5ceb',
- evidenceOrigin:'sealed-official-discovery-identity-only-not-renewed-by-native-runtime',
- latestCorporatePreflight:'HTTP403; original discovery clock unrenewed',companyScopeComplete:false,
-})
+export const CAREERS='https://www.dovercorporation.com/about-us/careers/'
+export function verifyCorporate(html){
+ const document=readNativeDocument(html)
+ check(document.nodes(n=>n.tag==='base').length===0,'Unreviewed corporate document base')
+ check(document.nodes(n=>n.tag==='title'&&/Dover/i.test(n.raw??'')).length===1,'Current corporate identity missing')
+ check(document.nodes(n=>n.tag==='a'&&n.attrs.href===BOARD).length>0,'Current corporate native-board handoff missing')
+}
 export const check=(ok,message)=>{if(!ok)throw Error('Dover native: '+message)}
 export function verifyShell(html){
  const document=readNativeDocument(html),root=document.nodes(n=>n.tag==='root')[0]
@@ -70,7 +64,7 @@ export function discoverOffices(payload){
  const locations=groups[0].values.filter(n=>n.facetParameter==='locations')
  check(locations.length===1,'Native location facet nesting changed')
  const offices=locations[0].values.filter(v=>/, India$/.test(v.descriptor)).sort((a,b)=>a.id.localeCompare(b.id))
- check(JSON.stringify(offices.map(v=>[v.id,v.descriptor]))===JSON.stringify(OFFICES),'Native India office facet identity changed')
+ check(offices.length<=50,'Native India office inventory bound exceeded')
  check(offices.reduce((sum,v)=>sum+v.count,0)<=2000,'Native selected office inventory bound exceeded')
  return offices
 }
@@ -87,7 +81,7 @@ export function listing(payload,office,offset){
   check(!/[<>]/.test(r.title)&&typeof r.externalPath==='string'&&/^\/job\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/.test(r.externalPath),'Native row identity malformed')
   check(Array.isArray(r.bulletFields)&&r.bulletFields.length===2&&/^JR\d+$/.test(r.bulletFields[1]),'Native requisition malformed')
   const [employer,req]=r.bulletFields
-  check(['Dover India Pvt.,Ltd.','Markem-Imaje India Private LTD'].includes(employer),'Native legal employer changed')
+  check(['Dover India Pvt.,Ltd.','Markem-Imaje India Private LTD','Tokheim India Private Ltd'].includes(employer),'Native legal employer changed')
   check(r.externalPath.endsWith('_'+req)||new RegExp('_'+req+'-\\d+$').test(r.externalPath),'Native requisition/path identity mismatch')
   check(r.locationsText===office.descriptor,'Native office country/location mismatch')
   return {...r,req,employer,officeId:office.id}
@@ -99,7 +93,7 @@ export function nativeDate(value,now,publication=false){
  const date=new Date(value+'T00:00:00.000Z')
  check(Number.isFinite(+date)&&date.toISOString().slice(0,10)===value,'Invalid native calendar date')
  check(!publication||+date<=Date.parse(now),'Future native publication date')
- return date.toISOString()
+ return value
 }
 export function detail(payload,row,now){
  noFailure(payload);const v=payload.jobPostingInfo;noFailure(v)

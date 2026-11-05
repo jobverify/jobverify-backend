@@ -35,17 +35,19 @@ export const FLEETX_CATALOG = {
     'https://www.fleetx.io/sitemap.xml',
   ],
   companyDomain: 'fleetx.io',
-  atsPlatform: 'official-company-site-no-public-careers',
+  atsPlatform: 'official-company-native-opening-cards',
   countryFilter: 'India',
   paginationStrategy:
-    'verified-first-party-home-careers-and-discovery-route-timeout-validation',
+    'paired-current-page-owned-client-records;company-scope-unqualified',
   extractionStrategy:
-    'verified-homepage-timeouts+verified-careers-route-timeouts+verified-robots-and-sitemap-timeouts-return-empty',
+    'active-html+declared-client-literal-openings;country-and-full-criteria-unproven',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-11-05',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that direct first-party fetches to https://fleetx.io/, https://www.fleetx.io/, https://fleetx.io/careers, https://www.fleetx.io/careers, https://fleetx.io/career, https://www.fleetx.io/career, https://fleetx.io/jobs, https://www.fleetx.io/jobs, https://fleetx.io/join-us, https://www.fleetx.io/join-us, https://fleetx.io/work-with-us, https://www.fleetx.io/work-with-us, https://fleetx.io/robots.txt, https://www.fleetx.io/robots.txt, https://fleetx.io/sitemap.xml, and https://www.fleetx.io/sitemap.xml all timed out from the verified environment instead of exposing a reachable first-party homepage, careers shell, sitemap, robots file, ATS handoff, or public jobs listing. No trustworthy public jobs surface was verifiable for Fleetx on the first-party domain at the verified date.',
+    'Current native observations use https://www.fleetx.ai/careers and its active declared page component. All published card/client fields are retained, including unlabeled locations, without executing website code. Own country, full criteria, canonical role URLs, application activity, company scope and cleanup remain unproven. Historical fleetx.io routes and timeout helpers are diagnostic only; failed reads stop collection and never establish an empty inventory.',
+  nativeCareersPage: 'https://www.fleetx.ai/careers',
+  zeroResultPolicy: 'evidence-required',
   dryRunFile: 'fleetx/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

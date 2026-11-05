@@ -287,7 +287,8 @@ const decorateJobWithProviderMetadata = (job, provider) => ({
   ...job,
   company: job.company || provider.companyName,
   source: job.source || provider.source,
-  country: Object.hasOwn(job, 'country') ? job.country : provider.countryFilter || 'India',
+  country: Object.hasOwn(job, 'country') ? job.country
+    : job.sourceCountryScopeUnresolved === true ? null : provider.countryFilter || 'India',
   companyCareerPage: job.companyCareerPage || provider.companyCareerPage,
   companyDomain: job.companyDomain || provider.companyDomain,
   atsPlatform: job.atsPlatform || provider.atsPlatform,

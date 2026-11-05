@@ -5,20 +5,26 @@ import companyAliases from '../../scraper-support/providers/companyAliases.json'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Astronics is registered against the verified group careers chain for Diagnosys coverage', () => {
+test('Astronics registers current declared native boards without claiming complete company coverage', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'astronics')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Astronics Test Systems')
   assert.equal(provider.companyCareerPage, 'https://www.astronics.com/careers')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.officialHomepageUrl, 'https://www.astronics.com/test-systems')
+  assert.equal(provider.atsPlatform, 'current-declared-greenhouse-and-talentsoft-public-boards')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-careers-page-plus-country-limited-jobs-page-or-embedded-appone-location-index')
+  assert.equal(provider.paginationStrategy, 'complete-current-native-Greenhouse-pages+France-all-offers+Canada-explicit-empty+final-inventories-after-closing-details')
   assert.equal(
     provider.extractionStrategy,
-    'verified-diagnosys-homepage+verified-astronics-careers-page+verified-us-jobs-page-without-india-or-embedded-appone-board-without-india-return-empty',
+    'current-Test-Systems-employer-bridge+declared-shared-boards+all-native-country-alternatives+full-France-criteria+closing',
   )
+  assert.equal(provider.zeroResultPolicy, 'evidence-required')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.sourceCompanyWideScopeComplete, false)
+  assert.equal(provider.lifecycleCleanupAllowed, false)
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'astronics.com')

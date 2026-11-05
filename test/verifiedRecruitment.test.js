@@ -70,12 +70,12 @@ test('schema content must agree with the visible title and full description', as
 test('ignores blocked pages, unsafe URLs, inert links, assets and unbound foreign redirects', async () => {
   let nativeCalls = 0
   const cases = [
-    async url => ({ status: 403, url, html: roleHTML() }),
-    async () => ({ status: 200, url: 'https://foreign.test/careers', html: roleHTML() }),
-    pages({ [provider.companyCareerPage]: '<template><a href="/careers/engineer">Jobs</a></template><a href="https://127.0.0.1/jobs">Jobs</a>' }),
-    pages({ [provider.companyCareerPage]: '<a href="https://someone.test/jobs">Jobs</a><a href="/careers/image.jpg">Jobs</a>' }),
+    ['blocked_or_access_denied', async url => ({ status: 403, url, html: roleHTML() })],
+    ['coverage_gap', async () => ({ status: 200, url: 'https://foreign.test/careers', html: roleHTML() })],
+    ['coverage_gap', pages({ [provider.companyCareerPage]: '<template><a href="/careers/engineer">Jobs</a></template><a href="https://127.0.0.1/jobs">Jobs</a>' })],
+    ['coverage_gap', pages({ [provider.companyCareerPage]: '<a href="https://someone.test/jobs">Jobs</a><a href="/careers/image.jpg">Jobs</a>' })],
   ]
-  for (const fetchPage of cases) await assert.rejects(run({ fetchPage, fetchJson: async () => { nativeCalls++; assert.fail('No board is bound') } }), error => error.failureKind === 'coverage_gap')
+  for (const [failureKind, fetchPage] of cases) await assert.rejects(run({ fetchPage, fetchJson: async () => { nativeCalls++; assert.fail('No board is bound') } }), error => error.failureKind === failureKind)
   assert.equal(nativeCalls, 0)
 })
 

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { parse } from 'acorn'
+import {setTimeout as delay} from 'node:timers/promises'
 import { createHTMLTransport } from '../shared/firstPartyHtmlJobs.js'
 import { readNativeDocument, decodeNativeEntities, extractActiveDescription } from './activeNativeHtml.js'
 import { readVisibleNativeDocument } from './visibleNativeHtml.js'
@@ -154,21 +155,40 @@ function verifyNativePayload(payload, config, now) {
 export function createCurrentClientGreenhouseScraper(config) {
   const apiURL = `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(config.boardToken)}/jobs?content=true`
   const allowedURLs = new Set([config.careersURL, apiURL, ...(config.portalURL ? [config.portalURL, config.clientURL] : [])])
-  return { async run({ fetchImpl, signal, sourceTimeoutMs = 90000, maxJobs, maxRequests = 12, maxAggregateBytes = 8 * 1024 * 1024 } = {}) {
+  return { async run({ fetchImpl, signal, sourceTimeoutMs = 90000, maxJobs, maxRequests = 12, maxAggregateBytes = 8 * 1024 * 1024,
+    requestIntervalMs = 1000 } = {}) {
     requireNative(['next-reviewed-client', 'nitro-greenhouse'].includes(config.mode), 'unreviewed binding mode')
     requireNative(Number.isSafeInteger(sourceTimeoutMs) && sourceTimeoutMs > 0 && sourceTimeoutMs <= 120000, 'source timeout bound is invalid')
     requireNative(Number.isSafeInteger(maxRequests) && maxRequests > 0 && maxRequests <= 12, 'native request bound is invalid')
     requireNative(Number.isSafeInteger(maxAggregateBytes) && maxAggregateBytes > 0 && maxAggregateBytes <= 16 * 1024 * 1024, 'native aggregate byte bound is invalid')
     requireNative(maxJobs === undefined || Number.isSafeInteger(maxJobs) && maxJobs >= 0 && maxJobs <= 10000, 'returned role bound is invalid')
+    requireNative(Number.isSafeInteger(requestIntervalMs) && requestIntervalMs >= 0
+      && (requestIntervalMs >= 1000 || typeof fetchImpl === 'function' && fetchImpl !== globalThis.fetch), 'native request interval is invalid')
     signal?.throwIfAborted()
+    if (maxJobs === 0) {
+      const jobs = []
+      Object.defineProperty(jobs, Symbol.for('jobverify.official-ats-discovery'), { value: {
+        source: config.source, binding: null, nativeInventory: { snapshots: 0,
+          observedNativeRoles: null, fullContentRoles: null, selectedIndiaPostings: null,
+          returnedPostings: 0, unresolvedCountryScope: true, scopeComplete: false },
+        retainedResponses: [], productionWrites: false,
+      } })
+      return attachInventoryEvidence(jobs, { status: 'coverage-gap', surface: config.careersURL,
+        firstParty: false, listingComplete: false, pagesFetched: 0, reportedTotal: null,
+        indiaFacetCount: null, verifiedAt: new Date().toISOString(), reason: 'caller-zero-result-limit;native-inventory-not-read;cleanup-forbidden' })
+    }
     const runSignal = AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(sourceTimeoutMs)])
     const validateURL = url => requireNative(allowedURLs.has(url), 'unqualified native read URL')
     const transport = createHTMLTransport({ validateURL, expectedContentType: url => url === apiURL ? 'application/json'
       : url === config.clientURL ? 'text/javascript' : 'text/html' }, { fetchImpl, signal: runSignal })
     let requests = 0, bytes = 0
+    const priorReads = new Map()
     const retainedResponses = []
     const read = async (url, types) => {
       runSignal.throwIfAborted(); requireNative(++requests <= maxRequests, 'native request bound exceeded')
+      const origin = new URL(url).origin, wait = requestIntervalMs - (Date.now() - (priorReads.get(origin) || 0))
+      if (wait > 0) await delay(wait, undefined, {signal: runSignal})
+      runSignal.throwIfAborted(); priorReads.set(origin, Date.now())
       const response = await transport(url)
       runSignal.throwIfAborted(); bytes += response.body.length
       requireNative(bytes <= maxAggregateBytes, 'native aggregate byte bound exceeded')

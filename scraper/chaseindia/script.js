@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { collectOracleRequisitionJobs } from '../../scraper-support/utils/oracleRequisitionInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -141,27 +142,18 @@ const getEmploymentType = (record = {}) =>
       || record.ContractType,
   )
 
-const getEffectiveLocation = (record = {}) => normalizeLocation(
-  record.PrimaryLocation
-    || record?.secondaryLocations?.[0]?.Name,
-)
-
-const isIndiaJob = (record = {}) => {
+const isIndiaPrimaryLocation = (record = {}) => {
   const country = normalizeWhitespace(record.PrimaryLocationCountry)?.toUpperCase()
   const primaryLocation = normalizeWhitespace(record.PrimaryLocation)
-  const secondaryLocations = Array.isArray(record?.secondaryLocations)
-    ? record.secondaryLocations
-      .map((location) => normalizeWhitespace(location?.Name))
-      .filter(Boolean)
-    : []
-
-  return (
-    country === 'IN'
-    || /(?:^|,)\s*india\s*$/i.test(primaryLocation || '')
-    || secondaryLocations.some((location) => /(?:^|,)\s*india\s*$/i.test(location))
-    || false
-  )
+  return country === 'IN' || /(?:^|,)\s*india\s*$/i.test(primaryLocation || '')
 }
+const indiaSecondaryLocation = (record = {}) => Array.isArray(record.secondaryLocations)
+  ? record.secondaryLocations.find(location => normalizeWhitespace(location?.CountryCode)?.toUpperCase() === 'IN'
+    || /(?:^|,)\s*india\s*$/i.test(normalizeWhitespace(location?.Name) || '')) : null
+const isIndiaJob = (record = {}) => isIndiaPrimaryLocation(record) || Boolean(indiaSecondaryLocation(record))
+const getEffectiveLocation = (record = {}) => normalizeLocation(
+  isIndiaPrimaryLocation(record) ? record.PrimaryLocation : indiaSecondaryLocation(record)?.Name,
+)
 
 const extractPreferredQualification = (html) => {
   const heading = 'Preferred Qualifications, capabilities and skills'
@@ -321,7 +313,8 @@ export const extractJobDetail = (payload, listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -330,7 +323,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -340,56 +334,35 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 })
 
 export const createChaseIndiaScraper = ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
+  maxPages = Infinity,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   fetchText = defaultFetchText,
   fetchJson = defaultFetchJson,
   now = () => new Date().toISOString(),
+  signal,
 } = {}) => ({
   async run() {
-    const corporateCareersHtml = await fetchText(CORPORATE_CAREERS_URL)
+    signal?.throwIfAborted()
+    const corporateCareersHtml = await fetchText(CORPORATE_CAREERS_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialCorporateCareersSignal(corporateCareersHtml)) {
       throw new Error('Chase India verified official JPMorgan careers page no longer matches the known first-party handoff')
     }
 
-    const candidateExperienceHtml = await fetchText(CANDIDATE_EXPERIENCE_URL)
+    const candidateExperienceHtml = await fetchText(CANDIDATE_EXPERIENCE_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialCandidateExperienceSignal(candidateExperienceHtml)) {
       throw new Error('Chase India verified JPMC candidate experience page no longer matches the known first-party shell')
     }
 
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (let page = 0; page < maxPages; page += 1) {
-      const payload = await fetchJson(buildSearchUrl({ page }))
-      const pageJobs = extractSearchResults(payload)
-      const summary = extractPaginationSummary(payload, { page })
-
-      for (const listing of pageJobs) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailPayload = await fetchJson(buildJobDetailApiUrl(listing.jobId))
-        const detail = extractJobDetail(detailPayload, listing)
-
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-          companyCareerPage: CORPORATE_CAREERS_URL,
-          companyDomain: COMPANY_DOMAIN,
-          atsPlatform: ATS_PLATFORM,
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-
-      if (!summary.hasNext) break
-    }
-
+    const jobs = await collectOracleRequisitionJobs({
+      source: SOURCE, siteNumber: SITE_NUMBER, buildSearchUrl, buildJobDetailApiUrl,
+      extractSearchResults, extractJobDetail, maxPages, maxJobs, signal, fetchJson,
+    })
+    for (const job of jobs) Object.assign(job, {
+      scrapedAt: now(), companyCareerPage: CORPORATE_CAREERS_URL,
+      companyDomain: COMPANY_DOMAIN, atsPlatform: ATS_PLATFORM,
+    })
     return jobs
   },
 })

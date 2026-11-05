@@ -13,6 +13,7 @@ const norm=value=>typeof value==='string'?value.replace(/\s+/g,' ').trim():''
 const sha=value=>createHash('sha256').update(value).digest('hex')
 const equal=(left,right)=>JSON.stringify(left)===JSON.stringify(right)
 const reviewed=JSON.parse(readFileSync(new URL('./current.scope.json',import.meta.url),'utf8'))
+const reviewedProfiles=[reviewed,JSON.parse(readFileSync(new URL('./current-20261105.scope.json',import.meta.url),'utf8'))]
 const schemaFields=new Set(['@context','@type','title','description','directApply','identifier','datePosted','hiringOrganization',
  'jobLocation','employmentType','jobLocationType','applicantLocationRequirements'])
 const rawFields=new Set(['id','title','department','team','employmentType','location','secondaryLocations','descriptionHtml',
@@ -60,7 +61,7 @@ const visibleDescription=html=>{
  const doc=readVisibleNativeDocument(html,{strict:true}),root=doc.nodes(node=>node.tag==='root')[0]
  return root?doc.text(root):''
 }
-const nativeAppState=html=>{
+const nativeAppState=(html,bootstrapSha256s)=>{
  const doc=readNativeDocument(html),scripts=doc.nodes(node=>node.tag==='script'&&!node.attrs.src
   &&!Object.hasOwn(node.attrs,'nomodule')&&/^(?:|module|(?:text|application)\/javascript)$/i.test(node.attrs.type||'')
   &&/window\.__appData\s*=/.test(node.raw||''))
@@ -69,14 +70,14 @@ const nativeAppState=html=>{
  if(statement?.type!=='ExpressionStatement'||assignment?.type!=='AssignmentExpression'
   ||assignment.operator!=='='||assignment.left?.type!=='MemberExpression'||assignment.left.computed
   ||assignment.left.object?.name!=='window'||assignment.left.property?.name!=='__appData'
-  ||assignment.right?.type!=='ObjectExpression'||sha(scripts[0].raw.slice(statement.end))!==reviewed.nativeAppBootstrap.sha256)throw Error('native-app-assignment-not-active-literal-or-reviewed-bootstrap')
+  ||assignment.right?.type!=='ObjectExpression'||!bootstrapSha256s.includes(sha(scripts[0].raw.slice(statement.end))))throw Error('native-app-assignment-not-active-literal-or-reviewed-bootstrap')
  // Read exactly the AST-validated right-hand side. A comment/string containing
  // another window.__appData assignment cannot supply this program's data.
  const app=JSON.parse(scripts[0].raw.slice(assignment.right.start,assignment.right.end))
  return{app,doc}
 }
-const nativeApp=html=>{
- const{app,doc}=nativeAppState(html)
+const nativeApp=(html,bootstrapSha256s)=>{
+ const{app,doc}=nativeAppState(html,bootstrapSha256s)
  const schemas=doc.nodes(node=>node.tag==='script'&&!node.attrs.src&&node.attrs.type==='application/ld+json')
   .flatMap(node=>{const value=JSON.parse(node.raw||'');return Array.isArray(value)?value:Array.isArray(value?.['@graph'])?value['@graph']:[value]})
   .filter(value=>value?.['@type']==='JobPosting')
@@ -94,22 +95,24 @@ function inspectEmployer(page){
   ?url.pathname.match(/^\/GitBook\/([a-z\d-]+)(?:\/application)?$/i)?.slice(1)||[]:[]))].sort()
  if(!ids.length)fail('active employer role handoff unavailable')
  const scope=captureActiveHiringScope(page.html,page.url)
- if(!equal(scope,reviewed.scope))fail('employer declaration scope changed; binding unavailable')
+ const profile=reviewedProfiles.find(value=>value.scope?equal(scope,value.scope):sha(JSON.stringify(scope))===value.scopeSha256)
+ if(!profile)fail('employer declaration scope changed; binding unavailable')
  const additionalHiringSurfaces=[...new Set(links.filter(({url,text})=>url.origin!=='https://jobs.ashbyhq.com'
   &&url.hostname.replace(/^www\./,'')!=='gitbook.com'&&/career|jobs?|apply|open.roles/i.test(url.pathname+' '+text)).map(({url})=>url.href))].sort()
  return{ids,scope,additionalHiringSurfaces,bodySha256:sha(page.html),
+  nativeAppBootstrapSha256s:[profile.nativeAppBootstrap.sha256,...(profile.nativeAppBootstrap.additionalReviewedSha256||[])],
   bindingMethod:'reviewed-first-party-responsive-SSR-role-declarations; partial-only',
   strictAllConditionsVisibleRoleAnchors:readVisibleNativeDocument(page.html,{strict:true}).nodes(node=>node.tag==='a'&&node.attrs.href?.startsWith('https://jobs.ashbyhq.com/GitBook/')).length,
-  reviewedDeclarationProvenance:reviewed.provenance}
+  reviewedDeclarationProvenance:profile.provenance}
 }
 
-async function inspectRole(row,fetchPage,signal){
+async function inspectRole(row,fetchPage,signal,bootstrapSha256s){
  const proof={jobId:row.id,url:row.jobUrl,complete:false,country:null,reasons:[]}
  try{
   const page=await fetchPage(row.jobUrl,{signal});signal?.throwIfAborted()
   if(page?.status!==200||page.url!==row.jobUrl||typeof page.html!=='string'||Buffer.byteLength(page.html)>3000000)throw Error('native-role-response-unavailable')
   proof.responseSha256=sha(page.html)
-  const{app,schema}=nativeApp(page.html),posting=app.posting
+  const{app,schema}=nativeApp(page.html,bootstrapSha256s),posting=app.posting
   proof.nativeAppData=app;proof.nativeJobPosting=schema
   if(app.environment!=='production'||app.maintenanceMode!==false||app.schedulingMaintenanceMode!==false
    ||app.organization?.hostedJobsPageSlug!=='GitBook'||app.organization.name!=='GitBook'
@@ -177,16 +180,16 @@ export async function runCurrentGitBook({fetchPage,fetchJson,mapJobs,now,onAudit
  const unavailable=await verifyUnavailableAshbyRoles(missing,provider,{fetchPage:async(url,options)=>{
   const page=await fetchPage(url,options);signal?.throwIfAborted()
   if(page?.status===404){
-   const{app}=nativeAppState(page.html)
+   const{app}=nativeAppState(page.html,employer.nativeAppBootstrapSha256s)
    if(app.environment!=='production'||app.maintenanceMode!==false||app.schedulingMaintenanceMode!==false
     ||app.organization!==null||app.posting!==null||app.jobBoard!==null)throw Error('actual-native-unavailable-state-not-established')
   }
   return page
  },signal})
  const openingDetails=[]
- for(const row of rows)openingDetails.push(await inspectRole(row,fetchPage,signal))
+ for(const row of rows)openingDetails.push(await inspectRole(row,fetchPage,signal,employer.nativeAppBootstrapSha256s))
  const closingDetails=[]
- for(const row of rows)closingDetails.push(await inspectRole(row,fetchPage,signal))
+ for(const row of rows)closingDetails.push(await inspectRole(row,fetchPage,signal,employer.nativeAppBootstrapSha256s))
  const closing=await fetchJson(feed,{signal});await validator.run({fetchJson:async()=>closing,signal})
  if(!equal(opening,closing))fail('closing-inventory-changed')
  const closingPage=await fetchPage(official,{signal});signal?.throwIfAborted()

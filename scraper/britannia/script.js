@@ -2,6 +2,11 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { hydrateTurboHireJobs } from '../../scraper-support/utils/turboHireDetails.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { createPublicTurboHireTransport } from '../../scraper-support/utils/turboHirePublicTransport.js'
+import { TURBOHIRE_CURRENT_PUBLIC_CLIENT, verifyTurboHirePublicClient } from '../../scraper-support/utils/turboHirePublicClient.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -10,7 +15,7 @@ export const OFFICIAL_CAREERS_URL = 'https://www.britannia.co.in/careers'
 export const ORIGIN = 'https://britannia.turbohire.co'
 export const ORG_ID = 'c143932d-0df7-4856-9dc5-0a9f1ca26dc5'
 export const BOARD_URL = `${ORIGIN}/careerpage/${ORG_ID}`
-export const API_BASE_URL = 'https://thapi.azurewebsites.net'
+export const API_BASE_URL = TURBOHIRE_CURRENT_PUBLIC_CLIENT.apiBaseURL
 export const NOAUTH_TOKEN_URL = `${API_BASE_URL}/api/token/noauth`
 export const FILTERED_JOBS_URL = `${API_BASE_URL}/api/careerpagev2/filteredjobs?orgId=${ORG_ID}&pageType=0`
 
@@ -76,11 +81,9 @@ const parseLocations = (value) => {
 
 const normalizeLocation = (value) => normalizeWhitespace(value)?.replace(/\s*,\s*/g, ', ') || null
 
-const extractPrimaryLocation = (value) => normalizeLocation(parseLocations(value)[0]?.Address)
-
 const extractCity = (location) => normalizeLocation(location)?.split(',')[0] || null
 
-const isIndiaLocation = (location) => /\bindia\b/i.test(normalizeWhitespace(location) || '')
+const isIndiaLocation = (location) => /(?:^|,\s*)india$/i.test(normalizeWhitespace(location) || '')
 
 const buildPublicJobUrl = (jobIdObfuscated) => (
   jobIdObfuscated
@@ -95,29 +98,29 @@ const buildAuthenticatedHeaders = (accessToken = null) => {
 }
 
 export const hasOfficialCareersSignal = (html) => {
-  const page = String(html ?? '')
-  return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.britannia\.co\.in\/careers["']/i.test(page)
-    && /Explore Britannia Careers: Exciting Job Opportunities Await/i.test(page)
-    && /WE GROW WHEN OUR PEOPLE GROW/i.test(page)
+  const doc = readNativeDocument(String(html ?? ''))
+  return doc.nodes(n => n.tag === 'link' && n.attrs.rel === 'canonical' && n.attrs.href === OFFICIAL_CAREERS_URL).length === 1
+    && doc.nodes(n => n.tag === 'title' && /Explore Britannia Careers: Exciting Job Opportunities Await/i.test(n.raw || '')).length === 1
+    && doc.nodes(n => n.tag === 'h1' && doc.text(n) === 'WE GROW WHEN OUR PEOPLE GROW').length === 1
 }
 
 export const extractTurboHireHandoffUrl = (html) => {
-  const match = String(html ?? '').match(/href=["'](https:\/\/britannia\.turbohire\.co\/careerpage\/c143932d-0df7-4856-9dc5-0a9f1ca26dc5)["']/i)
-  return normalizeWhitespace(match?.[1]) || null
+  const doc = readNativeDocument(String(html ?? ''))
+  return doc.nodes(n => n.tag === 'a' && n.attrs.href === BOARD_URL).length ? BOARD_URL : null
 }
 
 export const hasOfficialBoardSignal = (html) => {
-  const page = String(html ?? '')
-  return /<title>\s*Britannia Industries\s*<\/title>/i.test(page)
-    && /property=["']og:title["'][^>]+content=["']Britannia Industries - Career Page["']/i.test(page)
-    && /property=["']og:site_name["'][^>]+content=["']Britannia Industries["']/i.test(page)
+  const doc = readNativeDocument(String(html ?? ''))
+  return doc.nodes(n => n.tag === 'title' && n.raw?.trim() === 'Britannia Industries').length === 1
+    && doc.nodes(n => n.tag === 'meta' && n.attrs.property === 'og:title' && n.attrs.content === 'Britannia Industries - Career Page').length === 1
+    && doc.nodes(n => n.tag === 'meta' && n.attrs.property === 'og:site_name' && n.attrs.content === 'Britannia Industries').length === 1
   }
 
 export const extractPublicJobs = (payload = {}) =>
   (Array.isArray(payload?.Result) ? payload.Result : [])
     .map((record) => {
       const title = normalizeWhitespace(record?.JobTitle)
-      const location = extractPrimaryLocation(record?.Location)
+      const location = parseLocations(record?.Location).map(place => normalizeLocation(place?.Address)).find(isIndiaLocation)
       const sourceUrl = buildPublicJobUrl(normalizeWhitespace(record?.JobIdObfuscated))
 
       if (!title || !location || !sourceUrl || !isIndiaLocation(location)) return null
@@ -130,7 +133,7 @@ export const extractPublicJobs = (payload = {}) =>
         city: extractCity(location),
         country: 'India',
         jobId: normalizeWhitespace(record?.JobId),
-        requisitionId: normalizeWhitespace(record?.JobCode) || normalizeWhitespace(record?.JobId),
+        requisitionId: normalizeWhitespace(record?.JobCode),
         sourceUrl,
         applyUrl: sourceUrl,
         employmentType: normalizeWhitespace(record?.JobTypeV2) || null,
@@ -147,84 +150,84 @@ export const extractPublicJobs = (payload = {}) =>
     })
     .filter(Boolean)
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': DEFAULT_HEADERS['User-Agent'],
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
-
-const defaultFetchJson = async (url, options = {}) => {
-  const response = await fetch(url, {
-    method: options.method || 'GET',
-    headers: options.headers,
-    body: options.body,
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.json()
-}
-
 export const createBritanniaScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const fetchJson = options.fetchJson || defaultFetchJson
     const now = options.now || (() => new Date().toISOString())
-
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Britannia official careers page no longer matches the verified public surface')
-    }
-
-    const handoffUrl = extractTurboHireHandoffUrl(careersHtml)
-    if (handoffUrl !== BOARD_URL) {
-      throw new Error('Britannia official careers page no longer exposes the verified TurboHire handoff')
-    }
-
-    const boardHtml = await fetchText(BOARD_URL)
-    if (!hasOfficialBoardSignal(boardHtml)) {
-      throw new Error('The official Britannia TurboHire board no longer matches the verified public surface')
-    }
-
-    const tokenPayload = await fetchJson(NOAUTH_TOKEN_URL, {
-      method: 'GET',
-      headers: buildAuthenticatedHeaders(),
+    const cap = options.maxJobs ?? maxJobs
+    if (cap != null && (!Number.isSafeInteger(cap) || cap < 0)) throw Error('Britannia invalid caller cap')
+    options.signal?.throwIfAborted()
+    if (cap === 0) return attachInventoryEvidence([], { status: 'coverage-gap', surface: BOARD_URL,
+      firstParty: true, listingComplete: false, pagesFetched: 0, verifiedAt: now(), reason: 'caller-cap-zero-no-public-reads' })
+    const transport = createPublicTurboHireTransport({ source: 'britannia', ...options,
+      allowedURL: (url, method, body) => method === 'GET'
+        ? [OFFICIAL_CAREERS_URL, BOARD_URL, NOAUTH_TOKEN_URL, ORIGIN + TURBOHIRE_CURRENT_PUBLIC_CLIENT.path].includes(url)
+          || /^https:\/\/thapi-stage2\.azurewebsites\.net\/api\/publicjobs\/[0-9a-f-]{36}\?fieldVisibility=CareerPage$/i.test(url)
+        : method === 'POST' && url === FILTERED_JOBS_URL && body === '{}',
     })
+    const { fetchText, fetchScript, fetchJson, signal } = transport
+    try {
+      let currentClient
+      const verifyPublisher = async () => {
+        const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+        if (!hasOfficialCareersSignal(careersHtml)) {
+          throw new Error('Britannia official careers page no longer matches the verified public surface')
+        }
 
-    const listingsPayload = await fetchJson(FILTERED_JOBS_URL, {
-      method: 'POST',
-      headers: {
-        ...buildAuthenticatedHeaders(tokenPayload?.access_token),
-        'Content-Type': 'application/json',
-      },
-      body: '{}',
-    })
+        const handoffUrl = extractTurboHireHandoffUrl(careersHtml)
+        if (handoffUrl !== BOARD_URL) {
+          throw new Error('Britannia official careers page no longer exposes the verified TurboHire handoff')
+        }
 
-    const jobs = extractPublicJobs(listingsPayload).map((job) => ({
-      ...job,
-      source: 'britannia',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
+        const boardHtml = await fetchText(BOARD_URL)
+        if (!hasOfficialBoardSignal(boardHtml)) {
+          throw new Error('The official Britannia TurboHire board no longer matches the verified public surface')
+        }
+        const client = await verifyTurboHirePublicClient({ source: 'britannia', origin: ORIGIN, boardHTML: boardHtml, fetchScript })
+        if (currentClient && JSON.stringify(client) !== JSON.stringify(currentClient)) throw Error('Britannia current public client changed during closing')
+        currentClient = client
+      }
+      await verifyPublisher()
 
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+      const tokenPayload = await fetchJson(NOAUTH_TOKEN_URL, {
+        method: 'GET',
+        headers: buildAuthenticatedHeaders(),
+      })
+
+      if (typeof tokenPayload?.access_token !== 'string' || !tokenPayload.access_token) throw Error('Britannia public anonymous token unavailable')
+      const listingRequest = {
+        method: 'POST',
+        headers: {
+          ...buildAuthenticatedHeaders(tokenPayload?.access_token),
+          'Content-Type': 'application/json',
+        },
+        body: '{}',
+        signal,
+      }
+      const listingsPayload = await fetchJson(FILTERED_JOBS_URL, listingRequest)
+
+      const jobs = extractPublicJobs(listingsPayload).map((job) => ({
+        ...job,
+        source: 'britannia',
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
+
+      return await hydrateTurboHireJobs({ source: 'britannia', orgId: ORG_ID, employer: 'Britannia Industries',
+        origin: ORIGIN, apiBaseUrl: API_BASE_URL, boardUrl: BOARD_URL, payload: listingsPayload, jobs,
+        fetchJson, headers: buildAuthenticatedHeaders(tokenPayload.access_token), listingUrl: FILTERED_JOBS_URL,
+        listingRequest, maxJobs: cap, signal, now, retainNativeProof: true,
+        mapNativeFields: detail => ({ employmentType: normalizeWhitespace(detail.JobTypeV2),
+          experienceRequired: formatExperience(detail.Experience),
+          requiredSkills: Array.isArray(detail.Skills) ? detail.Skills.filter(value => typeof value === 'string').map(normalizeWhitespace).filter(Boolean) : [] }),
+        publisherProof: { corporateURL: OFFICIAL_CAREERS_URL, boardURL: BOARD_URL, orgId: ORG_ID, client: currentClient }, verifyPublisher,
+      })
+    } finally { transport.close() }
   },
 })
 
-export const run = async () => createBritanniaScraper().run()
+export const run = async (options = {}) => createBritanniaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

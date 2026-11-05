@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { collectOracleRequisitionJobs } from '../../scraper-support/utils/oracleRequisitionInventory.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -101,22 +102,18 @@ const getRequisitionDetail = (payload) => {
   return payload || {}
 }
 
-const isIndiaJob = (record = {}) => {
+const isIndiaPrimaryLocation = (record = {}) => {
   const country = normalizeWhitespace(record.PrimaryLocationCountry)?.toUpperCase()
   const location = normalizeWhitespace(record.PrimaryLocation)
-  const secondaryLocation = normalizeWhitespace(record?.secondaryLocations?.[0]?.Name)
-
-  return (
-    country === 'IN'
-    || /(?:^|,)\s*india\s*$/i.test(location || '')
-    || /(?:^|,)\s*india\s*$/i.test(secondaryLocation || '')
-    || false
-  )
+  return country === 'IN' || /(?:^|,)\s*india\s*$/i.test(location || '')
 }
 
+const indiaSecondaryLocation = (record = {}) => Array.isArray(record.secondaryLocations)
+  ? record.secondaryLocations.find(location => normalizeWhitespace(location?.CountryCode)?.toUpperCase() === 'IN'
+    || /(?:^|,)\s*india\s*$/i.test(normalizeWhitespace(location?.Name) || '')) : null
+const isIndiaJob = (record = {}) => isIndiaPrimaryLocation(record) || Boolean(indiaSecondaryLocation(record))
 const getEffectiveLocation = (record = {}) => normalizeLocation(
-  record.PrimaryLocation
-    || record?.secondaryLocations?.[0]?.Name,
+  isIndiaPrimaryLocation(record) ? record.PrimaryLocation : indiaSecondaryLocation(record)?.Name,
 )
 
 const getEmploymentType = (record = {}) =>
@@ -252,8 +249,9 @@ export const extractJobDetail = (payload, listing = {}) => {
   }
 }
 
-const defaultFetchJson = async (url) => {
+const defaultFetchJson = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'application/json,text/plain,*/*',
@@ -268,46 +266,18 @@ const defaultFetchJson = async (url) => {
 }
 
 export const createJPMorganScraper = ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
+  maxPages = Infinity,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   fetchJson = defaultFetchJson,
+  signal,
 } = {}) => ({
-  async run() {
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (let page = 0; page < maxPages; page += 1) {
-      const payload = await fetchJson(buildSearchUrl({ page }))
-      const pageJobs = extractSearchResults(payload)
-      const summary = extractPaginationSummary(payload, { page })
-
-      for (const listing of pageJobs) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailPayload = await fetchJson(buildJobDetailApiUrl(listing.jobId))
-        const detail = extractJobDetail(detailPayload, listing)
-
-        jobs.push({
-          ...detail,
-          source: 'jpmorgan',
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-
-      if (!summary.hasNext) break
-    }
-
-    return jobs
-  },
+  run: () => collectOracleRequisitionJobs({
+    source: 'jpmorgan', siteNumber: SITE_NUMBER, buildSearchUrl, buildJobDetailApiUrl,
+    extractSearchResults, extractJobDetail, maxPages, maxJobs, signal, fetchJson,
+  }),
 })
 
-export const run = async () => createJPMorganScraper().run()
+export const run = async options => createJPMorganScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -8,6 +8,8 @@ import {
   extractSearchResults,
 } from '../societegenerale/script.js'
 import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readWithCallerAbort } from '../societegenerale/nativeInventory.js'
 
 import { SOCGEN_CATALOG } from './catalog.js'
 
@@ -50,7 +52,7 @@ const defaultFetchPage = async (url, { signal } = {}) => {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    redirect: 'follow',
+    redirect: 'error',
     signal: composeAbortSignals(signal, createTimeoutSignal(FETCH_TIMEOUT_MS)),
   })
 
@@ -94,19 +96,33 @@ export const createSocGenScraper = ({
     fetchPage = defaultFetchPage,
     fetchText,
     signal = undefined,
+    maxJobs: runtimeMaxJobs = maxJobs,
+    maxRequests,
+    detailConcurrency,
   } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL, { signal })
-    if (
-      Number(careersPage?.status) !== 200
-      || String(careersPage?.url ?? '') !== CAREERS_URL
-      || !hasVerifiedSocGenCareersPageSignal(careersPage?.html)
-    ) {
-      throw new Error('SocGen verified SocGen careers page no longer matches the pinned public Societe Generale surface')
+    const requestBudget = maxRequests == null ? null : Number.isSafeInteger(maxRequests) && maxRequests >= 0 ? maxRequests : 0
+    const validationReads = requestBudget === 0 || runtimeMaxJobs === 0 ? 0 : 1
+    if (validationReads) {
+      const careersPage = await readWithCallerAbort(fetchPage, CAREERS_URL, signal)
+      if (
+        Number(careersPage?.status) !== 200
+        || String(careersPage?.url ?? '') !== CAREERS_URL
+        || !hasVerifiedSocGenCareersPageSignal(careersPage?.html)
+      ) {
+        throw new Error('SocGen verified SocGen careers page no longer matches the pinned public Societe Generale surface')
+      }
     }
 
-    const jobs = await createSocieteGeneraleScraper({ maxJobs }).run({ fetchText, signal })
+    const jobs = await createSocieteGeneraleScraper({ maxJobs:runtimeMaxJobs, detailConcurrency }).run({ fetchText, signal,
+      maxRequests:requestBudget == null ? undefined : requestBudget - validationReads })
+    signal?.throwIfAborted()
     const scrapedAt = now()
-    return jobs.map((job) => decorateSocGenJob(job, scrapedAt))
+    signal?.throwIfAborted()
+    const mapped = mapJobsWithInventoryEvidence(jobs, (job) => decorateSocGenJob(job, scrapedAt))
+    if (jobs.sourceAudit) Object.defineProperty(mapped, 'sourceAudit', { value:{ ...jobs.sourceAudit,
+      source:SOURCE, delegatedSource:jobs.sourceAudit.source, delegatedRequests:jobs.sourceAudit.requests,
+      requests:jobs.sourceAudit.requests + validationReads, wrapperValidationRequests:validationReads } })
+    return mapped
   },
 })
 

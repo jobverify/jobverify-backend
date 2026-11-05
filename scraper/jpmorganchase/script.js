@@ -17,14 +17,16 @@ import {
 } from '../chaseindia/script.js'
 
 import { JPMORGAN_CHASE_CATALOG } from './catalog.js'
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -71,20 +73,25 @@ export const createJPMorganChaseScraper = ({
   maxPages = Number.POSITIVE_INFINITY,
   maxJobs = null,
   now = () => new Date().toISOString(),
+  signal: factorySignal,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
     fetchJson,
+    signal = factorySignal,
   } = {}) {
-    const corporateCareersHtml = await fetchText(CAREERS_URL)
+    signal?.throwIfAborted()
+    const corporateCareersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasVerifiedJPMorganChaseCareersSignal(corporateCareersHtml)) {
       throw new Error('JPMorgan Chase verified JPMorgan Chase careers page no longer matches the pinned first-party handoff')
     }
 
     const scrapedAt = now()
-    const cachedFetchText = async (url) => {
+    const cachedFetchText = async (url, options) => {
+      signal?.throwIfAborted()
       if (url === CAREERS_URL) return corporateCareersHtml
-      return fetchText(url)
+      return fetchText(url, options)
     }
 
     const jobs = await createChaseIndiaScraper({
@@ -93,9 +100,10 @@ export const createJPMorganChaseScraper = ({
       fetchText: cachedFetchText,
       fetchJson,
       now: () => scrapedAt,
+      signal,
     }).run()
 
-    return jobs.map((job) => decorateJPMorganChaseJob(job, scrapedAt))
+    return mapJobsWithInventoryEvidence(jobs, job => decorateJPMorganChaseJob(job, scrapedAt))
   },
 })
 

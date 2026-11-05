@@ -48,7 +48,7 @@ test('Zebra Technologies local catalog captures the verified first-party careers
   assert.equal(provider.paginationStrategy, 'verified-first-party-careers-handoff-plus-workday-india-filter')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-workday-handoff+shared-workday-runner',
+    'current-first-party-careers-handoff+full-native-workday-role+reviewed-employer+explicit-own-country+incomplete-source-scope',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

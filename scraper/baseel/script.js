@@ -232,9 +232,10 @@ export const hasBaseelDotInHomepageSignal = (html) => {
     && links.includes(sitemapLink)
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     redirect: 'follow',
+    signal,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -248,9 +249,10 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     redirect: 'follow',
+    signal,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'application/javascript,text/javascript,text/plain;q=0.9,*/*;q=0.8',
@@ -313,10 +315,37 @@ const verifySiteSurface = async (site, { fetchPage, fetchText }) => {
 
 export const createBaseelScraper = () => ({
   async run({
-    fetchPage = defaultFetchPage,
-    fetchText = defaultFetchText,
+    fetchPage: providedFetchPage = defaultFetchPage,
+    fetchText: providedFetchText = defaultFetchText,
+    signal,
+    timeoutMs = 120000,
+    requestTimeoutMs = 15000,
   } = {}) {
+    for (const budget of [timeoutMs, requestTimeoutMs]) {
+      if (!Number.isSafeInteger(budget) || budget < 1 || budget > 300000) throw new RangeError('Baseel request and source budgets must be within five minutes')
+    }
+    const sourceSignal = AbortSignal.any([AbortSignal.timeout(timeoutMs), ...(signal ? [signal] : [])])
+    const read = async (fetcher, url) => {
+      const requestSignal = AbortSignal.any([sourceSignal, AbortSignal.timeout(requestTimeoutMs)])
+      requestSignal.throwIfAborted()
+      let onAbort
+      const aborted = new Promise((_, reject) => {
+        onAbort = () => reject(requestSignal.reason)
+        requestSignal.addEventListener('abort', onAbort, { once: true })
+      })
+      try {
+        const response = await Promise.race([Promise.resolve().then(() => {
+          requestSignal.throwIfAborted()
+          return fetcher(url, { signal: requestSignal })
+        }), aborted])
+        requestSignal.throwIfAborted()
+        return response
+      } finally { requestSignal.removeEventListener('abort', onAbort) }
+    }
+    const fetchPage = url => read(providedFetchPage, url)
+    const fetchText = url => read(providedFetchText, url)
     for (const site of SITE_DEFINITIONS) {
+      sourceSignal.throwIfAborted()
       await verifySiteSurface(site, { fetchPage, fetchText })
     }
 

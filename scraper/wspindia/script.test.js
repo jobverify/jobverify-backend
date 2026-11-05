@@ -194,7 +194,8 @@ test('WSP India reconciles current pages and required Oracle details for the ful
   const jobs = await wspIndia.createWspIndiaScraper().run(fixtureWspFetches(wspIndia, fixtures))
   assert.deepEqual(jobs.map(job => job.jobId), ['97196', '97197', '91677'])
   assert.ok(jobs.every(job => job.country === 'India' && job.publicExperienceChecked && job.jobDescription.length > 100))
-  assert.ok(jobs.every(job => job.sourceListingComplete !== false))
+  assert.ok(jobs.every(job => job.sourceListingComplete === false && job.nativeListingEnumerationComplete === true
+    && job.sourceDetailComplete === true && job.sourceScopeComplete === false && job.lifecycleCleanupAllowed === false))
   assert.match(jobs[0].sourceUrl, /sites\/CX_2001\/job\/97196$/)
 })
 
@@ -235,7 +236,7 @@ test('WSP India current Oracle job links cannot silently become an empty parsed 
   assert.deepEqual(wspIndia.extractJobsFromHtml(fixtures.first).map(job => job.jobId), ['97196', '97197'])
 })
 
-test('WSP India preserves an unpublished public role description as null', async () => {
+test('WSP India holds a role with no public criteria without treating company boilerplate as its description', async () => {
   const wspIndia = await loadModule()
   const html = await fs.readFile(new URL('./fixtures/jobs-current-bare-description.html', import.meta.url), 'utf8')
   const payload = JSON.parse(await fs.readFile(new URL('./fixtures/detail-94515.json', import.meta.url), 'utf8'))
@@ -246,12 +247,12 @@ test('WSP India preserves an unpublished public role description as null', async
       return payload
     },
   })
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].jobId, '94515')
-  assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].jobDescription, null)
-  assert.equal(jobs[0].experienceRequired, null)
-  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.equal(jobs.length, 0)
+  assert.equal(jobs.nativeCollectionEvidence.heldNativeRoles[0].id, '94515')
+  assert.match(jobs.nativeCollectionEvidence.heldNativeRoles[0].reason, /public role criteria missing/)
+  const {readInventoryEvidence}=await import('../../scraper-support/utils/inventoryEvidence.js')
+  assert.equal(readInventoryEvidence(jobs).status,'coverage-gap')
+  assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
 
 test('WSP India bounds concurrent detail reads while preserving published job order', async () => {
@@ -295,7 +296,7 @@ test('WSP India default enumerates verified pagination beyond the shared ten-pag
   })
   assert.deepEqual(requestedPages, Array.from({ length: 11 }, (_, index) => index + 1))
   assert.equal(jobs.length, 11)
-  assert.ok(jobs.every(job => job.sourceListingComplete !== false))
+  assert.ok(jobs.every(job => job.sourceListingComplete === false && job.nativeListingEnumerationComplete === true))
 })
 
 test('WSP India accounts for identical publisher duplicate rows without duplicating requisitions', async () => {
@@ -317,7 +318,8 @@ test('WSP India accounts for identical publisher duplicate rows without duplicat
   assert.deepEqual(requestedIds, ['97196', '97197', '91677'])
   assert.equal(readInventoryEvidence(jobs).reportedTotal, 4)
   assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 3)
-  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(jobs.nativeCollectionEvidence.enumerationComplete, true)
 })
 
 test('WSP India rejects conflicting repeated requisition cards instead of silently deduplicating', async () => {

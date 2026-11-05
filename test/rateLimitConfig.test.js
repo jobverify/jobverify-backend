@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
+test('equivalent search URL spellings share the expensive-search quota', () => {
+  for (const originalUrl of ['/api/jobs/', '/api/jobs/search/', '/API/JOBS/SEARCH', '/api/jobs/META/', '/api/jobs/meta/companies/']) {
+    assert.equal(getApiRateLimitProfile({ method: 'GET', originalUrl }), 'expensive-search', originalUrl);
+  }
+});
 import {
   createApiRateLimitHandler,
   createRateLimiter,

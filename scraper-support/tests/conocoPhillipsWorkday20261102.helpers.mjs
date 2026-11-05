@@ -10,7 +10,7 @@ import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
 
 export const SOURCE='conocophillips'
 export const PROFILE=Object.freeze({
-  listingStrategy:'jobs-api',inventoryScope:'complete-board-country-proof',
+  listingStrategy:'jobs-api',inventoryScope:'complete-board-country-proof',retainProvenIndiaOnUnresolvedLocations:true,
   officialCareersUrl:'https://careers.conocophillips.com/',
   jobsApiUrl:'https://conocophillips.wd1.myworkdayjobs.com/wday/cxs/conocophillips/External/jobs',
   detailUrlBase:'https://conocophillips.wd1.myworkdayjobs.com/External/',
@@ -73,7 +73,7 @@ export const exercise=async(t,{change=()=>{},options={},registered=false,mode='o
         throw Object.assign(new Error('CONTROLLED uncaptured native continuation; no page24 or empty response invented'),{abortRetries:true})
       }
       assert.equal(call.body.offset,0)
-      assert.ok(++posts<=2,'At most synthetic opening and closing')
+      assert.ok(++posts<=3,'Only synthetic opening, closing and final board recheck are available')
       return asResponse(packet('unfiltered-listing-prefix'),JSON.stringify(posts===1?state.opening:state.closing))
     }
     if(url===packet('selected-native-detail').nativeMetadata.url&&method==='GET'){
@@ -101,15 +101,22 @@ export const assertNoAuthority=result=>{
   assert.notEqual(result.error?.inventoryEvidence?.status,'verified-empty')
   assert.notEqual(result.error?.inventoryEvidence?.indiaFacetCount,0)
 }
+export const assertNativeHeld=result=>{
+  assert.equal(result.rejected,false)
+  assert.deepEqual(result.jobs,[])
+  assert.equal(result.evidence?.status,'coverage-gap')
+  assert.equal(result.evidence?.listingComplete,false)
+  assert.equal(result.evidence?.reportedTotal,null)
+  assert.equal(result.evidence?.indiaFacetCount,null)
+  const proof=result.jobs[Symbol.for('jobverify.workday.country-inventory-proof')]
+  assert.equal(proof.completeSourceScope,false)
+  assert.ok(proof.boards[0].unresolvedCountryRoles.length>0)
+}
 export const assertNativeIncomplete=result=>{
-  assert.equal(result.rejected,true)
-  assert.equal(result.error?.code,'WORKDAY_NATIVE_LOCATIONS_UNRESOLVED')
-  assert.equal(result.error?.softFailure,true)
-  assert.equal(result.error?.abortRetries,true)
-  assertNoAuthority(result)
+  assertNativeHeld(result)
   assert.ok(result.calls.some(c=>c.url===PROFILE.officialCareersUrl))
   assert.ok(result.calls.some(c=>c.url===PROFILE.detailUrlBase))
-  assert.equal(result.calls.filter(c=>c.method==='POST').length,1,'Unknown secondary scope stops before any modeled closing read')
+  assert.equal(result.calls.filter(c=>c.method==='POST').length,3,'Unknown secondary scope stays held while the known board reconciles')
   assert.equal(result.calls.filter(c=>c.url===packet('selected-native-detail').nativeMetadata.url).length,1)
   assert.ok(result.calls.every(c=>c.signal instanceof AbortSignal))
   assert.deepEqual(result.state.opening.jobPostings[0],selected)

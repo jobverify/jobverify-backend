@@ -199,7 +199,9 @@ for (const status of [401, 403, 429]) {
       close: async () => { closes++ },
     }) })
     const jobs = await scraper.run({ fetchText: async url => { assert.equal(url, OFFICIAL_CAREERS_URL); return official } })
-    assert.deepEqual(directCalls, [buildDetailApiUrl(record.id)])
+    // Only native 429s receive the two bounded portal retries; denial statuses
+    // still make one direct request and never trigger browser detail recovery.
+    assert.deepEqual(directCalls, Array.from({ length: status === 429 ? 3 : 1 }, () => buildDetailApiUrl(record.id)))
     assert.deepEqual(browserCalls, [buildListingApiUrl()])
     assert.equal(closes, 1)
     assert.equal(jobs.length, 1)

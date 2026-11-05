@@ -20,6 +20,24 @@ test('pipeline separately compares source claims and returns only validated docu
   assert.ok(result.facts);
 });
 
+test('generation reserves time for PDF compilation and the independent audit within the shared worker deadline', async () => {
+  const deadline = Date.now() + 20 * 60000;
+  let generationDeadline, auditDeadline, compilationDeadline;
+  await processResumeDocument({ mode: 'base', source }, {
+    deadline,
+    generate: async (_prompt, options) => {
+      if (options.comparison) { auditDeadline = options.deadline; return supported; }
+      generationDeadline = options.deadline;
+      return latex;
+    },
+    compile: async (_latex, options) => { compilationDeadline = options.deadline; return compiled; },
+  });
+  assert.ok(generationDeadline <= deadline - 3 * 60000, 'inference must leave three minutes for validation on a warm worker');
+  assert.ok(generationDeadline > deadline - 4 * 60000);
+  assert.equal(compilationDeadline, deadline);
+  assert.equal(auditDeadline, deadline);
+});
+
 test('the actual generation and independent audit consume confirmed candidate evidence and exclude unconfirmed inference', async () => {
   const candidateEvidence = { version: 3, hash: 'test', experiences: [{ id: 'e1', kind: 'project', company: 'Personal', role: 'Latency monitor', summary: 'Built a service monitor', skills: ['Redis'] }],
     achievements: [{ id: 'a1', experienceId: 'e1', claim: 'Reduced response latency by 25%', context: 'Redis cache', metrics: '25%', skills: ['Redis'], provenance: 'manual', confirmed: true },

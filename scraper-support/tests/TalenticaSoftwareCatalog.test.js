@@ -37,20 +37,20 @@ test('Talentica Software local catalog captures the verified first-party job car
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.talentica.com/careers/')
   assert.equal(provider.companyCareerPage, 'https://www.talentica.com/job-openings/')
-  assert.equal(provider.atsPlatform, 'official-first-party-job-card-grid')
+  assert.equal(provider.atsPlatform, 'official-company-native-role-pages')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-page-job-card-grid')
+  assert.equal(provider.paginationStrategy, 'paired-current-index-and-declared-role-pages;company-scope-unqualified')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-job-card-grid+direct-detail-links+public-experience-labels',
+    'active-own-role-criteria+application-position-fields;native-country-unproven',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'talentica.com')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-11-05')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Data Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /QA LLM Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Work-country.*remain unknown/i)
+  assert.match(provider.verifiedSurfaceSummary, /activation and cleanup are unqualified/i)
   assert.equal(talentica.PROVIDER_METADATA.source, provider.source)
 })
 
