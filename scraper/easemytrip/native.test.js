@@ -1,15 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import fs from 'node:fs'
 import * as scraper from './script.js'
+import {fixtureFetch} from './fixtureReplay.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
-const captures=['official-home.json','official-careers.json','native-application-form.json'].map(n=>JSON.parse(fs.readFileSync(new URL('fixtures/'+n,import.meta.url),'utf8')))
-const replay=(mutate=r=>r)=>async url=>{const row=captures.find(r=>r.url===url);assert.ok(row,'Uncaptured '+url);const r=mutate({...row}),response=new Response(r.body);return{status:r.status,url:r.finalUrl,body:response.body,text:()=>response.text()}}
+const replay=fixtureFetch
+const htmlHeaders=new Headers({'content-type':'text/html'})
 
 test('EaseMyTrip stops and cancels an oversized streaming response before EOF',async()=>{
  let cancelled=false,pulls=0
  const body=new ReadableStream({pull(c){pulls++;if(pulls<=7)c.enqueue(new Uint8Array(1000000))},cancel(){cancelled=true}})
- await assert.rejects(scraper.run({timeoutMs:100,fetchImpl:async url=>({status:200,url,body,text:()=>new Response(body).text()})}),e=>e.code==='EASEMYTRIP_COVERAGE_GAP'&&/bound/.test(e.message))
+ await assert.rejects(scraper.run({timeoutMs:100,fetchImpl:async url=>({status:200,url,headers:htmlHeaders,body,text:()=>new Response(body).text()})}),e=>e.code==='EASEMYTRIP_COVERAGE_GAP'&&/bound/.test(e.message))
  assert.equal(cancelled,true)
  assert.ok(pulls<=7,'must stop reading as soon as byte bound is exceeded')
 })
@@ -25,7 +25,7 @@ test('EaseMyTrip caller abort cancels a stalled stream and preserves the reason'
  const controller=new AbortController(),reason=Error('caller stopped'),received=Promise.withResolvers()
  let cancelled=false
  const body=new ReadableStream({pull(){received.resolve()},cancel(){cancelled=true}},{highWaterMark:0})
- const pending=scraper.run({signal:controller.signal,fetchImpl:async url=>({status:200,url,body,text:()=>new Response(body).text()})})
+ const pending=scraper.run({signal:controller.signal,fetchImpl:async url=>({status:200,url,headers:htmlHeaders,body,text:()=>new Response(body).text()})})
  await received.promise;controller.abort(reason)
  await assert.rejects(pending,e=>e===reason)
  assert.equal(cancelled,true)
@@ -34,7 +34,7 @@ test('EaseMyTrip caller abort cancels a stalled stream and preserves the reason'
 test('EaseMyTrip aggregate deadline cancels a stalled streaming body',async()=>{
  let cancelled=false
  const body=new ReadableStream({cancel(){cancelled=true}})
- await assert.rejects(scraper.run({timeoutMs:20,fetchImpl:async url=>({status:200,url,body,text:()=>new Response(body).text()})}),e=>e.code==='EASEMYTRIP_COVERAGE_GAP'&&/deadline/.test(e.message))
+ await assert.rejects(scraper.run({timeoutMs:20,fetchImpl:async url=>({status:200,url,headers:htmlHeaders,body,text:()=>new Response(body).text()})}),e=>e.code==='EASEMYTRIP_COVERAGE_GAP'&&/deadline/.test(e.message))
  assert.equal(cancelled,true)
 })
 
@@ -46,17 +46,18 @@ test('EaseMyTrip enforces elapsed deadline when synchronous work starves abort t
   return captured(url)
  }}),e=>e.code==='EASEMYTRIP_COVERAGE_GAP'&&/deadline/.test(e.message))
 })
-test('EaseMyTrip returns native12 city-policy roles without certifying country or inventory completeness',async()=>{
- const jobs=await scraper.run({fetchImpl:replay()})
- assert.equal(jobs.length,12)
+test('EaseMyTrip retains all twelve observations and qualifies ten exact owned India worksites without company completeness',async()=>{
+ const jobs=await scraper.run({fetchImpl:replay(),minIntervalMs:0})
+ assert.equal(jobs.length,10)
  assert.equal(readInventoryEvidence(jobs)?.status,'coverage-gap')
- assert.equal(readInventoryEvidence(jobs).reportedTotal,12)
+ assert.equal(readInventoryEvidence(jobs).reportedTotal,null)
  assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null)
- const inspected=await scraper.inspectInventory({fetchImpl:replay()})
+ const inspected=await scraper.inspectInventory({fetchImpl:replay(),minIntervalMs:0})
  assert.equal(inspected.roles.length,12)
  assert.equal(inspected.roles[0].title,'Senior Frontend Engineer')
  assert.equal(inspected.roles[0].location,'Gurugram')
- assert.equal(inspected.roles[0].country,null)
+ assert.equal(inspected.roles[0].country,'India')
+ assert.equal(inspected.roles.filter(r=>r.country===null).length,2)
  assert.ok(inspected.roles.every(r=>r.description.length>100&&r.postingDate===null))
 })
 test('EaseMyTrip unavailable upstream is never empty',async()=>{
@@ -83,12 +84,11 @@ test('EaseMyTrip never executes client data expressions',async()=>{
 test('EaseMyTrip hidden native client is not public role evidence',async()=>{
  await assert.rejects(scraper.run({fetchImpl:replay(r=>{if(r.url===scraper.CAREERS_URL){const start=r.body.lastIndexOf('<script',r.body.indexOf('const ROLES'));r.body=r.body.slice(0,start)+r.body.slice(start).replace('<script','<script hidden')}return r})}),{code:'EASEMYTRIP_COVERAGE_GAP'})
 })
-test('EaseMyTrip rejects changed application employer',async()=>{
- await assert.rejects(scraper.run({fetchImpl:replay(r=>{if(r.url===scraper.APPLICATION_URL)r.body=r.body.replaceAll('EaseMyTrip.com','Other.example');return r})}),{code:'EASEMYTRIP_COVERAGE_GAP'})
+test('EaseMyTrip rejects a changed declared application destination without requesting the form',async()=>{
+ await assert.rejects(scraper.run({minIntervalMs:0,fetchImpl:replay(r=>{if(r.url===scraper.CAREERS_URL)r.body=r.body.replaceAll(scraper.APPLICATION_URL,'https://other.example/form');return r})}),{code:'EASEMYTRIP_COVERAGE_GAP'})
 })
-test('EaseMyTrip retains nullable native descriptions',async()=>{
- const inspected=await scraper.inspectInventory({fetchImpl:replay(r=>{if(r.url===scraper.CAREERS_URL){r.body=r.body.replace(/about:'[^'\r\n]*'/g,"about:null").replace(/resp:\[[^\]\r\n]*\]/g,'resp:[]').replace(/profile:\[[^\]\r\n]*\]/g,'profile:[]')}return r})})
- assert.ok(inspected.roles.every(r=>r.description===null))
+test('EaseMyTrip empty native descriptions remain inspectable in the failed-source audit and cannot qualify',async()=>{
+ await assert.rejects(scraper.inspectInventory({minIntervalMs:0,fetchImpl:replay(r=>{if(r.url===scraper.CAREERS_URL){r.body=r.body.replace(/about:'[^'\r\n]*'/g,"about:null").replace(/resp:\[[^\]\r\n]*\]/g,'resp:[]').replace(/profile:\[[^\]\r\n]*\]/g,'profile:[]')}return r})}),e=>e.code==='EASEMYTRIP_COVERAGE_GAP'&&e.recruitmentObservations.heldNativeRows.length===12)
 })
 
 

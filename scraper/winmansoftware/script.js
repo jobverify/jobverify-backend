@@ -5,6 +5,7 @@ import { composeAbortSignals, fetchTextWithRetry } from '../../scraper-support/u
 import { readVisibleNativeDocument } from '../../scraper-support/utils/visibleNativeHtml.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
+import { readCurrentWinmanCriteria } from './currentCriteria.js'
 
 import { WINMAN_SOFTWARE_CATALOG } from './catalog.js'
 
@@ -146,18 +147,30 @@ const readNativeWorkplaceObservation = (html, listing) => {
 
 export const extractCurrentFresherDetail = (html, listing) => {
   const page = String(html ?? '')
-  const title = normalizeWhitespace(page.match(/<h1\b[^>]*class=["']job-title["'][^>]*>([\s\S]*?)<\/h1>/i)?.[1])
-  const summary = page.match(/<ul\b[^>]*class=["']job-summary["'][^>]*>([\s\S]*?)<\/ul>/i)?.[1]
-  const description = summary && stripToLines(summary).join(' ')
-  const qualification = normalizeWhitespace(page.match(/<p\b[^>]*class=["']qualification["'][^>]*>([\s\S]*?)<\/p>/i)?.[1])
+  const criteria = readCurrentWinmanCriteria(page, listing)
+  if (criteria) return {
+    title: criteria.title, description: criteria.text, qualification: criteria.qualification,
+    rawNativeWorkplaceEvidence: readNativeWorkplaceObservation(page, listing),
+    nativeCriteriaComplete: true, nativeCriteriaModel: criteria.model,
+    nativeMinimumMarksThroughout: criteria.minimumMarks,
+  }
+  const document = readVisibleNativeDocument(page, { strict: true })
+  const titles = document.nodes(node => node.tag === 'h1' && document.hasClass(node, 'job-title'))
+  const summaries = document.nodes(node => node.tag === 'ul' && document.hasClass(node, 'job-summary'))
+  const qualifications = document.nodes(node => node.tag === 'p' && document.hasClass(node, 'qualification'))
+  const title = titles.length === 1 ? document.text(titles[0]) : null
+  const description = summaries.length === 1 ? document.text(summaries[0]) : null
+  const qualification = qualifications.length === 1 ? document.text(qualifications[0]) : null
+  const visibleText = document.text(document.nodes(node => node.tag === 'root')[0])
   if (title !== listing.title || !description || !qualification || !page.includes(APPLY_URL)
-    || !/Winman Software India LLP/i.test(page) || !/Mangalore/i.test(page)) {
+    || !/Winman Software India LLP/i.test(visibleText) || !/Mangalore/i.test(visibleText)) {
     throw new Error(`Winman current job detail changed: ${listing.detailUrl}`)
   }
-  return { title, description, qualification, rawNativeWorkplaceEvidence: readNativeWorkplaceObservation(page, listing) }
+  return { title, description, qualification, rawNativeWorkplaceEvidence: readNativeWorkplaceObservation(page, listing),
+    nativeCriteriaComplete: false, nativeCriteriaModel: null, nativeMinimumMarksThroughout: null }
 }
 
-const buildCurrentJob = ({ title, description, qualification = null, experienceRequired = null, sourceUrl, scrapedAt, rawNativeWorkplaceEvidence = null }) => {
+const buildCurrentJob = ({ title, description, qualification = null, experienceRequired = null, sourceUrl, scrapedAt, rawNativeWorkplaceEvidence = null, nativeCriteriaComplete = false, nativeCriteriaModel = null, nativeMinimumMarksThroughout = null }) => {
   const jobId = slugify(title)
   if (!jobId) throw new Error('Winman current job ID is missing')
   return {
@@ -168,7 +181,8 @@ const buildCurrentJob = ({ title, description, qualification = null, experienceR
     employmentType: null, experienceRequired,
     minimumQualification: qualification, preferredQualification: null,
     requiredSkills: [], postingDate: null, closingDate: null,
-    jobDescription: description, remoteStatus: 'On-site',
+    jobDescription: description, sourceDescription: description, remoteStatus: 'On-site',
+    nativeCriteriaComplete, nativeCriteriaModel, nativeMinimumMarksThroughout,
     source: SOURCE, link: APPLY_URL, scrapedAt,
   }
 }
@@ -379,7 +393,10 @@ export const createWinmanSoftwareScraper = ({
           const detail = extractCurrentFresherDetail(await readText(listing.detailUrl), listing)
           return buildCurrentJob({ title: detail.title, description: detail.description,
             qualification: detail.qualification, sourceUrl: listing.detailUrl, scrapedAt,
-            rawNativeWorkplaceEvidence: detail.rawNativeWorkplaceEvidence })
+            rawNativeWorkplaceEvidence: detail.rawNativeWorkplaceEvidence,
+            nativeCriteriaComplete: detail.nativeCriteriaComplete,
+            nativeCriteriaModel: detail.nativeCriteriaModel,
+            nativeMinimumMarksThroughout: detail.nativeMinimumMarksThroughout })
         }))
         freshJobs.push(...batch)
       }

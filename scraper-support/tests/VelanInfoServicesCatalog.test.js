@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { hydrateProviderCatalogEntry, getScraperCatalog } from '../providers/index.js'
 
 const loadCatalogModule = async () => {
   try {
@@ -36,6 +36,12 @@ test('Velan Info Services catalog captures the verified first-party current-open
   assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Senior Accountant/i)
   assert.match(provider.verifiedSurfaceSummary, /Process Executive/i)
+  const current = getScraperCatalog().find(row => row.source === 'velaninfoservices')
+  assert.equal(current.verifiedOn, '2026-11-05')
+  assert.match(current.extractionStrategy, /whole-native-role-criteria/)
+  assert.match(current.paginationStrategy, /company-scope-unqualified/)
+  assert.equal(current.verifiedPublicJobCount, null)
+  assert.equal(current.verifiedIndiaJobCount, null)
 })
 
 test('Velan Info Services exact backlog row resolves from the local catalog contract', async () => {

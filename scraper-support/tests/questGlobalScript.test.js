@@ -57,6 +57,8 @@ test('extractSearchResults normalizes Quest Global listing cards and employment 
     requisitionId: 'P-118996',
     department: 'Semiconductors',
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: null,
     jobDescription:
       'Embrace the role of a Lead Engineer - ATE Lab Equipment and drive the reliability and efficiency of advanced test equipment. Leverage your expertise in ATE testers, troubleshooting, and semiconductor testing to support high-volume production and continuous improvement. Collaborate with cross-functional teams and make a significant impact in a dynamic lab environment.',

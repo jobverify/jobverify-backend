@@ -6,6 +6,7 @@ import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { isIndiaJob } from '../../scraper-support/utils/indiaLocationFilter.js'
 import { extractActiveDescription } from '../../scraper-support/utils/activeNativeHtml.js'
+import { verifyPocketClientBinding } from './currentClientBinding.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -150,17 +151,10 @@ export const createPocketFMScraper = () => ({
     const aborted = new Promise((_, reject) => { onAbort = () => reject(combined.reason); combined.addEventListener('abort', onAbort, { once: true }) })
     try {
       const collect = async () => {
-        const getText = async url => { combined.throwIfAborted(); const result = await fetchText(url, { signal: combined }); combined.throwIfAborted(); requireInventory(typeof result === 'string', 'source text unavailable'); return result }
+        const getText = async (url, label = 'source') => { combined.throwIfAborted(); const result = await fetchText(url, { signal: combined }); combined.throwIfAborted(); requireInventory(typeof result === 'string', `${label} text unavailable`); return result }
         const home = await getText(FIRST_PARTY_ROOT_URL)
         requireInventory(/<title[^>]*>Pocket FM:/i.test(home), 'official homepage identity changed')
-        const homeDoc = document(home)
-        requireInventory(homeDoc.nodes(node => node.tag === 'script' && node.attrs.src
-          && new URL(node.attrs.src, FIRST_PARTY_ROOT_URL).href === OFFICIAL_CLIENT_PARENT_URL).length === 1,
-        'current homepage client asset binding changed')
-        const parent = await getText(OFFICIAL_CLIENT_PARENT_URL)
-        requireInventory(/Promise\.all\(\[["']static\/chunks\/0plbo-9g--9fh\.js["']/.test(parent), 'current client loader binding changed')
-        const client = await getText(OFFICIAL_CLIENT_URL)
-        requireInventory(/href:["']https:\/\/jobs\.lever\.co\/pocketfm["'],translationKey:["']careers["']/.test(client), 'official client careers binding changed')
+        await verifyPocketClientBinding(home, url => getText(url, 'client binding'))
         const rows = [], identities = new Set(), checkedAt = Date.now()
         let pagesFetched = 0, terminal = false
         for (let page = 0; page < maxPages; page++) {

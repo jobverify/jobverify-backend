@@ -1,18 +1,12 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createPublishingGapAtsScraper } from '../../scraper-support/utils/publishingGapAts.js'
+import { createBlueConicScraper, BLUECONIC_METADATA } from './nativeBamboo.js'
 
-export const PROVIDER_METADATA = {
-  "source": "blueconic",
-  "companyName": "BlueConic",
-  "atsPlatform": "greenhouse",
-  "boardToken": "blueconic",
-  "companyCareerPage": "https://www.blueconic.com/about/careers/careers---open-positions"
-}
+export const PROVIDER_METADATA = BLUECONIC_METADATA
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
-export const run = (options = {}) => createPublishingGapAtsScraper(PROVIDER_METADATA).run(options)
+export const run = (options = {}) => createBlueConicScraper().run(options)
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

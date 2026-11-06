@@ -14,7 +14,17 @@ const admissionGroup = scraper => {
   const directory = provider.sourceDirectory || (provider.modulePath && path.dirname(provider.modulePath))
   if (typeof directory !== 'string' || !path.isAbsolute(directory)) return null
   const config = loadConfig(directory)
-  if (config.listingStrategy !== 'jobs-api' || config.inventoryScope !== 'complete-board-country-proof') return null
+  // This finite paired native India reader still shares wd115's admission
+  // queue. Admission controls traffic; it does not certify company coverage.
+  const pairedCondeIndia = provider.source === 'condenast'
+    && config.inventoryScope === 'published-india-country-facet-with-paired-native-roles'
+    && config.officialCareersUrl === 'https://www.condenast.com/careers'
+    && config.jobsApiUrl === 'https://condenast.wd115.myworkdayjobs.com/wday/cxs/condenast/CondeCareers/jobs'
+    && config.detailUrlBase === 'https://condenast.wd115.myworkdayjobs.com/CondeCareers'
+    && config.locationCountry === 'c4f78be1a8f14da0ab49ce1162348a5e'
+    && config.searchText === ''
+  if (config.listingStrategy !== 'jobs-api'
+    || config.inventoryScope !== 'complete-board-country-proof' && !pairedCondeIndia) return null
   try {
     const official = new URL(config.officialCareersUrl), api = new URL(config.jobsApiUrl)
     if (official.protocol !== 'https:' || official.username || official.password || official.hash

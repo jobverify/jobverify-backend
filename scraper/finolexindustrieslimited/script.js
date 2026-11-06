@@ -1,11 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import {runCurrentFinolex} from './currentNative.js'
 
 export const CAREER_PAGE_URL = 'https://www.finolexpipes.com/career/'
-export const VERIFIED_ON = '2026-08-07'
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+export const VERIFIED_ON = null
 
 export const hasOfficialCareersSignal = (html) =>
   /<title>\s*Careers\s*&(?:amp;)?\s*Jobs Opportunities \|\s*Work with Finolex Pipes\s*<\/title>/i.test(html || '')
@@ -32,43 +30,10 @@ export const hasEmptyOpeningsSignal = (html) =>
   && /Apply via Whatsapp/i.test(html || '')
   && /career@finolexind\.com/i.test(html || '')
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
-}
-
-export const createFinolexIndustriesLimitedScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const page = await fetchPage(CAREER_PAGE_URL)
-    const { html, status } = page
-
-    if (!hasOfficialCareersSignal(html)) {
-      throw new Error('Finolex careers page no longer matches the verified official public surface')
-    }
-
-    if (!hasEmptyOpeningsSignal(html)) {
-      throw new Error('Finolex careers page no longer matches the verified no-open-positions surface')
-    }
-
-    if (status >= 400 && !/500 Internal Server Error/i.test(html)) {
-      throw new Error(`HTTP ${status} for ${CAREER_PAGE_URL}`)
-    }
-
-    return []
-  },
-})
-
-export const run = async () => createFinolexIndustriesLimitedScraper().run()
+// Legacy marker helpers remain available for callers inspecting old reports;
+// neither helper certifies current inventory or an authoritative empty state.
+export const createFinolexIndustriesLimitedScraper=()=>({run:options=>runCurrentFinolex(options??{})})
+export const run=options=>runCurrentFinolex(options??{})
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

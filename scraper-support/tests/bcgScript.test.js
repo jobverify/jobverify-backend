@@ -152,6 +152,8 @@ test('run keeps BCG jobs on the official Phenom route and decorates shared runne
     sourceListingTeaser: 'Coordinate office operations and facilities.',
     sourceDetailComplete: true,
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: '5+ years',
     publicExperienceChecked: true,
     jobDescription: 'Support office operations and workplace services.',

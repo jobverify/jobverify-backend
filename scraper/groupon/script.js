@@ -1,13 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import GROUPON_CATALOG from './catalog.js'
+import {createNativeGrouponScraper} from './nativeRun.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 export const PROVIDER_METADATA = GROUPON_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -80,23 +77,17 @@ const normalizeDate = (value) => {
 const normalizeLocationLabel = (value) => normalizeWhitespace(value)
 
 const deriveCity = (location) => {
-  const normalized = normalizeLocationLabel(location)
-  if (!normalized) return null
-
-  return normalizeWhitespace(
-    normalized
-      .split(',')[0]
-      .split('(')[0],
-  )
+  // An untyped legacy location label does not publish a separate city field.
+  return null
 }
 
 const inferCountry = (location) => {
   const normalized = normalizeLocationLabel(location)
   if (!normalized) return null
-
-  if (/\b(?:india|bangalore|bengaluru)\b/i.test(normalized)) return 'India'
-  if (/\bunited states\b/i.test(normalized)) return 'United States'
-  return null
+  if (/\b(?:worldwide|global|anywhere|multiple locations)\b/i.test(normalized)) return null
+  const countries=normalized.split(';').map(value=>value.trim().match(/(?:^|,\s*|\s+-\s+)(India|United States)$/i)?.[1]?.toLowerCase())
+  if(countries.some(value=>!value)||new Set(countries).size!==1)return null
+  return countries[0]==='india'?'India':'United States'
 }
 
 const extractExperienceRequired = (description) => {
@@ -125,28 +116,6 @@ const toAbsoluteUrl = (value, baseUrl) => {
     return null
   }
 }
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
-  method: options.method,
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json,text/plain,*/*',
-    Referer: BOARD_URL,
-    ...(options.headers || {}),
-  },
-  body: options.body,
-  label: SOURCE,
-  timeoutMs: 15000,
-})
 
 export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?content=true`
 
@@ -265,7 +234,7 @@ export const extractJobsFromGreenhousePayload = (
       department: normalizeWhitespace(job?.departments?.[0]?.name),
       employmentType: null,
       experienceRequired: extractExperienceRequired(jobDescription),
-      postingDate: normalizeDate(job?.updated_at || job?.first_published),
+      postingDate: typeof job?.first_published==='string'&&Number.isFinite(Date.parse(job.first_published))?job.first_published:null,
       closingDate: null,
       jobDescription,
       minimumQualification: null,
@@ -276,54 +245,7 @@ export const extractJobsFromGreenhousePayload = (
   })
 }
 
-export const createGrouponScraper = ({
-  maxJobs = null,
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Groupon verified Groupon careers page no longer matches the official first-party surface')
-    }
-
-    const boardHtml = await fetchText(BOARD_URL)
-    if (hasCurrentCareersSignal(careersHtml)
-      && (!/<title[^>]*>\s*Jobs at Groupon\s*<\/title>/i.test(boardHtml)
-        || !/https:\/\/www\.grouponcareers\.com/i.test(boardHtml)
-        || !/life at Groupon/i.test(boardHtml))) {
-      throw new Error('Groupon Greenhouse board no longer links back to its first-party careers domain')
-    }
-    const visibleJobUrls = extractVisibleJobUrls(boardHtml)
-    if (visibleJobUrls.length === 0) {
-      throw new Error('Groupon visible Groupon Greenhouse job links are no longer exposed on the official board')
-    }
-
-    let jobs
-    try {
-      jobs = extractJobsFromGreenhousePayload(
-        await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' }),
-        { scrapedAt: now() },
-      )
-    } catch (error) {
-      if (/verified public Greenhouse detail URLs/i.test(error?.message || '')) {
-        throw new Error('Groupon verified Groupon Greenhouse board links no longer match the Greenhouse jobs API surface')
-      }
-      throw error
-    }
-
-    const visibleJobUrlSet = new Set(visibleJobUrls)
-    if (!jobs.every((job) => visibleJobUrlSet.has(job.sourceUrl))) {
-      throw new Error('Groupon verified Groupon Greenhouse board links no longer match the Greenhouse jobs API surface')
-    }
-
-    return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
-  },
-})
-
+export const createGrouponScraper = options => createNativeGrouponScraper(options)
 export const run = async (options = {}) => createGrouponScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -1,223 +1,17 @@
 import assert from 'node:assert/strict'
-import path from 'node:path'
 import test from 'node:test'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const careersHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Careers | Join Codewave</title>
-  </head>
-  <body>
-    <h2>Open Positions.</h2>
-    <div class="cw-vacancies">
-      <div class="cw-vacancy-row">
-        <h3 class="cw-vacancy-title">Quality Builder: Web &amp; Cross-Platform</h3>
-        <p class="cw-job-location">Bangalore</p>
-        <div class="blue-href cw-vacancy-slug">
-          <a href="https://codewave.com/careers/quality-builder-web-cross-platform/">Find out more</a>
-        </div>
-      </div>
-      <div class="cw-vacancy-row">
-        <h3 class="cw-vacancy-title">Product Owner: Vision &amp; Delivery</h3>
-        <p class="cw-job-location">Bangalore</p>
-        <div class="blue-href cw-vacancy-slug">
-          <a href="https://codewave.com/careers/product-owner-vision-delivery/">Find out more</a>
-        </div>
-      </div>
-      <div class="cw-vacancy-row">
-        <h3 class="cw-vacancy-title">Product Builder: Full Stack, Golang</h3>
-        <p class="cw-job-location">Bangalore</p>
-        <div class="blue-href cw-vacancy-slug">
-          <a href="https://codewave.com/careers/product-builder-full-stack-golang/">Find out more</a>
-        </div>
-      </div>
-    </div>
-    <a href="/careers/?cwpage=2">2</a>
-    <a href="/careers/?cwpage=3">3</a>
-  </body>
-</html>
-`
-
-const careersPage2Html = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Careers | Join Codewave</title>
-  </head>
-  <body>
-    <h2>Open Positions.</h2>
-    <div class="cw-vacancies">
-      <div class="cw-vacancy-row">
-        <h3 class="cw-vacancy-title">Product Builder: Full Stack</h3>
-        <p class="cw-job-location">Bangalore</p>
-        <div class="blue-href cw-vacancy-slug">
-          <a href="https://codewave.com/careers/product-builder-full-stack/">Find out more</a>
-        </div>
-      </div>
-      <div class="cw-vacancy-row">
-        <h3 class="cw-vacancy-title">Infra Builder: Senior DevOps &amp; Cloud</h3>
-        <p class="cw-job-location">Bangalore</p>
-        <div class="blue-href cw-vacancy-slug">
-          <a href="https://codewave.com/careers/infra-builder-senior-devops-cloud/">Find out more</a>
-        </div>
-      </div>
-      <div class="cw-vacancy-row">
-        <h3 class="cw-vacancy-title">Infra Builder: DevOps &amp; Cloud</h3>
-        <p class="cw-job-location">Bangalore</p>
-        <div class="blue-href cw-vacancy-slug">
-          <a href="https://codewave.com/careers/infra-builder-devops-cloud/">Find out more</a>
-        </div>
-      </div>
-    </div>
-  </body>
-</html>
-`
-
-const careersPage3Html = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Careers | Join Codewave</title>
-  </head>
-  <body>
-    <h2>Open Positions.</h2>
-    <div class="cw-vacancies">
-      <div class="cw-vacancy-row">
-        <h3 class="cw-vacancy-title">AI Builder: Models &amp; Agents</h3>
-        <p class="cw-job-location">Bangalore</p>
-        <div class="blue-href cw-vacancy-slug">
-          <a href="https://codewave.com/careers/ai-builder-models-agents/">Find out more</a>
-        </div>
-      </div>
-    </div>
-  </body>
-</html>
-`
-
-const qualityBuilderHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Quality Builder: Web & Cross-Platform - Codewave</title>
-  </head>
-  <body>
-    <h1>Quality Builder: Web & Cross-Platform</h1>
-    <h6>What we offer</h6>
-    <p>Full time · Bangalore · <a href="https://codewave.com/en/apply"><span class="__cf_email__">[email protected]</span></a></p>
-    <a href="https://codewave.com/en/apply?job_id=35572">Apply for this job <img src="arrow.svg" alt=""></a>
-  </body>
-</html>
-`
-
-const productOwnerHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Product Owner: Vision & Delivery - Codewave</title>
-  </head>
-  <body>
-    <h1>Product Owner: Vision & Delivery</h1>
-    <h6>What we offer</h6>
-    <p>Full time · Bangalore · <a href="https://codewave.com/en/apply">jobs@codewave.com</a></p>
-    <a href="https://codewave.com/en/apply?job_id=35576">Apply for this job</a>
-  </body>
-</html>
-`
-
-const productBuilderGolangHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Product Builder: Full Stack, Golang - Codewave</title>
-  </head>
-  <body>
-    <h1>Product Builder: Full Stack, Golang</h1>
-    <h6>What we offer</h6>
-    <p>Full time · Bangalore · <a href="https://codewave.com/en/apply">jobs@codewave.com</a></p>
-    <a href="https://codewave.com/en/apply?job_id=35575">Apply for this job</a>
-  </body>
-</html>
-`
-
-const productBuilderHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Product Builder: Full Stack - Codewave</title>
-  </head>
-  <body>
-    <h1>Product Builder: Full Stack</h1>
-    <h6>What we offer</h6>
-    <p>Full time · Bangalore · <a href="https://codewave.com/en/apply">jobs@codewave.com</a></p>
-    <a href="https://codewave.com/en/apply?job_id=35574">Apply for this job</a>
-  </body>
-</html>
-`
-
-const seniorDevopsHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Infra Builder: Senior DevOps & Cloud - Codewave</title>
-  </head>
-  <body>
-    <h1>Infra Builder: Senior DevOps & Cloud</h1>
-    <h6>What we offer</h6>
-    <p>Full time · Bangalore · <a href="https://codewave.com/en/apply">jobs@codewave.com</a></p>
-    <a href="https://codewave.com/en/apply?job_id=35573">Apply for this job</a>
-  </body>
-</html>
-`
-
-const devopsHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Infra Builder: DevOps & Cloud - Codewave</title>
-  </head>
-  <body>
-    <h1>Infra Builder: DevOps & Cloud</h1>
-    <h6>What we offer</h6>
-    <p>Full time · Bangalore · <a href="https://codewave.com/en/apply">jobs@codewave.com</a></p>
-    <a href="https://codewave.com/en/apply?job_id=35571">Apply for this job</a>
-  </body>
-</html>
-`
-
-const aiBuilderHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>AI Builder: Models & Agents - Codewave</title>
-  </head>
-  <body>
-    <h1>AI Builder: Models & Agents</h1>
-    <h6>What we offer</h6>
-    <p>Full time · Bangalore · <a href="https://codewave.com/en/apply">jobs@codewave.com</a></p>
-    <a href="https://codewave.com/en/apply?job_id=35570">Apply for this job</a>
-  </body>
-</html>
-`
-
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import {hydrateProviderCatalogEntry} from '../providers/index.js'
+import * as codewave from '../../scraper/codewavetechnologies/script.js'
+const fixture=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/codewaveDeltecs20261106/capture.json.gz',import.meta.url))))
+const current=fixture.documents['https://codewave.com/careers'].body
+const fetchPage=async url=>{assert.ok(fixture.documents[url],'Uncaptured URL '+url);const page=fixture.documents[url];return {status:page.status,url:page.finalUrl,headers:page.headers,body:page.body,bodyUnavailable:page.bodyUnavailable}}
 const loadCatalogModule = async () => {
   try {
     return await import('../../scraper/codewavetechnologies/catalog.js')
   } catch {
     assert.fail('Expected Codewave Technologies catalog module at ../../scraper/codewavetechnologies/catalog.js')
-  }
-}
-
-const loadScriptModule = async () => {
-  try {
-    return await import('../../scraper/codewavetechnologies/script.js')
-  } catch {
-    assert.fail('Expected Codewave Technologies scraper module at ../../scraper/codewavetechnologies/script.js')
   }
 }
 
@@ -247,116 +41,33 @@ test('Codewave Technologies local catalog captures the verified first-party care
   assert.match(provider.verifiedSurfaceSummary, /job_id=35572/i)
 })
 
-test('Codewave Technologies helpers stay pinned to the verified careers page and detail pages', async () => {
-  const codewave = await loadScriptModule()
 
-  assert.equal(codewave.SOURCE, 'codewavetechnologies')
-  assert.equal(codewave.COMPANY, 'Codewave Technologies')
-  assert.equal(codewave.CAREERS_URL, 'https://codewave.com/careers/')
-  assert.equal(codewave.VERIFIED_ON, '2026-08-01')
-  assert.equal(codewave.hasOfficialCareersSignal(careersHtml), true)
-  assert.deepEqual(codewave.extractOpeningCards(careersHtml), [
-    {
-      title: 'Quality Builder: Web & Cross-Platform',
-      location: 'Bangalore',
-      detailUrl: 'https://codewave.com/careers/quality-builder-web-cross-platform/',
-    },
-    {
-      title: 'Product Owner: Vision & Delivery',
-      location: 'Bangalore',
-      detailUrl: 'https://codewave.com/careers/product-owner-vision-delivery/',
-    },
-    {
-      title: 'Product Builder: Full Stack, Golang',
-      location: 'Bangalore',
-      detailUrl: 'https://codewave.com/careers/product-builder-full-stack-golang/',
-    },
-  ])
-  assert.deepEqual(codewave.extractPaginationUrls(careersHtml), [
-    'https://codewave.com/careers/?cwpage=2',
-    'https://codewave.com/careers/?cwpage=3',
-  ])
-  assert.deepEqual(codewave.extractOpeningCards(careersPage2Html), [
-    {
-      title: 'Product Builder: Full Stack',
-      location: 'Bangalore',
-      detailUrl: 'https://codewave.com/careers/product-builder-full-stack/',
-    },
-    {
-      title: 'Infra Builder: Senior DevOps & Cloud',
-      location: 'Bangalore',
-      detailUrl: 'https://codewave.com/careers/infra-builder-senior-devops-cloud/',
-    },
-    {
-      title: 'Infra Builder: DevOps & Cloud',
-      location: 'Bangalore',
-      detailUrl: 'https://codewave.com/careers/infra-builder-devops-cloud/',
-    },
-  ])
-  assert.deepEqual(codewave.extractDetailSignals(qualityBuilderHtml), {
-    employmentType: 'Full-time',
-    location: 'Bangalore',
-    applyUrl: 'https://codewave.com/en/apply?job_id=35572',
-  })
+test('Codewave helpers preserve native IDs, full authored criteria and typed country without the retired whole-page regex',()=>{
+ const started=performance.now(),rows=codewave.extractOpeningCards(current)
+ assert.equal(rows.length,14)
+ assert.equal(new Set(rows.map(row=>row.jobId)).size,14)
+ assert.equal(rows.filter(row=>row.country==='India').length,12)
+ assert.deepEqual(rows.filter(row=>row.country!=='India').map(row=>row.country),['Switzerland','United States'])
+ assert.ok(rows.every(row=>row.requisitionId===null&&row.jobDescription.length>100))
+ assert.ok(rows[0].jobDescription.includes('Peerly is Codewave’s framework'))
+ assert.ok(!rows[0].sourceVisibleDescription.includes('Peerly is Codewave’s framework'))
+ assert.ok(performance.now()-started<5000,'Current native extraction must finish without the legacy runaway match')
 })
-
-test('Codewave Technologies run validates the first-party careers page and returns job listings', async () => {
-  const codewave = await loadScriptModule()
-  const requestedUrls = []
-  const jobs = await codewave.createCodewaveTechnologiesScraper({
-    now: () => '2026-08-01T00:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === codewave.CAREERS_URL) return careersHtml
-      if (url === 'https://codewave.com/careers/?cwpage=2') return careersPage2Html
-      if (url === 'https://codewave.com/careers/?cwpage=3') return careersPage3Html
-      if (url === 'https://codewave.com/careers/quality-builder-web-cross-platform/') return qualityBuilderHtml
-      if (url === 'https://codewave.com/careers/product-owner-vision-delivery/') return productOwnerHtml
-      if (url === 'https://codewave.com/careers/product-builder-full-stack-golang/') return productBuilderGolangHtml
-      if (url === 'https://codewave.com/careers/product-builder-full-stack/') return productBuilderHtml
-      if (url === 'https://codewave.com/careers/infra-builder-senior-devops-cloud/') return seniorDevopsHtml
-      if (url === 'https://codewave.com/careers/infra-builder-devops-cloud/') return devopsHtml
-      if (url === 'https://codewave.com/careers/ai-builder-models-agents/') return aiBuilderHtml
-      throw new Error(`Unexpected Codewave URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    codewave.CAREERS_URL,
-    'https://codewave.com/careers/?cwpage=2',
-    'https://codewave.com/careers/?cwpage=3',
-    'https://codewave.com/careers/quality-builder-web-cross-platform/',
-    'https://codewave.com/careers/product-owner-vision-delivery/',
-    'https://codewave.com/careers/product-builder-full-stack-golang/',
-    'https://codewave.com/careers/product-builder-full-stack/',
-    'https://codewave.com/careers/infra-builder-senior-devops-cloud/',
-    'https://codewave.com/careers/infra-builder-devops-cloud/',
-    'https://codewave.com/careers/ai-builder-models-agents/',
-  ])
-  assert.equal(jobs.length, 7)
-  assert.deepEqual(jobs.map((job) => job.title), [
-    'Quality Builder: Web & Cross-Platform',
-    'Product Owner: Vision & Delivery',
-    'Product Builder: Full Stack, Golang',
-    'Product Builder: Full Stack',
-    'Infra Builder: Senior DevOps & Cloud',
-    'Infra Builder: DevOps & Cloud',
-    'AI Builder: Models & Agents',
-  ])
-  assert.equal(jobs[0].location, 'Bangalore, India')
-  assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].source, 'codewavetechnologies')
-  assert.equal(jobs[0].applyUrl, 'https://codewave.com/en/apply?job_id=35572')
+test('Codewave factory output limit retains complete native cohort observations and original canonical declaration',async()=>{
+ const requested=[]
+ const jobs=await codewave.createCodewaveTechnologiesScraper({maxJobs:1}).run({fetchPage:async url=>{requested.push(url);return fetchPage(url)},now:()=> '2026-11-06T10:30:00.000Z'})
+ assert.equal(jobs.length,1)
+ assert.deepEqual(requested,['https://codewave.com/careers/','https://codewave.com/careers','https://codewave.com/careers'])
+ assert.equal(jobs.nativeCollectionEvidence.observedRecordCount,14)
+ assert.equal(jobs.nativeCollectionEvidence.nativeIndiaCountryMatches,12)
+ assert.equal(jobs.nativeCollectionEvidence.sourceExplicitLimit,1)
+ assert.equal(jobs[0].applyUrl,'https://codewave.com/apply')
+ assert.equal(jobs[0].sourceApplicationHandoff.activationVerified,false)
 })
-
-test('Codewave Technologies fails closed when the verified careers shell changes materially', async () => {
-  const codewave = await loadScriptModule()
-
-  await assert.rejects(
-    codewave.createCodewaveTechnologiesScraper().run({
-      fetchText: async () => '<html><body><h1>Careers</h1></body></html>',
-    }),
-    /verified Codewave careers page/i,
-  )
+test('Codewave rejects changed canonical declarations and cannot substitute foreign application destinations',async()=>{
+ await assert.rejects(codewave.run({fetchPage:async url=>url===codewave.CAREERS_URL
+  ?{status:301,url,headers:{location:'https://unrelated.invalid/careers'},body:null,bodyUnavailable:true}:fetchPage(url)}),/redirect changed/)
+ const changed=current.replace('class="job-apply" href="/apply"','class="job-apply" href="https://unrelated.invalid/apply"')
+ assert.notEqual(changed,current)
+ assert.throws(()=>codewave.extractOpeningCards(changed),/application post binding/)
 })

@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { runApiPortalScraper } from '../../scraper-support/apiPortal/engine.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -76,7 +77,7 @@ const createApiProvider = () => ({
     pagination: {
       strategy: 'single-page',
       resultsPath: 'jobs',
-      hasMorePath: 'hasMore',
+      totalCountPath: 'meta.total',
     },
     mapping: {
       title: 'title',
@@ -143,7 +144,16 @@ export const createGroupMScraper = ({
       fetchJson,
     })
 
-    return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+    const selected = Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+    const evidence = readInventoryEvidence(jobs)
+    // The observed APAC handoff establishes this WPP Media board, but cannot
+    // establish that it covers every GroupM recruiting channel. Preserve that
+    // scope limit even when the documented board count reconciles.
+    for (const job of selected) Object.assign(job, {
+      sourceListingComplete: false, sourceScopeComplete: false, lifecycleCleanupAllowed: false,
+    })
+    return attachInventoryEvidence(selected, { ...evidence, status: 'discovery-only', listingComplete: false,
+      reason: `whole-groupm-scope-unverified;${evidence.reason}${selected.length !== jobs.length ? ';source-job-limit' : ''}` })
   },
 })
 

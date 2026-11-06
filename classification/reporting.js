@@ -73,7 +73,8 @@ export function recordClassificationInference(summary, prediction) {
 export function aggregateClassificationSummaries(parts) {
   const summary = { ...createClassificationReport(), assigned: 0, scanned: 0, identityScans: 0,
     completed: 0, skipped: 0, cached: 0, nativeCached: 0, failed: 0, stale: 0, leased: 0,
-    budgetExhausted: false, elapsedSeconds: 0, workerSeconds: 0, workers: [], scanCountBasis: 'assigned_partitions' }
+    budgetExhausted: false, elapsedSeconds: 0, workerSeconds: 0, workers: [], scanCountBasis: 'assigned_partitions',
+    timingBasis: 'summed_operation_durations' }
   const merge = (target, source) => { for (const [key, value] of Object.entries(source || {})) if (finite(value)) increment(target, key, value) }
   for (const part of parts) {
     for (const key of ['assigned', 'completed', 'skipped', 'cached', 'nativeCached', 'failed', 'stale', 'leased', 'modelRequests']) {
@@ -104,7 +105,7 @@ export function aggregateClassificationSummaries(parts) {
     merge(summary.inference.latencyBuckets, part.inference?.latencyBuckets)
     // Each shard runs on a separate runner: retain its peak rather than sum RAM.
     summary.resources.peakRssBytes = Math.max(summary.resources.peakRssBytes, part.resources?.peakRssBytes || 0)
-    summary.workers.push({ shard: part.shard, cpuThreads: part.resources?.cpuThreads ?? null,
+    summary.workers.push({ shard: part.shard, concurrency: part.concurrency ?? 1, cpuThreads: part.resources?.cpuThreads ?? null,
       availableCpus: part.resources?.availableCpus ?? null, peakRssBytes: part.resources?.peakRssBytes ?? null,
       elapsedSeconds: part.elapsedSeconds ?? null })
   }

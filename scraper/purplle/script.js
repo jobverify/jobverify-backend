@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url'
 import {attachInventoryEvidence,normalizeInventoryEvidence,readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {attachSourceObservationEvidence} from '../../scraper-support/utils/sourceObservationEvidence.js'
 import {collectPurplleNative} from './native.js'
+import {collectPurplleTurboHire} from './turboHire.js'
 import candidate from './catalog-candidate.json' with {type:'json'}
 
 export const SOURCE='purplle', COMPANY='Purplle'
@@ -13,7 +14,7 @@ const currentDir=path.dirname(fileURLToPath(import.meta.url))
 export const FIRST_PARTY_ROOT_URL='https://www.purplle.com/careers'
 export const PROVIDER_METADATA={...candidate,modulePath:fileURLToPath(import.meta.url)}
 export const createPurplleScraper=(defaults={})=>({async run(options={}) {
- const {fetchImpl=globalThis.fetch,signal,timeoutMs=45000,now=new Date()}={...defaults,...options}
+ const {fetchImpl=globalThis.fetch,signal,timeoutMs=45000,now=new Date(),maxJobs=2,requestIntervalMs=800}={...defaults,...options}
  signal?.throwIfAborted()
  const controller=new AbortController(),retainedResponses=[]
  let surface=FIRST_PARTY_ROOT_URL,timer,onAbort
@@ -43,6 +44,9 @@ export const createPurplleScraper=(defaults={})=>({async run(options={}) {
     retainedResponses.push({url,finalUrl:response.url,status:response.status,bodyUnread:true,capturedAt:new Date().toISOString()})
     const reason=response.url!==url?'Source final URL changed':'Source HTTP failure'
     const error=Object.assign(gap(reason+'; HTTP '+response.status+' for '+url+'; final URL '+response.url),{status:response.status,requestUrl:url,finalUrl:response.url})
+    // A nonstandard response is unavailable source data, never an empty board.
+    // Keep it distinct from a changed employer identity in an HTTP 200 page.
+    if(response.url===url&&response.status===247)Object.assign(error,{failureType:'upstream_unavailable',softFailure:true,failureKind:'upstream_unavailable',upstreamOutage:true})
     cancelBody(error);throw error
    }
    let body
@@ -58,7 +62,17 @@ export const createPurplleScraper=(defaults={})=>({async run(options={}) {
    retainedResponses.push({url,finalUrl:response.url,status:response.status,body,capturedAt:new Date().toISOString(),bodySHA256:createHash('sha256').update(body).digest('hex')})
    return body
   }
-  const {jobs,facts,firstParty,reason,inventoryStatus}=await collectPurplleNative({read,now:typeof now==='function'?now():now})
+  let collected
+  try{collected=await collectPurplleNative({read,now:typeof now==='function'?now():now})}
+  catch(error){
+   const corporateUnavailable=error.status===247&&error.requestUrl===CAREERS_URL&&error.finalUrl===CAREERS_URL?{url:CAREERS_URL,status:247}:null
+   const exactEmployerDenied=[403,429].includes(error.status)&&error.requestUrl==='https://www.linkedin.com/company/purplle-com/'&&error.finalUrl===error.requestUrl
+   if(!corporateUnavailable&&!exactEmployerDenied)throw error
+   try{collected=await collectPurplleTurboHire({fetchImpl,signal:controller.signal,now,retainedResponses,maxJobs,requestIntervalMs,corporateUnavailable})}
+   catch(recoveryError){if(!corporateUnavailable)throw recoveryError;error.independentRecoveryFailure={message:recoveryError.message,status:recoveryError.status??null};throw error}
+   surface=collected.facts.nativeSurface
+  }
+  const {jobs,facts,firstParty,reason,inventoryStatus}=collected
   checkBudget()
   const result=attachInventoryEvidence(jobs,{status:inventoryStatus,surface,firstParty,listingComplete:false,pagesFetched:retainedResponses.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason})
   Object.defineProperty(result,'nativeCollectionEvidence',{value:{retainedResponses,...facts,lifecycleCleanupAllowed:false}})

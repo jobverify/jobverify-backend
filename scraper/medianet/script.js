@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { nativeMediaRole, nativeMediaText } from './nativeRoleObservations.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -10,8 +12,6 @@ export const CAREERS_URL = 'https://careers.media.net/'
 const CAREERS_HOST = new URL(CAREERS_URL).hostname
 const COMPANY = 'Media.net'
 const SOURCE = 'medianet'
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
@@ -31,7 +31,7 @@ const toSameHostUrl = (value, baseUrl = CAREERS_URL) => {
 
   try {
     const url = new URL(normalized, baseUrl)
-    if (!['http:', 'https:'].includes(url.protocol)) return null
+    if (url.protocol !== 'https:' || url.username || url.password || url.port || url.search || url.hash) return null
     return url.hostname === CAREERS_HOST ? url.toString() : null
   } catch {
     return null
@@ -46,16 +46,11 @@ const getPathSegments = (value) => {
   }
 }
 
-const toJobId = (value) => getPathSegments(value).at(-1) || null
+const toRoleSlug = (value) => getPathSegments(value).at(-1) || null
 
 const extractFirst = (pattern, value) => {
   const match = String(value ?? '').match(pattern)
   return match ? stripTags(match[1]) : null
-}
-
-const extractField = (label, html) => {
-  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return extractFirst(new RegExp(`${escaped}\\s*:\\s*([^<]+)`, 'i'), html)
 }
 
 const extractAnchorMatches = (html) => [...String(html ?? '').matchAll(
@@ -95,96 +90,6 @@ const toDepartmentNameFromUrl = (departmentUrl) => {
     .split('-')
     .map((part) => part ? `${part[0].toUpperCase()}${part.slice(1)}` : part)
     .join(' ')
-}
-
-const normalizeLocation = (value) => normalizeWhitespace(value)
-
-const toCity = (location) => {
-  const normalized = normalizeLocation(location)
-  if (!normalized) return null
-  if (/remote/i.test(normalized)) return 'Remote'
-
-  const [city] = normalized.split(/[\/,]/)
-  return normalizeWhitespace(city)
-}
-
-const inferCountry = (location) => {
-  const normalized = String(location ?? '').toLowerCase()
-  if (!normalized) return null
-
-  if (
-    /india/.test(normalized)
-    || /\b(mumbai|pune|bengaluru|bangalore)\b/.test(normalized)
-  ) {
-    return 'India'
-  }
-
-  if (
-    /united states|usa/.test(normalized)
-    || /\b(new york|los angeles)\b/.test(normalized)
-  ) {
-    return 'United States'
-  }
-
-  if (/dubai|united arab emirates|uae/.test(normalized)) return 'United Arab Emirates'
-  if (/zurich|switzerland/.test(normalized)) return 'Switzerland'
-
-  return null
-}
-
-const inferRemoteStatus = (location) => {
-  const normalized = normalizeLocation(location)
-  if (!normalized) return null
-  return /remote|hybrid/i.test(normalized) ? 'Hybrid' : 'On-site'
-}
-
-const extractListItems = (html) => [...String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
-  .map((match) => stripTags(match[1]))
-  .filter(Boolean)
-
-const extractSectionHtml = (html, headingPattern) => {
-  const match = String(html ?? '').match(
-    new RegExp(
-      `<h[1-6]\\b[^>]*>[\\s\\S]*?${headingPattern}[\\s\\S]*?<\\/h[1-6]>([\\s\\S]*?)(?=<h[1-6]\\b|<\\/main>|<\\/body>)`,
-      'i',
-    ),
-  )
-
-  return match?.[1] || null
-}
-
-const extractParagraphs = (html) => [...String(html ?? '').matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
-  .map((match) => stripTags(match[1]))
-  .filter(Boolean)
-
-const extractDescriptionParts = (html) => {
-  const sections = [
-    extractSectionHtml(html, 'Job\\s+Summary'),
-    extractSectionHtml(html, 'Overall\\s+Responsibility'),
-    extractSectionHtml(html, 'About\\s+the\\s+role'),
-    extractSectionHtml(html, 'Roles\\s+and\\s+Responsibilities'),
-  ].filter(Boolean)
-
-  const parts = sections.flatMap((sectionHtml) => [
-    ...extractParagraphs(sectionHtml),
-    ...extractListItems(sectionHtml),
-  ])
-
-  return [...new Set(parts)]
-}
-
-const buildJobDescription = (html) => {
-  const parts = extractDescriptionParts(html)
-  return parts.length > 0 ? parts.join('\n\n') : stripTags(html)
-}
-
-const extractRequiredSkills = (html) => {
-  const qualificationsSection = extractSectionHtml(
-    html,
-    'Qualification\\s+and\\s+Experience|Basic\\s+Requirements?|Requirements?',
-  )
-
-  return extractListItems(qualificationsSection || html)
 }
 
 const extractExperienceRequired = (value) => {
@@ -228,9 +133,9 @@ export const extractListings = (html, { departmentUrl } = {}) => {
     if (pathSegments.length !== 2) continue
     if (departmentSlug && pathSegments[0] !== departmentSlug) continue
 
-    const title = stripTags(text)
-    const jobId = toJobId(sourceUrl)
-    if (!title || !jobId) continue
+    const title = nativeMediaText(text) || null
+    const roleSlug = toRoleSlug(sourceUrl)
+    if (!title || !roleSlug) continue
 
     seen.add(sourceUrl)
     jobs.push({
@@ -240,8 +145,10 @@ export const extractListings = (html, { departmentUrl } = {}) => {
       location: null,
       city: null,
       country: null,
-      jobId,
-      requisitionId: jobId,
+      jobId: null,
+      requisitionId: null,
+      nativeObservationKey: sourceUrl,
+      nativeObservationKeyKind: 'published-role-URL-not-a-posting-id',
       sourceUrl,
       applyUrl: sourceUrl,
       employmentType: null,
@@ -260,64 +167,119 @@ export const extractListings = (html, { departmentUrl } = {}) => {
 }
 
 export const extractJobDetail = (html, listing = {}) => {
-  const title = extractFirst(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i, html) || listing.title || null
-  const location = normalizeLocation(extractField('Location', html) || listing.location)
-  const requiredSkills = extractRequiredSkills(html)
-  const jobDescription = buildJobDescription(html)
-  const textForExperience = [jobDescription, ...requiredSkills].filter(Boolean).join(' ')
+  const role = nativeMediaRole(html)
+  if (listing.title && normalizeWhitespace(role.title) !== normalizeWhitespace(listing.title)) throw new Error('Media.net native listing/detail title mismatch')
 
   return {
-    ...listing,
-    title,
-    company: listing.company || COMPANY,
+    title: role.title,
+    company: COMPANY,
     department: listing.department || toDepartmentNameFromUrl(listing.sourceUrl) || null,
-    location,
-    city: toCity(location) || listing.city || null,
-    country: inferCountry(location) || listing.country || null,
+    sourceUrl: listing.sourceUrl || null,
+    jobId: null,
+    requisitionId: null,
+    nativePostingID: null,
+    nativeObservationKey: listing.sourceUrl || null,
+    nativeObservationKeyKind: 'published-role-URL-not-a-posting-id',
+    postingDate: null,
+    closingDate: null,
+    location: role.location,
+    nativeLocationLabel: role.location,
+    city: role.city,
+    country: role.country,
     applyUrl: listing.sourceUrl || listing.applyUrl || null,
-    employmentType: extractField('Employment Type', html) || listing.employmentType || null,
-    experienceRequired: extractExperienceRequired(textForExperience) || listing.experienceRequired || null,
-    minimumQualification: requiredSkills[0] || listing.minimumQualification || null,
-    preferredQualification: requiredSkills[1] || listing.preferredQualification || null,
-    requiredSkills,
-    jobDescription: jobDescription || listing.jobDescription || null,
-    remoteStatus: inferRemoteStatus(location || listing.location),
+    employmentType: role.employmentType,
+    experienceRequired: extractExperienceRequired(role.description),
+    minimumQualification: role.minimumQualification,
+    preferredQualification: role.preferredQualification,
+    requiredSkills: [],
+    nativeRequirementItems: role.requirementItems,
+    jobDescription: role.description,
+    sourceDescription: role.description,
+    nativeSourceRecord: role.record,
+    nativeDescriptionWholeContainerRetained: true,
+    remoteStatus: role.remoteStatus,
+    sourceDetailComplete: false,
+    sourceDetailStatus: 'unqualified-native-observation',
+    sourceDetailFailureKind: 'current-role-country-employer-and-closing-proof-unqualified',
+    sourceCountryScopeUnresolved: role.countryUnresolved,
+    nativeCanonicalRoleURL: null,
+    nativePublishedRoleURL: listing.sourceUrl || null,
+    nativePublishedApplyURL: null,
+    applicationLinkIsPublicRolePage: true,
+    applicationVisited: false,
+    applicationFormSubmitted: false,
+    activeApplyVerified: false,
+    nativeApplicationsOpen: null,
+    sourceScopeComplete: false,
+    sourceListingComplete: false,
+    lifecycleCleanupAllowed: false,
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
+  attempts: 1,
   headers: {
-    'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
 })
 
-export const createMediaNetScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const rootHtml = await fetchText(CAREERS_URL)
+export const createMediaNetScraper = ({ now = () => new Date().toISOString(), maxJobs: factoryCap = Infinity } = {}) => ({
+  async run(options = {}) {
+    const { fetchText = defaultFetchText, now: overrideNow, signal } = options
+    signal?.throwIfAborted()
+    const cap = Object.hasOwn(options, 'maxJobs') ? options.maxJobs ?? Infinity : factoryCap ?? Infinity
+    if (!(cap === Infinity || Number.isSafeInteger(cap) && cap >= 0)) throw new RangeError('Media.net invalid result cap')
+    const finish = jobs => attachInventoryEvidence(jobs, { status: 'coverage-gap', surface: CAREERS_URL,
+      firstParty: false, listingComplete: false, reportedTotal: null, indiaFacetCount: null,
+      reason: 'Raw native observations only; current work-country, employer, closing and whole-company inventory remain unqualified' })
+    if (cap === 0) return finish([])
+    const get = async url => {
+      signal?.throwIfAborted()
+      let listener
+      const cancelled = new Promise((_, reject) => {
+        listener = () => reject(signal.reason)
+        signal?.addEventListener('abort', listener, { once: true })
+      })
+      try {
+        const html = await Promise.race([Promise.resolve().then(() => {
+          signal?.throwIfAborted()
+          return fetchText(url, { signal })
+        }), cancelled])
+        signal?.throwIfAborted()
+        if (typeof html !== 'string') throw new Error('Media.net observation callback must return original HTML text')
+        return html
+      } finally { signal?.removeEventListener('abort', listener) }
+    }
+    const rootHtml = await get(CAREERS_URL)
     const jobs = []
     const seenUrls = new Set()
 
     for (const departmentUrl of extractDepartmentUrls(rootHtml)) {
-      const departmentHtml = await fetchText(departmentUrl)
+      const departmentHtml = await get(departmentUrl)
 
       for (const listing of extractListings(departmentHtml, { departmentUrl })) {
         if (seenUrls.has(listing.sourceUrl)) continue
         seenUrls.add(listing.sourceUrl)
 
-        const detailHtml = await fetchText(listing.sourceUrl)
+        const detailHtml = await get(listing.sourceUrl)
         jobs.push(extractJobDetail(detailHtml, listing))
+        if (jobs.length === cap) break
       }
+      if (jobs.length === cap) break
     }
 
-    return jobs.map((job) => ({
+    signal?.throwIfAborted()
+    const result = jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: (overrideNow || now)(),
     }))
+    signal?.throwIfAborted()
+    return finish(result)
   },
 })
 

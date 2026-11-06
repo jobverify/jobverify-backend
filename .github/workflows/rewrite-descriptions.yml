@@ -61,7 +61,7 @@ jobs:
           JOB_DESCRIPTION_REWRITE_REQUIRE_NATIVE_TESTS: '1'
         run: |
           bash -n scripts/portableRewriteRuntime.sh
-          node --test test/descriptionRewriteWorkflow.test.js test/jobDescriptionReport20261105.test.js test/jobDescriptionPortableRuntime.test.js test/jobDescriptionNativeDiagnostics.test.js test/jobDescriptionWorkerHealth.test.js
+          node --test test/descriptionRewriteWorkflow.test.js test/jobDescriptionPartitioning.test.js test/jobDescriptionPlanCli.test.js test/descriptionRewriteReporting.test.js test/jobDescriptionReport20261105.test.js test/jobDescriptionPortableRuntime.test.js test/jobDescriptionNativeDiagnostics.test.js test/jobDescriptionWorkerHealth.test.js
       - name: Claim pipeline stage
         run: node scripts/pipelineGithub.js register
         env:
@@ -79,13 +79,13 @@ jobs:
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           JOB_DESCRIPTION_REWRITE_MODE: 'publish'
-      - name: Plan four shards for the complete queue
+      - name: Plan sixteen shards for the complete queue
         id: plan
         run: node scripts/planDescriptionRewrites.js
         env:
-          JOB_DESCRIPTION_REWRITE_SHARD_COUNT: '4'
+          JOB_DESCRIPTION_REWRITE_SHARD_COUNT: '16'
           JOB_DESCRIPTION_REWRITE_JOBS_PER_SHARD: ${{ vars.JOB_DESCRIPTION_REWRITE_JOBS_PER_SHARD || '1000' }}
-          JOB_DESCRIPTION_REWRITE_MAX_PARALLEL: ${{ vars.JOB_DESCRIPTION_REWRITE_MAX_PARALLEL || '4' }}
+          JOB_DESCRIPTION_REWRITE_MAX_PARALLEL: '16'
       - name: Cache portable AVX2 CPU runtime
         id: portable_runtime
         if: steps.description_queue.outputs.queued != '0'
@@ -187,9 +187,9 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .cache/description-rewrites
-          key: description-lfm12b-rewrites-${{ runner.os }}-v27-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-rewrites-${{ runner.os }}-v28-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            description-lfm12b-rewrites-${{ runner.os }}-v27-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-
+            description-lfm12b-rewrites-${{ runner.os }}-v28-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-
       - name: Prepare native crash diagnostics
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
         run: |
@@ -209,7 +209,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: .cache/description-rewrites
-          key: description-lfm12b-rewrites-${{ runner.os }}-v27-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-rewrites-${{ runner.os }}-v28-${{ github.ref }}-partitions-${{ needs.register.outputs.shard_count }}-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload generation quality and capacity diagnostics
         if: always()
         uses: actions/upload-artifact@v7

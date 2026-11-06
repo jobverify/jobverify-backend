@@ -123,13 +123,23 @@ export const extractMediDocDetail = (value, listing = {}) => {
 }
 
 export const createNativeMediCollector = ({ maxJobs = null, defaultFetchText }) => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString(), signal } = {}) {
-    if (maxJobs != null && (!Number.isSafeInteger(maxJobs) || maxJobs < 0)) throw fail('invalid output cap')
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString(), signal, maxJobs: runMaxJobs } = {}) {
+    const outputCap = runMaxJobs === undefined ? maxJobs : runMaxJobs
+    if (outputCap != null && (!Number.isSafeInteger(outputCap) || outputCap < 0)) throw fail('invalid output cap')
     signal?.throwIfAborted()
     const lifecycle = AbortSignal.any([AbortSignal.timeout(120000), ...(signal ? [signal] : [])])
     const read = async url => {
       lifecycle.throwIfAborted()
-      const body = await fetchText(url, { signal: lifecycle })
+      // A callback may ignore its signal. Observe its eventual settlement but
+      // release this collection immediately when the caller/deadline aborts.
+      const body = await new Promise((resolve, reject) => {
+        const cleanup = () => lifecycle.removeEventListener('abort', aborted)
+        const aborted = () => { cleanup(); reject(lifecycle.reason) }
+        lifecycle.addEventListener('abort', aborted, { once: true })
+        if (lifecycle.aborted) { aborted(); return }
+        Promise.resolve().then(() => { lifecycle.throwIfAborted(); return fetchText(url, { signal: lifecycle }) })
+          .then(value => { cleanup(); resolve(value) }, error => { cleanup(); reject(lifecycle.aborted ? lifecycle.reason : error) })
+      })
       lifecycle.throwIfAborted()
       if (/<title[^>]*>\s*(?:Just a moment|Access Denied|Forbidden|Attention Required)/i.test(body)) throw fail('public native challenge unavailable')
       return body
@@ -141,7 +151,7 @@ export const createNativeMediCollector = ({ maxJobs = null, defaultFetchText }) 
     }
     const seen = new Set()
     for (const listing of listings) { if (seen.has(listing.jobId)) throw fail('native role URL identity repeated'); seen.add(listing.jobId) }
-    const selected = maxJobs == null ? listings : listings.slice(0, maxJobs)
+    const selected = outputCap == null ? listings : listings.slice(0, outputCap)
     const audit = { source: SOURCE, observedListingCount: listings.length, observedNativeRecordCount: listings.length + observations.length,
       observedVisibleVacancyCount: listings.length, excludedRawObservationCount: observations.length, candidateDetails: selected.length,
       successfulDetailReads: 0, nativeDetailAttempts: 0, extractedDetailJobs: 0, failures: [], otherObservations: observations,

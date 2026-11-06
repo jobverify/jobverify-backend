@@ -36,19 +36,20 @@ export const createCurrentGreenhouseScraper=(source,defaults={})=>({async run(pa
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(new DOMException('Public inventory collection deadline exceeded','TimeoutError')),timeout),signal=caller?AbortSignal.any([caller,controller.signal]):controller.signal
  let aggregateBytes=0,nativeAudit=null
  const allowed=url=>{const u=new URL(url);return !u.username&&!u.password&&!u.hash&&(url===profile.primaryURL||source==='tripadvisor'&&url==='https://careers.tripadvisor.com/all-jobs'||assets.has(url)||url===base||url===base+'/offices'||url===feedURL||source==='tripadvisor'&&url===base+'/departments'||u.origin===new URL(base).origin&&u.pathname.startsWith(new URL(base).pathname+'/jobs/')&&/^\d+$/.test(u.pathname.slice((new URL(base).pathname+'/jobs/').length))&&u.search==='?pay_transparency=true')}
- const read=async url=>{
+ const sourceSignal=signal
+ const read=async(url,signal=sourceSignal)=>{
   signal.throwIfAborted();requireCurrent(allowed(url),'URL is not a current declared public read')
   const host=new URL(url).hostname;requireCurrent(!denied.has(host),'public host is unavailable for this attempt')
   requireCurrent(responses.length<420,'public request budget exceeded')
   const requestedAt=stamp();let result
-  if(options.fetchPage)result=await bounded(Promise.resolve().then(()=>options.fetchPage(url,{signal:caller||signal})),signal)
+  if(options.fetchPage)result=await bounded(Promise.resolve().then(()=>{signal.throwIfAborted();return options.fetchPage(url,{signal})}),signal)
   else{
    const begin=Math.max(Date.now(),starts.get(host)||0);starts.set(host,begin+500)
    if(begin>Date.now())await bounded(new Promise(resolve=>setTimeout(resolve,begin-Date.now())),signal)
    signal.throwIfAborted();requireCurrent(!denied.has(host),'public host became unavailable while queued')
-   const requestSignal=AbortSignal.any([signal,AbortSignal.timeout(15000)]),r=await bounded(Promise.resolve().then(()=>(options.fetchImpl||globalThis.fetch)(url,{method:'GET',redirect:'manual',signal:requestSignal,headers:{Accept:'text/html,application/json,application/javascript,*/*;q=0.5','User-Agent':'Mozilla/5.0 (compatible; Jobverify scraper)'}})),requestSignal)
+   const requestSignal=AbortSignal.any([signal,AbortSignal.timeout(15000)]),r=await bounded(Promise.resolve().then(()=>{requestSignal.throwIfAborted();return(options.fetchImpl||globalThis.fetch)(url,{method:'GET',redirect:'manual',signal:requestSignal,headers:{Accept:'text/html,application/json,application/javascript,*/*;q=0.5','User-Agent':'Mozilla/5.0 (compatible; Jobverify scraper)'}})}),requestSignal)
    if([401,403,429].includes(r.status))denied.add(host)
-   const bytes=Buffer.from(await bounded(Promise.resolve().then(()=>r.arrayBuffer()),requestSignal))
+   const bytes=Buffer.from(await bounded(Promise.resolve().then(()=>{requestSignal.throwIfAborted();return r.arrayBuffer()}),requestSignal))
    result={url:r.url,status:r.status,headers:Object.fromEntries(r.headers),bodyBase64:bytes.toString('base64')}
   }
   signal.throwIfAborted()
@@ -62,23 +63,23 @@ export const createCurrentGreenhouseScraper=(source,defaults={})=>({async run(pa
  }
  const originalText=page=>{requireCurrent(page.status===200,'public HTTP response unavailable: '+page.status);return new TextDecoder('utf-8',{fatal:true}).decode(Buffer.from(page.bodyBase64,'base64'))}
  const json=page=>{const value=readLiteralModel(originalText(page)).value;requireCurrent(!nativeEnvelopeFailed(value),'public JSON error envelope');return value}
- const fetchPage=async url=>{
-  const page=await read(url)
+ const fetchPage=async(url,{signal=sourceSignal}={})=>{
+  const page=await read(url,signal)
   if(url!==profile.primaryURL||page.status!==200)return page
   const snapshot={phase:snapshots.length===0?'opening':snapshots.length===1?'closing':'final',qualified:false};snapshots.push(snapshot)
   try{
    const html=originalText(page)
    if(source==='buildkite'){
     const asset=buildkiteInventoryAsset(html);assets.add(asset)
-    snapshot.publicClient=readCurrentInventoryClient(source,html,originalText(await read(asset)))
+    snapshot.publicClient=readCurrentInventoryClient(source,html,originalText(await read(asset,signal)))
    }else{
     const links=readNativeDocument(html).nodes(n=>n.tag==='a'&&!n.inert&&n.attrs.href).filter(n=>{try{return new URL(n.attrs.href,profile.primaryURL).href==='https://careers.tripadvisor.com/all-jobs'}catch{return false}})
     requireCurrent(links.length>0,'current corporate Open Positions route changed')
     snapshot.publicClient=readCurrentInventoryClient(source,html)
-    const allHTML=originalText(await read('https://careers.tripadvisor.com/all-jobs'))
+    const allHTML=originalText(await read('https://careers.tripadvisor.com/all-jobs',signal))
     snapshot.allJobsClient=readCurrentInventoryClient(source,allHTML)
     requireCurrent(snapshot.allJobsClient.publicProgramSHA256===snapshot.publicClient.publicProgramSHA256,'corporate and all-jobs public inventory programs differ')
-    snapshot.originalNativeDepartments=json(await read(base+'/departments'))
+    snapshot.originalNativeDepartments=json(await read(base+'/departments',signal))
     // The shared reader still verifies the exact original inline entity. Only
     // its public inventory program is a source authority prerequisite.
     profile.declaration.scriptSHA256=snapshot.publicClient.originalScriptSHA256

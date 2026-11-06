@@ -39,7 +39,8 @@ export const createBiofourmisScraper = (defaults = {}) => ({ async run(passed = 
   const allowedURL = url => [HOME, GENERAL, CLINICAL, LOADER, BOARD, API, API + '/offices', API + '/departments/', API + '/jobs?content=true'].includes(url)
     || /^https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/biofourmis\/jobs\/[1-9]\d*\?pay_transparency=true$/.test(url)
     || /^https:\/\/job-boards\.greenhouse\.io\/biofourmis\/jobs\/[1-9]\d*$/.test(url)
-  const request = async (url, phaseName) => {
+  const sourceSignal = signal
+  const request = async (url, phaseName, signal = sourceSignal) => {
     signal?.throwIfAborted()
     if (!allowedURL(url)) fail('unreviewed public URL blocked')
     if (deniedHosts.has(new URL(url).hostname)) fail('public host access denied; no retries or alternate clients')
@@ -50,7 +51,7 @@ export const createBiofourmisScraper = (defaults = {}) => ({ async run(passed = 
       requestedHeaders: options.fetchPage ? null : headers, credentials: options.fetchPage ? null : 'omit' })
     const requestSignal = AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(20000)])
     let requestedAt = new Date().toISOString(), raw
-    if (options.fetchPage) raw = await abortable(Promise.resolve().then(() => options.fetchPage(url, { signal: requestSignal })), requestSignal)
+    if (options.fetchPage) raw = await abortable(Promise.resolve().then(() => { requestSignal.throwIfAborted();return options.fetchPage(url, { signal: requestSignal }) }), requestSignal)
     else {
       const response = await (options.fetchImpl || globalThis.fetch)(url, { method: 'GET', redirect: 'manual', signal: requestSignal,
         credentials: 'omit', headers })
@@ -93,22 +94,23 @@ export const createBiofourmisScraper = (defaults = {}) => ({ async run(passed = 
     if (bytesRead > MAX_AGGREGATE_BYTES) fail('2 MiB source aggregate byte limit exceeded')
     return { ...raw, bodyBase64: retained.bodyBase64 }
   }
-  const optional = async (url, phaseName) => {
-    try { return await request(url, phaseName) }
+  const optional = async (url, phaseName, signal = sourceSignal) => {
+    try { return await request(url, phaseName, signal) }
     catch (error) { signal?.throwIfAborted();issue('PUBLIC_PROOF_READ_FAILED', { url, phase: phaseName, message: error.message });return null }
   }
   const pageFor = (name, url) => responses.find(response => response.phase === name && response.url === url)
-  const fetchPage = async url => {
+  const fetchPage = async (url, { signal = sourceSignal } = {}) => {
+    signal?.throwIfAborted()
     if (url === GENERAL) {
       phase = phases.length === 0 ? 'opening' : 'closing';phases.push(phase)
-      const primary = await request(url, phase), home = await optional(HOME, phase)
+      const primary = await request(url, phase, signal), home = await optional(HOME, phase, signal)
       const generalHTML = Buffer.from(primary.bodyBase64, 'base64').toString('utf8')
       const homeHTML = home ? Buffer.from(home.bodyBase64, 'base64').toString('utf8') : ''
-      if (advertisedClinical(generalHTML, GENERAL) || advertisedClinical(homeHTML, HOME)) await optional(CLINICAL, phase)
-      await optional(BOARD, phase)
+      if (advertisedClinical(generalHTML, GENERAL) || advertisedClinical(homeHTML, HOME)) await optional(CLINICAL, phase, signal)
+      await optional(BOARD, phase, signal)
       // The shared collector's visual tree deliberately omits hidden scripts.
       // This source's executable declaration must use original script semantics.
-      try { if (inspectPublicPage(generalHTML, GENERAL).loaderDeclared) await optional(LOADER, phase) }
+      try { if (inspectPublicPage(generalHTML, GENERAL).loaderDeclared) await optional(LOADER, phase, signal) }
       catch (error) { signal?.throwIfAborted();issue('PRIMARY_LOADER_UNVERIFIED', { url, phase, message: error.message }) }
       return primary
     }
@@ -116,14 +118,14 @@ export const createBiofourmisScraper = (defaults = {}) => ({ async run(passed = 
       const retained = pageFor(phase, LOADER)
       return { ...retained, url: retained.finalURL }
     }
-    const result = await request(url, phase)
+    const result = await request(url, phase, signal)
     if (url.startsWith(API + '/jobs/') && result.status === 200) {
       try {
         const record = parseJSON(result), offices = pageFor(phase, API + '/offices')
         const scope = geography(record, officeIndex(offices ? parseJSON(offices) : null))
         if (record.company_name === 'Biofourmis' && Number.isSafeInteger(record.internal_job_id) && record.internal_job_id > 0
           && postURI(record.absolute_url, record.id, PROFILE) && (scope.country === 'India' || scope.sourceCountryScopeUnresolved)) {
-          await optional(record.absolute_url, phase)
+          await optional(record.absolute_url, phase, signal)
         }
       } catch (error) { signal?.throwIfAborted();issue('PUBLIC_DETAIL_CANDIDATE_UNRESOLVED', { url, phase, message: error.message }) }
     }

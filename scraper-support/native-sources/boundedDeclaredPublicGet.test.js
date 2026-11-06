@@ -124,8 +124,8 @@ test('the request deadline releases an ignoring fetch and cancels its eventual b
   const canceledBeforeHarnessCleanup = late.stats.canceled
   late.close(); const final = await running
   assert.equal(continuedBeforeDelivery.continued, true, 'timed-out fetch must not hold the collector')
-  assert.equal(final.error, stop); assert.equal(audit.rawPages[0].error?.name, 'TimeoutError')
-  assert.equal(audit.rawPages[0].transportQualified, false)
+  assert.equal(final.error, stop)
+  assert.equal(audit, undefined, 'caller cancellation must prevent the later audit callback')
   assert.equal(canceledBeforeHarnessCleanup, 1); assert.equal(late.stats.cancelReason, signal.reason)
   assert.equal(signal.reason.name, 'TimeoutError'); assert.equal(late.stats.arrayBufferCalls, 0)
   assert.equal(getEventListeners(signal, 'abort').length, 0)

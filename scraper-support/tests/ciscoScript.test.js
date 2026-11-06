@@ -55,6 +55,8 @@ test('extractSearchResults normalizes Cisco listing cards into shared scraper fi
     requisitionId: '2012591',
     department: 'Product and Engineering',
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: null,
     jobDescription:
       'Exciting opportunity for a seasoned Signal and Power Integrity Technical Leader to drive the design and development of next-gen ASIC packaging at Cisco Silicon One. Lead a high-performing team, shape advanced IC architectures, and collaborate with top experts in high-speed, ultra-high-performance networking. Join us to shape the future of Silicon packaging!',

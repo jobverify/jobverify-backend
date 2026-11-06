@@ -7,18 +7,20 @@ import {getScraperCatalog,createCatalogScraper} from '../scraper-support/provide
 import {readInventoryEvidence} from '../scraper-support/utils/inventoryEvidence.js'
 import {WorkdayHostCircuitBreaker} from '../scraper-support/myworkday/engine.js'
 import {withRecordedWorkdayClock} from './helpers/workdayRecordedClock.js'
+import {nativePackets as currentDoverBindingPackets} from '../scraper/dovercorporation.workday/nativeReplayFixture.js'
+import {readAecomOriginalResponses} from '../scraper/aecom.workday/nativeCurrent.js'
 
 const fixture=JSON.parse(gunzipSync(fs.readFileSync(new URL('./test-data/recruitmentGoal20261104/native-production.json.gz',import.meta.url))))
 const sha=value=>createHash('sha256').update(value).digest('hex')
 const key=(url,init={})=>(init.method||'GET')+':'+url+':'+(init.body||'')
-const proof=job=>({id:String(job.jobId||job.requisitionId||job.sourceUrl),title:job.title,country:job.country,location:job.location,
+const proof=job=>({id:String(job.jobId||job.requisitionId||job.nativeObservationKey||job.sourceUrl),title:job.title,country:job.country,location:job.location,
  descriptionSHA256:sha(job.sourceDescription||job.jobDescription),postingDate:job.postingDate||null,sourceUrl:job.sourceUrl,applyUrl:job.applyUrl,
  nativeRecordSHA256:sha(JSON.stringify(job.nativeSourceRecord||job.sourceNativeRecord)),nativeEmployer:job.nativeHiringOrganization||null,
  sourceScopeComplete:job.sourceScopeComplete,lifecycleCleanupAllowed:job.lifecycleCleanupAllowed})
 
-test('the current goal proof retains 47 sources, 992 independently verified India records and intact original response bytes',()=>{
- assert.equal(fixture.sources.length,47)
- assert.equal(fixture.sources.reduce((n,s)=>n+s.expected.proofs.length,0),992)
+test('the current goal proof retains 60 registrations, 1850 verified India registration records and intact original response bytes',()=>{
+ assert.equal(fixture.sources.length,60)
+ assert.equal(fixture.sources.reduce((n,s)=>n+s.expected.proofs.length,0),1850)
  for(const source of fixture.sources){
   assert.equal(source.countryEvidence.length,source.expected.proofs.length)
   for(const r of source.requests)if(r.text!==undefined||r.bodyBase64!==undefined){
@@ -30,7 +32,10 @@ test('the current goal proof retains 47 sources, 992 independently verified Indi
 for(const capture of fixture.sources)test(capture.source+': current registered route preserves its native identity, employer, country, full description and incomplete scope',async()=>{
  const provider=getScraperCatalog().find(p=>p.source===capture.source),pending=new Map()
  assert.ok(provider)
- for(const r of capture.requests){const id=key(r.requestedURL,{method:r.method,body:r.body}),rows=pending.get(id)||[];rows.push(r);pending.set(id,rows)}
+ // Dover's archived native role bytes use the separately captured current
+ // careers-host redirect; the untouched original archive hashes above remain checked.
+ const requests=capture.source==='dovercorporation'?currentDoverBindingPackets(capture.requests):capture.requests
+ for(const r of requests){const id=key(r.requestedURL,{method:r.method,body:r.body}),rows=pending.get(id)||[];rows.push(r);pending.set(id,rows)}
  const original=globalThis.fetch
  globalThis.fetch=async(url,init={})=>{
   const rows=pending.get(key(String(url),init));assert.ok(rows?.length,'Uncaptured HTTP request: '+url)
@@ -45,7 +50,7 @@ for(const capture of fixture.sources)test(capture.source+': current registered r
   ...(capture.source==='cocacola'?{requestScheduler:{acquire:async()=>()=>{},recordRateLimit(){}},retryBaseDelayMs:0,
    circuitBreaker:new WorkdayHostCircuitBreaker(),detailCircuitBreaker:new WorkdayHostCircuitBreaker()}:{}),
   ...(['britannia','navi','monocept','byteridge','dovercorporation','telstra','aspentechnology','amberstudent','digitalwebsolutions'].includes(capture.source)?{requestIntervalMs:0,fetchImpl:(...args)=>globalThis.fetch(...args)}:{}),
-  ...(['teradata','lyrahealth','lakechemicalspvtltd','cdot'].includes(capture.source)?{minIntervalMs:0,fetchImpl:(...args)=>globalThis.fetch(...args)}:{})})
+  ...(['teradata','lyrahealth','lakechemicalspvtltd','cdot','cyfuture','velaninfoservices','unosecur','logelite','adidas','mannhummel','kkr','easemytrip','condenast'].includes(capture.source)?{minIntervalMs:0,fetchImpl:(...args)=>globalThis.fetch(...args)}:{})})
  try{jobs=await(capture.source==='cocacola'?withRecordedWorkdayClock(capture.startedAt,run):run())}finally{globalThis.fetch=original}
  if(capture.expected.globalNativeRecords){
   assert.equal(provider.countryFilter,'Global')
@@ -61,6 +66,185 @@ for(const capture of fixture.sources)test(capture.source+': current registered r
  assert.equal(readInventoryEvidence(jobs).listingComplete,capture.expected.inventoryEvidence.listingComplete)
  assert.ok(verifiedIndiaJobs.every(j=>j.country==='India'))
  assert.ok(jobs.every(j=>j.sourceScopeComplete===false&&j.lifecycleCleanupAllowed===false))
+ if(['aecom','aecomindia'].includes(capture.source)){
+  assert.equal(jobs.length,380);assert.equal(capture.requests.length,845)
+  assert.ok(capture.requests.every(r=>r.method==='GET'&&r.status===200&&r.requestedURL===r.finalURL))
+  assert.equal(capture.sameNativeBoard,'https://aecom.jobs/');assert.equal(capture.canonicalIndividualRoleURLsQualified,false)
+  assert.equal(capture.registrationAliasOf,capture.source==='aecomindia'?'aecom':null)
+  if(capture.source==='aecomindia')assert.equal(provider.aliasOfSource,'aecom')
+  const originals=readAecomOriginalResponses(jobs);assert.equal(originals.length,845)
+  for(const p of originals){assert.equal(p.originalBodyComplete,true);assert.equal(sha(Buffer.from(p.bodyBase64,'base64')),p.bodySHA256)}
+  for(const j of jobs){
+   assert.equal(j.companyName,'AECOM');assert.equal(j.country,'India');assert.equal(j.nativeCriteriaComplete,true);assert.equal(j.nativeGeographyQualified,true);assert.equal(j.sourceDetailComplete,true)
+   assert.equal(j.canonicalRoleURL,null);assert.equal(j.legalEmployer,null);assert.equal(j.firstEverPublication,null);assert.equal(j.applicationVisited,false)
+   assert.equal(j.sourceDescription,j.nativeSourceRecord.detail.html_description);assert.equal(j.nativeClosingRecord.detail.guid,j.jobId);assert.equal(j.requisitionId,j.nativeSourceRecord.detail.reqid)
+   assert.equal(j.nativeSourceRecord.detail.is_posted,false);assert.equal(j.nativePublicationEvidence.indexPostedFlagMeaning,null)
+   assert.equal(j.sourceWorksiteCountryProof.requestCountryUsed,false);assert.equal(j.sourceWorksiteCountryProof.cityDictionaryUsed,false)
+  }
+  assert.ok([...pending.values()].every(rows=>rows.length===0),'Every retained native request must be replayed')
+  const other=fixture.sources.find(s=>s.source===(capture.source==='aecom'?'aecomindia':'aecom'))
+  assert.deepEqual(capture.expected.proofs.map(p=>p.id).sort(),other.expected.proofs.map(p=>p.id).sort(),'Existing alias registrations share the same 380 roles')
+ }
+ if(capture.source==='syrmasgs'){
+  assert.deepEqual(jobs.map(j=>j.jobId),['22188','19964','19963','19962'])
+  assert.equal(capture.requests.length,22);assert.ok(capture.requests.every(r=>r.method==='GET'&&r.status===200))
+  for(const j of jobs){
+   assert.equal(j.nativeContentId,j.jobId);assert.equal(j.requisitionId,null);assert.equal(j.nativePostingId,null);assert.equal(j.legalEmployer,null)
+   assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true)
+   assert.deepEqual(j.nativeSourceRecord,j.nativeClosingRecord);assert.equal(j.nativeCanonicalRoleURL,j.sourceUrl)
+   assert.equal(j.sourceWorksiteCountryProof.cityDictionaryUsed,false);assert.ok(['CHENNAI','MANESAR'].includes(j.sourceWorksiteCountryProof.officeHeading))
+   assert.match(j.postingDate,/\+00:00$/);assert.equal(j.applicationVisited,false);assert.equal(j.activeApplyVerified,false)
+  }
+ }
+ if(capture.source==='specindia'){
+  assert.equal(jobs.length,5);assert.equal(capture.requests.length,18)
+  assert.equal(capture.requests.filter(r=>r.method==='POST').length,2)
+  assert.equal(jobs.reduce((n,j)=>n+j.numberOfOpenings,0),19)
+  for(const j of jobs){
+   assert.equal(j.nativeRoleClosingReconciled,true);assert.equal(j.nativeRoleCriteriaReconciled,true)
+   assert.equal(j.nativePublishedClosedNotice,false);assert.equal(j.nativeClosingPublicationState.closed,false)
+   assert.equal(j.nativeClosingPublicationState.criteriaReconciled,true)
+   assert.equal(j.nativeCanonicalRoleURL,null);assert.equal(j.jobId,null);assert.equal(j.requisitionId,null)
+   assert.equal(j.postingDate,null);assert.equal(j.closingDate,null);assert.equal(j.city,null)
+   assert.equal(j.sourceWorksiteCountryProof.countryHeading,'India');assert.equal(j.sourceWorksiteCountryProof.cityDictionaryUsed,false)
+   assert.equal(j.activeApplyVerified,false);assert.equal(j.applicationVisited,false)
+   assert.equal(j.applyUrl,j.sourceUrl);assert.ok(j.sourceDescription.includes(j.nativeWholeCriteriaText))
+   assert.ok(j.nativeSourceRecord.role.criteria&&j.nativeClosingRecord.role.criteria)
+  }
+ }
+ if(capture.source==='condenast'){
+  assert.equal(jobs.length,7);assert.equal(capture.requests.length,26);assert.equal(jobs[0].sourceNativeRetainedResponses.length,26)
+  assert.equal(jobs[0].sourceNativeCollectionAudit.heldNativeRows.length,0)
+  for(const j of jobs){assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true);assert.equal(j.country,'India');assert.equal(j.sourceWorksiteCountryProof.nativeWorksiteCountryCode,'IN');assert.equal(j.sourceWorksiteCountryProof.cityDictionaryUsed,false);assert.deepEqual(j.nativeSourceRecord.detail,j.nativeClosingRecord.detail);assert.equal(j.sourceDescription,j.jobDescription);assert.equal(j.nativeCanonicalRoleURL,null);assert.equal(j.nativePublishedApplyURL,null);assert.equal(j.activeApplyVerified,false);assert.equal(j.postedAt,null);assert.equal(j.publicationTimezone,null);assert.equal(j.nativeSourceRecord.publisher.publisherProgramsExecuted,false);assert.equal(j.nativeSourceRecord.publisher.initialSSRVisible,false)}
+ }
+ if(capture.source==='easemytrip'){
+  assert.equal(jobs.length,10);assert.equal(capture.requests.length,6)
+  const audit=jobs[0].sourceNativeCollectionAudit;assert.equal(audit.nativeRecords,12);assert.equal(audit.nativeRoleClosingReconciled,10);assert.equal(audit.excludedNativeRows.length,2);assert.ok(audit.excludedNativeRows.every(r=>r.record.loc==='Remote'&&r.countryNotClassified));assert.equal(jobs[0].sourceNativeRetainedResponses.length,6)
+  assert.equal(new Set(jobs.map(j=>j.nativeObservationKey)).size,10)
+  for(const j of jobs){
+   assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true);assert.equal(j.sourceWorksiteCountryProof.countryHeading,'Our Offices Within India');assert.equal(j.sourceWorksiteCountryProof.nativeOfficeLabel,j.nativeLocationLabel);assert.equal(j.sourceWorksiteCountryProof.cityDictionaryUsed,false);assert.equal(j.sourceWorksiteCountryProof.exactCampusEstablished,false)
+   assert.deepEqual(j.nativeSourceRecord.role,j.nativeClosingRecord.role);assert.ok(j.sourceDescription.includes('Interview process'));assert.ok(j.sourceDescription.includes('Minimum experience'));assert.equal(j.sourceDescription,j.jobDescription);assert.equal(j.employmentType,'Full-time')
+   assert.equal(j.sourceURLIsSharedCareersPage,true);assert.equal(j.applicationUrlIsGeneric,true);assert.equal(j.applicationVisited,false);assert.equal(j.applicationFormSubmitted,false);assert.equal(j.activeApplyVerified,false);assert.equal(j.nativeSourceRecord.careers.publisherProgramsExecuted,false)
+   for(const k of ['jobId','requisitionId','nativePostingID','nativeCanonicalRoleURL','nativePublishedRoleURL','postingDate','postedAt','closingDate','firstEverPublication','legalEmployer','numberOfOpenings','remoteStatus','nativeApplicationsOpen'])assert.equal(j[k],null,k)
+  }
+ }
+ if(capture.source==='kkr'){
+  assert.equal(jobs.length,19);assert.equal(capture.requests.length,10)
+  assert.equal(jobs[0].sourceNativeCollectionAudit.nativeRecords,136);assert.equal(jobs[0].sourceNativeCollectionAudit.nativeRoleClosingReconciled,19)
+  assert.equal(jobs[0].sourceNativeCollectionAudit.excludedNativeRows.length,117)
+  assert.equal(jobs[0].sourceNativeRetainedResponses.length,10)
+  for(const j of jobs){
+   assert.equal(j.city,'Gurugram');assert.equal(j.state,null);assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true)
+   assert.equal(j.nativePublishingCompanyName,'Careers at KKR');assert.equal(j.nativeHiringOrganization.name,'KKR');assert.equal(j.nativeCanonicalRoleURL,null);assert.equal(j.employmentType,null);assert.equal(j.nativeEducationApplicationSetting,'education_required')
+   assert.equal(j.sourceWorksiteCountryProof.method,'own-office-label-to-current-publisher-office-country');assert.equal(j.sourceWorksiteCountryProof.literalRoleCountry,false);assert.equal(j.sourceWorksiteCountryProof.cityDictionaryUsed,false);assert.ok(j.sourceWorksiteCountryProof.contextStatement.includes('second office in India'))
+   assert.deepEqual(j.nativeSourceRecord.job,j.nativeClosingRecord.job);assert.ok(j.nativeSourceRecord.office.countryContext);assert.ok(j.nativeClosingRecord.office.countryContext)
+   assert.equal(j.sourceDescription,j.jobDescription);assert.ok(j.sourceDescription.includes('KKR is an equal opportunity employer.'));assert.equal(j.firstEverPublication,null)
+  }
+ }
+ if(capture.source==='mannhummel'){
+  assert.equal(jobs.length,13);assert.equal(capture.requests.length,32)
+  assert.equal(jobs[0].sourceNativeCollectionAudit.nativeRecords,13);assert.equal(jobs[0].sourceNativeCollectionAudit.nativeRoleClosingReconciled,13)
+  for(const j of jobs){
+   assert.equal(j.sourceWorksiteCountryProof.method,'own-rmk-country-property-and-labelled-native-tile');assert.equal(j.nativeCountryLabel,'IN');assert.equal(j.sourceWorksiteCountryProof.nativeListingCountryLabel,'Country/Region');assert.equal(j.sourceWorksiteCountryProof.literalEnglishCountryName,false)
+   assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true);assert.equal(j.nativeHiringOrganization.name,'Mann+Hummel GmbH')
+   assert.equal(j.sourceDescription,j.nativeSourceRecord.role.criteriaText);assert.ok(j.sourceDescription.includes(j.nativeJobDescription));assert.deepEqual(j.nativeSourceRecord.role,j.nativeClosingRecord.role)
+   for(const k of ['jobId','requisitionId','legalEmployer','numberOfOpenings','firstEverPublication','employmentType','nativeApplicationsOpen'])assert.equal(j[k],null,k)
+   assert.equal(j.publicationTimezone,'UTC');assert.equal(j.sourceDatePrecision,'second');assert.match(j.postedAt,/Z$/);assert.match(j.closingDate,/Z$/);assert.equal(j.applicationVisited,false);assert.equal(j.activeApplyVerified,false)
+   for(const p of ['source','sourceClosing'])for(const s of ['Corporate','Board','Listing','Role'])assert.equal(sha(j[p+'RawNative'+s]),j[p+'RawNative'+s+'SHA256'])
+  }
+  assert.ok(jobs[0].sourceDescription.includes('Ability to travel 50%'))
+  for(const id of ['1447599233','1433806933','1451119933'])assert.equal(jobs.find(j=>j.nativePublicPageID===id).city,null)
+ }
+ if(capture.source==='adidas'){
+  assert.equal(jobs.length,9);assert.equal(capture.requests.length,28);assert.ok(jobs.every(j=>!j.title.includes('Talent Pool')))
+  assert.equal(jobs[0].sourceNativeCollectionAudit.talentPoolRecords,1);assert.equal(jobs[0].sourceNativeCollectionAudit.nativeRecords,10)
+  for(const j of jobs){
+   assert.equal(j.sourceWorksiteCountryProof.method,'own-rmk-country-region-label');assert.equal(j.sourceWorksiteCountryProof.nativeCountryLabel,'IN');assert.equal(j.sourceWorksiteCountryProof.literalRoleCountry,true)
+   assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true);assert.equal(j.nativeHiringOrganization.name,'adidas');assert.ok(j.nativeHiringOrganization.employees.includes('our employees'))
+   assert.equal(j.sourceDescription,j.nativeSourceRecord.role.criteriaText);assert.ok(j.sourceDescription.includes(j.nativeJobDescription));assert.ok(j.sourceDescription.includes('Culture Starts With People'))
+   for(const k of ['jobId','requisitionId','legalEmployer','numberOfOpenings','postingDate','postedAt','firstEverPublication','closingDate','publicationTimezone','nativeApplicationsOpen'])assert.equal(j[k],null,k)
+   assert.notEqual(j.nativePublicPageID,j.nativeAdvertisementNumber);assert.match(j.nativeDateCalendar,/^2026-10-\d{2}$/);assert.equal(j.applicationVisited,false);assert.equal(j.activeApplyVerified,false)
+   for(const p of ['source','sourceClosing'])for(const s of ['Publisher','Index','Client','Listing','Role'])assert.equal(sha(j[p+'RawNative'+s]),j[p+'RawNative'+s+'SHA256'])
+  }
+  const countryOnly=jobs.find(j=>j.nativeAdvertisementNumber==='548541');assert.equal(countryOnly.city,null);assert.equal(countryOnly.state,null);assert.equal(countryOnly.location,'India')
+ }
+ if(capture.source==='logelite'){
+  assert.equal(jobs.length,6);assert.equal(capture.requests.length,26);assert.equal(jobs.reduce((n,j)=>n+j.numberOfOpenings,0),19)
+  assert.equal(jobs.reduce((n,j)=>n+j.nativeSourceRecord.pdf.pages.length,0),12)
+  assert.equal(jobs[1].employmentType,'Full Time (Rotational Shift)');assert.equal(jobs[3].nativeExperienceLabel,'1/2 to 1 Year')
+  assert.ok(jobs[3].sourceDescription.includes('6 months to 1 year'))
+  for(const j of jobs){
+   assert.equal(j.sourceWorksiteCountryProof.method,'declared-own-role-pdf-literal-work-location')
+   assert.equal(j.sourceWorksiteCountryProof.literalRoleCountry,true);assert.equal(j.sourceWorksiteCountryProof.exactCampusEstablished,false)
+   assert.equal(j.city,'Lucknow');assert.equal(j.location,'Lucknow, India');assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true)
+   assert.equal(j.nativeCanonicalRoleURL,j.sourceUrl);assert.ok(j.sourceDescription.endsWith(j.nativeSourceRecord.pdf.text));assert.ok(j.sourceDescription.length>2500)
+   for(const key of ['jobId','requisitionId','postingDate','postedAt','closingDate','firstEverPublication','legalEmployer','state','minimumQualification','experienceRequired','remoteStatus'])assert.equal(j[key],null,key)
+   assert.match(j.nativeContentDocumentID,/^\d+$/);assert.equal(j.applicationUrlIsGeneric,true);assert.equal(j.applicationVisited,false);assert.equal(j.applicationFormSubmitted,false);assert.equal(j.activeApplyVerified,false)
+   for(const prefix of ['source','sourceClosing']){
+    for(const key of ['RawNativeHTML','RawNativeCareersHTML'])assert.equal(sha(j[prefix+key]),j[prefix+key+'SHA256'])
+    assert.equal(sha(Buffer.from(j[prefix+'RawNativePDFBase64'],'base64')),j[prefix+'RawNativePDFSHA256']);assert.ok(j[prefix+'NativePDFRendererAliases'].fonts.length>0)
+   }
+  }
+  assert.equal(jobs[0].sourceNativeCollectionAudit.responses.length,26)
+ }
+ if(capture.source==='unosecur'){
+  assert.equal(jobs.length,3);assert.equal(capture.requests.length,16)
+  assert.deepEqual(jobs.map(j=>j.jobId),['3140','3099','3056'])
+  assert.equal(jobs[0].title,'Software Development Engineer II');assert.equal(jobs[0].nativeInternalRequisitionTitle,'UI Developer')
+  assert.equal(jobs[1].nativeCorporateTitle,'Solutions Engineer (Sales)');assert.equal(jobs[1].title,'Solution Engineer Sales')
+  assert.equal(jobs[0].nativeApplicationRequirements.videoApplicationMode,'required')
+  assert.equal(jobs.reduce((n,j)=>n+j.nativeApplicationRequirements.screeningQuestions.length,0),12)
+  for(const j of jobs){
+   assert.equal(j.sourceWorksiteCountryProof.method,'declared-reczee-jobposting-and-native-api-location')
+   assert.equal(j.sourceWorksiteCountryProof.literalRoleCountry,true);assert.equal(j.sourceWorksiteCountryProof.exactCampusEstablished,false)
+   assert.equal(j.city,'Bengaluru');assert.equal(j.nativeRoleLocations[0].country,'India');assert.equal(j.nativeRoleLocations[0].country_code,'IN')
+   assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true);assert.equal(j.sourceListingComplete,false)
+   assert.equal(j.sourceDescription,j.nativeSourceRecord.api.data.requisition.job_description);assert.ok(j.sourceDescription.length>2500)
+   assert.equal(j.postingDate,j.nativeSourceRecord.role.jobPosting.datePosted);assert.equal(j.postedAt,j.postingDate);assert.equal(j.publicationTimezone,'UTC')
+   for(const key of ['state','requisitionId','legalEmployer','firstEverPublication','closingDate','numberOfOpenings','minimumQualification','nativeApplicationsOpen'])assert.equal(j[key],null,key)
+   assert.equal(j.nativeApplicationHandoff.publicRolePageRead,true);assert.equal(j.nativeApplicationHandoff.formInteractedWith,false)
+   assert.equal(j.applicationVisited,false);assert.equal(j.applicationFormSubmitted,false);assert.equal(j.activeApplyVerified,false)
+   for(const key of ['sourceRawNativeHTML','sourceClosingRawNativeHTML','sourceRawNativeCareersHTML','sourceClosingRawNativeCareersHTML','sourceRawNativeClientJS','sourceClosingRawNativeClientJS','sourceRawNativeAPIJSON','sourceClosingRawNativeAPIJSON'])assert.equal(sha(j[key]),j[key+'SHA256'])
+  }
+  assert.equal(jobs[0].sourceNativeCollectionAudit.responses.length,16)
+ }
+ if(capture.source==='velaninfoservices'){
+  assert.equal(jobs.length,12);assert.equal(capture.requests.length,30)
+  assert.equal(jobs.reduce((n,j)=>n+j.numberOfOpenings,0),22)
+  for(const j of jobs){
+   assert.equal(j.sourceWorksiteCountryProof.method,'role-location-to-publisher-delivery-center-country')
+   assert.equal(j.sourceWorksiteCountryProof.contextualBinding,true);assert.equal(j.sourceWorksiteCountryProof.literalRoleCountry,false)
+   assert.equal(j.sourceWorksiteCountryProof.exactCampusEstablished,false);assert.equal(j.sourceWorksiteCountryProof.interviewAddressAloneUsed,false)
+   assert.equal(j.sourceWorksiteCountryProof.matchingWorksites.length,2)
+   assert.ok(j.sourceWorksiteCountryProof.matchingWorksites.every(s=>s.heading==='Delivery Center'&&s.countryLabel==='INDIA'))
+   assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true);assert.equal(j.sourceListingComplete,false)
+   assert.equal(j.nativeCanonicalRoleURL,j.sourceUrl);assert.ok(j.sourceDescription.length>700);assert.ok(j.nativeSourceRecord.role.region)
+   assert.equal(j.sourceDatePrecision,'calendar-date');assert.match(j.postingDate,/^\d{4}-\d{2}-\d{2}$/)
+   for(const key of ['city','state','requisitionId','legalEmployer','employmentType','postedAt','closingDate','firstEverPublication','publicationTimezone'])assert.equal(j[key],null,key)
+   assert.equal(j.nativeApplicationHandoff.publicRolePageRead,true);assert.equal(j.nativeApplicationHandoff.formInteractedWith,false)
+   assert.equal(j.applicationVisited,false);assert.equal(j.applicationFormSubmitted,false);assert.equal(j.activeApplyVerified,false)
+   for(const key of ['sourceRawNativeHTML','sourceClosingRawNativeHTML','sourceRawNativeCareersHTML','sourceClosingRawNativeCareersHTML','sourceRawNativeIndexHTML','sourceClosingRawNativeIndexHTML','sourceRawNativeOfficeHTML','sourceClosingRawNativeOfficeHTML'])assert.equal(sha(j[key]),j[key+'SHA256'])
+  }
+  assert.equal(jobs[0].sourceNativeCollectionAudit.responses.length,30)
+  assert.equal(jobs[0].nativeSourceRecord.offices.candidates.length,4)
+ }
+ if(capture.source==='cyfuture'){
+  assert.equal(jobs.length,10);assert.equal(capture.requests.length,24)
+  assert.deepEqual(jobs.map(j=>j.jobId),['146','143','116','91','126','101','98','70','94','93'])
+  assert.equal(jobs.reduce((n,j)=>n+j.numberOfOpenings,0),331)
+  for(const j of jobs){
+   assert.equal(j.sourceWorksiteCountryProof.method,'role-location-to-publisher-office-country-group')
+   assert.equal(j.sourceWorksiteCountryProof.contextualBinding,true);assert.equal(j.sourceWorksiteCountryProof.literalRoleCountry,false)
+   assert.equal(j.sourceWorksiteCountryProof.exactCampusEstablished,false);assert.equal(j.sourceWorksiteCountryProof.countryLabel,'INDIA')
+   assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true);assert.equal(j.sourceListingComplete,false)
+   assert.equal(j.nativeCanonicalRoleURL,j.sourceUrl);assert.ok(j.sourceDescription.length>500)
+   for(const key of ['city','state','requisitionId','legalEmployer','postingDate','postedAt','closingDate','firstEverPublication'])assert.equal(j[key],null,key)
+   assert.equal(j.applicationUrlIsGeneric,true);assert.equal(j.applicationVisited,false);assert.equal(j.activeApplyVerified,false)
+  }
+  assert.equal(jobs[0].sourceNativeCollectionAudit.responses.length,24)
+  assert.equal(jobs[0].nativeSourceRecord.offices.groups.flatMap(g=>g.offices).length,13)
+  assert.equal(jobs[0].nativeSourceRecord.offices.unassignedOffices.length,0)
+ }
  if(capture.source==='cdot'){
   assert.equal(jobs.length,1);const job=jobs[0]
   assert.equal(job.numberOfOpenings,5);assert.equal(job.nativeWorkplace,'Delhi');assert.equal(job.location,'Delhi')

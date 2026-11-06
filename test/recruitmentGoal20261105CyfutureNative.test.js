@@ -42,7 +42,9 @@ test('Cyfuture detail helpers retain full native criteria and cannot inherit an 
  assert.ok(job.nativeSourceRecord);assert.match(job.sourceDescription,/Recruiter Details/);assert.ok(job.sourceDescription.includes('years’ of relevant experience'))
 })
 test('Cyfuture reconciles ten whole roles and all native country-office context using twenty-four declared reads',async t=>{
- const {jobs,error,calls}=await replay(t);assert.ifError(error);assert.equal(jobs.length,10);assert.deepEqual(calls.map(c=>c.url),fullOrder)
+ const {jobs,error,calls}=await replay(t);assert.ifError(error)
+ assert.deepEqual(jobs[0]?.sourceNativeCollectionAudit.failures,[],'Native collection failures: '+JSON.stringify(jobs[0]?.sourceNativeCollectionAudit.failures))
+ assert.equal(jobs.length,10);assert.deepEqual(calls.map(c=>c.url),fullOrder)
  assert.deepEqual(jobs.map(j=>j.jobId),['146','143','116','91','126','101','98','70','94','93'])
  for(const j of jobs){assert.equal(j.country,'India');assert.equal(j.sourceCountryScopeUnresolved,false);assert.equal(j.sourceDetailComplete,true);assert.equal(j.nativeRoleClosingReconciled,true)
   assert.equal(j.sourceDescription,j.jobDescription);assert.ok(j.sourceDescription.length>500);assert.ok(j.nativeSourceRecord);assert.ok(j.nativeClosingRecord)
@@ -121,4 +123,113 @@ test('Cyfuture awaited audit callbacks preserve exact caller cancellation',async
  const controller=new AbortController(),reason=Error('Cancel Cyfuture audit')
  const {jobs,error}=await replay(t,()=>{},{signal:controller.signal,onAudit:async()=>{await Promise.resolve();controller.abort(reason)}})
  assert.ok(!jobs);assert.equal(error,reason)
+})
+const rekey=hex=>{
+ const b=Buffer.from(hex,'hex'),key=(b[0]+31)%256
+ return Buffer.from([key,...b.subarray(1).map(v=>v^b[0]^key)]).toString('hex')
+}
+const emailEncoding=(text,edit)=>text.replace(/(data-cfemail=")([a-f0-9]+)(")/gi,(_,a,b,c)=>a+edit(b)+c)
+ .replace(/(\/cdn-cgi\/l\/email-protection#)([a-f0-9]+)/gi,(_,a,b)=>a+edit(b))
+test('Cyfuture hidden native criteria cannot silently qualify through a visible sibling',async t=>{
+ const {jobs,error,calls}=await replay(t,q=>{if(q.requestedURL===roleURLs[0])q.bodyText=q.bodyText.replace('<h2>Skill Requirement</h2>',
+  '<h2>Skill Requirement</h2><span style="display:none">Country: France; extra eligibility condition</span>')})
+ assert.ok(!jobs);assert.match(error?.message||'',/hidden|unreviewed/);assert.equal(calls.length,3)
+})
+test('Cyfuture new native role schemas require review despite CSS, hidden attributes and MIME casing',async t=>{
+ const {jobs,error,calls}=await replay(t,q=>{if(q.requestedURL===index)q.bodyText=q.bodyText.replace('</head>',
+  '<script hidden style="display:none" type="application/LD+JSON">{"@type":"JobPosting","jobLocation":{"address":{"addressCountry":"FR"}}}</script></head>')})
+ assert.ok(!jobs);assert.match(error?.message||'',/JobPosting/);assert.equal(calls.length,1)
+})
+test('Cyfuture changing public email encodings preserves both actual models and compares the same public value',async t=>{
+ const {jobs,error,calls}=await replay(t,(q,n)=>{if(n===2&&q.requestedURL!==index)q.bodyText=emailEncoding(q.bodyText,rekey)})
+ assert.ifError(error);assert.equal(jobs.length,10);assert.equal(calls.length,24);assert.ok(jobs.every(j=>j.sourceDetailComplete===true))
+ assert.notDeepEqual(jobs[0].nativeSourceRecord,jobs[0].nativeClosingRecord)
+ assert.notEqual(jobs[0].sourceRawNativeOfficeHTML,jobs[0].sourceClosingRawNativeOfficeHTML)
+})
+test('Cyfuture a changed underlying public contact value cannot hide behind an email encoding change',async t=>{
+ const key=19,changed=Buffer.from([key,...Buffer.from('changed-public-contact@cyfuture.com').map(v=>v^key)]).toString('hex')
+ const {jobs,error,calls,audits}=await replay(t,(q,n)=>{if(q.requestedURL===contact&&n===2)q.bodyText=q.bodyText.replace(/data-cfemail="[a-f0-9]+"/i,'data-cfemail="'+changed+'"')})
+ assert.ifError(error);assert.equal(jobs.length,0);assert.equal(calls.length,14);assert.equal(audits[0].heldNativeRows.length,10)
+})
+test('Cyfuture a matching city office outside the India group prevents a headquarters country default',async t=>{
+ const {jobs,error}=await replay(t,q=>{if(q.requestedURL===contact){const start=q.bodyText.indexOf('id="europe"'),marker='<div class="row locations-grid">'
+  const at=q.bodyText.indexOf(marker,start);assert.ok(at>start)
+  q.bodyText=q.bodyText.slice(0,at+marker.length)+'<div class="location-card"><p class="office-title">Noida Overseas Office</p><div class="address-info">Cyfuture India Pvt Ltd. Noida, France</div></div>'+q.bodyText.slice(at+marker.length)
+ }})
+ assert.ifError(error);assert.equal(jobs.length,10)
+ assert.ok(jobs.filter(j=>j.nativeLocation==='Noida').every(j=>j.country===null&&j.sourceDetailComplete===false))
+ assert.ok(jobs.filter(j=>j.nativeLocation!=='Noida').every(j=>j.country==='India'&&j.sourceDetailComplete===true))
+})
+test('Cyfuture an explicit foreign work assignment overrides the city-office country inference',async t=>{
+ const {jobs,error}=await replay(t,q=>{if(q.requestedURL===roleURLs[0])q.bodyText=q.bodyText.replace('<h2>Skill Requirement</h2>',
+  '<h2>Skill Requirement</h2><p>This role operates in Paris, France.</p>')})
+ assert.ifError(error);assert.equal(jobs.length,10)
+ const j=jobs.find(j=>j.jobId==='146');assert.equal(j.country,null);assert.equal(j.sourceDetailComplete,false)
+ assert.ok(j.sourceDescription.includes('This role operates in Paris, France.'))
+})
+test('Cyfuture malformed closing role retains the whole excluded opening model and conflicting original body',async t=>{
+ const {jobs,error,calls,audits}=await replay(t,(q,n)=>{if(q.requestedURL===roleURLs[0]&&n===2)q.bodyText=q.bodyText.replace('<title>Apply for Job ID 146','<title>Unrelated post 146')})
+ assert.ifError(error);assert.equal(jobs.length,9);assert.equal(calls.length,15);assert.ok(jobs.every(j=>j.sourceDetailComplete===false))
+ const held=audits[0].heldNativeRows[0];assert.ok(held.opening.nativeRecord.role.tree);assert.ok(held.opening.rawHTML.includes('Apply for Job ID 146'))
+ assert.ok(held.closing.rawHTML.includes('Unrelated post 146'))
+})
+test('Cyfuture malformed closing index retains every opening model and stops before further offices or roles',async t=>{
+ const {jobs,error,calls,audits}=await replay(t,(q,n)=>{if(q.requestedURL===index&&n===2)q.bodyText=q.bodyText.replace('<title>Career Opportunities at Cyfuture</title>','<title>Unrelated</title>')})
+ assert.ok(!jobs);assert.ok(error);assert.equal(calls.length,13)
+ const audit=audits[0]||error.recruitmentObservations;assert.equal(audit.heldNativeRows.length,10);assert.ok(audit.heldNativeRows[0].opening.nativeRecord.role.tree)
+ assert.ok(audit.heldNativeRows[0].closing.rawHTML.includes('<title>Unrelated</title>'))
+})
+test('Cyfuture noncooperative transport preserves exact cancellation without waiting for cleanup',async t=>{
+ const controller=new AbortController(),reason=Error('Cancel noncooperative Cyfuture transport');let release,calls=0
+ const fetchImpl=()=>++calls===1?new Promise(resolve=>{release=resolve}):Promise.reject(Object.assign(Error('Late test cleanup'),{abortRetries:true}))
+ const pending=source.createCyfutureScraper({fetchImpl,minIntervalMs:0,signal:controller.signal}).run()
+ await new Promise(resolve=>setImmediate(resolve));controller.abort(reason)
+ const result=await Promise.race([pending.then(value=>({value}),error=>({error})),new Promise(resolve=>setTimeout(()=>resolve({timeout:true}),200))])
+ const response=new Response(lookup(index).bodyText,{headers:lookup(index).headers});Object.defineProperty(response,'url',{value:index});release?.(response)
+ await pending.catch(()=>{});assert.equal(result.error,reason)
+})
+test('Cyfuture noncooperative body cancellation cannot block the exact caller reason',async()=>{
+ const controller=new AbortController(),reason=Error('Cancel Cyfuture body');let streamController,ready
+ const started=new Promise(resolve=>{ready=resolve})
+ const fetchImpl=async()=>{const stream=new ReadableStream({start(c){streamController=c;ready()},cancel(){return new Promise(()=>{})}})
+  const response=new Response(stream,{headers:{'content-type':'text/html'}});Object.defineProperty(response,'url',{value:index});return response}
+ const pending=source.createCyfutureScraper({fetchImpl,minIntervalMs:0,signal:controller.signal}).run()
+ await started;await new Promise(resolve=>setImmediate(resolve));controller.abort(reason)
+ const result=await Promise.race([pending.then(value=>({value}),error=>({error})),new Promise(resolve=>setTimeout(()=>resolve({timeout:true}),200))])
+ try{streamController.close()}catch{}
+ await pending.catch(()=>{});assert.equal(result.error,reason)
+})
+test('Cyfuture ordinary role location and future posting wording cannot contradict the office-country binding',async t=>{
+ for(const statement of ['Location: Paris, France.','Worksite: Paris, France.','This position will be based at Paris, France.']){
+  const {jobs,error}=await replay(t,q=>{if(q.requestedURL===roleURLs[0])q.bodyText=q.bodyText.replace('<h2>Skill Requirement</h2>','<h2>Skill Requirement</h2><p>'+statement+'</p>')})
+  assert.ifError(error);const j=jobs.find(j=>j.jobId==='146');assert.equal(j.country,null,statement);assert.equal(j.sourceDetailComplete,false,statement)
+ }
+})
+test('Cyfuture conflicting country fields in native listing and assigned office data remain unqualified',async t=>{
+ const listing=await replay(t,q=>{if(q.requestedURL===index)q.bodyText=q.bodyText.replace('<strong>Experience</strong>',
+  '<strong>Country</strong><span>France</span></li><li><strong>Experience</strong>')})
+ assert.ifError(listing.error);assert.equal(listing.jobs.find(j=>j.jobId==='146').country,null)
+ const office=await replay(t,q=>{if(q.requestedURL===contact)q.bodyText=q.bodyText.replace('Plot No. 197-198','Country: France<br>Plot No. 197-198')})
+ assert.ifError(office.error);assert.ok(office.jobs.filter(j=>j.nativeLocation==='Noida').every(j=>j.country===null&&j.sourceDetailComplete===false))
+})
+test('Cyfuture ungrouped native office cards cannot disappear from country consensus',async t=>{
+ const {jobs,error}=await replay(t,q=>{if(q.requestedURL===contact)q.bodyText=q.bodyText.replace('<div class="container gl-locations gl-locations3">',
+  '<div class="container gl-locations gl-locations3"><div class="location-card"><p class="office-title">Noida Ungrouped Office</p><div class="address-info">Country: France</div></div>')})
+ assert.ifError(error);assert.equal(jobs.length,10);assert.ok(jobs.filter(j=>j.nativeLocation==='Noida').every(j=>j.country===null&&j.sourceDetailComplete===false))
+})
+test('Cyfuture fully qualified and prefixed native JobPosting types require field review',async t=>{
+ for(const type of ['https://schema.org/JobPosting','http://schema.org/JobPosting','schema:JobPosting']){
+  const {jobs,error,calls}=await replay(t,q=>{if(q.requestedURL===index)q.bodyText=q.bodyText.replace('</head>',
+   '<script type="application/ld+json">{"@type":"'+type+'","jobLocation":{"address":{"addressCountry":"FR"}}}</script></head>')})
+  assert.ok(!jobs,type);assert.match(error?.message||'',/JobPosting|schema.*review/);assert.equal(calls.length,1)
+ }
+})
+test('Cyfuture declared role criteria delegation cannot silently become complete native detail',async t=>{
+ const {jobs,error,calls}=await replay(t,q=>{if(q.requestedURL===roleURLs[0])q.bodyText=q.bodyText.replace('<h2>Skill Requirement</h2>',
+  '<h2>Skill Requirement</h2><iframe src="/additional-eligibility" title="Additional eligibility"></iframe>')})
+ assert.ok(!jobs);assert.match(error?.message||'',/delegat|embedded|unreviewed/);assert.equal(calls.length,3)
+})
+test('Cyfuture native position counts cannot round an unsafe published integer',async t=>{
+ const {jobs,error,calls}=await replay(t,q=>{if(q.requestedURL===index)q.bodyText=q.bodyText.replace('1&nbsp; Opening','99999999999999999&nbsp; Opening')})
+ assert.ok(!jobs);assert.match(error?.message||'',/position|count/);assert.equal(calls.length,1)
 })

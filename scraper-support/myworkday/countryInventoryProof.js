@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { decodeNativeEntities } from '../utils/activeNativeHtml.js'
 import { readVisibleNativeDocument } from '../utils/visibleNativeHtml.js'
+import { currentAureconCorporateReceipt } from './nativeAureconWorksites.js'
 
 export const WORKDAY_COUNTRY_INVENTORY_PROOF = Symbol.for('jobverify.workday.country-inventory-proof')
 export const hashWorkdayProof = body => createHash('sha256').update(body).digest('hex')
@@ -18,7 +19,8 @@ const boardKey = value => {
 
 // The shared native tree reader excludes raw-text, template and fallback
 // markup. Additional activity checks apply to anchors and their ancestors.
-export const currentWorkdayBoardReceipt = ({ officialCareersUrl, boardUrl, response, html }) => {
+export const currentWorkdayBoardReceipt = ({ officialCareersUrl, boardUrl, response, html, renderProof = null }) => {
+  if (renderProof !== null) return currentAureconCorporateReceipt({ officialCareersUrl, boardUrl, response, html, renderProof })
   const requested = new URL(officialCareersUrl), actual = new URL(response.url)
   const contentType = response.headers?.get?.('content-type') || ''
   if (!response.ok || requested.protocol !== 'https:' || actual.protocol !== 'https:'

@@ -1,11 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { createPublicIO } from '../publicIO.js'
+import { reviewedDeclaredAssetURLs, selectReviewedDeclaredAsset, matchesAuthoredIntegrity } from './reviewedDeclaredAssets.js'
 import { boundedDeclaredPublicGet } from '../boundedDeclaredPublicGet.js'
 import { attachInventoryEvidence } from '../../utils/inventoryEvidence.js'
 import { attachSourceObservationEvidence } from '../../utils/sourceObservationEvidence.js'
 import { text } from '../cisVeeam/publishedData.js'
 import { requireNative, nativeJSON, primaryDeclaration, postURI, criteria, officeIndex, geography, literalFields } from './nativeData.js'
 import { departmentIndex, departmentPostIndex, routeContext, observeOwnRoute, primaryRouteStructure } from '../declaredGreenhouseRoutes/routeData.js'
+import { withNativeRuntimeControls } from './runtimeControls.js'
 
 export const NATIVE_GREENHOUSE_PROFILES = JSON.parse(readFileSync(new URL('./profiles.json', import.meta.url)))
 export const nativeSourceMetadata = (profile, previous = {}) => ({ ...previous, source: profile.source, companyName: profile.companyName,
@@ -49,7 +51,8 @@ const parallel = async (items, visit, signal) => {
 }
 export const createNativeGreenhouseScraper = (profile, defaults = {}) => ({ async run(passed = {}) {
   requireNative(profile && typeof profile.boardToken === 'string', 'missing configured native profile')
-  const options = { ...defaults, ...passed }, { signal, maxJobs = null, onAudit = () => {}, now = () => new Date().toISOString() } = options
+  return withNativeRuntimeControls(profile, defaults, passed, async (options, controls) => {
+  const { signal, maxJobs = null, onAudit = () => {}, now = () => new Date().toISOString() } = options
   const countryFilter = profile.countryFilter ?? 'India'
   signal?.throwIfAborted()
   requireNative(['India', 'Global'].includes(countryFilter), 'countryFilter must be India or Global')
@@ -60,14 +63,16 @@ export const createNativeGreenhouseScraper = (profile, defaults = {}) => ({ asyn
   const allowed = url => allowedURLs.has(url.href) && !io.rawPages.some(page => [401, 403, 429].includes(page.status) && new URL(page.url).hostname === url.hostname)
   requireNative(!(options.fetchJson || options.fetchText) || options.fetchPage || options.fetchImpl,
     'Parsed fetchJson alone has no original HTTP provenance; provide fetchPage or fetchImpl with original Responses')
+  for (const url of reviewedDeclaredAssetURLs(profile)) allowedURLs.add(url)
   const fetchOriginal = options.fetchImpl || globalThis.fetch
-  const fetchPage = options.fetchPage || (async url => {
+  const fetchOriginalPage = options.fetchPage || (async url => {
     await waitForHost(url, signal)
     requireNative(allowed(new URL(url)), 'native host became unavailable while queued')
     return boundedDeclaredPublicGet(url, { fetchImpl: fetchOriginal,
       signal: AbortSignal.any([AbortSignal.timeout(15000), ...(signal ? [signal] : [])]),
       overflowError: Error('Declared Greenhouse: native entity exceeds input limit') })
   })
+  const fetchPage = (url, init) => controls.read(() => fetchOriginalPage(url, init))
   const io = createPublicIO({ ...options, fetchPage, allowed }), observations = new Map(), order = new Map(), history = []
   const load = (url, options = {}) => io.load(url, { fresh: true, ...options })
   let opening, closing, fatal = null
@@ -90,9 +95,11 @@ export const createNativeGreenhouseScraper = (profile, defaults = {}) => ({ asyn
       catch (error) { signal?.throwIfAborted();declared = false;result.issues.push(error.message) }
     }
     if (declared && profile.declaration.kind === 'active-declared-external-profile') {
-      const asset = await io.load(profile.declaration.scriptURL, { fresh: true })
+      const declaration = Object.hasOwn(profile.declaration, 'reviewedAlternates')
+        ? selectReviewedDeclaredAsset(page.originalText, profile) : profile.declaration
+      const asset = declaration ? await io.load(declaration.scriptURL, { fresh: true }) : null
       declared = Boolean(asset?.usable && asset.transportQualified && typeof asset.bodyBase64 === 'string'
-        && asset.bodySHA256 === profile.declaration.scriptSHA256)
+        && asset.bodySHA256 === declaration.scriptSHA256 && matchesAuthoredIntegrity(declaration, asset.bodyBase64))
     }
     result.currentPrimaryDeclarationQualified = declared
     result.originalNativeBoard = await read(base, 'native board')
@@ -195,7 +202,7 @@ export const createNativeGreenhouseScraper = (profile, defaults = {}) => ({ asyn
   const audit = { source: profile.source, countryFilter, opening, closing, observations: all, observationHistory: history, rawPages: io.rawPages, issues: io.issues,
     sourceScopeComplete: false, lifecycleCleanupAllowed: false, authoritativeSourceTotal: null, authoritativeIndiaFacetCount: null,
     qualification: 'Complete original published native post models retained before prospect/country selection. Hosted pages, wider employer channels, active recruitment, applications, persistence and publication remain unverified.' }
-  await onAudit(structuredClone(audit));signal?.throwIfAborted();if (fatal) throw fatal
+  await controls.audit(() => onAudit(structuredClone(audit), { signal }));signal?.throwIfAborted();if (fatal) throw fatal
   const candidates = all.filter(job => job.jobDescription && job.sourceNativePostKind === 'job' && (countryFilter === 'Global'
     ? job.sourceCurrentNativePostingIdentityQualified
     : job.sourceCurrentNativeRoleQualified && !job.sourceNativeCountryConflict && (job.country === 'India' || job.sourceCountryScopeUnresolved)))
@@ -207,4 +214,5 @@ export const createNativeGreenhouseScraper = (profile, defaults = {}) => ({ asyn
   return attachInventoryEvidence(jobs, { status: 'discovery-only', firstParty: io.rawPages.some(page => page.transportQualified), surface: feedURL,
     listingComplete: false, reportedTotal: null, indiaFacetCount: null, pagesFetched: io.rawPages.filter(page => page.usable).length, verifiedAt: observedAt,
     reason: 'current-native-published-post-models-before-country-selection;whole-employer-India-zero-active-recruitment-applications-and-publication-unqualified' })
+  })
 } })

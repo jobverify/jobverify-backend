@@ -1,0 +1,12 @@
+[
+  {
+    "source": "mannhummel",
+    "catalogOverride": true,
+    "paginationStrategy": "declared-public-single-tile-page;paired-whole-native-models;company-scope-unqualified",
+    "extractionStrategy": "whole-own-typed-RMK-role+explicit-native-country-region-property+publisher-render-contract-as-data",
+    "verifiedOn": "2026-11-06",
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedSurfaceSummary": "The current corporate careers page declares a public board whose GET keyword search publishes 13 own native role pages. Complete native tile/role models, typed hiring organization, explicit own country properties and accessible Country/Region labels reconcile at opening and closing. Country is interpreted in that labelled native country contract; a keyword, city or free-form IN address is not country proof. Original UTC publication and expiry timestamps and limited/unlimited contract labels retain their native semantics. Full criteria, international travel, title placement differences and unknown precise cities remain intact. Publisher render/map programs are reviewed as data and never executed; applications, login and maps are unvisited. Sequential bounded metadata-checked reads stop at the first failure. Formal requisitions, seat counts, legal-employer claims, full company inventory and cleanup remain unqualified."
+  }
+]

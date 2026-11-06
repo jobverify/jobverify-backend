@@ -3,7 +3,7 @@ import {readNativeDocument} from '../../scraper-support/utils/activeNativeHtml.j
 export const BOARD='https://dover.wd103.myworkdayjobs.com/Dover'
 export const API='https://dover.wd103.myworkdayjobs.com/wday/cxs/dover/Dover'
 export const CLIENT='https://prod-wd103.myworkdaycdn.com/wday/asset/candidate-experience-jobs/cx-jobs.min.js'
-export const CAREERS='https://www.dovercorporation.com/about-us/careers/'
+export const CAREERS='https://careers.dovercorporation.com/'
 export function verifyCorporate(html){
  const document=readNativeDocument(html)
  check(document.nodes(n=>n.tag==='base').length===0,'Unreviewed corporate document base')

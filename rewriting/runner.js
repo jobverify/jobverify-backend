@@ -378,7 +378,8 @@ export const rewriteProgress = summary => {
 };
 
 /** The caller supplies a Mongo update boundary; source/filter fields never enter these updates. */
-export const rewriteCandidates = async (jobs, { client, update, deadline, signal, concurrency = 1, onResult = () => {}, onRejection = () => {} } = {}) => {
+export const rewriteCandidates = async (jobs, { client, update, deadline, signal, concurrency = 1, onResult = () => {},
+  onRejection = () => {}, onFragmentRejection = () => {} } = {}) => {
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw new Error('Rewrite concurrency must be between one and four');
   const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, queueRepairs: 0, staleSources: 0, concurrentChanges: 0,
     sourceFallbackDescriptions: 0, sourceFallbackBlocks: 0, interrupted: false, peakConcurrency: 0 };
@@ -405,7 +406,8 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
     try {
       if (!assessment.ok) result = assessment;
       else {
-      response = await client.generate(input, { signal, remainingMs: deadline - started });
+      response = await client.generate(input, { signal, remainingMs: deadline - started,
+        onFragmentRejection: rejection => onFragmentRejection({ ...rejection, id: String(job._id), input }) });
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
       result = response.finishReason === 'stop' && response.validationFailure
         ? response.validationFailure : validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
@@ -418,7 +420,7 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
       if (Number.isInteger(error.generationRequests) || error.rawText) response = { generationRequests: error.generationRequests,
         rawText: error.rawText, usage: error.usage, timings: error.timings, generations: error.generations,
-        transportRetries: error.transportRetries };
+        transportRetries: error.transportRetries, reusedChunks: error.reusedChunks };
       response = { ...response, errorDiagnostic: error.errorDiagnostic || captureRewriteError(error, { phase: 'generate', sourceTexts: [input.sourceDescription] }) };
       result = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout'
         : error.reason === 'model_context_budget' ? 'model_context_budget' : 'generation_error' };

@@ -54,10 +54,19 @@ export const createDeclaredJobFeedScraper = (profile, defaults = {}) => ({ name:
   requireNative(['India', 'Global'].includes(countryFilter), 'countryFilter must be India or Global')
   requireNative(maxJobs === null || Number.isSafeInteger(maxJobs) && maxJobs >= 0, 'maxJobs must be a nonnegative safe integer or null')
   requireNative(!(options.fetchJson || options.fetchText) || options.fetchPage || options.fetchImpl, 'Parsed/text-only injection has no original HTTP provenance')
+  if (profile.platform === 'greenhouse') return createNativeGreenhouseScraper(profile, defaults).run({ ...options, now: () => {
+    const observedAt = typeof now === 'function' ? now() : now
+    requireNative(typeof observedAt === 'string' && Number.isFinite(Date.parse(observedAt)), 'Invalid observation clock')
+    return observedAt
+  }, onAudit: async (audit, control) => {
+    control.signal.throwIfAborted()
+    await onAudit(structuredClone(audit))
+    control.signal.throwIfAborted()
+    await onRecords(structuredClone(audit.observations))
+    control.signal.throwIfAborted()
+  } })
   const observedAt = typeof now === 'function' ? now() : now
   requireNative(typeof observedAt === 'string' && Number.isFinite(Date.parse(observedAt)), 'Invalid observation clock')
-  if (profile.platform === 'greenhouse') return createNativeGreenhouseScraper(profile).run({ ...options, now: () => observedAt,
-    onAudit: async audit => { await onAudit(structuredClone(audit));await onRecords(structuredClone(audit.observations)) } })
   const allowedURLs = new Set([...profile.primaryPages, ...(profile.identityPages||[]), profile.publicAPIURL, profile.boardURL,
     ...(['active-declared-external-profile', 'active-declared-astro-component'].includes(profile.declaration.kind) ? [profile.declaration.scriptURL] : [])])
   const held = new Set(), allowed = url => allowedURLs.has(url.href) && !held.has(url.hostname)

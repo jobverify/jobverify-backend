@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { readLiteralModel } from './literalModel.js'
+import { boundedDeclaredPublicGet } from './boundedDeclaredPublicGet.js'
 
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex')
 export const resourceURL = value => { const url = new URL(value);url.hash = '';return url.href }
@@ -22,11 +23,11 @@ export const createPublicIO = ({ fetchPage, fetchText, fetchJson, signal, allowe
       else if (kind === 'json' && fetchJson) result = { legacyParsedJSON: await fetchJson(url, { signal }) }
       else if (fetchText) result = await fetchText(url, { signal })
       else {
-        const response = await fetch(url, { method: 'GET', redirect: 'manual', signal: AbortSignal.any([AbortSignal.timeout(15000), ...(signal ? [signal] : [])]),
-          headers: { Accept: 'text/html,application/json,application/rss+xml,*/*;q=0.5', 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)' } })
-        const body = Buffer.from(await response.arrayBuffer())
-        if (body.length > 16 * 1024 * 1024) throw Error('Native entity exceeds input limit')
-        result = { status: response.status, url: response.url, headers: Object.fromEntries(response.headers), bodyBase64: body.toString('base64') }
+        result = await boundedDeclaredPublicGet(url, {
+          fetchImpl: (requested, init) => fetch(requested, { ...init,
+            headers: { ...init.headers, Accept: 'text/html,application/json,application/rss+xml,*/*;q=0.5' } }),
+          signal: AbortSignal.any([AbortSignal.timeout(15000), ...(signal ? [signal] : [])]),
+          overflowError: Error('Native entity exceeds input limit') })
       }
       signal?.throwIfAborted()
       const legacy = typeof result === 'string', bytes = typeof result?.bodyBase64 === 'string' ? Buffer.from(result.bodyBase64, 'base64') : null

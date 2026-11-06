@@ -24,7 +24,7 @@ test('a filtered native keyword search cannot certify AIX zero inventory',async(
 test('a missing no-open-positions sentence is unknown even when a fallback zero sentence remains',async()=>{
  await assert.rejects(run((page,{url})=>{if(url===search)page.body=page.body.replace('There are currently no open positions matching','Search results are loading matching')}),/explicit|zero|empty/i)
 })
-test('active role links alongside stale zero copy remain unimplemented positive inventory',async()=>{
+test('active role links alongside stale zero copy remain unqualified positive inventory',async()=>{
  await assert.rejects(run((page,{url})=>{if(url===search)page.body=page.body.replace('</body>','<a href="/aix/job/Gurgaon-Engineer/12345/">Engineer</a></body>')}),/positive|role|posting/i)
 })
 test('a corporate model handoff to broad Air India is not an AIX binding',async()=>{

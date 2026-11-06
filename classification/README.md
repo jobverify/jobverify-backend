@@ -58,6 +58,22 @@ The runtime helper participates in the existing classification and native-predic
 
 The 22 October 2026 diagnostics and CPU changes have not been tested locally or run through inference, as requested. New regression cases are authored but unexecuted; compatibility, performance and artifact contents remain pending pipeline validation.
 
+## Source-quality and throughput repairs (6 November 2026)
+
+Placeholder-only employer content such as `-`, `N/A`, `TBD`, or an empty description heading is missing evidence. A published rewrite cannot make a placeholder original sufficient. Independent employer qualification, responsibility and experience fields remain usable, including an explicit numeric zero. Policy-mode skips clear obsolete classification and public experience fields under the source snapshot guard; shadow skips preserve policy-owned fields.
+
+An explicitly identified system-test-only vacancy stays `Unspecified` with `non_vacancy_test_posting`. Real System Test Engineer roles and internships restricted to selected students remain valid. Model-only categories gain `sparse_role_description` when their input is at most 100 UTF-8 bytes, and `model_fallback_without_majority` when the top uncalibrated class score is at most one half. These are review signals, not calibrated probability thresholds, and they do not invent experience or override an explicit source category. Entry-level vacancy titles that require prior professional experience retain employer bounds and gain `entry_level_title_with_required_experience` for review.
+
+Flexsin and Bahwan preserve their native experience fields as `sourceExperienceRequired`. Phenom preserves native employment and experience metadata as source fields, separately from experience snippets inferred from description prose. Independently stated fields can support classification when a role description is unavailable; no synthetic description is stored. Genuinely absent source evidence remains unresolved until a successful source recovery and classification run.
+
+`CLASSIFICATION_CONCURRENCY` accepts an integer from 1 through 8. The CLI and library default to 1; the Actions workflow uses 4. This overlaps database claims and saves around the existing serialized Python inference worker, while retaining owner leases, source compare-and-set guards and serialized diagnostic writes. Fatal reporting/read failures stop new admissions and drain already admitted work before shutdown. Time-budget and cancellation checks stop admitting new jobs; admitted work is allowed to settle.
+
+Leases retain the ten-minute serial allowance and add five minutes for each possible request ahead in the worker queue. At concurrency four the lease is 25 minutes; at concurrency eight it is 45 minutes. This covers the existing five-minute request timeout without heartbeat writes, at the cost of longer recovery after an abandoned worker.
+
+Worker summaries record `concurrency`, and aggregate `workers` retain each shard's setting. `timingBasis: summed_operation_durations` means phase durations include overlapping operations and may exceed wall-clock worker time. `modelRoundTrip` includes time waiting behind other requests in the serialized worker queue; `inference.seconds` remains actual inference work. These measurements must not be interpreted as disjoint percentages of wall time under concurrency.
+
+These policy edits invalidate completed policy identities. Unchanged native prediction inputs can still reuse the saved native cache on the next run, without calling the model again. Existing production records are updated only when the repaired classifier runs; the local regression tests use isolated MongoDB instances. The historical missing-description count is not a promise that all 269 old records can be recovered.
+
 ## Local setup
 
 From the backend directory, use Python 3.12 and install the CPU dependencies:
@@ -83,6 +99,7 @@ With `MONGO_URI` configured, `npm run classify:jobs` starts the separate classif
 | `CLASSIFICATION_SHARD` | `0` | Worker partition |
 | `CLASSIFICATION_SHARD_COUNT` | `1` locally; `4` in Actions | Total partitions |
 | `CLASSIFICATION_BUDGET_SECONDS` | `18000` | Processing budget per worker |
+| `CLASSIFICATION_CONCURRENCY` | `1` locally; `4` in Actions | Maximum admitted jobs; integer from 1 through 8 |
 | `CLASSIFICATION_SUMMARY_FILE` | `.cache/scraper-actions/classification-<shard>.json` | Progress summary |
 | `CLASSIFICATION_DIAGNOSTICS_FILE` | Summary filename with `.ndjson` extension | Per-job outcomes without description bodies |
 

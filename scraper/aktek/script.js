@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { AKTEK_CATALOG } from './catalog.js'
+import { withUnverifiedPublicSurface } from '../../scraper-support/utils/unverifiedPublicSurface.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -22,9 +24,6 @@ export const CAREERS_ROUTE_URLS = [
   'https://aktek.io/openings',
   'https://aktek.io/current-openings',
 ]
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -67,22 +66,6 @@ const stripScriptAndStyle = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
-
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
-}
-
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
@@ -122,7 +105,9 @@ export const hasExpectedSitemapIndexSignal = (xml) => {
 
   return urls.includes('https://aktek.io/post-sitemap.xml')
     && urls.includes('https://aktek.io/page-sitemap.xml')
-    && urls.includes('https://aktek.io/category-sitemap.xml')
+    && urls.length === new Set(urls).size
+    && urls.every(url => ['https://aktek.io/post-sitemap.xml', 'https://aktek.io/page-sitemap.xml', 'https://aktek.io/category-sitemap.xml'].includes(url))
+    && /<sitemapindex\b[^>]*>[\s\S]*<\/sitemapindex>/i.test(String(xml ?? ''))
 }
 
 export const hasExpectedPageSitemapSignal = (xml) => {
@@ -141,51 +126,49 @@ export const hasExpectedPageSitemapSignal = (xml) => {
   return hasKnownPages && !hasCareerUrls
 }
 
-export const isMissingCareerRoute = (page = {}) =>
+export const isMissingCareerRoute = (page = {}, requestedUrl = page.url) =>
   Number(page.status) === 404
-  && page.url === page.url
+  && CAREERS_ROUTE_URLS.includes(requestedUrl)
+  && page.url === requestedUrl
+  && (page.finalUrl == null || page.finalUrl === requestedUrl)
   && /<title>\s*Page not found - AKTEK\s*<\/title>/i.test(String(page.html ?? ''))
   && !hasPublicJobsSignal(page.html)
 
 export const createAktekScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run(options = {}) {
+    return withUnverifiedPublicSurface({source:SOURCE,
+      urls:[HOMEPAGE_URL, ROBOTS_TXT_URL, SITEMAP_INDEX_URL, PAGE_SITEMAP_URL], options,
+      injected:options.fetchPage}, async ({read:fetchPage, fail, gap}) => {
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Aktek verified official homepage no longer matches the known public surface')
+      throw fail('Aktek verified official homepage no longer matches the known public surface', {failureKind:'surface_drift_or_fail_closed'})
     }
 
     if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('Aktek homepage now appears to expose public jobs')
+      throw fail('Aktek homepage now appears to expose public jobs; a hiring inventory contract must be qualified')
     }
 
     if (hasFirstPartyCareerLikeLink(homepage.html)) {
-      throw new Error('Aktek homepage now exposes a first-party careers or jobs link')
+      throw fail('Aktek homepage now exposes a first-party careers or jobs link; a hiring inventory contract must be qualified')
     }
 
     const robotsTxt = await fetchPage(ROBOTS_TXT_URL)
     if (robotsTxt.status !== 200 || !hasExpectedRobotsTxtSignal(robotsTxt.html)) {
-      throw new Error('Aktek verified robots.txt no longer matches the known public surface')
+      throw fail('Aktek verified robots.txt no longer matches the known public surface', {failureKind:'surface_drift_or_fail_closed'})
     }
 
     const sitemapIndex = await fetchPage(SITEMAP_INDEX_URL)
     if (sitemapIndex.status !== 200 || !hasExpectedSitemapIndexSignal(sitemapIndex.html)) {
-      throw new Error('Aktek verified sitemap index no longer matches the known public surface')
+      throw fail('Aktek verified sitemap index no longer matches the known public surface', {failureKind:'surface_drift_or_fail_closed'})
     }
 
     const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
     if (pageSitemap.status !== 200 || !hasExpectedPageSitemapSignal(pageSitemap.html)) {
-      throw new Error('Aktek verified page sitemap no longer matches the known public surface')
+      throw fail('Aktek verified page sitemap no longer matches the known public surface', {failureKind:'surface_drift_or_fail_closed'})
     }
 
-    for (const routeUrl of CAREERS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-
-      if (!isMissingCareerRoute(routePage)) {
-        throw new Error(`Aktek verified no-public-careers route changed: ${routePage.url || routeUrl}`)
-      }
-    }
-
-    return []
+    return attachInventoryEvidence([], gap('Corporate homepage and crawl documents expose no qualified native vacancy inventory; company and India totals remain unknown', true))
+    })
   },
 })
 

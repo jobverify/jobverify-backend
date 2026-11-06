@@ -154,7 +154,10 @@ const defaultFetchText = async (url, { signal, headers = {} } = {}) => {
     const error = buildHttpError(response, url)
     error.message = `Waymo HTTP ${response.status} for ${url}; final URL ${response.url}`
     Object.assign(error, { requestUrl: url, finalUrl: response.url })
-    if (response.status === 202) error.abortRetries = true
+    if (response.status === 202) Object.assign(error, {
+      abortRetries: true, failureType: 'upstream_unavailable', softFailure: true,
+      failureKind: 'upstream_unavailable', upstreamOutage: true,
+    })
     void Promise.resolve().then(() => response.body?.cancel?.(error)).catch(() => {})
     throw error
   }

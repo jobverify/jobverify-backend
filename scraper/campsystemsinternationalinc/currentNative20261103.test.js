@@ -106,6 +106,27 @@ test('CAMP walks all native pages with an unfiltered query and closes membership
   assert.equal(f.calls.at(-1).body.opportunitySearch.Skip, 16)
 })
 
+test('CAMP reconciles the current native initial total field with all 22 captured public roles', async () => {
+  const payload = JSON.parse(gunzipSync(await fs.readFile(new URL('./test-data/current-native-20261106/listing.json.gz', import.meta.url))))
+  const listing = readCampListing(payload, { skip: 0, pageSize: 50 })
+  assert.equal(listing.totalCount, 22)
+  assert.equal(listing.initialTotalOpportunitiesCount, 22)
+  assert.equal(listing.opportunities.length, 22)
+})
+
+test('CAMP closes its inventory across pages when the native initial total is published', async () => {
+  const f = await fixture({ pageSize: 2, changeListing: value => { value.initialTotalOpportunitiesCount = value.totalCount } })
+  const jobs = await f.run()
+  assert.equal(f.records.length, 18)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 18)
+})
+
+test('CAMP rejects a contradictory native initial total instead of ignoring the new count', async () => {
+  const f = await fixture({ changeListing: value => { value.initialTotalOpportunitiesCount = value.totalCount + 1 } })
+  await assert.rejects(f.run(), /native total and pagination do not reconcile/)
+})
+
 test('CAMP closing field changes cannot certify a complete collection', async () => {
   const f = await fixture({ changeListing: (value, read) => { if (read === 3) value.opportunities[0].JobCategoryName = 'Changed native department' } })
   const jobs = await f.run()

@@ -12,7 +12,7 @@ export const OFFICIAL_BINDING=Object.freeze({
 const check=(ok,message)=>{if(!ok)throw Error('Checkmarx native contract: '+message)}
 const plain=s=>typeof s==='string'&&s.trim()===s&&s.length>0&&s.length<=1000&&!/[<>\u0000-\u001f]/.test(s)
 const uid=s=>typeof s==='string'&&/^[A-F0-9]{2}\.[A-F0-9]{3}(?:-[A-F0-9]{2}\.[A-F0-9]{3})?$/.test(s)
-const COUNTRIES={IN:'India',US:'United States',PT:'Portugal',IL:'Israel',BR:'Brazil',PH:'Philippines',MX:'Mexico'}
+const COUNTRIES={IN:'India',US:'United States',PT:'Portugal',IL:'Israel',BR:'Brazil',PH:'Philippines',MX:'Mexico',GB:'United Kingdom'}
 const INDIA_CITIES=new Set(['Pune','Mumbai','Bengaluru','Bangalore','Hyderabad','Chennai','Delhi','New Delhi','Gurgaon','Gurugram','Noida','Kolkata','Ahmedabad','Remote'])
 const INDIA_STATES=new Set(('AN|Andaman and Nicobar Islands|AP|Andhra Pradesh|AR|Arunachal Pradesh|AS|Assam|BR|Bihar|CH|Chandigarh|CG|Chhattisgarh|DN|Dadra and Nagar Haveli|DD|Daman and Diu|DL|Delhi|GA|Goa|GJ|Gujarat|HR|Haryana|HP|Himachal Pradesh|JK|Jammu and Kashmir|JH|Jharkhand|KA|Karnataka|KL|Kerala|LA|Ladakh|LD|Lakshadweep|MP|Madhya Pradesh|MH|Maharashtra|MN|Manipur|ML|Meghalaya|MZ|Mizoram|NL|Nagaland|OD|OR|Odisha|PB|Punjab|PY|Puducherry|RJ|Rajasthan|SK|Sikkim|TN|Tamil Nadu|TS|Telangana|TR|Tripura|UP|Uttar Pradesh|UK|UT|Uttarakhand|WB|West Bengal').toLowerCase().split('|'))
 const cityKey=value=>value.toLowerCase().replace(/\bbangalore\b/g,'bengaluru').replace(/\bgurgaon\b/g,'gurugram').replace(/\bnew delhi\b/g,'delhi')
@@ -49,14 +49,18 @@ function nativeURL(value,id,firstParty=false){
   const u=new URL(value)
   check(!u.hash&&!u.username&&!u.password,'Native role URL credentials/fragment changed')
   if(firstParty){
-    // Actual native foreign records retain ref/Share tracking, and the two
-    // separately advertised location variants point to their base role page.
-    // These raw links are retained; runtime/application identity uses the exact
-    // unique native public UID URL, which never accepts query parameters.
+    // Native foreign records retain search/referral/share tracking and location
+    // variants can point to the base role page. These raw links are data only:
+    // visibility and actual reads use the query-free native public UID URL.
     const allowed=new Set([id,id.split('-')[0]])
     check(u.origin==='https://checkmarx.com'&&[...allowed].some(x=>u.pathname==='/job-openings/position/'+x+'/'||u.pathname==='/job-openings/position/'+x),'Native official role identity mismatch')
     const keys=[...u.searchParams.keys()]
-    check(new Set(keys).size===keys.length&&keys.every(k=>['ref',';t','Share'].includes(k)),'Native official tracking query changed')
+    check(new Set(keys).size===keys.length&&keys.every(k=>['ref',';t','Share','utm_search_query','jr_id','employee','t'].includes(k)),'Native official tracking query changed')
+    const params=u.searchParams
+    check(!params.has('utm_search_query')||plain(params.get('utm_search_query')),'Native official search tracking malformed')
+    check(!params.has('jr_id')||/^[a-f0-9]{24}$/.test(params.get('jr_id')),'Native official referral tracking malformed')
+    check(!params.has('employee')||params.get('employee')===''&&params.has('Share')&&params.get('Share')===''&&params.has('t'),'Native official employee tracking malformed')
+    check(!params.has('t')||/^\d{13}$/.test(params.get('t'))&&params.has('Share')&&params.get('Share')===''&&params.has('employee')&&params.get('employee')==='','Native official share tracking malformed')
   }else check(!u.search&&u.origin==='https://www.comeet.com'&&new RegExp('^/jobs/checkmarx/C0\\.008/[a-z0-9-]+/'+id.replaceAll('.','\\.')+'$').test(u.pathname),'Native public role identity mismatch')
   return u.href
 }

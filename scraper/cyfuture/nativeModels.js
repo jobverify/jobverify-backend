@@ -21,7 +21,7 @@ const schemaAndIdentity=(html,title)=>{
  need(!all(root,n=>n.tag==='base').length,'active base unsupported')
  const schemas=all(root,n=>n.tag==='script'&&(n.attrs.type||'').trim().toLowerCase()==='application/ld+json').map(n=>{
   try{return JSON.parse(n.raw)}catch{need(false,'invalid native JSON-LD')}})
- need(!walk(schemas).some(n=>(Array.isArray(n['@type'])?n['@type']:[n['@type']]).includes('JobPosting')),'new native JobPosting requires field review')
+ need(!walk(schemas).some(n=>(Array.isArray(n['@type'])?n['@type']:[n['@type']]).some(t=>typeof t==='string'&&/(?:^|[\/:#])JobPosting$/.test(t))),'new native JobPosting requires field review')
  return {d,identity:head,schemas}
 }
 export const isRoleURL=url=>{try{const u=new URL(url);return u.origin==='https://cyfuture.com'&&!u.username&&!u.password&&!u.port&&!u.search&&!u.hash&&/^\/apply-job\/\d+\/[A-Za-z0-9-]*$/.test(u.pathname)}catch{return false}}
@@ -46,7 +46,7 @@ export function readIndex(html){
    const sourceUrl=new URL(link.attrs.href,INDEX).href;need(isRoleURL(sourceUrl)&&nativeText(link)==='View Details','unreviewed declared role URL')
    const jobId=new URL(sourceUrl).pathname.match(/^\/apply-job\/(\d+)\//)[1]
    const badge=one(within(card,n=>cls(n,'opening-badge')),'native positions badge'),label=nativeText(badge),m=/^(\d+) Openings?$/.exec(label)
-   need(title&&m&&Number(m[1])>0,'native role identity or position count unavailable')
+   need(title&&m&&Number.isSafeInteger(Number(m[1]))&&Number(m[1])>0&&Number(m[1])<=10000,'native role identity or position count unavailable')
    const previews=within(card,n=>n.tag==='li').map(n=>({label:within(n,c=>c.tag==='strong').map(nativeText).join(' '),text:nativeText(n),tree:tree(n)}))
    rows.push({jobId,title,sourceUrl,nativeLocation:tab.label,tab:structuredClone(tab),numberOfOpenings:Number(m[1]),openingLabel:label,previews,card:tree(card)})
   }
@@ -62,19 +62,26 @@ export function readOfficeIndex(html){
  const tablist=one(within(section,n=>n.attrs.id==='regionTab'&&n.attrs.role==='tablist'),'native country/region declaration')
  const controls=within(tablist,n=>n.tag==='a'&&n.attrs.role==='tab')
  need(controls.length>0,'country/region declarations missing')
+ const assignments=new Map()
+ const office=(card,{country=null,countryLabel=null,panelId=null}={})=>{
+  const heading=one(within(card,n=>cls(n,'office-title')),'native office heading'),address=one(within(card,n=>cls(n,'address-info')),'whole native office address')
+  return {heading:nativeText(heading),address:nativeText(address),country,countryLabel,panelId,tree:tree(card)}
+ }
  const groups=controls.map(control=>{
   const target=control.attrs.href;need(/^#[a-z]+$/.test(target)&&control.attrs['aria-controls']===target.slice(1),'native office-country target changed')
   const pane=one(within(section,n=>n.attrs.id===target.slice(1)&&n.attrs.role==='tabpanel'&&n.attrs['aria-labelledby']===control.attrs.id),'declared country office panel')
   const label=nativeText(control),country=label==='INDIA'?'India':null
   const offices=within(pane,n=>cls(n,'location-card')).map(card=>{
-   const heading=one(within(card,n=>cls(n,'office-title')),'native office heading'),address=one(within(card,n=>cls(n,'address-info')),'whole native office address')
-   return {heading:nativeText(heading),address:nativeText(address),country,countryLabel:label,panelId:pane.attrs.id,tree:tree(card)}
+   need(!assignments.has(card),'overlapping native office-country assignments')
+   assignments.set(card,pane.attrs.id)
+   return office(card,{country,countryLabel:label,panelId:pane.attrs.id})
   })
   need(offices.length>0,'empty native office region requires review')
   return {label,country,control:tree(control),paneAttrs:structuredClone(pane.attrs),offices,tree:tree(pane)}
  })
  need(new Set(groups.map(g=>g.paneAttrs.id)).size===groups.length,'ambiguous native office-country groups')
- return {identity,schemas,groups,tree:tree(section)}
+ const unassignedOffices=all(section,n=>cls(n,'location-card')).filter(card=>!assignments.has(card)).map(card=>office(card))
+ return {identity,schemas,groups,unassignedOffices,tree:tree(section)}
 }
 export function makeListingObservation(row,clock=null){
  return {source:SOURCE,company:COMPANY,jobId:row.jobId,requisitionId:null,title:row.title,sourceUrl:row.sourceUrl,nativeCanonicalRoleURL:row.sourceUrl,
@@ -91,6 +98,7 @@ export function readRole(html,row,{clock=null}={}){
  const {d,identity,schemas}=schemaAndIdentity(html,/^Apply for Job ID \d+(?: |$)/)
  need(identity.titles[0].match(/^Apply for Job ID (\d+)(?: |$)/)?.[1]===row.jobId,'native role ID conflict')
  const section=one(d.nodes(n=>n.tag==='section'&&n.attrs.id==='section1'&&cls(n,'cyf-opp-details')),'whole native role scope')
+ need(!all(section,n=>['iframe','object','embed'].includes(n.tag)).length,'delegated native role criteria require review')
  const visible=readVisibleNativeDocument(html,{strict:true}),v=one(visible.nodes(n=>n.tag==='section'&&n.attrs.id==='section1'&&cls(n,'cyf-opp-details')),'visible whole role scope')
  need(JSON.stringify(coverage(section))===JSON.stringify(coverage(v,true)),'hidden or unreviewed native role criteria')
  const parts=within(section,n=>cls(n,'opportunitylist')).map(n=>({headings:within(n,c=>c.tag==='h2').map(nativeText),text:nativeText(n),tree:tree(n)}))
@@ -108,11 +116,21 @@ export function readRole(html,row,{clock=null}={}){
  return job
 }
 const escaped=v=>v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')
+const workplaceScopes=text=>String(text??'').match(/\b(?:(?:country|(?:work |job |office |posting |employment )?location|work\s?site|duty station)\s*:|(?:located|based|stationed|posted)\s+(?:in|at|from)\b|work from anywhere\b|overseas\b|abroad\b|(?:this|the) (?:role|post|position|job) (?:(?:is|will be|shall be) )?(?:located|based|operates|works) (?:in|at|from)\b)[^.!?\n]{0,160}/gi)||[]
+const geographicAttributes=node=>all(node,n=>Object.keys(n.attrs).some(k=>/^(?:data-(?:country|location|worksite)|itemprop)$/i.test(k)&&
+ (k!=='itemprop'||/country|location|worksite|address/i.test(n.attrs[k])))).map(tree)
 export function bindOfficeCountry(job,offices){
  const city=job.nativeLocation,pattern=new RegExp('\\b'+escaped(city)+'\\b','i')
- const matching=offices.groups.flatMap(g=>g.offices).filter(o=>pattern.test(o.heading)||pattern.test(o.address))
- const fields=job.sourceDescription.match(/\b(?:country|work location|job location|duty station|based in|work from anywhere|overseas|abroad)\b[^.!?\n]{0,100}/gi)||[]
- if(!matching.length||matching.some(o=>o.country!=='India')||fields.length)return job
+ const matching=[...offices.groups.flatMap(g=>g.offices),...offices.unassignedOffices].filter(o=>pattern.test(o.heading)||pattern.test(o.address))
+ const fields=workplaceScopes(job.sourceDescription)
+ const listingFields=job.nativeListingPreviews.filter(p=>/\b(?:country|location|work\s?site|duty station)\b/i.test(p.label)||workplaceScopes(p.text).length)
+ const officeFields=matching.flatMap(o=>workplaceScopes(nativeText(o.tree)).map(text=>({heading:o.heading,text})))
+ const attributes=[...geographicAttributes(job.nativeSourceRecord.listing.card),...geographicAttributes(job.nativeSourceRecord.role.tree),...matching.flatMap(o=>geographicAttributes(o.tree))]
+ if(!matching.length||matching.some(o=>o.country!=='India')||fields.length||listingFields.length||officeFields.length||attributes.length){
+  job.sourceNativeCountryContext={nativeRoleLocation:city,matchingOfficeGroups:matching.map(o=>({heading:o.heading,countryLabel:o.countryLabel,panelId:o.panelId})),
+   unreviewedRoleWorkplaceScopes:fields,unreviewedListingWorkplaceScopes:structuredClone(listingFields),unreviewedOfficeWorkplaceScopes:officeFields,unreviewedGeographicAttributes:attributes}
+  return job
+ }
  job.country='India';job.location=city;job.sourceCountryScopeUnresolved=false;job.sourceDetailFailureKind='native-closing-unreconciled'
  job.sourceWorksiteCountryProof={method:'role-location-to-publisher-office-country-group',contextualBinding:true,literalRoleCountry:false,
   nativeRoleLocation:city,country:'India',countryLabel:'INDIA',contactURL:CONTACT,exactCampusEstablished:false,

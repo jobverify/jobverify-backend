@@ -1,0 +1,12 @@
+[
+  {
+    "source": "kkr",
+    "catalogOverride": true,
+    "paginationStrategy": "declared-current-complete-public-feed;paired-own-native-records;company-scope-unqualified",
+    "extractionStrategy": "current-official-account+own-native-employer+explicit-current-publisher-office-country-binding+full-native-criteria",
+    "verifiedOn": "2026-11-06",
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedSurfaceSummary": "The current official opportunities page declares Greenhouse account stage. The current official Gurugram office careers page explicitly identifies that office as in India; each qualified role must have an agreeing own Gurugram workplace label and exact native office association. Full native descriptions, own employer overview and equal-opportunity statement, posting/internal/requisition IDs and first-published/update/deadline semantics are retained with paired whole records and original public responses. Application education/employment-history settings are separate from unknown job qualifications and contract type. Other native worksites are outside the verified binding and remain country-unclassified. No city dictionary, legal-employer, canonical-role-URL, application availability, complete company inventory or lifecycle-cleanup assertion is made. Bounded anonymous GETs stop after the first failed public read."
+  }
+]

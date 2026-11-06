@@ -7,7 +7,7 @@ import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 import connectDB from '../db/db.js'
 import Job from '../src/models/Job.js'
-import { CLASSIFICATION_FIELDS, isTitleOnlyClassificationSource } from '../src/services/jobClassificationPolicy.js'
+import { CLASSIFICATION_FIELDS } from '../src/services/jobClassificationPolicy.js'
 import { normalizePublicJobType } from '../src/utils/publicJobTypeLabel.js'
 import { alreadyClassified, classificationShard, postScrapeInput, GLICLASS_CONFIG,
   resolvePostScrapeClassification, sourceSnapshotFilter } from '../src/services/postScrapeClassification.js'
@@ -50,17 +50,21 @@ async function* assignedSavedJobs(model, shard, shardCount, summary, shouldStop)
 }
 
 export async function classifySavedJobs({ model = Job, worker, now = () => new Date(),
-  mode = 'shadow', shard = 0, shardCount = 1, budgetSeconds = 18000, signal,
+  mode = 'shadow', shard = 0, shardCount = 1, budgetSeconds = 18000, concurrency = 1, signal,
   monotonicNow = () => performance.now(),
   onProgress = () => {}, onResult = () => {} } = {}) {
   if (!['shadow', 'policy'].includes(mode)) throw new Error('Mode must be shadow or policy')
   if (!Number.isSafeInteger(shard) || shard < 0 || shard >= shardCount) throw new Error('Invalid shard')
   classificationShard('validate', shardCount)
   if (!Number.isFinite(budgetSeconds) || budgetSeconds <= 0) throw new Error('Invalid time budget')
+  if (!Number.isSafeInteger(concurrency) || concurrency < 1 || concurrency > 8) throw new Error('Invalid classification concurrency (1-8)')
+  // The serialized worker allows five minutes per request. Queued jobs need
+  // that allowance for every request ahead of them as well as their own lease.
+  const leaseMilliseconds = (10 + 5*(concurrency-1))*60*1000
   const started = Date.now(), owner = randomUUID(), nativeRuntime = trialNativeRuntimeHash()
   const summary = { ...createClassificationReport(worker.configuration),
     modelId: GLICLASS_CONFIG.model, modelRevision: GLICLASS_CONFIG.revision,
-    mode, shard, shardCount, scanned: 0, assigned: 0, cached: 0, nativeCached: 0,
+    mode, shard, shardCount, concurrency, timingBasis: 'summed_operation_durations', scanned: 0, assigned: 0, cached: 0, nativeCached: 0,
     completed: 0, skipped: 0, failed: 0, stale: 0, leased: 0, budgetExhausted: false,
     timingMs: { sourceRead: 0, input: 0, claim: 0, modelRoundTrip: 0, decision: 0, save: 0, reporting: 0 } }
   const recordTiming = (phase, began, jobTimings) => {
@@ -78,14 +82,8 @@ export async function classifySavedJobs({ model = Job, worker, now = () => new D
   }
   const shouldStop = () => signal?.aborted || Date.now()-started >= budgetSeconds*1000
   const cursor = assignedSavedJobs(model, shard, shardCount, summary, shouldStop)
-  try {
-    while (true) {
-      const { value: job, done } = await measure('sourceRead', () => cursor.next())
-      if (done) break
-      if (shouldStop()) {
-        summary.budgetExhausted = true
-        break
-      }
+  let reportQueue = Promise.resolve()
+  const processJob = async job => {
       summary.assigned++
       const jobStarted = Date.now()
       const jobTimings = { input: 0, claim: 0, modelRoundTrip: 0, decision: 0, save: 0 }
@@ -93,13 +91,16 @@ export async function classifySavedJobs({ model = Job, worker, now = () => new D
       recordClassificationInput(summary, input)
       const inputBytes = Buffer.byteLength(input.body, 'utf8')
       const emit = async (status, details = {}) => {
-        await measure('reporting', async () => {
-          await onResult({ id: String(job._id), company: String(job.company || '').slice(0, 200),
+        const row = { id: String(job._id), company: String(job.company || '').slice(0, 200),
             title: input.title.slice(0, 200), source: String(job.source || '').slice(0, 200),
             inputHash: input.inputHash, inputBytes, descriptionOrigin: input.descriptionOrigin,
-            shard, status, durationMs: Date.now() - jobStarted, timingMs: { ...jobTimings }, ...details })
+            shard, status, durationMs: Date.now() - jobStarted, timingMs: { ...jobTimings }, ...details }
+        const reported = reportQueue.then(() => measure('reporting', async () => {
+          await onResult(row)
           await onProgress({ ...summary, timingMs: { ...summary.timingMs }, elapsedSeconds: (Date.now() - started) / 1000 })
-        })
+        }))
+        reportQueue = reported.catch(() => {})
+        await reported
       }
       const decisionDetails = (result, prediction, publicJobType) => {
         const modelJobType = prediction?.modelLabel ?? result?.comparison?.modelJobType ?? null
@@ -123,18 +124,18 @@ export async function classifySavedJobs({ model = Job, worker, now = () => new D
         recordClassificationDecision(summary, { input, result: previous?.classification,
           prediction: previous?.prediction, publicJobType })
         await emit('cached', { ...decisionDetails(previous?.classification, previous?.prediction, publicJobType), modelRequest: false })
-        continue
+        return
       }
       const snapshot = measureSync('input', () => sourceSnapshotFilter(job), jobTimings)
       if (input.incomplete) {
         const reason = classificationSkipReason(input, GLICLASS_CONFIG.maxInputBytes)
-        const caption = mode === 'policy' && reason === 'missing_description' && isTitleOnlyClassificationSource(job)
+        const clearPolicyFields = mode === 'policy'
         const saved = await measure('save', () => model.updateOne(snapshot, { $set: {
-          ...(caption ? Object.fromEntries(CLASSIFICATION_FIELDS.map(field => [field,
+          ...(clearPolicyFields ? Object.fromEntries(CLASSIFICATION_FIELDS.map(field => [field,
             field === 'jobType' ? 'Unspecified' : field === 'experienceYears' ? [] : null])) : {}),
           postClassification: {
           inputHash: input.inputHash, mode, status: 'skipped', reason, attemptedAt: clock,
-        } }, ...(caption ? { $unset: { classification: '' } } : {}) }), jobTimings)
+        } }, ...(clearPolicyFields ? { $unset: { classification: '' } } : {}) }), jobTimings)
         if (saved.matchedCount === 0) {
           summary.stale++
           await emit('stale', { reason: 'source_changed', modelRequest: false })
@@ -143,17 +144,17 @@ export async function classifySavedJobs({ model = Job, worker, now = () => new D
           summary.skipReasons[reason]++
           await emit('skipped', { reason, maxInputBytes: GLICLASS_CONFIG.maxInputBytes, modelRequest: false })
         }
-        continue
+        return
       }
       const claimed = await measure('claim', () => model.updateOne({ ...snapshot, $or: [
         { 'postClassification.status': { $ne: 'processing' } },
         { 'postClassification.leaseUntil': { $lte: clock } },
         { 'postClassification.leaseUntil': { $exists: false } },
       ] }, { $set: { postClassification: { inputHash: input.inputHash, mode, status: 'processing',
-        owner, attemptedAt: clock, leaseUntil: new Date(clock.getTime()+10*60*1000),
+        owner, attemptedAt: clock, leaseUntil: new Date(clock.getTime()+leaseMilliseconds),
         attempts: job.postClassification?.inputHash === input.inputHash ? (job.postClassification.attempts || 0)+1 : 1,
       } } }), jobTimings)
-      if (!claimed.modifiedCount) { summary.leased++; await emit('leased', { reason: 'live_lease_or_source_changed', modelRequest: false }); continue }
+      if (!claimed.modifiedCount) { summary.leased++; await emit('leased', { reason: 'live_lease_or_source_changed', modelRequest: false }); return }
       let outcome, details = {}, inferred = false
       try {
         const nativeInputHash = measureSync('input', () => trialNativeInputHash(input, nativeRuntime), jobTimings)
@@ -206,8 +207,30 @@ export async function classifySavedJobs({ model = Job, worker, now = () => new D
         }), jobTimings)
       }
       await emit(outcome, { ...details, modelRequest: inferred })
+  }
+  const inFlight = new Set()
+  let fatalError
+  const launch = job => {
+    const task = processJob(job).catch(error => { fatalError ||= error }).finally(() => inFlight.delete(task))
+    inFlight.add(task)
+  }
+  try {
+    while (!fatalError) {
+      if (inFlight.size >= concurrency) await Promise.race(inFlight)
+      if (fatalError) break
+      const { value: job, done } = await measure('sourceRead', () => cursor.next())
+      if (done || fatalError) break
+      if (shouldStop()) { summary.budgetExhausted = true; break }
+      launch(job)
     }
-  } finally { await measure('sourceRead', () => cursor.return()) }
+  } catch (error) { fatalError ||= error }
+  finally {
+    // A fatal reporting/read failure stops admission, but owned jobs must finish
+    // before the caller shuts down the worker or database connection.
+    await Promise.all(inFlight)
+    try { await measure('sourceRead', () => cursor.return()) } catch (error) { fatalError ||= error }
+  }
+  if (fatalError) throw fatalError
   return { ...summary, elapsedSeconds: (Date.now()-started)/1000 }
 }
 
@@ -236,6 +259,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     progress.phase('process_queue')
     const summary = await classifySavedJobs({ worker, shard, shardCount: Number(process.env.CLASSIFICATION_SHARD_COUNT || 1),
       mode: process.env.POST_SCRAPE_CLASSIFICATION_MODE || 'shadow',
+      concurrency: Number(process.env.CLASSIFICATION_CONCURRENCY || 1),
       budgetSeconds: Number(process.env.CLASSIFICATION_BUDGET_SECONDS || 18000), signal: controller.signal,
       onProgress: value => {
         const { scanned, assigned, completed, cached, nativeCached, skipped, failed, stale, leased, modelRequests } = value

@@ -177,7 +177,7 @@ test('entry-level vacancies resolve as freshers before an experienced model fall
     'Requirements: You must have prior professional experience in software engineering.']) {
     const supported = classify({ title: 'Graduate Engineer Trainee', sourceDescription })
     assert.equal(supported.resolved.jobType, 'Full-time Experienced')
-    assert.deepEqual(supported.reviewReasons, [])
+    assert.deepEqual(supported.reviewReasons, ['entry_level_title_with_required_experience'])
   }
 })
 
@@ -202,7 +202,7 @@ test('an ambiguous graduate title still requires review instead of inventing eli
   const result = classify({ title: 'Graduate', sourceDescription: description })
   assert.equal(result.resolved.jobType, 'Full-time Experienced')
   assert.equal(result.resolved.experienceProfile.minimumYears, null)
-  assert.deepEqual(result.reviewReasons, ['entry_level_title_with_experienced_prediction'])
+  assert.deepEqual(result.reviewReasons, ['entry_level_title_with_experienced_prediction', 'sparse_role_description'])
 })
 
 test('degree duration does not manufacture conflicting professional experience for a fresher', () => {

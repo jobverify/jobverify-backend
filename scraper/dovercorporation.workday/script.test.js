@@ -1,10 +1,21 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {replayCurrentNative,capturedSource,currentNativeTransport} from '../../test/helpers/replayCurrentNativeQuality.js'
+import {readFileSync} from 'node:fs'
+import {capturedSource,currentNativeTransport as archivedTransport} from '../../test/helpers/replayCurrentNativeQuality.js'
+import {getScraperCatalog,createCatalogScraper} from '../../scraper-support/providers/index.js'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {discoverOffices,CAREERS,BOARD} from './nativeContract.js'
 import {run} from './script.js'
-const replay=(mutate,options)=>replayCurrentNative('dovercorporation',mutate,options)
+const redirect=JSON.parse(readFileSync(new URL('./fixtures/official-careers-redirect.json',import.meta.url)))
+const currentNativeTransport=(source,mutate)=>archivedTransport(source,mutate,capturedSource(source).requests.map(p=>p.requestedURL==='https://www.dovercorporation.com/about-us/careers/'?structuredClone(redirect):p))
+// Retain the archived native role bytes while replacing only its superseded
+// corporate binding packets with the captured current first-party redirect.
+const replay=async(mutate,options={})=>{
+ const transport=currentNativeTransport('dovercorporation',mutate)
+ const provider=getScraperCatalog().find(p=>p.source==='dovercorporation')
+ const jobs=await createCatalogScraper(provider).run({fetchImpl:(...args)=>transport.fetch(...args),requestIntervalMs:0,now:()=>capturedSource('dovercorporation').completedAt,...options})
+ return{jobs,transport}
+}
 const changeDetail=fn=>p=>{if(p.requestedURL.includes('/job/')){const d=JSON.parse(p.text);fn(d);p.text=JSON.stringify(d)}}
 
 test('current registered reader reconciles 30 full native India roles and five current offices',async()=>{
@@ -84,12 +95,12 @@ test('current corporate denial stops before native reads',async()=>{
  await assert.rejects(run({fetchImpl:(...args)=>t.fetch(...args),requestIntervalMs:0}),/HTTP/i)
  assert.deepEqual(t.calls.map(c=>c.url),[CAREERS])
 })
-test('inert or absent current handoffs cannot bind the stored native account',async()=>{
- await assert.rejects(replay(p=>{if(p.requestedURL===CAREERS)p.text='<title>Dover Careers</title><template><a href="'+BOARD+'">Jobs</a></template>'}),/handoff/i)
+test('HTML with inert handoffs cannot replace the current careers-host redirect',async()=>{
+ await assert.rejects(replay(p=>{if(p.requestedURL===CAREERS){p.status=200;p.text='<title>Dover Careers</title><template><a href="'+BOARD+'">Jobs</a></template>'}}),/handoff/i)
 })
 test('changed closing company handoff prevents candidate publication',async()=>{
  let reads=0
- await assert.rejects(replay(p=>{if(p.requestedURL===CAREERS&&++reads===2)p.text='<title>Dover Careers</title><p>Unavailable</p>'}),/handoff/i)
+ await assert.rejects(replay(p=>{if(p.requestedURL===CAREERS&&++reads===2){p.status=200;p.text='<title>Dover Careers</title><p>Unavailable</p>'}}),/handoff/i)
 })
 test('native client redirects are checked before fetching their targets',async()=>{
  const t=currentNativeTransport('dovercorporation',p=>{if(p.status===307)p.headers.location='https://foreign.example/client.js'})

@@ -16,7 +16,56 @@ const html=(street,{visible=street,country=null,extra=''}={})=>`<div itemscope i
  <span itemprop="jobLocation" itemscope><span itemprop="address" itemscope>
  <meta itemprop="streetAddress" content="${street}">${country===null?'':`<meta itemprop="addressCountry" content="${country}">`}
  </span></span><span class="jobGeoLocation">${visible}</span><div itemprop="description">${description}</div>${extra}</div>`
-const parse=body=>recruitmentMicrodataPostings(readNativeDocument(body),url)[0]
+const parse=body=>recruitmentMicrodataPostings(readNativeDocument(body),url,{html:body})[0]
+const bhp=JSON.parse(gunzipSync(readFileSync(new URL('./test-data/recruitmentGoal20261104/bhp-country-only-quality.json.gz',import.meta.url))))
+
+test('BHP own country-only worksite labels establish India without inventing a city',()=>{
+ const roles=bhp.packets.filter(q=>q.requestedURL.includes('/job/'))
+ assert.equal(roles.length,2)
+ for(const q of roles){assert.equal(createHash('sha256').update(q.text).digest('hex'),q.bodySHA256);const row=recruitmentMicrodataPostings(readNativeDocument(q.text),q.finalURL,{html:q.text})[0]
+  assert.deepEqual(row.nativeMicrodataIssues,[]);assert.equal(row.jobLocation[0].address.addressCountry,'India');assert.equal(row.jobLocation[0].address.addressLocality,null)
+  assert.equal(row.jobLocation[0].address.streetAddress,'India');assert.equal(row.jobLocation[0].address.nativeAddressCountry,null);assert.equal(row.hiringOrganization.name,'BHP Career Portal');assert.ok(row.description.includes('About BHP'))
+ }
+})
+test('matching full country-only worksite names normalize without a city or postal guess',()=>{
+ for(const country of ['India','Indonesia','Canada','Australia','United Kingdom']){const row=parse(html(country));assert.deepEqual(row.nativeMicrodataIssues,[],country);assert.equal(row.jobLocation[0].address.addressCountry,country);assert.equal(row.jobLocation[0].address.addressLocality,null);assert.equal(row.jobLocation[0].address.streetAddress,country)}
+})
+test('country-only short codes, placeholders and city names cannot supply a normalized country',()=>{
+ for(const label of ['IN','In','IND','USA','CA','Unknown','Bangalore','Gurgaon','']){const row=parse(html(label));assert.ok(row.nativeMicrodataIssues.length,label);assert.notEqual(row.jobLocation[0].address.addressCountry,'India',label)}
+})
+test('country-only worksite country requires every own visible label to agree',()=>{
+ for(const body of [html('India',{visible:'France'}),html('India',{extra:'<span class="jobGeoLocation">France</span>'}),html('India',{country:'US'}),html('India').replace('class="jobGeoLocation"','hidden class="jobGeoLocation"'),html('Unknown',{extra:'<aside itemscope><span class="jobGeoLocation">India</span></aside>'})])assert.ok(parse(body).nativeMicrodataIssues.length)
+})
+test('country-only India proof survives registered-style collection with city left unknown',async()=>{
+ const source={source:'example',companyName:'Example',companyDomain:'example.test',companyCareerPage:'https://example.test/careers'}
+ const jobs=await createVerifiedRecruitmentScraper(source).run({fetchPage:async requested=>({status:200,url:requested,html:requested===url?html('India'):`<h1>Example Careers</h1><a href="${url}">Software Engineer</a>`})})
+ assert.equal(jobs.length,1);assert.equal(jobs[0].country,'India');assert.equal(jobs[0].city,null);assert.equal(jobs[0].sourceDescription,description);assert.equal(readInventoryEvidence(jobs).listingComplete,false);assert.equal(jobs[0].lifecycleCleanupAllowed,false)
+})
+test('country-only structured JobPosting also leaves city unknown instead of inventing Remote',async()=>{
+ const posting={'@type':'JobPosting',title:'Software Engineer',url,description,hiringOrganization:{name:'Example'},jobLocation:{address:{addressCountry:'India'}}}
+ const body=`<h1>Software Engineer</h1><div>${description}</div><script type="application/ld+json">${JSON.stringify(posting)}</script>`
+ const source={source:'example',companyName:'Example',companyDomain:'example.test',companyCareerPage:'https://example.test/careers'}
+ const jobs=await createVerifiedRecruitmentScraper(source).run({fetchPage:async requested=>({status:200,url:requested,html:requested===url?body:`<h1>Example Careers</h1><a href="${url}">Software Engineer</a>`})})
+ assert.equal(jobs.length,1);assert.equal(jobs[0].country,'India');assert.equal(jobs[0].city,null);assert.equal(jobs[0].location,'India');assert.deepEqual(jobs[0].nativeSourceRecord,posting)
+})
+test('stylesheet-hidden country-only labels cannot establish worksite country',()=>{
+ const body='<style>.jobGeoLocation{display:none}</style>'+html('India')
+ const row=parse(body);assert.ok(row.nativeMicrodataIssues.length);assert.notEqual(row.jobLocation[0].address.addressCountry,'India')
+})
+test('country-only normalization needs the original stylesheet context',()=>{
+ const row=recruitmentMicrodataPostings(readNativeDocument(html('India')),url)[0];assert.ok(row.nativeMicrodataIssues.length);assert.notEqual(row.jobLocation[0].address.addressCountry,'India')
+})
+test('a CSS-hidden country-only label cannot become a complete collected India role',async()=>{
+ const body='<style>.jobGeoLocation{display:none}</style>'+html('India'),source={source:'example',companyName:'Example',companyDomain:'example.test',companyCareerPage:'https://example.test/careers'}
+ const jobs=await createVerifiedRecruitmentScraper(source).run({fetchPage:async requested=>({status:200,url:requested,html:requested===url?body:`<h1>Example Careers</h1><a href="${url}">Software Engineer</a>`})})
+ assert.equal(jobs.length,0);assert.equal(readInventoryEvidence(jobs).listingComplete,false);assert.ok(jobs[RECRUITMENT_OBSERVATIONS].unresolved.includes('native-country-only-visible-worksite-unqualified'))
+})
+test('a changed anti-framing program cannot authorize ignoring its body-hiding stylesheet',()=>{
+ const q=bhp.packets.find(q=>q.requestedURL.includes('/job/')),body=q.text.replace('self === top','self !== top');assert.notEqual(body,q.text);const row=recruitmentMicrodataPostings(readNativeDocument(body),q.finalURL,{html:body})[0];assert.ok(row.nativeMicrodataIssues.length);assert.notEqual(row.jobLocation[0].address.addressCountry,'India')
+})
+test('reviewed anti-framing removal cannot ignore a second country-hiding stylesheet',()=>{
+ const q=bhp.packets.find(q=>q.requestedURL.includes('/job/')),body=q.text.replace('</head>','<style>.jobGeoLocation{display:none}</style></head>');assert.notEqual(body,q.text);const row=recruitmentMicrodataPostings(readNativeDocument(body),q.finalURL,{html:body})[0];assert.ok(row.nativeMicrodataIssues.length);assert.notEqual(row.jobLocation[0].address.addressCountry,'India')
+})
 
 test('the captured Volvo role owns its visible full worksite and retains the exact street address while resolving its country',()=>{
  assert.equal(createHash('sha256').update(capture.html).digest('hex'),capture.bodySHA256)

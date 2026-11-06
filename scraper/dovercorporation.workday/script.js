@@ -7,10 +7,10 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "dovercorporation"
 export const COMPANY = "Dover Corporation"
-export const CAREERS_URL = 'https://www.dovercorporation.com/about-us/careers/'
+export const CAREERS_URL = 'https://careers.dovercorporation.com/'
 export const DISPOSITION = 'official-native-India-office-subset-company-scope-partial'
 export const VERIFIED_ON = null
-export const VERIFIED_SURFACE_SUMMARY = 'Checks the current corporate Workday handoff, advertised public client, current typed India office facets, every selected page and full role, and final publisher/listing/detail reconciliation. Whole-company recruitment scope remains unknown.'
+export const VERIFIED_SURFACE_SUMMARY = 'Checks the exact current first-party careers-host redirect to Workday, advertised public client, current typed India office facets, every selected page and full role, and final publisher/listing/detail reconciliation. Whole-company recruitment scope remains unknown.'
 
 export const run = async (options={}) => {
   if(options.maxJobs!=null)throw Error('Dover cannot certify truncated selected office inventory')

@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import {readVisibleNativeDocument} from '../../utils/visibleNativeHtml.js'
 import {readNativeDocument,decodeNativeEntities} from '../../utils/activeNativeHtml.js'
 import {createPublicIO} from '../publicIO.js'
+import {boundedDeclaredPublicGet} from '../boundedDeclaredPublicGet.js'
 import {attachInventoryEvidence} from '../../utils/inventoryEvidence.js'
 import {attachSourceObservationEvidence} from '../../utils/sourceObservationEvidence.js'
 import {text,ensure,equal,codeValid,publicURLs,accountMatches,pageIdentity,markdownRows,geography,validatePair,projectJob} from './nativeData.js'
@@ -36,9 +37,8 @@ export const createPublicWorkableSource=(profile,defaults={})=>({name:profile.so
  const allowed=url=>allowedURLs.has(url.href)&&!held.has(url.hostname),originalFetch=options.fetchImpl||globalThis.fetch
  const fetchPage=options.fetchPage|| (async url=>{
   await gate(url,signal);ensure(allowed(new URL(url)),'public host held while queued')
-  const response=await originalFetch(url,{method:'GET',redirect:'manual',signal:AbortSignal.any([AbortSignal.timeout(15000),...(signal?[signal]:[])]),headers:{Accept:'text/html,application/json,text/markdown,*/*;q=0.5','User-Agent':'Mozilla/5.0 (compatible; Jobverify scraper)'}})
-  const bytes=Buffer.from(await response.arrayBuffer());ensure(bytes.length<=16*1024*1024,'native entity exceeds input limit')
-  return {url:response.url,status:response.status,headers:Object.fromEntries(response.headers),bodyBase64:bytes.toString('base64')}
+  return boundedDeclaredPublicGet(url,{fetchImpl:(requested,init)=>originalFetch(requested,{...init,headers:{...init.headers,Accept:'text/html,application/json,text/markdown,*/*;q=0.5'}}),
+   signal:AbortSignal.any([AbortSignal.timeout(15000),...(signal?[signal]:[])]),overflowError:Error('Public Workable: native entity exceeds input limit')})
  })
  const io=createPublicIO({fetchPage,signal,allowed}),original=page=>Boolean(page?.usable&&page.transportQualified&&page.bodyBase64&&typeof page.originalText==='string')
  const load=async url=>{const page=await io.load(url,{fresh:true});if([401,403,429].includes(page?.status))held.add(new URL(url).hostname);return page}

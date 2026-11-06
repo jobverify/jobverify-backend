@@ -1,224 +1,77 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import * as teamlease from '../../scraper/teamlease/script.js'
 
-const loadTeamleaseModule = async () => {
-  try {
-    return await import('../../scraper/teamlease/script.js')
-  } catch {
-    assert.fail('Expected Teamlease scraper module at ../../scraper/teamlease/script.js')
-  }
+// Synthetic contract cases. Genuine public responses are tested separately in
+// teamleaseCurrentInventory20261106.test.js; these are not historical captures.
+const date='2026-11-06T09:30:00.000Z'
+const payload=[
+ {id:5001,link:'https://group.teamlease.com/jobs/sales-manager-staffing-5/',title:{rendered:'Sales Manager - Staffing'},
+  content:{protected:false,rendered:'<p>Lead enterprise staffing growth for the west region.</p><ul><li>Drive regional sales targets.</li><li>Manage strategic client relationships.</li></ul>'},
+  class_list:['type-awsm_job_openings','status-publish','job-category-sales','job-location-mumbai','job-type-full-time']},
+ {id:5002,link:'https://group.teamlease.com/jobs/recruitment-specialist-2/',title:{rendered:'Recruitment Specialist'},
+  content:{protected:false,rendered:'<p>Support hiring operations for key client accounts.</p><ul><li>Coordinate interviews across teams.</li><li>Maintain accurate candidate records.</li></ul>'},
+  class_list:['type-awsm_job_openings','status-publish','job-category-operations','job-location-bengaluru','job-type-full-time']},
+]
+const detail=row=>`<!doctype html><html><head><link rel="canonical" href="${row.link}">
+<script type="application/ld+json">${JSON.stringify({'@type':'JobPosting',title:row.title.rendered,description:row.content.rendered,datePosted:'2026-11-01T00:00:00Z',validThrough:'2026-11-20T00:00:00Z',hiringOrganization:{name:'TeamLease Services Limited',sameAs:'https://group.teamlease.com'}})}</script></head>
+<body class="single-awsm_job_openings postid-${row.id}"><div class="new-page-banner-content"><h3>${row.title.rendered}</h3></div>
+<form action="https://marcom.teamlease.com/form/submit?formId=12" method="post"><input name="unrelated-contact"></form>
+<main><div class="awsm-job-single-wrap"><div class="awsm-job-entry-content entry-content">${row.content.rendered}</div>
+<form id="awsm-application-form" class="awsm-application-form" method="post"><input type="hidden" name="awsm_job_id" value="${row.id}"><input type="hidden" name="action" value="awsm_applicant_form_submission"><input type="file" name="awsm_file"></form>
+</div></main></body></html>`
+const archive=`<!doctype html><html><head><title>Job Openings Archive - TeamLease</title><link rel="canonical" href="${teamlease.CAREERS_URL}"></head>
+<body class="post-type-archive-awsm_job_openings">${payload.map(row=>`<div class="awsm-job-listing-item" id="awsm-grid-item-${row.id}"><a class="awsm-job-item" href="${row.link}"><h2 class="awsm-job-post-title">${row.title.rendered}</h2><span>More Details</span></a></div>`).join('')}</body></html>`
+const reader=(pageSize,requested)=>async url=>{
+ requested.push(url)
+ if(url===teamlease.CAREERS_URL)return {status:200,url,headers:{'content-type':'text/html'},body:archive}
+ const row=payload.find(row=>row.link===url)
+ if(row)return {status:200,url,headers:{'content-type':'text/html'},body:detail(row)}
+ const pages=Math.ceil(payload.length/pageSize)
+ for(let page=1;page<=pages;page++)if(url===teamlease.buildSearchUrl(page,pageSize))return {
+  status:200,url,headers:{'content-type':'application/json','x-wp-total':'2','x-wp-totalpages':String(pages)},
+  body:JSON.stringify(payload.slice((page-1)*pageSize,page*pageSize))}
+ throw Error('Unexpected or out-of-range TeamLease URL: '+url)
 }
 
-const listingPayload = [
-  {
-    id: 5001,
-    link: 'https://group.teamlease.com/jobs/sales-manager-staffing-5/',
-    title: {
-      rendered: 'Sales Manager - Staffing',
-    },
-    content: {
-      rendered: '<p>Lead enterprise staffing growth for the west region.</p>',
-    },
-    class_list: [
-      'type-awsm_job_openings',
-      'job-category-sales',
-      'job-location-mumbai',
-      'job-type-full-time',
-    ],
-  },
-  {
-    id: 5002,
-    link: 'https://group.teamlease.com/jobs/recruitment-specialist-2/',
-    title: {
-      rendered: 'Recruitment Specialist',
-    },
-    content: {
-      rendered: '<p>Support hiring operations for key client accounts.</p>',
-    },
-    class_list: [
-      'type-awsm_job_openings',
-      'job-category-operations',
-      'job-location-bengaluru',
-      'job-type-full-time',
-    ],
-  },
-]
-
-const detailHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Sales Manager - Staffing</h1>
-    <p>Job Category: Sales</p>
-    <p>Job Type: Full Time</p>
-    <p>Job Location: Mumbai</p>
-    <section id="jobDescription">
-      <p>Lead enterprise staffing growth for the west region.</p>
-      <ul>
-        <li>Drive regional sales targets.</li>
-        <li>Manage strategic client relationships.</li>
-      </ul>
-    </section>
-    <h2>Apply Now</h2>
-    <form action="https://marcom.teamlease.com/form/submit?formId=12" method="post">
-      <input type="hidden" name="zf_referrer_name" value="sales-manager-staffing-5" />
-    </form>
-  </body>
-</html>
-`
-
-test('Teamlease AWSM helpers stay on the public REST archive and map listing rows into shared fields', async () => {
-  const teamlease = await loadTeamleaseModule()
-
-  assert.equal(teamlease.CAREERS_URL, 'https://group.teamlease.com/jobs/')
-  assert.equal(teamlease.CAREERS_API_URL, 'https://group.teamlease.com/wp-json/wp/v2/awsm_job_openings')
-  assert.equal(typeof teamlease.buildSearchUrl, 'function')
-  assert.equal(typeof teamlease.extractSearchResults, 'function')
-  assert.equal(typeof teamlease.extractJobDetail, 'function')
-  assert.equal(typeof teamlease.createTeamleaseScraper, 'function')
-  assert.equal(typeof teamlease.run, 'function')
-
-  assert.equal(
-    teamlease.buildSearchUrl(1),
-    'https://group.teamlease.com/wp-json/wp/v2/awsm_job_openings?_fields=id%2Clink%2Ctitle%2Ccontent%2Cclass_list&per_page=100&page=1',
-  )
-
-  assert.deepEqual(teamlease.extractSearchResults(listingPayload), [
-    {
-      title: 'Sales Manager - Staffing',
-      company: 'Teamlease',
-      department: 'Sales',
-      location: 'Mumbai, India',
-      city: 'Mumbai',
-      country: 'India',
-      jobId: '5001',
-      requisitionId: '5001',
-      sourceUrl: 'https://group.teamlease.com/jobs/sales-manager-staffing-5/',
-      applyUrl: 'https://group.teamlease.com/jobs/sales-manager-staffing-5/',
-      employmentType: 'Full Time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: 'Lead enterprise staffing growth for the west region.',
-      remoteStatus: 'On-site',
-    },
-    {
-      title: 'Recruitment Specialist',
-      company: 'Teamlease',
-      department: 'Operations',
-      location: 'Bengaluru, India',
-      city: 'Bengaluru',
-      country: 'India',
-      jobId: '5002',
-      requisitionId: '5002',
-      sourceUrl: 'https://group.teamlease.com/jobs/recruitment-specialist-2/',
-      applyUrl: 'https://group.teamlease.com/jobs/recruitment-specialist-2/',
-      employmentType: 'Full Time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: 'Support hiring operations for key client accounts.',
-      remoteStatus: 'On-site',
-    },
-  ])
+test('Teamlease AWSM helpers retain published records and keep city-only workplace country unknown',()=>{
+ assert.equal(teamlease.CAREERS_URL,'https://group.teamlease.com/jobs/')
+ assert.equal(teamlease.CAREERS_API_URL,'https://group.teamlease.com/wp-json/wp/v2/awsm_job_openings')
+ assert.equal(teamlease.buildSearchUrl(1),'https://group.teamlease.com/wp-json/wp/v2/awsm_job_openings?_fields=id%2Clink%2Ctitle%2Ccontent%2Cclass_list&per_page=100&page=1')
+ const rows=teamlease.extractSearchResults(payload)
+ assert.equal(rows.length,2)
+ assert.deepEqual(rows.map(row=>({id:row.jobId,title:row.title,department:row.department,location:row.location,country:row.country,requisitionId:row.requisitionId,employmentType:row.employmentType})),[
+  {id:'5001',title:'Sales Manager - Staffing',department:'Sales',location:'Mumbai',country:null,requisitionId:null,employmentType:'Full Time'},
+  {id:'5002',title:'Recruitment Specialist',department:'Operations',location:'Bengaluru',country:null,requisitionId:null,employmentType:'Full Time'},
+ ])
+ assert.deepEqual(rows.map(row=>row.sourceNativeListingRecord),payload)
+ assert.ok(rows.every(row=>row.sourceCountryScopeUnresolved&&row.remoteStatus===null))
 })
-
-test('extractJobDetail promotes Teamlease detail-page form actions into the shared applyUrl field', async () => {
-  const teamlease = await loadTeamleaseModule()
-  const listing = teamlease.extractSearchResults(listingPayload)[0]
-  const detail = teamlease.extractJobDetail(detailHtml, listing)
-
-  assert.deepEqual(detail, {
-    title: 'Sales Manager - Staffing',
-    company: 'Teamlease',
-    department: 'Sales',
-    location: 'Mumbai, India',
-    city: 'Mumbai',
-    country: 'India',
-    jobId: '5001',
-    requisitionId: '5001',
-    sourceUrl: 'https://group.teamlease.com/jobs/sales-manager-staffing-5/',
-    applyUrl: 'https://marcom.teamlease.com/form/submit?formId=12',
-    employmentType: 'Full Time',
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [
-      'Drive regional sales targets.',
-      'Manage strategic client relationships.',
-    ],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: 'Lead enterprise staffing growth for the west region. Drive regional sales targets. Manage strategic client relationships.',
-    remoteStatus: 'On-site',
-  })
+test('extractJobDetail binds the native post application form and retains full criteria and dates',()=>{
+ const row=teamlease.extractSearchResults(payload)[0]
+ const job=teamlease.extractJobDetail(detail(payload[0]),row,{now:date})
+ assert.equal(job.applyUrl,row.sourceUrl+'#awsm-application-form')
+ assert.deepEqual(job.sourceDescriptionLines,['Lead enterprise staffing growth for the west region.','Drive regional sales targets.','Manage strategic client relationships.'])
+ assert.equal(job.postingDate,'2026-11-01T00:00:00.000Z')
+ assert.equal(job.closingDate,'2026-11-20T00:00:00.000Z')
+ assert.equal(job.country,null)
+ assert.equal(job.lifecycleCleanupAllowed,false)
+ assert.equal(job.applicationVisited,false)
 })
-
-test('run paginates Teamlease REST listings, fetches detail pages, and decorates runner fields', async () => {
-  const teamlease = await loadTeamleaseModule()
-  const requestedJsonUrls = []
-  const requestedTextUrls = []
-
-  const jobs = await teamlease.createTeamleaseScraper({ pageSize: 1 }).run({
-    fetchJson: async (url) => {
-      requestedJsonUrls.push(url)
-      if (url === teamlease.buildSearchUrl(1, 1)) return [listingPayload[0]]
-      if (url === teamlease.buildSearchUrl(2, 1)) return [listingPayload[1]]
-      if (url === teamlease.buildSearchUrl(3, 1)) return []
-      throw new Error(`Unexpected Teamlease JSON URL: ${url}`)
-    },
-    fetchText: async (url) => {
-      requestedTextUrls.push(url)
-      if (url === 'https://group.teamlease.com/jobs/sales-manager-staffing-5/') return detailHtml
-      if (url === 'https://group.teamlease.com/jobs/recruitment-specialist-2/') {
-        return detailHtml
-          .replaceAll('Sales Manager - Staffing', 'Recruitment Specialist')
-          .replaceAll('Lead enterprise staffing growth for the west region.', 'Support hiring operations for key client accounts.')
-          .replaceAll('Sales', 'Operations')
-          .replaceAll('Mumbai', 'Bengaluru')
-      }
-      throw new Error(`Unexpected Teamlease HTML URL: ${url}`)
-    },
-    now: () => '2026-07-09T12:00:00.000Z',
-  })
-
-  assert.deepEqual(requestedJsonUrls, [
-    'https://group.teamlease.com/wp-json/wp/v2/awsm_job_openings?_fields=id%2Clink%2Ctitle%2Ccontent%2Cclass_list&per_page=1&page=1',
-    'https://group.teamlease.com/wp-json/wp/v2/awsm_job_openings?_fields=id%2Clink%2Ctitle%2Ccontent%2Cclass_list&per_page=1&page=2',
-    'https://group.teamlease.com/wp-json/wp/v2/awsm_job_openings?_fields=id%2Clink%2Ctitle%2Ccontent%2Cclass_list&per_page=1&page=3',
-  ])
-  assert.deepEqual(requestedTextUrls, [
-    'https://group.teamlease.com/jobs/sales-manager-staffing-5/',
-    'https://group.teamlease.com/jobs/recruitment-specialist-2/',
-  ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'teamlease')
-  assert.equal(jobs[0].link, 'https://marcom.teamlease.com/form/submit?formId=12')
-  assert.equal(jobs[0].scrapedAt, '2026-07-09T12:00:00.000Z')
+test('run paginates native published listings, reconciles closing reads and decorates runner fields',async()=>{
+ const requested=[]
+ const jobs=await teamlease.createTeamleaseScraper({pageSize:1}).run({fetchPage:reader(1,requested),now:()=>date})
+ assert.deepEqual(requested,[teamlease.CAREERS_URL,teamlease.buildSearchUrl(1,1),teamlease.buildSearchUrl(2,1),...payload.map(row=>row.link),teamlease.buildSearchUrl(1,1),teamlease.buildSearchUrl(2,1),teamlease.CAREERS_URL])
+ assert.equal(jobs.length,2)
+ assert.equal(jobs[0].source,'teamlease')
+ assert.equal(jobs[0].link,payload[0].link+'#awsm-application-form')
+ assert.equal(jobs[0].scrapedAt,date)
+ assert.equal(jobs.nativeCollectionEvidence.openingClosingNativeRecordsMatch,true)
 })
-
-test('run stops after the final Teamlease REST page instead of probing an out-of-range page', async () => {
-  const teamlease = await loadTeamleaseModule()
-  const requestedJsonUrls = []
-
-  const jobs = await teamlease.createTeamleaseScraper().run({
-    fetchJson: async (url) => {
-      requestedJsonUrls.push(url)
-      if (url === teamlease.buildSearchUrl(1)) return listingPayload
-      throw new Error(`Unexpected Teamlease JSON URL: ${url}`)
-    },
-    fetchText: async () => detailHtml,
-    now: () => '2026-07-09T12:00:00.000Z',
-  })
-
-  assert.deepEqual(requestedJsonUrls, [
-    'https://group.teamlease.com/wp-json/wp/v2/awsm_job_openings?_fields=id%2Clink%2Ctitle%2Ccontent%2Cclass_list&per_page=100&page=1',
-  ])
-  assert.equal(jobs.length, 2)
+test('run respects the native final page declaration without probing an out-of-range page',async()=>{
+ const requested=[]
+ const jobs=await teamlease.run({fetchPage:reader(100,requested),now:()=>date})
+ assert.deepEqual(requested.filter(url=>url.startsWith(teamlease.CAREERS_API_URL)),[teamlease.buildSearchUrl(1),teamlease.buildSearchUrl(1)])
+ assert.equal(jobs.length,2)
+ assert.equal(jobs.nativeCollectionEvidence.nativeFeedReportedTotal,2)
 })

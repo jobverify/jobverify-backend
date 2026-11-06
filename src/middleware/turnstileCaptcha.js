@@ -20,6 +20,15 @@ const normalizeToken = (req) => {
 const isTurnstileEnabled = (env = process.env) =>
   Boolean(String(env.TURNSTILE_SECRET_KEY || "").trim());
 
+export function validateTurnstileConfiguration(env = process.env) {
+  if (String(env.NODE_ENV || '').trim().toLowerCase() !== 'production') return;
+  for (const key of ['TURNSTILE_SECRET_KEY', 'TURNSTILE_ALLOWED_HOSTNAMES', 'TURNSTILE_EXPECTED_ACTION']) {
+    if (!String(env[key] || '').trim() || (key === 'TURNSTILE_ALLOWED_HOSTNAMES' && parseList(env[key]).length === 0)) {
+      throw new Error(`${key} must be configured in production.`);
+    }
+  }
+}
+
 const validateTurnstileResponse = (result, options) => {
   if (!result?.success) {
     return false;
@@ -42,6 +51,12 @@ const validateTurnstileResponse = (result, options) => {
 export const requireTurnstileCaptcha = (options = {}) => async (req, res, next) => {
   const env = options.env ?? process.env;
   const secret = String(env.TURNSTILE_SECRET_KEY || "").trim();
+
+  try {
+    validateTurnstileConfiguration(env);
+  } catch {
+    return res.status(503).json({ code: 503, success: false, message: 'Security verification is temporarily unavailable. Please try again.' });
+  }
 
   if (!isTurnstileEnabled(env)) {
     return next();

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import path from 'node:path'
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
@@ -148,30 +150,38 @@ test('Mistral Solutions extracts first-party careers table rows with docx detail
       [
         'JID-021',
         'Test Engineer - Senior Engineer',
-        'Bangalore, India',
+        'Bangalore',
         'https://mistralsolutions.com/wp-content/uploads/2026/07/18.Test-Engineer-Senior-Engineer.docx',
         'https://docs.google.com/forms/d/e/1FAIpQLSdXCkBGxh_l8CuzwNaudaOr3Xg_wQATHZsCQGRGb8TdVi5OGA/viewform?usp=pp_url&entry.1656541746=Test%20Engineer%20-%20Senior%20Engineer%20',
       ],
       [
         'JID-001',
         'Pre-Sales Lead - Module Lead/ Project Lead',
-        'Bangalore, India',
+        'Bangalore',
         'https://mistralsolutions.com/wp-content/uploads/2026/07/Pre-Sales-Lead-Module-Lead_-Project-Lead.docx',
         'https://docs.google.com/forms/d/e/1FAIpQLSdXCkBGxh_l8CuzwNaudaOr3Xg_wQATHZsCQGRGb8TdVi5OGA/viewform?usp=pp_url&entry.1656541746=Pre-Sales%20Lead%20-%20Module%20Lead/%20Project%20Lead',
       ],
     ],
   )
 
+  const native=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../test/test-data/recruitmentGoal20261104/mistral-native-documents.json.gz',import.meta.url))))
   const jobs = await mistral.createMistralSolutionsScraper().run({
-    fetchText: async () => careersHtml,
+    fetchResponse: async url => {
+      const packet=native.packets.find(p=>p.requestedURL===url)
+      assert.ok(packet,'Only the original declared native URLs may be read')
+      return {...packet,bytes:Buffer.from(packet.bodyBase64||packet.bodyText,packet.bodyBase64?'base64':'utf8')}
+    },
     now: () => '2026-07-18T00:00:00.000Z',
   })
 
-  assert.equal(jobs.length, 2)
+  assert.equal(jobs.length, 25)
   assert.equal(jobs[0].source, 'mistralsolutions')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(jobs[0].city, 'Bangalore')
+  assert.equal(jobs[0].link, jobs[0].sourceUrl)
+  assert.equal(jobs[0].city, null)
   assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.equal(jobs[0].requisitionId, null)
+  assert.match(jobs[0].sourceDescription, /Preferred Profile/)
 })
 
 test('Mistral Solutions fails closed when the verified careers table disappears', async () => {
@@ -181,6 +191,6 @@ test('Mistral Solutions fails closed when the verified careers table disappears'
     mistral.createMistralSolutionsScraper().run({
       fetchText: async () => '<html><body><h1>Careers</h1><p>No listings here.</p></body></html>',
     }),
-    /verified first-party careers table/i,
+    /native careers table/i,
   )
 })

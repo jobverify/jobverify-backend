@@ -29,6 +29,26 @@ async function withApp(run) {
   }
 }
 
+test('production startup refuses incomplete CAPTCHA configuration', () => {
+  const keys = ['NODE_ENV', 'TURNSTILE_SECRET_KEY', 'TURNSTILE_ALLOWED_HOSTNAMES', 'TURNSTILE_EXPECTED_ACTION'];
+  const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+  try {
+    Object.assign(process.env, { NODE_ENV: 'production', TURNSTILE_SECRET_KEY: 'local-fixture-secret', TURNSTILE_ALLOWED_HOSTNAMES: 'www.jobverify.test', TURNSTILE_EXPECTED_ACTION: 'login' });
+    for (const key of keys.slice(1)) {
+      const configured = process.env[key];
+      delete process.env[key];
+      assert.throws(() => createApp(), new RegExp(key));
+      process.env[key] = configured;
+    }
+    assert.doesNotThrow(() => createApp());
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
+  }
+});
+
 test("constructing the app does not connect the database; health and API misses return JSON", async () => {
   await withApp(async (base) => {
     assert.equal(mongoose.connection.readyState, 0);
@@ -122,6 +142,22 @@ test("CORS preflight supports PATCH for allowed origins without authorizing othe
     assert.match(response.headers.get("access-control-allow-methods"), /PATCH/);
     const denied = await fetch(`${base}/health`, { headers: { origin: "https://other.test" } });
     assert.equal(denied.headers.get("access-control-allow-origin"), null);
+  });
+});
+
+test("allowed browser clients can read the filename of a downloaded document", async () => {
+  await withApp(async (base, app) => {
+    app.get('/download-filename-probe', (_req, res) => {
+      res.attachment('jobverify-cv.pdf').send('document fixture');
+    });
+    const response = await fetch(`${base}/download-filename-probe`, {
+      headers: { origin: env.CORS_ORIGIN },
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('access-control-allow-origin'), env.CORS_ORIGIN);
+    assert.match(response.headers.get('content-disposition'), /jobverify-cv\.pdf/);
+    assert.match(response.headers.get('access-control-expose-headers') || '', /\bContent-Disposition\b/i);
+    assert.equal(await response.text(), 'document fixture');
   });
 });
 

@@ -62,6 +62,8 @@ test('extractSearchResults normalizes Collins Aerospace India listings into the 
     requisitionId: '01849281',
     department: 'Supply Chain',
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: null,
     jobDescription:
       'Date Posted. 2026-06-24Country. IndiaLocation. IN-KA-BENGALURU-008 ~ Hitech, Defence & Aerospace Park ~ HI TECH DEFENSEPosition Role Type. Hybrid. At RTX, the world\'s largest aerospace and defense com...',

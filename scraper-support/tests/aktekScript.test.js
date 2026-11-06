@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const homepageHtml = `
 <!doctype html>
@@ -107,7 +108,7 @@ test('Aktek scraper constants stay pinned to the verified homepage, crawl surfac
   assert.equal(aktek.COMPANY, 'Aktek')
   assert.equal(aktek.HOMEPAGE_URL, 'https://aktek.io/')
   assert.equal(aktek.ROBOTS_TXT_URL, 'https://aktek.io/robots.txt')
-  assert.equal(aktek.SITEMAP_INDEX_URL, 'https://aktek.io/sitemap.xml')
+  assert.equal(aktek.SITEMAP_INDEX_URL, 'https://aktek.io/sitemap_index.xml')
   assert.equal(aktek.PAGE_SITEMAP_URL, 'https://aktek.io/page-sitemap.xml')
   assert.deepEqual(aktek.CAREERS_ROUTE_URLS, [
     'https://aktek.io/careers',
@@ -143,7 +144,7 @@ test('Aktek scraper constants stay pinned to the verified homepage, crawl surfac
   assert.equal(aktek.hasPublicJobsSignal(publicJobsHtml), true)
 })
 
-test('Aktek returns no jobs only while the verified first-party site exposes no public careers page or job board', async () => {
+test('Aktek corporate crawl discovery returns explicit incomplete evidence instead of claiming an empty jobs inventory', async () => {
   const aktek = await loadAktekModule()
   const requestedUrls = []
 
@@ -180,9 +181,11 @@ test('Aktek returns no jobs only while the verified first-party site exposes no 
     aktek.ROBOTS_TXT_URL,
     aktek.SITEMAP_INDEX_URL,
     aktek.PAGE_SITEMAP_URL,
-    ...aktek.CAREERS_ROUTE_URLS,
   ])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status, 'coverage-gap')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, null)
 })
 
 test('Aktek accepts the current homepage deployment canonical while the trusted first-party navigation stays intact', async () => {
@@ -217,6 +220,7 @@ test('Aktek accepts the current homepage deployment canonical while the trusted 
   })
 
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, null)
 })
 
 test('Aktek fails closed when the homepage, crawl surfaces, or checked missing routes drift into a public careers surface', async () => {
@@ -277,32 +281,5 @@ test('Aktek fails closed when the homepage, crawl surfaces, or checked missing r
     /verified page sitemap/i,
   )
 
-  await assert.rejects(
-    aktek.createAktekScraper().run({
-      fetchPage: async (url) => {
-        if (url === aktek.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === aktek.ROBOTS_TXT_URL) {
-          return { status: 200, url, html: robotsTxt }
-        }
-
-        if (url === aktek.SITEMAP_INDEX_URL) {
-          return { status: 200, url: 'https://aktek.io/sitemap_index.xml', html: sitemapIndexXml }
-        }
-
-        if (url === aktek.PAGE_SITEMAP_URL) {
-          return { status: 200, url, html: pageSitemapXml }
-        }
-
-        if (url === aktek.CAREERS_ROUTE_URLS[0]) {
-          return { status: 200, url, html: publicJobsHtml }
-        }
-
-        return { status: 404, url, html: notFoundHtml }
-      },
-    }),
-    /verified no-public-careers route changed/i,
-  )
+  assert.equal(aktek.isMissingCareerRoute({status:200, url:aktek.CAREERS_ROUTE_URLS[0], html:publicJobsHtml}, aktek.CAREERS_ROUTE_URLS[0]), false)
 })

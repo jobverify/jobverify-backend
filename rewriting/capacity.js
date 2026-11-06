@@ -17,6 +17,10 @@ export function summarizeRewriteCapacity(results, { startedAt, finishedAt, attem
     cachedDescriptions: published.filter(result => result.modelPlanCached).length,
     modelEditedDescriptions: published.filter(result => (result.quality?.modelEditedBlocks ?? result.quality?.modelEditedItems ?? 0) > 0).length,
     sourcePreservedDescriptions: published.filter(result => (result.quality?.modelEditedBlocks ?? result.quality?.modelEditedItems) === 0).length,
+    modelWordingEditedDescriptions: published.filter(result => result.quality?.modelWordingEditedBlocks > 0).length,
+    modelLayoutOnlyDescriptions: published.filter(result => result.quality?.modelWordingEditedBlocks === 0
+      && result.quality?.modelLayoutEditedBlocks > 0).length,
+    reusedChunks: results.reduce((total, result) => total + (result.reusedChunks || 0), 0),
     modelEditedBlocks: sum('modelEditedBlocks'), sourcePreservedBlocks: sum('sourcePreservedBlocks'),
     modelWordingEditedBlocks: sum('modelWordingEditedBlocks'), modelLayoutEditedBlocks: sum('modelLayoutEditedBlocks'),
     wordingMetricsRecordedDescriptions: published.filter(result => Number.isInteger(result.quality?.modelWordingEditedBlocks)

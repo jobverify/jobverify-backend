@@ -11,7 +11,15 @@ export const nativeRouteMetadata = (profile, previous = {}) => ({ ...nativeSourc
 export const createNativeRouteScraper = (profile, defaults = {}) => ({ name: profile.source, async run(passed = {}) {
   const options = { ...defaults, ...passed }, { onAudit = () => {}, onRecords = () => {}, now = () => new Date().toISOString() } = options
   options.signal?.throwIfAborted()
-  const observedAt = now();requireNative(typeof observedAt === 'string' && Number.isFinite(Date.parse(observedAt)), 'invalid observation clock')
-  return createNativeGreenhouseScraper(profile).run({ ...options, now: () => observedAt,
-    onAudit: async audit => { await onAudit(structuredClone(audit));await onRecords(structuredClone(audit.observations)) } })
+  return createNativeGreenhouseScraper(profile, defaults).run({ ...options, now: () => {
+    const observedAt = now();requireNative(typeof observedAt === 'string' && Number.isFinite(Date.parse(observedAt)), 'invalid observation clock')
+    return observedAt
+  },
+    onAudit: async (audit, control) => {
+      control.signal.throwIfAborted()
+      await onAudit(structuredClone(audit))
+      control.signal.throwIfAborted()
+      await onRecords(structuredClone(audit.observations))
+      control.signal.throwIfAborted()
+    } })
 } })

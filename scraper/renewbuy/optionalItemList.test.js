@@ -8,6 +8,7 @@ import { run, JOBS_URL } from './script.js'
 const fixture = name => JSON.parse(readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url)))
 const receipts = [...fixture('official-responses'), fixture('native-company'), fixture('native-jobs'), ...fixture('native-details').responses]
 const runWithBoard = transform => run({
+  maxJobs: 8,
   now: () => '2026-10-23T06:20:00.000Z',
   fetchImpl: async url => {
     const row = receipts.find(item => item.url === url)

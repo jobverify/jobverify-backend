@@ -144,9 +144,9 @@ const messages = (source, sectionContext, validationFeedback) => [{ role: 'syste
 
 export const createProseRewriteClient = ({ endpoint, model, requestMs, planCacheDir, assertAlive, GenerationError, readCompletion }) => {
   const origin = new URL(endpoint).origin;
-  const cache = new Map(), partialCache = new Map();
+  const cache = new Map(), partialCache = new Map(), fragmentCache = new Map();
   const generateOne = async (input, { signal, remainingMs = requestMs ?? REWRITE_MODEL.requestSeconds * 1000, onProgress,
-    cacheMode = 'use', allowSourceFallback = true } = {}) => {
+    cacheMode = 'use', allowSourceFallback = true, onFragmentRejection } = {}) => {
     // Production passes the remaining workflow budget. Explicit callers may set
     // a shorter timeout, but there is no fixed per-description production cap.
     const milliseconds = Math.max(1, Math.floor(remainingMs));
@@ -164,6 +164,11 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
     let reusedChunks = 0;
     const generations = [], usage = {}, timings = {}, sourceTokenCounts = new Map();
     const telemetry = () => ({ generations, usage, timings, reusedChunks, transportRetries });
+    const reportFragmentRejection = async (reason, evidence = diagnostic) => {
+      try { await onFragmentRejection?.({ reason, diagnostic: evidence && structuredClone(evidence),
+        response: { rawText, generationRequests, finishReason: currentGeneration?.detail.finishReason } }); }
+      catch { /* Diagnostic observers must not replace the inference outcome. */ }
+    };
     const saveCache = async (file, value) => {
       if (!file) return;
       const temporary = file + '.' + randomUUID() + '.tmp';
@@ -225,6 +230,17 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       activeFragment = fragment;
       activeOffset = offset;
       const sectionContext = contextAt(offset);
+      const fragmentKey = createHash('sha256').update(JSON.stringify([fragment, sectionContext, allowSourceFallback])).digest('hex');
+      const reused = cacheMode !== 'refresh' && !validationFeedback ? fragmentCache.get(fragmentKey) : undefined;
+      if (reused !== undefined) {
+        const part = { source: fragment, text: reused, sourceOffset: offset, sectionContext };
+        // Identical source words can occur at a different physical statement
+        // boundary. A previous acceptance never bypasses destination checks.
+        if (!validateProsePart(fragment, reused, { sectionContext }) && !checkInContext(part).reason) {
+          reusedChunks++;
+          return acceptPart(part);
+        }
+      }
       const promptMessages = messages(fragment, sectionContext, validationFeedback);
       const rendered = await postJson('/apply-template', { messages: promptMessages, add_generation_prompt: true,
         chat_template_kwargs: { enable_thinking: false } }, 'apply_template');
@@ -285,6 +301,8 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
       try { value = JSON.parse(choice.message.content); } catch { /* one correction below */ }
       if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => key !== 'text')) {
         currentGeneration.detail.validationReason = 'malformed_output';
+        await reportFragmentRejection('malformed_output', { code: 'malformed_output', phase: 'fragment',
+          evidence: fragment.slice(0, 1800), sourceOffset: offset, sectionContext });
         if (!validationFeedback) return process(fragment, offset, { reason: 'malformed_output' });
         throw new GenerationError('Malformed generator response');
       }
@@ -300,6 +318,7 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
           ...mismatch, code: reason, phase, sourceOffset: offset, sectionContext };
         currentGeneration.detail.validationReason = reason;
         currentGeneration.detail.validationPhase = phase;
+        await reportFragmentRejection(reason);
         // One fresh corrective generation shares the original abort/deadline.
         // Rejected model text never becomes a chunk, cache entry or fallback.
         if (!validationFeedback && (correctionReasons.has(reason) || reason === 'empty_output')) return process(fragment, offset,
@@ -311,6 +330,8 @@ export const createProseRewriteClient = ({ endpoint, model, requestMs, planCache
         throw Object.assign(new GenerationError('Rewrite failed source checks'), { reason });
       }
       await acceptPart({ source: fragment, text: value.text, sourceOffset: offset, sectionContext });
+      fragmentCache.set(fragmentKey, value.text);
+      if (fragmentCache.size > 128) fragmentCache.delete(fragmentCache.keys().next().value);
     };
     try {
       if (!source) throw Object.assign(new GenerationError('Empty source'), { reason: 'insufficient_source' });

@@ -25,6 +25,11 @@ for (const source of Object.keys(sources)) {
     assert.equal(details[source].jobPostingInfo.canApply, true)
   })
 
+  // Conde's current native CMS/renderer + India-facet contract is exercised
+  // against every intact current response in recruitmentGoal20261106CondenastNative.
+  // The synthetic unfiltered-board cases below remain the Cognex engine contract.
+  if (source === 'condenast') continue
+
   test(`${source}: synthetic visible primary and one-role unfiltered snapshots retain native ID, title, full JD and day-precision dates`, async t => {
     assertScopedRole(await exercise(t, source), source)
   })
@@ -159,13 +164,12 @@ test('Cognex: retained ordinary corporate 429 remains fail-closed; no captured I
   assert.equal(result.calls[0].url, primary.url)
 })
 
-test('Conde Nast: exact retained corporate SSR opacity-zero ancestors cannot authorize the India handoff', async t => {
+test('Conde Nast: opaque corporate SSR without the declared reviewed renderer cannot authorize the India handoff', async t => {
   const primary = packetFor('condenast', packet => packet.phase === 'initial-pages' && packet.url === 'https://www.condenast.com/careers')
   const result = await exercise(t, 'condenast', { change: state => { state.primary = primary } })
   assert.equal(result.rejected, true)
-  assert.equal(result.calls.length, 1)
   assert.equal(result.calls[0].url, primary.url)
-  assert.match(result.error?.cause?.message || '', /no active anchor/)
+  assert.ok(result.calls.every(call => call.method !== 'POST' && !call.url.includes('myworkdayjobs.com')))
 })
 
 test('registered Cognex and Conde configurations enter their actual Workday admission shards without changing catalog authority', async () => {

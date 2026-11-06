@@ -1,0 +1,10 @@
+[
+  {
+    "source": "logelite",
+    "extractionStrategy": "paired-current-native-role-pages+complete-declared-pdf-descriptions+literal-own-pdf-country",
+    "verifiedOn": "2026-11-06",
+    "verifiedSurfaceSummary": "Current own role/PDF metadata and all twelve full PDF pages are paired with current declared cards; country uses literal own PDF location rather than a city default. Posting identity, legal employer, application activation, company/listing completeness and cleanup remain unqualified.",
+    "companyGlobalTotal": null,
+    "companyIndiaTotal": null
+  }
+]

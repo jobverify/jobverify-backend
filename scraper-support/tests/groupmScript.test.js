@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const loadGroupMModule = async () => {
   try {
@@ -77,6 +78,32 @@ const greenhousePayload = {
   ],
 }
 
+test('GroupM reconciles the documented Greenhouse total without claiming whole-employer completeness', async () => {
+  const groupm = await loadGroupMModule()
+  const jobs = await groupm.run({ fetchText: async () => officialCareersHtml,
+    fetchJson: async () => ({ ...structuredClone(greenhousePayload), meta: { total: 2 } }) })
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.reportedTotal, 2)
+  assert.equal(evidence.listingComplete, false)
+  assert.match(evidence.reason, /whole-groupm-scope-unverified/)
+  assert.doesNotMatch(evidence.reason, /configured-continuation-unavailable/)
+  assert.equal(jobs[0].sourceListingComplete, false)
+})
+
+test('a GroupM output cap retains inventory evidence and prevents lifecycle cleanup', async () => {
+  const groupm = await loadGroupMModule()
+  const payload = structuredClone(greenhousePayload)
+  payload.jobs.push({ ...payload.jobs[0], id: 903, absolute_url: 'https://job-boards.greenhouse.io/wppmedia/jobs/903' })
+  payload.meta = { total: 3 }
+  const jobs = await groupm.run({ maxJobs: 1, fetchText: async () => officialCareersHtml,
+    fetchJson: async () => payload })
+  assert.equal(jobs.length, 1)
+  assert.equal(readInventoryEvidence(jobs)?.reportedTotal, 3)
+  assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
+  assert.match(readInventoryEvidence(jobs)?.reason, /source-job-limit/)
+  assert.equal(jobs[0].lifecycleCleanupAllowed, false)
+})
+
 test('GroupM constants stay pinned to the verified WPP Media careers handoff and APAC Greenhouse board', async () => {
   const groupm = await loadGroupMModule()
 
@@ -148,6 +175,8 @@ test('GroupM run validates the official careers handoff and keeps only India job
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
     sourceListingComplete: false,
+    sourceScopeComplete: false,
+    lifecycleCleanupAllowed: false,
   })
 })
 

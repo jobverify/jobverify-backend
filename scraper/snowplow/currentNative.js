@@ -5,9 +5,11 @@ import {readInventoryEvidence, attachInventoryEvidence, normalizeInventoryEviden
 import {readVisibleNativeDocument} from '../../scraper-support/utils/visibleNativeHtml.js'
 import {extractActiveDescription} from '../../scraper-support/utils/activeNativeHtml.js'
 import {NATIVE_CONFIG} from './catalog.js'
+import {attachSourceObservationEvidence} from '../../scraper-support/utils/sourceObservationEvidence.js'
 
 const reviewed = JSON.parse(fs.readFileSync(new URL('./reviewedNative.json', import.meta.url), 'utf8'))
 const reviewedCurrent = JSON.parse(fs.readFileSync(new URL('./reviewedNative20261105.json', import.meta.url), 'utf8'))
+const reviewedNovember6 = JSON.parse(fs.readFileSync(new URL('./reviewedNative20261106.json', import.meta.url), 'utf8'))
 const hash = text => createHash('sha256').update(text).digest('hex')
 const stable = value => {
   assertSafeNumbers(value)
@@ -177,8 +179,9 @@ export const createCurrentSnowplowScraper = (defaults = {}) => ({async run(optio
     if (url === NATIVE_CONFIG.careers || url === NATIVE_CONFIG.board) {
       // Selection binds one complete independently reviewed deployment; never
       // mix an archived employer page with a current native renderer/cohort.
-      if (url === NATIVE_CONFIG.careers && receipts.length === 1 && typeof response?.body === 'string'
-        && hash(response.body) === reviewedCurrent.corporateBodySha256) review = reviewedCurrent
+      if (url === NATIVE_CONFIG.careers && receipts.length === 1 && typeof response?.body === 'string') {
+        review = [reviewedCurrent, reviewedNovember6].find(candidate => hash(response.body) === candidate.corporateBodySha256) || reviewed
+      }
       const expected = url === NATIVE_CONFIG.careers ? review.corporateBodySha256 : review.boardBodySha256
       const accepted = response?.status === 200 && response.url === url && /^text\/html\b/i.test(response.contentType || '')
         && typeof response.body === 'string' && hash(response.body) === expected
@@ -215,6 +218,17 @@ export const createCurrentSnowplowScraper = (defaults = {}) => ({async run(optio
       && (kind === 'json' ? /^application\/json\b/i : kind === 'html' ? /^text\/html\b/i : /^(?:text|application)\/(?:javascript|css)\b/i).test(response.contentType || ''), 'public response status/identity/MIME/cap changed')
     return kind === 'json' ? parseNativeJSON(response.body) : response.body
   }
+  const reconcileCorporate = (html, rows, phase) => {
+    try { audit.corporateRoleProofs = reconcileCorporateRoles(html, rows) }
+    catch (error) {
+      // This exact reviewed deployment advertises a stale corporate cohort.
+      // Keep the disagreement unresolved while inspecting every current native
+      // role; it never supplements scope or permits an India absence claim.
+      requireProof(review.preservedCorporateMismatch && error.message === 'Snowplow native proof: ' + review.preservedCorporateMismatch,
+        'unreviewed corporate/native inventory disagreement: ' + error.message)
+      gaps.push(phase + '-corporate-scope-unresolved:' + error.message)
+    }
+  }
   try {
     // Preserve the originals in receipts/audit, then validate every original
     // engine JSON response before any supplemental type, hash or pin claims.
@@ -223,11 +237,12 @@ export const createCurrentSnowplowScraper = (defaults = {}) => ({async run(optio
     if (review.version) {
       requireProof(keysAre(audit.rawOpeningFeed, ['filterGroups', 'jobAdDetails', 'jobOpeningMetadata'])
         && hash(stable({filterGroups: audit.rawOpeningFeed.filterGroups, jobOpeningMetadata: audit.rawOpeningFeed.jobOpeningMetadata})) === review.feedScopeSha256, 'unreviewed native filter/opening metadata or geographic scope')
-      audit.corporateRoleProofs = reconcileCorporateRoles(receipts.find(r => r.url === NATIVE_CONFIG.careers).response.body, rawRows)
-      const expected = [...review.supplementedBaseEngineGaps, ...rawRows.map(raw => 'unverified-native-role-fields:' + raw.id)].sort()
+      reconcileCorporate(receipts.find(r => r.url === NATIVE_CONFIG.careers).response.body, rawRows, 'opening')
+      const expected = [...review.supplementedBaseEngineGaps, ...(review.preservedBaseEngineGaps || []), ...rawRows.map(raw => 'unverified-native-role-fields:' + raw.id)].sort()
       const actual = originalEngineEvidence?.reason?.startsWith('hibob-native-incomplete:')
         ? originalEngineEvidence.reason.slice('hibob-native-incomplete:'.length).split(';').sort() : null
       requireProof(stable(actual) === stable(expected), 'original engine has additional unresolved guards: ' + originalEngineEvidence?.reason)
+      for (const reason of review.preservedBaseEngineGaps || []) gaps.push('base-engine-scope-unresolved:' + reason)
     } else requireProof(originalEngineEvidence?.reason === 'hibob-native-incomplete:public-client-contract-changed', 'original engine has additional unresolved guards: ' + originalEngineEvidence?.reason)
     for (const resource of review.resources) requireProof(hash(await get(resource.url, 'program', resource)) === resource.sha256, 'declared native renderer/style/program changed: ' + resource.url)
     for (const resource of review.unresolvedResources) gaps.push('unreviewed-declared-stylesheet:' + resource.url)
@@ -247,7 +262,7 @@ export const createCurrentSnowplowScraper = (defaults = {}) => ({async run(optio
     audit.rawClosingSite = await get(siteUrl, 'json')
     audit.rawClosingFeed = await get(feedUrl, 'json')
     requireProof(stable(audit.rawOpeningSite) === stable(audit.rawClosingSite) && canonicalFeed(audit.rawOpeningFeed, review) === canonicalFeed(audit.rawClosingFeed, review), 'full raw closing cohort/criteria changed')
-    if (review.version) reconcileCorporateRoles(receipts.filter(r => r.url === NATIVE_CONFIG.careers).at(-1).response.body, audit.rawClosingFeed.jobAdDetails)
+    if (review.version) reconcileCorporate(receipts.filter(r => r.url === NATIVE_CONFIG.careers).at(-1).response.body, audit.rawClosingFeed.jobAdDetails, 'closing')
     for (const [index, proof] of detailProofs.entries()) {
       proof.rawClosing = validateForm(await get(proof.url, 'json'), rawRows[index], rows[index], review)
       requireProof(stable(proof.rawOpening) === stable(proof.rawClosing), 'full raw closing application criteria changed')
@@ -269,7 +284,9 @@ export const createCurrentSnowplowScraper = (defaults = {}) => ({async run(optio
     sourceDetailComplete: false, sourceDetailFailureKind: 'snowplow-current-native-proof-incomplete'})
   await settings.onAudit?.(audit)
   settings.signal?.throwIfAborted()
-  return attachInventoryEvidence(jobs, {...originalEngineEvidence, listingComplete: complete, status: complete ? audit.nativeInventoryCount ? 'complete-inventory' : 'verified-empty' : 'discovery-only',
+  const result = attachInventoryEvidence(jobs, {...originalEngineEvidence, listingComplete: complete, status: complete ? audit.nativeInventoryCount ? 'complete-inventory' : 'verified-empty' : 'discovery-only',
     reportedTotal: complete ? audit.nativeInventoryCount : null, indiaFacetCount: complete ? jobs.length : null, pagesFetched: receipts.length,
     reason: complete ? 'snowplow-current-declared-client-and-full-native-cohort-reconciled' : 'snowplow-current-native-partial:' + gaps.join(';')})
+  return audit.nativeInventoryCount == null ? result : attachSourceObservationEvidence(result, {source:'snowplow',recordKind:'vacancy-rows',
+    observedRecordCount:audit.nativeInventoryCount,observedVacancyCount:audit.nativeInventoryCount,sourceScopeComplete:false})
 }})

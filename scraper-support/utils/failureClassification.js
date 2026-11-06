@@ -51,6 +51,12 @@ export const classifyScraperError = (error = {}) => {
     }
   }
 
+  // A validated hard contract failure is more precise than words appearing
+  // incidentally in its role URL or original JSON parser cause.
+  if (error.failureKind === 'parser_or_contract_error') {
+    return { softFailure: false, upstreamOutage: false, failureKind: 'parser_or_contract_error' }
+  }
+
   const text = getErrorText(error)
 
   if (BLOCKED_OR_ACCESS_DENIED_PATTERN.test(text)) {

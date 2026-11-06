@@ -63,6 +63,8 @@ test('extractSearchResults normalizes Allianz India listings into the shared scr
     requisitionId: '90730',
     department: 'IT & Tech Engineering',
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: null,
     jobDescription:
       'Step into the role of Integration Architecture Lead and drive enterprise-scale integration solutions across insurance platforms. Lead strategic integrations, collaborate with cross-functional teams, and ensure secure, scalable, and compliant architectures. Bring your expertise in API-first, event-driven patterns, and cloud-native services to shape the future of digital insurance integration.',

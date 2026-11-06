@@ -64,19 +64,29 @@ function mutateNative(change) {
 // Catches the former two-read recovery path, which discarded every foreign
 // model before detail health and never checked the native board or closing view.
 for (const [boundary, invoke] of [['factory', options => createLangchainNativeScraper().run(options)], ['exported', run], ['registered', options => createCatalogScraper(provider).run(options)]]) {
-  test(`genuine current ${boundary} route retains 101 full native roles before India projection and closing checks`, async () => {
+  test(`genuine captured ${boundary} route retains 101 full roles and two unresolved native worksite relationships`, async () => {
     const context = replay()
     const jobs = await invoke(context.options)
     assert.deepEqual(context.calls, [CAREERS, BOARD, API, API, BOARD, CAREERS])
     const audit = jobs[OBSERVATIONS]?.nativeInventoryAudit
     assert.ok(audit, 'Full native audit survives the public boundary')
-    assert.equal(audit.configuredBoardInventoryComplete, true)
-    assert.equal(audit.allRoleDetailHealth.complete, true)
+    assert.equal(audit.configuredBoardInventoryComplete, false)
+    assert.equal(audit.allRoleDetailHealth.complete, false)
+    assert.equal(audit.allRoleDetailHealth.contentComplete, true)
+    assert.equal(audit.allRoleDetailHealth.missingDescriptions, 0)
+    assert.equal(audit.allRoleDetailHealth.incompleteJobs, 2)
+    assert.equal(audit.allRoleDetailHealth.incompleteCountryJobs, 0)
+    assert.equal(audit.allRoleDetailHealth.incompleteWorksiteJobs, 2)
     assert.equal(audit.allRoleDetailHealth.inspectedJobs, 101)
     assert.equal(audit.fullNativeModels.length, 101)
     assert.equal(audit.countryRelations.inspected, 149)
     assert.equal(audit.countryRelations.unresolved, 0)
-    assert.equal(audit.configuredBoardIndiaCount, 0)
+    assert.equal(audit.countryRelations.worksiteUnresolved, 2)
+    assert.equal(audit.configuredBoardIndiaCount, null)
+    assert.deepEqual(audit.fullNativeModels.filter(role => !role.sourceDetailComplete).map(role => role.id),
+      ['b23ea9af-c6dc-40fa-86ce-75042b905173', 'e6d2bc1e-e0b9-4076-be01-ef8681863c01'])
+    assert.ok(audit.fullNativeModels.filter(role => !role.sourceDetailComplete)
+      .every(role => role.nativeCountryRelations.every(location => location.country === 'United States')))
     assert.equal(audit.sourceScopeComplete, false)
     assert.equal(audit.companyGlobalTotal, null)
     assert.equal(audit.companyIndiaTotal, null)
@@ -106,16 +116,39 @@ test('synthetic missing foreign role description cannot hide behind a zero India
   await assert.rejects(run(context.options), /description/i)
 })
 
+test('long genuine company boilerplate alone cannot qualify role-owned criteria', async () => {
+  const context = mutateNative(role => {
+    const end = role.descriptionHtml.search(/<p[^>]*><strong>About the Team<\/strong><\/p>/)
+    assert.ok(end > 1000)
+    role.descriptionHtml = role.descriptionHtml.slice(0, end)
+    role.descriptionPlain = role.descriptionPlain.split('About the Team')[0]
+  })
+  await assert.rejects(run(context.options), /description|criteria|content|role/i)
+})
+
+test('the exact native role title alone cannot qualify a full description', async () => {
+  const context = mutateNative(role => {
+    role.descriptionHtml = '<h1>' + role.title.trim() + '</h1>'
+    role.descriptionPlain = role.title.trim()
+  })
+  await assert.rejects(run(context.options), /description|criteria|content|role/i)
+})
+
 test('synthetic secondary typed India country is projected with native criteria and unknown requisition', async () => {
+  const original = JSON.parse(receipts[2].body).jobs[0]
+  const originalRestriction = 'In person 5 days/week in San Francisco, CA or Boston, MA '
+  const syntheticRestriction = 'In person 5 days/week in San Francisco, CA or Bengaluru, India '
   const context = mutateNative(role => {
     role.secondaryLocations = [{ location: 'Bengaluru', address: { postalAddress: { addressCountry: 'IN', addressLocality: 'Bengaluru' } } }]
+    role.descriptionHtml = role.descriptionHtml.replace(originalRestriction, syntheticRestriction).replace('(SF preferred)', '(both locations supported)')
+    role.descriptionPlain = role.descriptionPlain.replace(originalRestriction, syntheticRestriction).replace('(SF preferred)', '(both locations supported)')
   })
   const jobs = await run(context.options)
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].country, 'India')
   assert.equal(jobs[0].requisitionId, null)
-  assert.equal(jobs[0].sourceDescription, JSON.parse(receipts[2].body).jobs[0].descriptionHtml)
-  assert.equal(jobs[0].nativeDescriptionPlain, JSON.parse(receipts[2].body).jobs[0].descriptionPlain)
+  assert.equal(jobs[0].sourceDescription, original.descriptionHtml.replace(originalRestriction, syntheticRestriction).replace('(SF preferred)', '(both locations supported)'))
+  assert.equal(jobs[0].nativeDescriptionPlain, original.descriptionPlain.replace(originalRestriction, syntheticRestriction).replace('(SF preferred)', '(both locations supported)'))
   assert.equal(jobs[0].sourceScopeComplete, false)
   assert.equal(jobs[0].lifecycleCleanupAllowed, false)
 })
@@ -130,6 +163,25 @@ test('synthetic city and Remote labels cannot resolve an unknown typed country t
   assert.equal(audit.countryRelations.unresolved, 1)
   assert.equal(audit.configuredBoardIndiaCount, null)
   assert.equal(audit.configuredBoardInventoryComplete, false)
+})
+
+test('synthetic native plain-only country restriction blocks a contradictory India projection', async () => {
+  const html = '<h2>Requirements</h2><p>You will develop and test backend APIs using Python.</p>'
+  const plain = 'Requirements\nYou will develop and test backend APIs using Python.\nThis position is open only to candidates resident in United States. Applicants must work from United States.'
+  const context = mutateNative(role => {
+    role.location = 'Bengaluru'; role.address = { postalAddress: { addressCountry: 'IN', addressLocality: 'Bengaluru' } }
+    role.secondaryLocations = []; role.descriptionHtml = html; role.descriptionPlain = plain
+  })
+  const jobs = await run(context.options)
+  const audit = jobs[OBSERVATIONS].nativeInventoryAudit
+  const role = audit.fullNativeModels.find(item => item.id === '74e5f9f4-e44a-4594-ba26-abdf71bf287d')
+  assert.equal(jobs.length, 0)
+  assert.equal(role.sourceDetailComplete, false)
+  assert.equal(role.nativeCountryRelations[0].country, 'India')
+  assert.equal(role.nativeCountryRelations[0].qualifiedForProjection, false)
+  assert.equal(role.nativeSourceRecord.descriptionHtml, html)
+  assert.equal(role.nativeSourceRecord.descriptionPlain, plain)
+  assert.equal(audit.configuredBoardIndiaCount, null)
 })
 
 test('synthetic closing description change prevents a complete configured inventory', async () => {

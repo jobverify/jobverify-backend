@@ -5,27 +5,32 @@ const clip = (value, limit) => typeof value === 'string' ? value.slice(0, limit)
 /** Bounded employer-text samples belong only in the diagnostic artifact, never console summaries. */
 export const createRewriteDiagnostics = ({ maxSamples = 10, maxBytes = 65536 } = {}) => {
   if (!Number.isInteger(maxSamples) || maxSamples < 0 || maxSamples > 10 || !Number.isInteger(maxBytes) || maxBytes < 4096 || maxBytes > 65536) throw new Error('Invalid rejection diagnostic limits');
-  const state = { totalRejected: 0, reasons: Object.create(null), samples: [], maxSamples, maxBytes };
-  return { record({ id, input, response, reason, diagnostic } = {}) {
-    state.totalRejected++;
+  const state = { totalRejected: 0, totalRejectedFragments: 0, reasons: Object.create(null),
+    fragmentReasons: Object.create(null), samples: [], maxSamples, maxBytes };
+  return { record({ id, input, response, reason, diagnostic, kind: requestedKind } = {}) {
+    const kind = requestedKind === 'fragment' ? 'fragment' : 'job';
+    state[kind === 'fragment' ? 'totalRejectedFragments' : 'totalRejected']++;
+    const reasons = kind === 'fragment' ? state.fragmentReasons : state.reasons;
     let key = typeof reason === 'string' && /^[a-z_]{1,64}$/.test(reason) ? reason : 'unknown';
-    if (!Object.hasOwn(state.reasons, key) && Object.keys(state.reasons).length >= 32) key = 'other';
-    state.reasons[key] = (state.reasons[key] || 0) + 1;
+    if (!Object.hasOwn(reasons, key) && Object.keys(state.reasons).length + Object.keys(state.fragmentReasons).length >= 32) key = 'other';
+    reasons[key] = (reasons[key] || 0) + 1;
     const phase = String(id || '').startsWith('worker-probe-') ? 'probe' : 'production';
     if (!maxSamples) return;
-    if (state.samples.filter(sample => sample.reason === key).length >= 2) {
-      const probe = state.samples.findIndex(sample => sample.reason === key && sample.phase === 'probe');
+    const sameReason = sample => sample.reason === key && sample.kind === kind;
+    if (state.samples.filter(sameReason).length >= 2) {
+      const probe = state.samples.findIndex(sample => sameReason(sample) && sample.phase === 'probe');
       if (phase !== 'production' || probe < 0) return;
       state.samples.splice(probe, 1);
     }
     if (state.samples.length >= maxSamples) {
-      if (state.samples.some(sample => sample.reason === key)) return;
-      const replace = state.samples.findLastIndex(sample => state.samples.filter(other => other.reason === sample.reason).length > 1);
+      if (state.samples.some(sameReason)) return;
+      let replace = state.samples.findLastIndex(sample => state.samples.filter(other => other.reason === sample.reason && other.kind === sample.kind).length > 1);
+      if (replace < 0 && kind === 'job') replace = state.samples.findLastIndex(sample => sample.kind === 'fragment');
       if (replace < 0) return;
       state.samples.splice(replace, 1);
     }
     const raw = response?.rawValue ?? response?.value;
-    const sample = { id: clip(id, 64), inputHash: clip(input?.inputHash, 64), reason: key, phase,
+    const sample = { id: clip(id, 64), inputHash: clip(input?.inputHash, 64), reason: key, phase, kind,
       sourceContext: clip(diagnostic?.evidence || input?.sourceDescription, 1800),
       ...(phase === 'probe' && { probeSource: clip(input?.sourceDescription, 1800) }),
       completionPreview: diagnostic?.phase === 'assembly'

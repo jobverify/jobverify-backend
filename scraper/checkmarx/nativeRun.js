@@ -1,5 +1,6 @@
 import {BOARD,OFFICIAL_BINDING,parseCheckmarxBoard,parseCheckmarxRole} from './nativeContract.js'
 import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {attachSourceObservationEvidence} from '../../scraper-support/utils/sourceObservationEvidence.js'
 const check=(ok,message)=>{if(!ok)throw Error('Checkmarx native run: '+message)}
 const USER_AGENT='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 export async function runNativeCheckmarx(options={}){
@@ -18,7 +19,6 @@ export async function runNativeCheckmarx(options={}){
   try{
     const board=parseCheckmarxBoard(await get(BOARD),{now,maxNativeRecords:options.maxNativeRecords??300})
     const selected=board.rows.filter(r=>r.location.country==='IN'&&r.is_internal===false)
-    check(selected.length>0,'No qualified current public India records; company-wide zero remains unverified')
     const jobs=[]
     for(let i=0;i<selected.length;i+=concurrency)jobs.push(...await Promise.all(selected.slice(i,i+concurrency).map(async row=>parseCheckmarxRole(await get(row.url_comeet_hosted_page),row,{now}))))
     const final=parseCheckmarxBoard(await get(BOARD),{now,maxNativeRecords:options.maxNativeRecords??300})
@@ -35,6 +35,7 @@ export async function runNativeCheckmarx(options={}){
       j.sourceNativeInventoryGrain='native position UID including separately advertised location variants'
     }
     abort()
-    return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:BOARD,firstParty:true,listingComplete:false,pagesFetched:2,reportedTotal:null,indiaFacetCount:null,verifiedAt:now,reason:'current-native-public-board-enumerated-and-rechecked-company-wide-scope-unproven'})
+    attachInventoryEvidence(jobs,{status:'coverage-gap',surface:BOARD,firstParty:true,listingComplete:false,pagesFetched:2,reportedTotal:null,indiaFacetCount:null,verifiedAt:now,reason:'current-native-public-board-enumerated-and-rechecked-company-wide-scope-unproven'})
+    return attachSourceObservationEvidence(jobs,{source:'checkmarx',recordKind:'vacancy-rows',observedRecordCount:board.rows.length,observedVacancyCount:board.rows.length,sourceScopeComplete:false,companyGlobalTotal:null,companyIndiaTotal:null})
   }finally{clearTimeout(timer)}
 }

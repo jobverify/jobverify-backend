@@ -263,7 +263,14 @@
       "kind": "active-declared-external-profile",
       "scriptURL": "https://www.affirm.com/sections-Jobs-895ebc840a0b26051eaf.js",
       "scriptSHA256": "e0e03254f43c30e4a5b10a3283181065bf610b065af9da9e8a1104998384a1f7",
-      "scriptSpecifier": "/sections-Jobs-895ebc840a0b26051eaf.js"
+      "scriptSpecifier": "/sections-Jobs-895ebc840a0b26051eaf.js",
+      "reviewedAlternates": [
+        {
+          "scriptURL": "https://www.affirm.com/sections-Jobs-65cbf014b3c569923b18.js",
+          "scriptSpecifier": "/sections-Jobs-65cbf014b3c569923b18.js",
+          "scriptSHA256": "142cb6de171f70dde22443e3b1c7e1ee4eafa52ffe55f6912eada982fd0b50e1"
+        }
+      ]
     },
     "countryFilter": "India"
   },
@@ -309,7 +316,14 @@
       "kind": "active-declared-external-profile",
       "scriptURL": "https://tailscale.com/_next/static/chunks/44640-dc80d7b513269eaf.js",
       "scriptSHA256": "0cf5bfc726c7f188abc708a98770550d742858b5a1e9ff2b425aa7b4732bd689",
-      "scriptSpecifier": "/_next/static/chunks/44640-dc80d7b513269eaf.js"
+      "scriptSpecifier": "/_next/static/chunks/44640-dc80d7b513269eaf.js",
+      "reviewedAlternates": [
+        {
+          "scriptURL": "https://tailscale.com/_next/static/chunks/44640-94f2d044bde7e9bf.js",
+          "scriptSpecifier": "/_next/static/chunks/44640-94f2d044bde7e9bf.js",
+          "scriptSHA256": "ceca4395d0f0f6c1488c9219c7cce53aead98b57945bf2e8dda2a7bdd89879e6"
+        }
+      ]
     },
     "countryFilter": "India"
   }
