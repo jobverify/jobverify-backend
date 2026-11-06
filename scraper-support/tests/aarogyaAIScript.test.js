@@ -9,7 +9,7 @@ const loadAarogyaAIModule = async () => {
   }
 }
 
-test('AarogyaAI validates the verified unreachable first-party surfaces for the current no-public-jobs state', async () => {
+test('AarogyaAI legacy predicates identify response shapes without proving zero vacancies', async () => {
   const aarogyaAI = await loadAarogyaAIModule()
   assert.ok(aarogyaAI, 'Expected AarogyaAI scraper module at ../../scraper/aarogyaai/script.js')
 
@@ -19,13 +19,13 @@ test('AarogyaAI validates the verified unreachable first-party surfaces for the 
   assert.equal(aarogyaAI.isUnexpectedReachableSurface({ errorKind: 'timeout' }), false)
 })
 
-test('AarogyaAI run verifies the exact-name first-party roots and common careers routes before returning []', async () => {
+test('AarogyaAI stops at the unavailable configured root and preserves unknown inventory', async () => {
   const aarogyaAI = await loadAarogyaAIModule()
   assert.ok(aarogyaAI, 'Expected AarogyaAI scraper module at ../../scraper/aarogyaai/script.js')
 
   const requestedUrls = []
 
-  const jobs = await aarogyaAI.createAarogyaAIScraper().run({
+  await assert.rejects(aarogyaAI.createAarogyaAIScraper().run({
     probeUrl: async (url) => {
       requestedUrls.push(url)
 
@@ -48,20 +48,16 @@ test('AarogyaAI run verifies the exact-name first-party roots and common careers
 
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), error => error.failureKind === 'network_or_timeout'
+    && error.inventoryEvidence.listingComplete === false
+    && error.inventoryEvidence.reportedTotal === null)
 
   assert.deepEqual(requestedUrls, [
     'https://aarogyaai.com/',
-    'https://aarogyaai.in/',
-    'https://aarogyaai.com/careers',
-    'https://aarogyaai.com/jobs',
-    'https://aarogyaai.in/careers',
-    'https://aarogyaai.in/jobs',
   ])
-  assert.deepEqual(jobs, [])
 })
 
-test('AarogyaAI fails closed when a first-party root or common careers route becomes reachable', async () => {
+test('AarogyaAI does not treat reachable corporate HTML, job-like HTML or DNS errors as a complete inventory', async () => {
   const aarogyaAI = await loadAarogyaAIModule()
   assert.ok(aarogyaAI, 'Expected AarogyaAI scraper module at ../../scraper/aarogyaai/script.js')
 
@@ -93,7 +89,7 @@ test('AarogyaAI fails closed when a first-party root or common careers route bec
   await assert.rejects(
     aarogyaAI.createAarogyaAIScraper().run({
       probeUrl: async (url) => {
-        if (url === 'https://aarogyaai.in/jobs') {
+        if (url === 'https://aarogyaai.com/') {
           return {
             url,
             finalUrl: url,
@@ -125,6 +121,6 @@ test('AarogyaAI fails closed when a first-party root or common careers route bec
         errorKind: 'dns',
       }),
     }),
-    /verified unreachable surface/i,
+    error => error.failureKind === 'network_or_timeout' && error.inventoryEvidence.reportedTotal === null,
   )
 })

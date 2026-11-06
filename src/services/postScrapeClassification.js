@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs'
 import { buildClassificationInput, hashClassificationInput, resolveClassification, getAuthoritativeClassification, RUNTIME_HASH, CLASSIFICATION_FIELDS } from './jobClassificationPolicy.js'
 import { recoverClassificationSourceTitle } from './classificationSourceTitle.js'
 import { normalizePublicJobType } from '../utils/publicJobTypeLabel.js'
-import { collectRecruitmentFacts, fresherVacancyTitle, hasAlternativeFresherPath } from './jobRecruitmentPolicy.js'
+import { collectRecruitmentFacts, entryLevelVacancyTitle, fresherVacancyTitle, hasAlternativeFresherPath } from './jobRecruitmentPolicy.js'
+import { isExplicitTestPosting } from './classificationSourceQuality.js'
 
 export const GLICLASS_CONFIG = JSON.parse(readFileSync(new URL('../../classification/gliclass/model.json', import.meta.url)))
 const runtimeHash = createHash('sha256').update(RUNTIME_HASH).update([
@@ -122,6 +123,7 @@ export function sourceGuardedClassification(job, { now = new Date(), mode = 'sha
     .some(field => input.sourceFields[field].length > 20)
   const roleSection = /\b(?:(?:roles?\s+and\s+|key\s+)?responsibilities|(?:minimum|basic|required)\s+qualifications|requirements)\s*:\s*(?!zoom\s+in\b)[a-z][^.\n]{20,}/i.test(description)
   const sourceQualityIssues = []
+  if (isExplicitTestPosting(input.title)) sourceQualityIssues.push('non_vacancy_test_posting')
   if (!roleFields && !roleSection) {
     if (/\b(?:how did you know about this opportunity|choose how you'd like to (?:proceed|share your resume)|personal education skills others)\b/i.test(description)) {
       sourceQualityIssues.push('application_form_without_role_description')
@@ -183,8 +185,8 @@ export function sourceGuardedClassification(job, { now = new Date(), mode = 'sha
     sourceQualityIssues.push('conflicting_role_eligibility')
   }
   if (sourceQualityIssues.length) {
-    const reason = sourceQualityIssues.includes('conflicting_role_eligibility')
-      ? 'conflicting_role_eligibility' : 'insufficient_role_description'
+    const reason = sourceQualityIssues.includes('non_vacancy_test_posting') ? 'non_vacancy_test_posting'
+      : sourceQualityIssues.includes('conflicting_role_eligibility') ? 'conflicting_role_eligibility' : 'insufficient_role_description'
     result = { ...result, status: 'uncertain', reason,
       resolved: { ...result.resolved, jobType: 'Unspecified', employmentType: null,
         seniority: 'Unknown', experienceLevel: null, experiencePolicy: 'not_stated',
@@ -222,6 +224,13 @@ export function resolvePostScrapeClassification(job, prediction, { now = new Dat
   if (modelFallback && prediction.modelLabel === 'Full-time Experienced'
     && /\b(?:trainee|graduate|apprentice|entry[- ]level|freshers?)\b/i.test(input.title.replace(/_/g, ' '))) {
     reviewReasons.push('entry_level_title_with_experienced_prediction')
+  }
+  if (modelFallback && Buffer.byteLength(input.body, 'utf8') <= 100) reviewReasons.push('sparse_role_description')
+  if (modelFallback && ranked[0][1] <= .5) reviewReasons.push('model_fallback_without_majority')
+  if (resolved.jobType === 'Full-time Experienced' && entryLevelVacancyTitle(input.title)
+    && (base.resolved.employerExperienceProfile?.minimumYears > 0
+      || collectRecruitmentFacts({ ...input, title: '' }).experienced)) {
+    reviewReasons.push('entry_level_title_with_required_experience')
   }
   // Source-backed rules guard numeric eligibility, contract roles, and internships.
   // The model supplies a category only when usable source text leaves it unresolved;

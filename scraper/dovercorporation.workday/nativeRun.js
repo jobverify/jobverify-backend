@@ -2,7 +2,7 @@ import {extractWorkdayStructuredDetail} from '../../scraper-support/myworkday/en
 import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 import {createHash} from 'node:crypto'
 import {setTimeout as delay} from 'node:timers/promises'
-import {BOARD,API,CLIENT,CAREERS,check,verifyCorporate,verifyShell,canonicalFacets,discoverOffices,listing,detail,detailSnapshot,description,nativeDate} from './nativeContract.js'
+import {BOARD,API,CLIENT,CAREERS,check,verifyShell,canonicalFacets,discoverOffices,listing,detail,detailSnapshot,description,nativeDate} from './nativeContract.js'
 
 export async function runNative({signal,now,fetchImpl=globalThis.fetch,requestIntervalMs=1000}){
  check(Number.isSafeInteger(requestIntervalMs)&&requestIntervalMs>=0&&(requestIntervalMs>=1000||fetchImpl!==globalThis.fetch),'Invalid native request interval')
@@ -27,18 +27,32 @@ export async function runNative({signal,now,fetchImpl=globalThis.fetch,requestIn
    const target=new URL(response.headers.get('location'),url).href
    check(clientURL(target),'Advertised client redirect URL invalid');response=await fetchOne(target)
   }
-  check(response.status===200&&(isClient?clientURL(response.url):response.url===url),'Native HTTP/final URL identity failure')
+  const binding=url===CAREERS,redirectTarget=binding?response.headers.get('location'):null
+  if(response.status!==200&&!(binding&&response.status===301)){
+   await response.body?.cancel?.().catch(()=>{})
+   throw Object.assign(Error('Dover native: Native public HTTP '+response.status),{
+    status:response.status,requestUrl:url,finalUrl:response.url,abortRetries:[401,403,429,451].includes(response.status),incompleteScope:true,
+   })
+  }
+  if(!(isClient?clientURL(response.url):response.url===url)){
+   await response.body?.cancel?.().catch(()=>{})
+   check(false,'Native final URL identity failure')
+  }
+  if(binding&&!(response.status===301&&redirectTarget===BOARD)){
+   await response.body?.cancel?.().catch(()=>{})
+   check(false,'Official careers redirect handoff changed')
+  }
   if(url===BOARD){const set=response.headers.getSetCookie?.()??[];cookies=set.map(v=>v.split(';')[0]).join('; ');csrf=set.find(v=>v.startsWith('CALYPSO_CSRF_TOKEN='))?.split(';')[0].slice(19)??''}
   const mime=response.headers.get('content-type')||''
-  check((json?/application\/json\b/i:isClient?/(?:java|ecma)script/i:/text\/html\b/i).test(mime),'Native response MIME changed')
+  check(binding||(json?/application\/json\b/i:isClient?/(?:java|ecma)script/i:/text\/html\b/i).test(mime),'Native response MIME changed')
   const chunks=[];let size=0
   if(response.body){for await(const chunk of response.body){requestSignal.throwIfAborted();size+=chunk.byteLength;check(size<=10000000,'Native response body bound exceeded');chunks.push(Buffer.from(chunk))}}
   else if(fetchImpl!==globalThis.fetch){const value=await response.text();size=Buffer.byteLength(value);check(size<=10000000,'Native response body bound exceeded');chunks.push(Buffer.from(value))}
-  else check(false,'Native response body unavailable')
+  else check(binding,'Native response body unavailable')
   const bytes=Buffer.concat(chunks);requestSignal.throwIfAborted();signal.throwIfAborted()
-  return{body:new TextDecoder('utf-8',{fatal:true}).decode(bytes),requestedURL:url,finalURL:response.url,bodySHA256:sha(bytes)}
+  return{body:new TextDecoder('utf-8',{fatal:true}).decode(bytes),requestedURL:url,finalURL:response.url,bodySHA256:sha(bytes),...(binding?{redirectStatus:response.status,redirectTarget}: {})}
  }
- const corporate=await request(CAREERS);verifyCorporate(corporate.body)
+ const corporate=await request(CAREERS)
  const shell=(await request(BOARD)).body
  verifyShell(shell)
  const client=await request(CLIENT,undefined,true);check(client.body.includes('appliedFacets'),'Native advertised public client contract missing')
@@ -75,14 +89,14 @@ export async function runNative({signal,now,fetchImpl=globalThis.fetch,requestIn
    ...(!active?{sourceRejectedNativeDescription:v.jobDescription??null,sourceDetailFailureKind:'unqualified-role-content'}:{}),
    department:mapped?.department,minimumQualification:mapped?.minimumQualification,preferredQualification:mapped?.preferredQualification,requiredSkills:mapped?.requiredSkills,experienceRequired:mapped?.experienceRequired,publicExperienceChecked:Boolean(active),
    nativeEmployer:payload.hiringOrganization.name,nativeHiringOrganization:structuredClone(payload.hiringOrganization),nativeSourceRecord:structuredClone(payload),nativeListingRecord:structuredClone(snapshots.flatMap(s=>s.raw.jobPostings).find(r=>r.externalPath===row.externalPath)),nativeBoardProvenance:[{tenant:'dover',site:'Dover',nativePostingUid:v.id,requisitionId:v.jobReqId,canonicalUrl:v.externalUrl,nativeEmployer:payload.hiringOrganization.name}],
-   sourceOfficialBinding:{careersURL:CAREERS,boardURL:BOARD,observedAt:now(),bodySHA256:corporate.bodySHA256,companyScopeComplete:false},sourceClientIdentity:{requestedURL:client.requestedURL,finalURL:client.finalURL,bodySHA256:client.bodySHA256},
+   sourceOfficialBinding:{careersURL:CAREERS,boardURL:BOARD,bindingKind:'first-party-careers-host-redirect',redirectStatus:corporate.redirectStatus,redirectTarget:corporate.redirectTarget,observedAt:now(),bodySHA256:corporate.bodySHA256,companyScopeComplete:false},sourceClientIdentity:{requestedURL:client.requestedURL,finalURL:client.finalURL,bodySHA256:client.bodySHA256},
    sourceNativeLocationFacets:{parameter:'locations',ids:offices.map(v=>v.id),values:structuredClone(offices),selectedOfficeId:row.officeId,scope:'current-explicit-native-India-office-facets'},
    sourceListingComplete:false,sourceScopeComplete:false,sourceCompanyCoverageComplete:false,sourceGlobalJobCount:null,sourceIndiaJobCount:null,
    sourceObservedIndiaJobCount:rows.length,sourceBoardInventories:offices.map(office=>({tenant:'dover',site:'Dover',scope:'configured-native-location-subset',appliedFacets:{locations:[office.id]},reportedTotal:office.count,observedIndia:office.count,pagesFetched:Math.max(1,Math.ceil(office.count/20)),stableReportedTotal:true,explicitGlobalEmpty:false})),
    sourceFinalListingEvidence:{allSelectedPagesRechecked:true,allSelectedDetailsRechecked:true,typedFacetSetsRechecked:true,pagesFetched:snapshots.length,companyGlobalTotal:null,companyIndiaTotal:null},lifecycleCleanupAllowed:false,applicationVisited:false,
   })
  }
- const finalCorporate=await request(CAREERS);verifyCorporate(finalCorporate.body)
+ const finalCorporate=await request(CAREERS)
  for(const job of jobs)Object.assign(job.sourceOfficialBinding,{closingBodySHA256:finalCorporate.bodySHA256,closingObservedAt:now(),currentHandoffRechecked:true})
  signal.throwIfAborted()
  return attachInventoryEvidence(jobs,{status:'coverage-gap',surface:BOARD,firstParty:true,listingComplete:false,pagesFetched:snapshots.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason:'current-explicit-native-India-office-facets-company-recruitment-scope-unproven'})

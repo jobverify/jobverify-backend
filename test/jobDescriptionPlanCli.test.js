@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const exec = promisify(execFile);
 const script = fileURLToPath(new URL('../scripts/planDescriptionRewrites.js', import.meta.url));
 
-test('queue planning emits four configured shards for Actions and preserves one retry cutoff', async t => {
+test('queue planning emits sixteen configured shards for Actions and preserves one retry cutoff', async t => {
   assert.equal(await fs.access(script).then(() => true, () => false), true, 'planning CLI must exist');
   const cwd = await fs.mkdtemp(path.join(tmpdir(), 'rewrite-plan-'));
   t.after(() => fs.rm(cwd, { recursive: true, force: true }));
@@ -18,19 +18,19 @@ test('queue planning emits four configured shards for Actions and preserves one 
     queueAsOf: '2026-10-30T10:00:00.000Z', startedAt: '2026-10-30T10:00:01.000Z' }));
   const result = await exec(process.execPath, [script, summary], { cwd, windowsHide: true, env: {
     ...process.env, GITHUB_OUTPUT: output, JOB_DESCRIPTION_REWRITE_JOBS_PER_SHARD: '1000',
-    JOB_DESCRIPTION_REWRITE_SHARD_COUNT: '4', JOB_DESCRIPTION_REWRITE_MAX_PARALLEL: '4',
+    JOB_DESCRIPTION_REWRITE_SHARD_COUNT: '16', JOB_DESCRIPTION_REWRITE_MAX_PARALLEL: '16',
   } });
   const plan = JSON.parse(result.stdout.trim());
-  assert.equal(plan.shardCount, 4);
+  assert.equal(plan.shardCount, 16);
   assert.equal(plan.queued, 27660);
-  assert.equal(plan.estimatedJobsPerShard, 6915);
+  assert.equal(plan.estimatedJobsPerShard, 1729);
   assert.equal(plan.queueAsOf, '2026-10-30T10:00:00.000Z');
   const fields = Object.fromEntries((await fs.readFile(output, 'utf8')).trim().split('\n').map(line => {
     const at = line.indexOf('='); return [line.slice(0, at), line.slice(at + 1)];
   }));
-  assert.equal(fields.shard_count, '4');
-  assert.equal(fields.max_parallel, '4');
+  assert.equal(fields.shard_count, '16');
+  assert.equal(fields.max_parallel, '16');
   assert.equal(fields.queue_as_of, plan.queueAsOf);
-  assert.deepEqual(JSON.parse(fields.matrix), { shard: [0, 1, 2, 3] });
+  assert.deepEqual(JSON.parse(fields.matrix), { shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] });
   assert.deepEqual(JSON.parse(await fs.readFile(path.join(cwd, '.cache/scraper-actions/description-plan.json'))), plan);
 });

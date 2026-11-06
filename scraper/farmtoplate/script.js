@@ -101,27 +101,13 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || null
 
-const createTimeoutSignal = (timeoutMs) => {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
-    return undefined
-  }
-
-  if (typeof AbortSignal?.timeout === 'function') {
-    return AbortSignal.timeout(timeoutMs)
-  }
-
-  const controller = new AbortController()
-  setTimeout(() => controller.abort(), timeoutMs)
-  return controller.signal
-}
-
 const defaultFetchPage = async (url, options = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    signal: AbortSignal.any([createTimeoutSignal(20000), ...(options.signal ? [options.signal] : [])]),
+    signal: options.signal,
   })
 
   return {
@@ -365,9 +351,50 @@ const buildJob = ({ card, detail }) => {
   }
 }
 
-export const createFarmToPlateScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchPage = defaultFetchPage, now: overrideNow, signal } = {}) {
-    const read = async url => { signal?.throwIfAborted(); const page = await fetchPage(url, { signal }); signal?.throwIfAborted(); return page }
+export const createFarmToPlateScraper = ({ now = () => new Date().toISOString(), maxJobs: factoryCap = Infinity } = {}) => ({
+  async run(options = {}) {
+    const { fetchPage = defaultFetchPage, now: overrideNow, signal } = options
+    signal?.throwIfAborted()
+    const cap = Object.hasOwn(options, 'maxJobs') && options.maxJobs !== undefined ? options.maxJobs ?? Infinity : factoryCap ?? Infinity
+    if (!(cap === Infinity || Number.isSafeInteger(cap) && cap >= 0)) throw new RangeError('Farm To Plate invalid result cap')
+    if (options.maxPages != null && options.maxPages !== Infinity) throw new RangeError('Farm To Plate finite source-page limits are unsupported')
+    let pagesFetched = 0
+    const finish = (jobs, cards = []) => {
+      signal?.throwIfAborted()
+      attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows', observedRecordCount: cards.length,
+        observedVacancyCount: cards.length, sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null })
+      return attachInventoryEvidence(jobs, { status: 'discovery-only', surface: CAREERS_URL, firstParty: pagesFetched > 0,
+        listingComplete: false, pagesFetched, reportedTotal: null, indiaFacetCount: null, verifiedAt: null,
+        reason: 'farm-native-vacancy-observations'
+          + (cap === 0 ? ';zero-result-limit' : '')
+          + (jobs.some(job => !job.rawNativeRoleEvidence.identityQualified) ? ';native-identity-conflict' : '')
+          + ';workplace-country-company-scope-unconfirmed;closing-not-read' })
+    }
+    if (cap === 0) return finish([])
+    const read = async url => {
+      signal?.throwIfAborted()
+      const deadline = AbortSignal.timeout(20000), requestSignal = signal ? AbortSignal.any([signal, deadline]) : deadline
+      let listener
+      const cancelled = new Promise((_, reject) => {
+        listener = () => reject(requestSignal.reason)
+        requestSignal.addEventListener('abort', listener, { once: true })
+      })
+      try {
+        const page = await Promise.race([Promise.resolve().then(() => {
+          requestSignal.throwIfAborted()
+          pagesFetched++
+          return fetchPage(url, { signal: requestSignal })
+        }), cancelled])
+        signal?.throwIfAborted()
+        requestSignal.throwIfAborted()
+        return page
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      } finally {
+        requestSignal.removeEventListener('abort', listener)
+      }
+    }
     const homepage = await read(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Farm To Plate official homepage no longer matches the verified first-party surface')
@@ -388,10 +415,17 @@ export const createFarmToPlateScraper = ({ now = () => new Date().toISOString() 
       throw new Error('Farm To Plate opening cards changed materially')
     }
 
-    const scrapedAt = (overrideNow || now)()
+    let scrapedAt
+    try {
+      scrapedAt = (overrideNow || now)()
+    } catch (error) {
+      signal?.throwIfAborted()
+      throw error
+    }
+    signal?.throwIfAborted()
     const jobs = []
 
-    for (const card of cards) {
+    for (const card of cards.slice(0, cap)) {
       const detailPage = await read(card.detailUrl)
 
       if (detailPage.status !== 200) {
@@ -416,13 +450,7 @@ export const createFarmToPlateScraper = ({ now = () => new Date().toISOString() 
       })
     }
 
-    attachSourceObservationEvidence(jobs, { source: SOURCE, recordKind: 'vacancy-rows', observedRecordCount: cards.length,
-      observedVacancyCount: cards.length, sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null })
-    return attachInventoryEvidence(jobs, { status: 'discovery-only', surface: CAREERS_URL, firstParty: true,
-      listingComplete: false, pagesFetched: 3 + cards.length, reportedTotal: null, indiaFacetCount: null, verifiedAt: null,
-      reason: 'farm-native-vacancy-observations'
-        + (jobs.some(job => !job.rawNativeRoleEvidence.identityQualified) ? ';native-identity-conflict' : '')
-        + ';workplace-country-company-scope-unconfirmed;closing-not-read' })
+    return finish(jobs, cards)
   },
 })
 

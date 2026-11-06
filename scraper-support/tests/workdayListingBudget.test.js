@@ -80,9 +80,15 @@ test('Workday ends optional detail enrichment at its budget and retains all safe
 })
 
 test('Workday refuses a snapshot if the detail budget leaves grouped India locations unresolved', async (t) => {
-  t.mock.method(globalThis, 'fetch', async (_url, init = {}) => init.method === 'POST'
-    ? json({ total: 2, jobPostings: [posting(1), posting(2, '2 Locations')] })
-    : new Response('<html>Workday</html>'))
+  t.mock.method(globalThis, 'fetch', async (url, init = {}) => {
+    if (init.method === 'POST') return json({ total: 2, jobPostings: [posting(1), posting(2, '2 Locations')] })
+    // A valid native JSON response with only one of two promised locations
+    // exercises geography. HTML at this endpoint is a separate contract error.
+    if (String(url).includes('/wday/cxs/')) return json({ jobPostingInfo: {
+      location: 'Bangalore, India', additionalLocations: [],
+    } })
+    return new Response('<html>Workday</html>')
+  })
 
   await assert.rejects(
     runWorkdayScraper({ ...options, detailEnrichmentBudgetMs: 0 }),

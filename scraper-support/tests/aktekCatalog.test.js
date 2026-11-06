@@ -17,7 +17,7 @@ const loadAktekCatalog = async () => {
   }
 }
 
-test('Aktek provider metadata captures the verified first-party no-public-careers surface without aliases', async () => {
+test('Aktek provider metadata records declared corporate crawl discovery without a complete inventory claim', async () => {
   const { AKTEK_CATALOG } = await loadAktekCatalog()
   const provider = hydrateProviderCatalogEntry(AKTEK_CATALOG)
 
@@ -27,20 +27,21 @@ test('Aktek provider metadata captures the verified first-party no-public-career
   assert.equal(provider.companyCareerPage, 'https://aktek.io/')
   assert.equal(provider.companyDomain, 'aktek.io')
   assert.equal(provider.robotsTxtUrl, 'https://aktek.io/robots.txt')
-  assert.equal(provider.sitemapIndexUrl, 'https://aktek.io/sitemap.xml')
+  assert.equal(provider.sitemapIndexUrl, 'https://aktek.io/sitemap_index.xml')
   assert.equal(provider.pageSitemapUrl, 'https://aktek.io/page-sitemap.xml')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-homepage-plus-crawl-surface-plus-common-careers-route-404-validation')
+  assert.equal(provider.paginationStrategy, 'bounded-homepage-and-declared-crawl-discovery')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-robots-and-page-sitemap-without-careers-url+verified-missing-common-careers-routes-return-empty',
+    'qualified-corporate-crawl-documents-return-explicit-incomplete-inventory-evidence',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.sourceScopeComplete, false)
   assert.match(provider.modulePath, /aktek[\\/]script\.js$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /November 6, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/aktek\.io\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/aktek\.io\/robots\.txt/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/aktek\.io\/page-sitemap\.xml/i)

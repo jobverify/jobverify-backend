@@ -1,3 +1,4 @@
+import {runNovoNordiskGbsNative} from './nativeCareers.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -184,60 +185,8 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify Novo Nordisk GBS scraper)',
-      Accept: 'text/html,application/xhtml+xml',
-    },
-  })
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
-}
-
-export const createNovoNordiskGBSScraper = () => ({
-  async run({
-    maxPages = config.maxPages,
-    maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-    fetchText = defaultFetchText,
-  } = {}) {
-    const jobs = []
-    const seenJobIds = new Set()
-    let startRow = 0
-    let pageNumber = 1
-
-    while (pageNumber <= maxPages) {
-      const listingHtml = await fetchText(buildIndiaSearchUrl(startRow || null))
-      const listings = extractSearchResults(listingHtml)
-      const summary = extractResultsSummary(listingHtml)
-
-      if (listings.length === 0) break
-
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId) || !isBengaluruLocation(listing.location)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detail = extractJobDetail(await fetchText(listing.sourceUrl), listing)
-        if (!isIndiaLocation(detail.location) || !isBengaluruLocation(detail.location)) continue
-        if (!isNovoNordiskGbsOrganization(detail.organization)) continue
-
-        jobs.push({
-          ...detail,
-          company: 'Novo Nordisk Global Business Services',
-          link: detail.applyUrl || detail.sourceUrl,
-          source: 'novonordiskgbs',
-          scrapedAt: new Date().toISOString(),
-        })
-        if (maxJobs && jobs.length >= maxJobs) return jobs
-      }
-
-      if (!summary.totalPages || pageNumber >= summary.totalPages) break
-      startRow += summary.pageSize || listings.length
-      pageNumber += 1
-    }
-
-    return jobs
-  },
+export const createNovoNordiskGBSScraper = (options = {}) => ({
+  run: (overrides = {}) => runNovoNordiskGbsNative({...options, ...overrides}),
 })
 
 export const run = async (options) => createNovoNordiskGBSScraper().run(options)

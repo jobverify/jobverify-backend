@@ -22,7 +22,10 @@ export function createCyfuturePublicRead(options,receipts){
    need(/^text\/html\b/i.test(response.headers.get('content-type')||''),'native response MIME changed')
    const length=response.headers.get('content-length'),encoding=response.headers.get('content-encoding')?.toLowerCase()
    need(length===null||/^\d+$/.test(length)&&Number(length)<=4000000,'advertised response bound')
-   need(!encoding||['identity','gzip','br','deflate'].includes(encoding),'unreviewed response encoding')
+   // Fetch adapters expose decoded bytes while retaining original wire headers.
+   // The current native publisher also serves zstd; decoded stream bounds and
+   // strict UTF-8/native document validation still apply to every response.
+   need(!encoding||['identity','gzip','br','deflate','zstd'].includes(encoding),'unreviewed response encoding')
    reader=response.body?.getReader();need(reader,'native response stream missing');const chunks=[];let bytes=0
    for(;;){combined.throwIfAborted();const part=await reader.read();combined.throwIfAborted();if(part.done)break
     bytes+=part.value.byteLength;total+=part.value.byteLength;need(bytes<=4000000&&total<=32000000,'native response byte bound');chunks.push(Buffer.from(part.value))}

@@ -1,0 +1,12 @@
+[
+  {
+    "source": "novonordiskgbs",
+    "catalogOverride": true,
+    "paginationStrategy": "declared-public-GET-pages;paired-whole-native-models;company-scope-unqualified",
+    "extractionStrategy": "whole-own-RMK-role-shell+native-GBS-scope+literal-workplace-India+published-deadline-holds",
+    "verifiedOn": "2026-11-06",
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedSurfaceSummary": "The declared public India GET search lists 21 current native roles. Full own role shells, literal GBS witnesses, original body bytes and application declarations reconcile at opening and closing. Four affiliate/medical roles are outside GBS; three published application deadlines have passed. Nine India roles have explicit own workplace/unit country proof; five GBS roles remain country-unknown. The India query, Bangalore and terminal IN do not supply missing country. Public page IDs stay separate from unknown formal requisitions, publication timestamps, seat counts and legal employers. Applications are unvisited. Metadata-checked sequential GETs stop at the first failure; company/listing scope and cleanup remain unqualified. No full source-coverage credit is claimed."
+  }
+]

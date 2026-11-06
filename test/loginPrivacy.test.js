@@ -13,7 +13,7 @@ const createResponse = () => ({
   cookie() { assert.fail("An unsuccessful sign-in must not create a session."); },
 });
 
-test("an incorrect password does not disclose whether an email uses Google sign-in", async (t) => {
+test("login distinguishes unknown emails from incorrect passwords for existing accounts", async (t) => {
   const passwordHash = await bcrypt.hash("CorrectPassword123", 4);
   const accounts = new Map([
     ["google.account@gmail.com", { password: null, google: { sub: "google-subject" } }],
@@ -30,7 +30,9 @@ test("an incorrect password does not disclose whether an email uses Google sign-
     assert.deepEqual(res.body, {
       code: 401,
       success: false,
-      message: "Invalid credentials",
+      message: accounts.has(email)
+        ? "Incorrect password. Please try again or reset your password."
+        : "Account doesn't exist. Please sign up.",
     }, email);
   }
 });
@@ -52,6 +54,23 @@ test('failed login categories each perform one policy-cost password comparison',
     await login({ body: { email, password: 'IncorrectPassword123!' } }, res);
     assert.equal(compare.mock.callCount() - previous, 1, email);
     assert.equal(res.statusCode, 401);
-    assert.equal(res.body.message, 'Invalid credentials');
+    assert.equal(res.body.message, accounts.has(email)
+      ? 'Incorrect password. Please try again or reset your password.'
+      : "Account doesn't exist. Please sign up.");
+  }
+});
+
+test('pending registrations never receive the account-does-not-exist warning', async t => {
+  const password = 'PendingPassword123!';
+  t.mock.method(User, 'findOne', async () => null);
+  t.mock.method(PendingUser, 'findOne', async () => ({ password: await bcrypt.hash(password, 4) }));
+  for (const [submittedPassword, expectedMessage] of [
+    [password, 'Your email verification is pending. Please verify your email to log in.'],
+    ['WrongPassword123!', 'Incorrect password. Please try again or reset your password.'],
+  ]) {
+    const res = createResponse();
+    await login({ body: { email: 'pending@gmail.com', password: submittedPassword } }, res);
+    assert.equal(res.statusCode, 401);
+    assert.equal(res.body.message, expectedMessage);
   }
 });

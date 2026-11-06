@@ -64,6 +64,8 @@ test('extractSearchResults normalizes athenahealth India listings into the share
     requisitionId: 'R15060',
     department: 'Product Engineering & Data Science',
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: null,
     jobDescription:
       'Join us as we work to create a thriving ecosystem that delivers accessible, high-quality, and sustainable healthcare for all. Role summary. Build scalable, reliable full-stack capabilities that hel...',

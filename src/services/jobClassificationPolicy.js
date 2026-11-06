@@ -7,6 +7,7 @@ import { resolveRecruitmentPolicy } from './jobRecruitmentPolicy.js';
 import { normalizePublicJobType, PUBLIC_JOB_TYPES } from '../utils/publicJobTypeLabel.js';
 import { resolveJobPublicationDate } from '../utils/jobPublicationDate.js';
 import { getSourceDescription } from '../utils/jobSourceContent.js';
+import { isPlaceholderClassificationText } from './classificationSourceQuality.js';
 
 const normalizedBytes = relative => readFileSync(new URL(`../../${relative}`, import.meta.url)).toString('utf8').replace(/\r\n/g, '\n');
 const policyBytes = normalizedBytes('classification/policy.json');
@@ -16,7 +17,7 @@ export const CLASSIFICATION_MODEL = JSON.parse(readFileSync(new URL('../../class
 export const POLICY_HASH = createHash('sha256').update(policyBytes).digest('hex');
 export const RUNTIME_HASH = createHash('sha256').update(JSON.stringify([
   'classification/gliclass/model.json', 'classification/gliclass/requirements.txt', 'classification/gliclass/worker.py', 'classification/gliclass/runtime.py',
-  'src/services/jobClassificationPolicy.js', 'src/services/classificationDescription.js', 'src/services/jobRecruitmentPolicy.js', 'src/utils/jobClassificationVersion.js', 'src/utils/jobFilterSignals.js', 'src/utils/jobSourceContent.js', 'src/utils/jobPublicationDate.js',
+  'src/services/jobClassificationPolicy.js', 'src/services/classificationDescription.js', 'src/services/classificationSourceQuality.js', 'src/services/jobRecruitmentPolicy.js', 'src/utils/jobClassificationVersion.js', 'src/utils/jobFilterSignals.js', 'src/utils/jobSourceContent.js', 'src/utils/jobPublicationDate.js',
   'src/utils/publicJobTypeLabel.js', 'src/constants/preferredJobTypes.js',
 ].map(relative => [relative, createHash('sha256').update(normalizedBytes(relative)).digest('hex')]))).digest('hex');
 const PUBLIC_TYPES = ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract', 'Others', 'Unspecified'];
@@ -58,6 +59,7 @@ export const isTitleOnlyClassificationSource = (job = {}) => {
 
 export const buildClassificationInput = (job = {}, { now = new Date(), identity = {} } = {}) => {
   const selectedDescription = selectClassificationDescription(job);
+  const sourceDescription = cleanSourceText(getSourceDescription(job));
   const referenceYear = Number(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(now));
   // These opt-in fields are employer facts. employmentType/jobType/experienceLevel may already be inferred by a scraper.
   const sourceEmploymentType = cleanSourceText(job.sourceEmploymentType || job.atsEmploymentType || job.rawEmploymentType
@@ -65,12 +67,16 @@ export const buildClassificationInput = (job = {}, { now = new Date(), identity 
   const sourceFields = {
     // A role caption is not an employer description. An old rewrite cannot
     // supply missing source evidence; independently stated fields remain usable.
-    description: isTitleOnlyClassificationSource(job) ? '' : cleanSourceText(selectedDescription.text),
+    description: isTitleOnlyClassificationSource(job) || isPlaceholderClassificationText(sourceDescription)
+      ? '' : cleanSourceText(selectedDescription.text),
     minimumQualification: cleanSourceText(job.minimumQualification), preferredQualification: cleanSourceText(job.preferredQualification),
     qualifications: cleanSourceText(job.qualifications), responsibilities: cleanSourceText(job.responsibilities), requirements: cleanSourceText(job.requirements),
     experienceRequired: cleanSourceText([job.sourceExperienceRequired, job.experienceRequiredProvenance === 'source' ? job.experienceRequired : null]
       .find(value => value !== null && value !== undefined && value !== '')),
   };
+  for (const [field, value] of Object.entries(sourceFields)) {
+    if (isPlaceholderClassificationText(value) && !(field === 'experienceRequired' && /^\d$/.test(value))) sourceFields[field] = '';
+  }
   const body = [...new Set([
     sourceFields.description,
     ...Object.entries(sourceFields).filter(([key, value]) => key !== 'description' && value).map(([key, value]) => `${{

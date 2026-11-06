@@ -430,7 +430,7 @@ const listingFingerprint = (cards) => JSON.stringify(cards.map((card) => ({
 
 const readNativeIndiaIdentity = (html, card) => {
   const meta = extractMetaDescription(html)
-  const identity = meta?.match(/^Offre d'emploi (.+?) de '([\s\S]+)'\. Lieu : ([\s\S]*?)\. Date : (\d{2}\/\d{2}\/\d{4})\. Ref : ([A-Z0-9/.-]+)\.$/i)
+  const identity = meta?.match(/^Offre d'emploi (.+?) de '([\s\S]+)'\. Lieu : ([\s\S]*?)\. Date : (\d{2}\/\d{2}\/\d{4})\. Ref : ([A-Z0-9/ .-]{1,200})\.$/i)
   const title = extractFieldById(html, 'fldjobdescription_jobtitle')
   const geography = extractLocationParts(extractFieldById(html, 'fldlocation_location_geographicalareacollection'))
   if (!identity || title !== card.title || normalizeWhitespace(identity[2]) !== card.title

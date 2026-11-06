@@ -78,7 +78,11 @@
     "https://monocept.turbohire.co/runtime-main.2aa688f3291c2c0748bb.js": "e26b68ad533d6a72bfbfb0cd364dd538d0ad1d20aa10dbf4996c58fc624e4525",
     "https://monocept.turbohire.co/main.b92aa5cb7a0a7499e689.chunk.js": "e29cb0673262b14c959241384c5f2e03b94a3417f9f82303f5807344279d4d66",
     "https://monocept.turbohire.co/24.52ad9596a317e0433e77.chunk.js": "947f1d46af7076821bd671d0049574fa109d04a97ca093b59bba0adc2e1ad926",
-    "https://monocept.turbohire.co/40.b1d2ab512b5de0fe4ca6.chunk.js": "9cd324b8b66a659f683b8b503350d4be321a57acbfdfe146ecb8e3ff33381090"
+    "https://monocept.turbohire.co/40.b1d2ab512b5de0fe4ca6.chunk.js": "9cd324b8b66a659f683b8b503350d4be321a57acbfdfe146ecb8e3ff33381090",
+    "https://monocept.turbohire.co/runtime-main.a3801c5ec8c75a558b86.js": "7503ade1cb27613358ce98f6084210ce621d12c49d561ba3c9dca6ffe18a1e95",
+    "https://monocept.turbohire.co/18.0a0a3f53b49041744779.chunk.js": "abcaa7c62f5eba8def6e1e5e1b28b412d5ef629eed81a0630617ec891a29175d",
+    "https://monocept.turbohire.co/main.bc8f2fdf0fa9e74f4468.chunk.js": "4d56acc5efbcfba0f97c383dace482b51288ce727e03d22296e0c25d7e27d085",
+    "https://monocept.turbohire.co/40.3ec75e9eb87caff145b7.chunk.js": "37422a4a8d2f7c78a4f9fc5fa6b0d7d951cb950e165ccc80e9d9d537ce5cbc94"
   },
   "cssSHA256": {
     "https://cdn.prod.website-files.com/696a2e35e7e3651bc1220fc5/css/monocept.webflow.6a01eb9f1a479fcac0481c05.d9e7abae8.opt.min.css": "818041ebe4ea8077c36512005327b0a4f4e0b78ed0102adc1ad993ac462fb22b",
@@ -174,6 +178,36 @@
         "https://monocept.turbohire.co/main.b92aa5cb7a0a7499e689.chunk.js",
         "https://monocept.turbohire.co/24.52ad9596a317e0433e77.chunk.js",
         "https://monocept.turbohire.co/40.b1d2ab512b5de0fe4ca6.chunk.js"
+      ],
+      "companyScopeUnqualified": true
+    },
+    {
+      "reviewedAt": "2026-11-06T05:02:17.579354+00:00",
+      "sourceCapture": "scraper-support/tests/fixtures/turboHireBuild20261106/capture.json.gz",
+      "reviewSummary": "Static original-program review: seven public/session method bodies, nine complete listing/detail/application caller bodies and two default-filter objects match the genuine October31 release. Lazy24 changes only three paired module-number digits. Whole-entity hashes and coherent script set are pinned per tenant. This review qualifies compatibility only; current company inventory remains unqualified.",
+      "publicMethodSHA256": {
+        "getUnauthenticatedAccessToken": "d50db8d34d43d41eca8fc2f1403cec1661391d41d6dde960d7d1baec9be7f857",
+        "constructor": "9a47aeb91fb9ee7bd685848c37ffaadc054ff843ea96a6451fd9a612d52becb1",
+        "getUnAuthenticatedAccessToken": "75b78c537edf926ce6a024e37ccd9b587641b2c1698b5fb3dac6619c513142d0",
+        "getOrgDetailsFromAccountName": "22e61ca681921aa255ce15df19193ec4e4ab97bbe4f718f37863b001bf68c1a8",
+        "getPublicOrgInfo": "c930e4bc62256d242ac81f814296659ed963f86331fdf8ce82a183e796f54e50",
+        "getPublicJobRefsForOrgFiltered": "b9a164010d28e4ef3cc9fdb9f4a65c4dcec9e6b1b16e6f0ffb1533dc666cd7bc",
+        "getJobInfo": "15c91e4a0a8ddcd940e6df83f4c249a7ab945bfbecfa1b6e8edadef13f6bb5df"
+      },
+      "protocolReviewSHA256": "d3861184751f3d52748019d605d76890649e4d01845789931bd93b99937b7ab7",
+      "scriptURLs": [
+        "https://monocept.turbohire.co/runtime-main.a3801c5ec8c75a558b86.js",
+        "https://monocept.turbohire.co/18.0a0a3f53b49041744779.chunk.js",
+        "https://monocept.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://monocept.turbohire.co/main.bc8f2fdf0fa9e74f4468.chunk.js"
+      ],
+      "clientURLs": [
+        "https://monocept.turbohire.co/runtime-main.a3801c5ec8c75a558b86.js",
+        "https://monocept.turbohire.co/18.0a0a3f53b49041744779.chunk.js",
+        "https://monocept.turbohire.co/30.812b9abed47cf2099f54.chunk.js",
+        "https://monocept.turbohire.co/main.bc8f2fdf0fa9e74f4468.chunk.js",
+        "https://monocept.turbohire.co/24.52ad9596a317e0433e77.chunk.js",
+        "https://monocept.turbohire.co/40.3ec75e9eb87caff145b7.chunk.js"
       ],
       "companyScopeUnqualified": true
     }

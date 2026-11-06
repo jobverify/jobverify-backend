@@ -73,13 +73,13 @@ test('Logelite exports local provider metadata for the verified first-party care
     atsPlatform: 'official-company-careers',
     countryFilter: 'India',
     paginationStrategy: 'single-page-job-cards',
-    extractionStrategy: 'verified-first-party-careers-page+same-page-role-cards+first-party-apply-links',
+    extractionStrategy: 'paired-current-native-role-pages+complete-declared-pdf-descriptions+literal-own-pdf-country',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'logelite.com',
-    verifiedOn: '2026-08-03',
+    verifiedOn: '2026-11-06',
     verifiedSurfaceSummary:
-      'Verified on Monday, August 3, 2026 that https://logelite.com/career/ is still the live first-party Logelite careers page and that it publicly exposes role cards such as Human Resource Executive, Business Development Manager, and SEO Executive with Lucknow location text plus first-party role pages, Download Details PDFs, and Apply Now links.',
+      'Current official careers cards and own role pages declare six complete native two-page PDF descriptions. Literal own PDF location labels, full criteria, employment and experience labels, original bytes and paired closing models are retained. Applications, complete company scope and cleanup remain unverified.',
     dryRunFile: 'logelite/jobs.json',
   })
 
@@ -89,31 +89,13 @@ test('Logelite exports local provider metadata for the verified first-party care
   assert.deepEqual(scriptModule.PROVIDER_METADATA, providerModule.provider)
 })
 
-test('Logelite extracts verified same-page role cards with first-party apply links', async () => {
+test('Logelite old city-only card fixtures and body-only reads cannot authorize native India extraction', async () => {
   const logelite = await loadScriptModule()
 
-  assert.equal(logelite.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(logelite.hasOfficialCareersSignal(careersHtml), false)
 
-  const jobs = await logelite.run({
+  await assert.rejects(logelite.run({
     fetchText: async () => careersHtml,
     now: () => '2026-08-03T00:00:00.000Z',
-  })
-
-  assert.equal(jobs.length, 3)
-  assert.deepEqual(jobs[0], {
-    title: 'Human Resource Executive',
-    company: 'Logelite',
-    location: 'Lucknow, India',
-    city: 'Lucknow',
-    country: 'India',
-    openings: '1',
-    compensation: 'Subject to Interview',
-    sourceUrl: 'https://logelite.com/career/hr-executive-details',
-    applyUrl: 'https://logelite.com/career/hr-executive-apply',
-    jobDescription:
-      "We're looking for a dynamic Human Resource Executive to join our team and contribute to a positive work environment.",
-    link: 'https://logelite.com/career/hr-executive-apply',
-    source: 'logelite',
-    scrapedAt: '2026-08-03T00:00:00.000Z',
-  })
+  }), /HTTP response metadata required/)
 })

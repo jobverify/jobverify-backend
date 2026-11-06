@@ -2,6 +2,7 @@ import{createHash}from'node:crypto'
 import{activeHead,activeScripts,readNativeDocument}from'../../scraper-support/utils/activeNativeHtml.js'
 import{attachInventoryEvidence}from'../../scraper-support/utils/inventoryEvidence.js'
 import{readAixNativeInit}from'../bounteous/nativeScriptContract.js'
+import{assertNoPositiveAixInventory,readPositiveAixPage,readPositiveAixRole}from'./positiveAix.js'
 export const CURRENT_CAREERS='https://www.airindiaexpress.com/careers'
 const ROOT_MODEL='https://www.airindiaexpress.com/content/airindiaexpress/en.model.json',PAGE_MODEL='https://www.airindiaexpress.com/content/airindiaexpress/en/careers.model.json'
 export const AIX_BOARD='https://careers.airindia.com/aix',AIX_SEARCH=AIX_BOARD+'/search/?q=&locationsearch='
@@ -40,19 +41,26 @@ function board(html){
  check(extra.every(href=>href.startsWith('/aix/go/AIX-')),'additional unqualified native hiring channel')
  return{brand:'aix',departments,search:AIX_SEARCH}
 }
-function emptySearch(html){
+function searchIdentity(html){
  const{doc,init}=nativeIdentity(html)
  for(const field of ['q','location','locationsearch','geolocation'])check(init[field]==='','native unfiltered query must remain blank: '+field)
+ const forms=doc.nodes(node=>node.tag==='form'&&node.attrs.role==='search')
+ check(forms.length===1&&forms[0].attrs.method==='get'&&forms[0].attrs.action==='/aix/search/','native AIX unfiltered search form changed')
+ const controls=doc.nodes(node=>['input','select'].includes(node.tag)&&node.attrs.name)
+ check(controls.every(node=>['createNewAlert','q','locationsearch'].includes(node.attrs.name)),'additional native search filter control changed')
+ check(controls.filter(node=>node.attrs.name==='q').length===1&&controls.filter(node=>node.attrs.name==='locationsearch').length===1
+  &&controls.every(node=>node.attrs.name==='createNewAlert'?node.attrs.value==='false':(node.attrs.value||'')===''),'native query/filter control conflicts with the blank search')
+ return doc
+}
+function emptySearch(html){
+ const doc=searchIdentity(html)
+ assertNoPositiveAixInventory(html)
  const activeJobLinks=doc.nodes(node=>node.tag==='a'&&/(?:\/job\/|\/jobs\/)/i.test(node.attrs.href||''))
  check(!activeJobLinks.length&&!doc.nodes(node=>node.attrs['data-row-index']||doc.hasClass(node,'data-row')||doc.hasClass(node,'job-tile')).length,'positive native role inventory requires full current posting extraction')
  const nodes=doc.nodes(node=>node.attrs.id==='noresults');check(nodes.length===1,'explicit native zero result container missing')
  const text=doc.text(nodes[0]);check(/There are currently no open positions matching\s*"\s*"\./.test(text),'explicit native no-open-positions sentence missing')
  check(/The 0 most recent jobs posted by Air India Careers are listed below for your convenience\./.test(text),'native fallback zero count changed')
  check(!doc.nodes(node=>node.tag==='a'&&/startrow=/.test(node.attrs.href||'')).length,'unexpected zero-inventory pagination continuation')
- const controls=doc.nodes(node=>['input','select'].includes(node.tag)&&node.attrs.name)
- check(controls.every(node=>['createNewAlert','q','locationsearch'].includes(node.attrs.name)),'additional native search filter control changed')
- check(controls.filter(node=>node.attrs.name==='q').length===1&&controls.filter(node=>node.attrs.name==='locationsearch').length===1
-  &&controls.every(node=>node.attrs.name==='createNewAlert'?node.attrs.value==='false':(node.attrs.value||'')===''),'native query/filter control conflicts with the blank search')
  return{brand:'aix',companyToken:'airindiali',reportedTotal:0,query:{q:'',location:'',locationsearch:'',geolocation:''},explicitZero:true}
 }
 export async function runCurrentAix(options={}){
@@ -69,13 +77,29 @@ export async function runCurrentAix(options={}){
   if(!json)return packet.body
   try{return JSON.parse(packet.body)}catch{throw Error('AirAsia India current native JSON invalid')}
  }
- const scan=async()=>{const binding=corporate(await read(CURRENT_CAREERS),await read(ROOT_MODEL,true),await read(PAGE_MODEL,true)),channel=board(await read(AIX_BOARD)),inventory=emptySearch(await read(AIX_SEARCH));return{binding,channel,inventory}}
- const opening=await scan(),closing=await scan(),stable=JSON.stringify(opening)===JSON.stringify(closing);check(stable,'closing current AIX hiring models changed')
- const jobs=[],audit={source:'airasiaindia',historicalEmployer:'AirAsia India / AIX Connect',currentEmployer:'Air India Express',nativeBrand:'aix',observedListingCount:0,observedIndiaListingCount:0,
-  opening,closing,closingInventoryMatches:stable,listingPaginationComplete:true,sourceScopeComplete:true,sourceDeclaredBoardScopeComplete:true,sourceCompanyWideScopeComplete:false,sourceLifecycleCleanupVerified:false,
+ const inventory=async()=>{
+  const html=await read(AIX_SEARCH),doc=searchIdentity(html)
+  if(!doc.nodes(node=>node.tag==='a'&&/(?:\/job\/|\/jobs\/)/i.test(node.attrs.href||'')||doc.hasClass(node,'job-tile')).length)return emptySearch(html)
+  const first=readPositiveAixPage(html),rows=[...first.rows],ids=new Set(rows.map(row=>row.jobId));let next=first.nextUrl,pages=1
+  while(next){check(++pages<=100,'native positive role pagination exceeds source bound');const page=readPositiveAixPage(await read(next),{start:rows.length,config:first.config})
+   for(const row of page.rows){check(!ids.has(row.jobId),'duplicate native positive role identity across pages');ids.add(row.jobId);rows.push(row)}next=page.nextUrl}
+  check(rows.length===first.config.total,'native positive role total does not reconcile')
+  return{brand:'aix',companyToken:'airindiali',reportedTotal:first.config.total,explicitZero:false,config:first.config,rows,pages}
+ }
+ const scan=async()=>{const binding=corporate(await read(CURRENT_CAREERS),await read(ROOT_MODEL,true),await read(PAGE_MODEL,true)),channel=board(await read(AIX_BOARD));return{binding,channel,inventory:await inventory()}}
+ const observedAt=new Date((options.now||(()=>new Date().toISOString()))()).toISOString()
+ const details=async collection=>{const roles=[];for(const row of collection.rows||[])roles.push(readPositiveAixRole(await read(row.sourceUrl),row,observedAt));return roles}
+ const opening=await scan(),openingRoles=await details(opening.inventory),closing=await scan(),stable=JSON.stringify(opening)===JSON.stringify(closing);check(stable,'closing current AIX hiring models changed')
+ const closingRoles=await details(closing.inventory),isZero=closing.inventory.explicitZero
+ if(!isZero){check(JSON.stringify(openingRoles.map(role=>role.state))===JSON.stringify(closingRoles.map(role=>role.state)),'closing current AIX full native posting details changed')
+  check(JSON.stringify(await inventory())===JSON.stringify(closing.inventory),'final current AIX positive role inventory changed after details')}
+ const jobs=closingRoles.flatMap(role=>role.job?[role.job]:[]),audit={source:'airasiaindia',historicalEmployer:'AirAsia India / AIX Connect',currentEmployer:'Air India Express',nativeBrand:'aix',observedListingCount:closing.inventory.reportedTotal,observedIndiaListingCount:jobs.length,
+  opening,closing,closingInventoryMatches:stable,listingPaginationComplete:true,sourceScopeComplete:isZero,sourceDeclaredBoardScopeComplete:true,sourceCompanyWideScopeComplete:false,sourceLifecycleCleanupVerified:false,
   historicalContinuity:{url:MERGER_STATEMENT,publishedOn:'2024-10-01',kind:'primary-official-legal-merger-statement',scope:'AIX Connect (erstwhile AirAsia India) merged into Air India Express; does not conflate the separate Air India airline employer'},
-  observations:responses,failures:[],reason:'Only current corporate-declared AIX brand public unfiltered board is explicitly zero in both native reads. Other recruitment channels/company-wide absence/lifecycle cleanup remain unproved. Future positive input is held until original full public role extraction is implemented.'}
- attachInventoryEvidence(jobs,{firstParty:true,surface:AIX_SEARCH,status:'verified-empty',listingComplete:true,pagesFetched:responses.length,reportedTotal:0,indiaFacetCount:0,verifiedAt:new Date().toISOString(),reason:audit.reason})
+  observations:responses,failures:[],excludedRoles:closingRoles.filter(role=>role.excluded).map(role=>({publicId:role.state.publicId,reason:role.reason})),reason:isZero
+   ?'Only current corporate-declared AIX brand public unfiltered board is explicitly zero in both native reads. Other recruitment channels/company-wide absence/lifecycle cleanup remain unproved.'
+   :'Current corporate-declared AIX brand pagination, role IDs, explicit employer, canonical/apply identity, typed countries and full posting details reconcile across closing reads. Company-wide scope, other channels and lifecycle cleanup remain unproved.'}
+ attachInventoryEvidence(jobs,{firstParty:true,surface:AIX_SEARCH,status:isZero?'verified-empty':'coverage-gap',listingComplete:isZero,pagesFetched:responses.length,reportedTotal:isZero?0:null,indiaFacetCount:isZero?0:null,verifiedAt:new Date().toISOString(),reason:audit.reason})
  if(options.onAudit)await wait(Promise.resolve().then(()=>options.onAudit(audit)))
  signal.throwIfAborted();return jobs
 }

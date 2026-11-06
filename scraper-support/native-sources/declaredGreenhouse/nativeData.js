@@ -1,5 +1,6 @@
 import { readNativeDocument, activeIframeSources } from '../../utils/activeNativeHtml.js'
 import { readLiteralModel } from '../literalModel.js'
+import { selectReviewedDeclaredAsset } from './reviewedDeclaredAssets.js'
 import { countryName } from '../jobPostingData.js'
 import { sha256 } from '../publicIO.js'
 import { text, decode, plain, content, dayDate, offsetDate } from '../cisVeeam/publishedData.js'
@@ -16,6 +17,8 @@ export const primaryDeclaration = (html, profile) => {
   const doc = readNativeDocument(html), declarations = profile.declaration
   const titles = doc.nodes(node => node.tag === 'title').map(node => text(decode(node.raw || '')))
   if (!titles.some(title => profile.primaryTitleSignals.some(signal => title.toLowerCase().includes(signal.toLowerCase())))) return false
+  if (declarations.kind === 'active-declared-external-profile' && Object.hasOwn(declarations, 'reviewedAlternates'))
+    return Boolean(selectReviewedDeclaredAsset(html, profile))
   const scripts = doc.nodes(node => node.tag === 'script' && executable(node))
   if (declarations.kind === 'active-native-frame') return activeIframeSources(html).some(value => {
     try { const url = new URL(value, profile.primaryURL);return url.origin === 'https://job-boards.greenhouse.io' && !url.username && !url.password

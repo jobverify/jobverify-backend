@@ -788,12 +788,13 @@
     "companyDomain": "aarogyaai.com",
     "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
-    "paginationStrategy": "exact-name-domain-root-plus-common-careers-route-timeout-validation",
-    "extractionStrategy": "verified-exact-name-first-party-domains-time-out-plus-common-careers-routes-time-out-return-empty",
+    "paginationStrategy": "bounded-configured-root-discovery",
+    "extractionStrategy": "configured-public-root-diagnostic-never-infer-zero-from-timeout",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-14",
-    "verifiedSurfaceSummary": "Verified on July 14, 2026 that the exact-name first-party roots https://aarogyaai.com/ and https://aarogyaai.in/ plus the common careers and jobs routes on both hosts timed out rather than exposing any trustworthy public jobs surface."
+    "verifiedOn": null,
+    "verifiedSurfaceSummary": "The configured https://aarogyaai.com/ root has no currently qualified public vacancy inventory. Unavailable roots, timeouts and missing guessed routes cannot establish zero company or India openings. Preserve access/network failures and disallow lifecycle cleanup until a native hiring inventory is qualified.",
+    "sourceScopeComplete": false
   },
   {
     "source": "aatral",
@@ -2041,16 +2042,17 @@
     "companyCareerPage": "https://aktek.io/",
     "companyDomain": "aktek.io",
     "robotsTxtUrl": "https://aktek.io/robots.txt",
-    "sitemapIndexUrl": "https://aktek.io/sitemap.xml",
+    "sitemapIndexUrl": "https://aktek.io/sitemap_index.xml",
     "pageSitemapUrl": "https://aktek.io/page-sitemap.xml",
     "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
-    "paginationStrategy": "verified-homepage-plus-crawl-surface-plus-common-careers-route-404-validation",
-    "extractionStrategy": "verified-homepage+verified-robots-and-page-sitemap-without-careers-url+verified-missing-common-careers-routes-return-empty",
+    "paginationStrategy": "bounded-homepage-and-declared-crawl-discovery",
+    "extractionStrategy": "qualified-corporate-crawl-documents-return-explicit-incomplete-inventory-evidence",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-15",
-    "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://aktek.io/ is the live official AKTEK homepage, that https://aktek.io/robots.txt and https://aktek.io/sitemap.xml are the live first-party crawl surfaces, and that https://aktek.io/page-sitemap.xml lists product, policy, conference, and about pages but no careers or jobs page. There is no trustworthy public jobs surface: common first-party careers routes such as https://aktek.io/careers, https://aktek.io/career, https://aktek.io/jobs, https://aktek.io/join-us, https://aktek.io/work-with-us, https://aktek.io/openings, and https://aktek.io/current-openings all returned first-party 404 pages during live checks, and the verified homepage exposed no first-party careers link or public ATS handoff."
+    "verifiedOn": null,
+    "verifiedSurfaceSummary": "Observed on November 6, 2026 that https://aktek.io/ is the official AKTEK homepage and https://aktek.io/robots.txt declares https://aktek.io/sitemap_index.xml. The current sitemap index contains post and page sections; https://aktek.io/page-sitemap.xml contains no configured careers route. These corporate crawl documents do not establish a complete vacancy inventory or zero company/India openings. No trustworthy public jobs surface has been qualified; lifecycle cleanup remains disallowed.",
+    "sourceScopeComplete": false
   },
   {
     "source": "akulaku",

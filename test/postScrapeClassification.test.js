@@ -291,7 +291,7 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     assert.equal(publicRow.category, 'Unspecified')
     assert.equal(await Job.countDocuments(applyPublicJobVisibility({ _id: blocked._id, status: 'active' }, {}, now)), 0)
     const review = await Job.findOne({ fingerprint: 'persisted-title-review' }).lean()
-    assert.deepEqual(review.classification.reviewReasons, ['entry_level_title_with_experienced_prediction'])
+    assert.deepEqual(review.classification.reviewReasons, ['entry_level_title_with_experienced_prediction', 'sparse_role_description'])
     const savedTrainee = await Job.findById(trainee._id).lean()
     assert.equal(savedTrainee.jobType, 'Full-time Fresher')
     assert.equal(getAuthoritativeClassification(savedTrainee).jobType, 'Full-time Fresher')

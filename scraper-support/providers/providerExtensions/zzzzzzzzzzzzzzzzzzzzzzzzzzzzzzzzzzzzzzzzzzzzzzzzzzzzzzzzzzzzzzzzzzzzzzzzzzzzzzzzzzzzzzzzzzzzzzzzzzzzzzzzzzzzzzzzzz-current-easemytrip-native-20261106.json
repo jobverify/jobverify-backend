@@ -1,0 +1,12 @@
+[
+  {
+    "source": "easemytrip",
+    "catalogOverride": true,
+    "paginationStrategy": "paired-complete-current-native-role-literals-and-owned-office-country-regions;company-scope-unqualified",
+    "extractionStrategy": "current-official-hiring-employer+reviewed-data-only-role-renderer+full-interview-experience-responsibility-profile-criteria+exact-owned-office-country-binding",
+    "verifiedOn": "2026-11-06",
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedSurfaceSummary": "The current homepage declares the careers page; its exact literal ROLES and DEPARTMENTS are parsed as data without executing publisher code. All complete role and interview criteria, experience/type labels and original models remain intact across closing checks. Only exact own worksite labels matching the current visible Our Offices Within India region receive country proof. Other worksite labels remain country-unclassified; company scope and cleanup remain unqualified. Formal posting IDs, requisitions, dates, legal employer and individual canonical role URLs remain unknown. Title/department/worksite observation keys and renderer indices are explicitly separate from public posting IDs. The shared declared Google application form is never requested or submitted. Anonymous bounded reads retain original HTTP/byte evidence and stop after the first failure."
+  }
+]

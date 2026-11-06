@@ -1,0 +1,12 @@
+[
+  {
+    "source": "precisely",
+    "catalogOverride": true,
+    "paginationStrategy": "declared-international-public-whole-feed;paired-full-native-records;company-scope-unqualified",
+    "extractionStrategy": "current-official-international-account+whole-native-job-content-and-AI-disclosure+explicit-own-country+native-exception-quarantine",
+    "verifiedOn": "2026-11-06",
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedSurfaceSummary": "The registered official careers page separately declares its international Greenhouse account. Paired complete native feed records preserve full descriptions, separately displayed AI disclosures, public posting/internal/requisition identities and first_published/updated/deadline semantics. Explicit own workplace labels and office countries must agree; city-only labels, placeholders, hidden/delegated eligibility, unknown fields and conflicting metadata remain held. Original public bodies are retained. Public role paths and query IDs do not independently establish canonical URLs or application availability. Bounded anonymous GETs stop on first failed read. Full company inventory and lifecycle cleanup remain unqualified."
+  }
+]

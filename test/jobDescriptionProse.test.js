@@ -515,14 +515,16 @@ test('identical effective source reuses cache while binding the current job inpu
   assert.equal(server.requests.length, 1);
 });
 
-test('source facts added to the effective prompt cannot reuse a different location cache', async t => {
+test('changed location rebuilds source metadata while reusing only the unchanged validated prose', async t => {
   const server = await serverFor(t), client = createRewriteClient(server);
   await client.generate(buildRewriteInput({ title: 'Engineer', sourceDescription: source, location: 'Pune' }));
   const previous = server.requests.length;
   const result = await client.generate(buildRewriteInput({ title: 'Engineer', sourceDescription: source, location: 'Mumbai' }));
-  assert.ok(server.requests.length > previous);
+  assert.equal(server.requests.length, previous);
+  assert.ok(result.reusedChunks > 0);
   assert.equal(result.cachedModelPlan, undefined);
   assert.match(validateProseRewrite(result.value, buildRewriteInput({ title: 'Engineer', sourceDescription: source, location: 'Mumbai' }), 'stop').description, /Location: Mumbai/);
+  assert.doesNotMatch(validateProseRewrite(result.value, buildRewriteInput({ title: 'Engineer', sourceDescription: source, location: 'Mumbai' }), 'stop').description, /Location: Pune/);
 });
 
 test('simultaneous identical sources share one inference and preserve every job hash', async t => {

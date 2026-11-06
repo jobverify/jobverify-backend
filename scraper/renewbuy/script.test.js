@@ -88,7 +88,7 @@ test('captured native active India role is recovered as an employer-published pa
 })
 
 test('a rate-limited detail stops new requests while retaining previously verified native roles',async()=>{
- const jobs=await run({fetchImpl:replay(nativeDetails),now:()=> '2026-10-23T06:20:00.000Z'})
+ const jobs=await run({fetchImpl:replay(nativeDetails),maxJobs:8,now:()=> '2026-10-23T06:20:00.000Z'})
  assert.equal(jobs.length,7)
  assert.deepEqual(new Set(jobs.map(job=>job.jobId)),new Set(['4457850766','4457857705','4457866682','4457853673','4457863691','4457854693','4457863692']))
  assert.match(readInventoryEvidence(jobs).reason,/429/)
@@ -144,7 +144,7 @@ test('a hidden description is nullable and never resurrected from structured mar
 })
 
 test('default native profile failures carry typed unknown inventory evidence',async()=>{
- const fetchImpl=replay(nativeDetails,row=>row.url===nativeCompany.url?{...row,status:429,body:'Too many requests'}:row)
+ const fetchImpl=replay(nativeDetails,row=>row.url===nativeCompany.url?{...row,status:503,body:'Service unavailable'}:row)
  await assert.rejects(run({fetchImpl}),error=>error.code==='RENEWBUY_COVERAGE_GAP'&&error.inventoryEvidence?.status==='coverage-gap'&&error.inventoryEvidence.reportedTotal===null&&error.lifecycleCleanupAllowed===false)
 })
 

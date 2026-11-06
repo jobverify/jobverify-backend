@@ -206,9 +206,12 @@ const nativeDate = value => {
 }
 
 export function readCampListing(payload, { skip, pageSize }) {
-  requireValue(payload && Object.keys(payload).sort().join('|') === 'locations|opportunities|totalCount'
+  const keys = payload && Object.keys(payload).sort().join('|')
+  requireValue(payload && ['locations|opportunities|totalCount', 'initialTotalOpportunitiesCount|locations|opportunities|totalCount'].includes(keys)
     && Array.isArray(payload.opportunities) && Array.isArray(payload.locations) && payload.locations.length === 0
     && Number.isSafeInteger(payload.totalCount) && payload.totalCount >= 0 && payload.totalCount <= 1000
+    && (!Object.hasOwn(payload, 'initialTotalOpportunitiesCount')
+      || Number.isSafeInteger(payload.initialTotalOpportunitiesCount) && payload.initialTotalOpportunitiesCount === payload.totalCount)
     && payload.opportunities.length === Math.min(pageSize, Math.max(0, payload.totalCount - skip)), 'native total and pagination do not reconcile')
   const ids = new Set()
   for (const row of payload.opportunities) {

@@ -168,6 +168,8 @@ test('extractSearchResults normalizes Mars India listings and preserves the publ
     requisitionId: 'R129167',
     department: 'Digital Technologies',
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: null,
     jobDescription: 'Build modern data products and pipelines for Mars digital platforms.',
     minimumQualification: null,

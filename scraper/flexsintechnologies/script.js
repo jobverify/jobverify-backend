@@ -96,6 +96,7 @@ export const extractJobs = (html = '') => {
       applyUrl: sourceUrl,
       employmentType: null,
       experienceRequired,
+      sourceExperienceRequired: experienceRequired,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],

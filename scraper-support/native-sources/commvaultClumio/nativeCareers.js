@@ -1,4 +1,5 @@
 import { createPublicIO } from '../publicIO.js'
+import { boundedDeclaredPublicGet } from '../boundedDeclaredPublicGet.js'
 import { nativeEnvelopeFailed } from '../declaredGreenhouse/nativeCareers.js'
 import { requireNative, nativeJSON, postURI, criteria, officeIndex } from '../declaredGreenhouse/nativeData.js'
 import { text } from '../cisVeeam/publishedData.js'
@@ -37,11 +38,9 @@ export const createCommvaultClumioScraper = (defaults = {}) => ({ name: profile.
   const originalFetch = options.fetchImpl || globalThis.fetch
   const fetchPage = options.fetchPage || (async url => {
     await waitForHost(url, signal);requireNative(allowed(new URL(url)), 'public host became unavailable while queued')
-    const response = await originalFetch(url, { method: 'GET', redirect: 'manual',
+    return boundedDeclaredPublicGet(url, { fetchImpl: originalFetch,
       signal: AbortSignal.any([AbortSignal.timeout(15000), ...(signal ? [signal] : [])]),
-      headers: { Accept: 'text/html,application/json,*/*;q=0.5', 'User-Agent': 'Mozilla/5.0 (compatible; Jobverify scraper)' } })
-    const bytes = Buffer.from(await response.arrayBuffer());requireNative(bytes.length <= 16 * 1024 * 1024, 'native entity exceeds input limit')
-    return { status: response.status, url: response.url, headers: Object.fromEntries(response.headers), bodyBase64: bytes.toString('base64') }
+      overflowError: Error('Declared Greenhouse: native entity exceeds input limit') })
   })
   const io = createPublicIO({ ...options, fetchPage, allowed }), observations = new Map(), order = new Map(), history = []
   const load = async url => { const page = await io.load(url, { fresh: true });if ([401, 403, 429].includes(page?.status)) held.add(new URL(url).hostname);return page }

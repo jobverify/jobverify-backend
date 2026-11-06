@@ -122,9 +122,9 @@ const country = value => {
   return countries[0] || null
 }
 const asArray = value => value == null ? [] : Array.isArray(value) ? value : [value]
-const workdayListingHasRequisition = (row, id) => {
+const workdayListingHasRequisition = (row, id, allowBulletMatch = true) => {
   if (!text(id)) return false
-  if (asArray(row.bulletFields).some(value => value === id)) return true
+  if (allowBulletMatch && asArray(row.bulletFields).some(value => value === id)) return true
   let pathname
   try { pathname = decodeURIComponent(row.externalPath) } catch { return false }
   if (pathname.split('/').at(-1) === id) return true
@@ -263,7 +263,7 @@ const roleEmployerStatement = (description, contract) => {
 
 function project(config, native, observedAt) {
   const location = native.location || 'India'
-  const city = getValidIndiaCityForJob({ country: 'India', location, city: native.city || null })
+  const city = !native.city && /^India$/i.test(location.trim()) ? null : getValidIndiaCityForJob({ country: 'India', location, city: native.city || null })
   return {
     source: config.source, company: config.companyName, jobId: String(native.id), title: native.title,
     location, country: 'India', city, applyUrl: native.applyURL || native.url, sourceUrl: native.url, link: native.url,
@@ -315,7 +315,7 @@ export function createVerifiedRecruitmentScraper(config) {
       id: row.jobId, title: row.title, url: row.applyUrl })
     const observeWorkday = (row, prefix, board) => {
       const path = typeof row?.externalPath === 'string' && /^\/job\/[^?#]+$/.test(row.externalPath) ? row.externalPath : null
-      const requisitions = path ? asArray(row.bulletFields).filter(id => text(id) && workdayListingHasRequisition(row, id)) : []
+      const requisitions = path ? asArray(row.bulletFields).filter(id => text(id) && workdayListingHasRequisition(row, id, false)) : []
       observeNative({ scope: 'workday:' + prefix, id: requisitions.length === 1 ? requisitions[0] : path,
         title: row?.title, url: path ? board.url + path : null })
     }
@@ -433,6 +433,11 @@ export function createVerifiedRecruitmentScraper(config) {
       failures.push(failureDiagnostic(stage, bounded))
     }
     const phenomNativeIdentities = new Map()
+    const excludeNativeIntake = (title, url, record) => {
+      if (!isRecruitmentIntakeTitle(title)) return false
+      observed.exclusions.push({ reason: 'native-generic-intake', url, nativeSourceRecord: record })
+      return true
+    }
     const addJob = native => {
       if (native.heldStatuses?.length) {
         observed.exclusions.push({reason:'native-role-on-hold',url:native.url,nativeStatuses:native.heldStatuses}); return
@@ -451,9 +456,7 @@ export function createVerifiedRecruitmentScraper(config) {
       if (closed(native.closing, now)) return
       const url = https(native.url)
       if (!url || !allowed(url)) { observed.unresolved.push('native-role-url-unbound'); return }
-      if (isRecruitmentIntakeTitle(native.title)) {
-        observed.exclusions.push({ reason: 'native-generic-intake', url: url.href, nativeSourceRecord: native.record }); return
-      }
+      if (excludeNativeIntake(native.title, url.href, native.record)) return
       if(config.deduplicatePhenomNativeIds===true&&native.record?.uniqueValue?.refNum&&native.record.uniqueValue.jobId===native.id){
         const key=native.record.uniqueValue.refNum+':'+native.id
         const signature=JSON.stringify({title:native.title,employer:native.employer?.name,descriptionSHA256:sha(native.description),
@@ -558,8 +561,14 @@ export function createVerifiedRecruitmentScraper(config) {
             jibeSearchOrigins.add(pageURL.origin)
             await readJibeRecruitment(search, { readRenderer: value => read(value, {}, 'renderer'), readJson, permit, addJob, maxPages, maxDetails,
               canRead: () => observed.requestCount < maxRequests, inventoryRead: value => observed.nativeInventoryReads.push(value),
-              recordRead: row => { observed.nativeRecords++; observeNative({ scope: 'jibe:' + search.origin + ':' + search.cid,
-                id: row.req_id, title: row.title, url: new URL(search.rolePrefix + encodeURIComponent(row.slug), search.origin).href }) },
+              recordRead: row => {
+                observed.nativeRecords++
+                const language = row.language == null ? search.locale : /^[a-z]{2}-[a-z]{2}$/i.test(row.language) ? row.language : null
+                const role = new URL(search.rolePrefix + encodeURIComponent(row.slug), search.origin)
+                if (language) role.searchParams.set('lang', language)
+                observeNative({ scope: 'jibe:' + search.origin + ':' + search.cid,
+                  id: row.req_id, title: row.title, url: language ? role.href : null })
+              },
               unresolved: value => observed.unresolved.push(value), problem })
           } else if (search && search.searchPageURL !== page.url && !seenPages.has(search.searchPageURL)) {
             permit(search.searchPageURL); declaredNativeSearchLinks.push(search.searchPageURL)
@@ -583,7 +592,7 @@ export function createVerifiedRecruitmentScraper(config) {
         } catch (error) { problem('native-successfactors-unified-search', error) }
       }
       const nativeCandidate = nativeSearchCandidates.get(value) || nativeSearchCandidates.get(page.url)
-      const microdata = new Set(recruitmentMicrodataPostings(doc, page.url))
+      const microdata = new Set(recruitmentMicrodataPostings(doc, page.url,{html:normalizeNativeAttributeBoundaries(page.html)}))
       const visibleRoles = new Set(config.prioritizeRecruitmentSearch
         ? [...recruitmentSuccessFactorsPostings(doc, page.url), ...successFactorsUnifiedPostings(doc, page.url,{listing:nativeCandidate?.record})] : [])
       const schemas = [...recruitmentJobPostings(doc), ...microdata, ...visibleRoles]
@@ -768,6 +777,7 @@ export function createVerifiedRecruitmentScraper(config) {
             : board.kind === 'greenhouse' ? `https://boards-api.greenhouse.io/v1/boards/${token}`
               : `https://api.${board.region === 'eu' ? 'eu.' : ''}lever.co/v0/postings/${token}`
           permit(api); permit(board.url)
+          const nativeIntakes = new Map()
           const native = await createPublishingGapAtsScraper({ source: config.source, companyName: config.companyName,
             companyCareerPage: root?.href || homepage.href, atsPlatform: board.kind, boardToken: board.token,
             leverRegion: board.region, sourceScopeComplete: false }).run({ signal, fetchJson: async (url, init) => {
@@ -780,9 +790,16 @@ export function createVerifiedRecruitmentScraper(config) {
             const rows = Array.isArray(payload) ? payload : payload?.jobs || []
             observed.nativeRecords += rows.length
             if (!publicAtsInventoryError(payload) && Array.isArray(rows)) for (const row of rows) {
+              const roleURL = row?.jobUrl || row?.hostedUrl || row?.absolute_url
+              const roleBoard = recruitmentBoard(roleURL)
+              if (roleBoard && (roleBoard.kind !== board.kind || roleBoard.token !== board.token
+                || (roleBoard.region || 'global') !== (board.region || 'global'))) {
+                observed.unresolved.push('native-observation-foreign-account'); continue
+              }
+              if (isRecruitmentIntakeTitle(row?.title || row?.text)) nativeIntakes.set(String(row?.id), row)
               observeNative({ scope: board.kind + ':' + (board.region || 'global') + ':' + board.token,
                 id: row?.id, title: row?.title || row?.text,
-                url: row?.jobUrl || row?.hostedUrl || row?.absolute_url,
+                url: roleURL,
                 nonVacancy: board.kind === 'greenhouse' && isGreenhouseProspectPost(row) })
             }
             return payload
@@ -793,6 +810,8 @@ export function createVerifiedRecruitmentScraper(config) {
             observed.unresolved.push(nativeEvidence.reason)
           }
           for (const job of native) {
+            if (excludeNativeIntake(job.title, job.sourceUrl || job.applyUrl,
+              nativeIntakes.get(String(job.jobId || job.id)) || job.nativeSourceRecord || job)) continue
             if (!sourceDescription(job.sourceDescription || job.jobDescription)) {
               observed.unresolved.push('native-full-description-unavailable'); continue
             }

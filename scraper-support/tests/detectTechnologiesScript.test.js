@@ -1,120 +1,28 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
-const listingHtml = `
-<div class="current-job-list">
-  <h5>Software Engineer&nbsp;( SE 2 &#8211; Frontend Developer)&nbsp;</h5>
-  <div class="media"><div class="media-body"><p>Job Type : Full Time</p></div></div>
-  <div class="media"><div class="media-body"><p>Exp : 2+ Years</p></div></div>
-  <div class="media"><div class="media-body"><p>Location : Chennai</p></div></div>
-  <a href="https://detecttechnologies.com/career/software-engineer-se-2-frontend-developer/" class="btn btn-text">Apply Now<i></i></a>
-</div>
-<div class="current-job-list">
-  <h5>Backend Engineer Applications &#8211; BEA 1</h5>
-  <div class="media"><div class="media-body"><p>Job Type : Full Time</p></div></div>
-  <div class="media"><div class="media-body"><p>Exp : 2+ Years</p></div></div>
-  <div class="media"><div class="media-body"><p>Location : Chennai</p></div></div>
-  <a href="https://detecttechnologies.com/career/backend-engineer-applications-bea-1/" class="btn btn-text">Apply Now<i></i></a>
-</div>
-`
-
-const loadDetectTechnologiesModule = async () => {
-  try {
-    return await import('../../scraper/detecttechnologies/script.js')
-  } catch {
-    assert.fail('Expected Detect Technologies scraper module at ../../scraper/scraper/detecttechnologies/script.js')
-  }
-}
-
-test('extractSearchResults maps official Detect Technologies opening cards into job records', async () => {
-  const detect = await loadDetectTechnologiesModule()
-
-  assert.equal(detect.pageIndicatesJobCards(listingHtml), true)
-  assert.deepEqual(detect.extractSearchResults(listingHtml), [
-    {
-      title: 'Software Engineer ( SE 2 - Frontend Developer)',
-      company: 'Detect Technologies',
-      department: null,
-      location: 'Chennai, India',
-      city: 'Chennai',
-      country: 'India',
-      jobId: 'detecttechnologies-software-engineer-se-2-frontend-developer',
-      requisitionId: 'software-engineer-se-2-frontend-developer',
-      sourceUrl: 'https://detecttechnologies.com/current-openings/',
-      applyUrl: 'https://detecttechnologies.com/career/software-engineer-se-2-frontend-developer/',
-      employmentType: 'Full Time',
-      experienceRequired: '2+ Years',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: 'Apply via the official Detect Technologies job page.',
-    },
-    {
-      title: 'Backend Engineer Applications - BEA 1',
-      company: 'Detect Technologies',
-      department: null,
-      location: 'Chennai, India',
-      city: 'Chennai',
-      country: 'India',
-      jobId: 'detecttechnologies-backend-engineer-applications-bea-1',
-      requisitionId: 'backend-engineer-applications-bea-1',
-      sourceUrl: 'https://detecttechnologies.com/current-openings/',
-      applyUrl: 'https://detecttechnologies.com/career/backend-engineer-applications-bea-1/',
-      employmentType: 'Full Time',
-      experienceRequired: '2+ Years',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: 'Apply via the official Detect Technologies job page.',
-    },
-  ])
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+import * as detect from '../../scraper/detecttechnologies/script.js'
+const fixture=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/currentNative20261106C25/capture.json.gz',import.meta.url))))
+const html=fixture.documents[detect.CURRENT_URL].body
+const fetchPage=async url=>{const page=fixture.documents[url];assert.ok(page);return {status:page.status,url:page.finalUrl,headers:page.headers,body:page.body,bodyUnavailable:page.bodyUnavailable}}
+test('Detect current native cards retain written countries and source labels without old India defaults',()=>{
+ const jobs=detect.extractSearchResults(html);assert.equal(jobs.length,9)
+ assert.equal(jobs.filter(job=>job.country===null).length,8)
+ assert.equal(jobs.find(job=>job.title==='IOT Intern - US').country,'United States')
+ assert.ok(jobs.every(job=>job.requisitionId===null&&job.jobDescription===null))
 })
-
-test('run fetches the official Detect Technologies openings page and decorates each job', async () => {
-  const detect = await loadDetectTechnologiesModule()
-  const requestedUrls = []
-
-  const jobs = await detect.createDetectTechnologiesScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      return listingHtml
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [detect.CAREER_PAGE_URL])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'detecttechnologies')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
+test('Detect public run forwards the injected original transport and returns full qualified observations',async()=>{
+ const jobs=await detect.run({fetchPage});assert.equal(jobs.length,8)
+ assert.ok(jobs.every(job=>job.jobDescription.length>300&&job.sourceDetailComplete===true&&job.sourceCountryScopeUnresolved===true))
+ assert.equal(jobs.nativeCollectionEvidence.observedRecordCount,9)
+ assert.equal(jobs.nativeCollectionEvidence.explicitNonIndiaCount,1)
 })
-
-test('Detect Technologies reads the current Webflow openings cards', async () => {
-  const detect = await loadDetectTechnologiesModule()
-  const webflowHtml = `<html><head><title>Current Openings</title><meta name="generator" content="Webflow"></head><body>
-    <div id="roles"><div class="w-dyn-list"><div role="list" class="w-dyn-items">
-    <div role="listitem" class="w-dyn-item"><div class="job-listing-card">
-      <h3 class="text-size-medium">Junior Software Operations and Maintenance Engineer</h3>
-      <div>Mode:</div><div>Full Time</div><div>Exp:</div><div>Freshers</div>
-      <div>Location:</div><div>Chennai</div><div>Mode:</div><div>Work from office</div>
-      <a href="/careers/junior-software-operations-and-maintenance-engineer" class="button is-icon w-inline-block"><div>Apply Now</div></a>
-    </div></div>
-    <div role="listitem" class="w-dyn-item"><div class="job-listing-card">
-      <h3 class="text-size-medium">Delivery Engineer DA Robotics (Drone Pilot)</h3>
-      <div>Mode:</div><div>Full Time</div><div>Exp:</div><div>1-1.5 yrs</div>
-      <div>Location:</div><div>Chennai</div><div>Mode:</div><div>Work from office</div>
-      <a href="/careers/delivery-engineer-da-robotics-drone-pilot" class="button is-icon w-inline-block"><div>Apply Now</div></a>
-    </div></div></div></div></div></body></html>`
-
-  assert.equal(detect.pageIndicatesJobCards(webflowHtml), true)
-  const jobs = await detect.createDetectTechnologiesScraper().run({ fetchText: async () => webflowHtml })
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].title, 'Junior Software Operations and Maintenance Engineer')
-  assert.equal(jobs[0].city, 'Chennai')
-  assert.equal(jobs[0].employmentType, 'Full Time')
-  assert.equal(jobs[0].experienceRequired, 'Freshers')
-  assert.equal(jobs[0].applyUrl, 'https://detecttechnologies.com/careers/junior-software-operations-and-maintenance-engineer')
+test('Detect recognizes current title and native collection without relying on its duplicated anchor ID',()=>{
+ assert.equal(detect.pageIndicatesJobCards(html),true)
+ assert.equal(detect.buildSearchUrl(),detect.CAREER_PAGE_URL)
+ assert.equal(detect.pageIndicatesJobCards(html.replace('Current Job Openings - Detect Technologies','Unrelated Company')),false)
+})
+test('Detect refuses unrelated pages instead of converting a changed source to complete empty inventory',async()=>{
+ await assert.rejects(detect.run({fetchPage:async url=>({status:200,url,headers:{'content-type':'text/html'},body:'<html><head><title>Different</title></head><body></body></html>'})}),/native careers/)
 })

@@ -93,29 +93,9 @@ test('Novo Nordisk GBS scraper keeps requests on the official public board and f
   assert.ok(isNovoNordiskGbsOrganization(detail.organization))
   assert.equal(isNovoNordiskGbsOrganization('Novo Nordisk'), false)
 
-  const requestedUrls = []
-  const jobs = await createNovoNordiskGBSScraper().run({
-    maxPages: 1,
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === buildIndiaSearchUrl()) return listingHtml
-      if (url === listings[0].sourceUrl) return gbsDetailHtml
-      if (url === listings[1].sourceUrl) return nonGbsDetailHtml
-      throw new Error(`Unexpected Novo Nordisk GBS URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    buildIndiaSearchUrl(),
-    listings[0].sourceUrl,
-    listings[1].sourceUrl,
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].company, 'Novo Nordisk Global Business Services')
-  assert.equal(jobs[0].source, 'novonordiskgbs')
-  assert.equal(jobs[0].requisitionId, '341290')
-  assert.equal(
-    jobs[0].applyUrl,
-    'https://careers.novonordisk.com/talentcommunity/apply/1401136833/?locale=en_GB',
-  )
+  let requests = 0
+  await assert.rejects(createNovoNordiskGBSScraper().run({
+    fetchText: async () => { requests++; return listingHtml },
+  }), /HTTP response metadata/)
+  assert.equal(requests, 0)
 })

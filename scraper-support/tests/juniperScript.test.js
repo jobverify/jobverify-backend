@@ -58,6 +58,8 @@ test('extractSearchResults normalizes Juniper landing-page listings into Phenom 
     requisitionId: '1191918',
     department: 'Engineering & QA',
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: null,
     jobDescription:
       'Join our team as a Senior Software Engineer Staff and drive innovation in cloud and networking solutions. Leverage your expertise in C++, C++, and Python to design, develop, and troubleshoot complex software systems. Collaborate with cross-functional teams and play a key role in delivering high-quality, scalable solutions for global clients.',

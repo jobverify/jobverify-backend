@@ -1,10 +1,17 @@
 import { attachInventoryEvidence } from './inventoryEvidence.js'
 import { extractActiveDescription } from './activeNativeHtml.js'
+import { buildHttpError } from './fetch.js'
 
 const text = value => typeof value === 'string' ? value.trim() : ''
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
 const shortRegionNames = new Intl.DisplayNames(['en'], { type: 'region', style: 'short' })
-const fail = message => { throw new Error('Workable public inventory ' + message) }
+const fail = message => { throw Object.assign(new Error('Workable public inventory ' + message), {
+  name: 'WorkableInventoryContractError', failureKind: 'parser_or_contract_error', abortRetries: true,
+}) }
+const inventoryChanged = message => { throw Object.assign(new Error('Workable public inventory ' + message), {
+  name: 'WorkableInventoryChangedError', failureKind: 'upstream_inventory_changed', softFailure: true,
+  upstreamOutage: false,
+}) }
 const assertNativePayload = payload => {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload) || payload.success === false
     || payload.error || (Array.isArray(payload.errors) ? payload.errors.length : payload.errors)
@@ -39,7 +46,11 @@ const defaultFetchJson = async (url, options = {}) => {
     } })
     callerSignal?.throwIfAborted()
     signal.throwIfAborted()
-    if (response.status !== 200 || response.url !== url) fail('HTTP status or redirect identity changed for ' + url)
+    if (response.status !== 200 || response.url !== url) {
+      try { await response.body?.cancel?.() } catch {}
+      if (response.status !== 200) throw buildHttpError(response, url)
+      fail('HTTP status or redirect identity changed for ' + url)
+    }
     const payload = await response.json()
     callerSignal?.throwIfAborted()
     signal.throwIfAborted()
@@ -89,9 +100,9 @@ export const mapWorkablePublicDetail = (record, detail, locations, config, scrap
   const currentTime = Date.parse(scrapedAt)
   const detailLocations = validateRecord(detail, config.accountUid, currentTime)
   const listingPublished = nativePublication(record.published, currentTime), detailPublished = nativePublication(detail.published, currentTime)
-  if (listingPublished && detailPublished && listingPublished !== detailPublished) fail('detail publication timestamp changed during enumeration')
+  if (listingPublished && detailPublished && listingPublished !== detailPublished) inventoryChanged('detail publication timestamp changed during enumeration')
   if (detail.id !== record.id || detail.shortcode !== record.shortcode || text(detail.title) !== text(record.title)
-    || locations.map(locationKey).sort().join('\n') !== detailLocations.map(locationKey).sort().join('\n')) fail('detail identity or location changed during enumeration')
+    || locations.map(locationKey).sort().join('\n') !== detailLocations.map(locationKey).sort().join('\n')) inventoryChanged('detail identity or location changed during enumeration')
   const requiredSections = config.requiredContentSections || ['description', 'requirements', 'benefits']
   const sections = ['description', 'requirements', 'benefits'].map(key => {
     const raw = detail[key]
@@ -146,8 +157,8 @@ export const createWorkablePublicApiScraper = config => ({
       pagesFetched++
       assertNativePayload(payload)
       if (!payload || payload.error || payload.errors || payload.success === false
-        || !Array.isArray(payload.results) || !Number.isSafeInteger(payload.total) || payload.total < 0
-        || (total !== null && payload.total !== total)) fail('response contract or authoritative total is inconsistent')
+        || !Array.isArray(payload.results) || !Number.isSafeInteger(payload.total) || payload.total < 0) fail('response contract or authoritative total is inconsistent')
+      if (total !== null && payload.total !== total) inventoryChanged('authoritative total changed during enumeration')
       total = payload.total
       for (const record of payload.results) {
         const locations = validateRecord(record, config.accountUid, currentTime)
@@ -158,7 +169,10 @@ export const createWorkablePublicApiScraper = config => ({
       if (records.length > total) fail('record count exceeds the authoritative total')
       if (Object.hasOwn(payload, 'nextPage')) {
         if (!text(payload.nextPage) || typeof payload.nextPage !== 'string' || cursors.has(payload.nextPage)) fail('cursor is malformed or repeats a previous cursor')
-        if (!payload.results.length || records.length >= total) fail('cursor contradicts the authoritative record count')
+        // Workable can emit a final cursor when the last nonempty page reaches
+        // the exact total. Follow it and require a cursorless terminal response;
+        // the total and duplicate checks still reject any additional records.
+        if (!payload.results.length) fail('cursor contradicts the authoritative record count')
         cursors.add(payload.nextPage)
         token = payload.nextPage
       } else token = undefined

@@ -40,7 +40,7 @@ test('COSGrid current public pages recover skills and Requirements-only complete
  assert.deepEqual(jobs.map(row=>row.jobId),['backend-developer','frontend-developer','embedded-sw-developer','sales-executive','BusinessDevelpoment_Lead_gen','product_Marketing','Digital_marketing_content'])
  for(const job of jobs){assert.ok(job.jobDescription.length>=150);assert.ok(job.requiredSkills.length||job.minimumQualification);assert.equal(job.country,'India');assert.equal(job.lifecycleCleanupAllowed,false)}
  for(const job of jobs.slice(0,4)){assert.ok(job.jobDescription.length>1000);assert.ok(job.requiredSkills.length>5)}
- for(const job of jobs.slice(4)){assert.ok(job.minimumQualification);assert.ok(job.jobDescription.includes(job.minimumQualification));assert.match(job.jobDescription,/Responsibilities/)}
+ for(const job of jobs.slice(4)){assert.ok(job.minimumQualification);assert.ok(job.jobDescription.includes(job.minimumQualification));assert.match(job.jobDescription,/Responsibilities/);assert.doesNotMatch(job.minimumQualification,/What Do You Get\?|Submit your Application|Flexible Working hours/)}
  assert.match(jobs[0].jobDescription,/data structures|RESTful APIs/)
  assert.doesNotMatch(jobs[0].jobDescription,/Full Name \*|Submit Application/)
  const evidence=readInventoryEvidence(jobs);assert.equal(evidence.reportedTotal,8);assert.equal(evidence.listingComplete,false)

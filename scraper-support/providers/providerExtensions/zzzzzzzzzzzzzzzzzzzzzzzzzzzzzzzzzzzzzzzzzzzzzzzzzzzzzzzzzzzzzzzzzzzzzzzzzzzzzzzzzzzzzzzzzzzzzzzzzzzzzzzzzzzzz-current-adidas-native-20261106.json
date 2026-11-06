@@ -1,0 +1,11 @@
+[
+  {
+    "source": "adidas",
+    "extractionStrategy": "paired-current-declared-get-search+full-own-rmk-role+native-brand-and-country-region",
+    "verifiedOn": "2026-11-06",
+    "verifiedSurfaceSummary": "Current declared public GET search and complete own native RMK role models retain explicit employee/brand witness and literal Country/Region. Talent-pool posts are held. Native public page IDs, advertisement Number labels and calendar Date labels remain distinct. Formal requisitions, legal employer, application activation, complete company scope and cleanup remain unqualified.",
+    "companyGlobalTotal": null,
+    "companyIndiaTotal": null,
+    "catalogOverride": true
+  }
+]

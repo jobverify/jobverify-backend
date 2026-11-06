@@ -3,19 +3,40 @@ import { readNativeDocument, activeIframeSources } from '../../scraper-support/u
 import { identifyPublicAtsBoard } from '../../scraper-support/utils/publicAtsIdentity.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { attachSourceObservationEvidence } from '../../scraper-support/utils/sourceObservationEvidence.js'
-import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
-import { nativeCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
+import { inspectNativeRoleCriteria, inspectNativeCountries } from './nativeRoleEvidence.js'
+import { withNativeAbort, readNativePublicDocument, serializeNativePayload } from './nativeTransport.js'
+import { declaredNativeFrontend, nativeFrontendEntry, verifyNativeFrontend } from './nativeFrontendContract.js'
 
 export const CAREERS_URL = 'https://www.langchain.com/careers'
 export const BOARD_URL = 'https://jobs.ashbyhq.com/langchain'
 export const API_URL = 'https://api.ashbyhq.com/posting-api/job-board/langchain'
 export const RECRUITMENT_OBSERVATIONS = Symbol.for('jobverify.verified-recruitment-observations')
 const OFFICIAL_ATS_DISCOVERY = Symbol.for('jobverify.official-ats-discovery')
-// The reviewed loader declares the manifest whose SRI-verified entry consumes
-// __appData.jobBoard as a direct, unpaginated array. A deployment/loader change
-// requires another static review; downloaded JavaScript is never executed here.
+// Exact historical loaders retain their reviewed profiles. Current declared
+// deployments require manifest/SRI and complete reviewed module AST validation;
+// downloaded JavaScript remains data and is never executed here.
 const REVIEWED_LOADER_SHA256 = 'eea23f1de66310eaa08ca779df5fe4d9cdbffb738f9dae84c5254a3514048149'
 const REVIEWED_MANIFEST_URL = 'https://cdn.ashbyprd.com/frontend_non_user/3fe3f8247ce1d2ca000991427629bd467057ba6c/.vite/manifest.json'
+const REVIEWED_FRONTENDS = Object.freeze([
+  { loaderSHA256: REVIEWED_LOADER_SHA256, manifestURL: REVIEWED_MANIFEST_URL,
+    manifestSHA256: '8072fffa5176941b2df69affb583c952633e5abf49f52605b448c6cbf9b5934f',
+    entrySHA256: '0caf6e210c9581f7e4eef29cf1bd1d2a3102ac7218f1cad5f8b7bc6b58e28d38',
+    contract: 'AT -> window.__appData.jobBoard -> direct jobPostings array; ApiJobBoardWithTeams has only organizationHostedJobsPageName; local Qv/Ile/Nle/Ryt filters and renders all postings' },
+  { loaderSHA256: 'dbf1f9e0d92a280bcd38e89308ba5d0df7364779720dd931013b5825e2d72d8b',
+    manifestURL: 'https://cdn.ashbyprd.com/frontend_non_user/249f9e89fb71dacdfea1d66006891f1e8ea0bfaf/.vite/manifest.json',
+    manifestSHA256: 'ad4278e23150e7978545aed6d051d6a537b83ad64976000a8483f5c26e45a004',
+    entrySHA256: '4a736d8e2d0041974cfad92cd2cbdb8768bf85772179d0a293fb4c849c075515',
+    entrySRI: 'sha384-++oChadkH1HdrjVXmU+DT54E0IRBXHZapfDLYLN7fsL4Genp6hOikd4nQlyY8dij',
+    staticReviewSHA256: '709aa6a0a5c214e7d8bf5c5cb3cbdc4a3d3a8091285e028a2d570b545bec0671',
+    contract: 'MT -> window.__appData; zyt selects WOe API query or bootstrap jobBoard; Byt consumes full jobPostings; $v/Ile/Nle filter/group/count locally; query has only organizationHostedJobsPageName' },
+  { loaderSHA256: '934d962eaa1105c3116a6e5b15f79a745980784cbeaf83baea447ac6c299954f',
+    manifestURL: 'https://cdn.ashbyprd.com/frontend_non_user/14c61a6af42192b9a5a9105f0cb01a41b7ac8c9b/.vite/manifest.json',
+    manifestSHA256: 'f30cf908fcb56f607a3c3fd0aedd782cba6ec05a5ade41d5f102c967fff522d1',
+    entrySHA256: '814bacc2d043f7d39b1b81b9a7fb6eb59f00c8161c2c148380ccab8cd43fd8e0',
+    entrySRI: 'sha384-fZhYi39O32+L3oRFDrrIXCbSjgj049ale5Eds9vWb+NiHgRXJigHyW95Y6WjeLnp',
+    staticReviewSHA256: 'af481c2142f635df24c110062a207fda03bf1d7f0362784102db63e9b34fdedf',
+    contract: 'MT -> window.__appData; zyt selects WOe API query or bootstrap jobBoard; Byt consumes full jobPostings; $v/Ile/Nle filter/group/count locally; query has only organizationHostedJobsPageName' },
+])
 const LIMITS = Object.freeze({ requests: 9, responseBytes: 8000000, aggregateBytes: 24000000, nativeRows: 2000, requestTimeoutMs: 15000 })
 const POSTING_FIELDS = new Set(['id', 'title', 'department', 'team', 'employmentType', 'location', 'secondaryLocations',
   'publishedAt', 'isListed', 'isRemote', 'workplaceType', 'address', 'descriptionHtml', 'descriptionPlain', 'jobUrl', 'applyUrl'])
@@ -26,47 +47,6 @@ const requireValue = (value, message) => { if (!value) throw Object.assign(Error
 const normalized = value => value.normalize('NFKC').replace(/\s+/g, ' ').trim()
 const isCorporate = value => {
   try { const url = new URL(value); return url.protocol === 'https:' && !url.username && !url.password && !url.port && ['langchain.com', 'www.langchain.com'].includes(url.hostname) } catch { return false }
-}
-
-function withAbort(operation, signal) {
-  signal.throwIfAborted()
-  return new Promise((resolve, reject) => {
-    const cancel = () => reject(signal.reason)
-    signal.addEventListener('abort', cancel, { once: true })
-    Promise.resolve().then(() => { signal.throwIfAborted(); return operation() }).then(value => {
-      signal.removeEventListener('abort', cancel)
-      if (signal.aborted) reject(signal.reason)
-      else resolve(value)
-    }, error => { signal.removeEventListener('abort', cancel); reject(signal.aborted ? signal.reason : error) })
-  })
-}
-
-async function nodeDocument(url, { signal }) {
-  const response = await fetch(url, { method: 'GET', redirect: 'manual', credentials: 'omit',
-    referrerPolicy: 'no-referrer', signal, headers: { Accept: 'application/json, text/html;q=0.9',
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify LangChain public inventory)' } })
-  const headers = Object.fromEntries([...response.headers].filter(([name]) => name.toLowerCase() !== 'set-cookie'))
-  if (response.status >= 300 && response.status < 400) {
-    await response.body?.cancel()
-    return { status: response.status, url: response.url, headers, bodyUnavailable: true,
-      bodyUnavailableReason: 'Redirect metadata retained; redirect body was not read or invented.' }
-  }
-  requireValue(Number(response.headers.get('content-length') || 0) <= LIMITS.responseBytes, 'Declared response byte limit exceeded')
-  const reader = response.body?.getReader(), chunks = []
-  let bytes = 0
-  requireValue(reader, 'Public response body unavailable')
-  try {
-    while (true) {
-      signal.throwIfAborted()
-      const part = await reader.read()
-      if (part.done) break
-      bytes += part.value.byteLength
-      requireValue(bytes <= LIMITS.responseBytes, 'Streamed response byte limit exceeded')
-      chunks.push(part.value)
-    }
-  } finally { await reader.cancel().catch(() => {}) }
-  return { status: response.status, url: response.url, headers,
-    body: new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks)) }
 }
 
 function literalBootstrap(html) {
@@ -85,7 +65,8 @@ function literalBootstrap(html) {
   }
   requireValue(end > 0, 'Unterminated native bootstrap JSON')
   const suffix = script.slice(end).trim()
-  requireValue(sha(suffix) === REVIEWED_LOADER_SHA256 && suffix.includes(REVIEWED_MANIFEST_URL), 'Native frontend loader changed; static contract review required')
+  const frontend = REVIEWED_FRONTENDS.find(profile => sha(suffix) === profile.loaderSHA256 && suffix.includes(profile.manifestURL))
+    || declaredNativeFrontend(suffix)
   const data = JSON.parse(script.slice(prefix[0].length, end))
   const organization = data.organization, board = data.jobBoard
   requireValue(data.maintenanceMode === false && data.posting === null && data.routerPrefix === '/', 'Native board publication or route state changed')
@@ -106,7 +87,7 @@ function literalBootstrap(html) {
       && Array.isArray(row.secondaryLocations), 'Invalid or duplicate native board posting')
     ids.add(row.id)
   }
-  return { data, organization, board, loaderSHA256: sha(suffix), manifestURL: REVIEWED_MANIFEST_URL }
+  return { data, organization, board, frontend }
 }
 
 function corporateBinding(response) {
@@ -147,13 +128,15 @@ function publishedDate(value) {
     sourceField: 'publishedAt', provenance: 'native-public-posting-api', firstEverPublication: null }
 }
 
-function fullModels(payload, bootstrap) {
+function fullModels(payload, bootstrap, check) {
+  check()
   requireValue(object(payload) && payload.apiVersion === '1' && Array.isArray(payload.jobs)
     && Object.keys(payload).every(key => ['jobs', 'apiVersion'].includes(key)) && payload.jobs.length <= LIMITS.nativeRows, 'Invalid native inventory envelope or schema')
   requireValue(payload.jobs.length === bootstrap.board.jobPostings.length, 'Native board/API inventory count mismatch')
   const briefs = new Map(bootstrap.board.jobPostings.map(row => [row.id, row])), identities = new Set()
-  const relations = { inspected: 0, unresolved: 0, countryCounts: {} }
+  const relations = { inspected: 0, unresolved: 0, worksiteUnresolved: 0, countryCounts: {} }
   const models = payload.jobs.map(row => {
+    check()
     requireValue(object(row) && Object.keys(row).every(field => POSTING_FIELDS.has(field)), 'Unreviewed native role schema fields')
     requireValue(object(row) && typeof row.id === 'string' && /^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(row.id)
       && !identities.has(row.id) && text(row.title) && row.isListed === true, 'Invalid native identity or public listed state')
@@ -165,40 +148,32 @@ function fullModels(payload, bootstrap) {
     for (const [field, suffix] of [['jobUrl', ''], ['applyUrl', '/application']]) {
       requireValue(row[field] === BOARD_URL + '/' + row.id + suffix, 'Foreign native posting/application identity')
     }
-    requireValue(typeof row.descriptionHtml === 'string' && typeof row.descriptionPlain === 'string'
-      && hasSourceDescription({ sourceDescription: row.descriptionHtml }) && hasSourceDescription({ sourceDescription: row.descriptionPlain }), 'Full native role description unavailable')
+    const { authoredCriteria, ownedBlocks } = inspectNativeRoleCriteria(row, check)
     requireValue((row.isRemote === null || typeof row.isRemote === 'boolean') && [null, 'Remote', 'Hybrid', 'OnSite'].includes(row.workplaceType)
       && ['FullTime', 'PartTime', 'Contract', 'Intern', 'Temporary'].includes(row.employmentType)
       && text(row.department) && text(row.team), 'Unsupported native role employment schema')
     requireValue(!(row.isRemote === true && row.workplaceType === 'OnSite')
       && !(row.isRemote === false && row.workplaceType === 'Remote'), 'Unreviewed contradictory native remote/workplace tuple')
-    const locations = [{ location: row.location, address: row.address }, ...row.secondaryLocations].map((location, index) => {
-      requireValue(object(location) && text(location.location) && object(location.address), 'Invalid typed native location relation')
-      const address = location.address.postalAddress ?? location.address
-      requireValue(object(address) && ['addressCountry', 'addressLocality', 'addressRegion'].every(field => address[field] == null || typeof address[field] === 'string'), 'Invalid native postal address relation')
-      const country = address.addressCountry === 'UK' ? 'United Kingdom' : nativeCountryName(address.addressCountry)
+    const countries = inspectNativeCountries(row, ownedBlocks, check)
+    const locations = countries.locations
+    for (const location of locations) {
       relations.inspected++
-      if (!country) relations.unresolved++
-      else relations.countryCounts[country] = (relations.countryCounts[country] || 0) + 1
-      const contradictory = country && country !== 'India' && /\bindia\b/i.test(location.location)
-      requireValue(!contradictory, 'Contradictory typed native country and written country label')
-      return { kind: index === 0 ? 'primary' : 'secondary', location: location.location,
-        nativeAddress: structuredClone(address), nativeCountryRaw: address.addressCountry ?? null, country,
-        countryProvenance: country ? 'native-address-postalAddress-addressCountry' : 'unknown',
-        cityOrRemoteUsedAsCountryEvidence: false }
-    })
-    const content = readNativeDocument(row.descriptionHtml)
-    const authoredCriteria = { sourceFields: ['descriptionHtml', 'descriptionPlain'],
-      headings: content.nodes(node => /^h[1-6]$/.test(node.tag)).map(node => content.text(node)),
-      listItems: content.nodes(node => node.tag === 'li').map(node => content.text(node)),
-      fullContentRetained: true, normalizedCriteriaInferred: false }
+      if (!location.countryScopeQualified) relations.unresolved++
+      else relations.countryCounts[location.country] = (relations.countryCounts[location.country] || 0) + 1
+      if (!location.worksiteScopeQualified) relations.worksiteUnresolved++
+    }
+    check()
     return { id: row.id, title: normalized(row.title), nativeSourceRecord: structuredClone(row), nativeBoardRecord: structuredClone(brief),
       nativeCountryRelations: locations, nativeAuthoredCriteria: authoredCriteria, nativePublication: publishedDate(row.publishedAt),
+      nativeCountryScopeQualified: countries.countryScopeQualified, nativeAuthoredLocationRestrictions: countries.restrictionClauses,
+      nativeQualification: { complete: countries.qualifiedForProjection, contentComplete: true,
+        countryComplete: countries.countryScopeQualified, worksiteComplete: countries.worksiteScopeQualified,
+        unresolved: [...new Set(locations.flatMap(location => location.unresolved))] },
       nativeListedState: true, nativeOpenStateBasis: 'current-public-board-membership-and-api-isListed-true',
       nativePublicationStatus: 'listed-public-posting', legalEmployer: null, requisitionId: null, firstEverPublication: null,
-      applicationVisited: false, sourceDetailComplete: true }
+      applicationVisited: false, sourceDetailComplete: countries.qualifiedForProjection }
   })
-  return { models, relations }
+  check(); return { models, relations }
 }
 
 export const createLangchainNativeScraper = () => ({
@@ -206,23 +181,44 @@ export const createLangchainNativeScraper = () => ({
     const { signal, sourceTimeoutMs = 90000 } = options
     requireValue(Number.isSafeInteger(sourceTimeoutMs) && sourceTimeoutMs > 0 && sourceTimeoutMs <= 120000, 'Source timeout must be between 1 and 120000 milliseconds')
     signal?.throwIfAborted()
-    const controller = new AbortController(), timer = setTimeout(() => controller.abort(Error('LangChain native source deadline exceeded')), sourceTimeoutMs)
+    const deadline = performance.now() + sourceTimeoutMs
+    const deadlineReason = Error('LangChain native source deadline exceeded')
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(deadlineReason), sourceTimeoutMs)
     const runSignal = AbortSignal.any([controller.signal, ...(signal ? [signal] : [])])
+    const check = () => {
+      signal?.throwIfAborted()
+      if (!controller.signal.aborted && performance.now() >= deadline) controller.abort(deadlineReason)
+      runSignal.throwIfAborted()
+    }
     const retainedResponses = [], executionStartedAt = new Date().toISOString()
+    const requestChecks = new WeakMap()
     let totalBytes = 0, audit = null
     const get = async url => {
-      runSignal.throwIfAborted()
+      check()
       requireValue(retainedResponses.length < LIMITS.requests, 'Source request bound exceeded')
       const requestedAt = new Date().toISOString(), request = new AbortController()
-      const requestTimer = setTimeout(() => request.abort(Error('LangChain native request deadline exceeded')), LIMITS.requestTimeoutMs)
+      const requestDeadline = performance.now() + LIMITS.requestTimeoutMs
+      const requestReason = Error('LangChain native request deadline exceeded')
+      const requestTimer = setTimeout(() => request.abort(requestReason), LIMITS.requestTimeoutMs)
       const requestSignal = AbortSignal.any([runSignal, request.signal])
+      const checkRequest = () => {
+        check()
+        if (!request.signal.aborted && performance.now() >= requestDeadline) request.abort(requestReason)
+        requestSignal.throwIfAborted()
+      }
       let response
       try {
-        response = await withAbort(() => options.fetchDocument ? options.fetchDocument(url, { method: 'GET', redirect: 'manual', signal: requestSignal })
-          : options.fetchPage && url !== API_URL ? options.fetchPage(url, { signal: requestSignal })
-            : options.fetchJson && url === API_URL ? options.fetchJson(url, { signal: requestSignal }).then(payload => ({ status: 200, url, body: JSON.stringify(payload), bodyRepresentation: 'caller-parsed-json-reserialization' }))
-              : nodeDocument(url, { signal: requestSignal }), requestSignal)
-        requestSignal.throwIfAborted()
+        const byteLimit = Math.min(LIMITS.responseBytes, LIMITS.aggregateBytes - totalBytes)
+        if (options.fetchDocument) response = await withNativeAbort(() => options.fetchDocument(url,
+          { method: 'GET', redirect: 'manual', signal: requestSignal }), requestSignal, checkRequest)
+        else if (options.fetchPage && url !== API_URL) response = await withNativeAbort(() => options.fetchPage(url,
+          { signal: requestSignal }), requestSignal, checkRequest)
+        else if (options.fetchJson && url === API_URL) {
+          const payload = await withNativeAbort(() => options.fetchJson(url, { signal: requestSignal }), requestSignal, checkRequest)
+          response = { status: 200, url, body: serializeNativePayload(payload, { check: checkRequest, byteLimit, nativeRows: LIMITS.nativeRows }),
+            bodyRepresentation: 'caller-parsed-json-reserialization' }
+        } else response = await readNativePublicDocument(url, { signal: requestSignal, check: checkRequest, byteLimit })
+        checkRequest()
         requireValue(object(response) && Number.isSafeInteger(response.status) && response.url === url, 'Unexpected public response authority or transport shape')
         const body = response.body ?? response.html
         const record = { requestedUrl: url, url, method: 'GET', status: response.status,
@@ -232,6 +228,8 @@ export const createLangchainNativeScraper = () => ({
           offlineReviewRequestedAt: options.acquisitionMode === 'captured-response-replay' ? requestedAt : null,
           bodyRepresentation: response.bodyRepresentation ?? 'response-text',
           headers: Object.fromEntries(Object.entries(response.headers || {}).filter(([name]) => name.toLowerCase() !== 'set-cookie')) }
+        checkRequest()
+        requestChecks.set(record, checkRequest)
         retainedResponses.push(record)
         if (response.status >= 300 && response.status < 400) {
           record.bodyUnavailable = true; record.bodyUnavailableReason = response.bodyUnavailableReason || 'Redirect response body not supplied; metadata retained without fabricating a body.'
@@ -242,6 +240,7 @@ export const createLangchainNativeScraper = () => ({
         requireValue(bytes <= LIMITS.responseBytes && totalBytes + bytes <= LIMITS.aggregateBytes, 'Response or aggregate byte limit exceeded')
         totalBytes += bytes
         Object.assign(record, { body, bodyBytes: bytes, bodySHA256: sha(body), bodyUnavailable: false })
+        checkRequest()
         requireValue(record.status === 200, 'Public source HTTP ' + record.status)
         return record
       } finally { clearTimeout(requestTimer) }
@@ -254,33 +253,48 @@ export const createLangchainNativeScraper = () => ({
         requireValue(isCorporate(next.href) && !next.hash, 'Unreviewed corporate redirect authority')
         corporate = await get(next.href)
       }
-      const binding = corporateBinding(corporate)
-      const boardResponse = await get(BOARD_URL), bootstrap = literalBootstrap(boardResponse.body)
-      const apiResponse = await get(API_URL), payload = JSON.parse(apiResponse.body)
-      const { models, relations } = fullModels(payload, bootstrap)
+      const checkCorporate = requestChecks.get(corporate)
+      checkCorporate(); const binding = corporateBinding(corporate); checkCorporate()
+      const boardResponse = await get(BOARD_URL)
+      const checkBoard = requestChecks.get(boardResponse)
+      checkBoard(); const bootstrap = literalBootstrap(boardResponse.body); checkBoard()
+      let frontend = bootstrap.frontend
+      if (frontend.requiresCurrentProgramVerification) {
+        const manifestResponse = await get(frontend.manifestURL)
+        const entry = nativeFrontendEntry(frontend, manifestResponse, requestChecks.get(manifestResponse))
+        const entryResponse = await get(entry.entryURL)
+        frontend = verifyNativeFrontend(frontend, entry, entryResponse, requestChecks.get(entryResponse))
+      }
+      const apiResponse = await get(API_URL)
+      const checkAPI = requestChecks.get(apiResponse)
+      checkAPI(); const payload = JSON.parse(apiResponse.body); checkAPI()
+      const { models, relations } = fullModels(payload, bootstrap, checkAPI)
       const closingAPI = await get(API_URL), closingBoard = await get(BOARD_URL), closingCorporate = await get(corporate.url)
       runSignal.throwIfAborted()
       requireValue(closingAPI.bodySHA256 === apiResponse.bodySHA256 && closingBoard.bodySHA256 === boardResponse.bodySHA256
         && closingCorporate.bodySHA256 === corporate.bodySHA256, 'Closing native inventory, role content, or corporate binding changed during collection')
-      const indiaModels = models.filter(model => model.nativeCountryRelations.some(location => location.country === 'India'))
+      check()
+      const indiaModels = models.filter(model => model.nativeQualification.complete && model.nativeCountryRelations.some(location => location.country === 'India'))
+      const detailHealth = { complete: models.length > 0 && models.every(model => model.sourceDetailComplete),
+        inspectedJobs: models.length, incompleteJobs: models.filter(model => !model.sourceDetailComplete).length,
+        missingDescriptions: 0, contentComplete: models.length > 0, missingCriteria: 0,
+        incompleteCountryJobs: models.filter(model => !model.nativeQualification.countryComplete).length,
+        incompleteWorksiteJobs: models.filter(model => !model.nativeQualification.worksiteComplete).length,
+        nonVacuous: models.length > 0, basis: 'every-native-listed-role-active-authored-criteria-and-typed-country-worksite-consistency-before-projection' }
       audit = { source: 'langchain', executionStartedAt, executionCompletedAt: new Date().toISOString(),
         acquisitionMode: options.acquisitionMode ?? (options.fetchDocument || options.fetchPage || options.fetchJson ? 'caller-supplied-response' : 'current-anonymous-node-get'),
         physicalAcquisitionStartedAt: retainedResponses[0].sourceRequestedAt,
         physicalAcquisitionCompletedAt: retainedResponses.at(-1).sourceCompletedAt,
         configuredBoardURL: BOARD_URL, nativeModelURL: API_URL, nativeApiVersion: payload.apiVersion,
-        reviewedNativeFrontend: { loaderSHA256: bootstrap.loaderSHA256, manifestURL: bootstrap.manifestURL,
-          manifestSHA256: '8072fffa5176941b2df69affb583c952633e5abf49f52605b448c6cbf9b5934f',
-          entrySHA256: '0caf6e210c9581f7e4eef29cf1bd1d2a3102ac7218f1cad5f8b7bc6b58e28d38',
-          contract: 'AT -> window.__appData.jobBoard -> direct jobPostings array; ApiJobBoardWithTeams has only organizationHostedJobsPageName; local Qv/Ile/Nle/Ryt filters and renders all postings',
-          evidenceKind: 'previously-acquired-static-contract-pinned-by-current-loader',
-          programsRefetchedDuringThisAttempt: false, downloadedJavaScriptExecuted: false },
+        reviewedNativeFrontend: { ...frontend,
+          evidenceKind: frontend.evidenceKind ?? 'previously-acquired-static-contract-pinned-by-current-loader',
+          programsRefetchedDuringThisAttempt: frontend.programsRefetchedDuringThisAttempt === true, downloadedJavaScriptExecuted: false },
         corporateBinding: binding, nativeOrganization: structuredClone(bootstrap.organization),
         observedListingCount: models.length, fullNativeModels: models, countryRelations: relations,
-        allRoleDetailHealth: { complete: true, inspectedJobs: models.length, incompleteJobs: 0, missingDescriptions: 0,
-          nonVacuous: models.length > 0, basis: 'every-native-listed-role-before-country-projection' },
+        allRoleDetailHealth: detailHealth, nativeQualificationHealth: { ...detailHealth },
         listingPaginationComplete: true, closingInventoryMatches: true,
-        configuredBoardInventoryComplete: relations.unresolved === 0,
-        configuredBoardIndiaCount: relations.unresolved === 0 ? indiaModels.length : null,
+        configuredBoardInventoryComplete: detailHealth.complete && relations.unresolved === 0 && relations.worksiteUnresolved === 0,
+        configuredBoardIndiaCount: detailHealth.complete && relations.unresolved === 0 && relations.worksiteUnresolved === 0 ? indiaModels.length : null,
         sourceScopeComplete: false, companyGlobalTotal: null, companyIndiaTotal: null,
         lifecycleCleanupAllowed: false, applicationsVisited: false, bounds: LIMITS,
         requestCount: retainedResponses.length, aggregateBytes: totalBytes, retainedResponses }
@@ -310,7 +324,7 @@ export const createLangchainNativeScraper = () => ({
       Object.defineProperty(jobs, RECRUITMENT_OBSERVATIONS, { value: { source: 'langchain', nativeRecords: models.length,
         returnedIndiaJobs: jobs.length, nativeInventoryAudit: audit } })
       Object.defineProperty(jobs, OFFICIAL_ATS_DISCOVERY, { value: { boards: [{ atsPlatform: 'ashby', boardToken: 'langchain', bindingEvidence: binding }], checks: retainedResponses.map(({ body, ...receipt }) => receipt) } })
-      runSignal.throwIfAborted()
+      requestChecks.get(closingCorporate)()
       return jobs
     } catch (error) {
       if (signal?.aborted) throw signal.reason

@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 import { readNativeTable, readNativeRole } from './nativeInventory.js'
 
 import { APEXON_CATALOG } from './catalog.js'
@@ -97,8 +98,21 @@ export const extractExploreJobsUrl = (html) =>
 export const hasOfficialExploreJobsSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
+  let titles
+  try {
+    const document = readNativeDocument(page)
+    const root = document.nodes(node => node.tag === 'root')[0]
+    const html = root?.children.find(node => typeof node !== 'string' && node.tag === 'html')
+    const heads = html?.children.filter(node => typeof node !== 'string' && node.tag === 'head') || []
+    if (heads.length !== 1) return false
+    // The first HTML title owns document.title, including hidden/inert titles.
+    // Later WordPress SEO titles and body titles do not replace that authority.
+    titles = heads[0].children.filter(node => typeof node !== 'string' && node.tag === 'title')
+      .map(node => normalizeWhitespace(node.raw || ''))
+  } catch { return false }
 
-  return /<title>\s*Job Search, Job Opportunities (?:&amp;|&) Openings in India - Apexon\s*<\/title>/i.test(page)
+  return titles.length > 0
+    && /^Job Search, Job Opportunities & Openings in (?:India|USA) - Apexon$/i.test(titles[0])
     && text.includes('Explore Jobs')
     && text.includes('Job Title')
     && text.includes('Openings')

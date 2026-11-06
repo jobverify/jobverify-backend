@@ -130,23 +130,23 @@ test('Groupon helpers stay pinned to the verified first-party careers handoff an
       {
         title: '(AI-First) Engineering Manager',
         location: 'Prague',
-        city: 'Prague',
+        city: null,
         country: null,
         link: 'https://job-boards.eu.greenhouse.io/groupon/jobs/4924951101',
         applyUrl: 'https://job-boards.eu.greenhouse.io/groupon/jobs/4924951101',
         department: 'Engineering',
-        postingDate: '2026-07-10',
+        postingDate: null,
         experienceRequired: '7+ years',
       },
       {
         title: 'Business Development Manager',
         location: 'Chicago (35 W. Wacker Dr.)',
-        city: 'Chicago',
+        city: null,
         country: null,
         link: 'https://job-boards.eu.greenhouse.io/groupon/jobs/4817345101',
         applyUrl: 'https://job-boards.eu.greenhouse.io/groupon/jobs/4817345101',
         department: 'Sales',
-        postingDate: '2026-07-14',
+        postingDate: null,
         experienceRequired: '5+ years',
       },
     ],
@@ -156,78 +156,14 @@ test('Groupon helpers stay pinned to the verified first-party careers handoff an
   assert.match(jobs[1].jobDescription, /merchant relationships across Chicago/i)
 })
 
-test('Groupon run validates the verified first-party careers page and board before fetching the Greenhouse jobs API', async () => {
-  const groupon = await loadModule()
-  const requested = []
-
-  const jobs = await groupon.createGrouponScraper({ maxJobs: 1 }).run({
-    fetchText: async (url) => {
-      requested.push({ type: 'text', url })
-      if (url === groupon.CAREERS_URL) return VERIFIED_CAREERS_HTML
-      if (url === groupon.BOARD_URL) return VERIFIED_BOARD_HTML
-      throw new Error(`Unexpected Groupon text fixture URL: ${url}`)
-    },
-    fetchJson: async (url, options = {}) => {
-      requested.push({ type: 'json', url, options })
-      return GREENHOUSE_PAYLOAD
-    },
-    now: () => FIXED_SCRAPED_AT,
-  })
-
-  assert.deepEqual(
-    requested.map((request) => [request.type, request.url]),
-    [
-      ['text', groupon.CAREERS_URL],
-      ['text', groupon.BOARD_URL],
-      ['json', 'https://boards-api.greenhouse.io/v1/boards/groupon/jobs?content=true'],
-    ],
-  )
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'groupon')
-  assert.equal(jobs[0].company, 'Groupon')
-  assert.equal(jobs[0].link, 'https://job-boards.eu.greenhouse.io/groupon/jobs/4924951101')
-  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+test('Groupon rejects the obsolete three-request handoff before any legacy API fallback', async () => {
+ const groupon = await loadModule(); let jsonReads = 0
+ await assert.rejects(groupon.createGrouponScraper().run({fetchText:async()=>VERIFIED_CAREERS_HTML,fetchJson:async()=>{jsonReads++;return GREENHOUSE_PAYLOAD}}),/canonical redirect changed/)
+ assert.equal(jsonReads,0)
 })
 
-test('Groupon fails closed when the verified careers page or Greenhouse board links drift materially', async () => {
-  const groupon = await loadModule()
-
-  await assert.rejects(
-    groupon.createGrouponScraper().run({
-      fetchText: async () => VERIFIED_CAREERS_HTML.replace('Why Groupon', 'Join Groupon'),
-      fetchJson: async () => GREENHOUSE_PAYLOAD,
-    }),
-    /verified Groupon careers page/i,
-  )
-
-  await assert.rejects(
-    groupon.createGrouponScraper().run({
-      fetchText: async (url) => {
-        if (url === groupon.CAREERS_URL) return VERIFIED_CAREERS_HTML
-        if (url === groupon.BOARD_URL) return '<html><head><title>Jobs at Groupon</title></head><body></body></html>'
-        throw new Error(`Unexpected Groupon text fixture URL: ${url}`)
-      },
-      fetchJson: async () => GREENHOUSE_PAYLOAD,
-    }),
-    /visible Groupon Greenhouse job links/i,
-  )
-
-  await assert.rejects(
-    groupon.createGrouponScraper().run({
-      fetchText: async (url) => {
-        if (url === groupon.CAREERS_URL) return VERIFIED_CAREERS_HTML
-        if (url === groupon.BOARD_URL) return VERIFIED_BOARD_HTML
-        throw new Error(`Unexpected Groupon text fixture URL: ${url}`)
-      },
-      fetchJson: async () => ({
-        jobs: [
-          {
-            ...GREENHOUSE_PAYLOAD.jobs[0],
-            absolute_url: 'https://job-boards.eu.greenhouse.io/other-company/jobs/4924951101',
-          },
-        ],
-      }),
-    }),
-    /verified Groupon Greenhouse board links/i,
-  )
+test('Groupon runtime zero cap prevents both legacy and native callbacks', async () => {
+ const groupon = await loadModule(); let reads = 0
+ const jobs=await groupon.createGrouponScraper().run({maxJobs:0,fetchResponse:()=>{reads++;throw Error('No IO')},fetchText:()=>{reads++;throw Error('No IO')},fetchJson:()=>{reads++;throw Error('No IO')}})
+ assert.equal(jobs.length,0);assert.equal(reads,0)
 })

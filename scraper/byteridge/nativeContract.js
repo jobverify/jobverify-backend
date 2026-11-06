@@ -26,6 +26,27 @@ export const canonical = value => JSON.stringify(value, function (_key, item) {
 // Role visibility uses parsed attributes, including entity-decoded/unquoted
 // styles, plus the conservative source-local author-CSS projection.
 export const document = html => projectAuthorVisibility(readNativeDocument(html),html)
+// The client uses document.getElementById, which retains hidden/inert IDs.
+// Template elements belong to the document; their HTML fragment children do
+// not. Foreign template elements retain ordinary document children; HTML
+// integration points return their template children to fragment semantics.
+const documentElements = doc => {
+  const elements = []
+  const visit = (node, inherited = 'html') => {
+    const namespace = inherited === 'html' ? node.tag === 'svg' ? 'svg' : node.tag === 'math' ? 'mathml' : 'html' : inherited
+    elements.push(node)
+    if (namespace === 'html' && node.tag === 'template') return
+    const integration = namespace === 'svg' && ['foreignobject','desc','title'].includes(node.tag)
+      || namespace === 'mathml' && node.tag === 'annotation-xml' && ['text/html','application/xhtml+xml'].includes((node.attrs.encoding || '').toLowerCase())
+    for (const child of node.children || []) if (typeof child !== 'string') {
+      const textIntegration = namespace === 'mathml' && ['mi','mo','mn','ms','mtext'].includes(node.tag) && !['mglyph','malignmark'].includes(child.tag)
+      const svgAnnotation = namespace === 'mathml' && node.tag === 'annotation-xml' && child.tag === 'svg'
+      visit(child,integration || textIntegration || svgAnnotation ? 'html' : namespace)
+    }
+  }
+  visit(doc.nodes(node => node.tag === 'root')[0])
+  return elements
+}
 export const plain = html => { const d = document(html); return d.nodes(n => n.tag === 'root').map(n => d.text(n)).join(' ') }
 const compact = html => plain(html).replace(/\s/g, '')
 const pathOnly = (value, base) => { const u = new URL(value, base); return u.origin + u.pathname }
@@ -128,16 +149,18 @@ export function frameContract(html, client) {
 }
 export function nativePageContract(html, expected) {
   const doc = document(html),execution=executableDocument(html)
+  const elements = documentElements(doc)
   check(sameStyles(surfaceStyles(html,doc,NATIVE_ORIGIN),reviewedSurfaces.native),'unreviewed native stylesheet visibility')
   check(canonical(inlineClients(execution))===canonical(reviewedSurfaces.native.inlineExecutableSHA256),'unreviewed native executable inline client')
-  check(doc.nodes(n => n.tag === 'base').length === 0, 'unreviewed native base')
+  check(!elements.some(n => n.tag === 'base'), 'unreviewed native base')
   const scripts = execution.nodes(n => n.tag === 'script' && n.attrs.src)
   const native = scripts.filter(n => new URL(n.attrs.src, NATIVE_ORIGIN).origin === NATIVE_ORIGIN)
-  const clientURLs = [NATIVE_CLIENTS,...(reviewedSurfaces.nativeClientVersions||[]).map(version=>version.scriptURLs)].find(urls => native.length === urls.length && native.every(n => executable(n) && urls.includes(new URL(n.attrs.src, NATIVE_ORIGIN).href)) && new Set(native.map(n => new URL(n.attrs.src, NATIVE_ORIGIN).href)).size === urls.length)
+  const clientURLs = [NATIVE_CLIENTS,...(reviewedSurfaces.nativeClientVersions||[]).map(version=>version.scriptURLs)].find(urls => native.length === urls.length && native.every(n => executable(n) && !Object.hasOwn(n.attrs,'integrity') && urls.includes(new URL(n.attrs.src, NATIVE_ORIGIN).href)) && new Set(native.map(n => new URL(n.attrs.src, NATIVE_ORIGIN).href)).size === urls.length)
   check(clientURLs, 'native public client version/execution drift')
   check(scripts.filter(n => new URL(n.attrs.src, NATIVE_ORIGIN).origin !== NATIVE_ORIGIN).every(n => executable(n) && NATIVE_EXTERNALS.has(pathOnly(n.attrs.src, NATIVE_ORIGIN))), 'unreviewed external native client')
   check(projectedFrameContexts(doc).length === 0, 'unreviewed native frame')
-  check(doc.nodes(n => n.tag === 'div' && n.attrs.id === 'root').length === 1, 'missing active public application root')
+  const roots = doc.nodes(n => n.tag === 'div' && n.attrs.id === 'root')
+  check(roots.length === 1 && elements.find(n => n.attrs.id === 'root') === roots[0], 'missing or shadowed active public application root')
   const postings = schema(doc, 'JobPosting')
   check(postings.length === 1, 'missing/ambiguous public JobPosting')
   const posting = postings[0]

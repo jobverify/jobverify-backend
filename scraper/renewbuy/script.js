@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { document as parseDocument, norm, decode } from '../../scraper-support/shared/rmkNativePairHtml.js'
 import { nativeDate, nativeCountryName, nativeLocationCountryName } from '../../scraper-support/shared/nativeJobPosting.js'
 import { attachInventoryEvidence, normalizeInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { buildHttpError } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'renewbuy'
 export const COMPANY_NAME = 'RenewBuy'
@@ -70,7 +71,7 @@ function board(html) {
   }
   return {rows, count:Number(countText)}
 }
-function detail(html, row, at) {
+function detail(html, row, at, unavailableProfileStatus=null) {
   const doc = document(html), source = roleURL(one(doc.nodes(n=>n.tag==='link'&&n.attrs.rel==='canonical'),'job canonical').attrs.href,row.id)
   requireFact(source === row.url, 'canonical job conflict')
   const title = doc.text(one(byClass(doc,'h1','top-card-layout__title'),'native job title')), employer = one(byClass(doc,'a','topcard__org-name-link'),'detail employer')
@@ -83,6 +84,10 @@ function detail(html, row, at) {
   for(const node of doc.nodes(n=>n.tag==='script'&&n.attrs.type==='application/ld+json')) walk(JSON.parse(node.raw))
   const schema = one(schemas,'native JobPosting'); employerURL(schema.hiringOrganization?.sameAs)
   requireFact(norm(schema.title) === title && schema.hiringOrganization?.name === COMPANY_NAME, 'structured employer/title conflict')
+  if(unavailableProfileStatus){
+    const identities=doc.nodes(n=>n.tag==='meta'&&n.attrs.name==='companyId')
+    requireFact(identities.length===1&&identities[0].attrs.content==='9350817','native detail company ID changed')
+  }
   const posted = nativeDate(schema.datePosted,{required:true}), closing = nativeDate(schema.validThrough)
   requireFact(Date.parse(row.date.iso) <= at && Date.parse(posted.iso) <= at, 'native posting date conflict')
   requireFact(!closing.iso || Date.parse(closing.iso) >= Date.parse(posted.iso), 'native expiry precedes publication')
@@ -102,22 +107,34 @@ function detail(html, row, at) {
   let jd=descriptions.length?doc.text(descriptions[0])||null:null
   const structured=schema.description?document(decode(schema.description)):null, schemaJD=structured?structured.text(structured.root)||null:null
   requireFact(!jd || !schemaJD || jd.replace(/\s/g,'')===schemaJD.replace(/\s/g,''),'description conflict')
+  if(unavailableProfileStatus){
+    // A restricted profile cannot supply identity from a historical capture.
+    // Every recovered live role must independently identify the exact native
+    // company account, corporate domain and legal employer in visible content.
+    const identity=/(?:^|\s)Company\s*:\s*RenewBuy\.com\s*\(\s*D2C Insurance Broking Private Limited\s*\)(?=\s|$)/
+    requireFact(jd&&schemaJD&&identity.test(jd)&&identity.test(schemaJD),'native legal employer/domain self-identification unavailable')
+  }
   if(jd){
     let substance=doc.inner(descriptions[0])
     for(const heading of doc.nodes(n=>['strong','h1','h2','h3','h4','h5','h6'].includes(n.tag),descriptions[0]))substance=substance.replace(doc.outer(heading),'')
     const content=document(substance)
     if(!content.text(content.root)||jd.length<80||/^(?:tbd|to be (?:added|updated)|coming soon|job description|responsibilities)\.?$/i.test(jd))jd=null
+    if(unavailableProfileStatus){
+      const roleContent=content.text(content.root).replace(/(?:^|\s)Company\s*:\s*RenewBuy\.com\s*\(\s*D2C Insurance Broking Private Limited\s*\)(?=\s|$)/g,' ')
+      if(norm(roleContent).length<80)jd=null
+    }
   }
+  if(unavailableProfileStatus)requireFact(jd,'native substantive description unavailable')
   const apply=doc.nodes(n=>n.tag==='button'&&n.attrs.id==='topbar-apply')
   requireFact(apply.length===1&&doc.text(apply[0])==='Apply','missing active native application')
   const login=doc.nodes(n=>n.tag==='a'&&n.attrs['data-tracking-control-name']==='public_jobs_nav-header-signin')
   requireFact(login.length>0&&login.every(n=>{const u=linkedinURL(n.attrs.href);return u.pathname==='/login'&&u.searchParams.getAll('session_redirect').length===1&&roleURL(u.searchParams.get('session_redirect'),row.id)===source}),'application role conflict')
   const geo=geography[0]
-  return {source:SOURCE,company:COMPANY_NAME,jobId:row.id,requisitionId:null,title,location,city:geo.city,state:geo.state,country:'India',jobDescription:jd,postingDate:posted.iso < row.date.iso ? posted.iso : row.date.iso,listingPostingDate:row.date.raw,nativeDetailPostingDate:posted.raw,closingDate:closing.iso,sourceUrl:source,applyUrl:source,link:source,applicationRequiresAccount:true,sourceListingComplete:false,sourceDescription:jd?'native-visible-description':null,sourceDetailComplete:Boolean(jd),sourceDetailStatus:jd?'verified':'description-unavailable',sourceScopeComplete:false,lifecycleCleanupAllowed:false}
+  return {source:SOURCE,company:COMPANY_NAME,jobId:row.id,requisitionId:null,title,location,city:geo.city,state:geo.state,country:'India',jobDescription:jd,postingDate:posted.iso < row.date.iso ? posted.iso : row.date.iso,listingPostingDate:row.date.raw,nativeDetailPostingDate:posted.raw,closingDate:closing.iso,sourceUrl:source,applyUrl:source,link:source,applicationRequiresAccount:true,sourceListingComplete:false,sourceDescription:jd?'native-visible-description':null,sourceDetailComplete:Boolean(jd),sourceDetailStatus:jd?'verified':'description-unavailable',sourceScopeComplete:false,lifecycleCleanupAllowed:false,...(unavailableProfileStatus?{nativeEmployerVerification:'native-detail-company-id-and-legal-domain',nativeCompanyProfileUnavailableStatus:unavailableProfileStatus}:{})}
 }
 
 export const createRenewBuyScraper = () => ({
-  async run({fetchImpl=globalThis.fetch,signal,timeoutMs=120000,maxJobs,now=()=>new Date().toISOString(),nativeRecovery=true}={}) {
+  async run({fetchImpl=globalThis.fetch,signal,timeoutMs=120000,maxJobs=3,now=()=>new Date().toISOString(),nativeRecovery=true}={}) {
     signal?.throwIfAborted()
     requireFact(Number.isInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=540000,'invalid timeout')
     requireFact(maxJobs==null||Number.isInteger(maxJobs)&&maxJobs>0,'invalid maxJobs')
@@ -125,10 +142,17 @@ export const createRenewBuyScraper = () => ({
     signal?.addEventListener('abort',abort,{once:true})
     let timer, listener, activeReader, bytes=0, pages=0
     const deadline=new Promise((_,reject)=>{listener=()=>reject(controller.signal.reason);controller.signal.addEventListener('abort',listener,{once:true});timer=setTimeout(()=>controller.abort(new DOMException('RenewBuy aggregate request deadline exceeded','TimeoutError')),timeoutMs)})
-    const read=async url=>{
+    const read=async (url,requireSuccess=false)=>{
       controller.signal.throwIfAborted()
       const response=await fetchImpl(url,{method:'GET',redirect:'manual',credentials:'omit',headers:{Accept:'text/html'},signal:controller.signal})
       controller.signal.throwIfAborted();requireFact(response.url===url,'response authority changed')
+      if(requireSuccess&&response.status!==200){
+        pages++
+        const error=Object.assign(buildHttpError(response,url),{requestUrl:url,finalUrl:response.url})
+        error.message='RenewBuy native source unavailable: '+error.message
+        void Promise.resolve().then(()=>response.body?.cancel?.(error)).catch(()=>{})
+        throw error
+      }
       let html=''
       if(response.body?.getReader){const reader=response.body.getReader(),chunks=[];activeReader=reader;let size=0;try{for(;;){const p=await reader.read();controller.signal.throwIfAborted();if(p.done)break;size+=p.value.byteLength;requireFact(size<=4*1024*1024,'body bound exceeded');chunks.push(Buffer.from(p.value))}html=Buffer.concat(chunks).toString('utf8')}finally{reader.releaseLock();activeReader=null}}
       else html=await response.text()
@@ -140,24 +164,31 @@ export const createRenewBuyScraper = () => ({
       const blocked=[]
       for(const url of [HOMEPAGE_URL,CAREERS_URL]){const page=await read(url);requireFact(page.status===403&&/forbidden/i.test(page.html),'official surface changed; review newly available content');blocked.push(page.status)}
       if(!nativeRecovery)return attachInventoryEvidence([],{status:'coverage-gap',surface:CAREERS_URL,firstParty:true,listingComplete:false,pagesFetched:pages,reportedTotal:null,indiaFacetCount:null,verifiedAt:checkedAt,reason:'Official homepage and careers HTTP '+blocked.join('/')+'; inventory unknown; corporate outbound hiring handoff unverified.'})
-      const company=await read(PROFILE_URL);requireFact(company.status===200,'native profile unavailable');profile(company.html)
-      const listing=await read(JOBS_URL);requireFact(listing.status===200,'native board unavailable');const inventory=board(listing.html),jobs=[]
+      let unavailableProfile=null
+      try{const company=await read(PROFILE_URL,true);profile(company.html)}catch(error){
+        if(error.requestUrl!==PROFILE_URL||![403,429].includes(error.status))throw error
+        unavailableProfile=error
+      }
+      const listing=await read(JOBS_URL,true);const inventory=board(listing.html),jobs=[]
       let interruption=null
       for(const row of [...inventory.rows].sort((a,b)=>b.date.iso.localeCompare(a.date.iso))){
         if(jobs.length>=(maxJobs??Infinity))break
         if(/\b(?:dummy|test job|sample job)\b/i.test(row.title))continue
         const page=await read(row.url)
         if(page.status!==200){interruption='Native detail HTTP '+page.status+'; stopped without retry.';break}
-        const job=detail(page.html,row,Date.parse(checkedAt));if(job)jobs.push({...job,scrapedAt:checkedAt})
+        const job=detail(page.html,row,Date.parse(checkedAt),unavailableProfile?.status);if(job)jobs.push({...job,scrapedAt:checkedAt})
       }
-      if(!interruption){const confirm=await read(JOBS_URL);requireFact(confirm.status===200&&JSON.stringify(board(confirm.html))===JSON.stringify(inventory),'native inventory changed during collection')}
-      return attachInventoryEvidence(jobs,{status:'discovery-only',surface:JOBS_URL,firstParty:false,listingComplete:false,pagesFetched:pages,reportedTotal:inventory.count,indiaFacetCount:null,verifiedAt:checkedAt,reason:'Employer-published LinkedIn subset verified through exact RenewBuy company ID 9350817 and native reciprocal website; corporate outbound handoff unavailable (HTTP 403), pagination incomplete; no cleanup.'+(interruption?' '+interruption:'')})
+      if(unavailableProfile&&!jobs.length)throw unavailableProfile
+      if(!interruption){const confirm=await read(JOBS_URL,true);requireFact(JSON.stringify(board(confirm.html))===JSON.stringify(inventory),'native inventory changed during collection')}
+      const identityReason=unavailableProfile?'profile HTTP '+unavailableProfile.status+' unavailable; each role independently verifies native company ID 9350817, exact RenewBuy employer/profile, and visible/structured Company: RenewBuy.com (D2C Insurance Broking Private Limited) self-identification':'native reciprocal company website verified'
+      return attachInventoryEvidence(jobs,{status:'discovery-only',surface:JOBS_URL,firstParty:false,listingComplete:false,pagesFetched:pages,reportedTotal:inventory.count,indiaFacetCount:null,verifiedAt:checkedAt,reason:'Employer-published LinkedIn subset verified through exact RenewBuy company ID 9350817; '+identityReason+'; corporate outbound handoff unavailable (HTTP 403), pagination incomplete; no cleanup.'+(interruption?' '+interruption:'')})
     })()
     try{return await Promise.race([task,deadline])}catch(error){
       signal?.throwIfAborted()
       controller.abort(error)
       const wrapped=new Error(error.message,{cause:error});wrapped.name=error.name;wrapped.code='RENEWBUY_COVERAGE_GAP';wrapped.lifecycleCleanupAllowed=false
-      wrapped.inventoryEvidence=normalizeInventoryEvidence({status:'coverage-gap',surface:JOBS_URL,firstParty:false,listingComplete:false,pagesFetched:pages,reportedTotal:null,indiaFacetCount:null,verifiedAt:null,reason:'RenewBuy source unavailable or changed; current inventory unknown: '+error.message})
+      for(const key of ['status','requestUrl','finalUrl','abortRetries','retryDelayMs'])if(error[key]!=null)wrapped[key]=error[key]
+      wrapped.inventoryEvidence=normalizeInventoryEvidence({status:'coverage-gap',surface:error.requestUrl||JOBS_URL,firstParty:false,listingComplete:false,pagesFetched:pages,reportedTotal:null,indiaFacetCount:null,verifiedAt:null,reason:'RenewBuy source unavailable or changed; current inventory unknown: '+error.message})
       throw wrapped
     }finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);controller.signal.removeEventListener('abort',listener);try{Promise.resolve(activeReader?.cancel(controller.signal.reason)).catch(()=>{})}catch{}}
   },

@@ -66,6 +66,8 @@ test('extractSearchResults keeps only Beckman Coulter Diagnostics jobs in India'
     requisitionId: 'R1310882',
     department: 'Digital Products Development',
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: null,
     jobDescription:
       'Embrace the role of a Lead Software Engineer and drive innovation in life sciences diagnostics. Architect, design, and implement robust software solutions using Java, Azure, and modern frameworks. Collaborate with cross-functional teams to deliver impactful products in a regulated environment. Shape the future of clinical diagnostics with Beckman Coulter Diagnostics.',

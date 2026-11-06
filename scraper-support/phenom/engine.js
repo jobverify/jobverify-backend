@@ -300,6 +300,17 @@ const extractExperienceSnippet = (value, { requireKeyword = true, allowLabels = 
   return allowLabels ? normalizeExperienceLabel(value) : null
 }
 
+// A native display sentence can describe a preference or an alternative path.
+// Only a complete standalone experience field can be promoted to a requirement;
+// keep sentences in the original description for the policy's contextual parser.
+const REQUIRED_EXPERIENCE_FIELD = new RegExp('^(?:(?:minimum(?: of)?|at least)\\s+)?(?:'
+  + EXPERIENCE_DURATION_PATTERN.source + ')(?:\\s+(?:of\\s+)?(?:(?:professional|relevant|work)\\s+)*experience)?'
+  + '(?:\\s+(?:is\\s+)?(?:required|mandatory))?\\.?$', 'i')
+const nativeExperienceRequirement = value => {
+  const text = normalizeWhitespace(value)
+  return normalizeExperienceLabel(text) || (text && REQUIRED_EXPERIENCE_FIELD.test(text) ? text : null)
+}
+
 const extractQualificationSnippet = (value) => {
   const text = stripTags(value)
   if (!text) return null
@@ -742,6 +753,8 @@ export const createPhenomScraper = ({
       const description = normalizeWhitespace(
         job.ml_highlight || job.descriptionTeaser || job.ml_job_parser?.descriptionTeaser || null,
       )
+      const sourceEmploymentType = normalizeEmploymentType(job.type)
+      const sourceExperienceRequired = nativeExperienceRequirement(job.experience)
 
       if (!job?.reqId || !job?.title || !sourceUrl) return null
 
@@ -753,11 +766,10 @@ export const createPhenomScraper = ({
         jobId: normalizeWhitespace(job.jobId || job.reqId),
         requisitionId: normalizeWhitespace(job.reqId || job.jobId),
         department: normalizeWhitespace(job.category),
-        employmentType: normalizeEmploymentType(job.type),
-        experienceRequired: extractExperienceSnippet(job.experience, {
-          requireKeyword: false,
-          allowLabels: true,
-        }),
+        employmentType: sourceEmploymentType,
+        sourceEmploymentType,
+        experienceRequired: extractExperienceSnippet(job.experience, { requireKeyword: false, allowLabels: true }),
+        sourceExperienceRequired,
         jobDescription: description,
         minimumQualification: null,
         preferredQualification: null,
@@ -808,6 +820,9 @@ export const createPhenomScraper = ({
           || explicitExperienceLabel
           || normalizeExperienceLabel(structuredJob?.experience)
         )
+    const sourceExperienceRequired = nativeExperienceRequirement(structuredJob?.experience)
+    const sourceEmploymentType = normalizeEmploymentType(structuredJob?.job_type_fields?.job_type
+      || structuredJob?.employmentType || structuredJob?.type || jobPosting?.employmentType)
 
     return {
       title: normalizeWhitespace(
@@ -831,13 +846,10 @@ export const createPhenomScraper = ({
       department: normalizeWhitespace(
         listing.department || structuredJob?.category || jobPosting?.occupationalCategory,
       ),
-      employmentType: normalizeEmploymentType(
-        structuredJob?.job_type_fields?.job_type
-          || structuredJob?.employmentType
-          || structuredJob?.type
-          || jobPosting?.employmentType,
-      ),
+      employmentType: sourceEmploymentType,
+      sourceEmploymentType,
       experienceRequired,
+      sourceExperienceRequired,
       jobDescription: description,
       minimumQualification: normalizeQualificationRequirement(
         structuredJob?.education_sentences?.[0],

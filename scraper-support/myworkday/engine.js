@@ -14,6 +14,8 @@ import { isGroupedLocationLabel } from '../../src/utils/jobLocations.js'
 import { isJobInPublicLocationScope } from '../../src/utils/publicJobLocationScope.js'
 import { extractWorkdayDetailLocations } from './locationDetails.js'
 import { parseWorkdayNativeLifecycleDate } from './nativeLifecycleDates.js'
+import { workdayListingIdentityDiagnostic } from './listingIdentityDiagnostics.js'
+import { validateAureconWorksiteProof } from './nativeAureconWorksites.js'
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 import {
   currentWorkdayBoardReceipt, explicitWorkdayCountryScope, explicitWorkdayAdditionalCountryScope, hasRecognizedWorkdayCountry, hashWorkdayProof,
@@ -1568,6 +1570,11 @@ const buildWorkdayIncompleteScopeError = (source, jobUrl, cause) => {
   return error
 }
 
+const buildWorkdayScopeContractError = (source, url, cause) => Object.assign(
+  new Error('[' + source + '] Workday scope API expected JSON from the same native detail URL at ' + url, { cause }),
+  { name: 'WorkdayScopeApiContractError', abortRetries: true, failureKind: 'parser_or_contract_error' },
+)
+
 const resolveWorkdayCxsPrimaryLocation = (info = {}) => (
   info.location == null || (typeof info.location === 'string' && !info.location.trim())
     ? info.jobRequisitionLocation?.descriptor
@@ -1650,17 +1657,24 @@ const fetchWorkdayScopePayload = async ({
             },
           },
           { signal, timeoutMs: requestTimeoutMs, source, requestScheduler, kind: 'listing' },
-          async (response) => ({
-            response,
-            payload: response.ok ? await response.json() : (await response.text(), null),
-          }),
+          async (response) => {
+            let payload = null
+            if (response.ok) {
+              try { payload = await response.json() } catch (error) {
+                if (!(error instanceof SyntaxError)) throw error
+                throw buildWorkdayScopeContractError(source, detailApiUrl.href, error)
+              }
+            } else await response.text()
+            return { response, payload }
+          },
         )
         if (!response.ok) {
           throw buildWorkdayHttpFailureError(source, detailApiUrl.href, response.status, response.headers)
         }
         if (countryProof && (response.url !== detailApiUrl.href
           || !/^application\/(?:[\w.-]+\+)?json(?:\s*;|$)/i.test(response.headers?.get?.('content-type') || ''))) {
-          throw new Error('Native Workday country detail response URL or JSON content type is invalid')
+          throw buildWorkdayScopeContractError(source, detailApiUrl.href,
+            new Error('Native Workday country detail response URL or JSON content type is invalid'))
         }
 
         const info = payload?.jobPostingInfo
@@ -1670,15 +1684,18 @@ const fetchWorkdayScopePayload = async ({
           !info || (info.additionalLocations != null && !Array.isArray(info.additionalLocations))
           || Array.isArray(info.additionalLocations) && info.additionalLocations.some(value => typeof value !== 'string')
         ) {
-          throw new Error('CXS job location payload is missing or ambiguous')
+          throw buildWorkdayIncompleteScopeError(source, candidate.canonicalLink,
+            new Error('CXS job location payload is missing or ambiguous'))
         }
         const normalizedLocations = locations.map(value => typeof value === 'string' ? value.trim() : '')
         if (!allowUnresolvedLocations) {
           if (normalizedLocations.some(value => !value || isGroupedLocationLabel(value) || /^unknown$/i.test(value))) {
-            throw new Error('CXS job location payload is missing or ambiguous')
+            throw buildWorkdayIncompleteScopeError(source, candidate.canonicalLink,
+              new Error('CXS job location payload is missing or ambiguous'))
           }
           if (normalizedLocations.length < expectedCount) {
-            throw new Error('CXS supplied ' + normalizedLocations.length + ' of ' + expectedCount + ' job locations')
+            throw buildWorkdayIncompleteScopeError(source, candidate.canonicalLink,
+              new Error('CXS supplied ' + normalizedLocations.length + ' of ' + expectedCount + ' job locations'))
           }
         }
         circuitBreaker.recordSuccess(detailApiUrl.href)
@@ -1692,7 +1709,9 @@ const fetchWorkdayScopePayload = async ({
     }
   } catch (error) {
     throwIfAborted(signal)
-    throw buildWorkdayIncompleteScopeError(source, candidate.canonicalLink, error)
+    // Only geographic validation above is incomplete location scope. Keep the
+    // original HTTP/transport/contract failure and its status/retry metadata.
+    throw error
   }
 }
 
@@ -1732,6 +1751,10 @@ export const validateWorkdayAdditionalWorksiteProof = (input, {
   const sha = value => typeof value === 'string' && /^[a-f\d]{64}$/.test(value)
   const text = value => typeof value === 'string' && !!value.trim()
   const time = value => typeof value === 'string' && Number.isFinite(Date.parse(value))
+  requireProof(dataOnly(input))
+  if (input.version === 'aurecon-native-worksites-v2') return validateAureconWorksiteProof(input, {
+    source, baseUrl, jobsApiUrl, officialCareersUrl, countryProof, now,
+  })
   requireProof(dataOnly(input) && plain(input) && countryProof === true && input.version === 'workday-additional-worksites-v1'
     && input.source === source && input.jobsApiUrl === jobsApiUrl && input.boardUrl === baseUrl
     && input.officialCareersUrl === officialCareersUrl && time(input.verifiedAt))
@@ -2049,7 +2072,7 @@ const runWorkdayJobsApiScraper = async ({
           async response => ({ response, html: await response.text() }),
         )
         boardReceipt = currentWorkdayBoardReceipt({ officialCareersUrl: config.officialCareersUrl,
-          boardUrl: baseUrl, response, html })
+          boardUrl: baseUrl, response, html, renderProof: worksiteProof?.corporateRenderProof ?? null })
         }
         // The configured API must belong to the board the corporate page names.
         const inferred = inferWorkdayJobsApiConfig(baseUrl)
@@ -2235,16 +2258,23 @@ const runWorkdayJobsApiScraper = async ({
         console.log(`  [${source}] Scraping page ${pageNum} - ${jobsApiUrl} (offset ${offset})`)
         console.log(`  [${source}] Page ${pageNum}: ${jobs.length} job records`)
 
-        for (const job of jobs) {
-          const canonicalLink = buildWorkdayJobDetailUrl(job.externalPath, detailUrlBase, baseUrl)
+        for (const [rowIndex, job] of jobs.entries()) {
+          const canonicalLink = countryProof && typeof job?.externalPath !== 'string' ? null
+            : buildWorkdayJobDetailUrl(job.externalPath, detailUrlBase, baseUrl)
           if (countryProof) {
             const apiBoard = new URL(jobsApiUrl).pathname.match(/^\/wday\/cxs\/([^/]+)\/([^/]+)\/jobs$/)
-            const expectedRolePath = '/' + apiBoard?.[2] + job.externalPath
+            const expectedRolePath = '/' + apiBoard?.[2] + job?.externalPath
             const actualRolePath = canonicalLink && new URL(canonicalLink).pathname.replace(/^\/[a-z]{2}-[a-z]{2}(?=\/)/i, '')
-            if (!apiBoard || typeof job.title !== 'string' || !job.title.trim()
-              || typeof job.externalPath !== 'string' || !/^\/job\/.*_[^/]+$/.test(job.externalPath)
-              || !canonicalLink || actualRolePath !== expectedRolePath) {
-              throw buildWorkdayIncompleteListingError(source, 'complete-board role identity is missing, duplicate, or outside this board')
+            const identityFailure = !apiBoard ? 'invalid-api-board'
+              : typeof job?.title !== 'string' || !job.title.trim() ? 'missing-title'
+                : typeof job.externalPath !== 'string' || !/^\/job\/.*_[^/]+$/.test(job.externalPath) ? 'invalid-external-path'
+                  : !canonicalLink || actualRolePath !== expectedRolePath ? 'outside-board' : null
+            if (identityFailure) {
+              const diagnostic = workdayListingIdentityDiagnostic({ reason: identityFailure,
+                board: boardReceipt?.board || baseUrl, rowIndex: offset + rowIndex, externalPath: job?.externalPath })
+              throw Object.assign(buildWorkdayIncompleteListingError(source,
+                'complete-board role identity is missing, duplicate, or outside this board ' + JSON.stringify(diagnostic)),
+              { listingIdentity: diagnostic })
             }
             if (initialInventory.has(canonicalLink)) throw buildWorkdayInventoryChangedError(source, 'complete-board role identity repeated during pagination')
             initialInventory.set(canonicalLink, workdayInventoryIdentity(job))

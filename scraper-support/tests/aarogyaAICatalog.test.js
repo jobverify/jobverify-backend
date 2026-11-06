@@ -15,14 +15,14 @@ const loadAarogyaAIModule = async () => {
   }
 }
 
-test('AarogyaAI exports verified first-party sentinel metadata for the current no-public-jobs surface', async () => {
+test('AarogyaAI metadata requires a qualified inventory and does not advertise timeout-based zero verification', async () => {
   const aarogyaAI = await loadAarogyaAIModule()
   assert.ok(aarogyaAI, 'Expected AarogyaAI scraper module at ../../scraper/aarogyaai/script.js')
 
   assert.equal(aarogyaAI.SOURCE, 'aarogyaai')
   assert.equal(aarogyaAI.COMPANY, 'AarogyaAI')
   assert.equal(aarogyaAI.COMPANY_DOMAIN, 'aarogyaai.com')
-  assert.equal(aarogyaAI.VERIFIED_AT, '2026-07-14')
+  assert.equal(aarogyaAI.VERIFIED_AT, null)
   assert.deepEqual(aarogyaAI.FIRST_PARTY_ROOT_URLS, [
     'https://aarogyaai.com/',
     'https://aarogyaai.in/',
@@ -40,9 +40,9 @@ test('AarogyaAI exports verified first-party sentinel metadata for the current n
     companyDomain: 'aarogyaai.com',
     countryFilter: 'India',
     atsPlatform: 'official-company-site-no-public-careers',
-    paginationStrategy: 'exact-name-domain-root-plus-common-careers-route-timeout-validation',
+    paginationStrategy: 'bounded-configured-root-discovery',
     extractionStrategy:
-      'verified-exact-name-first-party-domains-time-out-plus-common-careers-routes-time-out-return-empty',
+      'configured-public-root-diagnostic-never-infer-zero-from-timeout',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
   })

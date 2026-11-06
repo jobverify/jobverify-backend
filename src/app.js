@@ -30,6 +30,7 @@ import { createOriginAllowlist } from "./utils/originAllowlist.js";
 import mongoose from "mongoose";
 import { readSiteSettings } from "./controllers/siteSettingsController.js";
 import { parseTrustProxy, parseOriginList } from "./config/http.js";
+import { validateTurnstileConfiguration } from './middleware/turnstileCaptcha.js';
 
 export function createApp({ isReady = () => mongoose.connection.readyState === 1 } = {}) {
   const env = process.env;
@@ -49,6 +50,7 @@ export function createApp({ isReady = () => mongoose.connection.readyState === 1
   }
 
   if (nodeEnv === "production") {
+    validateTurnstileConfiguration(env);
     requireOneOf(["FRONTEND_ORIGIN", "CORS_ORIGIN"], env);
     resolvePublicApiOrigin(env);
   }
@@ -90,6 +92,7 @@ export function createApp({ isReady = () => mongoose.connection.readyState === 1
       },
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       credentials: true,
+      exposedHeaders: ["Content-Disposition"],
     }),
   );
 

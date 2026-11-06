@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { parse } from 'acorn'
 import { createVerifiedRecruitmentScraper, RECRUITMENT_OBSERVATIONS } from '../utils/verifiedRecruitment.js'
 import { readSourceObservationEvidence } from '../utils/sourceObservationEvidence.js'
+import { createRecruitmentObservationAccounting } from '../utils/recruitmentObservationAccounting.js'
 import { extractionRawJobMetrics } from '../utils/extractionRawJobMetrics.js'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { readInventoryDelegationEvidence } from '../utils/inventoryDelegationEvidence.js'
@@ -479,4 +480,66 @@ test('an existing source export and its actual registered adapter preserve posit
   assert.equal(result.eligibleJobs, 0)
   assert.deepEqual(result.sourceObservations, expected)
   assert.equal(result.inventoryEvidence.reportedTotal, null)
+})
+
+// Regression controls promoted from the independently reproduced four-case RED
+// report. These remain synthetic and make no current employer inventory claim.
+test('delegated India Open Application is a retained hiring signal rather than a returned vacancy', async () => {
+  const row = { ...ashbyRow('open-intake', 'Open Application'), location: 'Bengaluru, India',
+    address: { postalAddress: { addressCountry: 'IN' } } }
+  const jobs = await runAts(['https://jobs.ashbyhq.com/fixture'], async () => ({ apiVersion: '1', jobs: [row] }))
+  assert.equal(jobs.length, 0)
+  audit(jobs, 1, 0, 'hiring-signals')
+  const excluded = jobs[RECRUITMENT_OBSERVATIONS].exclusions.find(item => item.reason === 'native-generic-intake')
+  assert.deepEqual(excluded.nativeSourceRecord, row)
+})
+
+test('a rejected foreign account intake cannot erase a proven vacancy from the first advertised account', async () => {
+  const vacancy = ashbyRow('same-id'), foreignIntake = { ...vacancy, title: 'General Application' }
+  const jobs = await runAts(['https://jobs.ashbyhq.com/fixture', 'https://jobs.ashbyhq.com/second'],
+    async url => ({ apiVersion: '1', jobs: [url.endsWith('/fixture') ? vacancy : foreignIntake] }))
+  assert.equal(jobs.length, 0)
+  assert.ok(jobs[RECRUITMENT_OBSERVATIONS].failures.length > 0)
+  audit(jobs, 1)
+})
+
+test('Workday employment bullets do not merge distinct native requisition paths', async () => {
+  const rows = [workdayRow('R1'), { ...workdayRow('R2'), title: 'Product Designer' }]
+    .map(row => ({ ...row, bulletFields: ['Full time'] }))
+  const jobs = await runWorkday({ total: 2, jobPostings: rows }, { maxPages: 1 })
+  assert.equal(jobs.length, 0)
+  assert.equal(jobs[RECRUITMENT_OBSERVATIONS].nativeRecords, 2)
+  audit(jobs, 2)
+})
+
+test('Jibe native ID and schema representation deduplicate at the declared language URL', async () => {
+  const roleURL = 'https://employer.test/jobs/native-role?lang=en-us'
+  const row = { data: { req_id: 'jibe-1', slug: 'native-role', title: 'Software Engineer', client_code: 'fixture',
+    internal: false, searchable: true, applyable: true, country: 'United States', country_code: 'US' } }
+  const schema = { ...posting('jibe-1'), url: roleURL }
+  const client = 'https://app.jibecdn.com/prod/search/1.2.3/main.js'
+  const script = 'this.http.get("/api/jobs");this.http.get(`/api/jobs/${slug}/${language}`);const role=`/jobs/${data.slug}?lang=${language}`;'
+  const jobs = await createVerifiedRecruitmentScraper({ ...config, discoverJibeRecruitmentData: true }).run({ now: () => clock,
+    fetchPage: async url => ({ status: 200, url, html: url === client ? script : url === roleURL ? schemaHtml([schema])
+      : '<h1>Careers</h1><script>var _jibe={cid:"fixture"};var searchConfig={externalSearch:true,isLoggedIn:false,path:"/jobs",locale:"en-us",numRowsPerPage:20};</script>'
+        + '<script src="' + client + '"></script><a href="' + roleURL + '">Job</a>' }),
+    fetchJson: async () => ({ totalCount: 1, jobs: [row] }) })
+  assert.equal(jobs.length, 0)
+  assert.equal(jobs[RECRUITMENT_OBSERVATIONS].nativeRecords, 2)
+  audit(jobs, 1)
+})
+
+test('an existing page ID alias cannot join two independently identified native accounts', () => {
+  const ledger = createRecruitmentObservationAccounting(config.source)
+  const first = { scope: 'ashby:global:one', id: '42', url: 'https://jobs.ashbyhq.com/one/42', title: 'Software Engineer' }
+  const second = { scope: 'ashby:global:two', id: '42', url: 'https://jobs.ashbyhq.com/two/42', title: 'Product Designer' }
+  assert.equal(ledger.observe(first), true)
+  assert.equal(ledger.observe(second), true)
+  assert.equal(ledger.observe({ ...first, scope: 'native-page:https://jobs.ashbyhq.com' }), true)
+  assert.equal(ledger.observe({ ...second, scope: 'native-page:https://jobs.ashbyhq.com' }), false)
+  const evidence = readSourceObservationEvidence(ledger.attach([]), config.source)
+  assert.equal(evidence.observedRecordCount, 2)
+  assert.equal(evidence.observedVacancyCount, 2)
+  assert.equal(evidence.sourceScopeComplete, false)
+  assert.equal(evidence.companyGlobalTotal, null)
 })

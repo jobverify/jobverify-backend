@@ -64,6 +64,8 @@ test('extractSearchResults normalizes Signify India listings into the shared scr
     requisitionId: '361860',
     department: 'Digital(IT)',
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: null,
     jobDescription:
       'Embrace the role of an SAP Basis Consultant and play a key role in managing, optimizing, and securing SAP ECC and S/4HANA environments. Collaborate with cross-functional teams, drive system modernization, and ensure high availability and performance. Grow your career with cutting-edge technologies and continuous improvement initiatives in a dynamic, global organization.',

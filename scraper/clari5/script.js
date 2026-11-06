@@ -2,6 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readVisibleNativeDocument } from '../../scraper-support/utils/visibleNativeHtml.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -70,8 +73,6 @@ const toPlainText = (value) => {
   return normalized || null
 }
 
-const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
 const extractText = (pattern, html) => stripTags(pattern.exec(String(html ?? ''))?.[1] ?? null)
 
 const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
@@ -88,7 +89,8 @@ const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
 const isOfficialDetailUrl = (value) => {
   try {
     const url = new URL(value)
-    return url.origin === SITE_ORIGIN && /^\/careers\/(?!page\/)[a-z0-9-]+\/$/i.test(url.pathname)
+    return url.origin === SITE_ORIGIN && !url.search && !url.hash && !url.username && !url.password
+      && /^\/careers\/(?!page\/)[a-z0-9-]+\/$/i.test(url.pathname)
   } catch {
     return false
   }
@@ -124,16 +126,6 @@ const deriveCity = (location) => {
   return withoutCountry || null
 }
 
-const extractDescriptionHtml = (html) =>
-  String(html ?? '').match(
-    /<div class="job-description">\s*([\s\S]*?)\s*<\/div>\s*(?:<div class="clearfix"><\/div>\s*)?(?:<!-- Start Job Features|<div class="job-features">)/i,
-  )?.[1] ?? null
-
-const extractListItems = (html) =>
-  [...String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
-    .map((match) => stripTags(match[1]))
-    .filter(Boolean)
-
 const extractCategory = (html) =>
   extractText(
     /<h4>\s*<i[^>]*><\/i>\s*Job Category<\/h4>\s*<p>([\s\S]*?)<\/p>/i,
@@ -141,7 +133,7 @@ const extractCategory = (html) =>
   )
 
 const descriptionLines = (descriptionHtml) =>
-  (toPlainText(descriptionHtml) || '')
+  (Array.isArray(descriptionHtml) ? descriptionHtml.join('\n') : toPlainText(descriptionHtml) || '')
     .split('\n')
     .map((line) => normalizeWhitespace(line))
     .filter(Boolean)
@@ -285,41 +277,91 @@ export const extractArchiveListings = (html) => {
   return listings
 }
 
-export const hasOfficialJobDetailSignal = (html, sourceUrl) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page) || ''
-  const canonicalPattern = new RegExp(
-    `<link rel="canonical" href="${escapeRegex(sourceUrl)}"`,
-    'i',
-  )
+const descendants = (node, predicate) => node.inert ? [] : [
+  ...(predicate(node) ? [node] : []),
+  ...node.children.filter(child => typeof child !== 'string').flatMap(child => descendants(child, predicate)),
+]
+// Head metadata belongs to the document even when an element is hidden/inert.
+// Template fragments and embedded fallback documents have their own scopes.
+const retainedMetadata = (node, predicate) => ['template', 'object', 'iframe', 'noscript'].includes(node.tag) ? [] : [
+  ...(predicate(node) ? [node] : []),
+  ...node.children.filter(child => typeof child !== 'string').flatMap(child => retainedMetadata(child, predicate)),
+]
+const roleKey = value => normalizeWhitespace(value)?.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
+const visibleLines = node => {
+  if (node.inert || ['script', 'style'].includes(node.tag)) return ''
+  const text = node.children.map(child => typeof child === 'string' ? decodeHtml(child) : visibleLines(child)).join('')
+  return /^(?:p|div|li|ul|ol|h[1-6]|section|br)$/.test(node.tag) ? '\n' + text + '\n' : text
+}
+const readDetailView = (html, sourceUrl, listing = {}) => {
+  if (!isOfficialDetailUrl(sourceUrl)) return null
+  const document = readVisibleNativeDocument(String(html), {strict:true})
+  const retained = readNativeDocument(String(html)), roots = retained.nodes(node => node.tag === 'root')
+  if (roots.length !== 1) return null
+  const heads = retainedMetadata(roots[0], node => node.tag === 'head')
+  const htmlElements = roots[0].children.filter(node => typeof node !== 'string' && node.tag === 'html')
+  if (heads.length !== 1 || htmlElements.length !== 1 || !htmlElements[0].children.includes(heads[0])) return null
+  const canonical = retainedMetadata(heads[0], node => node.tag === 'link' && node.attrs.rel === 'canonical')
+  const titles = retainedMetadata(heads[0], node => node.tag === 'title')
+  if (canonical.length !== 1 || canonical[0].attrs.href !== sourceUrl || titles.length !== 1) return null
+  const pageTitle = normalizeWhitespace(titles[0].raw)
+  const legacyTitle = pageTitle?.match(/^(.+)\s+-\s+Clari5$/i)?.[1]
+  const currentTitle = /\sJob\s*\|\s*Clari5 Careers$/i.test(pageTitle || '')
+  if (!legacyTitle && !currentTitle) return null
+  const posts = document.nodes(node => document.hasClass(node, 'jobpost') && document.hasClass(node, 'type-jobpost'))
+  const scope = posts.length === 1 ? posts[0] : posts.length === 0 && !currentTitle
+    ? document.nodes(node => node.tag === 'body' && document.hasClass(node, 'single-jobpost'))[0] : null
+  if (!scope) return null
+  const forms = descendants(scope, node => node.tag === 'form' && node.attrs.id === 'sjb-application-form'
+    && document.hasClass(node, 'jobpost-form'))
+  if (forms.length !== 1) return null
+  const form = forms[0], formId = form.attrs.class?.match(/(?:^|\s)sjb-job-detail-(\d+)(?:\s|$)/)?.[1]
+  const field = name => descendants(form, node => node.tag === 'input' && node.attrs.type === 'hidden' && node.attrs.name === name)
+  const ids = field('job_id'), actions = field('action')
+  if (!formId || ids.length !== 1 || ids[0].attrs.value !== formId
+    || listing.jobId && listing.jobId !== formId
+    || actions.length !== 1 || actions[0].attrs.value !== 'process_applicant_form'
+    || posts.length === 1 && !document.hasClass(scope, 'post-' + formId)) return null
+  const headings = descendants(scope, node => node.tag === 'h1' && document.text(node))
+  if (headings.length > 1 || currentTitle && headings.length !== 1) return null
+  const title = headings.length ? normalizeWhitespace(document.text(headings[0])) : normalizeWhitespace(legacyTitle)
+  if (!title || listing.title && roleKey(title) !== roleKey(listing.title)) return null
+  const descriptions = descendants(scope, node => document.hasClass(node, 'job-description'))
+  if (descriptions.length !== 1) return null
+  const lines = descriptionLines(visibleLines(descriptions[0]))
+  if (lines.join(' ').length < 40 || !/[\p{L}\p{N}]/u.test(lines.join(' '))) return null
+  const skills = descendants(descriptions[0], node => node.tag === 'li').map(node => normalizeWhitespace(document.text(node))).filter(Boolean)
+  const roleField = className => descendants(scope, node => document.hasClass(node, className))
+  const locations = roleField('job-location'), types = roleField('job-type'), dates = roleField('job-date')
+  if (locations.length !== 1 || types.length > 1 || dates.length > 1) return null
+  const location = normalizeWhitespace(document.text(locations[0]))
+  if (!location) return null
+  return {title, jobId:formId, description:lines.join('\n'), lines, skills, location,
+    employmentType:types.length ? normalizeWhitespace(document.text(types[0])) : null,
+    postedText:dates.length ? normalizeWhitespace(document.text(dates[0])) : null}
+}
 
-  return canonicalPattern.test(page)
-    && /<title>[\s\S]*\s-\sClari5<\/title>/i.test(page)
-    && /single-jobpost|jobpost type-jobpost/i.test(page)
-    && /<form class="jobpost-form sjb-job-detail-\d+" id="sjb-application-form"/i.test(page)
-    && /<input type="hidden" name="action" value="process_applicant_form"/i.test(page)
-    && normalized.includes('Apply For This Job')
+export const hasOfficialJobDetailSignal = (html, sourceUrl) => {
+  try { return Boolean(readDetailView(html, sourceUrl)) } catch { return false }
 }
 
 export const extractJobDetail = (html, listing = {}) => {
   const sourceUrl = listing.sourceUrl || null
-  if (!sourceUrl || !hasOfficialJobDetailSignal(html, sourceUrl)) {
+  let view
+  try { view = sourceUrl && readDetailView(html, sourceUrl, listing) } catch { /* Unqualified markup is not a job detail. */ }
+  if (!view) {
     throw new Error('verified Clari5 job detail no longer matches the trusted first-party application surface')
   }
 
-  const descriptionHtml = extractDescriptionHtml(html)
-  const location = extractText(/<div class="job-location"><i[^>]*><\/i>([\s\S]*?)<\/div>/i, html) || listing.location || null
-  const employmentType = extractText(/<div class="job-type"><i[^>]*><\/i>([\s\S]*?)<\/div>/i, html) || listing.employmentType || null
-  const postedText = extractText(/<div class="job-date"><i[^>]*><\/i>([\s\S]*?)<\/div>/i, html) || listing.postedText || null
-  const category = extractCategory(html) || listing.category || null
-  const jobId = normalizeWhitespace(
-    String(html ?? '').match(/<input type="hidden" name="job_id" value="(\d+)"/i)?.[1]
-      || listing.jobId
-      || null,
-  )
+  const descriptionHtml = view.lines
+  const location = view.location
+  const employmentType = view.employmentType
+  const postedText = view.postedText
+  const category = listing.category || null
+  const jobId = view.jobId
 
   return {
-    title: extractText(/<title>([\s\S]*?)\s*-\s*Clari5<\/title>/i, html) || listing.title || null,
+    title: view.title,
     company: COMPANY,
     department: extractValueAfterLabel(descriptionHtml, 'Department') || category,
     location,
@@ -334,10 +376,10 @@ export const extractJobDetail = (html, listing = {}) => {
     experienceRequired: extractExperienceRequired(descriptionHtml),
     minimumQualification: extractMinimumQualification(descriptionHtml),
     preferredQualification: extractPreferredQualification(descriptionHtml),
-    requiredSkills: extractListItems(descriptionHtml),
+    requiredSkills: view.skills,
     postingDate: postedText,
     closingDate: null,
-    jobDescription: toPlainText(descriptionHtml),
+    jobDescription: view.description,
   }
 }
 
@@ -379,6 +421,7 @@ export const createClari5Scraper = () => ({
 
       const detailHtml = await fetchText(listing.sourceUrl)
       const detail = extractJobDetail(detailHtml, listing)
+      if (detail.country !== 'India') continue
 
       jobs.push({
         ...detail,
@@ -388,11 +431,17 @@ export const createClari5Scraper = () => ({
         companyDomain: 'clari5.com',
         atsPlatform: 'official-company-careers',
         scrapedAt: now(),
+        sourceListingComplete: false,
+        lifecycleCleanupAllowed: false,
       })
       seenJobUrls.add(listing.sourceUrl)
     }
 
-    return jobs
+    return attachInventoryEvidence(jobs, {
+      status:'coverage-gap', surface:CAREERS_URL, firstParty:true, listingComplete:false,
+      pagesFetched:seenPages.size + seenJobUrls.size, reportedTotal:null, indiaFacetCount:null, verifiedAt:null,
+      reason:'first-party-listed-roles-recovered-company-scope-and-closing-status-unverified',
+    })
   },
 })
 

@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 
 import { CBNITS_CATALOG } from './catalog.js'
 
@@ -16,14 +17,6 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
-const normalizeWhitespace = (value) => String(value ?? '')
-  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-  .replace(/<[^>]+>/g, ' ')
-  .replace(/&amp;/gi, '&')
-  .replace(/\s+/g, ' ')
-  .trim()
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -50,10 +43,36 @@ export const hasOfficialCareersShellSignal = (html = '') => {
   return legacy || current
 }
 
-export const hasServerRenderedJobsSignal = (html = '') =>
-  /current openings|apply now|job openings|latest job openings here|href=["'][^"']*(apply|job|career)[^"']*["']/i.test(
-    normalizeWhitespace(html),
-  )
+export const hasServerRenderedJobsSignal = (html = '') => {
+  const document = readNativeDocument(String(html))
+  const roots = document.nodes(node => node.tag === 'root')
+  // Introductory openings copy is present in the verified unpublished view.
+  // Require an active application/detail link or an actual published job record.
+  if (roots.some(node => /\bapply now\b/i.test(document.text(node)))) return true
+  if (document.nodes(node => node.tag === 'a' && node.attrs.href).some(node => {
+    try {
+      const url = new URL(node.attrs.href, CAREERS_URL)
+      return ['https:', 'http:'].includes(url.protocol)
+        && /\/(?:apply(?:\/|$)|(?:careers?|jobs?)\/[^/]+)/i.test(url.pathname)
+    } catch { return false }
+  })) return true
+  if (document.nodes(node => /(?:^|\/)JobPosting$/i.test(node.attrs.itemtype || '')).length) return true
+  for (const node of document.nodes(node => node.tag === 'script' && node.attrs.type === 'application/ld+json')) {
+    let data
+    try { data = JSON.parse(node.raw || 'null') } catch { return true }
+    const pending = [data]
+    let visited = 0
+    while (pending.length) {
+      const value = pending.pop()
+      if (!value || typeof value !== 'object') continue
+      if (++visited > 4096) return true // Unknown structured data must not prove absence.
+      const types = Array.isArray(value['@type']) ? value['@type'] : [value['@type']]
+      if (types.some(type => typeof type === 'string' && /(?:^|\/)JobPosting$/i.test(type))) return true
+      pending.push(...Object.values(value))
+    }
+  }
+  return false
+}
 
 export const extractBundleUrl = (html = '') => {
   const raw = String(html ?? '')

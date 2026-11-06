@@ -44,6 +44,7 @@ if (REWRITE_MODEL.outputFormat === 'prose') {
 const diagnosticFile = path.join(path.dirname(summaryFile), `description-rejections${shardSuffix}.json`);
 const diagnostics = createRewriteDiagnostics();
 const onRejection = rejection => diagnostics.record(rejection);
+const onFragmentRejection = rejection => diagnostics.record({ ...rejection, kind: 'fragment' });
 const deadline = rewriteDeadline({ budgetSeconds: process.env.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || 1200,
   workflowStartedAt: process.env.JOB_DESCRIPTION_WORKFLOW_STARTED_AT, workflowSeconds: process.env.JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS || 9000 });
 const controller = new AbortController();
@@ -95,7 +96,7 @@ try {
         Object.assign(summary, await rewriteWhenReady(summary.workerProbe, async () => {
         setPhase('process_queue');
         jobs = rewriteQueuePages(Job, query, { pageSize: 8, deadline, signal });
-        return rewriteCandidates(jobs, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-rewrites' }), deadline, signal, concurrency: worker.parallelism, onRejection,
+        return rewriteCandidates(jobs, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-rewrites' }), deadline, signal, concurrency: worker.parallelism, onRejection, onFragmentRejection,
           update: async (filter, update) => {
             try { return await Job.updateOne(filter, update, { runValidators: true, maxTimeMS: 15000 }); }
             catch (error) { error.rewritePhase = 'update_job'; throw error; }
@@ -143,6 +144,7 @@ try {
   if (apply) {
     const rejected = diagnostics.snapshot();
     summary.rejectionDiagnostics = { file: path.basename(diagnosticFile), totalRejected: rejected.totalRejected,
+      totalRejectedFragments: rejected.totalRejectedFragments, fragmentReasons: rejected.fragmentReasons,
       sampleCount: rejected.samples.length, reasons: rejected.reasons, maxSamples: rejected.maxSamples, maxBytes: rejected.maxBytes };
     await fs.writeFile(diagnosticFile + '.tmp', JSON.stringify(rejected) + '\n');
     await fs.rename(diagnosticFile + '.tmp', diagnosticFile);

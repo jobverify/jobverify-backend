@@ -3,6 +3,7 @@ import {document} from './html.js'
 import {nativeCountryName,nativeLocationCountryName,nativeDate} from '../../scraper-support/shared/nativeJobPosting.js'
 import {isJobInPublicLocationScope} from '../../src/utils/publicJobLocationScope.js'
 import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {workdayListingIdentityDiagnostic} from '../../scraper-support/myworkday/listingIdentityDiagnostics.js'
 
 export const CAREERS='https://www.samsung.com/in/about-us/careers/'
 export const BOARD='https://sec.wd3.myworkdayjobs.com/Samsung_Careers'
@@ -19,9 +20,14 @@ const envelope=value=>{
  }
  return value
 }
-const rowID=row=>{
- check(row&&typeof row.title==='string'&&row.title.trim()&&typeof row.externalPath==='string'&&/^\/job\/[^?#\\]+_R\d+(?:-\d+)?$/.test(row.externalPath),'invalid listing identity')
- check(Array.isArray(row.bulletFields)&&row.bulletFields.length===1&&/^R\d+$/.test(row.bulletFields[0])&&row.externalPath.match(/_(R\d+)(?:-\d+)?$/)?.[1]===row.bulletFields[0],'listing requisition mismatch')
+const rowID=(row,rowIndex=null)=>{
+ const rejectIdentity=(message,reason)=>{
+  const diagnostic=workdayListingIdentityDiagnostic({reason,board:BOARD,rowIndex,externalPath:row?.externalPath})
+  throw Object.assign(Error('Samsung native incomplete: '+message+' '+JSON.stringify(diagnostic)),{listingIdentity:diagnostic})
+ }
+ if(!row||typeof row.title!=='string'||!row.title.trim())rejectIdentity('invalid listing identity','missing-title')
+ if(typeof row.externalPath!=='string'||!/^\/job\/[^?#\\]+_R\d+(?:-\d+)?$/.test(row.externalPath))rejectIdentity('invalid listing identity','invalid-external-path')
+ if(!Array.isArray(row.bulletFields)||row.bulletFields.length!==1||!/^R\d+$/.test(row.bulletFields[0])||row.externalPath.match(/_(R\d+)(?:-\d+)?$/)?.[1]!==row.bulletFields[0])rejectIdentity('listing requisition mismatch','listing-requisition-mismatch')
  return row.bulletFields[0]
 }
 const body=(facets,offset)=>({appliedFacets:facets,limit:20,offset,searchText:''})
@@ -34,7 +40,7 @@ const requestPage=async(transport,facets,offset,expectedTotal)=>{
  const total=offset>0?expectedTotal:page.total
  check(offset===0||page.total===0||page.total===expectedTotal,'total changed during pagination')
  check(page.jobPostings.length===Math.min(20,Math.max(0,total-offset)),'short/oversized native page')
- page.jobPostings.forEach(rowID)
+ page.jobPostings.forEach((row,index)=>rowID(row,offset+index))
  return page
 }
 async function enumerate(transport,facets,first){

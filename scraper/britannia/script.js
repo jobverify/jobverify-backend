@@ -6,7 +6,8 @@ import { hydrateTurboHireJobs } from '../../scraper-support/utils/turboHireDetai
 import { readNativeDocument } from '../../scraper-support/utils/activeNativeHtml.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { createPublicTurboHireTransport } from '../../scraper-support/utils/turboHirePublicTransport.js'
-import { TURBOHIRE_CURRENT_PUBLIC_CLIENT, verifyTurboHirePublicClient } from '../../scraper-support/utils/turboHirePublicClient.js'
+import { TURBOHIRE_CURRENT_PUBLIC_CLIENT } from '../../scraper-support/utils/turboHirePublicClient.js'
+import { isReviewedBritanniaClientURL, verifyBritanniaPublicClient } from './publicClient.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -162,7 +163,7 @@ export const createBritanniaScraper = ({
       firstParty: true, listingComplete: false, pagesFetched: 0, verifiedAt: now(), reason: 'caller-cap-zero-no-public-reads' })
     const transport = createPublicTurboHireTransport({ source: 'britannia', ...options,
       allowedURL: (url, method, body) => method === 'GET'
-        ? [OFFICIAL_CAREERS_URL, BOARD_URL, NOAUTH_TOKEN_URL, ORIGIN + TURBOHIRE_CURRENT_PUBLIC_CLIENT.path].includes(url)
+        ? [OFFICIAL_CAREERS_URL, BOARD_URL, NOAUTH_TOKEN_URL].includes(url) || isReviewedBritanniaClientURL(url)
           || /^https:\/\/thapi-stage2\.azurewebsites\.net\/api\/publicjobs\/[0-9a-f-]{36}\?fieldVisibility=CareerPage$/i.test(url)
         : method === 'POST' && url === FILTERED_JOBS_URL && body === '{}',
     })
@@ -184,7 +185,7 @@ export const createBritanniaScraper = ({
         if (!hasOfficialBoardSignal(boardHtml)) {
           throw new Error('The official Britannia TurboHire board no longer matches the verified public surface')
         }
-        const client = await verifyTurboHirePublicClient({ source: 'britannia', origin: ORIGIN, boardHTML: boardHtml, fetchScript })
+        const client = await verifyBritanniaPublicClient({ boardHTML: boardHtml, fetchScript })
         if (currentClient && JSON.stringify(client) !== JSON.stringify(currentClient)) throw Error('Britannia current public client changed during closing')
         currentClient = client
       }

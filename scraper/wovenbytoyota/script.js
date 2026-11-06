@@ -7,6 +7,8 @@ import { nativeCountryName, nativeLocationCountryName } from '../../scraper-supp
 import { toPlainText } from '../../scraper-support/detailExtractors/shared.js'
 import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { document } from '../../scraper-support/shared/rmkNativePairHtml.js'
+import { isReviewedWovenLeverClient } from './currentClientBinding.js'
+import { clientScriptDeclarations } from '../../scraper-support/utils/reviewedClientProgram.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'wovenbytoyota'
@@ -73,7 +75,7 @@ export const createWovenByToyotaScraper = () => ({
         if (roots.length !== 1 || bodies.length !== 1 || !doc.nodes(node => node.tag === 'meta'
           && node.attrs.property === 'og:title' && node.attrs.content?.startsWith('Careers') && node.attrs.content.endsWith(COMPANY)).length) fail('official careers identity changed')
         doc.outer(roots[0]); doc.outer(bodies[0])
-        const scripts = [...new Set(doc.nodes(node => node.tag === 'script').flatMap(node => {
+        const scripts = [...new Set(clientScriptDeclarations(html).filter(node => node.attrs.src).flatMap(node => {
           try { const url = new URL(node.attrs.src, OFFICIAL_CAREERS_URL); return url.origin === 'https://woven.toyota'
             && /^\/_next\/static\/chunks\/[a-z0-9_-]+\.js$/.test(url.pathname) && !url.search && !url.hash ? [url.href] : [] } catch { return [] }
         }))]
@@ -82,7 +84,8 @@ export const createWovenByToyotaScraper = () => ({
         let bound = false
         for (let index = 0; index < scripts.length && !bound; index += 4) {
           const results = await Promise.allSettled(scripts.slice(index, index + 4).map(url => requestPage(url)))
-          bound = results.some(result => result.status === 'fulfilled' && result.value.includes(NATIVE_JOBS_URL + '?') && result.value.includes('getLeverPostingsUrl'))
+          bound = results.some((result, offset) => result.status === 'fulfilled'
+            && isReviewedWovenLeverClient(result.value, { careersHTML: html, scriptURL: scripts[index + offset] }))
         }
         combined.throwIfAborted()
         if (!bound) fail('official native board binding changed or unavailable')

@@ -1,249 +1,39 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
-const homepageHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Dhan - Online Stock Trading and Investing Platform for India</title>
-    <link rel="canonical" href="https://dhan.co/" />
-  </head>
-  <body>
-    <nav>
-      <a href="/">Home</a>
-      <a href="/career/">Careers</a>
-    </nav>
-  </body>
-</html>
-`
-
-const careersHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Work with us and Help us Raise The Bar | Dhan</title>
-    <link rel="canonical" href="https://dhan.co/career/" />
-    <meta property="og:url" content="https://dhan.co/career/" />
-  </head>
-  <body>
-    <main>
-      <h1>Come work with us</h1>
-      <p>Raise is a team of 550+ and hiring more.</p>
-      <p>Apply now!</p>
-      <a href="https://www.linkedin.com/company/raise-financial-services/jobs/">Explore on Linkedin</a>
-      <a href="https://dhan.keka.com/careers/">Explore Careers at Raise</a>
-    </main>
-  </body>
-</html>
-`
-
-const jobsPayload = [{
-  id: 73365,
-  title: 'Product & Growth Marketing - fuzz (Raise AI)',
-  departmentName: 'Design',
-  jobLocations: [{
-    name: 'Mumbai, Maharashtra, India',
-    city: 'Mumbai',
-    countryCode: 'IN',
-    countryName: 'India',
-  }],
-  jobType: 2,
-  experience: '3-5 years',
-  skillNames: ['Growth Marketing'],
-  publishedOn: '2026-09-03',
-  description: '<p>Help Raise grow its investing products.</p>',
-}]
-
-const loadDhanModule = async () => {
-  try {
-    return await import('../../scraper/dhan/script.js')
-  } catch {
-    assert.fail('Expected Dhan scraper module at ../../scraper/dhan/script.js')
-  }
-}
-
-test('Dhan scraper constants and helpers stay pinned to the verified first-party and Keka surfaces', async () => {
-  const dhan = await loadDhanModule()
-
-  assert.equal(dhan.SOURCE, 'dhan')
-  assert.equal(dhan.COMPANY, 'Dhan')
-  assert.equal(dhan.OFFICIAL_BRAND_NAME, 'Dhan')
-  assert.equal(dhan.VERIFIED_ON, '2026-09-03')
-  assert.equal(dhan.HOMEPAGE_URL, 'https://dhan.co/')
-  assert.equal(dhan.CAREERS_URL, 'https://dhan.co/career/')
-  assert.equal(dhan.CAREERS_HANDOFF_URL, 'https://dhan.keka.com/careers/')
-  assert.equal(dhan.CAREERS_CONFIG_URL, null)
-  assert.equal(dhan.CAREERS_FILTER_PARAMS_URL, null)
-  assert.equal(
-    dhan.JOBS_API_URL,
-    'https://dhan.keka.com/careers/api/embedjobs/default/active/7669ff3a-2b35-4442-9bac-9f9ae4b718b3',
-  )
-  assert.match(dhan.VERIFIED_SURFACE_SUMMARY, /https:\/\/dhan\.co\/career\//i)
-  assert.equal(dhan.KEKA_JOBS_API_URL, dhan.JOBS_API_URL)
-  assert.equal(dhan.KEKA_JOB_DETAILS_URL, 'https://dhan.keka.com/careers/jobdetails/')
-  assert.equal(dhan.hasOfficialHomepageSignal(homepageHtml), true)
-  assert.equal(dhan.extractHomepageCareerUrl(homepageHtml), 'https://dhan.co/career/')
-  assert.equal(dhan.hasOfficialCareersPageSignal(careersHtml), true)
-  assert.equal(dhan.extractOfficialCareersHandoffUrl(careersHtml), 'https://dhan.keka.com/careers/')
-
-  const job = dhan.normalizeKekaJob(jobsPayload[0])
-  assert.ok(job)
-  assert.equal(job.title, 'Product & Growth Marketing - fuzz (Raise AI)')
-  assert.equal(job.company, 'Dhan')
-  assert.equal(job.department, 'Design')
-  assert.equal(job.location, 'Mumbai, Maharashtra, India')
-  assert.equal(job.city, 'Mumbai')
-  assert.equal(job.country, 'India')
-  assert.equal(job.jobId, 'dhan-73365')
-  assert.equal(job.requisitionId, '73365')
-  assert.equal(job.sourceUrl, 'https://dhan.keka.com/careers/jobdetails/73365')
-  assert.equal(job.applyUrl, 'https://dhan.keka.com/careers/jobdetails/73365')
-  assert.equal(job.employmentType, 'Full-time')
-  assert.equal(job.experienceRequired, '3-5 years')
-  assert.equal(job.postingDate, '2026-09-03')
-  assert.deepEqual(job.requiredSkills, ['Growth Marketing'])
-  assert.match(job.jobDescription, /Help Raise grow/i)
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
+const capture=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/currentNative20261106C26/capture.json.gz',import.meta.url))))
+const original=url=>{const row=capture.documents[url];assert.ok(row);return {status:row.status,url:row.finalUrl,headers:row.headers,body:row.body}}
+import * as source from '../../scraper/dhan/script.js'
+import {ROOT_URL,ACTIVE_URL,PORTAL_URL,readCurrentActiveRecords} from '../../scraper/dhan/currentNative.js'
+import {readInventoryEvidence} from '../utils/inventoryEvidence.js'
+const records=JSON.parse(original(ACTIVE_URL).body),portalInfo=JSON.parse(original(PORTAL_URL).body)
+test('Dhan source factory retains the native group identity without a Dhan legal employer default',async()=>{
+ const jobs=await source.createDhanScraper({maxJobs:2}).run({fetchPage:async url=>original(url)})
+ assert.equal(jobs.length,2);assert.ok(jobs.every(job=>job.company==='Raise holding'&&job.legalEmployer===null&&job.companyDomain===null&&job.sourceOriginalCompanyName==='Dhan'))
+ assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
-
-test('Dhan run validates the verified first-party handoff and returns normalized Keka jobs', async () => {
-  const dhan = await loadDhanModule()
-  const requestedPageUrls = []
-  const requestedJsonUrls = []
-
-  const jobs = await dhan.createDhanScraper({
-    now: () => '2026-09-03T12:00:00.000Z',
-  }).run({
-    fetchPage: async (url) => {
-      requestedPageUrls.push(url)
-
-      if (url === dhan.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === dhan.CAREERS_URL) {
-        return { status: 200, url, html: careersHtml }
-      }
-
-      throw new Error(`Unexpected Dhan page URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJsonUrls.push(url)
-
-      if (url === dhan.JOBS_API_URL) return jobsPayload
-
-      throw new Error(`Unexpected Dhan JSON URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedPageUrls, [
-    'https://dhan.co/',
-    'https://dhan.co/career/',
-  ])
-  assert.deepEqual(requestedJsonUrls, [
-    'https://dhan.keka.com/careers/api/embedjobs/default/active/7669ff3a-2b35-4442-9bac-9f9ae4b718b3',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Product & Growth Marketing - fuzz (Raise AI)')
-  assert.equal(jobs[0].companyDomain, 'dhan.co')
-  assert.equal(jobs[0].atsPlatform, 'keka')
-  assert.equal(jobs[0].companyCareerPage, 'https://dhan.co/career/')
-  assert.equal(jobs[0].link, 'https://dhan.keka.com/careers/jobdetails/73365')
-  assert.equal(jobs[0].scrapedAt, '2026-09-03T12:00:00.000Z')
+test('Dhan rejects duplicate records and non-array active models',()=>{
+ assert.throws(()=>readCurrentActiveRecords(JSON.stringify([records[0],records[0]])),/duplicate/)
+ assert.throws(()=>readCurrentActiveRecords('{}'),/array/)
+ assert.throws(()=>readCurrentActiveRecords(JSON.stringify([{...records[0],jobLocations:{}}])),/vacancy/)
 })
-
-test('Dhan returns [] when the verified Keka jobs feed has no active India roles', async () => {
-  const dhan = await loadDhanModule()
-
-  const jobs = await dhan.createDhanScraper().run({
-    fetchPage: async (url) => {
-      if (url === dhan.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === dhan.CAREERS_URL) {
-        return { status: 200, url, html: careersHtml }
-      }
-
-      throw new Error(`Unexpected Dhan page URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      if (url === dhan.JOBS_API_URL) return []
-
-      throw new Error(`Unexpected Dhan JSON URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(jobs, [])
+test('Dhan only maps native publication timestamps and the declared client employment codes',()=>{
+ const record=records[0],job=source.normalizeKekaJob(record,{portalInfo});assert.equal(job.postingDate,record.publishedOn);assert.equal(job.firstPublishedAt,null);assert.equal(job.employmentType,'Full-time')
+ const altered=source.normalizeKekaJob({...record,publishedOn:'2026-02-30T00:00:00Z',jobType:999},{portalInfo});assert.equal(altered.postingDate,null);assert.equal(altered.employmentType,null)
+ assert.equal(job.applyUrl,ROOT_URL+'jobdetails/'+record.id);assert.equal(job.applicationVisited,false)
 })
-
-test('Dhan fails closed when the verified first-party handoff or Keka payloads drift', async () => {
-  const dhan = await loadDhanModule()
-
-  await assert.rejects(
-    dhan.createDhanScraper().run({
-      fetchPage: async (url) => {
-        if (url === dhan.HOMEPAGE_URL) {
-          return { status: 200, url, html: '<html><title>Unexpected</title></html>' }
-        }
-
-        throw new Error(`Unexpected Dhan page URL: ${url}`)
-      },
-    }),
-    /homepage/i,
-  )
-
-  await assert.rejects(
-    dhan.createDhanScraper().run({
-      fetchPage: async (url) => {
-        if (url === dhan.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === dhan.CAREERS_URL) {
-          return { status: 200, url, html: '<html><title>Broken</title></html>' }
-        }
-
-        throw new Error(`Unexpected Dhan page URL: ${url}`)
-      },
-    }),
-    /careers page/i,
-  )
-
-  await assert.rejects(
-    dhan.createDhanScraper().run({
-      fetchPage: async (url) => {
-        if (url === dhan.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === dhan.CAREERS_URL) {
-          return { status: 200, url, html: careersHtml }
-        }
-
-        throw new Error(`Unexpected Dhan page URL: ${url}`)
-      },
-      fetchJson: async (url) => {
-        if (url === dhan.JOBS_API_URL) return { jobs: [] }
-
-        throw new Error(`Unexpected Dhan JSON URL: ${url}`)
-      },
-    }),
-    /Keka jobs API/i,
-  )
-
-  await assert.rejects(
-    dhan.createDhanScraper().run({
-      fetchPage: async (url) => {
-        if (url === dhan.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
-        if (url === dhan.CAREERS_URL) return { status: 200, url, html: careersHtml }
-        throw new Error(`Unexpected Dhan page URL: ${url}`)
-      },
-      fetchJson: async (url) => {
-        if (url === dhan.JOBS_API_URL) return [{ id: 73365, title: 'Unexpected location', jobLocations: [] }]
-
-        throw new Error(`Unexpected Dhan JSON URL: ${url}`)
-      },
-    }),
-    /no longer produces India jobs/i,
-  )
+test('Dhan withholds a native role whose complete DTO changes at closing',async()=>{
+ let reads=0;const id=records[0].id,jobs=await source.run({fetchPage:async url=>{const page=original(url);if(url===ACTIVE_URL&&++reads===2){const latest=JSON.parse(page.body);latest[0].title+=' changed';page.body=JSON.stringify(latest)}return page}})
+ assert.equal(jobs.length,29);assert.equal(jobs.some(job=>job.sourceNativeJobId===String(id)),false);assert.equal(jobs.nativeCollectionEvidence.openingClosingRecordsMatch,false)
+})
+test('Dhan changed group employer identity at closing cannot certify earlier roles',async()=>{
+ let reads=0;await assert.rejects(()=>source.run({fetchPage:async url=>{const page=original(url);if(url===PORTAL_URL&&++reads===2)page.body=page.body.replaceAll('Raise holding','Other employer');return page}}),/employer/)
+})
+test('Dhan an opening denied native feed is a failure, never an authoritative empty inventory',async()=>{
+ await assert.rejects(()=>source.run({fetchPage:async url=>url===ACTIVE_URL?{...original(url),status:403,body:'denied'}:original(url)}),error=>error.status===403)
+})
+test('Dhan pre-cancellation prevents every original request',async()=>{
+ const reason={exact:'caller'},signal=AbortSignal.abort(reason);let calls=0
+ await assert.rejects(()=>source.run({signal,fetchPage:async()=>{calls++;return {}}}),error=>error===reason);assert.equal(calls,0)
 })

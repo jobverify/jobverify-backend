@@ -3,26 +3,26 @@ import { fileURLToPath } from 'node:url'
 
 import { readFileSync } from 'node:fs'
 
-import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
+import { runCondeNastNative,collectCondeNastNative } from './nativeRun.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "condenast"
 export const COMPANY = "Conde Nast"
 export const CAREERS_URL = "https://www.condenast.com/careers"
-export const DISPOSITION = "guarded-workday-native"
-export const VERIFIED_ON = "2026-08-01"
-export const VERIFIED_SURFACE_SUMMARY = "Guarded native Workday observations require a current exact corporate handoff and reconciled unfiltered board country proof. Historical catalog dates do not authorize current inventory or company completeness."
+export const DISPOSITION = "current-publisher-bound-native-India-country-facet-partial-company-scope"
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = "Current declared country-card renderer, explicit India native countries, exact hiring organizations, full original role models and closing reconciliation. Company scope and lifecycle cleanup remain unqualified."
 
 // This exact profile is mandatory before IO. loadConfig otherwise silently
 // falls back to central defaults when a local file is missing or malformed.
 const REQUIRED_PROFILE = Object.freeze({
   "listingStrategy": "jobs-api",
-  "inventoryScope": "complete-board-country-proof",
+  "inventoryScope": "published-india-country-facet-with-paired-native-roles",
   "officialCareersUrl": "https://www.condenast.com/careers",
   "jobsApiUrl": "https://condenast.wd115.myworkdayjobs.com/wday/cxs/condenast/CondeCareers/jobs",
   "detailUrlBase": "https://condenast.wd115.myworkdayjobs.com/CondeCareers",
-  "locationCountry": null,
+  "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e",
   "searchText": ""
 })
 
@@ -51,15 +51,9 @@ const assertNativeProfile = signal => {
 
 export const run = async (options = {}) => {
   assertNativeProfile(options.signal)
-  return runWorkdayScraper({
-    ...options,
-    company: COMPANY,
-    source: SOURCE,
-    baseUrl: REQUIRED_PROFILE.detailUrlBase,
-    scraperDir: currentDir,
-    locationCountry: null,
-  })
+  return runCondeNastNative(options)
 }
+export const inspectInventory = async (options={}) => { assertNativeProfile(options.signal); return collectCondeNastNative(options) }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

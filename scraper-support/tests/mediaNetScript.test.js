@@ -88,8 +88,9 @@ const DATA_SCIENCE_DETAIL_HTML = `
 <html lang="en">
   <body>
     <main>
-      <h2>Analyst / Senior Business Analyst - Business Analytics</h2>
+      <h2 id="jobProfile">Analyst / Senior Business Analyst - Business Analytics</h2>
       <button type="button">Apply Now</button>
+      <div class="post-body">
       <p>Location: Mumbai, India</p>
       <p>Employment Type: Full-time</p>
       <h3>Job Summary</h3>
@@ -99,6 +100,7 @@ const DATA_SCIENCE_DETAIL_HTML = `
         <li>3+ years of proven experience as a Business Analyst or similar role.</li>
         <li>Proficiency in SQL and Python for data analysis.</li>
       </ul>
+      </div>
     </main>
   </body>
 </html>
@@ -109,8 +111,9 @@ const BUSINESS_DEVELOPMENT_DETAIL_HTML = `
 <html lang="en">
   <body>
     <main>
-      <h2>Director, Agency Partnerships (Experience based)</h2>
+      <h2 id="jobProfile">Director, Agency Partnerships (Experience based)</h2>
       <button type="button">Apply Now</button>
+      <div class="post-body">
       <p>Role: Director, Agency Partnerships (Experience based)</p>
       <p>Location: New York</p>
       <p>Function: Buyer Development</p>
@@ -121,6 +124,7 @@ const BUSINESS_DEVELOPMENT_DETAIL_HTML = `
         <li>4 to 8 years experience in media buying or programmatic advertising.</li>
         <li>Exceptional writing and communication skills.</li>
       </ul>
+      </div>
     </main>
   </body>
 </html>
@@ -168,8 +172,10 @@ test('extractListings parses Media.net department pages into detail-page listing
     location: null,
     city: null,
     country: null,
-    jobId: 'analyst-senior-business-analyst-business-analytics',
-    requisitionId: 'analyst-senior-business-analyst-business-analytics',
+    jobId: null,
+    requisitionId: null,
+    nativeObservationKey: 'https://careers.media.net/data-science-analytics/analyst-senior-business-analyst-business-analytics/',
+    nativeObservationKeyKind: 'published-role-URL-not-a-posting-id',
     sourceUrl: 'https://careers.media.net/data-science-analytics/analyst-senior-business-analyst-business-analytics/',
     applyUrl: 'https://careers.media.net/data-science-analytics/analyst-senior-business-analyst-business-analytics/',
     employmentType: null,
@@ -196,13 +202,14 @@ test('extractJobDetail lifts Media.net detail fields while keeping the detail pa
   assert.equal(job.title, 'Director, Agency Partnerships (Experience based)')
   assert.equal(job.department, 'Business Development')
   assert.equal(job.location, 'New York')
-  assert.equal(job.city, 'New York')
-  assert.equal(job.country, 'United States')
+  assert.equal(job.city, null)
+  assert.equal(job.country, null, 'A city label alone cannot provide a country')
   assert.equal(job.applyUrl, 'https://careers.media.net/business-development/director-agency-partnerships-experience-based/')
   assert.match(job.jobDescription, /developing and nurturing account teams/i)
-  assert.equal(job.minimumQualification, '4 to 8 years experience in media buying or programmatic advertising.')
-  assert.equal(job.preferredQualification, 'Exceptional writing and communication skills.')
-  assert.deepEqual(job.requiredSkills, [
+  assert.equal(job.minimumQualification, null)
+  assert.equal(job.preferredQualification, null)
+  assert.deepEqual(job.requiredSkills, [])
+  assert.deepEqual(job.nativeRequirementItems, [
     '4 to 8 years experience in media buying or programmatic advertising.',
     'Exceptional writing and communication skills.',
   ])
@@ -245,7 +252,8 @@ test('run fetches the Media.net root page, active department pages, and detail p
   assert.equal(jobs[0].link, 'https://careers.media.net/data-science-analytics/analyst-senior-business-analyst-business-analytics/')
   assert.equal(jobs[0].scrapedAt, '2026-07-10T12:00:00.000Z')
   assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[1].country, 'United States')
+  assert.equal(jobs[1].country, null)
+  assert.ok(jobs.every(job => !job.sourceDetailComplete && !job.sourceScopeComplete && !job.lifecycleCleanupAllowed))
 })
 
 test('run fails closed when the Media.net careers surface changes', async () => {

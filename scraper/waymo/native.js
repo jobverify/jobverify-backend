@@ -129,7 +129,7 @@ export const runWaymoNative=async({read,searchUrl,now,signal})=>{
  const clock=new Date(typeof now==='function'?now():now).toISOString()
  const get=async(url,init={})=>{signal?.throwIfAborted();surface=url;const body=await read(url,{...init,signal});signal?.throwIfAborted();check(typeof body==='string'&&Buffer.byteLength(body)<=4000000,'missing/oversized native document');retained.push({url,body});return body}
  const failed=error=>{
-  error.failureKind='incomplete_listing';error.source='waymo';error.retainedNativeResponses=retained
+  error.failureKind||='incomplete_listing';error.source='waymo';error.retainedNativeResponses=retained
   error.inventoryEvidence=normalizeInventoryEvidence({status:'coverage-gap',surface,firstParty:true,listingComplete:false,pagesFetched:retained.length,
    reportedTotal:null,indiaFacetCount:null,verifiedAt:clock,reason:error.message})
   return error

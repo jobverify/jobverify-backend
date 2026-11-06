@@ -566,7 +566,7 @@ export const changePassword = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Your session has expired. Please sign in again.' });
     }
     if (!user.password) {
-      return res.status(400).json({ success: false, message: 'This account has no password yet. Use the reset email option to set one.' });
+      return res.status(400).json({ success: false, message: 'You signed up with Google, so no password was set. Use "Send password reset email" to set a custom password.' });
     }
     if (!await bcrypt.compare(oldPassword, user.password)) {
       return res.status(400).json({ success: false, message: 'Old password is incorrect.' });
@@ -629,7 +629,9 @@ export const login = async (req, res) => {
       return res.status(401).json({
         code: 401,
         success: false,
-        message: "Invalid credentials",
+        message: pendingUser
+          ? "Incorrect password. Please try again or reset your password."
+          : "Account doesn't exist. Please sign up.",
       });
     }
 
@@ -638,7 +640,7 @@ export const login = async (req, res) => {
       return res.status(401).json({
         code: 401,
         success: false,
-        message: "Invalid credentials",
+        message: "Incorrect password. Please try again or reset your password.",
       });
     }
 
@@ -647,7 +649,7 @@ export const login = async (req, res) => {
       return res.status(401).json({
         code: 401,
         success: false,
-        message: "Invalid credentials",
+        message: "Incorrect password. Please try again or reset your password.",
       });
     }
 

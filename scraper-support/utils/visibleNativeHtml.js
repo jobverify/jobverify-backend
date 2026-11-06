@@ -124,7 +124,7 @@ const simpleMatches = (node, { tag, ids, classes, attributes }, ambiguous) => (!
 // pseudo-class evaluation. Escaped/quoted braces cannot begin a CSS block.
 const hidingRules = (css, statusContext = false) => {
   const legacy = () => [...css.matchAll(/([^{}]+)\{([^{}]+)\}/g)].map(([, selector, declarations]) => [selector, declarations])
-  if (!statusContext && !css.includes('\\')) return legacy()
+  if (!statusContext && !css.includes('\\') && !/@(?:-[a-z]+-)?keyframes\b/i.test(css)) return legacy()
   const rules = [], stack = []
   let start = 0, quote = '', depth = 0, bracket = 0, malformed = false
   for (let index = 0; index < css.length; index++) {
@@ -138,10 +138,17 @@ const hidingRules = (css, statusContext = false) => {
     else if (char === ']') bracket--
     else if (!depth && !bracket && char === '{') {
       if (stack.length) stack.at(-1).nested = true
-      stack.push({ selector: cssTrim(css.slice(start, index)), body: index + 1, nested: false }); start = index + 1
+      const selector = cssTrim(css.slice(start, index))
+      const atRule = selector.startsWith('@') ? cssIdentifier(selector, 1) : null
+      // Keyframe selectors describe animation offsets, never DOM elements.
+      // Preserve their block boundary, including escaped/vendor rule names,
+      // without letting a nested offset become a global hiding selector.
+      const keyframes = stack.at(-1)?.keyframes || !!(atRule && !atRule.invalid && /^(?:-[a-z]+-)?keyframes$/i.test(atRule.name))
+      stack.push({ selector, body: index + 1, nested: false, keyframes }); start = index + 1
     } else if (!depth && !bracket && char === '}') {
       const block = stack.pop()
       if (!block) malformed = true
+      else if (block.keyframes) { /* Animation declarations do not select elements. */ }
       else if (!block.nested) rules.push(statusContext
         ? [block.selector, css.slice(block.body, index), { qualified: !stack.length && !block.selector.startsWith('@') }]
         : [block.selector, css.slice(block.body, index)])
@@ -294,7 +301,7 @@ const statusBlocks = new Set(['html', 'body', 'address', 'article', 'aside', 'bl
 // split), as measured independently; this does not qualify author atomic/flex
 // display values or resolve conflicting overrides.
 const statusInline = new Set(['root', 'a', 'abbr', 'b', 'bdi', 'bdo', 'button', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'i', 'ins', 'kbd', 'label', 'mark', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u', 'var', 'wbr'])
-const unmodelledFlow = /^(?:all|float|position|white-space|white-space-collapse|text-wrap|writing-mode|text-orientation|direction|unicode-bidi|order|content|columns|column-count|column-width|flex(?:-.+)?|grid(?:-.+)?)$/
+const unmodelledFlow = /^(?:all|float|position|white-space|white-space-collapse|text-wrap|writing-mode|text-orientation|direction|unicode-bidi|order|content|columns|column-count|column-width|flex(?:-.+)?|grid(?:-.+)?|(?:-[a-z]+-)?animation(?:-name)?)$/
 const statusDeclarations = source => {
   const declarations = [], displays = [], hiding = { visibility: [], content: [], opacity: [] }
   let start = 0, quote = '', depth = 0, uncertain = false

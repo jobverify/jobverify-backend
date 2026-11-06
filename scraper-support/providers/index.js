@@ -21,6 +21,10 @@ import { attachInventoryDelegationEvidence, readInventoryDelegationEvidence } fr
 import { attachSourceObservationEvidence, readSourceObservationEvidence } from '../utils/sourceObservationEvidence.js'
 import { hasMatchingPublicAtsBinding } from '../utils/publicAtsIdentity.js'
 import { buildHttpError, parseRetryAfterHeader } from '../utils/fetch.js'
+import {FINOLEX_CATALOG} from '../../scraper/finolexindustrieslimited/catalog.js'
+import {GOODNOTES_CATALOG} from '../../scraper/goodnotes/catalog.js'
+import {DENTALKART_CATALOG} from '../../scraper/dentalkart/catalog.js'
+import {DHAN_CATALOG} from '../../scraper/dhan/catalog.js'
 
 const currentDir = SUPPORT_PROVIDER_DIR
 const scraperDir = SCRAPER_DIR
@@ -290,7 +294,7 @@ const decorateJobWithProviderMetadata = (job, provider) => ({
   country: Object.hasOwn(job, 'country') ? job.country
     : job.sourceCountryScopeUnresolved === true ? null : provider.countryFilter || 'India',
   companyCareerPage: job.companyCareerPage || provider.companyCareerPage,
-  companyDomain: job.companyDomain || provider.companyDomain,
+  companyDomain: Object.hasOwn(job, 'companyDomain') ? job.companyDomain : provider.companyDomain,
   atsPlatform: job.atsPlatform || provider.atsPlatform,
   applyUrl: job.applyUrl || job.link || null,
   sourceUrl: job.sourceUrl || job.link || null,
@@ -545,6 +549,8 @@ export const getScraperCatalog = ({
     adapter: 'apiPortal',
   })),
   ...TARGETED_OPENING_PROVIDERS.map((item) => expandApiPortalProviderTemplate(item)),
+  // Current source-owned catalogs supersede historical zero/sentinel notes.
+  ...[FINOLEX_CATALOG,GOODNOTES_CATALOG,DENTALKART_CATALOG,DHAN_CATALOG].map(provider=>({...provider,verifiedPublicJobCount:null,verifiedIndiaJobCount:null,verifiedOn:null,backfillMode:null})),
   // Explicit, verified repairs must win over stale base adapter configuration.
   // Ordinary extensions retain their historical precedence for compatibility.
   ...providerExtensions.filter((item) => item.catalogOverride === true),
@@ -554,6 +560,11 @@ export const decorateJobsWithProviderMetadata = (jobs, provider) => {
   const decoratedJobs = jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
   const sourceObservations = readSourceObservationEvidence(jobs, provider.source)
   if (sourceObservations) attachSourceObservationEvidence(decoratedJobs, sourceObservations)
+  // The normalized attachment also supplies a summary fallback property. Keep
+  // the source's richer records, closing holds and receipts after that step.
+  if(Object.hasOwn(jobs,'nativeCollectionEvidence'))Object.defineProperty(decoratedJobs,'nativeCollectionEvidence',{
+    value:jobs.nativeCollectionEvidence,configurable:true,
+  })
   const delegationEvidence = readInventoryDelegationEvidence(jobs)
   if (delegationEvidence) attachInventoryDelegationEvidence(decoratedJobs, delegationEvidence)
   const inventoryEvidence = readInventoryEvidence(jobs)

@@ -63,6 +63,8 @@ test("extractSearchResults normalizes Lowe's India listings into the shared scra
     requisitionId: 'JR-02563681',
     department: 'Corporate',
     employmentType: 'Full-time',
+    sourceEmploymentType: 'Full-time',
+    sourceExperienceRequired: null,
     experienceRequired: null,
     jobDescription:
       "We are looking for a Senior Analyst \u2013 Paid Social to drive innovative digital marketing strategies at Lowe's. This role involves managing and optimizing paid media campaigns across various platforms to enhance brand visibility and profitability. Join us in shaping the future of home improvement retail!",

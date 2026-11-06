@@ -13,43 +13,12 @@ const loadDentalkartCatalog = async () => {
   }
 }
 
-test('Dentalkart catalog captures the verified first-party Zoho active-jobs metadata', async () => {
-  const {
-    DENTALKART_CATALOG,
-    VERIFIED_SURFACE_SUMMARY,
-    default: defaultCatalog,
-  } = await loadDentalkartCatalog()
-
-  assert.equal(defaultCatalog, DENTALKART_CATALOG)
-  assert.equal(DENTALKART_CATALOG.source, 'dentalkart')
-  assert.equal(DENTALKART_CATALOG.companyName, 'Dentalkart')
-  assert.equal(DENTALKART_CATALOG.adapter, 'script')
-  assert.equal(DENTALKART_CATALOG.modulePath, '../../scraper/dentalkart/script.js')
-  assert.equal(DENTALKART_CATALOG.companyCareerPage, 'https://www.dentalkart.com/careers')
-  assert.equal(DENTALKART_CATALOG.homepageUrl, 'https://www.dentalkart.com/')
-  assert.equal(DENTALKART_CATALOG.aboutPageUrl, 'https://www.dentalkart.com/about-us')
-  assert.equal(DENTALKART_CATALOG.companyDomain, 'dentalkart.com')
-  assert.equal(DENTALKART_CATALOG.atsPlatform, 'zoho-recruit')
-  assert.equal(DENTALKART_CATALOG.countryFilter, 'India')
-  assert.equal(
-    DENTALKART_CATALOG.paginationStrategy,
-    'complete-zoho-api-inventory-verified-against-public-portal',
-  )
-  assert.equal(
-    DENTALKART_CATALOG.extractionStrategy,
-    'verified-first-party-zoho-handoff+verified-legal-employer+complete-published-unlocked-india-inventory',
-  )
-  assert.equal(DENTALKART_CATALOG.parser, 'custom-script')
-  assert.equal(DENTALKART_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(DENTALKART_CATALOG.verifiedOn, '2026-11-03')
-  assert.equal(DENTALKART_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dentalkart\.com\/\b/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dentalkart\.com\/about-us\b/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dentalkart\.com\/careers\b/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /18 published, unlocked India openings/i)
-  assert.equal(DENTALKART_CATALOG.legalEmployerName, 'VASA Denticity Limited')
-  assert.equal(DENTALKART_CATALOG.officialCareersHandoffUrl, 'https://dentalkart.zohorecruit.in/jobs/Careers')
-  assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Dentalkart'), false)
+test('Dentalkart catalog describes an observed native board without static inventory authority',async()=>{
+ const {DENTALKART_CATALOG:catalog,default:defaultCatalog}=await loadDentalkartCatalog();assert.equal(catalog,defaultCatalog)
+ assert.equal(catalog.source,'dentalkart');assert.equal(catalog.companyName,'Dentalkart');assert.equal(catalog.legalEmployerName,'VASA Denticity Limited')
+ assert.equal(catalog.companyCareerPage,'https://www.dentalkart.com/careers');assert.equal(catalog.officialCareersHandoffUrl,'https://dentalkart.zohorecruit.in/jobs/Careers')
+ assert.equal(catalog.zohoJobsApiUrl,null);assert.equal(catalog.verifiedOn,null);assert.equal(catalog.sourceScopeComplete,false);assert.equal(catalog.companyGlobalTotal,null);assert.equal(catalog.lifecycleCleanupAllowed,false)
+ assert.equal(Object.hasOwn(companyAliases,'Dentalkart'),false)
 })
 
 test('Dentalkart backlog matching works directly from the local catalog metadata', async () => {

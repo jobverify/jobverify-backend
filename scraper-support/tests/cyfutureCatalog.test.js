@@ -36,15 +36,15 @@ test('getScraperCatalog includes Cyfuture as a verified first-party careers scra
   assert.equal(provider.companyCareerPage, 'https://cyfuture.com/current-opportunities.html')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'static-tabbed-first-party-openings-page')
+  assert.equal(provider.paginationStrategy, 'paired-native-location-tabs-and-declared-office-role-pages;company-scope-unqualified')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-careers-page+tabbed-openings-page+first-party-detail-pages+shared-upload-resume-apply-page',
+    'whole-native-role-criteria+same-publisher-office-country-group-binding+paired-closing-models',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'cyfuture.com')
-  assert.equal(provider.verifiedOn, '2026-07-14')
+  assert.equal(provider.verifiedOn, '2026-11-05')
   assert.match(provider.verifiedSurfaceSummary, /current-opportunities\.html/i)
   assert.match(provider.dryRunFile, /cyfuture[\\/]jobs\.json$/i)
 

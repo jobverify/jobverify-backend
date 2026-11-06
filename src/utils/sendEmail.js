@@ -6,6 +6,7 @@
 import nodemailer from "nodemailer";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import { sendPasswordResetViaRelay } from "./passwordResetRelay.js";
 
 const requireEmailConfig = (name) => {
   const value = String(process.env[name] ?? "").trim();
@@ -96,7 +97,9 @@ export const sendEmailChangeVerificationEmail = async (to, link) => sendEmail(
 );
 
 // Sends a password reset email containing a time-limited reset link.
-export const sendPasswordResetEmail = async (to, resetLink) => sendEmail(
+export const sendPasswordResetEmail = async (to, resetLink) => String(process.env.EMAIL_RELAY_URL ?? '').trim()
+  ? sendPasswordResetViaRelay(to, resetLink)
+  : sendEmail(
   to,
   "Reset your Jobverify password",
   `

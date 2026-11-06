@@ -115,7 +115,7 @@ const extractHybridSignal = (html) => {
 const extractSectionItems = (html, heading) => {
   const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const match = String(html ?? '').match(
-    new RegExp(`<p[^>]*>\\s*${escapedHeading}\\s*<\\/p>([\\s\\S]*?)(?=<div class="mt-5">|<\\/main>)`, 'i'),
+    new RegExp(`<p[^>]*>\\s*${escapedHeading}\\s*<\\/p>([\\s\\S]*?)(?=<div\\b[^>]*\\sclass\\s*=\\s*["'][^"']*\\bmt-5\\b|<\\/main>)`, 'i'),
   )
 
   if (!match) return []

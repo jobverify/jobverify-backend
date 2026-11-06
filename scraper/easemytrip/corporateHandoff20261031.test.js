@@ -6,11 +6,14 @@ import { run, HOME_URL, CAREERS_URL } from './script.js'
 import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const packets = JSON.parse(gunzipSync(readFileSync(new URL('./test-inputs/corporate-handoff-20261031.json.gz', import.meta.url))))
+const current=JSON.parse(gunzipSync(readFileSync(new URL('../../test/test-data/recruitmentGoal20261104/easemytrip-native-quality.json.gz',import.meta.url)))).packets
+const office=current.find(q=>q.requestedURL.endsWith('/contact-us.html'))
+packets.push({url:office.requestedURL,finalUrl:office.finalURL,status:office.status,contentType:office.contentType,body:office.bodyText})
 const ABOUT = 'https://www.easemytrip.com/about-us.html'
 const STYLE = 'https://css.emtcontent.com/career/career-new-stylesheet.css'
 const replay = (change = packet => packet) => {
   const calls = []
-  return { calls, fetchImpl: async url => {
+  return { calls, minIntervalMs:0, fetchImpl: async url => {
     calls.push(url)
     const found = packets.find(packet => packet.url === url)
     assert.ok(found, 'Uncaptured current EaseMyTrip URL: ' + url)
@@ -23,15 +26,15 @@ const replay = (change = packet => packet) => {
 
 test('the current corporate navigation supplies an active careers handoff when root HTML is an Angular shell', async () => {
   const options = replay(), jobs = await run(options), evidence = readInventoryEvidence(jobs)
-  assert.equal(jobs.length, 12)
+  assert.equal(jobs.length, 10)
   assert.equal(evidence.firstParty, true)
   assert.equal(evidence.status, 'coverage-gap')
   assert.equal(evidence.listingComplete, false)
   assert.equal(evidence.indiaFacetCount, null)
-  assert.ok(jobs.every(job => job.country === null && job.postingDate === null && job.requisitionId === null))
+  assert.ok(jobs.every(job => job.country === 'India' && job.postingDate === null && job.requisitionId === null))
   assert.ok(options.calls.includes(ABOUT) && options.calls.includes(STYLE))
   assert.ok(options.calls.indexOf(ABOUT) < options.calls.indexOf(CAREERS_URL))
-  assert.ok(options.calls.filter(url => url.startsWith('https://fonts.googleapis.com/')).length === 1)
+  assert.ok(options.calls.filter(url => url.startsWith('https://fonts.googleapis.com/')).length === 2)
   assert.ok(options.calls.every(url => !/assets\/js\//.test(url)), 'published client programs are never executed or used as anchor evidence')
 })
 
@@ -60,10 +63,10 @@ for (const [name, mutate] of [
 
 test('an unrelated hidden corporate component does not hide the native top navigation', async () => {
   const jobs = await run(replay(p => { if (p.url === STYLE) p.body += '\n.unrelated-modal{display:none}'; return p }))
-  assert.equal(jobs.length, 12)
+  assert.equal(jobs.length, 10)
 })
 
 test('a mobile-only hiding rule cannot conceal the observed desktop handoff', async () => {
   const jobs = await run(replay(p => { if (p.url === STYLE) p.body += '\n@media screen and (max-width:700px){nav{display:none}}'; return p }))
-  assert.equal(jobs.length, 12)
+  assert.equal(jobs.length, 10)
 })

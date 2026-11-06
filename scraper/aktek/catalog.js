@@ -1,5 +1,5 @@
 ﻿export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://aktek.io/ is the live official AKTEK homepage, that https://aktek.io/robots.txt and https://aktek.io/sitemap.xml are the live first-party crawl surfaces, and that https://aktek.io/page-sitemap.xml lists product, policy, conference, and about pages but no careers or jobs page. There is no trustworthy public jobs surface: common first-party careers routes such as https://aktek.io/careers, https://aktek.io/career, https://aktek.io/jobs, https://aktek.io/join-us, https://aktek.io/work-with-us, https://aktek.io/openings, and https://aktek.io/current-openings all returned first-party 404 pages during live checks, and the verified homepage exposed no first-party careers link or public ATS handoff.'
+  'Observed on November 6, 2026 that https://aktek.io/ is the official AKTEK homepage and https://aktek.io/robots.txt declares https://aktek.io/sitemap_index.xml. The current sitemap index contains post and page sections; https://aktek.io/page-sitemap.xml contains no configured careers route. These corporate crawl documents do not establish a complete vacancy inventory or zero company/India openings. No trustworthy public jobs surface has been qualified; lifecycle cleanup remains disallowed.'
 
 export const AKTEK_CATALOG = {
   source: 'aktek',
@@ -9,16 +9,17 @@ export const AKTEK_CATALOG = {
   companyCareerPage: 'https://aktek.io/',
   companyDomain: 'aktek.io',
   robotsTxtUrl: 'https://aktek.io/robots.txt',
-  sitemapIndexUrl: 'https://aktek.io/sitemap.xml',
+  sitemapIndexUrl: 'https://aktek.io/sitemap_index.xml',
   pageSitemapUrl: 'https://aktek.io/page-sitemap.xml',
   atsPlatform: 'official-company-site-no-public-careers',
   countryFilter: 'India',
-  paginationStrategy: 'verified-homepage-plus-crawl-surface-plus-common-careers-route-404-validation',
+  paginationStrategy: 'bounded-homepage-and-declared-crawl-discovery',
   extractionStrategy:
-    'verified-homepage+verified-robots-and-page-sitemap-without-careers-url+verified-missing-common-careers-routes-return-empty',
+    'qualified-corporate-crawl-documents-return-explicit-incomplete-inventory-evidence',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: null,
+  sourceScopeComplete: false,
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 
